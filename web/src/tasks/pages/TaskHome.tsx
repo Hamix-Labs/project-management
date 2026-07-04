@@ -86,6 +86,39 @@ export function TaskHome() {
           onClick={() => modals.openTemplateCreateModal()}
           disabled={createModalOpen}
         >
+          <svg
+            className="task-home-new-template-btn__icon"
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M3 2.5h7l3 3V13.5H3V2.5Z"
+              stroke="currentColor"
+              strokeWidth="1.2"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M10 2.5V5.5H13"
+              stroke="currentColor"
+              strokeWidth="1.2"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M8 8.5V11.5"
+              stroke="currentColor"
+              strokeWidth="1.2"
+              strokeLinecap="round"
+            />
+            <path
+              d="M6.5 10H9.5"
+              stroke="currentColor"
+              strokeWidth="1.2"
+              strokeLinecap="round"
+            />
+          </svg>
           New template
         </Button>
         <Button

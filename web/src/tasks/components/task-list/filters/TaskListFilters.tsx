@@ -74,6 +74,28 @@ export function TaskListFilters({
           Search titles
         </label>
         <div className="task-list-search-field__inner">
+          <svg
+            className="task-list-search-field__icon"
+            width="14"
+            height="14"
+            viewBox="0 0 14 14"
+            fill="none"
+            aria-hidden="true"
+          >
+            <circle
+              cx="6"
+              cy="6"
+              r="4.5"
+              stroke="currentColor"
+              strokeWidth="1.2"
+            />
+            <path
+              d="M9.5 9.5L13 13"
+              stroke="currentColor"
+              strokeWidth="1.2"
+              strokeLinecap="round"
+            />
+          </svg>
           <input
             ref={searchInputRef}
             id="task-list-search-title"

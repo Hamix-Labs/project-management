@@ -162,7 +162,13 @@
 }
 
 .task-home-new-template-btn {
-  margin-right: var(--space-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.task-home-new-template-btn__icon {
+  flex-shrink: 0;
 }
 
 .task-list-section-actions {

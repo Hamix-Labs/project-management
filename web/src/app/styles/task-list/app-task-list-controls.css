@@ -87,6 +87,13 @@
   border-bottom: 1px solid var(--border-hairline);
 }
 
+.task-list-section--redesign
+  .task-list-toolbar:not(:has(.task-list-stats-strip))
+  .task-list-section-head {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
 .task-list-stats-strip__list {
   display: flex;
   flex-wrap: wrap;

@@ -348,9 +348,7 @@ export const TaskListSection = memo(function TaskListSection({
       role="tabpanel"
     >
       <div className="task-list-toolbar">
-        <div className="task-list-card-header">
-          <TaskListSectionHeading actions={actions} summary={headingSummary} />
-        </div>
+        <TaskListSectionHeading actions={actions} summary={headingSummary} />
         {!loading ? (
           <>
             <TaskListStatusTabs
