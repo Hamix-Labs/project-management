@@ -45,7 +45,7 @@ func (h *Handler) workspaceRoots(w http.ResponseWriter, r *http.Request) {
 		writeJSONError(w, r, op, http.StatusInternalServerError, "workspace roots unavailable")
 		return
 	}
-	roots, env, err := repo.ResolveWorkspacePickerRoots(wd, gitRepos)
+	roots, env, err := repo.ResolveWorkspacePickerRoots(wd, gitRepos, workspaceRootsScope(r))
 	if err != nil {
 		slog.Log(r.Context(), slog.LevelError, "workspace roots failed",
 			"cmd", calltrace.LogCmd, "operation", op, "err", err)
@@ -53,6 +53,15 @@ func (h *Handler) workspaceRoots(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, r, op, http.StatusOK, workspaceRootsResponse{Roots: roots, Environment: env})
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func workspaceRootsScope(r *http.Request) string {
+	scope := strings.TrimSpace(r.URL.Query().Get("scope"))
+	if scope == repo.WorkspacePickerScopeExpanded {
+		return repo.WorkspacePickerScopeExpanded
+	}
+	return repo.WorkspacePickerScopeDefault
 }
 
 func (h *Handler) browseDirs(w http.ResponseWriter, r *http.Request) {

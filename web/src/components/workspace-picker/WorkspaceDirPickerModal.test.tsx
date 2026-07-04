@@ -497,4 +497,36 @@ describe("WorkspaceDirPickerModal", () => {
 
     fetchMock.mockRestore();
   });
+
+  it("requests expanded workspace roots when rootsScope is expanded", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes("/settings/workspace-roots")) {
+        expect(url).toContain("scope=expanded");
+        return jsonResponse({
+          environment: "native",
+          roots: [
+            { id: "repo", path: "/repo", label: "repo", category: "registered", available: true },
+            { id: "home", path: "/roots", label: "Home", category: "home", available: true },
+          ],
+        });
+      }
+      return new Response("not found", { status: 404 });
+    });
+
+    render(
+      <WorkspaceDirPickerModal
+        open
+        rootsScope="expanded"
+        currentPath=""
+        onClose={() => {}}
+        onSelect={() => {}}
+      />,
+    );
+
+    expect(await screen.findByRole("button", { name: /repo/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Home/ })).toBeInTheDocument();
+
+    fetchMock.mockRestore();
+  });
 });

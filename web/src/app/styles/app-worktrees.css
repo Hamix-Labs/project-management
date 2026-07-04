@@ -14,6 +14,7 @@
 }
 
 .worktrees-register-btn__icon {
+  display: block;
   flex-shrink: 0;
 }
 
@@ -618,8 +619,25 @@ button.worktrees-inventory-add-btn:focus-visible {
   min-width: 2rem;
 }
 
+.worktrees-menu-trigger__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  line-height: 0;
+}
+
+.worktrees-menu-trigger__icon svg {
+  display: block;
+}
+
+.worktrees-menu-trigger__label {
+  line-height: 1;
+}
+
 .worktrees-menu-trigger__chevron {
   flex-shrink: 0;
+  display: block;
   color: var(--text-tertiary);
 }
 
@@ -722,11 +740,19 @@ button.worktrees-inventory-add-btn:focus-visible {
 }
 
 .worktrees-form-modal .field > span,
+.worktrees-form-modal .field-label-with-req label,
 .worktrees-form-modal .settings-field-label {
   font-size: var(--text-sm);
   font-weight: 500;
   letter-spacing: -0.01em;
   color: var(--text-secondary);
+}
+
+.worktrees-form-modal__field-hint {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.45;
+  color: var(--text-tertiary);
 }
 
 .worktrees-form-modal .field input {
@@ -786,6 +812,65 @@ button.worktrees-inventory-add-btn:focus-visible {
   color: var(--text-secondary);
 }
 
+.worktrees-form-modal__picker-hint {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-sm);
+  line-height: 1.45;
+  color: var(--text-tertiary);
+}
+
+.worktrees-form-modal__parent-choice {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+}
+
+.worktrees-form-modal__parent-choice--default {
+  border-color: color-mix(in srgb, var(--info) 24%, var(--border-hairline));
+  background: var(--info-soft);
+}
+
+.worktrees-form-modal__parent-choice--default .worktrees-form-modal__parent-choice-header {
+  justify-content: flex-start;
+}
+
+.worktrees-form-modal__parent-choice-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.worktrees-form-modal__parent-choice-label {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.worktrees-form-modal__parent-default-badge {
+  flex-shrink: 0;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--info);
+  background: var(--info-soft);
+}
+
+.worktrees-form-modal__parent-choice-path {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  line-height: 1.45;
+  color: var(--text-primary);
+  word-break: break-all;
+}
+
 .worktrees-form-modal__selected {
   margin: 0;
   padding: var(--space-3);
@@ -836,6 +921,16 @@ button.worktrees-inventory-add-btn:focus-visible {
   align-self: flex-start;
 }
 
+.worktrees-form-modal__inventory-sync {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-sm);
+  line-height: 1.45;
+  color: var(--info);
+}
+
 .worktrees-form-modal__checkbox {
   display: flex;
   align-items: center;
@@ -863,6 +958,11 @@ button.worktrees-inventory-add-btn:focus-visible {
   gap: var(--space-2);
   font-size: var(--text-sm);
   color: var(--text-secondary);
+}
+
+.worktrees-delete-dialog__force {
+  display: block;
+  margin-top: var(--space-3);
 }
 
 .worktrees-form-modal__error {
@@ -1012,39 +1112,36 @@ button.worktrees-inventory-add-btn:focus-visible {
 
 /* —— Repository detail ( /worktrees/:id ) —— */
 
+.repository-detail__toolbar {
+  gap: 0;
+}
+
 .repository-detail__header {
   margin-bottom: var(--space-4);
 }
 
-.repository-detail__back {
-  display: inline-flex;
+.repository-detail__header-actions {
+  margin-inline-start: auto;
   align-items: center;
-  gap: var(--space-1);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  color: var(--text-secondary);
-  text-decoration: none;
 }
 
-.repository-detail__back:hover {
-  color: var(--text-primary);
+.repository-detail__reconcile-btn,
+.repository-detail__delete-btn {
+  min-height: 2.25rem;
+  white-space: nowrap;
 }
 
-.repository-detail__title-block {
-  margin-bottom: var(--space-6);
-}
-
-.repository-detail__title-row {
+.repository-detail__identity {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-4);
-  margin-bottom: var(--space-2);
+  flex-direction: column;
+  gap: var(--space-1);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border-hairline);
 }
 
 .repository-detail__title {
   margin: 0;
-  font-size: var(--text-2xl);
+  font-size: var(--text-xl);
   font-weight: 600;
   letter-spacing: -0.022em;
   line-height: 1.25;
@@ -1056,10 +1153,11 @@ button.worktrees-inventory-add-btn:focus-visible {
   align-items: center;
   gap: var(--space-2);
   margin: 0;
+  min-width: 0;
+  max-width: 100%;
   font-size: var(--text-sm);
   line-height: 1.45;
   color: var(--text-tertiary);
-  word-break: break-all;
 }
 
 .repository-detail__path-icon {
@@ -1067,12 +1165,22 @@ button.worktrees-inventory-add-btn:focus-visible {
   color: var(--text-tertiary);
 }
 
+.repository-detail__path-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.01em;
+}
+
 .repository-detail__host-path {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: var(--space-2);
-  margin: var(--space-2) 0 0;
+  margin: 0;
   font-size: var(--text-xs);
   line-height: 1.4;
   color: var(--text-tertiary);
@@ -1083,21 +1191,214 @@ button.worktrees-inventory-add-btn:focus-visible {
   word-break: break-all;
 }
 
-.worktrees-inventory--detail {
-  --worktrees-inventory-col-count: 0;
+.repository-detail__search.task-list-search-field {
+  margin-top: var(--space-3);
+  margin-bottom: 0;
 }
 
-.worktrees-inventory--detail .worktrees-inventory-head--detail,
-.worktrees-inventory--detail .worktrees-inventory-row {
+.repository-detail .task-list-section-actions .worktrees-menu-trigger.task-home-new-task-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.repository-detail
+  .task-list-section-actions
+  .worktrees-menu-trigger.task-home-new-task-btn
+  .worktrees-menu-trigger__chevron {
+  color: var(--control-primary-fg);
+  opacity: 0.85;
+}
+
+/* —— Worktrees list (repository detail) — flat list inside panel, like repositories —— */
+
+.worktrees-list {
+  --worktrees-list-col-branch: minmax(0, 11rem);
+  --worktrees-list-col-menu: 2rem;
+  --worktrees-list-inset-start: var(--space-3);
+}
+
+.worktrees-list-head {
+  display: grid;
   grid-template-columns:
     minmax(0, 1fr)
-    var(--worktrees-inventory-col-branch)
-    var(--worktrees-inventory-col-menu);
-  grid-template-areas: "name branch menu";
+    var(--worktrees-list-col-branch)
+    var(--worktrees-list-col-menu);
+  column-gap: var(--space-3);
+  align-items: center;
+  padding-inline: var(--worktrees-list-inset-start) var(--space-3);
+  border-bottom: 1px solid var(--border-hairline);
 }
 
-.worktrees-inventory--detail .worktrees-inventory-row__count {
-  display: none;
+.worktrees-list-head__label {
+  padding-block: var(--table-header-padding-y-top)
+    var(--table-header-padding-y-bottom);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.worktrees-list-head__label--branch {
+  justify-self: stretch;
+}
+
+.worktrees-list-head__spacer {
+  width: var(--worktrees-list-col-menu);
+  justify-self: end;
+}
+
+.worktrees-list-rows {
+  margin-bottom: 0;
+}
+
+.worktrees-list-row {
+  position: relative;
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    var(--worktrees-list-col-branch)
+    var(--worktrees-list-col-menu);
+  align-items: center;
+  column-gap: var(--space-3);
+  padding-inline: var(--worktrees-list-inset-start) var(--space-3);
+  padding-block: var(--space-3);
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  list-style: none;
+}
+
+.worktrees-list-row--worktree {
+  align-items: start;
+  cursor: pointer;
+}
+
+.worktrees-list-row--worktree:focus {
+  outline: none;
+}
+
+.worktrees-list-row--worktree:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--brand);
+}
+
+.worktrees-list-row--worktree::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  pointer-events: none;
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .worktrees-list-row--worktree:hover::before {
+    background: var(--neutral-fill-faint);
+  }
+
+  .worktrees-list-row--worktree .task-list-row-actions {
+    opacity: 0.55;
+    transition: opacity var(--duration-normal) var(--ease-out);
+  }
+
+  .worktrees-list-row--worktree:hover .task-list-row-actions,
+  .worktrees-list-row--worktree:focus-within .task-list-row-actions {
+    opacity: 1;
+  }
+}
+
+.worktrees-list-row--worktree:focus-within::before {
+  background: var(--neutral-fill-ghost);
+}
+
+.worktrees-list-row--worktree.worktrees-list-row--expanded .worktree-row__chevron {
+  transform: rotate(90deg);
+}
+
+.worktrees-list-row__name {
+  position: relative;
+  z-index: 1;
+  grid-column: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.worktrees-list-row__branch {
+  position: relative;
+  z-index: 1;
+  grid-column: 2;
+  min-width: 0;
+}
+
+.worktrees-list-row__actions {
+  position: relative;
+  z-index: 1;
+  grid-column: 3;
+  display: flex;
+  justify-content: flex-end;
+  justify-self: end;
+  width: var(--worktrees-list-col-menu);
+}
+
+.worktrees-list-row--status,
+.worktrees-list-row--empty {
+  display: block;
+  padding-inline: var(--worktrees-list-inset-start) var(--space-3);
+}
+
+.worktrees-list-row--add {
+  padding-block: var(--space-2) var(--space-3);
+}
+
+.worktrees-list-row--add .worktrees-list-row__name {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 768px) {
+  .worktrees-list-head {
+    display: none;
+  }
+
+  .worktrees-list-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "name menu"
+      "branch branch";
+    align-items: start;
+  }
+
+  .worktrees-list-row__name {
+    grid-area: name;
+  }
+
+  .worktrees-list-row__branch {
+    grid-area: branch;
+  }
+
+  .worktrees-list-row__actions {
+    grid-area: menu;
+  }
+
+  .worktrees-list-row--status,
+  .worktrees-list-row--empty {
+    display: block;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .worktrees-list-row--worktree::before {
+    transition: none;
+  }
+
+  .worktrees-list-row--worktree .task-list-row-actions {
+    opacity: 1 !important;
+    transition: none;
+  }
 }
 
 @media (max-width: 768px) {

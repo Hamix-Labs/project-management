@@ -31,7 +31,7 @@ Hamix expects operators to follow **repository → worktree (+ branch) → task*
 3. **`/worktrees?register=1`** — deep link that opens the register-repository modal on the list page.
 4. **Task create gate** — **New task** / **Start fresh** require at least one registered repository.
 
-**Unregister vs remove from disk:** **Unregister worktree** in the SPA (or `DELETE /git/worktrees/{id}`) drops only the Hamix inventory row. The linked checkout directory and `git worktree` entry stay on disk — the path reappears in live inventory (`registered: false`) so you can **Register worktree** again. To delete the directory from git, run `git worktree remove` outside Hamix. **Create worktree** is the opposite: Hamix runs `git worktree add` and registers the new row.
+**Unregister vs delete from disk:** **Unregister worktree** in the SPA (or `DELETE /git/worktrees/{id}`) drops only the Hamix inventory row. The linked checkout directory and `git worktree` entry stay on disk — the path reappears in live inventory (`registered: false`) so you can **Register worktree** again. **Delete worktree** in the SPA (or `DELETE /git/worktrees/{id}?remove_from_disk=true`) runs `git worktree remove`, deletes the Hamix row, and removes the checkout directory; use `&force=true` when the tree has uncommitted changes. The main worktree cannot be deleted from disk via the API. **Create worktree** runs `git worktree add`: the UI asks for a parent folder plus a new directory name (the path Git will create).
 
 **Runtime:** tasks on the same worktree run sequentially (per-worktree gate). Tasks on different worktrees may run in parallel when `HAMIX_AGENT_WORKER_CONCURRENCY` > 1. The worker does not switch branches — the worktree must already be checked out on its bound branch.
 

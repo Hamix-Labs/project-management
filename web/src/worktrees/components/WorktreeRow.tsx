@@ -12,7 +12,8 @@ import { WorktreesMenu } from "./WorktreesMenu";
 type Props = {
   worktree: GitWorktree;
   branches: GitBranch[];
-  onDelete: () => void;
+  onUnregister: () => void;
+  onDeleteFromDisk: () => void;
   deleteDisabled?: boolean;
 };
 
@@ -24,7 +25,8 @@ function isWorktreeRowActionExcluded(target: EventTarget | null): boolean {
 export function WorktreeRow({
   worktree,
   branches,
-  onDelete,
+  onUnregister,
+  onDeleteFromDisk,
   deleteDisabled = false,
 }: Props) {
   const [expanded, setExpanded] = useState(false);
@@ -38,20 +40,30 @@ export function WorktreeRow({
   const unregisterMenuItem = {
     id: "unregister-worktree",
     label: worktreeGitCopy.unregisterWorktree,
-    onSelect: onDelete,
+    onSelect: onUnregister,
     disabled: deleteBlocked,
     danger: true,
   };
+  const deleteMenuItem = {
+    id: "delete-worktree",
+    label: worktreeGitCopy.deleteWorktree,
+    onSelect: onDeleteFromDisk,
+    disabled: deleteBlocked,
+    danger: true,
+  };
+  const menuItems = worktree.is_main
+    ? [unregisterMenuItem]
+    : [unregisterMenuItem, deleteMenuItem];
 
   const toggleExpanded = () => setExpanded((open) => !open);
 
   return (
     <li
       className={[
-        "worktrees-inventory-row",
-        "worktrees-inventory-row--worktree",
-        "worktrees-inventory-row--interactive",
-        expanded ? "worktrees-inventory-row--expanded" : "",
+        "worktrees-list-row",
+        "worktrees-list-row--worktree",
+        "draft-row--interactive",
+        expanded ? "worktrees-list-row--expanded" : "",
       ]
         .filter(Boolean)
         .join(" ")}
@@ -72,7 +84,7 @@ export function WorktreeRow({
         }
       }}
     >
-      <div className="worktrees-inventory-row__name worktree-row__name">
+      <div className="worktrees-list-row__name worktree-row__name">
         <div className="worktree-row__summary">
           <span className="worktree-row__chevron-wrap" aria-hidden>
             <WorktreesChevronRightIcon className="worktree-row__chevron" />
@@ -94,7 +106,7 @@ export function WorktreeRow({
         ) : null}
       </div>
 
-      <div className="worktrees-inventory-row__branch worktree-row__branch" aria-label="Branch">
+      <div className="worktrees-list-row__branch worktree-row__branch" aria-label="Branch">
         {branch ? (
           <BranchPill branch={branch} />
         ) : worktree.branch_id ? (
@@ -104,16 +116,14 @@ export function WorktreeRow({
         )}
       </div>
 
-      <div className="worktrees-inventory-row__count worktree-row__count" aria-hidden="true" />
-
-      <div className="worktrees-inventory-row__actions worktree-row__actions">
+      <div className="worktrees-list-row__actions worktree-row__actions">
         <div className="task-list-row-actions">
           <WorktreesMenu
             triggerLabel={worktreeGitCopy.worktreeActions(displayName)}
             className="task-list-icon-btn"
             icon={<WorktreesMoreIcon />}
             iconOnly
-            items={[unregisterMenuItem]}
+            items={menuItems}
           />
         </div>
       </div>

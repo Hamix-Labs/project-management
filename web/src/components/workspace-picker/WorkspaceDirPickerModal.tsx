@@ -5,6 +5,7 @@ import {
   fetchWorkspaceRoots,
   type BrowseDirEntry,
   type WorkspaceBrowseRoot,
+  type WorkspaceRootsScope,
 } from "@/api/settingsBrowse";
 import "./workspace-picker.css";
 
@@ -23,6 +24,12 @@ type Props = {
   validatePath?: (path: string) => Promise<{ ok: boolean; message?: string }>;
   /** Skip the roots screen and list this directory when the modal opens. */
   initialBrowsePath?: string;
+  /** When expanded, workspace-roots includes OS bootstrap places alongside registered repos. */
+  rootsScope?: WorkspaceRootsScope;
+  /** Footer label for the path being confirmed. */
+  selectionFooterLabel?: string;
+  /** Confirm button label. */
+  confirmLabel?: string;
 };
 
 type LoadState =
@@ -111,6 +118,9 @@ export function WorkspaceDirPickerModal({
   requireGitRepository = false,
   validatePath,
   initialBrowsePath,
+  rootsScope = "default",
+  selectionFooterLabel,
+  confirmLabel,
 }: Props) {
   const resolvedLead =
     lead ??
@@ -159,7 +169,7 @@ export function WorkspaceDirPickerModal({
     setListingError(null);
     setPathValidation(null);
     setValidatingPath(false);
-    void fetchWorkspaceRoots()
+    void fetchWorkspaceRoots({ scope: rootsScope })
       .then((roots) => {
         if (cancelled) return;
         setLoadState({
@@ -182,7 +192,7 @@ export function WorkspaceDirPickerModal({
     return () => {
       cancelled = true;
     };
-  }, [open, initialBrowsePath, loadListing]);
+  }, [open, initialBrowsePath, loadListing, rootsScope]);
 
   const crumbs = useMemo(() => {
     if (loadState.kind !== "ready") return [];
@@ -248,6 +258,10 @@ export function WorkspaceDirPickerModal({
     onClose();
   }
 
+  const selectionLabel =
+    selectionFooterLabel ??
+    (requireGitRepository ? "Repository checkout" : "Folder to register");
+  const confirmButtonLabel = confirmLabel ?? "Use this folder";
   const hasOpenFolder = !atRoots && currentBrowsePath.trim() !== "";
   const gitRequirementMet = !requireGitRepository || currentPathIsGitRepo;
   const customValidationMet = !validatePath || (pathValidation?.ok === true && !validatingPath);
@@ -383,7 +397,7 @@ export function WorkspaceDirPickerModal({
             <footer className="workspace-picker-footer">
               <div className="workspace-picker-selection" aria-live="polite">
                 <span className="workspace-picker-selection-label">
-                  {requireGitRepository ? "Repository checkout" : "Folder to register"}
+                  {selectionLabel}
                 </span>
                 <code
                   className="workspace-picker-selection-path"
@@ -409,7 +423,7 @@ export function WorkspaceDirPickerModal({
                   disabled={!canConfirm}
                   onClick={confirmSelection}
                 >
-                  Use this folder
+                  {confirmButtonLabel}
                 </button>
               </div>
             </footer>

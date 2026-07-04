@@ -15,6 +15,11 @@ const (
 	browseRootHome    = "home"
 	dockerHomeMount   = "/host-home"
 	dockerInstallPath = "/app"
+
+	// WorkspacePickerScopeDefault returns registered-repo roots in manage mode.
+	WorkspacePickerScopeDefault = "default"
+	// WorkspacePickerScopeExpanded merges OS bootstrap places with registered roots.
+	WorkspacePickerScopeExpanded = "expanded"
 )
 
 // BrowseRoot is a top-level directory the workspace picker may start from.
@@ -80,7 +85,9 @@ func defaultBootstrapPlaceRegistry() *PlaceRegistry {
 // ResolveWorkspacePickerRoots is the single policy for GET /settings/workspace-roots.
 // Custom browse roots override everything; registered repos drive manage mode; otherwise
 // bootstrap OS entry points enable the register-repo folder picker.
-func ResolveWorkspacePickerRoots(startDir string, registered []domain.GitRepository) ([]BrowseRoot, BrowseEnvironment, error) {
+// When scope is WorkspacePickerScopeExpanded and repos are registered, bootstrap places
+// are merged so operators can browse outside registered checkout paths.
+func ResolveWorkspacePickerRoots(startDir string, registered []domain.GitRepository, scope string) ([]BrowseRoot, BrowseEnvironment, error) {
 	slog.Debug("trace", "operation", "repo.ResolveWorkspacePickerRoots")
 	if CustomBrowseRootsConfigured() {
 		return ResolveBrowseRoots(startDir)
@@ -100,6 +107,12 @@ func ResolveWorkspacePickerRoots(startDir string, registered []domain.GitReposit
 			for _, p := range places {
 				roots = append(roots, placeToBrowseRoot(p))
 			}
+		} else if scope == WorkspacePickerScopeExpanded {
+			merged, err := mergeBootstrapBrowseRoots(roots, env, startDir)
+			if err != nil {
+				return nil, env, err
+			}
+			roots = merged
 		}
 		return roots, env, nil
 	}
@@ -113,6 +126,49 @@ func ResolveWorkspacePickerRoots(startDir string, registered []domain.GitReposit
 		roots = append(roots, placeToBrowseRoot(p))
 	}
 	return roots, env, nil
+}
+
+//funclogmeasure:skip category=hot-path reason="Browse sub-step; operation trace is emitted by ResolveWorkspacePickerRoots."
+func mergeBootstrapBrowseRoots(roots []BrowseRoot, env BrowseEnvironment, startDir string) ([]BrowseRoot, error) {
+	reg := defaultBootstrapPlaceRegistry()
+	places, err := reg.Places(env, startDir)
+	if err != nil {
+		return nil, err
+	}
+	extra := make([]BrowseRoot, 0, len(places))
+	for _, p := range places {
+		extra = append(extra, placeToBrowseRoot(p))
+	}
+	return mergeBrowseRootsByPath(roots, extra), nil
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure helper; operation trace is emitted by ResolveWorkspacePickerRoots."
+func mergeBrowseRootsByPath(existing, extra []BrowseRoot) []BrowseRoot {
+	seen := make(map[string]struct{}, len(existing)+len(extra))
+	out := make([]BrowseRoot, 0, len(existing)+len(extra))
+	for _, root := range existing {
+		canon, err := canonicalizePathForContainment(root.Path)
+		if err != nil {
+			continue
+		}
+		if _, dup := seen[canon]; dup {
+			continue
+		}
+		seen[canon] = struct{}{}
+		out = append(out, root)
+	}
+	for _, root := range extra {
+		canon, err := canonicalizePathForContainment(root.Path)
+		if err != nil {
+			continue
+		}
+		if _, dup := seen[canon]; dup {
+			continue
+		}
+		seen[canon] = struct{}{}
+		out = append(out, root)
+	}
+	return out
 }
 
 // BrowseRootFromPath builds a BrowseRoot for an absolute path with availability

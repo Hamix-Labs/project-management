@@ -84,6 +84,55 @@ func (s *Store) UnregisterGitWorktree(ctx context.Context, projectID, worktreeID
 	return nil
 }
 
+// RemoveGitWorktreeFromDisk runs git worktree remove then deletes the Hamix row.
+func (s *Store) RemoveGitWorktreeFromDisk(ctx context.Context, projectID, worktreeID string, force bool, gitSvc gitwork.Service) error {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.RemoveGitWorktreeFromDisk")
+	wt, err := s.GetGitWorktree(ctx, projectID, worktreeID)
+	if err != nil {
+		return err
+	}
+	return s.removeGitWorktreeFromDisk(ctx, wt, force, gitSvc)
+}
+
+// RemoveGitWorktreeFromDiskByID is the global-route variant of RemoveGitWorktreeFromDisk.
+func (s *Store) RemoveGitWorktreeFromDiskByID(ctx context.Context, worktreeID string, force bool, gitSvc gitwork.Service) error {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.RemoveGitWorktreeFromDiskByID")
+	wt, err := s.GetGitWorktreeByID(ctx, worktreeID)
+	if err != nil {
+		return err
+	}
+	return s.removeGitWorktreeFromDisk(ctx, wt, force, gitSvc)
+}
+
+func (s *Store) removeGitWorktreeFromDisk(ctx context.Context, wt domain.GitWorktree, force bool, gitSvc gitwork.Service) error {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.removeGitWorktreeFromDisk")
+	if wt.IsMain {
+		return fmt.Errorf("%w: cannot remove main worktree from disk", domain.ErrInvalidInput)
+	}
+	if err := guardNoRunningTask(ctx, s.db, wt.ID); err != nil {
+		return err
+	}
+	repo, err := s.GetGitRepositoryByID(ctx, wt.RepositoryID)
+	if err != nil {
+		return err
+	}
+	if gitSvc == nil {
+		gitSvc = gitwork.New()
+	}
+	opened, err := gitSvc.OpenRepository(ctx, repo.Path)
+	if err != nil {
+		return fmt.Errorf("open repository: %w", err)
+	}
+	if err := gitSvc.RemoveWorktree(ctx, opened, wt.Path, force); err != nil {
+		return mapGitworkRemoveErr(err)
+	}
+	res := s.db.WithContext(ctx).Delete(&model.GitWorktree{}, "id = ?", wt.ID)
+	if res.Error != nil {
+		return fmt.Errorf("delete git worktree row: %w", res.Error)
+	}
+	return nil
+}
+
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func mapGitworkCreateErr(err error) error {
 	switch {

@@ -3,6 +3,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { gitQueryKeys } from "@/lib/gitQueryKeys";
 import { RegisterWorktreeModal } from "./RegisterWorktreeModal";
+import { worktreeGitCopy } from "../worktreeGitCopy";
 
 function jsonResponse(body: unknown, init: ResponseInit = { status: 200 }): Response {
   return new Response(JSON.stringify(body), {
@@ -193,6 +194,56 @@ describe("RegisterWorktreeModal", () => {
       );
     });
     expect(screen.queryByText(/No unregistered worktrees/i)).not.toBeInTheDocument();
+
+    fetchMock.mockRestore();
+  });
+
+  it("shows inventory refresh status and disables path select while prefetch pending", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes("/worktrees/live")) {
+        return jsonResponse({
+          worktrees: [
+            {
+              path: "/repo/unregistered",
+              branch: "feature",
+              is_main: false,
+              detached: false,
+              registered: false,
+              locked: false,
+              prunable: false,
+            },
+          ],
+        });
+      }
+      if (url.includes("/branches")) {
+        return jsonResponse({ branches: [] });
+      }
+      return new Response("not found", { status: 404 });
+    });
+
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+    });
+
+    render(
+      <QueryClientProvider client={client}>
+        <RegisterWorktreeModal
+          open
+          pending={false}
+          error={null}
+          repositoryId="00000000-0000-4000-8000-000000000010"
+          storedPath="/repo/main"
+          inventoryRefreshPending
+          onReconcile={vi.fn()}
+          onClose={() => {}}
+          onSubmit={() => {}}
+        />
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByRole("status")).toHaveTextContent(worktreeGitCopy.inventoryRefreshStatus);
+    expect(screen.getByRole("combobox", { name: /worktree path/i })).toBeDisabled();
 
     fetchMock.mockRestore();
   });

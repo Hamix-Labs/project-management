@@ -47,6 +47,20 @@ export function repositoryMatchesSearchQuery(
   );
 }
 
+/** Client-side filter for worktrees on the repository detail page. */
+export function worktreeMatchesSearchQuery(
+  worktree: { name: string; path: string },
+  branchName: string | undefined,
+  query: string,
+): boolean {
+  const q = query.trim().toLowerCase();
+  if (q === "") return true;
+  const name = worktree.name.trim().toLowerCase();
+  const path = worktree.path.toLowerCase();
+  const branch = (branchName ?? "").toLowerCase();
+  return name.includes(q) || path.includes(q) || branch.includes(q);
+}
+
 /** Short scannable label for a worktree path; full path belongs in a tooltip. */
 export function worktreePathLabel(worktreePath: string, repositoryPath: string): string {
   const trimmed = worktreePath.trim();

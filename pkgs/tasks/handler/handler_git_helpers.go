@@ -3,9 +3,11 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/logctx"
 )
@@ -88,4 +90,13 @@ func writeJSONCodedError(w http.ResponseWriter, r *http.Request, op string, stat
 
 func parseGitProjectID(r *http.Request) (string, error) {
 	return parseTaskPathID(r.PathValue("id"))
+}
+
+func gitWorktreeDeleteQuery(r *http.Request, op string) (removeFromDisk, force bool) {
+	removeFromDisk = r.URL.Query().Get("remove_from_disk") == "true"
+	force = r.URL.Query().Get("force") == "true"
+	if force && !removeFromDisk {
+		slog.Warn("deprecated query param ignored", "cmd", calltrace.LogCmd, "operation", op, "param", "force")
+	}
+	return removeFromDisk, force
 }

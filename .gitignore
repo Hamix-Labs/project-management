@@ -24,6 +24,8 @@ work_technique/*.md
 notes/
 .cursor/skills/
 moat.md
+codegraph-tools.md
+possible_improvements.md
 
 # Defense in depth against the 2026-04-19 incident: a Windows component
 # in the cursor-agent child process tree (Software Licensing Service /

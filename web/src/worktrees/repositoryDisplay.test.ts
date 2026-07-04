@@ -5,6 +5,7 @@ import {
   repositoryPathsEquivalent,
   shouldShowWorktreePath,
   splitWorktreePath,
+  worktreeMatchesSearchQuery,
   worktreePathLabel,
 } from "./repositoryDisplay";
 
@@ -73,5 +74,17 @@ describe("repositoryMatchesSearchQuery", () => {
     expect(repositoryMatchesSearchQuery(repo, "/repo/hamix")).toBe(true);
     expect(repositoryMatchesSearchQuery(repo, "documents")).toBe(true);
     expect(repositoryMatchesSearchQuery(repo, "nomatch")).toBe(false);
+  });
+});
+
+describe("worktreeMatchesSearchQuery", () => {
+  const worktree = { name: "Hamix-wt-03", path: "/repo/Hamix-wt-03" };
+
+  it("matches name, path, and branch", () => {
+    expect(worktreeMatchesSearchQuery(worktree, "hamix-test-03", "")).toBe(true);
+    expect(worktreeMatchesSearchQuery(worktree, "hamix-test-03", "wt-03")).toBe(true);
+    expect(worktreeMatchesSearchQuery(worktree, "hamix-test-03", "hamix-test")).toBe(true);
+    expect(worktreeMatchesSearchQuery(worktree, "hamix-test-03", "/repo/hamix")).toBe(true);
+    expect(worktreeMatchesSearchQuery(worktree, undefined, "nomatch")).toBe(false);
   });
 });

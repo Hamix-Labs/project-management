@@ -86,6 +86,67 @@ func TestHTTP_workspaceRoots_returnsRegisteredRepos(t *testing.T) {
 	}
 }
 
+// TestHTTP_workspaceRoots_expandedScope_includesBootstrap verifies expanded scope
+// merges OS bootstrap entry points when registered repositories are available.
+func TestHTTP_workspaceRoots_expandedScope_includesBootstrap(t *testing.T) {
+	repoPath := t.TempDir()
+
+	db := tasktestdb.OpenSQLite(t)
+	now := time.Now().UTC()
+	row := domain.GitRepository{
+		ID:            "test-repo-id",
+		Path:          repoPath,
+		HostPath:      "",
+		DefaultBranch: "main",
+		CreatedAt:     now,
+		UpdatedAt:     now,
+	}
+	if err := db.Create(&row).Error; err != nil {
+		t.Fatalf("seed repo: %v", err)
+	}
+
+	st := store.NewStore(db)
+	h := NewHandler(st, NewSSEHub(), nil)
+	srv := httptest.NewServer(h)
+	defer srv.Close()
+
+	res, err := http.Get(srv.URL + "/settings/workspace-roots?scope=expanded")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(res.Body)
+		t.Fatalf("status %d body=%s", res.StatusCode, b)
+	}
+	var body workspaceRootsResponse
+	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
+		t.Fatal(err)
+	}
+	if len(body.Roots) < 2 {
+		t.Fatalf("expected registered + bootstrap roots, got %+v", body.Roots)
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var hasRegistered, hasHome bool
+	for _, root := range body.Roots {
+		if root.Path == repoPath {
+			hasRegistered = true
+		}
+		if root.Path == home {
+			hasHome = true
+		}
+	}
+	if !hasRegistered {
+		t.Fatalf("missing registered repo root in %+v", body.Roots)
+	}
+	if !hasHome {
+		t.Fatalf("missing home bootstrap root in %+v", body.Roots)
+	}
+}
+
 // TestHTTP_workspaceRoots_bootstrapFallbackWhenRegisteredPathMissing verifies OS
 // bootstrap entry points are merged when all registered repo paths are unavailable.
 func TestHTTP_workspaceRoots_bootstrapFallbackWhenRegisteredPathMissing(t *testing.T) {

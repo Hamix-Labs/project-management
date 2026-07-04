@@ -83,11 +83,13 @@ func (h *Handler) deleteGitWorktree(w http.ResponseWriter, r *http.Request) {
 		writeGitStoreError(w, r, op, err)
 		return
 	}
-	force := r.URL.Query().Get("force") == "true"
-	if force {
-		slog.Warn("deprecated query param ignored", "cmd", calltrace.LogCmd, "operation", "handler.deleteGitWorktree", "param", "force")
-	}
-	if err := h.store.UnregisterGitWorktree(r.Context(), projectID, r.PathValue("worktreeId")); err != nil {
+	removeFromDisk, force := gitWorktreeDeleteQuery(r, op)
+	if removeFromDisk {
+		if err := h.store.RemoveGitWorktreeFromDisk(r.Context(), projectID, r.PathValue("worktreeId"), force, h.gitService()); err != nil {
+			writeGitStoreError(w, r, op, err)
+			return
+		}
+	} else if err := h.store.UnregisterGitWorktree(r.Context(), projectID, r.PathValue("worktreeId")); err != nil {
 		writeGitStoreError(w, r, op, err)
 		return
 	}

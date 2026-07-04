@@ -21,7 +21,16 @@ export function registerWorktreePathPlaceholder(
 }
 
 export function registerWorktreePathDisabled(
-  state: RegisterWorktreePathSelectState & { pending: boolean },
+  state: RegisterWorktreePathSelectState & {
+    pending: boolean;
+    inventoryRefreshPending?: boolean;
+  },
 ): boolean {
-  return state.pending || state.loading || state.inventoryError || state.optionCount === 0;
+  return (
+    state.pending ||
+    state.loading ||
+    state.inventoryError ||
+    state.optionCount === 0 ||
+    state.inventoryRefreshPending === true
+  );
 }

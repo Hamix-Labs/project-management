@@ -131,6 +131,22 @@ export async function unregisterGlobalGitWorktree(worktreeId: string): Promise<v
   if (!res.ok) throw await apiErrorFromResponse(res);
 }
 
+export async function deleteGlobalGitWorktreeFromDisk(
+  worktreeId: string,
+  options?: { force?: boolean },
+): Promise<void> {
+  const wtId = assertTaskPathId(worktreeId, "worktree id");
+  const params = new URLSearchParams({ remove_from_disk: "true" });
+  if (options?.force) {
+    params.set("force", "true");
+  }
+  const res = await fetchWithTimeout(
+    `${gitRoot}/worktrees/${encodeURIComponent(wtId)}?${params.toString()}`,
+    { method: "DELETE" },
+  );
+  if (!res.ok) throw await apiErrorFromResponse(res);
+}
+
 export async function listGlobalGitBranches(
   repositoryId: string,
   options?: { signal?: AbortSignal },

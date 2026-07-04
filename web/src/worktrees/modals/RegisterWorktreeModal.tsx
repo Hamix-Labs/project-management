@@ -20,6 +20,7 @@ import {
   type BranchBindValue,
 } from "../components/WorktreeBranchBindFields";
 import { WorktreeInventoryReconcilePrompt } from "../components/WorktreeInventoryReconcilePrompt";
+import { WorktreeInventorySyncStatus } from "../components/WorktreeInventorySyncStatus";
 
 type Props = {
   open: boolean;
@@ -28,6 +29,7 @@ type Props = {
   repositoryId: string;
   storedPath: string;
   reconcilePending?: boolean;
+  inventoryRefreshPending?: boolean;
   reconcileError?: unknown;
   reconcileBlocked?: boolean;
   onReconcile: () => void;
@@ -46,6 +48,7 @@ export function RegisterWorktreeModal({
   repositoryId,
   storedPath,
   reconcilePending = false,
+  inventoryRefreshPending = false,
   reconcileError,
   reconcileBlocked = false,
   onReconcile,
@@ -82,6 +85,7 @@ export function RegisterWorktreeModal({
     optionCount: worktreeOptions.length,
     inventoryError: inventoryUnreachable,
     pending,
+    inventoryRefreshPending,
   };
 
   useEffect(() => {
@@ -106,7 +110,11 @@ export function RegisterWorktreeModal({
 
   const errorMessage = error != null ? gitDeleteErrorMessage(error) : null;
   const branchPayload = branchBindPayload(branchBind);
-  const canSubmit = !inventoryUnreachable && selectedPath !== "" && branchPayload != null;
+  const canSubmit =
+    !inventoryUnreachable &&
+    !inventoryRefreshPending &&
+    selectedPath !== "" &&
+    branchPayload != null;
 
   return (
     <Modal
@@ -131,6 +139,10 @@ export function RegisterWorktreeModal({
           <h2 id="register-worktree-title">{worktreeGitCopy.registerModalTitle}</h2>
           <p className="worktrees-form-modal__lead">{worktreeGitCopy.registerModalLead}</p>
         </header>
+
+        <WorktreeInventorySyncStatus
+          pending={inventoryRefreshPending && !inventoryUnreachable}
+        />
 
         <CustomSelect
           id="register-worktree-select"
@@ -157,7 +169,7 @@ export function RegisterWorktreeModal({
           <input
             type="text"
             value={displayName}
-            disabled={pending || inventoryUnreachable}
+            disabled={pending || inventoryUnreachable || inventoryRefreshPending}
             placeholder={worktreeGitCopy.registerModalDisplayNamePlaceholder}
             onChange={(e) => setDisplayName(e.target.value)}
           />
@@ -165,7 +177,7 @@ export function RegisterWorktreeModal({
 
         <WorktreeBranchBindFields
           repositoryId={repositoryId}
-          enabled={open && repositoryId !== "" && !inventoryUnreachable}
+          enabled={open && repositoryId !== "" && !inventoryUnreachable && !inventoryRefreshPending}
           pending={pending}
           value={branchBind}
           onChange={setBranchBind}

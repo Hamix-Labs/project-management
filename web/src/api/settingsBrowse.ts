@@ -130,12 +130,25 @@ export function parseBrowseDirsResponse(raw: unknown): BrowseDirsResponse {
   };
 }
 
+export type WorkspaceRootsScope = "default" | "expanded";
+
+export type FetchWorkspaceRootsOptions = {
+  scope?: WorkspaceRootsScope;
+  signal?: AbortSignal;
+};
+
 export async function fetchWorkspaceRoots(
-  init?: RequestInit,
+  options?: FetchWorkspaceRootsOptions,
 ): Promise<WorkspaceRootsResponse> {
-  const res = await fetchWithTimeout("/settings/workspace-roots", {
-    ...init,
-    headers: { Accept: "application/json", ...(init?.headers ?? {}) },
+  const params = new URLSearchParams();
+  if (options?.scope === "expanded") {
+    params.set("scope", "expanded");
+  }
+  const qs = params.toString();
+  const url = qs ? `/settings/workspace-roots?${qs}` : "/settings/workspace-roots";
+  const res = await fetchWithTimeout(url, {
+    signal: options?.signal,
+    headers: { Accept: "application/json" },
   });
   if (!res.ok) {
     throw await apiErrorFromResponse(res);

@@ -3,6 +3,7 @@ import {
   createGlobalGitRepository,
   createGlobalGitWorktree,
   deleteGlobalGitRepository,
+  deleteGlobalGitWorktreeFromDisk,
   unregisterGlobalGitWorktree,
   reconcileGlobalGitRepository,
   registerGlobalGitWorktree,
@@ -60,6 +61,15 @@ export function useGlobalGitMutations() {
     onSuccess: (_data, vars) => invalidateRepo(vars.repositoryId),
   });
 
+  const removeWorktreeFromDisk = useMutation({
+    mutationFn: (vars: {
+      worktreeId: string;
+      repositoryId: string;
+      force?: boolean;
+    }) => deleteGlobalGitWorktreeFromDisk(vars.worktreeId, { force: vars.force }),
+    onSuccess: (_data, vars) => invalidateRepo(vars.repositoryId),
+  });
+
   const reconcile = useMutation({
     mutationFn: (vars: { repositoryId: string; input?: GitReconcileInput }) =>
       reconcileGlobalGitRepository(vars.repositoryId, vars.input),
@@ -78,6 +88,7 @@ export function useGlobalGitMutations() {
     createWorktree,
     registerWorktree,
     unregisterWorktree,
+    removeWorktreeFromDisk,
     reconcile,
     relocateRepository,
   };

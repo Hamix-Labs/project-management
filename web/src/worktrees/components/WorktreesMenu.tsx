@@ -28,6 +28,7 @@ type Props = {
   align?: "start" | "end";
   triggerDisabled?: boolean;
   triggerBusy?: boolean;
+  onOpenChange?: (open: boolean) => void;
 };
 
 const MENU_GAP_PX = 4;
@@ -46,10 +47,13 @@ export function WorktreesMenu({
   align = "end",
   triggerDisabled = false,
   triggerBusy = false,
+  onOpenChange,
 }: Props) {
   const menuId = useId();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const onOpenChangeRef = useRef(onOpenChange);
+  onOpenChangeRef.current = onOpenChange;
   const [open, setOpen] = useState(false);
   const [panelPos, setPanelPos] = useState<{
     top: number;
@@ -101,6 +105,10 @@ export function WorktreesMenu({
       window.removeEventListener("resize", compute);
     };
   }, [open, align, items.length]);
+
+  useEffect(() => {
+    onOpenChangeRef.current?.(open);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;

@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import type { GitRepository } from "@/types";
 import { useOptionalToast } from "@/shared/toast";
 import type { GitDeleteTarget } from "../gitDeleteErrors";
@@ -6,6 +6,8 @@ import { formatReconcileSuccess } from "../gitReconcileErrors";
 import { useGlobalGitMutations } from "./useGlobalGitMutations";
 
 type ActiveWorktreeModal = "register-worktree" | "create-worktree" | null;
+type ReconcileFlowOutcome = "ok" | "needs_bootstrap" | "error";
+type ReconcileIntent = "manual" | "silent";
 
 type Options = {
   repository: GitRepository | null | undefined;
@@ -22,13 +24,18 @@ export function useRepositoryGitActions({ repository, onRepositoryDeleted }: Opt
   const [relocateRepository, setRelocateRepository] = useState<GitRepository | null>(null);
   const [reconcileErrors, setReconcileErrors] = useState<Record<string, unknown>>({});
   const [autoReconcileBlocked, setAutoReconcileBlocked] = useState<Record<string, true>>({});
+  const [reconcileIntent, setReconcileIntent] = useState<ReconcileIntent | null>(null);
+  const reconcileInFlightRef = useRef<{
+    repoId: string;
+    promise: Promise<ReconcileFlowOutcome>;
+  } | null>(null);
 
   const closeDelete = () => {
     setDeleteTarget(null);
     setDeleteError(null);
   };
 
-  const runDelete = async () => {
+  const runDelete = async (options?: { force?: boolean }) => {
     if (!deleteTarget) return;
     setDeleteError(null);
     try {
@@ -36,6 +43,13 @@ export function useRepositoryGitActions({ repository, onRepositoryDeleted }: Opt
         await mutations.deleteRepository.mutateAsync(deleteTarget.id);
         closeDelete();
         onRepositoryDeleted?.();
+      } else if (deleteTarget.mode === "remove_from_disk") {
+        await mutations.removeWorktreeFromDisk.mutateAsync({
+          worktreeId: deleteTarget.id,
+          repositoryId: deleteTarget.repositoryId,
+          force: options?.force,
+        });
+        closeDelete();
       } else {
         await mutations.unregisterWorktree.mutateAsync({
           worktreeId: deleteTarget.id,
@@ -49,7 +63,9 @@ export function useRepositoryGitActions({ repository, onRepositoryDeleted }: Opt
   };
 
   const deletePending =
-    mutations.deleteRepository.isPending || mutations.unregisterWorktree.isPending;
+    mutations.deleteRepository.isPending ||
+    mutations.unregisterWorktree.isPending ||
+    mutations.removeWorktreeFromDisk.isPending;
 
   const reconcilingRepositoryId =
     mutations.reconcile.isPending || mutations.relocateRepository.isPending
@@ -58,7 +74,12 @@ export function useRepositoryGitActions({ repository, onRepositoryDeleted }: Opt
       : undefined;
 
   const handleReconcile = useCallback(
-    async (repo: GitRepository) => {
+    async (
+      repo: GitRepository,
+      options?: { silent?: boolean },
+    ): Promise<ReconcileFlowOutcome> => {
+      const intent: ReconcileIntent = options?.silent ? "silent" : "manual";
+      setReconcileIntent(intent);
       setReconcileErrors((prev) => {
         const next = { ...prev };
         delete next[repo.id];
@@ -72,14 +93,50 @@ export function useRepositoryGitActions({ repository, onRepositoryDeleted }: Opt
         if (result.status === "needs_bootstrap_path") {
           setAutoReconcileBlocked((prev) => ({ ...prev, [repo.id]: true }));
           setRelocateRepository(repo);
-          return;
+          return "needs_bootstrap";
         }
-        toast?.success(formatReconcileSuccess(result));
+        if (!options?.silent) {
+          toast?.success(formatReconcileSuccess(result));
+        }
+        return "ok";
       } catch (err) {
         setReconcileErrors((prev) => ({ ...prev, [repo.id]: err }));
+        return "error";
+      } finally {
+        setReconcileIntent((current) => (current === intent ? null : current));
       }
     },
     [mutations.reconcile, toast],
+  );
+
+  const ensureInventoryFresh = useCallback(
+    async (repo: GitRepository): Promise<ReconcileFlowOutcome> => {
+      const inFlight = reconcileInFlightRef.current;
+      if (inFlight?.repoId === repo.id) {
+        return inFlight.promise;
+      }
+      const promise = handleReconcile(repo, { silent: true });
+      reconcileInFlightRef.current = { repoId: repo.id, promise };
+      try {
+        return await promise;
+      } finally {
+        if (reconcileInFlightRef.current?.repoId === repo.id) {
+          reconcileInFlightRef.current = null;
+        }
+      }
+    },
+    [handleReconcile],
+  );
+
+  const openWorktreeModal = useCallback(
+    (modal: Exclude<ActiveWorktreeModal, null>) => {
+      if (!repository) return;
+      setActiveWorktreeModal(modal);
+      void ensureInventoryFresh(repository).then((outcome) => {
+        if (outcome === "needs_bootstrap") setActiveWorktreeModal(null);
+      });
+    },
+    [repository, ensureInventoryFresh],
   );
 
   const closeRelocateModal = () => {
@@ -88,6 +145,8 @@ export function useRepositoryGitActions({ repository, onRepositoryDeleted }: Opt
   };
 
   const reconcilePending = repository != null && reconcilingRepositoryId === repository.id;
+  const inventoryRefreshPending = reconcilePending && reconcileIntent === "silent";
+  const manualReconcilePending = reconcilePending && reconcileIntent === "manual";
   const reconcileError =
     repository != null ? reconcileErrors[repository.id] : undefined;
   const reconcileBlocked =
@@ -107,6 +166,18 @@ export function useRepositoryGitActions({ repository, onRepositoryDeleted }: Opt
     if (!repository) return;
     setDeleteTarget({
       kind: "worktree",
+      mode: "unregister",
+      id: worktreeId,
+      label,
+      repositoryId: repository.id,
+    });
+  };
+
+  const openRemoveWorktreeFromDisk = (worktreeId: string, label: string) => {
+    if (!repository) return;
+    setDeleteTarget({
+      kind: "worktree",
+      mode: "remove_from_disk",
       id: worktreeId,
       label,
       repositoryId: repository.id,
@@ -122,14 +193,19 @@ export function useRepositoryGitActions({ repository, onRepositoryDeleted }: Opt
     deletePending,
     relocateRepository,
     reconcilePending,
+    inventoryRefreshPending,
+    manualReconcilePending,
     reconcileError,
     reconcileBlocked,
     closeDelete,
     runDelete,
     closeRelocateModal,
     handleReconcile,
+    ensureInventoryFresh,
+    openWorktreeModal,
     openDeleteRepository,
     openDeleteWorktree,
+    openRemoveWorktreeFromDisk,
     setAutoReconcileBlocked,
   };
 }

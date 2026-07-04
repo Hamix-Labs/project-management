@@ -47,6 +47,15 @@ describe("registerWorktreePathDisabled", () => {
     expect(
       registerWorktreePathDisabled({ pending: false, loading: false, optionCount: 0, inventoryError: true }),
     ).toBe(true);
+    expect(
+      registerWorktreePathDisabled({
+        pending: false,
+        loading: false,
+        optionCount: 2,
+        inventoryError: false,
+        inventoryRefreshPending: true,
+      }),
+    ).toBe(true);
   });
 
   it("is enabled when ready with options and not pending", () => {
