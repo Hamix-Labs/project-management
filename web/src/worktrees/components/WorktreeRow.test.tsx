@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import type { GitBranch, GitWorktree } from "@/types/git";
+import type { GitBranch, GitWorktree, GitWorktreeCheckoutStatus } from "@/types/git";
 import { worktreeGitCopy } from "../worktreeGitCopy";
 import { WorktreeRow } from "./WorktreeRow";
 
@@ -23,6 +23,14 @@ const worktree: GitWorktree = {
   created_at: "2026-06-22T12:00:00Z",
 };
 
+const cleanCheckoutStatus: GitWorktreeCheckoutStatus = {
+  worktree_id: worktree.id,
+  available: true,
+  dirty: false,
+  detached: false,
+  head_commit_at: "2026-06-22T12:00:00Z",
+};
+
 describe("WorktreeRow", () => {
   it("renders summary with branch pill and primary badge", () => {
     render(
@@ -30,6 +38,7 @@ describe("WorktreeRow", () => {
         <WorktreeRow
           worktree={worktree}
           branches={[branch]}
+          checkoutStatus={cleanCheckoutStatus}
           onUnregister={vi.fn()}
           onDeleteFromDisk={vi.fn()}
         />
@@ -49,6 +58,7 @@ describe("WorktreeRow", () => {
         <WorktreeRow
           worktree={worktree}
           branches={[branch]}
+          checkoutStatus={cleanCheckoutStatus}
           onUnregister={vi.fn()}
           onDeleteFromDisk={vi.fn()}
         />

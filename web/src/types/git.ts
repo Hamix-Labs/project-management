@@ -58,6 +58,20 @@ export type GitWorktreeProbe = {
   registered: boolean;
 };
 
+/** Checkout status from `GET /git/repositories/{repoId}/worktrees/checkout-status`. */
+export type GitWorktreeCheckoutStatus = {
+  worktree_id: string;
+  available: boolean;
+  reason?: string;
+  dirty?: boolean;
+  detached?: boolean;
+  head_commit_at?: string;
+  has_upstream?: boolean;
+  ahead?: number;
+  behind?: number;
+  upstream?: string;
+};
+
 export type GitReconcileSkipped = {
   worktree_id: string;
   reason: string;

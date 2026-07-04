@@ -61,6 +61,35 @@ function detailBranchesResponse() {
   };
 }
 
+function detailCheckoutStatusResponse() {
+  return {
+    worktrees: [
+      {
+        worktree_id: wtMain,
+        available: true,
+        dirty: false,
+        detached: false,
+        head_commit_at: "2026-06-22T12:00:00Z",
+        has_upstream: true,
+        ahead: 0,
+        behind: 0,
+        upstream: "origin/main",
+      },
+      {
+        worktree_id: wtB,
+        available: true,
+        dirty: false,
+        detached: false,
+        head_commit_at: "2026-06-22T12:00:00Z",
+        has_upstream: true,
+        ahead: 0,
+        behind: 0,
+        upstream: "origin/feature",
+      },
+    ],
+  };
+}
+
 function jsonResponse(body: unknown, init: ResponseInit = { status: 200 }): Response {
   return new Response(JSON.stringify(body), {
     ...init,
@@ -133,7 +162,10 @@ function createDeferredReconcileFetch(options?: {
     if (method === "GET" && url.includes(`/git/repositories/${repoId}/worktrees/live`)) {
       return jsonResponse({ worktrees: [] });
     }
-    if (method === "GET" && url.includes(`/git/repositories/${repoId}/worktrees`)) {
+    if (method === "GET" && url.endsWith(`/git/repositories/${repoId}/worktrees/checkout-status`)) {
+      return jsonResponse(detailCheckoutStatusResponse());
+    }
+    if (method === "GET" && url.endsWith(`/git/repositories/${repoId}/worktrees`)) {
       return jsonResponse(detailWorktreesResponse());
     }
     if (method === "GET" && url.includes(`/git/repositories/${repoId}/branches`)) {
@@ -175,7 +207,10 @@ function mockRepositoryDetailFetch(options?: {
     if (method === "GET" && url.includes(`/git/repositories/${repoId}/worktrees/live`)) {
       return jsonResponse({ worktrees: [] });
     }
-    if (method === "GET" && url.includes(`/git/repositories/${repoId}/worktrees`)) {
+    if (method === "GET" && url.endsWith(`/git/repositories/${repoId}/worktrees/checkout-status`)) {
+      return jsonResponse(detailCheckoutStatusResponse());
+    }
+    if (method === "GET" && url.endsWith(`/git/repositories/${repoId}/worktrees`)) {
       return jsonResponse(detailWorktreesResponse());
     }
     if (method === "GET" && url.includes(`/git/repositories/${repoId}/branches`)) {

@@ -8,6 +8,7 @@ import type {
   GitReconcileResult,
   GitReconcileSkipped,
   GitWorktree,
+  GitWorktreeCheckoutStatus,
   GitWorktreeProbe,
 } from "@/types/git";
 import { isRecord, parseNonEmptyString, parseOptionalNonEmptyId, parseString } from "./parseTaskApiCore";
@@ -178,6 +179,64 @@ export function parseGitWorktreeProbe(raw: unknown): GitWorktreeProbe {
     branch: parseString(raw.branch, "branch"),
     registered: Boolean(raw.registered),
   };
+}
+
+function parseOptionalInt(value: unknown, path: string): number | undefined {
+  if (value == null) return undefined;
+  if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
+    throw new Error(`Invalid API response: ${path} must be a non-negative number`);
+  }
+  return Math.trunc(value);
+}
+
+function parseGitWorktreeCheckoutStatusRow(
+  value: unknown,
+  path: string,
+): GitWorktreeCheckoutStatus {
+  if (!isRecord(value)) {
+    throw new Error(`Invalid API response: ${path} must be object`);
+  }
+  const row: GitWorktreeCheckoutStatus = {
+    worktree_id: parseNonEmptyString(value.worktree_id, `${path}.worktree_id`),
+    available: Boolean(value.available),
+  };
+  if (value.reason != null) {
+    row.reason = parseString(value.reason, `${path}.reason`);
+  }
+  if (!row.available) {
+    return row;
+  }
+  if (value.dirty != null) {
+    row.dirty = Boolean(value.dirty);
+  }
+  if (value.detached != null) {
+    row.detached = Boolean(value.detached);
+  }
+  if (value.head_commit_at != null) {
+    row.head_commit_at = parseString(value.head_commit_at, `${path}.head_commit_at`);
+  }
+  if (value.has_upstream != null) {
+    row.has_upstream = Boolean(value.has_upstream);
+  }
+  if (row.has_upstream) {
+    if (value.upstream != null) {
+      row.upstream = parseString(value.upstream, `${path}.upstream`);
+    }
+    row.ahead = parseOptionalInt(value.ahead, `${path}.ahead`);
+    row.behind = parseOptionalInt(value.behind, `${path}.behind`);
+  }
+  return row;
+}
+
+export function parseGitWorktreeCheckoutStatusList(raw: unknown): GitWorktreeCheckoutStatus[] {
+  if (!isRecord(raw)) {
+    throw new Error("Invalid API response: body must be object");
+  }
+  const rows = raw.worktrees;
+  if (!Array.isArray(rows)) {
+    throw new Error("Invalid API response: worktrees must be array");
+  }
+  return rows.map((row, i) => parseGitWorktreeCheckoutStatusRow(row, `worktrees[${i}]`));
 }
 
 function parseGitReconcileSkipped(value: unknown, path: string): GitReconcileSkipped {

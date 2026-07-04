@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
@@ -112,6 +113,54 @@ func (h *Handler) listGlobalGitWorktreesLive(w http.ResponseWriter, r *http.Requ
 		})
 	}
 	writeJSON(w, r, op, http.StatusOK, gitLiveWorktreesListResponse{Worktrees: out})
+}
+
+func (h *Handler) listGlobalGitWorktreesCheckoutStatus(w http.ResponseWriter, r *http.Request) {
+	const op = "git.worktrees.checkout_status"
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.listGlobalGitWorktreesCheckoutStatus")
+	r = calltrace.WithRequestRoot(r, op)
+	repo, err := h.store.GetGitRepositoryByID(r.Context(), r.PathValue("repoId"))
+	if err != nil {
+		writeGitStoreError(w, r, op, err)
+		return
+	}
+	rows, err := h.store.RepoWorktreeCheckoutStatus(r.Context(), repo, h.gitService())
+	if err != nil {
+		writeGitStoreError(w, r, op, err)
+		return
+	}
+	out := make([]gitWorktreeCheckoutStatusJSON, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, gitWorktreeCheckoutStatusFromRow(row))
+	}
+	writeJSON(w, r, op, http.StatusOK, gitWorktreeCheckoutStatusListResponse{Worktrees: out})
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by listGlobalGitWorktreesCheckoutStatus."
+func gitWorktreeCheckoutStatusFromRow(row store.WorktreeCheckoutStatusRow) gitWorktreeCheckoutStatusJSON {
+	j := gitWorktreeCheckoutStatusJSON{
+		WorktreeID: row.WorktreeID,
+		Available:  row.Available,
+	}
+	if !row.Available {
+		j.Reason = row.Reason
+		return j
+	}
+	st := row.Status
+	j.Dirty = st.Dirty
+	j.Detached = st.Detached
+	if !st.HeadCommitAt.IsZero() {
+		j.HeadCommitAt = st.HeadCommitAt.UTC().Format(time.RFC3339)
+	}
+	j.HasUpstream = st.HasUpstream
+	if st.HasUpstream {
+		j.Upstream = st.Upstream
+		ahead := st.Ahead
+		behind := st.Behind
+		j.Ahead = &ahead
+		j.Behind = &behind
+	}
+	return j
 }
 
 func (h *Handler) probeGlobalGitWorktree(w http.ResponseWriter, r *http.Request) {

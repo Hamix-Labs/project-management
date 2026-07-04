@@ -243,6 +243,57 @@ func TestHandler_gitErrHTTP_domainSentinels(t *testing.T) {
 	}
 }
 
+func TestHandler_listGlobalGitWorktreesCheckoutStatus(t *testing.T) {
+	h, main := gitHandlerTest(t)
+	repoID := createGlobalGitRepo(t, h, main)
+
+	req := httptest.NewRequest(http.MethodGet, "/git/repositories/"+repoID+"/worktrees/checkout-status", nil)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("checkout-status status=%d body=%s", rec.Code, rec.Body.String())
+	}
+	var out gitWorktreeCheckoutStatusListResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+		t.Fatal(err)
+	}
+	if len(out.Worktrees) == 0 {
+		t.Fatal("expected at least main worktree")
+	}
+	found := false
+	for _, row := range out.Worktrees {
+		if !row.Available {
+			t.Fatalf("main should be available: %+v", row)
+		}
+		if row.Dirty {
+			t.Fatalf("expected clean main: %+v", row)
+		}
+		if row.HeadCommitAt == "" {
+			t.Fatalf("expected head_commit_at: %+v", row)
+		}
+		found = true
+	}
+	if !found {
+		t.Fatal("no available rows")
+	}
+
+	if err := os.WriteFile(filepath.Join(main, "dirty-status.txt"), []byte("x\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	req2 := httptest.NewRequest(http.MethodGet, "/git/repositories/"+repoID+"/worktrees/checkout-status", nil)
+	rec2 := httptest.NewRecorder()
+	h.ServeHTTP(rec2, req2)
+	if rec2.Code != http.StatusOK {
+		t.Fatalf("checkout-status dirty status=%d body=%s", rec2.Code, rec2.Body.String())
+	}
+	if err := json.Unmarshal(rec2.Body.Bytes(), &out); err != nil {
+		t.Fatal(err)
+	}
+	if len(out.Worktrees) == 0 || !out.Worktrees[0].Dirty {
+		t.Fatalf("expected dirty main: %+v", out.Worktrees)
+	}
+}
+
 func TestHandler_listGlobalGitWorktreesLive_registeredFlag(t *testing.T) {
 	h, main := gitHandlerTest(t)
 	repoID := createGlobalGitRepo(t, h, main)

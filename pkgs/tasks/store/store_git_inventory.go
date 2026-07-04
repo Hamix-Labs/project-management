@@ -5,8 +5,10 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
@@ -123,6 +125,85 @@ func FindWorktreeInInventory(rows []WorktreeInventoryRow, path string) (*Worktre
 		}
 	}
 	return nil, false
+}
+
+// WorktreeCheckoutStatusRow is live checkout git state for one registered worktree.
+type WorktreeCheckoutStatusRow struct {
+	WorktreeID string
+	Available  bool
+	Reason     string // path_missing | git_error
+	Status     gitwork.CheckoutStatus
+}
+
+const worktreeCheckoutStatusParallel = 4
+
+// RepoWorktreeCheckoutStatus reads git checkout state for branch-bound worktrees in a repository.
+func (s *Store) RepoWorktreeCheckoutStatus(
+	ctx context.Context,
+	repo domain.GitRepository,
+	gitSvc gitwork.Service,
+) ([]WorktreeCheckoutStatusRow, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.RepoWorktreeCheckoutStatus")
+	if gitSvc == nil {
+		gitSvc = gitwork.New()
+	}
+	registered, err := s.ListGitWorktreesByRepo(ctx, repo.ID)
+	if err != nil {
+		return nil, err
+	}
+	filtered := make([]domain.GitWorktree, 0, len(registered))
+	for _, wt := range registered {
+		if gitWorktreeIsFullyRegistered(wt) {
+			filtered = append(filtered, wt)
+		}
+	}
+	if len(filtered) == 0 {
+		return []WorktreeCheckoutStatusRow{}, nil
+	}
+	if _, err := gitSvc.OpenRepository(ctx, repo.Path); err != nil {
+		return nil, fmt.Errorf("open repository: %w", err)
+	}
+
+	out := make([]WorktreeCheckoutStatusRow, len(filtered))
+	var wg sync.WaitGroup
+	sem := make(chan struct{}, worktreeCheckoutStatusParallel)
+	for i, wt := range filtered {
+		wg.Add(1)
+		go func(i int, wt domain.GitWorktree) {
+			defer wg.Done()
+			sem <- struct{}{}
+			defer func() { <-sem }()
+			out[i] = s.checkoutStatusForWorktree(ctx, wt, gitSvc)
+		}(i, wt)
+	}
+	wg.Wait()
+	return out, nil
+}
+
+func (s *Store) checkoutStatusForWorktree(
+	ctx context.Context,
+	wt domain.GitWorktree,
+	gitSvc gitwork.Service,
+) WorktreeCheckoutStatusRow {
+	row := WorktreeCheckoutStatusRow{WorktreeID: wt.ID}
+	if _, err := os.Stat(wt.Path); err != nil {
+		if os.IsNotExist(err) {
+			row.Reason = "path_missing"
+			return row
+		}
+		row.Reason = "git_error"
+		return row
+	}
+	st, err := gitSvc.CheckoutStatus(ctx, wt.Path)
+	if err != nil {
+		slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.checkoutStatusForWorktree.err",
+			"worktree_id", wt.ID, "path", wt.Path, "err", err)
+		row.Reason = "git_error"
+		return row
+	}
+	row.Available = true
+	row.Status = st
+	return row
 }
 
 // ProbeGitWorktree checks whether path is a linked worktree of the repository.

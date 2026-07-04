@@ -19,6 +19,8 @@ export const gitQueryKeys = {
     [...gitQueryKeys.all, "global", "branches", "live", repositoryId] as const,
   globalLiveWorktrees: (repositoryId: string) =>
     [...gitQueryKeys.all, "global", "worktrees", "live", repositoryId] as const,
+  globalWorktreeCheckoutStatus: (repositoryId: string) =>
+    [...gitQueryKeys.all, "global", "worktrees", "checkout-status", repositoryId] as const,
   projectsByRepo: (repositoryId: string) =>
     [...gitQueryKeys.all, "global", "projects", repositoryId] as const,
 };

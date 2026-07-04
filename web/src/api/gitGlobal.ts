@@ -7,6 +7,7 @@ import type {
   GitRepository,
   GitWorktree,
   GitWorktreeBranchBind,
+  GitWorktreeCheckoutStatus,
   GitWorktreeProbe,
 } from "@/types/git";
 import type { ProjectListResponse } from "@/types/project";
@@ -18,6 +19,7 @@ import {
   parseGitRepository,
   parseGitRepositoryList,
   parseGitWorktree,
+  parseGitWorktreeCheckoutStatusList,
   parseGitWorktreeList,
   parseGitWorktreeProbe,
   parseGitReconcileResult,
@@ -84,6 +86,19 @@ export async function listGlobalGitWorktrees(
   );
   if (!res.ok) throw await apiErrorFromResponse(res);
   return parseGitWorktreeList((await res.json()) as unknown);
+}
+
+export async function listGlobalGitWorktreeCheckoutStatus(
+  repositoryId: string,
+  options?: { signal?: AbortSignal },
+): Promise<GitWorktreeCheckoutStatus[]> {
+  const repoId = assertTaskPathId(repositoryId, "repository id");
+  const res = await fetchWithTimeout(
+    `${gitRoot}/repositories/${encodeURIComponent(repoId)}/worktrees/checkout-status`,
+    { headers: { Accept: "application/json" }, signal: options?.signal },
+  );
+  if (!res.ok) throw await apiErrorFromResponse(res);
+  return parseGitWorktreeCheckoutStatusList((await res.json()) as unknown);
 }
 
 export async function createGlobalGitWorktree(

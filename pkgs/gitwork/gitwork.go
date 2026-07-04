@@ -59,6 +59,7 @@ type Service interface {
 	DeleteBranch(ctx context.Context, repo *Repository, name string, force bool) error
 	WorktreeCurrentBranch(ctx context.Context, worktreePath string) (string, error)
 	Checkout(ctx context.Context, worktreePath, branch string) error
+	CheckoutStatus(ctx context.Context, worktreePath string) (CheckoutStatus, error)
 }
 
 var (

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui";
 import { MutationErrorBanner } from "@/shared/MutationErrorBanner";
 import { useGlobalBranches } from "../hooks/useGlobalBranches";
 import { useGlobalWorktrees } from "../hooks/useGlobalWorktrees";
+import { useWorktreeCheckoutStatus } from "../hooks/useWorktreeCheckoutStatus";
 import { worktreeMatchesSearchQuery } from "../repositoryDisplay";
 import { worktreeGitCopy } from "../worktreeGitCopy";
 import { isDetailPageWorktree, sortDetailPageWorktrees } from "../worktreeRegistration";
@@ -36,6 +37,12 @@ export function RepositoryWorktreesSection({
   const branchesQuery = useGlobalBranches(repository.id);
   const worktrees = sortDetailPageWorktrees(
     (worktreesQuery.data ?? []).filter(isDetailPageWorktree),
+  );
+  const checkoutStatusQuery = useWorktreeCheckoutStatus(repository.id, {
+    enabled: !worktreesQuery.isLoading && worktrees.length > 0,
+  });
+  const statusByWorktreeId = new Map(
+    (checkoutStatusQuery.data ?? []).map((row) => [row.worktree_id, row]),
   );
   const branches = branchesQuery.data ?? [];
   const branchById = new Map(branches.map((branch) => [branch.id, branch]));
@@ -107,6 +114,7 @@ export function RepositoryWorktreesSection({
                 key={worktree.id}
                 worktree={worktree}
                 branches={branches}
+                checkoutStatus={statusByWorktreeId.get(worktree.id)}
                 onUnregister={() =>
                   onUnregisterWorktree(worktree.id, worktree.name.trim() || worktree.path)
                 }

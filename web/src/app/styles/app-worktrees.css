@@ -1543,10 +1543,20 @@
   background: var(--text-tertiary);
 }
 
+.worktree-row__status-dot--dirty {
+  background: var(--warning);
+}
+
 .worktree-row__status-label {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.worktree-row__status-sep,
+.worktree-row__status-time {
+  flex-shrink: 0;
+  color: var(--text-tertiary);
 }
 
 .worktrees-branch-control {
@@ -1589,10 +1599,21 @@
 }
 
 .worktree-row__branch {
+  display: flex;
   flex-shrink: 0;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
   min-width: 0;
-  max-width: 11rem;
+  max-width: 16rem;
   text-align: end;
+}
+
+.worktree-row__branch-sync {
+  flex-shrink: 0;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  white-space: nowrap;
 }
 
 .worktree-row__branch-empty {

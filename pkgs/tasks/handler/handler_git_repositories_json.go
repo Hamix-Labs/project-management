@@ -106,3 +106,20 @@ type gitWorktreeProbeResponse struct {
 	Branch     string `json:"branch"`
 	Registered bool   `json:"registered"`
 }
+
+type gitWorktreeCheckoutStatusJSON struct {
+	WorktreeID   string `json:"worktree_id"`
+	Available    bool   `json:"available"`
+	Reason       string `json:"reason,omitempty"`
+	Dirty        bool   `json:"dirty,omitempty"`
+	Detached     bool   `json:"detached,omitempty"`
+	HeadCommitAt string `json:"head_commit_at,omitempty"`
+	HasUpstream  bool   `json:"has_upstream,omitempty"`
+	Ahead        *int   `json:"ahead,omitempty"`
+	Behind       *int   `json:"behind,omitempty"`
+	Upstream     string `json:"upstream,omitempty"`
+}
+
+type gitWorktreeCheckoutStatusListResponse struct {
+	Worktrees []gitWorktreeCheckoutStatusJSON `json:"worktrees"`
+}

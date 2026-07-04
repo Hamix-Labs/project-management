@@ -8,6 +8,7 @@ Git worktree and branch operations for Hamix worktree management ([Issue #39](ht
 - `OpenRegisteredCheckout` — open a registered repo from cache, candidate path, or bounded sibling discovery ([git-checkout-resolution.md](../../docs/domain/git-checkout-resolution.md))
 - Worktrees — list, add, remove (`git worktree`)
 - Branches — list, create, delete, checkout
+- `CheckoutStatus` — dirty/clean, HEAD commit time, upstream ahead/behind for one worktree path
 
 ## Out of scope
 

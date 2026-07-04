@@ -7,6 +7,7 @@ import {
   parseGitRepositoryList,
   parseGitReconcileResult,
   parseGitWorktree,
+  parseGitWorktreeCheckoutStatusList,
   parseGitWorktreeList,
 } from "./parseGitApi";
 
@@ -133,6 +134,31 @@ describe("parseGitApi", () => {
       branches: [{ name: "main", head_sha: "deadbeef" }],
     });
     expect(rows[0]?.name).toBe("main");
+  });
+
+  it("parses checkout status list", () => {
+    const rows = parseGitWorktreeCheckoutStatusList({
+      worktrees: [
+        {
+          worktree_id: "00000000-0000-4000-8000-000000000030",
+          available: true,
+          dirty: true,
+          head_commit_at: "2026-07-04T12:00:00Z",
+          has_upstream: true,
+          ahead: 3,
+          behind: 1,
+          upstream: "origin/main",
+        },
+        {
+          worktree_id: "00000000-0000-4000-8000-000000000031",
+          available: false,
+          reason: "path_missing",
+        },
+      ],
+    });
+    expect(rows[0]?.dirty).toBe(true);
+    expect(rows[0]?.ahead).toBe(3);
+    expect(rows[1]?.reason).toBe("path_missing");
   });
 
   it("parses reconcile result with report", () => {

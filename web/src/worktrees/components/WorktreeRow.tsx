@@ -1,7 +1,8 @@
 import { useId, useState } from "react";
-import type { GitBranch, GitWorktree } from "@/types/git";
+import type { GitBranch, GitWorktree, GitWorktreeCheckoutStatus } from "@/types/git";
 import { worktreeAriaLabel, worktreeGitCopy } from "../worktreeGitCopy";
 import { BranchPill } from "./BranchPill";
+import { BranchSyncIndicator } from "./BranchSyncIndicator";
 import { WorktreeRowExpandPanel } from "./WorktreeRowExpandPanel";
 import { WorktreeRowStatus } from "./WorktreeRowStatus";
 import { WorktreesChevronRightIcon, WorktreesMoreIcon } from "./WorktreesIcons";
@@ -10,6 +11,7 @@ import { WorktreesMenu } from "./WorktreesMenu";
 type Props = {
   worktree: GitWorktree;
   branches: GitBranch[];
+  checkoutStatus?: GitWorktreeCheckoutStatus;
   onUnregister: () => void;
   onDeleteFromDisk: () => void;
   deleteDisabled?: boolean;
@@ -23,6 +25,7 @@ function isWorktreeRowActionExcluded(target: EventTarget | null): boolean {
 export function WorktreeRow({
   worktree,
   branches,
+  checkoutStatus,
   onUnregister,
   onDeleteFromDisk,
   deleteDisabled = false,
@@ -32,7 +35,6 @@ export function WorktreeRow({
   const displayName = worktree.name.trim() || worktree.path;
   const branchById = new Map(branches.map((b) => [b.id, b]));
   const branch = worktree.branch_id ? branchById.get(worktree.branch_id) : undefined;
-  const hasBranch = Boolean(worktree.branch_id);
   const deleteBlocked = deleteDisabled;
 
   const unregisterMenuItem = {
@@ -98,10 +100,11 @@ export function WorktreeRow({
               </span>
             ) : null}
           </div>
-          <WorktreeRowStatus hasBranch={hasBranch} />
+          <WorktreeRowStatus checkoutStatus={checkoutStatus} />
         </div>
 
         <div className="worktree-row__branch" aria-label="Branch">
+          <BranchSyncIndicator checkoutStatus={checkoutStatus} />
           {branch ? (
             <BranchPill branch={branch} />
           ) : worktree.branch_id ? (
