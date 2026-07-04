@@ -1,17 +1,17 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useDocumentTitle } from "@/shared/useDocumentTitle";
 import { useOptionalToast } from "@/shared/toast";
 import { EmptyState } from "@/shared/EmptyState";
 import { useDelayedTrue } from "@/lib/useDelayedTrue";
 import { TASK_TIMINGS } from "@/constants/tasks";
 import { TaskDraftsListSkeleton } from "@/components/skeletons/TaskDraftsListSkeleton";
-import {
-  repositoryDisplayName,
-  repositoryPathsEquivalent,
-} from "./repositoryDisplay";
+import { repositoryDisplayName } from "./repositoryDisplay";
 import { useGlobalRepository } from "./hooks/useGlobalRepository";
 import { useRepositoryGitActions } from "./hooks/useRepositoryGitActions";
+import { RepositoryDetailCard } from "./components/RepositoryDetailCard";
+import { RepositoryDetailHeader } from "./components/RepositoryDetailHeader";
+import { RepositoryWorktreesSearch } from "./components/RepositoryWorktreesSearch";
 import { RepositoryWorktreesSection } from "./components/RepositoryWorktreesSection";
 import { DeleteConfirmDialog } from "./components/DeleteConfirmDialog";
 import { RegisterWorktreeModal } from "./modals/RegisterWorktreeModal";
@@ -19,8 +19,8 @@ import { CreateWorktreeModal } from "./modals/CreateWorktreeModal";
 import { RelocateRepositoryModal } from "./modals/RelocateRepositoryModal";
 import { formatReconcileSuccess } from "./gitReconcileErrors";
 import { worktreeGitCopy } from "./worktreeGitCopy";
-import { WorktreesFolderIcon, WorktreesPlusIcon } from "./components/WorktreesIcons";
-import { WorktreesMenu } from "./components/WorktreesMenu";
+
+const HEADING_ID = "repository-detail-heading";
 
 function useDebouncedTrimmedValue(value: string, delayMs: number): string {
   const [debounced, setDebounced] = useState(value.trim());
@@ -59,162 +59,95 @@ export function RepositoryWorktreesPage() {
 
   if (!repositoryId) {
     return (
-      <section className="panel task-list-section-panel task-detail-content--enter repository-detail">
-        <EmptyState
-          title="Missing repository id"
-          description="Choose a repository from the list."
-          hideIcon
-          className="empty-state--task-list-fresh"
-        />
-      </section>
+      <div className="repository-detail-page">
+        <RepositoryDetailCard>
+          <EmptyState
+            title="Missing repository id"
+            description="Choose a repository from the list."
+            hideIcon
+            className="empty-state--task-list-fresh"
+          />
+        </RepositoryDetailCard>
+      </div>
     );
   }
 
   return (
-    <section
-      className="panel task-list-section-panel task-detail-content--enter worktrees-page repository-detail"
-      aria-labelledby="repository-detail-heading"
-    >
-      <div className="task-list-toolbar repository-detail__toolbar">
-        <header className="repository-detail__header pd__header">
-          <nav aria-label="Repository navigation">
-            <Link to="/worktrees" className="pd__back project-context-back-link">
-              <span aria-hidden="true">&#8249;</span>
-              All repositories
-            </Link>
-          </nav>
-          {repository ? (
-            <div className="repository-detail__header-actions task-list-section-actions">
-              <button
-                type="button"
-                className="secondary repository-detail__reconcile-btn"
-                disabled={actions.manualReconcilePending}
-                aria-busy={actions.manualReconcilePending || undefined}
-                onClick={() => void actions.handleReconcile(repository)}
-              >
-                {actions.manualReconcilePending
-                  ? worktreeGitCopy.reconciling
-                  : worktreeGitCopy.reconcile}
-              </button>
-              <button
-                type="button"
-                className="danger repository-detail__delete-btn"
-                disabled={actions.manualReconcilePending}
-                onClick={actions.openDeleteRepository}
-              >
-                {worktreeGitCopy.deleteRepository}
-              </button>
-              <WorktreesMenu
-                triggerLabel={worktreeGitCopy.addWorktree}
-                className="task-home-new-task-btn worktrees-register-btn worktrees-menu-trigger"
-                icon={<WorktreesPlusIcon className="worktrees-register-btn__icon" aria-hidden />}
-                chevron
-                onOpenChange={(open) => {
-                  if (open && repository) void actions.ensureInventoryFresh(repository);
-                }}
-                items={[
-                  {
-                    id: "register-worktree",
-                    label: worktreeGitCopy.registerWorktree,
-                    onSelect: () => void actions.openWorktreeModal("register-worktree"),
-                  },
-                  {
-                    id: "create-worktree",
-                    label: worktreeGitCopy.createWorktree,
-                    onSelect: () => void actions.openWorktreeModal("create-worktree"),
-                  },
-                ]}
-              />
-            </div>
-          ) : null}
-        </header>
-
+    <div className="repository-detail-page">
+      <RepositoryDetailCard headingId={repository ? HEADING_ID : undefined}>
         {repository ? (
           <>
-            <div className="repository-detail__identity">
-              <h1 id="repository-detail-heading" className="repository-detail__title">
-                {displayName}
-              </h1>
-              <p className="repository-detail__path" title={repository.path}>
-                <WorktreesFolderIcon className="repository-detail__path-icon" aria-hidden />
-                <span className="repository-detail__path-text">{repository.path}</span>
-              </p>
-              {repository.host_path.trim() !== "" &&
-              !repositoryPathsEquivalent(repository.path, repository.host_path) ? (
-                <p className="repository-detail__host-path">
-                  <span className="worktrees-repo-row__meta-label">
-                    {worktreeGitCopy.hostPathLabel}
-                  </span>
-                  <code>{repository.host_path}</code>
-                </p>
-              ) : null}
-            </div>
-
-            <div
-              className="task-templates-search field grow task-list-search-field repository-detail__search"
-              role="search"
-              aria-label="Search worktrees"
-            >
-              <label htmlFor="repository-worktrees-search" className="visually-hidden">
-                Search worktrees
-              </label>
-              <input
-                id="repository-worktrees-search"
-                type="search"
-                placeholder={worktreeGitCopy.searchWorktreesPlaceholder}
-                autoComplete="off"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-              />
-            </div>
+            <RepositoryDetailHeader
+              repository={repository}
+              headingId={HEADING_ID}
+              reconcilePending={actions.manualReconcilePending}
+              onReconcile={() => void actions.handleReconcile(repository)}
+              onDeleteRepository={actions.openDeleteRepository}
+              addWorktreeMenuItems={[
+                {
+                  id: "register-worktree",
+                  label: worktreeGitCopy.registerWorktree,
+                  onSelect: () => void actions.openWorktreeModal("register-worktree"),
+                },
+                {
+                  id: "create-worktree",
+                  label: worktreeGitCopy.createWorktree,
+                  onSelect: () => void actions.openWorktreeModal("create-worktree"),
+                },
+              ]}
+              onAddMenuOpenChange={(open) => {
+                if (open) void actions.ensureInventoryFresh(repository);
+              }}
+            />
+            <RepositoryWorktreesSearch value={searchInput} onChange={setSearchInput} />
           </>
         ) : null}
-      </div>
 
-      {repositoryQuery.isError && !repositoryQuery.isLoading ? (
-        <div className="err" role="alert">
-          <p>
-            {repositoryQuery.error instanceof Error
-              ? repositoryQuery.error.message
-              : "Could not load repository."}
-          </p>
-          <div className="task-detail-error-actions">
-            <button
-              type="button"
-              className="secondary"
-              onClick={() => {
-                void repositoryQuery.refetch();
-              }}
-            >
-              Try again
-            </button>
+        {repositoryQuery.isError && !repositoryQuery.isLoading ? (
+          <div className="repository-detail-card__body err" role="alert">
+            <p>
+              {repositoryQuery.error instanceof Error
+                ? repositoryQuery.error.message
+                : "Could not load repository."}
+            </p>
+            <div className="task-detail-error-actions">
+              <button
+                type="button"
+                className="secondary"
+                onClick={() => {
+                  void repositoryQuery.refetch();
+                }}
+              >
+                Try again
+              </button>
+            </div>
           </div>
-        </div>
-      ) : null}
+        ) : null}
 
-      <div className="stack">
-        {showSkeleton ? <TaskDraftsListSkeleton /> : null}
-        {!showSkeleton && repository ? (
-          <div className="stack task-list-content task-list-content--enter">
+        <div className="repository-detail-card__body">
+          {showSkeleton ? <TaskDraftsListSkeleton /> : null}
+          {!showSkeleton && repository ? (
             <RepositoryWorktreesSection
               repository={repository}
               searchQuery={debouncedQ}
+              onClearSearch={() => setSearchInput("")}
               reconcilePending={actions.manualReconcilePending}
               reconcileError={actions.reconcileError}
               onUnregisterWorktree={actions.openDeleteWorktree}
               onDeleteWorktreeFromDisk={actions.openRemoveWorktreeFromDisk}
             />
-          </div>
-        ) : null}
-        {!repositoryQuery.isLoading && !repositoryQuery.isError && !repository ? (
-          <EmptyState
-            title="Repository not found"
-            description="It may have been removed. Return to the repository list."
-            hideIcon
-            className="empty-state--task-list-fresh"
-          />
-        ) : null}
-      </div>
+          ) : null}
+          {!repositoryQuery.isLoading && !repositoryQuery.isError && !repository ? (
+            <EmptyState
+              title="Repository not found"
+              description="It may have been removed. Return to the repository list."
+              hideIcon
+              className="empty-state--task-list-fresh"
+            />
+          ) : null}
+        </div>
+
+      </RepositoryDetailCard>
 
       <RegisterWorktreeModal
         open={actions.activeWorktreeModal === "register-worktree"}
@@ -296,6 +229,6 @@ export function RepositoryWorktreesPage() {
             });
         }}
       />
-    </section>
+    </div>
   );
 }

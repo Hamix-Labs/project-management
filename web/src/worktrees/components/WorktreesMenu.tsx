@@ -24,6 +24,7 @@ type Props = {
   menuClassName?: string;
   icon?: ReactNode;
   chevron?: boolean;
+  split?: boolean;
   iconOnly?: boolean;
   align?: "start" | "end";
   triggerDisabled?: boolean;
@@ -43,6 +44,7 @@ export function WorktreesMenu({
   menuClassName = "",
   icon,
   chevron = false,
+  split = false,
   iconOnly = false,
   align = "end",
   triggerDisabled = false,
@@ -51,6 +53,7 @@ export function WorktreesMenu({
 }: Props) {
   const menuId = useId();
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const splitRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const onOpenChangeRef = useRef(onOpenChange);
   onOpenChangeRef.current = onOpenChange;
@@ -62,16 +65,17 @@ export function WorktreesMenu({
   } | null>(null);
 
   useLayoutEffect(() => {
-    if (!open || !triggerRef.current) {
+    const anchor = split ? splitRef.current : triggerRef.current;
+    if (!open || !anchor) {
       setPanelPos(null);
       return;
     }
 
     const compute = () => {
-      const trigger = triggerRef.current;
-      if (!trigger) return;
+      const currentAnchor = split ? splitRef.current : triggerRef.current;
+      if (!currentAnchor) return;
 
-      const rect = trigger.getBoundingClientRect();
+      const rect = currentAnchor.getBoundingClientRect();
       const panelHeight = panelRef.current?.offsetHeight ?? 0;
       const panelWidth = Math.max(
         MENU_MIN_WIDTH_PX,
@@ -104,7 +108,7 @@ export function WorktreesMenu({
       window.removeEventListener("scroll", compute, true);
       window.removeEventListener("resize", compute);
     };
-  }, [open, align, items.length]);
+  }, [open, align, items.length, split]);
 
   useEffect(() => {
     onOpenChangeRef.current?.(open);
@@ -117,6 +121,7 @@ export function WorktreesMenu({
       const target = event.target;
       if (!(target instanceof Node)) return;
       if (triggerRef.current?.contains(target)) return;
+      if (splitRef.current?.contains(target)) return;
       if (panelRef.current?.contains(target)) return;
       setOpen(false);
     };
@@ -173,36 +178,74 @@ export function WorktreesMenu({
       document.body,
     );
 
+  const toggleMenu = () => {
+    if (triggerDisabled) return;
+    setOpen((value) => !value);
+  };
+
+  const triggerContent = (
+    <>
+      {triggerBusy ? (
+        <span className="worktrees-menu-trigger__spinner" aria-hidden />
+      ) : icon ? (
+        <span className="worktrees-menu-trigger__icon">{icon}</span>
+      ) : null}
+      {!iconOnly ? (
+        <span className="worktrees-menu-trigger__label">{triggerLabel}</span>
+      ) : null}
+      {chevron && !split ? (
+        <WorktreesChevronDownIcon className="worktrees-menu-trigger__chevron" />
+      ) : null}
+    </>
+  );
+
   return (
     <>
       <div className={`worktrees-menu${open ? " worktrees-menu--open" : ""}`}>
-        <button
-          ref={triggerRef}
-          type="button"
-          className={`worktrees-menu-trigger ${className}`.trim()}
-          aria-label={iconOnly ? triggerLabel : undefined}
-          aria-haspopup="menu"
-          aria-expanded={open}
-          aria-controls={menuId}
-          aria-busy={triggerBusy || undefined}
-          disabled={triggerDisabled}
-          onClick={() => {
-            if (triggerDisabled) return;
-            setOpen((value) => !value);
-          }}
-        >
-          {triggerBusy ? (
-            <span className="worktrees-menu-trigger__spinner" aria-hidden />
-          ) : icon ? (
-            <span className="worktrees-menu-trigger__icon">{icon}</span>
-          ) : null}
-          {!iconOnly ? (
-            <span className="worktrees-menu-trigger__label">{triggerLabel}</span>
-          ) : null}
-          {chevron ? (
-            <WorktreesChevronDownIcon className="worktrees-menu-trigger__chevron" />
-          ) : null}
-        </button>
+        {split ? (
+          <div ref={splitRef} className="worktrees-menu-split">
+            <button
+              ref={triggerRef}
+              type="button"
+              className={`worktrees-menu-split__primary ${className}`.trim()}
+              aria-haspopup="menu"
+              aria-expanded={open}
+              aria-controls={menuId}
+              aria-busy={triggerBusy || undefined}
+              disabled={triggerDisabled}
+              onClick={toggleMenu}
+            >
+              {triggerContent}
+            </button>
+            <button
+              type="button"
+              className="worktrees-menu-split__chevron"
+              aria-label="More add options"
+              aria-haspopup="menu"
+              aria-expanded={open}
+              aria-controls={menuId}
+              disabled={triggerDisabled}
+              onClick={toggleMenu}
+            >
+              <WorktreesChevronDownIcon className="worktrees-menu-trigger__chevron" />
+            </button>
+          </div>
+        ) : (
+          <button
+            ref={triggerRef}
+            type="button"
+            className={`worktrees-menu-trigger ${className}`.trim()}
+            aria-label={iconOnly ? triggerLabel : undefined}
+            aria-haspopup="menu"
+            aria-expanded={open}
+            aria-controls={menuId}
+            aria-busy={triggerBusy || undefined}
+            disabled={triggerDisabled}
+            onClick={toggleMenu}
+          >
+            {triggerContent}
+          </button>
+        )}
       </div>
       {menuPanel}
     </>

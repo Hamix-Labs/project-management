@@ -2,11 +2,9 @@ import { useId, useState } from "react";
 import type { GitBranch, GitWorktree } from "@/types/git";
 import { worktreeAriaLabel, worktreeGitCopy } from "../worktreeGitCopy";
 import { BranchPill } from "./BranchPill";
-import {
-  WorktreesChevronRightIcon,
-  WorktreesFolderIcon,
-  WorktreesMoreIcon,
-} from "./WorktreesIcons";
+import { WorktreeRowExpandPanel } from "./WorktreeRowExpandPanel";
+import { WorktreeRowStatus } from "./WorktreeRowStatus";
+import { WorktreesChevronRightIcon, WorktreesMoreIcon } from "./WorktreesIcons";
 import { WorktreesMenu } from "./WorktreesMenu";
 
 type Props = {
@@ -30,12 +28,12 @@ export function WorktreeRow({
   deleteDisabled = false,
 }: Props) {
   const [expanded, setExpanded] = useState(false);
-  const pathPanelId = useId();
+  const panelId = useId();
   const displayName = worktree.name.trim() || worktree.path;
   const branchById = new Map(branches.map((b) => [b.id, b]));
   const branch = worktree.branch_id ? branchById.get(worktree.branch_id) : undefined;
+  const hasBranch = Boolean(worktree.branch_id);
   const deleteBlocked = deleteDisabled;
-  const kindLabel = worktree.is_main ? worktreeGitCopy.mainWorktreeShortLabel : null;
 
   const unregisterMenuItem = {
     id: "unregister-worktree",
@@ -60,73 +58,78 @@ export function WorktreeRow({
   return (
     <li
       className={[
-        "worktrees-list-row",
-        "worktrees-list-row--worktree",
-        "draft-row--interactive",
-        expanded ? "worktrees-list-row--expanded" : "",
+        "worktree-row",
+        expanded ? "worktree-row--expanded" : "",
       ]
         .filter(Boolean)
         .join(" ")}
       data-main={worktree.is_main ? "true" : "false"}
       aria-label={worktreeAriaLabel(displayName)}
-      aria-expanded={expanded}
-      aria-controls={pathPanelId}
-      tabIndex={0}
-      onClick={(event) => {
-        if (isWorktreeRowActionExcluded(event.target)) return;
-        toggleExpanded();
-      }}
-      onKeyDown={(event) => {
-        if (isWorktreeRowActionExcluded(event.target)) return;
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          toggleExpanded();
-        }
-      }}
     >
-      <div className="worktrees-list-row__name worktree-row__name">
-        <div className="worktree-row__summary">
-          <span className="worktree-row__chevron-wrap" aria-hidden>
-            <WorktreesChevronRightIcon className="worktree-row__chevron" />
-          </span>
-          <span className="worktree-row__label" title={displayName}>
-            {displayName}
-          </span>
-          {kindLabel ? (
-            <span className="worktree-row__kind" title={worktreeGitCopy.mainWorktreeHint}>
-              {kindLabel}
+      <div
+        className="worktree-row__main"
+        onClick={(event) => {
+          if (isWorktreeRowActionExcluded(event.target)) return;
+          toggleExpanded();
+        }}
+      >
+        <button
+          type="button"
+          className="worktree-row__chevron-btn"
+          aria-expanded={expanded}
+          aria-controls={panelId}
+          aria-label={expanded ? `Collapse ${displayName}` : `Expand ${displayName}`}
+          onClick={(event) => {
+            event.stopPropagation();
+            toggleExpanded();
+          }}
+        >
+          <WorktreesChevronRightIcon className="worktree-row__chevron" aria-hidden />
+        </button>
+
+        <div className="worktree-row__content">
+          <div className="worktree-row__title-row">
+            <span className="worktree-row__label" title={displayName}>
+              {displayName}
             </span>
-          ) : null}
+            {worktree.is_main ? (
+              <span className="worktree-row__primary-badge" title={worktreeGitCopy.mainWorktreeHint}>
+                {worktreeGitCopy.primaryWorktreeBadge}
+              </span>
+            ) : null}
+          </div>
+          <WorktreeRowStatus hasBranch={hasBranch} />
         </div>
-        {expanded ? (
-          <p id={pathPanelId} className="worktree-row__path" title={worktree.path}>
-            <WorktreesFolderIcon className="worktree-row__path-icon" aria-hidden />
-            <span className="worktree-row__path-text">{worktree.path}</span>
-          </p>
-        ) : null}
-      </div>
 
-      <div className="worktrees-list-row__branch worktree-row__branch" aria-label="Branch">
-        {branch ? (
-          <BranchPill branch={branch} />
-        ) : worktree.branch_id ? (
-          <span className="worktree-row__branch-empty">{worktree.branch_id}</span>
-        ) : (
-          <span className="worktree-row__branch-empty">{worktreeGitCopy.detachedHead}</span>
-        )}
-      </div>
+        <div className="worktree-row__branch" aria-label="Branch">
+          {branch ? (
+            <BranchPill branch={branch} />
+          ) : worktree.branch_id ? (
+            <span className="worktree-row__branch-empty">{worktree.branch_id}</span>
+          ) : (
+            <span className="worktree-row__branch-empty">{worktreeGitCopy.detachedHead}</span>
+          )}
+        </div>
 
-      <div className="worktrees-list-row__actions worktree-row__actions">
-        <div className="task-list-row-actions">
+        <div className="worktree-row__actions">
           <WorktreesMenu
             triggerLabel={worktreeGitCopy.worktreeActions(displayName)}
-            className="task-list-icon-btn"
+            className="worktree-row__menu-btn"
             icon={<WorktreesMoreIcon />}
             iconOnly
             items={menuItems}
           />
         </div>
       </div>
+
+      {expanded ? (
+        <WorktreeRowExpandPanel
+          panelId={panelId}
+          path={worktree.path}
+          branch={branch}
+          branchId={worktree.branch_id}
+        />
+      ) : null}
     </li>
   );
 }

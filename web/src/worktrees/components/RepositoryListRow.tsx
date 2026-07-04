@@ -82,7 +82,7 @@ export function RepositoryListRow({ repository }: Props) {
         aria-label={worktreeCountText}
       >
         {loading ? (
-          <span className="worktrees-inventory-row__count-muted">…</span>
+          <span className="repository-list-row__count-muted">…</span>
         ) : (
           repositoryListWorktreeCountDisplay(worktreeCount)
         )}

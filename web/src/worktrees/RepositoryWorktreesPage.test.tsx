@@ -10,8 +10,56 @@ import { RepositoryWorktreesPage } from "./RepositoryWorktreesPage";
 import { worktreeGitCopy } from "./worktreeGitCopy";
 
 const repoId = "00000000-0000-4000-8000-000000000010";
+const wtMain = "00000000-0000-4000-8000-000000000020";
 const wtB = "00000000-0000-4000-8000-000000000030";
 const branchId = "00000000-0000-4000-8000-000000000040";
+const mainBranchId = "00000000-0000-4000-8000-000000000041";
+
+function detailWorktreesResponse() {
+  return {
+    worktrees: [
+      {
+        id: wtMain,
+        repository_id: repoId,
+        path: "/repo/main",
+        name: "main",
+        is_main: true,
+        branch_id: mainBranchId,
+        created_at: "2026-06-22T12:00:00Z",
+      },
+      {
+        id: wtB,
+        repository_id: repoId,
+        path: "/repo/feature",
+        name: "feature",
+        is_main: false,
+        branch_id: branchId,
+        created_at: "2026-06-22T12:00:00Z",
+      },
+    ],
+  };
+}
+
+function detailBranchesResponse() {
+  return {
+    branches: [
+      {
+        id: mainBranchId,
+        repository_id: repoId,
+        name: "main",
+        head_sha: "def456",
+        created_at: "2026-06-22T12:00:00Z",
+      },
+      {
+        id: branchId,
+        repository_id: repoId,
+        name: "feature",
+        head_sha: "abc123",
+        created_at: "2026-06-22T12:00:00Z",
+      },
+    ],
+  };
+}
 
 function jsonResponse(body: unknown, init: ResponseInit = { status: 200 }): Response {
   return new Response(JSON.stringify(body), {
@@ -86,32 +134,10 @@ function createDeferredReconcileFetch(options?: {
       return jsonResponse({ worktrees: [] });
     }
     if (method === "GET" && url.includes(`/git/repositories/${repoId}/worktrees`)) {
-      return jsonResponse({
-        worktrees: [
-          {
-            id: wtB,
-            repository_id: repoId,
-            path: "/repo/feature",
-            name: "feature",
-            is_main: false,
-            branch_id: branchId,
-            created_at: "2026-06-22T12:00:00Z",
-          },
-        ],
-      });
+      return jsonResponse(detailWorktreesResponse());
     }
     if (method === "GET" && url.includes(`/git/repositories/${repoId}/branches`)) {
-      return jsonResponse({
-        branches: [
-          {
-            id: branchId,
-            repository_id: repoId,
-            name: "feature",
-            head_sha: "abc123",
-            created_at: "2026-06-22T12:00:00Z",
-          },
-        ],
-      });
+      return jsonResponse(detailBranchesResponse());
     }
     if (method === "DELETE") {
       return jsonResponse(
@@ -150,32 +176,10 @@ function mockRepositoryDetailFetch(options?: {
       return jsonResponse({ worktrees: [] });
     }
     if (method === "GET" && url.includes(`/git/repositories/${repoId}/worktrees`)) {
-      return jsonResponse({
-        worktrees: [
-          {
-            id: wtB,
-            repository_id: repoId,
-            path: "/repo/feature",
-            name: "feature",
-            is_main: false,
-            branch_id: branchId,
-            created_at: "2026-06-22T12:00:00Z",
-          },
-        ],
-      });
+      return jsonResponse(detailWorktreesResponse());
     }
     if (method === "GET" && url.includes(`/git/repositories/${repoId}/branches`)) {
-      return jsonResponse({
-        branches: [
-          {
-            id: branchId,
-            repository_id: repoId,
-            name: "feature",
-            head_sha: "abc123",
-            created_at: "2026-06-22T12:00:00Z",
-          },
-        ],
-      });
+      return jsonResponse(detailBranchesResponse());
     }
     if (method === "DELETE") {
       return jsonResponse(
@@ -196,7 +200,11 @@ describe("RepositoryWorktreesPage", () => {
     mockRepositoryDetailFetch();
     renderDetailPage();
     expect(await screen.findByRole("heading", { level: 1, name: "main" })).toBeInTheDocument();
-    expect(await screen.findByText("feature", { selector: ".worktree-row__label" })).toBeInTheDocument();
+    expect(await screen.findByText("main", { selector: ".worktree-row__label" })).toBeInTheDocument();
+    expect(screen.getByText(worktreeGitCopy.primaryWorktreeBadge)).toBeInTheDocument();
+    expect(screen.getByText("feature", { selector: ".worktree-row__label" })).toBeInTheDocument();
+    expect(screen.getByText("2 of 2 worktrees")).toBeInTheDocument();
+    expect(screen.getByText("2 branches checked out")).toBeInTheDocument();
     expect(screen.getByRole("navigation", { name: /repository navigation/i })).toBeInTheDocument();
     expect(screen.getByRole("search", { name: /search worktrees/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: worktreeGitCopy.reconcile })).toBeInTheDocument();
@@ -213,7 +221,7 @@ describe("RepositoryWorktreesPage", () => {
     await waitFor(() => {
       expect(screen.queryByText("feature", { selector: ".worktree-row__label" })).not.toBeInTheDocument();
     });
-    expect(screen.getByText("No matching worktrees")).toBeInTheDocument();
+    expect(screen.getByText(worktreeGitCopy.noMatchingWorktreesTitle)).toBeInTheDocument();
   });
 
   it("maps unregister 409 has_running_task to dialog copy", async () => {

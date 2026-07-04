@@ -59,6 +59,27 @@ export function WorktreesChevronRightIcon({ className }: IconProps) {
   );
 }
 
+export function WorktreesChevronLeftIcon({ className }: IconProps) {
+  return (
+    <svg
+      className={className}
+      width={16}
+      height={16}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+    >
+      <path
+        d="m15 6-6 6 6 6"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function WorktreesFolderIcon({ className }: IconProps) {
   return (
     <svg
@@ -97,6 +118,79 @@ export function WorktreesBranchIcon({ className }: IconProps) {
         strokeWidth={1.75}
         strokeLinecap="round"
       />
+    </svg>
+  );
+}
+
+export function WorktreesRefreshIcon({ className }: IconProps) {
+  return (
+    <svg
+      className={className}
+      width={14}
+      height={14}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+    >
+      <path
+        d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function WorktreesTrashIcon({ className }: IconProps) {
+  return (
+    <svg
+      className={className}
+      width={14}
+      height={14}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+    >
+      <path
+        d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m1 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14Z"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function WorktreesSearchIcon({ className }: IconProps) {
+  return (
+    <svg
+      className={className}
+      width={16}
+      height={16}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+    >
+      <circle cx={11} cy={11} r={7} stroke="currentColor" strokeWidth={2} />
+      <path d="m20 20-3.5-3.5" stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function WorktreesCloseIcon({ className }: IconProps) {
+  return (
+    <svg
+      className={className}
+      width={16}
+      height={16}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+    >
+      <path d="M18 6 6 18M6 6l12 12" stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
     </svg>
   );
 }

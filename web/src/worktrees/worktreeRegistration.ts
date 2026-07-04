@@ -9,3 +9,16 @@ export function isFullyRegisteredWorktree(worktree: GitWorktree): boolean {
 export function isLinkedWorktreeForDisplay(worktree: GitWorktree): boolean {
   return isFullyRegisteredWorktree(worktree) && !worktree.is_main;
 }
+
+/** Rows shown on /worktrees/:repositoryId detail list (includes primary checkout). */
+export function isDetailPageWorktree(worktree: GitWorktree): boolean {
+  return isFullyRegisteredWorktree(worktree);
+}
+
+export function sortDetailPageWorktrees(worktrees: GitWorktree[]): GitWorktree[] {
+  return [...worktrees].sort(
+    (a, b) =>
+      Number(b.is_main) - Number(a.is_main) ||
+      a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
+  );
+}

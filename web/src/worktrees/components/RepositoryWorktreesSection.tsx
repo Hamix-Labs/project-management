@@ -1,18 +1,22 @@
 import type { GitRepository } from "@/types/git";
+import { Button } from "@/components/ui";
 import { MutationErrorBanner } from "@/shared/MutationErrorBanner";
-import { EmptyState } from "@/shared/EmptyState";
 import { useGlobalBranches } from "../hooks/useGlobalBranches";
 import { useGlobalWorktrees } from "../hooks/useGlobalWorktrees";
 import { worktreeMatchesSearchQuery } from "../repositoryDisplay";
 import { worktreeGitCopy } from "../worktreeGitCopy";
-import { isLinkedWorktreeForDisplay } from "../worktreeRegistration";
+import { isDetailPageWorktree, sortDetailPageWorktrees } from "../worktreeRegistration";
 import { gitReconcileErrorMessage } from "../gitReconcileErrors";
+import { WorktreeListFooter } from "./WorktreeListFooter";
 import { WorktreeRow } from "./WorktreeRow";
+import { WorktreeRowSkeleton } from "./WorktreeRowSkeleton";
 import { WorktreeReconcileStatus } from "./WorktreeReconcileStatus";
+import { WorktreesSearchIcon } from "./WorktreesIcons";
 
 type Props = {
   repository: GitRepository;
   searchQuery?: string;
+  onClearSearch?: () => void;
   onUnregisterWorktree: (worktreeId: string, label: string) => void;
   onDeleteWorktreeFromDisk: (worktreeId: string, label: string) => void;
   reconcilePending?: boolean;
@@ -22,6 +26,7 @@ type Props = {
 export function RepositoryWorktreesSection({
   repository,
   searchQuery = "",
+  onClearSearch,
   onUnregisterWorktree,
   onDeleteWorktreeFromDisk,
   reconcilePending = false,
@@ -29,7 +34,9 @@ export function RepositoryWorktreesSection({
 }: Props) {
   const worktreesQuery = useGlobalWorktrees(repository.id);
   const branchesQuery = useGlobalBranches(repository.id);
-  const worktrees = (worktreesQuery.data ?? []).filter(isLinkedWorktreeForDisplay);
+  const worktrees = sortDetailPageWorktrees(
+    (worktreesQuery.data ?? []).filter(isDetailPageWorktree),
+  );
   const branches = branchesQuery.data ?? [];
   const branchById = new Map(branches.map((branch) => [branch.id, branch]));
   const filteredWorktrees = worktrees.filter((worktree) => {
@@ -45,49 +52,53 @@ export function RepositoryWorktreesSection({
       : null;
   const reconcileErrorMessage =
     reconcileError != null ? gitReconcileErrorMessage(reconcileError) : null;
+  const uniqueBranchIds = new Set(
+    worktrees.map((worktree) => worktree.branch_id).filter((id): id is string => Boolean(id)),
+  );
 
   return (
-    <div className="worktrees-list">
-      <div className="worktrees-list-head" role="row">
-        <span className="worktrees-list-head__label" role="columnheader">
-          {worktreeGitCopy.listColumnName}
-        </span>
-        <span
-          className="worktrees-list-head__label worktrees-list-head__label--branch"
-          role="columnheader"
-        >
-          {worktreeGitCopy.listColumnBranch}
-        </span>
-        <span className="worktrees-list-head__spacer" aria-hidden />
+    <div className="worktree-list">
+      <div className="worktree-list__head" role="row">
+        <span className="worktree-list__head-spacer" aria-hidden />
+        <div className="worktree-list__head-labels">
+          <span className="worktree-list__head-label" role="columnheader">
+            {worktreeGitCopy.listColumnName}
+          </span>
+          <span className="worktree-list__head-label worktree-list__head-label--branch" role="columnheader">
+            {worktreeGitCopy.listColumnBranch}
+          </span>
+        </div>
+        <span className="worktree-list__head-menu-spacer" aria-hidden />
       </div>
-      <ul className="draft-row-list worktrees-list-rows" aria-label="Worktrees">
+
+      <ul className="worktree-list__rows" aria-label="Worktrees">
         {reconcilePending ? (
-          <li className="worktrees-list-row worktrees-list-row--status">
-            <WorktreeReconcileStatus className="worktrees-inventory-reconcile" />
+          <li className="worktree-list__status">
+            <WorktreeReconcileStatus className="worktree-list__banner" />
           </li>
         ) : null}
 
         {reconcileErrorMessage ? (
-          <li className="worktrees-list-row worktrees-list-row--status">
+          <li className="worktree-list__status">
             <MutationErrorBanner
               error={reconcileErrorMessage}
-              className="worktrees-inventory-error"
+              className="worktree-list__banner"
             />
           </li>
         ) : null}
 
         {worktreesError ? (
-          <li className="worktrees-list-row worktrees-list-row--status">
-            <MutationErrorBanner error={worktreesError} className="worktrees-inventory-error" />
+          <li className="worktree-list__status">
+            <MutationErrorBanner error={worktreesError} className="worktree-list__banner" />
           </li>
         ) : null}
 
         {loading ? (
-          <li className="worktrees-list-row worktrees-list-row--status">
-            <p className="worktrees-inventory-loading" aria-busy="true">
-              Loading worktrees…
-            </p>
-          </li>
+          <>
+            <WorktreeRowSkeleton />
+            <WorktreeRowSkeleton />
+            <WorktreeRowSkeleton />
+          </>
         ) : null}
 
         {!loading && !worktreesError
@@ -107,22 +118,46 @@ export function RepositoryWorktreesSection({
           : null}
 
         {!loading && !worktreesError && worktrees.length === 0 ? (
-          <li className="worktrees-list-row worktrees-list-row--empty">
-            <p className="worktrees-inventory-empty">{worktreeGitCopy.emptyWorktreesTitle}</p>
+          <li className="worktree-list__empty">
+            <div className="worktree-list__empty-inner">
+              <div className="worktree-list__empty-icon-wrap" aria-hidden>
+                <WorktreesSearchIcon />
+              </div>
+              <p className="worktree-list__empty-title">{worktreeGitCopy.emptyWorktreesTitle}</p>
+              <p className="worktree-list__empty-description">
+                {worktreeGitCopy.emptyWorktreesDescription}
+              </p>
+            </div>
           </li>
         ) : null}
 
         {!loading && !worktreesError && worktrees.length > 0 && filteredWorktrees.length === 0 ? (
-          <li className="worktrees-list-row worktrees-list-row--empty">
-            <EmptyState
-              title="No matching worktrees"
-              description="Try a different search term."
-              hideIcon
-              className="empty-state--task-list-fresh empty-state--in-table"
-            />
+          <li className="worktree-list__empty">
+            <div className="worktree-list__empty-inner">
+              <div className="worktree-list__empty-icon-wrap" aria-hidden>
+                <WorktreesSearchIcon />
+              </div>
+              <p className="worktree-list__empty-title">{worktreeGitCopy.noMatchingWorktreesTitle}</p>
+              <p className="worktree-list__empty-description">
+                Nothing matches &ldquo;{searchQuery}&rdquo;. Try a different name or branch.
+              </p>
+              {onClearSearch ? (
+                <Button type="button" variant="secondary" onClick={onClearSearch}>
+                  {worktreeGitCopy.clearSearch}
+                </Button>
+              ) : null}
+            </div>
           </li>
         ) : null}
       </ul>
+
+      {!loading && !worktreesError && worktrees.length > 0 ? (
+        <WorktreeListFooter
+          filteredCount={filteredWorktrees.length}
+          totalCount={worktrees.length}
+          branchCount={uniqueBranchIds.size}
+        />
+      ) : null}
     </div>
   );
 }

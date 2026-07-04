@@ -32,7 +32,12 @@ export const worktreeGitCopy = {
     "The primary checkout from git clone or git init. Unregistering removes Hamix tracking only — the checkout stays on disk.",
   statusUnavailable: "—",
   statusUnavailableTitle: "Worktree checkout status is not available yet",
+  primaryWorktreeBadge: "Primary",
+  statusClean: "Clean",
+  locationLabel: "Location",
   detachedHead: "Detached HEAD",
+  noMatchingWorktreesTitle: "No worktrees found",
+  clearSearch: "Clear search",
   emptyWorktreesTitle: "No worktrees yet",
   emptyWorktreesDescription:
     "Register an existing linked directory or create a new one with git worktree add.",
