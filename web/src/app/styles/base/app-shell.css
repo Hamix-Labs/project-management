@@ -260,21 +260,12 @@
   transition:
     background var(--duration-normal) var(--ease-out),
     color var(--duration-normal) var(--ease-out),
-    border-color var(--duration-normal) var(--ease-out),
-    transform var(--duration-fast) var(--ease-out);
+    border-color var(--duration-normal) var(--ease-out);
 }
 
 @media (hover: hover) {
   .app-nav__link:hover {
-    background: var(--surface-glass-pill);
     color: var(--text-primary);
-    /* Subtle Apple-style press affordance — the link "rises" 1px on hover
-       so the row feels tactile instead of static. */
-    transform: translateY(-1px);
-  }
-
-  .app-nav__link:active {
-    transform: translateY(0);
   }
 }
 
@@ -291,7 +282,7 @@
   content: "";
   position: absolute;
   right: 0.75rem;
-  bottom: -0.35rem;
+  bottom: -0.5625rem; /* 9px — aligns with reference nav underline */
   left: 0.75rem;
   height: 2px;
   border-radius: var(--radius-full);
@@ -309,10 +300,6 @@
       background var(--duration-normal) var(--ease-out),
       color var(--duration-normal) var(--ease-out),
       border-color var(--duration-normal) var(--ease-out);
-  }
-
-  .app-nav__link:hover {
-    transform: none;
   }
 }
 

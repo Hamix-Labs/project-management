@@ -15,6 +15,8 @@ const sampleRepo = {
   path: "/repo/main",
   host_path: "",
   default_branch: "main",
+  main_branch_name: "main",
+  linked_worktree_count: 2,
   created_at: "2026-06-22T12:00:00Z",
   updated_at: "2026-06-22T12:00:00Z",
 };
@@ -27,7 +29,10 @@ describe("parseGitApi", () => {
   });
 
   it("parses single repository", () => {
-    expect(parseGitRepository(sampleRepo).default_branch).toBe("main");
+    const repo = parseGitRepository(sampleRepo);
+    expect(repo.default_branch).toBe("main");
+    expect(repo.main_branch_name).toBe("main");
+    expect(repo.linked_worktree_count).toBe(2);
   });
 
   it("throws on malformed repository list", () => {

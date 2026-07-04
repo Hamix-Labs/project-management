@@ -13,14 +13,14 @@ func (h *Handler) listGlobalGitRepositories(w http.ResponseWriter, r *http.Reque
 	const op = "git.repositories.list_global"
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.listGlobalGitRepositories")
 	r = calltrace.WithRequestRoot(r, op)
-	rows, err := h.store.ListAllGitRepositories(r.Context())
+	rows, err := h.store.ListAllGitRepositoriesWithSummary(r.Context())
 	if err != nil {
 		writeGitStoreError(w, r, op, err)
 		return
 	}
 	out := make([]gitRepositoryJSON, 0, len(rows))
 	for _, row := range rows {
-		out = append(out, h.gitRepositoryJSON(row))
+		out = append(out, h.gitRepositorySummaryJSON(row.Repository, row.MainBranchName, row.LinkedWorktreeCount))
 	}
 	writeJSON(w, r, op, http.StatusOK, gitRepositoriesListResponse{Repositories: out})
 }

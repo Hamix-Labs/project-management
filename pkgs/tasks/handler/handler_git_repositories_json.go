@@ -11,13 +11,15 @@ type gitRepositoriesListResponse struct {
 }
 
 type gitRepositoryJSON struct {
-	ID            string `json:"id"`
-	Path          string `json:"path"`
-	GitCommonDir  string `json:"git_common_dir"`
-	HostPath      string `json:"host_path"`
-	DefaultBranch string `json:"default_branch"`
-	CreatedAt     string `json:"created_at"`
-	UpdatedAt     string `json:"updated_at"`
+	ID                  string `json:"id"`
+	Path                string `json:"path"`
+	GitCommonDir        string `json:"git_common_dir"`
+	HostPath            string `json:"host_path"`
+	DefaultBranch       string `json:"default_branch"`
+	MainBranchName      string `json:"main_branch_name"`
+	LinkedWorktreeCount int    `json:"linked_worktree_count"`
+	CreatedAt           string `json:"created_at"`
+	UpdatedAt           string `json:"updated_at"`
 }
 
 type gitWorktreeCreateJSON struct {

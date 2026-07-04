@@ -19,9 +19,8 @@ export function RepositoriesListTable({ repositories }: Props) {
         >
           {worktreeGitCopy.listColumnWorktreeCount}
         </span>
-        <span className="repositories-list-head__label repositories-list-head__spacer" aria-hidden />
       </div>
-      <ul className="draft-row-list repositories-list-rows" aria-label="Repositories">
+      <ul className="repositories-list-rows" aria-label="Repositories">
         {repositories.map((repository) => (
           <RepositoryListRow key={repository.id} repository={repository} />
         ))}

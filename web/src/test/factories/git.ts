@@ -12,6 +12,8 @@ export function gitRepositoryFactory(overrides: Partial<GitRepository> = {}): Gi
     git_common_dir: "/repo/main/.git",
     host_path: "",
     default_branch: "",
+    main_branch_name: "main",
+    linked_worktree_count: 0,
     created_at: "2026-06-22T12:00:00Z",
     updated_at: "2026-06-22T12:00:00Z",
     ...overrides,

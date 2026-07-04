@@ -9,17 +9,33 @@ import { requestUrl } from "@/test/requestUrl";
 import { respondGlobalGitApi } from "@/test/handlers/gitGlobal";
 import { RepositoriesListPage } from "./RepositoriesListPage";
 import { RegisterRepositoryModal } from "./modals/RegisterRepositoryModal";
+import { worktreeGitCopy } from "./worktreeGitCopy";
 
 const repoId = "00000000-0000-4000-8000-000000000010";
 const repoId2 = "00000000-0000-4000-8000-000000000011";
-const wtB = "00000000-0000-4000-8000-000000000030";
-const branchId = "00000000-0000-4000-8000-000000000040";
 
 function jsonResponse(body: unknown, init: ResponseInit = { status: 200 }): Response {
   return new Response(JSON.stringify(body), {
     ...init,
     headers: { "content-type": "application/json", ...(init.headers ?? {}) },
   });
+}
+
+function repositoryJson(
+  overrides: Record<string, unknown> = {},
+): Record<string, unknown> {
+  return {
+    id: repoId,
+    path: "/repo/main",
+    git_common_dir: "",
+    host_path: "",
+    default_branch: "main",
+    main_branch_name: "main",
+    linked_worktree_count: 0,
+    created_at: "2026-06-22T12:00:00Z",
+    updated_at: "2026-06-22T12:00:00Z",
+    ...overrides,
+  };
 }
 
 function renderListPage(initialEntries: string[] = ["/worktrees"]) {
@@ -58,6 +74,9 @@ describe("RepositoriesListPage", () => {
 
     renderListPage();
     expect(await screen.findByRole("heading", { name: /^repositories$/i })).toBeInTheDocument();
+    expect(
+      await screen.findByText(/register and manage the git repositories/i),
+    ).toBeInTheDocument();
     expect(
       await screen.findByText(/register a repository to get started/i),
     ).toBeInTheDocument();
@@ -116,58 +135,16 @@ describe("RepositoriesListPage", () => {
     expect(screen.getByRole("button", { name: /Choose folder/i })).toBeInTheDocument();
   });
 
-  it("lists one repository without nested worktree rows", async () => {
+  it("lists one repository with branch badge and worktree count from API", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input: RequestInfo | URL) => {
       const url = requestUrl(input);
       if (url.endsWith("/git/repositories")) {
         return jsonResponse({
           repositories: [
-            {
-              id: repoId,
-              path: "/repo/main",
-              git_common_dir: "",
-              host_path: "",
-              default_branch: "main",
-              created_at: "2026-06-22T12:00:00Z",
-              updated_at: "2026-06-22T12:00:00Z",
-            },
-          ],
-        });
-      }
-      if (url.includes(`/git/repositories/${repoId}/worktrees`)) {
-        return jsonResponse({
-          worktrees: [
-            {
-              id: "00000000-0000-4000-8000-000000000020",
-              repository_id: repoId,
-              path: "/repo/main",
-              name: "main",
-              is_main: true,
-              branch_id: branchId,
-              created_at: "2026-06-22T12:00:00Z",
-            },
-            {
-              id: wtB,
-              repository_id: repoId,
-              path: "/repo/feature",
-              name: "feature",
-              is_main: false,
-              branch_id: branchId,
-              created_at: "2026-06-22T12:00:00Z",
-            },
-          ],
-        });
-      }
-      if (url.includes(`/git/repositories/${repoId}/branches`)) {
-        return jsonResponse({
-          branches: [
-            {
-              id: branchId,
-              repository_id: repoId,
-              name: "main",
-              head_sha: "abc123",
-              created_at: "2026-06-22T12:00:00Z",
-            },
+            repositoryJson({
+              linked_worktree_count: 1,
+              main_branch_name: "main",
+            }),
           ],
         });
       }
@@ -176,33 +153,19 @@ describe("RepositoriesListPage", () => {
 
     renderListPage();
     expect(
-      await screen.findByRole("heading", { level: 2, name: /^repositories$/i }),
+      await screen.findByRole("heading", { level: 1, name: /^repositories$/i }),
     ).toBeInTheDocument();
-    expect(await screen.findByText("main", { selector: ".draft-row__name" })).toBeInTheDocument();
+    expect(await screen.findByText("main", { selector: ".repositories-list-row__name" })).toBeInTheDocument();
+    expect(await screen.findByText("main", { selector: ".repositories-list-row__branch" })).toBeInTheDocument();
     expect(await screen.findByRole("gridcell", { name: /1 worktree/i })).toHaveTextContent("1");
-    expect(screen.queryByText("feature", { selector: ".worktree-row__label" })).not.toBeInTheDocument();
+    expect(await screen.findByText("1 of 1 repository")).toBeInTheDocument();
   });
 
   it("navigates to repository detail when a row is clicked", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input: RequestInfo | URL) => {
       const url = requestUrl(input);
       if (url.endsWith("/git/repositories")) {
-        return jsonResponse({
-          repositories: [
-            {
-              id: repoId,
-              path: "/repo/main",
-              git_common_dir: "",
-              host_path: "",
-              default_branch: "main",
-              created_at: "2026-06-22T12:00:00Z",
-              updated_at: "2026-06-22T12:00:00Z",
-            },
-          ],
-        });
-      }
-      if (url.includes(`/git/repositories/${repoId}/worktrees`)) {
-        return jsonResponse({ worktrees: [] });
+        return jsonResponse({ repositories: [repositoryJson()] });
       }
       return jsonResponse({ error: "not found" }, { status: 404 });
     });
@@ -213,56 +176,53 @@ describe("RepositoriesListPage", () => {
     expect(await screen.findByText("Detail")).toBeInTheDocument();
   });
 
-  it("filters repositories with the search field", async () => {
+  it("filters repositories with the search field and shows empty search state", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input: RequestInfo | URL) => {
       const url = requestUrl(input);
       if (url.endsWith("/git/repositories")) {
         return jsonResponse({
           repositories: [
-            {
+            repositoryJson({
               id: repoId,
               path: "/repo/hamix",
-              git_common_dir: "",
               host_path: "C:/Users/dev/Documents/hamix",
-              default_branch: "main",
-              created_at: "2026-06-22T12:00:00Z",
-              updated_at: "2026-06-22T12:00:00Z",
-            },
-            {
+            }),
+            repositoryJson({
               id: repoId2,
               path: "/repo/other",
-              git_common_dir: "",
               host_path: "C:/Users/dev/Documents/other",
-              default_branch: "main",
-              created_at: "2026-06-22T12:00:00Z",
-              updated_at: "2026-06-22T12:00:00Z",
-            },
+            }),
           ],
         });
-      }
-      if (url.includes("/git/repositories/") && url.includes("/worktrees")) {
-        return jsonResponse({ worktrees: [] });
       }
       return jsonResponse({ error: "not found" }, { status: 404 });
     });
 
     renderListPage();
     const search = await screen.findByRole("searchbox", { name: /search repositories/i });
-    expect(await screen.findByText("hamix", { selector: ".draft-row__name" })).toBeInTheDocument();
-    expect(screen.getByText("other", { selector: ".draft-row__name" })).toBeInTheDocument();
+    expect(await screen.findByText("hamix", { selector: ".repositories-list-row__name" })).toBeInTheDocument();
+    expect(screen.getByText("other", { selector: ".repositories-list-row__name" })).toBeInTheDocument();
+    expect(await screen.findByText("2 of 2 repositories")).toBeInTheDocument();
 
     await userEvent.clear(search);
     await userEvent.type(search, "hamix");
     await waitFor(() => {
-      expect(screen.queryByText("other", { selector: ".draft-row__name" })).not.toBeInTheDocument();
+      expect(screen.queryByText("other", { selector: ".repositories-list-row__name" })).not.toBeInTheDocument();
     });
-    expect(screen.getByText("hamix", { selector: ".draft-row__name" })).toBeInTheDocument();
+    expect(screen.getByText("hamix", { selector: ".repositories-list-row__name" })).toBeInTheDocument();
+    expect(await screen.findByText("1 of 2 repositories")).toBeInTheDocument();
 
     await userEvent.clear(search);
     await userEvent.type(search, "nomatch");
     await waitFor(() => {
-      expect(screen.queryByText("hamix", { selector: ".draft-row__name" })).not.toBeInTheDocument();
+      expect(screen.queryByText("hamix", { selector: ".repositories-list-row__name" })).not.toBeInTheDocument();
     });
-    expect(await screen.findByText(/no matching repositories/i)).toBeInTheDocument();
+    expect(await screen.findByText(/no repositories found/i)).toBeInTheDocument();
+    await userEvent.click(
+      screen.getByRole("button", { name: worktreeGitCopy.clearSearch }),
+    );
+    await waitFor(() => {
+      expect(screen.getByText("hamix", { selector: ".repositories-list-row__name" })).toBeInTheDocument();
+    });
   });
 });

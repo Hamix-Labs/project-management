@@ -4,6 +4,8 @@ export type GitRepository = {
   git_common_dir: string;
   host_path: string;
   default_branch: string;
+  main_branch_name: string;
+  linked_worktree_count: number;
   created_at: string;
   updated_at: string;
 };

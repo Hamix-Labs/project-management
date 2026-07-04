@@ -12,6 +12,13 @@ import type {
 } from "@/types/git";
 import { isRecord, parseNonEmptyString, parseOptionalNonEmptyId, parseString } from "./parseTaskApiCore";
 
+function parseLinkedWorktreeCount(value: unknown, path: string): number {
+  if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
+    throw new Error(`Invalid API response: ${path} must be a non-negative number`);
+  }
+  return Math.trunc(value);
+}
+
 function parseGitRepositoryRow(value: unknown, path: string): GitRepository {
   if (!isRecord(value)) {
     throw new Error(`Invalid API response: ${path} must be object`);
@@ -26,6 +33,13 @@ function parseGitRepositoryRow(value: unknown, path: string): GitRepository {
     default_branch: isRecord(value) && value.default_branch != null
       ? parseString(value.default_branch, `${path}.default_branch`)
       : "",
+    main_branch_name: isRecord(value) && value.main_branch_name != null
+      ? parseString(value.main_branch_name, `${path}.main_branch_name`)
+      : "",
+    linked_worktree_count:
+      isRecord(value) && value.linked_worktree_count != null
+        ? parseLinkedWorktreeCount(value.linked_worktree_count, `${path}.linked_worktree_count`)
+        : 0,
     created_at: parseString(value.created_at, `${path}.created_at`),
     updated_at: parseString(value.updated_at, `${path}.updated_at`),
   };

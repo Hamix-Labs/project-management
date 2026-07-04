@@ -17,7 +17,11 @@ import {
 } from "./worktreesPageMode";
 import { repositoryMatchesSearchQuery } from "./repositoryDisplay";
 import { worktreeGitCopy } from "./worktreeGitCopy";
-import { WorktreesPlusIcon } from "./components/WorktreesIcons";
+import {
+  WorktreesPlusIcon,
+  WorktreesSearchIcon,
+  WorktreesClearIcon,
+} from "./components/WorktreesIcons";
 
 function useDebouncedTrimmedValue(value: string, delayMs: number): string {
   const [debounced, setDebounced] = useState(value.trim());
@@ -51,6 +55,7 @@ export function RepositoriesListPage() {
   const pageTitle = worktreesPageTitle();
   useDocumentTitle(pageTitle);
   const showSearch = pageMode === "setup" || pageMode === "manage";
+  const showRegisterButton = pageMode === "setup" || pageMode === "manage";
 
   const showSkeleton = useDelayedTrue(
     pageMode === "loading",
@@ -64,114 +69,149 @@ export function RepositoriesListPage() {
   }, [searchParams, setSearchParams]);
 
   return (
-    <section
-      className="panel task-list-section-panel task-detail-content--enter worktrees-page"
-      aria-labelledby="worktrees-heading"
-    >
-      <div className="task-list-toolbar">
-        <header className="task-list-section-head">
-          <div className="task-list-section-head__text">
-            <h2 id="worktrees-heading" className="task-list-section-title">
+    <div className="repositories-page">
+      <section
+        className="repositories-card worktrees-page"
+        aria-labelledby="worktrees-heading"
+      >
+        <div className="repositories-card__header">
+          <div className="repositories-card__header-text">
+            <h1 id="worktrees-heading" className="repositories-card__title">
               {pageTitle}
-            </h2>
+            </h1>
+            <p className="repositories-card__subtitle">
+              {worktreeGitCopy.repositoriesPageSubtitle}
+            </p>
           </div>
-          <div className="task-list-section-actions">
-            {pageMode === "setup" || pageMode === "manage" ? (
-              <Button
-                type="button"
-                variant="primary"
-                className="task-home-new-task-btn worktrees-register-btn"
-                onClick={() => setRegisterOpen(true)}
-              >
-                <WorktreesPlusIcon className="worktrees-register-btn__icon" aria-hidden />
-                {worktreeGitCopy.registerRepository}
-              </Button>
-            ) : null}
-          </div>
-        </header>
+          {showRegisterButton ? (
+            <Button
+              type="button"
+              variant="primary"
+              className="repositories-card__register-btn"
+              onClick={() => setRegisterOpen(true)}
+            >
+              <WorktreesPlusIcon className="repositories-card__register-icon" aria-hidden />
+              {worktreeGitCopy.registerRepository}
+            </Button>
+          ) : null}
+        </div>
 
         {showSearch ? (
-          <div
-            className="task-templates-search field grow task-list-search-field"
-            role="search"
-            aria-label="Search repositories"
-          >
-            <label htmlFor="repositories-search" className="visually-hidden">
-              Search repositories
-            </label>
-            <input
-              id="repositories-search"
-              type="search"
-              placeholder={worktreeGitCopy.searchRepositoriesPlaceholder}
-              autoComplete="off"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-            />
-          </div>
-        ) : null}
-      </div>
-
-      {pageMode === "error" ? (
-        <div className="err" role="alert">
-          <p>{worktreesPageErrorMessage(repositoriesQuery.error)}</p>
-          <div className="task-detail-error-actions">
-            <button
-              type="button"
-              className="secondary"
-              onClick={() => {
-                void repositoriesQuery.refetch();
-              }}
-            >
-              Try again
-            </button>
-          </div>
-        </div>
-      ) : null}
-
-      <div className="stack">
-        {showSkeleton ? <TaskDraftsListSkeleton /> : null}
-        {!showSkeleton ? (
-          <div className="stack task-list-content task-list-content--enter">
-            {pageMode === "setup" ? (
-              <div className="task-list-empty-cell">
-                <EmptyState
-                  title="Register a repository to get started"
-                  description="Hamix needs a git checkout before you can register worktrees, bind branches, and run agent tasks."
-                  hideIcon
-                  className="empty-state--in-table empty-state--task-list-fresh"
-                />
-              </div>
-            ) : null}
-            {pageMode === "manage" && filteredRepositories.length === 0 && debouncedQ ? (
-              <EmptyState
-                title="No matching repositories"
-                description="Try a different search term."
-                hideIcon
-                className="empty-state--task-list-fresh"
+          <div className="repositories-card__toolbar">
+            <div className="repositories-card__search" role="search">
+              <label htmlFor="repositories-search" className="visually-hidden">
+                Search repositories
+              </label>
+              <WorktreesSearchIcon
+                className="repositories-card__search-icon"
+                aria-hidden
               />
-            ) : null}
-            {pageMode === "manage" && filteredRepositories.length > 0 ? (
-              <RepositoriesListTable repositories={filteredRepositories} />
-            ) : null}
+              <input
+                id="repositories-search"
+                type="search"
+                className="repositories-card__search-input"
+                placeholder={worktreeGitCopy.searchRepositoriesPlaceholder}
+                autoComplete="off"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+              />
+              {searchInput.trim() ? (
+                <button
+                  type="button"
+                  className="repositories-card__search-clear"
+                  aria-label="Clear search field"
+                  onClick={() => setSearchInput("")}
+                >
+                  <WorktreesClearIcon aria-hidden />
+                </button>
+              ) : null}
+            </div>
+            <p className="repositories-card__count">
+              {worktreeGitCopy.repositoriesSearchCount(
+                filteredRepositories.length,
+                repositories.length,
+              )}
+            </p>
           </div>
         ) : null}
-      </div>
 
-      <RegisterRepositoryModal
-        open={registerOpen}
-        pending={mutations.createRepository.isPending}
-        error={mutations.createRepository.error}
-        onClose={() => {
-          setRegisterOpen(false);
-          mutations.createRepository.reset();
-        }}
-        onSubmit={(input) => {
-          void mutations.createRepository
-            .mutateAsync(input)
-            .then(() => setRegisterOpen(false));
-        }}
-      />
-    </section>
+        {pageMode === "error" ? (
+          <div className="repositories-card__error err" role="alert">
+            <p>{worktreesPageErrorMessage(repositoriesQuery.error)}</p>
+            <div className="task-detail-error-actions">
+              <button
+                type="button"
+                className="secondary"
+                onClick={() => {
+                  void repositoriesQuery.refetch();
+                }}
+              >
+                Try again
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        <div className="repositories-card__body">
+          {showSkeleton ? <TaskDraftsListSkeleton /> : null}
+          {!showSkeleton ? (
+            <>
+              {pageMode === "setup" ? (
+                <div className="repositories-card__empty-setup">
+                  <EmptyState
+                    title="Register a repository to get started"
+                    description="Hamix needs a git checkout before you can register worktrees, bind branches, and run agent tasks."
+                    hideIcon
+                    className="empty-state--in-table empty-state--task-list-fresh"
+                  />
+                </div>
+              ) : null}
+              {pageMode === "manage" && filteredRepositories.length === 0 && debouncedQ ? (
+                <div className="repositories-card__empty-search">
+                  <span className="repositories-card__empty-search-icon-wrap">
+                    <WorktreesSearchIcon aria-hidden />
+                  </span>
+                  <div className="repositories-card__empty-search-text">
+                    <p className="repositories-card__empty-search-title">
+                      {worktreeGitCopy.repositoriesSearchEmptyTitle}
+                    </p>
+                    <p className="repositories-card__empty-search-description">
+                      {worktreeGitCopy.repositoriesSearchEmptyDescription(debouncedQ)}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="repositories-card__empty-search-clear"
+                    onClick={() => setSearchInput("")}
+                  >
+                    {worktreeGitCopy.clearSearch}
+                  </Button>
+                </div>
+              ) : null}
+              {pageMode === "manage" && filteredRepositories.length > 0 ? (
+                <RepositoriesListTable repositories={filteredRepositories} />
+              ) : null}
+            </>
+          ) : null}
+        </div>
+
+        <RegisterRepositoryModal
+          open={registerOpen}
+          pending={mutations.createRepository.isPending}
+          error={mutations.createRepository.error}
+          onClose={() => {
+            setRegisterOpen(false);
+            mutations.createRepository.reset();
+          }}
+          onSubmit={(input) => {
+            void mutations.createRepository
+              .mutateAsync(input)
+              .then(() => setRegisterOpen(false));
+          }}
+        />
+      </section>
+    </div>
   );
 }
 

@@ -23,7 +23,19 @@ export const worktreeGitCopy = {
   listColumnName: "Name",
   listColumnBranch: "Branch",
   listColumnWorktreeCount: "Worktrees",
-  searchRepositoriesPlaceholder: "Search by name…",
+  searchRepositoriesPlaceholder: "Search by name or path…",
+  repositoriesPageSubtitle:
+    "Register and manage the Git repositories powering your worktrees.",
+  repositoriesSearchCount: (filtered: number, total: number) => {
+    const noun = total === 1 ? "repository" : "repositories";
+    return `${filtered} of ${total} ${noun}`;
+  },
+  repositoriesSearchEmptyTitle: "No repositories found",
+  repositoriesSearchEmptyDescription: (query: string) =>
+    `No results for "${query}". Try a different name or path.`,
+  clearSearch: "Clear search",
+  copyPath: "Copy path",
+  pathCopied: "Path copied",
   searchWorktreesPlaceholder: "Search by name or branch…",
   cellNotApplicable: "—",
   mainWorktreeShortLabel: "main",
@@ -37,7 +49,6 @@ export const worktreeGitCopy = {
   locationLabel: "Location",
   detachedHead: "Detached HEAD",
   noMatchingWorktreesTitle: "No worktrees found",
-  clearSearch: "Clear search",
   emptyWorktreesTitle: "No worktrees yet",
   emptyWorktreesDescription:
     "Register an existing linked directory or create a new one with git worktree add.",

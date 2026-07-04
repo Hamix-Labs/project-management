@@ -28,6 +28,78 @@ func (s *Store) ListAllGitRepositories(ctx context.Context) ([]domain.GitReposit
 	return model.ToDomainGitRepositories(rows), nil
 }
 
+// GitRepositoryListSummary augments a repository row with list-page metadata.
+type GitRepositoryListSummary struct {
+	Repository          domain.GitRepository
+	MainBranchName      string
+	LinkedWorktreeCount int
+}
+
+// ListAllGitRepositoriesWithSummary returns repositories with main-branch name and
+// linked worktree counts for the global list UI (mirrors web isLinkedWorktreeForDisplay).
+func (s *Store) ListAllGitRepositoriesWithSummary(ctx context.Context) ([]GitRepositoryListSummary, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ListAllGitRepositoriesWithSummary")
+	repos, err := s.ListAllGitRepositories(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if len(repos) == 0 {
+		return nil, nil
+	}
+	repoIDs := make([]string, len(repos))
+	for i, repo := range repos {
+		repoIDs[i] = repo.ID
+	}
+
+	type mainBranchRow struct {
+		RepositoryID string
+		Name         string
+	}
+	var mainBranches []mainBranchRow
+	err = s.db.WithContext(ctx).
+		Table("git_worktrees AS w").
+		Select("w.repository_id, b.name").
+		Joins("JOIN git_branches AS b ON b.id = w.branch_id").
+		Where("w.is_main = ? AND w.repository_id IN ?", true, repoIDs).
+		Scan(&mainBranches).Error
+	if err != nil {
+		return nil, fmt.Errorf("list main branch names: %w", err)
+	}
+	mainBranchByRepo := make(map[string]string, len(mainBranches))
+	for _, row := range mainBranches {
+		mainBranchByRepo[row.RepositoryID] = row.Name
+	}
+
+	type worktreeCountRow struct {
+		RepositoryID string
+		Count        int64
+	}
+	var worktreeCounts []worktreeCountRow
+	err = s.db.WithContext(ctx).
+		Model(&model.GitWorktree{}).
+		Select("repository_id, COUNT(*) AS count").
+		Where("is_main = ? AND branch_id <> '' AND repository_id IN ?", false, repoIDs).
+		Group("repository_id").
+		Scan(&worktreeCounts).Error
+	if err != nil {
+		return nil, fmt.Errorf("count linked worktrees: %w", err)
+	}
+	countByRepo := make(map[string]int, len(worktreeCounts))
+	for _, row := range worktreeCounts {
+		countByRepo[row.RepositoryID] = int(row.Count)
+	}
+
+	out := make([]GitRepositoryListSummary, len(repos))
+	for i, repo := range repos {
+		out[i] = GitRepositoryListSummary{
+			Repository:          repo,
+			MainBranchName:      mainBranchByRepo[repo.ID],
+			LinkedWorktreeCount: countByRepo[repo.ID],
+		}
+	}
+	return out, nil
+}
+
 // CreateGlobalGitRepository registers a main checkout without project scoping and
 // seeds the main worktree row with the checkout's current branch.
 func (s *Store) CreateGlobalGitRepository(ctx context.Context, input CreateGitRepositoryInput, gitSvc gitwork.Service) (domain.GitRepository, error) {

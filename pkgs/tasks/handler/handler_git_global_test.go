@@ -193,6 +193,12 @@ func TestHandler_listGlobalGitRepositories_afterCreate(t *testing.T) {
 	if len(resp.Repositories) != 1 {
 		t.Fatalf("len=%d want 1", len(resp.Repositories))
 	}
+	if resp.Repositories[0].MainBranchName == "" {
+		t.Fatal("expected main_branch_name on list response")
+	}
+	if resp.Repositories[0].LinkedWorktreeCount != 0 {
+		t.Fatalf("linked_worktree_count=%d want 0", resp.Repositories[0].LinkedWorktreeCount)
+	}
 }
 
 func TestHandler_listGlobalGitWorktrees_serializesBranchID(t *testing.T) {

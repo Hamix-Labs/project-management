@@ -52,7 +52,7 @@ Git context follows [ADR-0037](./adr/ADR-0037-global-repos-project-tree.md) (glo
 
 | Method | Path | Notes |
 |---|---|---|
-| GET | `/git/repositories` | `{ repositories: [...] }`. |
+| GET | `/git/repositories` | `{ repositories: [...] }`. Each repository includes `main_branch_name` (branch checked out on the main worktree, when bound) and `linked_worktree_count` (non-main worktrees with a bound `branch_id`, matching the Repositories list UI). |
 | POST | `/git/repositories` | Register checkout. Body `{ path, host_path? }`. Resolves main worktree path and `git_common_dir`. **201**. Does not auto-create worktrees/branches. **409** `not_a_git_repository`, `duplicate` (same git object database). |
 | GET | `/git/repositories/{repoId}` | Single repository. **404** `repository_not_found`. |
 | DELETE | `/git/repositories/{repoId}` | **204**. **409** `has_running_task`. |
