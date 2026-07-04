@@ -124,6 +124,27 @@
     --warning-attention-gradient-end: rgb(251 191 36 / 8%);
     --info-soft: rgb(59 130 246 / 22%);
     --color-info-subtle: rgb(30 58 138 / 38%);
+
+    /* Task list badges (StatusBadge / PriorityBadge) */
+    --badge-tone-success-bg: var(--success-soft);
+    --badge-tone-success-fg: #6ee7b7;
+    --badge-tone-success-ring: var(--success-border);
+    --badge-tone-info-bg: var(--info-soft);
+    --badge-tone-info-fg: #93c5fd;
+    --badge-tone-info-ring: rgb(59 130 246 / 32%);
+    --badge-tone-warning-bg: var(--warning-soft);
+    --badge-tone-warning-fg: var(--warning-ink);
+    --badge-tone-warning-ring: var(--warning-chip-border);
+    --badge-tone-danger-bg: var(--danger-soft);
+    --badge-tone-danger-fg: var(--danger-on-subtle-text);
+    --badge-tone-danger-ring: var(--danger-border);
+    --badge-tone-neutral-bg: rgb(148 163 184 / 12%);
+    --badge-tone-neutral-fg: rgb(203 213 225);
+    --badge-tone-neutral-ring: rgb(148 163 184 / 22%);
+    --priority-bar-empty-neutral: rgb(148 163 184 / 18%);
+    --priority-bar-empty-info: var(--info-soft);
+    --priority-bar-empty-warning: var(--warning-soft);
+    --priority-bar-empty-danger: var(--danger-soft);
     --pill-ready-bg: rgb(148 163 184 / 14%);
     --pill-ready-text: rgb(226 232 240);
     --pill-ready-border: rgb(148 163 184 / 26%);

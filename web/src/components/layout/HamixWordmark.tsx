@@ -2,11 +2,17 @@ import type { ComponentPropsWithoutRef } from "react";
 
 type HamixWordmarkProps = ComponentPropsWithoutRef<"span">;
 
-/** Scalable product wordmark — gradient text rendered in CSS, not a raster asset. */
+/** Scalable product wordmark — split “Ha” / “mix” for redesigned shell chrome. */
 export function HamixWordmark({ className, ...props }: HamixWordmarkProps) {
   return (
     <span className={className} {...props}>
-      Hamix
+      <span className="hamix-wordmark__ha" aria-hidden="true">
+        Ha
+      </span>
+      <span className="hamix-wordmark__mix" aria-hidden="true">
+        mix
+      </span>
+      <span className="visually-hidden">Hamix</span>
     </span>
   );
 }

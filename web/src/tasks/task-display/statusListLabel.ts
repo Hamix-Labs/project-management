@@ -6,7 +6,7 @@ export function statusListLabel(status: Status): string {
     case "ready":
       return "Ready";
     case "running":
-      return "In progress";
+      return "Running";
     case "blocked":
       return "Blocked";
     case "review":

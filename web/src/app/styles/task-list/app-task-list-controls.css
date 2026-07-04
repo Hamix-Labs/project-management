@@ -50,6 +50,13 @@
   color: var(--text-primary);
 }
 
+.task-list-section-summary {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
 .task-list-section-actions {
   flex-shrink: 0;
 }

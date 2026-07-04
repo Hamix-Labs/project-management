@@ -10,8 +10,9 @@ import {
 import { useDelayedTrue } from "@/lib/useDelayedTrue";
 import { TaskListDataTable } from "../table/TaskListDataTable";
 import { TaskListFilters } from "../filters/TaskListFilters";
+import { TaskListStatusTabs } from "../filters/TaskListStatusTabs";
 import { TaskListSectionHeading } from "./TaskListSectionHeading";
-import { TaskListStatsStrip } from "./TaskListStatsStrip";
+import { formatTaskListHeadingSummary } from "./taskListHeadingSummary";
 import { TaskPager } from "../pager/TaskPager";
 import type { Task, TaskStatsResponse } from "@/types";
 import type { TaskWithDepth } from "../../../task-tree";
@@ -22,7 +23,12 @@ import {
   type TaskListClientPriorityFilter,
   type TaskListClientStatusFilter,
 } from "../filters/taskListClientFilter";
-import { sortTasksByCreatedDesc } from "../filters/taskListSort";
+import {
+  sortTasksForListView,
+  type TaskListSortDir,
+  type TaskListSortKey,
+} from "../filters/taskListSort";
+import { useTaskListSearchShortcut } from "../hooks/useTaskListSearchShortcut";
 import { taskListPagerSummary } from "../pager/taskListPagerSummary";
 import { TaskListTableSkeleton } from "../table/TaskListTableSkeleton";
 import { useAppTimezone } from "@/shared/time/appTimezone";
@@ -130,6 +136,10 @@ export const TaskListSection = memo(function TaskListSection({
     useState<TaskListClientPriorityFilter>("all");
   const [projectFilter, setProjectFilter] = useState("all");
   const [titleSearch, setTitleSearch] = useState("");
+  const [sortKey, setSortKey] = useState<TaskListSortKey>("created_at");
+  const [sortDir, setSortDir] = useState<TaskListSortDir>("desc");
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  useTaskListSearchShortcut(searchInputRef, smoothTransitions);
 
   const filteredTasks = useMemo(() => {
     const base = filterTasksForListView(
@@ -144,8 +154,26 @@ export const TaskListSection = memo(function TaskListSection({
         : projectFilter === "none"
           ? base.filter((task) => !task.project_id)
           : base.filter((task) => task.project_id === projectFilter);
-    return sortTasksByCreatedDesc(scoped);
-  }, [tasks, statusFilter, priorityFilter, titleSearch, projectFilter]);
+    return sortTasksForListView(scoped, sortKey, sortDir, projectNameById);
+  }, [
+    tasks,
+    statusFilter,
+    priorityFilter,
+    titleSearch,
+    projectFilter,
+    sortKey,
+    sortDir,
+    projectNameById,
+  ]);
+
+  const handleSortChange = useCallback((key: TaskListSortKey) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+      return;
+    }
+    setSortKey(key);
+    setSortDir(key === "created_at" ? "desc" : "asc");
+  }, [sortKey]);
 
   const visibleIds = useMemo(
     () => filteredTasks.map((t) => t.id),
@@ -213,6 +241,8 @@ export const TaskListSection = memo(function TaskListSection({
     priorityFilter,
     projectFilter,
     titleSearch,
+    sortKey,
+    sortDir,
     onListFiltersChange,
     clearSelection,
   ]);
@@ -305,30 +335,44 @@ export const TaskListSection = memo(function TaskListSection({
   const showTaskPager =
     !loading && (hasPrevPage || hasNextPage || tasks.length === listPageSize);
 
+  const headingSummary = useMemo(
+    () => formatTaskListHeadingSummary(filteredTasks.length, taskStats),
+    [filteredTasks.length, taskStats],
+  );
+
   return (
     <section
-      className="panel task-list-section-panel"
+      className="panel task-list-section-panel task-list-section--redesign"
       aria-labelledby="task-list-heading"
+      id="task-list-panel"
+      role="tabpanel"
     >
       <div className="task-list-toolbar">
-        <TaskListSectionHeading actions={actions} />
-        <TaskListStatsStrip stats={taskStats} />
+        <div className="task-list-card-header">
+          <TaskListSectionHeading actions={actions} summary={headingSummary} />
+        </div>
         {!loading ? (
-          <TaskListFilters
-            statusFilter={statusFilter}
-            onStatusFilterChange={(v) =>
-              setStatusFilter(v as TaskListClientStatusFilter)
-            }
-            priorityFilter={priorityFilter}
-            onPriorityFilterChange={(v) =>
-              setPriorityFilter(v as TaskListClientPriorityFilter)
-            }
-            projectFilter={projectFilter}
-            projectOptions={showProjectColumn ? projectFilterOptions : []}
-            onProjectFilterChange={showProjectColumn ? setProjectFilter : undefined}
-            titleSearch={titleSearch}
-            onTitleSearchChange={setTitleSearch}
-          />
+          <>
+            <TaskListStatusTabs
+              value={statusFilter}
+              onChange={setStatusFilter}
+              stats={taskStats}
+            />
+            <TaskListFilters
+              priorityFilter={priorityFilter}
+              onPriorityFilterChange={(v) =>
+                setPriorityFilter(v as TaskListClientPriorityFilter)
+              }
+              projectFilter={projectFilter}
+              projectOptions={showProjectColumn ? projectFilterOptions : []}
+              onProjectFilterChange={
+                showProjectColumn ? setProjectFilter : undefined
+              }
+              titleSearch={titleSearch}
+              onTitleSearchChange={setTitleSearch}
+              searchInputRef={searchInputRef}
+            />
+          </>
         ) : null}
       </div>
       {refreshing && !loading && !hideBackgroundRefreshHint ? (
@@ -352,6 +396,9 @@ export const TaskListSection = memo(function TaskListSection({
             onRequestDelete={onRequestDelete}
             projectNameById={projectNameById}
             showProjectColumn={showProjectColumn}
+            sortKey={sortKey}
+            sortDir={sortDir}
+            onSortChange={handleSortChange}
             selection={{
               isSelected: selection.isSelected,
               onRowToggle: selection.toggle,

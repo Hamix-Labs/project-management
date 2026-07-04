@@ -494,6 +494,16 @@
   opacity: 0.9;
 }
 
+.task-list-project-name {
+  display: block;
+  max-width: min(11rem, 100%);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .task-list-project-badge {
   display: inline-flex;
   align-items: center;
@@ -587,7 +597,7 @@
 
 @media (hover: hover) {
   .task-list-row .task-list-row-actions {
-    opacity: 0.55;
+    opacity: 0;
     transition: opacity var(--duration-normal) var(--ease-out);
   }
 

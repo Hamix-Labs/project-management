@@ -65,7 +65,7 @@ export function TaskListBulkActionBar({
   const noun = selectedCount === 1 ? "task" : "tasks";
   return (
     <div
-      className="task-list-bulk-bar"
+      className="task-list-bulk-bar task-list-bulk-action-bar--floating"
       role="toolbar"
       aria-label="Bulk actions for selected tasks"
       data-testid="task-list-bulk-bar"

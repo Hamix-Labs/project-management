@@ -11,7 +11,7 @@ export async function waitForCreateTaskEnabled(dialog: HTMLElement) {
 }
 
 export async function openNewTaskModal(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(screen.getByRole("button", { name: /^new task$/i }));
+  await user.click(screen.getByRole("button", { name: /\+?\s*new task/i }));
   return screen.findByRole("dialog");
 }
 

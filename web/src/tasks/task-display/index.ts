@@ -5,4 +5,8 @@ export * from "./taskDescendantCount";
 export * from "./taskGateDisplay";
 export * from "./statusListLabel";
 export * from "./priorityListLabel";
+export * from "./statusMeta";
+export * from "./priorityMeta";
+export * from "./StatusBadge";
+export * from "./PriorityBadge";
 export * from "./canEditTask";

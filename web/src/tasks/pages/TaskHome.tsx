@@ -94,7 +94,7 @@ export function TaskHome() {
           onClick={() => openCreateModal()}
           disabled={createModalOpen}
         >
-          New task
+          + New task
         </Button>
       </>
     ),

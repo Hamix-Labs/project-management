@@ -5,6 +5,7 @@
 @import "./styles/app-task-create-and-fields.css";
 @import "./styles/app-custom-select.css";
 @import "./styles/app-task-list-and-mentions.css";
+@import "./styles/task-display/app-task-badges.css";
 @import "./styles/task-drafts/app-task-drafts.css";
 @import "./styles/task-templates/app-task-templates.css";
 @import "./styles/app-rich-prompt.css";

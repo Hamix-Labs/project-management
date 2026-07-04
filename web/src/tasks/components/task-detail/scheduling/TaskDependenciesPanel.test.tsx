@@ -27,7 +27,7 @@ describe("TaskDependenciesPanel", () => {
     expect(screen.getByTestId("task-deps-list")).toBeInTheDocument();
     expect(screen.getByText("Upstream")).toBeInTheDocument();
     expect(screen.getByText("Done")).toBeInTheDocument();
-    expect(screen.getByText("In progress")).toBeInTheDocument();
+    expect(screen.getByText("Running")).toBeInTheDocument();
   });
 
   // Dependencies are fixed at creation time — the detail view is read-only.

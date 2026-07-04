@@ -1,13 +1,8 @@
-import { isUiFeatureOmitted } from "@/launch/omittedFeatures";
 import { CustomSelect } from "@/components/custom-select";
-import {
-  TASK_LIST_PRIORITY_FILTER_OPTIONS,
-  taskListStatusFilterOptions,
-} from "./taskListFilterSelectOptions";
+import { TASK_LIST_PRIORITY_FILTER_OPTIONS } from "./taskListFilterSelectOptions";
+import type { RefObject } from "react";
 
 type Props = {
-  statusFilter: string;
-  onStatusFilterChange: (value: string) => void;
   priorityFilter: string;
   onPriorityFilterChange: (value: string) => void;
   projectFilter?: string;
@@ -15,11 +10,11 @@ type Props = {
   onProjectFilterChange?: (value: string) => void;
   titleSearch: string;
   onTitleSearchChange: (value: string) => void;
+  searchInputRef?: RefObject<HTMLInputElement>;
+  showSearchShortcutHint?: boolean;
 };
 
 export function TaskListFilters({
-  statusFilter,
-  onStatusFilterChange,
   priorityFilter,
   onPriorityFilterChange,
   projectFilter = "all",
@@ -27,10 +22,9 @@ export function TaskListFilters({
   onProjectFilterChange,
   titleSearch,
   onTitleSearchChange,
+  searchInputRef,
+  showSearchShortcutHint = true,
 }: Props) {
-  const statusFilterOptions = taskListStatusFilterOptions({
-    includeScheduled: !isUiFeatureOmitted("schedule"),
-  });
   const projectFilterOptions = [
     { value: "all", label: "All projects" },
     ...projectOptions.map((project) => ({
@@ -41,24 +35,11 @@ export function TaskListFilters({
 
   return (
     <div
-      className="task-list-filters"
+      className="task-list-filters task-list-filters--redesign"
       role="search"
       aria-label="Filter tasks"
     >
       <div className="task-list-filters__controls">
-        <div className="task-list-filter-field task-list-filter-field--status">
-          <CustomSelect
-            id="task-list-filter-status"
-            label="Status"
-            compact
-            dropdownVariant="toolbar"
-            dropdownMinWidth={240}
-            listboxName="Filter by status"
-            value={statusFilter}
-            options={statusFilterOptions}
-            onChange={onStatusFilterChange}
-          />
-        </div>
         <div className="task-list-filter-field">
           <CustomSelect
             id="task-list-filter-priority"
@@ -92,14 +73,22 @@ export function TaskListFilters({
         <label htmlFor="task-list-search-title" className="visually-hidden">
           Search titles
         </label>
-        <input
-          id="task-list-search-title"
-          type="search"
-          value={titleSearch}
-          onChange={(e) => onTitleSearchChange(e.target.value)}
-          placeholder="Search by title…"
-          autoComplete="off"
-        />
+        <div className="task-list-search-field__inner">
+          <input
+            ref={searchInputRef}
+            id="task-list-search-title"
+            type="search"
+            value={titleSearch}
+            onChange={(e) => onTitleSearchChange(e.target.value)}
+            placeholder="Search tasks…"
+            autoComplete="off"
+          />
+          {showSearchShortcutHint && !titleSearch.trim() ? (
+            <kbd className="task-list-search-kbd-hint" aria-hidden="true">
+              /
+            </kbd>
+          ) : null}
+        </div>
       </div>
     </div>
   );

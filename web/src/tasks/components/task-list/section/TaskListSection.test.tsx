@@ -139,7 +139,7 @@ describe("TaskListSection", () => {
     // is caught here.
     expect(screen.getByText(/no tasks yet/i)).toBeInTheDocument();
     expect(
-      screen.getByRole("region", { name: /^all tasks$/i }),
+      screen.getByRole("tabpanel", { name: /^all tasks$/i }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("table", {
@@ -205,6 +205,43 @@ describe("TaskListSection", () => {
     expect(onRequestDelete).toHaveBeenCalledWith({
       ...task,
     });
+  });
+
+  it("renders heading summary when stats and rows are present", () => {
+    renderWithRouter(
+      <TaskListSection
+        tasks={[makeRow("1", "Alpha")]}
+        loading={false}
+        refreshing={false}
+        saving={false}
+        {...listPagerDefaults}
+        rootTasksOnPage={1}
+        onEdit={vi.fn()}
+        onRequestDelete={vi.fn()}
+        taskStats={{
+          total: 15,
+          ready: 7,
+          scheduled: 0,
+          critical: 0,
+          by_status: { review: 2, blocked: 2 },
+          by_priority: {},
+          cycles: { by_status: {}, by_triggered_by: {} },
+          phases: {
+            by_phase_status: { execute: {}, verify: {} },
+          },
+          runner: {
+            by_runner: {},
+            by_model: {},
+            by_runner_model: {},
+            by_runner_model_resolved: {},
+          },
+          recent_failures: [],
+        }}
+      />,
+    );
+    expect(
+      screen.getByText("1 shown · 7 ready · 2 in review · 2 blocked"),
+    ).toBeInTheDocument();
   });
 
   it("disables edit but keeps delete enabled for running tasks", async () => {
@@ -282,8 +319,7 @@ describe("TaskListSection", () => {
     expect(screen.getByText("Low ready")).toBeInTheDocument();
     expect(screen.getByText("High done")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("combobox", { name: /^status$/i }));
-    await user.click(screen.getByRole("option", { name: /^ready$/i }));
+    await user.click(screen.getByRole("tab", { name: /^ready$/i }));
     expect(screen.getByText("Low ready")).toBeInTheDocument();
     await waitFor(
       () => {
@@ -292,8 +328,7 @@ describe("TaskListSection", () => {
       { timeout: 500 },
     );
 
-    await user.click(screen.getByRole("combobox", { name: /^status$/i }));
-    await user.click(screen.getByRole("option", { name: /^all statuses$/i }));
+    await user.click(screen.getByRole("tab", { name: /^all$/i }));
     await user.click(screen.getByRole("combobox", { name: /^priority$/i }));
     await user.click(screen.getByRole("option", { name: /^high$/i }));
     await waitFor(
@@ -305,8 +340,7 @@ describe("TaskListSection", () => {
     expect(screen.getByText("High done")).toBeInTheDocument();
   });
 
-  it("shows status filter section labels for needs-user vs other", async () => {
-    const user = userEvent.setup();
+  it("renders status tabs for filtering", () => {
     renderWithRouter(
       <TaskListSection
         tasks={[]}
@@ -319,9 +353,10 @@ describe("TaskListSection", () => {
         onRequestDelete={vi.fn()}
       />,
     );
-    await user.click(screen.getByRole("combobox", { name: /^status$/i }));
-    expect(screen.getByText("Agent needs input")).toBeInTheDocument();
-    expect(screen.getByText("Other activity")).toBeInTheDocument();
+    expect(screen.getByRole("tablist", { name: /filter tasks by status/i })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /^all$/i })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /^ready$/i })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /^in progress$/i })).toBeInTheDocument();
   });
 
   it("filters rows by title search", async () => {
@@ -398,9 +433,7 @@ describe("TaskListSection", () => {
     );
     expect(screen.getByText("Moat task")).toBeInTheDocument();
     expect(screen.getByText("Unassigned task")).toBeInTheDocument();
-    expect(document.querySelector(".task-list-project-badge")).toHaveTextContent(
-      "Context moat",
-    );
+    expect(screen.getByText("Context moat")).toBeInTheDocument();
 
     await user.click(screen.getByRole("combobox", { name: /^project$/i }));
     await user.click(screen.getByRole("option", { name: /^context moat$/i }));
@@ -443,8 +476,7 @@ describe("TaskListSection", () => {
         onRequestDelete={vi.fn()}
       />,
     );
-    await user.click(screen.getByRole("combobox", { name: /^status$/i }));
-    await user.click(screen.getByRole("option", { name: /^failed$/i }));
+    await user.click(screen.getByRole("tab", { name: /^failed$/i }));
     await waitFor(
       () => {
         expect(screen.getByText(/no matching tasks/i)).toBeInTheDocument();
@@ -759,8 +791,7 @@ describe("TaskListSection", () => {
       );
       await user.click(screen.getByTestId("task-list-select-row-a"));
       expect(screen.getByTestId("task-list-bulk-bar")).toBeInTheDocument();
-      await user.click(screen.getByRole("combobox", { name: /^status$/i }));
-      await user.click(screen.getByRole("option", { name: /^done$/i }));
+      await user.click(screen.getByRole("tab", { name: /^done$/i }));
       expect(
         screen.queryByTestId("task-list-bulk-bar"),
       ).not.toBeInTheDocument();
@@ -787,10 +818,7 @@ describe("TaskListSection", () => {
           onRequestDelete={vi.fn()}
         />,
       );
-      await user.click(screen.getByRole("combobox", { name: /^status$/i }));
-      await user.click(
-        screen.getByRole("option", { name: /scheduled \(deferred\)/i }),
-      );
+      await user.click(screen.getByRole("tab", { name: /^scheduled$/i }));
       expect(screen.getByText("Future ready")).toBeInTheDocument();
       await waitFor(
         () => {

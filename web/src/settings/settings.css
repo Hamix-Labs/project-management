@@ -33,23 +33,18 @@
 }
 
 .app-header-settings-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  /* 40px hit target — between the 36px compact and the 44px Apple HIG
-     ideal; visually balanced against the nav pills on the same row. */
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-md);
+  display: inline-grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-full);
   text-decoration: none;
   color: var(--text-secondary, inherit);
-  border: 1px solid transparent;
+  border: 0;
   background: transparent;
   transition:
     background-color var(--duration-short, 150ms) ease,
-    border-color var(--duration-short, 150ms) ease,
-    color var(--duration-short, 150ms) ease,
-    transform var(--duration-fast, 100ms) ease;
+    color var(--duration-short, 150ms) ease;
 }
 
 .app-header-settings-icon {
@@ -62,13 +57,11 @@
 .app-header-settings-link:hover,
 .app-header-settings-link:focus-visible {
   background: var(--surface-glass-pill);
-  border-color: var(--border-hairline);
   color: var(--text-primary, inherit);
-  transform: translateY(-1px);
 }
 
 .app-header-settings-link:active {
-  transform: translateY(0);
+  opacity: 0.9;
 }
 
 /* Subtle gear rotation on hover — Apple-style affordance signaling
@@ -86,7 +79,6 @@
 .app-header-settings-link[aria-current="page"] {
   color: var(--text-primary);
   background: var(--neutral-fill-subtle);
-  border-color: var(--border-hairline);
 }
 
 @media (prefers-reduced-motion: reduce) {

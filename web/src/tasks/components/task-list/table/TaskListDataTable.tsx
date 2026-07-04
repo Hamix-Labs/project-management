@@ -7,15 +7,16 @@ import type { TaskWithDepth } from "../../../task-tree";
 import type { DeleteTargetInput } from "../../../hooks/useTaskDeleteFlow";
 import {
   canEditTask,
-  priorityListLabel,
-  priorityPillClass,
-  statusNeedsUserInput,
+  PriorityBadge,
+  StatusBadge,
 } from "../../../task-display";
-import { Badge } from "@/components/ui";
 import { TaskListDeleteGlyph, TaskListEditGlyph } from "./TaskListRowActionIcons";
-import { statusListLabel, taskListRowSubtitle } from "./taskListRowSubtitle";
+import { taskListRowSubtitle } from "./taskListRowSubtitle";
+import type {
+  TaskListSortDir,
+  TaskListSortKey,
+} from "../filters/taskListSort";
 import { previewTextFromPrompt } from "../../../task-prompt";
-import { projectBadgeToneFromId } from "../../../projectBadgeTone";
 import { formatInAppTimezone, useAppTimezone } from "@/shared/time/appTimezone";
 import { formatRelativeTime } from "@/shared/time/relativeTime";
 import { useNow } from "@/shared/useNow";
@@ -77,6 +78,9 @@ type Props = {
   /** Maps `task.project_id` to a label for the Project column (e.g. from `GET /projects`). */
   projectNameById?: Record<string, string>;
   showProjectColumn?: boolean;
+  sortKey?: TaskListSortKey;
+  sortDir?: TaskListSortDir;
+  onSortChange?: (key: TaskListSortKey) => void;
 };
 
 type ExitingRow = { task: TaskWithDepth; timeoutId: number };
@@ -357,18 +361,68 @@ type TaskListDataTableRowProps = {
   navigate: (path: string) => void;
 };
 
+function sortAriaValue(
+  key: TaskListSortKey,
+  activeKey: TaskListSortKey | undefined,
+  dir: TaskListSortDir | undefined,
+): "none" | "ascending" | "descending" {
+  if (activeKey !== key) return "none";
+  return dir === "asc" ? "ascending" : "descending";
+}
+
+function TaskListTableSortHeader({
+  label,
+  sortKey,
+  activeSortKey,
+  sortDir,
+  onSortChange,
+}: {
+  label: string;
+  sortKey: TaskListSortKey;
+  activeSortKey?: TaskListSortKey;
+  sortDir?: TaskListSortDir;
+  onSortChange?: (key: TaskListSortKey) => void;
+}) {
+  if (!onSortChange) {
+    return <th scope="col">{label}</th>;
+  }
+  const active = activeSortKey === sortKey;
+  const icon = !active ? "↕" : sortDir === "asc" ? "↑" : "↓";
+  return (
+    <th scope="col">
+      <button
+        type="button"
+        className="task-list-table-sort-btn"
+        aria-sort={sortAriaValue(sortKey, activeSortKey, sortDir)}
+        onClick={() => onSortChange(sortKey)}
+      >
+        {label}
+        <span className="task-list-sort-icon" aria-hidden="true">
+          {icon}
+        </span>
+      </button>
+    </th>
+  );
+}
+
 function TaskListTableHeader({
   showSelectionCol,
   showProjectColumn,
   selection,
   headerCheckboxRef,
   filteredTasksLength,
+  sortKey,
+  sortDir,
+  onSortChange,
 }: {
   showSelectionCol: boolean;
   showProjectColumn: boolean;
   selection: BulkSelectionProps | undefined;
   headerCheckboxRef: RefObject<HTMLInputElement | null>;
   filteredTasksLength: number;
+  sortKey?: TaskListSortKey;
+  sortDir?: TaskListSortDir;
+  onSortChange?: (key: TaskListSortKey) => void;
 }) {
   return (
     <thead>
@@ -391,11 +445,43 @@ function TaskListTableHeader({
             />
           </th>
         ) : null}
-        <th scope="col">Title</th>
-        <th scope="col">Status</th>
-        <th scope="col">Priority</th>
-        <th scope="col">Created</th>
-        {showProjectColumn ? <th scope="col">Project</th> : null}
+        <TaskListTableSortHeader
+          label="Title"
+          sortKey="title"
+          activeSortKey={sortKey}
+          sortDir={sortDir}
+          onSortChange={onSortChange}
+        />
+        <TaskListTableSortHeader
+          label="Status"
+          sortKey="status"
+          activeSortKey={sortKey}
+          sortDir={sortDir}
+          onSortChange={onSortChange}
+        />
+        <TaskListTableSortHeader
+          label="Priority"
+          sortKey="priority"
+          activeSortKey={sortKey}
+          sortDir={sortDir}
+          onSortChange={onSortChange}
+        />
+        <TaskListTableSortHeader
+          label="Created"
+          sortKey="created_at"
+          activeSortKey={sortKey}
+          sortDir={sortDir}
+          onSortChange={onSortChange}
+        />
+        {showProjectColumn ? (
+          <TaskListTableSortHeader
+            label="Project"
+            sortKey="project"
+            activeSortKey={sortKey}
+            sortDir={sortDir}
+            onSortChange={onSortChange}
+          />
+        ) : null}
         <th scope="col">Actions</th>
       </tr>
     </thead>
@@ -497,15 +583,7 @@ function TaskListDataTableRow({
     t.project_id !== ""
       ? projectNameById[t.project_id]
       : undefined;
-  const hasProject = Boolean(
-    showProjectColumn &&
-      t.project_id != null &&
-      t.project_id !== "" &&
-      projectLabel != null &&
-      projectLabel !== "",
-  );
   const titleSubtitle = taskListRowSubtitle({
-    hasProject,
     promptPreview,
   });
   const rowSelected =
@@ -588,19 +666,10 @@ function TaskListDataTableRow({
         </Link>
       </td>
       <td className="cell-status">
-        <Badge
-          status={t.status}
-          data-needs-user={
-            statusNeedsUserInput(t.status) ? "true" : undefined
-          }
-        >
-          {statusListLabel(t.status)}
-        </Badge>
+        <StatusBadge status={t.status} />
       </td>
       <td className="cell-priority">
-        <span className={priorityPillClass(t.priority)}>
-          {priorityListLabel(t.priority)}
-        </span>
+        <PriorityBadge priority={t.priority} />
       </td>
       <td className="cell-created">
         {createdLabel ? (
@@ -614,12 +683,7 @@ function TaskListDataTableRow({
       {showProjectColumn ? (
         <td className="cell-project">
           {projectLabel ? (
-            <span
-              className="task-list-project-badge"
-              data-tone={String(projectBadgeToneFromId(t.project_id ?? ""))}
-            >
-              {projectLabel}
-            </span>
+            <span className="task-list-project-name">{projectLabel}</span>
           ) : (
             <span className="task-list-project-empty">—</span>
           )}
@@ -672,6 +736,9 @@ export function TaskListDataTable({
   selection,
   projectNameById = {},
   showProjectColumn = true,
+  sortKey,
+  sortDir,
+  onSortChange,
 }: Props) {
   const navigate = useNavigate();
   const prefetchTaskDetail = useTaskDetailPrefetcher();
@@ -704,6 +771,9 @@ export function TaskListDataTable({
           selection={selection}
           headerCheckboxRef={headerCheckboxRef}
           filteredTasksLength={filteredTasks.length}
+          sortKey={sortKey}
+          sortDir={sortDir}
+          onSortChange={onSortChange}
         />
         <TaskListTableBody
           tasksLength={tasks.length}

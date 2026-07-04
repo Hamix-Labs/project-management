@@ -227,6 +227,27 @@
   --info-soft: rgb(59 130 246 / 14%);
   --color-info-subtle: #dbeafe;
 
+  /* Task list badges (StatusBadge / PriorityBadge) */
+  --badge-tone-success-bg: var(--success-soft);
+  --badge-tone-success-fg: var(--success);
+  --badge-tone-success-ring: var(--success-border);
+  --badge-tone-info-bg: var(--info-soft);
+  --badge-tone-info-fg: var(--info);
+  --badge-tone-info-ring: rgb(59 130 246 / 22%);
+  --badge-tone-warning-bg: var(--warning-soft);
+  --badge-tone-warning-fg: var(--warning-ink);
+  --badge-tone-warning-ring: var(--warning-chip-border);
+  --badge-tone-danger-bg: var(--danger-soft);
+  --badge-tone-danger-fg: var(--danger-on-subtle-text);
+  --badge-tone-danger-ring: var(--danger-border);
+  --badge-tone-neutral-bg: var(--neutral-fill-subtle);
+  --badge-tone-neutral-fg: var(--text-secondary);
+  --badge-tone-neutral-ring: var(--border-soft);
+  --priority-bar-empty-neutral: rgb(var(--slate-shadow) / 15%);
+  --priority-bar-empty-info: var(--info-soft);
+  --priority-bar-empty-warning: var(--warning-soft);
+  --priority-bar-empty-danger: var(--danger-soft);
+
   /* Task table status / priority pills (DS §10) */
   --pill-ready-bg: rgb(241 245 249);
   --pill-ready-text: rgb(51 65 85);

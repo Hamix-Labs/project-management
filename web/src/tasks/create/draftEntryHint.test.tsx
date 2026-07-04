@@ -24,7 +24,7 @@ describe("draft entry hints", () => {
 
     renderTasksHome();
     await screen.findByText("No tasks yet");
-    await user.click(screen.getByRole("button", { name: /^new task$/i }));
+    await user.click(screen.getByRole("button", { name: /\+?\s*new task/i }));
     expect(await screen.findByText(/loading drafts/i)).toBeInTheDocument();
 
     await deferred.resolve(HttpResponse.json({ drafts: [] }));
@@ -49,7 +49,7 @@ describe("draft entry hints", () => {
 
     renderTasksHome();
     await screen.findByText("No tasks yet");
-    await user.click(screen.getByRole("button", { name: /^new task$/i }));
+    await user.click(screen.getByRole("button", { name: /\+?\s*new task/i }));
 
     expect(await screen.findByRole("dialog", { name: /^new task$/i })).toBeInTheDocument();
     const draftsHintAlert = await screen.findByRole("alert");
@@ -85,7 +85,7 @@ describe("draft entry hints", () => {
 
     renderTasksHome();
     await screen.findByText("No tasks yet");
-    await user.click(screen.getByRole("button", { name: /^new task$/i }));
+    await user.click(screen.getByRole("button", { name: /\+?\s*new task/i }));
     await user.click(screen.getByRole("button", { name: /retry loading drafts/i }));
 
     expect(
