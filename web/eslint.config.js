@@ -24,6 +24,9 @@ export default defineConfig(
       "react-hooks": reactHooks,
     },
     rules: {
+      // ESLint 10 recommended adds these; defer until a dedicated lint pass.
+      "preserve-caught-error": "off",
+      "no-useless-assignment": "off",
       // Core hooks only — v7 recommended also enables React Compiler rules
       // (set-state-in-effect, refs, preserve-manual-memoization, etc.) that
       // this codebase has not been migrated to yet.
