@@ -77,7 +77,7 @@ func openTreeMigrateDB(t *testing.T) *gorm.DB {
 func seedLegacyGitTree(ctx context.Context, t *testing.T, db *gorm.DB) (wtID, brID, taskID string) {
 	t.Helper()
 	now := time.Now().UTC()
-	proj := domain.DefaultProject(now)
+	proj := domain.LegacyGlobalDefaultProject(now)
 	if err := db.WithContext(ctx).Create(&proj).Error; err != nil {
 		t.Fatal(err)
 	}
@@ -119,7 +119,7 @@ func TestMigrateSeedWorktreeBranchTree_backfills(t *testing.T) {
 	}
 
 	var proj domain.Project
-	if err := db.WithContext(ctx).First(&proj, "id = ?", domain.DefaultProjectID).Error; err != nil {
+	if err := db.WithContext(ctx).First(&proj, "id = ?", domain.LegacyGlobalDefaultProjectID).Error; err != nil {
 		t.Fatal(err)
 	}
 	if proj.RepositoryID == nil || *proj.RepositoryID != "repo-1" {
@@ -165,7 +165,7 @@ func TestMigrateSeedWorktreeBranchTree_skipsOrphanPairs(t *testing.T) {
 	db := openTreeMigrateDB(t)
 	ctx := context.Background()
 	now := time.Now().UTC()
-	proj := domain.DefaultProject(now)
+	proj := domain.LegacyGlobalDefaultProject(now)
 	if err := db.WithContext(ctx).Create(&proj).Error; err != nil {
 		t.Fatal(err)
 	}

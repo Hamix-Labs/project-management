@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { CustomSelect, type CustomSelectOption } from "@/components/custom-select";
 import type { Project } from "@/types";
-import { DEFAULT_PROJECT_ID } from "@/types";
 import { ProjectsStackIcon } from "./ProjectsStackIcon";
 
 type Props = {
@@ -25,10 +24,7 @@ export function ProjectSelect({
     const active = projects.filter((p) => p.status === "active");
     return active.map((project) => ({
       value: project.id,
-      label:
-        project.id === DEFAULT_PROJECT_ID
-          ? `${project.name} (default)`
-          : project.name,
+      label: project.is_default ? "Default" : project.name,
     }));
   }, [projects]);
 
@@ -36,10 +32,11 @@ export function ProjectSelect({
     <CustomSelect
       id={id}
       label="Project"
-      value={value || DEFAULT_PROJECT_ID}
+      value={value}
       options={options}
       onChange={onChange}
       disabled={disabled || loading}
+      requirement="required"
       leadingIcon={<ProjectsStackIcon className="project-select__icon" />}
     />
   );

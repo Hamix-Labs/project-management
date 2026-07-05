@@ -6,7 +6,6 @@ import {
   type CustomSelectOption,
 } from "@/components/custom-select";
 import {
-  DEFAULT_PROJECT_ID,
   PROJECT_STATUSES,
   type Project,
   type ProjectStatus,
@@ -19,7 +18,7 @@ type Props = {
 
 export function ProjectSettingsPanel({ project }: Props) {
   const queryClient = useQueryClient();
-  const isDefaultProject = project.id === DEFAULT_PROJECT_ID;
+  const isDefaultProject = project.is_default;
   const [status, setStatus] = useState<ProjectStatus>(project.status);
   const formRef = useRef<HTMLFormElement>(null);
 

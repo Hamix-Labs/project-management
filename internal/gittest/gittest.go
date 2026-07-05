@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
@@ -103,13 +102,13 @@ func SeedWorktree(t *testing.T, st *store.Store, repoDir string) (worktreeID, br
 	EnsureMain(t, repoDir)
 	ctx := context.Background()
 	gitSvc := gitwork.New()
-	repoRow, err := st.CreateGitRepository(ctx, domain.DefaultProjectID, store.CreateGitRepositoryInput{
+	repoRow, err := st.CreateGlobalGitRepository(ctx, store.CreateGitRepositoryInput{
 		Path: repoDir,
 	}, gitSvc)
 	if err != nil {
-		t.Fatalf("CreateGitRepository: %v", err)
+		t.Fatalf("CreateGlobalGitRepository: %v", err)
 	}
-	wts, err := st.ListGitWorktrees(ctx, domain.DefaultProjectID, repoRow.ID)
+	wts, err := st.ListGitWorktreesByRepo(ctx, repoRow.ID)
 	if err != nil || len(wts) == 0 {
 		t.Fatalf("ListGitWorktrees: %v len=%d", err, len(wts))
 	}

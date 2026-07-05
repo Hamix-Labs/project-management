@@ -12,7 +12,6 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/logctx"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
@@ -23,12 +22,13 @@ func TestHTTP_idempotency_post_second_replays_from_cache(t *testing.T) {
 	t.Cleanup(clearIdempotencyStateForTest)
 	t.Setenv("HAMIX_IDEMPOTENCY_TTL", "1h")
 
-	db := tasktestdb.OpenSQLite(t)
-	st := store.NewStore(db)
-	srv := httptest.NewServer(WithIdempotency(NewHandler(st, NewSSEHub(), nil)))
-	t.Cleanup(srv.Close)
+	var st *store.Store
+	srv := newBoundTaskServer(t, func(s *store.Store) http.Handler {
+		st = s
+		return WithIdempotency(boundTaskHandler(s))
+	})
 
-	body := withCreateChecklist(`{"title":"idem-cache","priority":"medium"}`)
+	body := withCreateChecklistForURL(srv.URL, `{"title":"idem-cache","priority":"medium"}`)
 	key := "idem-" + uuid.NewString()
 
 	do := func() *http.Response {
@@ -97,12 +97,13 @@ func TestHTTP_idempotency_disabled_allows_duplicate_post(t *testing.T) {
 	t.Cleanup(clearIdempotencyStateForTest)
 	t.Setenv("HAMIX_IDEMPOTENCY_TTL", "0")
 
-	db := tasktestdb.OpenSQLite(t)
-	st := store.NewStore(db)
-	srv := httptest.NewServer(WithIdempotency(NewHandler(st, NewSSEHub(), nil)))
-	t.Cleanup(srv.Close)
+	var st *store.Store
+	srv := newBoundTaskServer(t, func(s *store.Store) http.Handler {
+		st = s
+		return WithIdempotency(boundTaskHandler(s))
+	})
 
-	body := withCreateChecklist(`{"title":"idem-off","priority":"medium"}`)
+	body := withCreateChecklistForURL(srv.URL, `{"title":"idem-off","priority":"medium"}`)
 	key := "idem-off-" + uuid.NewString()
 
 	do := func() int {
@@ -149,16 +150,17 @@ func TestHTTP_idempotency_different_body_same_key_creates_two(t *testing.T) {
 	t.Cleanup(clearIdempotencyStateForTest)
 	t.Setenv("HAMIX_IDEMPOTENCY_TTL", "1h")
 
-	db := tasktestdb.OpenSQLite(t)
-	st := store.NewStore(db)
-	srv := httptest.NewServer(WithIdempotency(NewHandler(st, NewSSEHub(), nil)))
-	t.Cleanup(srv.Close)
+	var st *store.Store
+	srv := newBoundTaskServer(t, func(s *store.Store) http.Handler {
+		st = s
+		return WithIdempotency(boundTaskHandler(s))
+	})
 
 	key := "idem-body-" + uuid.NewString()
 
 	post := func(title string) {
 		t.Helper()
-		body := withCreateChecklist(`{"title":"` + title + `","priority":"medium"}`)
+		body := withCreateChecklistForURL(srv.URL, `{"title":"`+title+`","priority":"medium"}`)
 		req, err := http.NewRequest(http.MethodPost, srv.URL+"/tasks", strings.NewReader(body))
 		if err != nil {
 			t.Fatal(err)
@@ -196,12 +198,13 @@ func TestHTTP_idempotency_concurrent_post_single_row(t *testing.T) {
 	t.Cleanup(clearIdempotencyStateForTest)
 	t.Setenv("HAMIX_IDEMPOTENCY_TTL", "1h")
 
-	db := tasktestdb.OpenSQLite(t)
-	st := store.NewStore(db)
-	srv := httptest.NewServer(WithIdempotency(NewHandler(st, NewSSEHub(), nil)))
-	t.Cleanup(srv.Close)
+	var st *store.Store
+	srv := newBoundTaskServer(t, func(s *store.Store) http.Handler {
+		st = s
+		return WithIdempotency(boundTaskHandler(s))
+	})
 
-	body := withCreateChecklist(`{"title":"idem-concurrent","priority":"medium"}`)
+	body := withCreateChecklistForURL(srv.URL, `{"title":"idem-concurrent","priority":"medium"}`)
 	key := "idem-conc-" + uuid.NewString()
 
 	var wg sync.WaitGroup
@@ -259,11 +262,12 @@ func TestWithAccessLog_idempotencyKeyTooLong_logIncludesRequestID(t *testing.T) 
 	base := logctx.WrapSlogHandlerWithRequestContext(slog.NewJSONHandler(&buf, &slog.HandlerOptions{Level: slog.LevelWarn}))
 	slog.SetDefault(slog.New(logctx.WrapSlogHandlerWithLogSequence(base, &processSeq)))
 
-	db := tasktestdb.OpenSQLite(t)
-	h := WithAccessLog(WithIdempotency(NewHandler(store.NewStore(db), NewSSEHub(), nil)))
+	h := newDirectBoundHandler(t, func(st *store.Store) http.Handler {
+		return WithAccessLog(WithIdempotency(boundTaskHandler(st)))
+	})
 
 	longKey := strings.Repeat("k", 128+1)
-	req := httptest.NewRequest(http.MethodPost, "/tasks", strings.NewReader(withCreateChecklist(`{"title":"x","priority":"medium"}`)))
+	req := httptest.NewRequest(http.MethodPost, "/tasks", strings.NewReader(withCreateChecklistForURL(directHandlerTestURL, `{"title":"x","priority":"medium"}`)))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Idempotency-Key", longKey)
 	req.Header.Set("X-Request-ID", "rid-idem-key-long")
@@ -299,12 +303,12 @@ func TestHTTP_idempotency_rejects_overlength_key(t *testing.T) {
 	t.Cleanup(clearIdempotencyStateForTest)
 	t.Setenv("HAMIX_IDEMPOTENCY_TTL", "1h")
 
-	db := tasktestdb.OpenSQLite(t)
-	srv := httptest.NewServer(WithIdempotency(NewHandler(store.NewStore(db), NewSSEHub(), nil)))
-	t.Cleanup(srv.Close)
+	srv := newBoundTaskServer(t, func(st *store.Store) http.Handler {
+		return WithIdempotency(boundTaskHandler(st))
+	})
 
 	longKey := strings.Repeat("k", 128+1)
-	req, err := http.NewRequest(http.MethodPost, srv.URL+"/tasks", strings.NewReader(withCreateChecklist(`{"title":"idem-long","priority":"medium"}`)))
+	req, err := http.NewRequest(http.MethodPost, srv.URL+"/tasks", strings.NewReader(withCreateChecklistForURL(srv.URL, `{"title":"idem-long","priority":"medium"}`)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -332,13 +336,12 @@ func TestHTTP_idempotency_accepts_boundary_key_length(t *testing.T) {
 	t.Cleanup(clearIdempotencyStateForTest)
 	t.Setenv("HAMIX_IDEMPOTENCY_TTL", "1h")
 
-	db := tasktestdb.OpenSQLite(t)
-	st := store.NewStore(db)
-	srv := httptest.NewServer(WithIdempotency(NewHandler(st, NewSSEHub(), nil)))
-	t.Cleanup(srv.Close)
+	srv := newBoundTaskServer(t, func(st *store.Store) http.Handler {
+		return WithIdempotency(boundTaskHandler(st))
+	})
 
 	key := strings.Repeat("k", 128)
-	body := withCreateChecklist(`{"title":"idem-boundary","priority":"medium"}`)
+	body := withCreateChecklistForURL(srv.URL, `{"title":"idem-boundary","priority":"medium"}`)
 
 	do := func() (int, string) {
 		req, err := http.NewRequest(http.MethodPost, srv.URL+"/tasks", strings.NewReader(body))
@@ -373,10 +376,11 @@ func TestHTTP_idempotency_rejects_unknown_content_length(t *testing.T) {
 	t.Cleanup(clearIdempotencyStateForTest)
 	t.Setenv("HAMIX_IDEMPOTENCY_TTL", "1h")
 
-	db := tasktestdb.OpenSQLite(t)
-	h := WithIdempotency(NewHandler(store.NewStore(db), NewSSEHub(), nil))
+	h := newDirectBoundHandler(t, func(st *store.Store) http.Handler {
+		return WithIdempotency(boundTaskHandler(st))
+	})
 
-	req := httptest.NewRequest(http.MethodPost, "/tasks", io.NopCloser(strings.NewReader(withCreateChecklist(`{"title":"idem-unknown","priority":"medium"}`))))
+	req := httptest.NewRequest(http.MethodPost, "/tasks", io.NopCloser(strings.NewReader(withCreateChecklistForURL(directHandlerTestURL, `{"title":"idem-unknown","priority":"medium"}`))))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Idempotency-Key", "idem-unknown-len")
 	req.ContentLength = -1
@@ -399,10 +403,11 @@ func TestHTTP_idempotency_rejects_large_content_length(t *testing.T) {
 	t.Cleanup(clearIdempotencyStateForTest)
 	t.Setenv("HAMIX_IDEMPOTENCY_TTL", "1h")
 
-	db := tasktestdb.OpenSQLite(t)
-	h := WithIdempotency(NewHandler(store.NewStore(db), NewSSEHub(), nil))
+	h := newDirectBoundHandler(t, func(st *store.Store) http.Handler {
+		return WithIdempotency(boundTaskHandler(st))
+	})
 
-	req := httptest.NewRequest(http.MethodPost, "/tasks", strings.NewReader(withCreateChecklist(`{"title":"idem-large","priority":"medium"}`)))
+	req := httptest.NewRequest(http.MethodPost, "/tasks", strings.NewReader(withCreateChecklistForURL(directHandlerTestURL, `{"title":"idem-large","priority":"medium"}`)))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Idempotency-Key", "idem-large-len")
 	req.ContentLength = (1 << 20) + 1

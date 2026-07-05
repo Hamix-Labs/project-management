@@ -22,7 +22,9 @@ import (
 // worktree_branches, tasks.worktree_branch_id, git_worktrees.active_branch_id.
 //
 // Rev 5: git_repositories.git_common_dir (unique repo identity); main path normalization.
-const SchemaRevision = 5
+//
+// Rev 6 (ADR-0042): projects.is_default; per-repo default projects; remove global default row.
+const SchemaRevision = 6
 
 const schemaMetaRowID = 1
 

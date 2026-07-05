@@ -6,7 +6,7 @@ Tasks, projects, execution cycles/phases, checklists, dependencies, and gates. H
 
 Work hierarchy is **Project → Task**. Tasks may have:
 
-- `project_id` (optional) — shared-context membership. Projects are long-lived containers for memory across many tasks.
+- `project_id` (required for agent runs) — shared-context membership. Every task with a `worktree_id` must reference a project whose `repository_id` matches that worktree's repo. Use the repo's system default project when no custom grouping is needed. See [ADR-0042](./adr/ADR-0042-repo-default-projects.md).
 - `tags` and `milestone` — flat labels for organization within a project.
 - `depends_on` — directed acyclic graph of task-level dependencies.
 
@@ -23,7 +23,7 @@ Work hierarchy is **Project → Task**. Tasks may have:
 | `status` | enum | `ready` / `running` / `blocked` / `review` / `done` / `failed` / `on_hold`. Default `ready`. `on_hold` is operator-set: pickup is gated on `status = ready` so an `on_hold` task is intentionally kept out of the worker's queue until the operator flips it back to `ready` (PATCH `/tasks/{id}`). |
 | `pending_retry` | JSON \| null | Ephemeral operator intent between `POST /tasks/{id}/retry` and worker pickup. `{ mode: fresh|resume, parent_cycle_id }`. Not exposed on the HTTP task JSON (`json:"-"`); consumed and cleared atomically when the worker transitions `ready→running`. |
 | `priority` | enum | `low` / `medium` / `high` / `critical`. Required at create. |
-| `project_id` | string \| null | Optional project membership. |
+| `project_id` | string \| null | Project membership. Required on create when `worktree_id` is set; must belong to the same repo as the worktree. |
 | `project_context_item_ids` | string[] | Explicit allowlist of project context items for runner snapshots. Cleared on `project_id` change. |
 | `tags` | string[] | Free-form, `^[a-z0-9][a-z0-9._-]{0,31}$`. |
 | `milestone` | string \| null | Single anchor per task, `^[a-zA-Z0-9][a-zA-Z0-9 ._-]{0,63}$` when set. |
@@ -397,11 +397,16 @@ Repo-level refs.
 | `head_sha` | string | Cached tip SHA (reconcile refreshes). |
 | `created_at` | timestamptz | |
 
-Tasks reference `worktree_id` (FK -> `git_worktrees.id`, required for agent runs) and an optional `project_id`. When `project_id` is set, `project.repository_id` must equal the worktree's repo. Delete returns **409** `has_running_task` when a **running** task targets the repo, worktree, or branch; registering a worktree on a branch already bound elsewhere returns **409** `branch_bound_to_worktree`.
+Tasks reference `worktree_id` (FK -> `git_worktrees.id`, required for agent runs) and `project_id` (required when `worktree_id` is set). `project.repository_id` must equal the worktree's repo. Delete returns **409** `has_running_task` when a **running** task targets the repo, worktree, or branch; registering a worktree on a branch already bound elsewhere returns **409** `branch_bound_to_worktree`.
 
 ### `projects` (git overlay fields)
 
-`projects.repository_id` (nullable fk -> `git_repositories.id`) ties a project to exactly one repo; the repo must exist first. The built-in default project (`DEFAULT_PROJECT_ID`) is legacy with a null `repository_id`. See [ADR-0037](./adr/ADR-0037-global-repos-project-tree.md).
+| Column | Type | Notes |
+|---|---|---|
+| `repository_id` | string fk -> `git_repositories.id` | Required for all projects except legacy rows removed by migration. |
+| `is_default` | bool | System-seeded default for the repo; at most one per `repository_id`. Non-deletable. |
+
+When a repository is registered (`POST /git/repositories`), the system creates a default project (`name: "Default"`, `is_default: true`) for that repo. Users create additional projects via `POST /projects` with `repository_id`. See [ADR-0042](./adr/ADR-0042-repo-default-projects.md).
 
 ## Audit log (`task_events`)
 

@@ -12,11 +12,11 @@ import (
 )
 
 func TestHTTP_patch_checklist_item_text_updates_and_returns_items(t *testing.T) {
-	srv, st := newTaskTestServerWithStore(t)
+	srv, st := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 	ctx := context.Background()
 
-	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklist(`{"title":"chk","priority":"medium"}`)))
+	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklistForURL(srv.URL, `{"title":"chk","priority":"medium"}`)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -75,11 +75,11 @@ func TestHTTP_patch_checklist_item_text_updates_and_returns_items(t *testing.T) 
 }
 
 func TestHTTP_patch_checklist_item_done_rejects_default_user_actor(t *testing.T) {
-	srv, st := newTaskTestServerWithStore(t)
+	srv, st := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 	ctx := context.Background()
 
-	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklist(`{"title":"chk","priority":"medium"}`)))
+	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklistForURL(srv.URL, `{"title":"chk","priority":"medium"}`)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -131,11 +131,11 @@ func TestHTTP_patch_checklist_item_done_rejects_default_user_actor(t *testing.T)
 }
 
 func TestHTTP_patch_checklist_item_rejects_text_and_done_together(t *testing.T) {
-	srv, st := newTaskTestServerWithStore(t)
+	srv, st := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 	ctx := context.Background()
 
-	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklist(`{"title":"chk","priority":"medium"}`)))
+	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklistForURL(srv.URL, `{"title":"chk","priority":"medium"}`)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -187,11 +187,11 @@ func TestHTTP_patch_checklist_item_rejects_text_and_done_together(t *testing.T) 
 }
 
 func TestHTTP_patch_checklist_item_rejects_empty_trimmed_text(t *testing.T) {
-	srv, st := newTaskTestServerWithStore(t)
+	srv, st := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 	ctx := context.Background()
 
-	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklist(`{"title":"chk","priority":"medium"}`)))
+	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklistForURL(srv.URL, `{"title":"chk","priority":"medium"}`)))
 	if err != nil {
 		t.Fatal(err)
 	}

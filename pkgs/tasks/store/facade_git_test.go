@@ -42,25 +42,25 @@ func TestStore_GitRepositoryCRUD(t *testing.T) {
 	s, ctx, gitSvc := gitTestStore(t)
 	main := initGitRepo(t)
 
-	repo, err := s.CreateGitRepository(ctx, domain.DefaultProjectID, CreateGitRepositoryInput{Path: main}, gitSvc)
+	repo, err := s.CreateGitRepository(ctx, domain.LegacyGlobalDefaultProjectID, CreateGitRepositoryInput{Path: main}, gitSvc)
 	if err != nil {
 		t.Fatalf("CreateGitRepository: %v", err)
 	}
-	list, err := s.ListGitRepositories(ctx, domain.DefaultProjectID)
+	list, err := s.ListGitRepositories(ctx, domain.LegacyGlobalDefaultProjectID)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(list) != 1 {
 		t.Fatalf("len=%d want 1", len(list))
 	}
-	got, err := s.GetGitRepository(ctx, domain.DefaultProjectID, repo.ID)
+	got, err := s.GetGitRepository(ctx, domain.LegacyGlobalDefaultProjectID, repo.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if got.Path == "" {
 		t.Fatal("empty path")
 	}
-	if err := s.DeleteGitRepository(ctx, domain.DefaultProjectID, repo.ID); err != nil {
+	if err := s.DeleteGitRepository(ctx, domain.LegacyGlobalDefaultProjectID, repo.ID); err != nil {
 		t.Fatalf("DeleteGitRepository: %v", err)
 	}
 }
@@ -68,7 +68,7 @@ func TestStore_GitRepositoryCRUD(t *testing.T) {
 func TestStore_GitRepository_notARepository(t *testing.T) {
 	s, ctx, gitSvc := gitTestStore(t)
 	dir := t.TempDir()
-	_, err := s.CreateGitRepository(ctx, domain.DefaultProjectID, CreateGitRepositoryInput{Path: dir}, gitSvc)
+	_, err := s.CreateGitRepository(ctx, domain.LegacyGlobalDefaultProjectID, CreateGitRepositoryInput{Path: dir}, gitSvc)
 	if domain.GitErrCode(err) != domain.GitCodeNotARepository {
 		t.Fatalf("got %v want not_a_git_repository", err)
 	}
@@ -77,12 +77,12 @@ func TestStore_GitRepository_notARepository(t *testing.T) {
 func TestStore_GitWorktreeAndBranch_roundtrip(t *testing.T) {
 	s, ctx, gitSvc := gitTestStore(t)
 	main := initGitRepo(t)
-	repo, err := s.CreateGitRepository(ctx, domain.DefaultProjectID, CreateGitRepositoryInput{Path: main}, gitSvc)
+	repo, err := s.CreateGitRepository(ctx, domain.LegacyGlobalDefaultProjectID, CreateGitRepositoryInput{Path: main}, gitSvc)
 	if err != nil {
 		t.Fatal(err)
 	}
 	wtPath := filepath.Join(filepath.Dir(main), "wt-a")
-	wt, err := s.CreateGitWorktree(ctx, domain.DefaultProjectID, repo.ID, CreateGitWorktreeInput{
+	wt, err := s.CreateGitWorktree(ctx, domain.LegacyGlobalDefaultProjectID, repo.ID, CreateGitWorktreeInput{
 		Path:         wtPath,
 		Branch:       "feature-a",
 		CreateBranch: true,
@@ -90,25 +90,25 @@ func TestStore_GitWorktreeAndBranch_roundtrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateGitWorktree: %v", err)
 	}
-	wts, err := s.ListGitWorktrees(ctx, domain.DefaultProjectID, repo.ID)
+	wts, err := s.ListGitWorktrees(ctx, domain.LegacyGlobalDefaultProjectID, repo.ID)
 	if err != nil || len(wts) != 2 {
 		t.Fatalf("worktrees: %v len=%d", err, len(wts))
 	}
-	branch, err := s.CreateGitBranch(ctx, domain.DefaultProjectID, repo.ID, CreateGitBranchInput{
+	branch, err := s.CreateGitBranch(ctx, domain.LegacyGlobalDefaultProjectID, repo.ID, CreateGitBranchInput{
 		Name:       "feature-b",
 		StartPoint: "main",
 	}, gitSvc)
 	if err != nil {
 		t.Fatalf("CreateGitBranch: %v", err)
 	}
-	branches, err := s.ListGitBranches(ctx, domain.DefaultProjectID, repo.ID)
+	branches, err := s.ListGitBranches(ctx, domain.LegacyGlobalDefaultProjectID, repo.ID)
 	if err != nil || len(branches) < 2 {
 		t.Fatalf("branches: %v len=%d", err, len(branches))
 	}
-	if err := s.UnregisterGitWorktree(ctx, domain.DefaultProjectID, wt.ID); err != nil {
+	if err := s.UnregisterGitWorktree(ctx, domain.LegacyGlobalDefaultProjectID, wt.ID); err != nil {
 		t.Fatalf("UnregisterGitWorktree: %v", err)
 	}
-	if err := s.DeleteGitBranch(ctx, domain.DefaultProjectID, branch.ID, true, gitSvc); err != nil {
+	if err := s.DeleteGitBranch(ctx, domain.LegacyGlobalDefaultProjectID, branch.ID, true, gitSvc); err != nil {
 		t.Fatalf("DeleteGitBranch: %v", err)
 	}
 }
@@ -116,12 +116,12 @@ func TestStore_GitWorktreeAndBranch_roundtrip(t *testing.T) {
 func TestStore_GitDeleteGuard_runningTask(t *testing.T) {
 	s, ctx, gitSvc := gitTestStore(t)
 	main := initGitRepo(t)
-	repo, err := s.CreateGitRepository(ctx, domain.DefaultProjectID, CreateGitRepositoryInput{Path: main}, gitSvc)
+	repo, err := s.CreateGitRepository(ctx, domain.LegacyGlobalDefaultProjectID, CreateGitRepositoryInput{Path: main}, gitSvc)
 	if err != nil {
 		t.Fatal(err)
 	}
 	wtPath := filepath.Join(filepath.Dir(main), "wt-guard")
-	wt, err := s.CreateGitWorktree(ctx, domain.DefaultProjectID, repo.ID, CreateGitWorktreeInput{
+	wt, err := s.CreateGitWorktree(ctx, domain.LegacyGlobalDefaultProjectID, repo.ID, CreateGitWorktreeInput{
 		Path:         wtPath,
 		Branch:       "guard-branch",
 		CreateBranch: true,
@@ -129,7 +129,7 @@ func TestStore_GitDeleteGuard_runningTask(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	branches, _ := s.ListGitBranches(ctx, domain.DefaultProjectID, repo.ID)
+	branches, _ := s.ListGitBranches(ctx, domain.LegacyGlobalDefaultProjectID, repo.ID)
 	var branchID string
 	for _, b := range branches {
 		if b.Name == "guard-branch" {
@@ -156,7 +156,7 @@ func TestStore_GitDeleteGuard_runningTask(t *testing.T) {
 	if err := s.db.WithContext(ctx).Create(&task).Error; err != nil {
 		t.Fatal(err)
 	}
-	err = s.UnregisterGitWorktree(ctx, domain.DefaultProjectID, wt.ID)
+	err = s.UnregisterGitWorktree(ctx, domain.LegacyGlobalDefaultProjectID, wt.ID)
 	if ge := domain.GitErrCode(err); ge != domain.GitCodeHasRunningTask {
 		t.Fatalf("got code %q want has_running_task (%v)", ge, err)
 	}

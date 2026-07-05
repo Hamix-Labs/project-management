@@ -7,8 +7,9 @@ import "strings"
 const testCriterionText = "Test criterion"
 
 // withCreateChecklist injects the required checklist_items field into a POST
-// /tasks JSON object. jsonBody must be a single object literal ending with `}`.
-// No-op when checklist_items is already present.
+// /tasks JSON object and, when a test git repo is seeded, project_id and
+// worktree_id. jsonBody must be a single object literal ending with `}`.
+// Deprecated: use withCreateChecklistForURL when baseURL is known.
 func withCreateChecklist(jsonBody string) string {
 	jsonBody = strings.TrimSpace(jsonBody)
 	if strings.Contains(jsonBody, "checklist_items") {

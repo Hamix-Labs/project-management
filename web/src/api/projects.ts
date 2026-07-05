@@ -69,6 +69,7 @@ export function parseProject(value: unknown): Project {
     status: parseProjectStatus(value.status),
     context_summary: parseString(value.context_summary, "context_summary"),
     repository_id: parseOptionalNonEmptyId(value.repository_id, "repository_id"),
+    is_default: parseBooleanField(value.is_default, "is_default"),
     created_at: parseISO8601Required(value.created_at, "created_at"),
     updated_at: parseISO8601Required(value.updated_at, "updated_at"),
   };
@@ -199,7 +200,7 @@ export async function createProject(input: {
   id?: string;
   description?: string;
   context_summary?: string;
-  repository_id?: string;
+  repository_id: string;
 }): Promise<Project> {
   const res = await fetchWithTimeout("/projects", {
     method: "POST",

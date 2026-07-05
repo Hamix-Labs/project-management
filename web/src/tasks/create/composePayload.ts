@@ -1,5 +1,5 @@
 import type { AppSettings } from "@/api/settings";
-import { DEFAULT_PROJECT_ID, type ChecklistItemDraft, type Priority, type Status, type TaskComposePayload } from "@/types";
+import { type ChecklistItemDraft, type Priority, type Status, type TaskComposePayload } from "@/types";
 import { normalizeChecklistItems } from "../task-compose/checklistRequirement";
 import { createSubmitStatusForAutonomy, defaultCursorModelFromSettings, defaultRunnerFromSettings } from "./defaults";
 import type { TaskCreateFormFields } from "./types";
@@ -21,9 +21,9 @@ export function buildComposePayloadFromForm(
     priority: fields.newPriority as Priority,
     runner: fields.newTaskRunner.trim() || "cursor",
     cursor_model: fields.newTaskCursorModel.trim(),
-    project_id: fields.newProjectID.trim() || undefined,
+    project_id: fields.newProjectID.trim(),
     project_context_item_ids: fields.newProjectContextItemIDs,
-    worktree_id: fields.newWorktreeID.trim() || undefined,
+    worktree_id: fields.newWorktreeID.trim(),
     pickup_not_before: fields.newSchedule ?? undefined,
     tags: parseTagsFromCsv(fields.newTagsCsv),
     milestone: fields.newMilestone.trim() || undefined,
@@ -60,9 +60,7 @@ export function hydrateFormFromComposePayload(
       ? payload.cursor_model
       : defaultCursorModelFromSettings(settings);
   const projectID =
-    typeof payload.project_id === "string" && payload.project_id
-      ? payload.project_id
-      : DEFAULT_PROJECT_ID;
+    typeof payload.project_id === "string" ? payload.project_id : "";
   const worktreeID =
     typeof payload.worktree_id === "string" ? payload.worktree_id : "";
   const projectContextItemIDs = Array.isArray(payload.project_context_item_ids)

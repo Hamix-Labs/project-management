@@ -12,14 +12,14 @@ import (
 )
 
 func TestHTTP_list_keyset_after_id(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 	id1 := "20000000-0000-4000-8000-000000000001"
 	id2 := "20000000-0000-4000-8000-000000000002"
 	id3 := "20000000-0000-4000-8000-000000000003"
 	for _, id := range []string{id1, id2, id3} {
 		res, err := http.Post(srv.URL+"/tasks", "application/json",
-			strings.NewReader(withCreateChecklist(`{"id":"`+id+`","title":"x","priority":"medium"}`)))
+			strings.NewReader(withCreateChecklistForURL(srv.URL, `{"id":"`+id+`","title":"x","priority":"medium"}`)))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -67,14 +67,14 @@ func TestHTTP_list_keyset_after_id(t *testing.T) {
 }
 
 func TestHTTP_tasks_stats_global_counts(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 	for _, body := range []string{
 		`{"title":"ready one","priority":"medium","status":"ready"}`,
 		`{"title":"critical one","priority":"critical","status":"running"}`,
 		`{"title":"critical ready","priority":"critical","status":"ready"}`,
 	} {
-		res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklist(body)))
+		res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklistForURL(srv.URL, body)))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -135,7 +135,7 @@ func TestHTTP_tasks_stats_global_counts(t *testing.T) {
 // HTTP server and the test process; the past time is fixed at "1 hour
 // ago" for the same reason.
 func TestHTTP_tasks_stats_scheduled_count(t *testing.T) {
-	srv, st := newTaskTestServerWithStore(t)
+	srv, st := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 
 	// Disable the global agent_pickup_delay_seconds default
@@ -159,7 +159,7 @@ func TestHTTP_tasks_stats_scheduled_count(t *testing.T) {
 		`{"title":"ready future schedule","priority":"medium","status":"ready","pickup_not_before":"` + futureISO + `"}`,
 		`{"title":"running future schedule","priority":"medium","status":"running","pickup_not_before":"` + futureISO + `"}`,
 	} {
-		res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklist(body)))
+		res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklistForURL(srv.URL, body)))
 		if err != nil {
 			t.Fatalf("create task: %v body=%s", err, body)
 		}

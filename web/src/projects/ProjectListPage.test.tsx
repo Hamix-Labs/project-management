@@ -5,7 +5,7 @@ import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ROUTER_FUTURE_FLAGS } from "@/lib/routerFutureFlags";
 import { requestUrl } from "@/test/requestUrl";
-import { DEFAULT_PROJECT_ID, type Project } from "@/types";
+import { type Project } from "@/types";
 import { ProjectListPage } from "./ProjectListPage";
 import { projectQueryKeys } from "./queryKeys";
 
@@ -25,6 +25,7 @@ function project(index: number, overrides: Partial<Project> = {}): Project {
     description: `Context space ${index}`,
     status: "active",
     context_summary: "",
+    is_default: false,
     created_at: "2026-04-27T00:00:00Z",
     updated_at: "2026-04-27T00:00:00Z",
     ...overrides,
@@ -81,7 +82,7 @@ describe("ProjectListPage", () => {
 
   it("does not surface row delete controls on the list", () => {
     const projects: Project[] = [
-      project(0, { id: DEFAULT_PROJECT_ID, name: "Default project" }),
+      project(0, { name: "Default", is_default: true }),
       project(1, { id: "custom-a", name: "Alpha" }),
       project(2, { id: "custom-b", name: "Beta" }),
     ];
@@ -92,21 +93,41 @@ describe("ProjectListPage", () => {
     ).toHaveLength(0);
   });
 
-  it("creates a project with name and description via the dialog", async () => {
+  it("creates a project with name, description, and repository via the dialog", async () => {
+    const repoId = "00000000-0000-4000-8000-000000000010";
     const created = {
       id: "new-1",
       name: "Payments",
       description: "Card flow",
       status: "active",
       context_summary: "",
+      repository_id: repoId,
+      is_default: false,
       created_at: "2026-05-31T00:00:00Z",
       updated_at: "2026-05-31T00:00:00Z",
     };
 
-    let captured: { name?: unknown; description?: unknown } | null = null;
+    let captured: { name?: unknown; description?: unknown; repository_id?: unknown } | null = null;
     vi.spyOn(globalThis, "fetch").mockImplementation(
       async (input: FetchInput, init?: RequestInit) => {
         const url = requestUrl(input);
+        if (url === "/git/repositories") {
+          return jsonResponse({
+            repositories: [
+              {
+                id: repoId,
+                path: "/repo/main",
+                git_common_dir: "/repo/main/.git",
+                host_path: "",
+                default_branch: "",
+                main_branch_name: "main",
+                linked_worktree_count: 0,
+                created_at: "2026-05-31T00:00:00Z",
+                updated_at: "2026-05-31T00:00:00Z",
+              },
+            ],
+          });
+        }
         if (url === "/projects" && init?.method === "POST") {
           captured = JSON.parse(String(init.body ?? "{}")) as Record<
             string,
@@ -124,6 +145,9 @@ describe("ProjectListPage", () => {
     await user.click(screen.getByRole("button", { name: /new project/i }));
 
     const dialog = await screen.findByRole("dialog");
+    await waitFor(() => {
+      expect(within(dialog).getByLabelText(/^repository$/i)).toBeInTheDocument();
+    });
     await user.type(
       within(dialog).getByLabelText(/^name$/i),
       created.name,
@@ -142,6 +166,7 @@ describe("ProjectListPage", () => {
     expect(captured).toMatchObject({
       name: created.name,
       description: created.description,
+      repository_id: repoId,
     });
   });
 });

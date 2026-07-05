@@ -13,7 +13,6 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 	gormlogger "gorm.io/gorm/logger"
 )
 
@@ -101,10 +100,6 @@ func Migrate(ctx context.Context, db *gorm.DB) error {
 	if err := migrateRemoveDraftEvaluations(ctx, db); err != nil {
 		return fmt.Errorf("migrate remove draft evaluations: %w", err)
 	}
-	defaultProject := model.FromDomainProject(domain.DefaultProject(time.Now().UTC()))
-	if err := db.WithContext(ctx).Clauses(clause.OnConflict{DoNothing: true}).Create(&defaultProject).Error; err != nil {
-		return fmt.Errorf("seed default project: %w", err)
-	}
 	if err := backfillLegacyChecklistCompletions(ctx, db); err != nil {
 		return fmt.Errorf("backfill checklist completions: %w", err)
 	}
@@ -134,6 +129,9 @@ func Migrate(ctx context.Context, db *gorm.DB) error {
 	}
 	if err := migrateGitCommonDir(ctx, db); err != nil {
 		return fmt.Errorf("git common dir: %w", err)
+	}
+	if err := migrateRepoDefaultProjects(ctx, db); err != nil {
+		return fmt.Errorf("repo default projects: %w", err)
 	}
 	if err := RecordSchemaRevision(ctx, db, time.Now().UTC()); err != nil {
 		return fmt.Errorf("record schema revision: %w", err)

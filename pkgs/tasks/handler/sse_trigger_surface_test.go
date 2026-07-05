@@ -26,9 +26,11 @@ func newSSETriggerServer(t *testing.T) (*httptest.Server, *store.Store, *SSEHub)
 	t.Helper()
 	db := tasktestdb.OpenSQLite(t)
 	st := store.NewStore(db)
+	binding := seedHandlerTestGitRepo(t, st)
 	hub := NewSSEHub()
-	h := NewHandler(st, hub, nil)
-	return httptest.NewServer(h), st, hub
+	srv := httptest.NewServer(newTaskTestHandlerWithHub(st, hub))
+	registerHandlerGitBinding(t, srv.URL, binding)
+	return srv, st, hub
 }
 
 // drainSSE collects up to want events from ch, returning whatever arrived
@@ -506,7 +508,7 @@ func postCycleJSON(t *testing.T, srv *httptest.Server, taskID, body string, want
 
 func postTaskJSON(t *testing.T, srv *httptest.Server, body string, wantStatus int) domain.Task {
 	t.Helper()
-	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklist(body)))
+	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklistForURL(srv.URL, body)))
 	if err != nil {
 		t.Fatal(err)
 	}

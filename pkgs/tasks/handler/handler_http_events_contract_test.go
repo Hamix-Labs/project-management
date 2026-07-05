@@ -20,7 +20,7 @@ import (
 // `type`, `by`, and `data` (defaulted to "{}" when the underlying event
 // has no payload).
 func TestHTTP_taskEvents_fullListShape(t *testing.T) {
-	srv, _ := newTaskTestServerWithStore(t)
+	srv, _ := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 	created := postTaskJSON(t, srv, `{"title":"contract","priority":"medium"}`, http.StatusCreated)
 
@@ -89,7 +89,7 @@ func TestHTTP_taskEvents_fullListShape(t *testing.T) {
 // `has_more_newer`, `has_more_older`, and `approval_pending`. Empty pages
 // must still send `limit`/`total` but omit `range_start`/`range_end`.
 func TestHTTP_taskEvents_cursorShape(t *testing.T) {
-	srv, _ := newTaskTestServerWithStore(t)
+	srv, _ := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 	task := postTaskJSON(t, srv, `{"title":"c","priority":"medium"}`, http.StatusCreated)
 	patchTaskJSON(t, srv, task.ID, `{"title":"c2"}`, http.StatusOK)
@@ -155,7 +155,7 @@ func TestHTTP_taskEvents_cursorShape(t *testing.T) {
 // TestHTTP_taskEvents_orderingFullVsCursor ensures the documented ordering
 // contract is real: full-list is ascending, cursor-paged is descending.
 func TestHTTP_taskEvents_orderingFullVsCursor(t *testing.T) {
-	srv, _ := newTaskTestServerWithStore(t)
+	srv, _ := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 	task := postTaskJSON(t, srv, `{"title":"o","priority":"medium"}`, http.StatusCreated)
 	for i := 0; i < 3; i++ {
@@ -208,7 +208,7 @@ func TestHTTP_taskEvents_orderingFullVsCursor(t *testing.T) {
 // the events endpoints. If the wording or set of triggers drifts, this
 // test fails so docs/api.md is updated in the same PR.
 func TestHTTP_taskEvents_validation400s(t *testing.T) {
-	srv, _ := newTaskTestServerWithStore(t)
+	srv, _ := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 	task := postTaskJSON(t, srv, `{"title":"v","priority":"medium"}`, http.StatusCreated)
 
@@ -247,7 +247,7 @@ func TestHTTP_taskEvents_validation400s(t *testing.T) {
 // TestHTTP_taskEvents_seqPathValidation pins the {seq} path-segment 400s
 // for both GET and PATCH event-detail routes.
 func TestHTTP_taskEvents_seqPathValidation(t *testing.T) {
-	srv, _ := newTaskTestServerWithStore(t)
+	srv, _ := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 	task := postTaskJSON(t, srv, `{"title":"s","priority":"medium"}`, http.StatusCreated)
 
@@ -293,7 +293,7 @@ func TestHTTP_taskEvents_seqPathValidation(t *testing.T) {
 // TestHTTP_taskEvents_404OnUnknownTask pins the documented 404 when the
 // task does not exist (handler must Get(id) before pagination work).
 func TestHTTP_taskEvents_404OnUnknownTask(t *testing.T) {
-	srv, _ := newTaskTestServerWithStore(t)
+	srv, _ := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 
 	missingID := "00000000-0000-4000-8000-000000000000"
@@ -318,7 +318,7 @@ func TestHTTP_taskEvents_404OnUnknownTask(t *testing.T) {
 // empty user_response, oversize user_response (>10 000 bytes), and
 // non-accepting event types all return 400; missing event returns 404.
 func TestHTTP_taskEvents_patchValidation(t *testing.T) {
-	srv, st := newTaskTestServerWithStore(t)
+	srv, st := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 	task := postTaskJSON(t, srv, `{"title":"p","priority":"medium"}`, http.StatusCreated)
 

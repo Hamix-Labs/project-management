@@ -10,15 +10,15 @@ import (
 	"time"
 )
 
-func templateSaveBody(title string) string {
-	return `{"name":"` + title + `","payload":` + withCreateChecklist(`{"title":"`+title+`","priority":"medium"}`) + `}`
+func templateSaveBody(baseURL, title string) string {
+	return `{"name":"` + title + `","payload":` + withCreateChecklistForURL(baseURL, `{"title":"`+title+`","priority":"medium"}`) + `}`
 }
 
 func TestHTTP_task_templates_crud(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
-	saveRes, err := http.Post(srv.URL+"/task-templates", "application/json", strings.NewReader(templateSaveBody("Template one")))
+	saveRes, err := http.Post(srv.URL+"/task-templates", "application/json", strings.NewReader(templateSaveBody(srv.URL, "Template one")))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -84,14 +84,14 @@ func TestHTTP_task_templates_crud(t *testing.T) {
 }
 
 func TestHTTP_task_templates_search_q(t *testing.T) {
-	srv, st := newTaskTestServerWithStore(t)
+	srv, st := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 	ctx := context.Background()
-	payload := []byte(withCreateChecklist(`{"title":"Alpha task","priority":"medium"}`))
+	payload := []byte(withCreateChecklistForURL(srv.URL, `{"title":"Alpha task","priority":"medium"}`))
 	if _, err := st.SaveTemplate(ctx, "", "Alpha task", payload); err != nil {
 		t.Fatal(err)
 	}
-	payload2 := []byte(withCreateChecklist(`{"title":"Beta task","priority":"medium"}`))
+	payload2 := []byte(withCreateChecklistForURL(srv.URL, `{"title":"Beta task","priority":"medium"}`))
 	if _, err := st.SaveTemplate(ctx, "", "Beta task", payload2); err != nil {
 		t.Fatal(err)
 	}
@@ -121,14 +121,14 @@ func TestHTTP_task_templates_search_q(t *testing.T) {
 }
 
 func TestHTTP_task_templates_instantiate(t *testing.T) {
-	srv, st := newTaskTestServerWithStore(t)
+	srv, st := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 	ctx := context.Background()
 	past := time.Now().UTC().Add(-24 * time.Hour).Format(time.RFC3339)
-	payload := []byte(withCreateChecklist(`{
+	payload := []byte(withCreateChecklistForURL(srv.URL, `{
 		"title":"From template",
 		"priority":"medium",
-		"pickup_not_before":"` + past + `",
+		"pickup_not_before":"`+past+`",
 		"depends_on":[{"task_id":"00000000-0000-4000-8000-000000000001","type":"finish_to_start"}]
 	}`))
 	tmpl, err := st.SaveTemplate(ctx, "", "From template", payload)
@@ -174,7 +174,7 @@ func TestHTTP_task_templates_instantiate(t *testing.T) {
 }
 
 func TestHTTP_task_templates_instantiate_empty_ids(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 	res, err := http.Post(srv.URL+"/task-templates/instantiate", "application/json",
 		strings.NewReader(`{"template_ids":[]}`))
@@ -188,10 +188,10 @@ func TestHTTP_task_templates_instantiate_empty_ids(t *testing.T) {
 }
 
 func TestHTTP_task_templates_instantiate_count(t *testing.T) {
-	srv, st := newTaskTestServerWithStore(t)
+	srv, st := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 	ctx := context.Background()
-	payload := []byte(withCreateChecklist(`{"title":"Repeated template","priority":"medium"}`))
+	payload := []byte(withCreateChecklistForURL(srv.URL, `{"title":"Repeated template","priority":"medium"}`))
 	tmpl, err := st.SaveTemplate(ctx, "", "Repeated template", payload)
 	if err != nil {
 		t.Fatal(err)
@@ -230,15 +230,15 @@ func TestHTTP_task_templates_instantiate_count(t *testing.T) {
 }
 
 func TestHTTP_task_templates_instantiate_items_mixed_counts(t *testing.T) {
-	srv, st := newTaskTestServerWithStore(t)
+	srv, st := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 	ctx := context.Background()
-	payloadA := []byte(withCreateChecklist(`{"title":"Template A","priority":"medium"}`))
+	payloadA := []byte(withCreateChecklistForURL(srv.URL, `{"title":"Template A","priority":"medium"}`))
 	tmplA, err := st.SaveTemplate(ctx, "", "Template A", payloadA)
 	if err != nil {
 		t.Fatal(err)
 	}
-	payloadB := []byte(withCreateChecklist(`{"title":"Template B","priority":"medium"}`))
+	payloadB := []byte(withCreateChecklistForURL(srv.URL, `{"title":"Template B","priority":"medium"}`))
 	tmplB, err := st.SaveTemplate(ctx, "", "Template B", payloadB)
 	if err != nil {
 		t.Fatal(err)
@@ -274,10 +274,10 @@ func TestHTTP_task_templates_instantiate_items_mixed_counts(t *testing.T) {
 }
 
 func TestHTTP_task_templates_instantiate_invalid_count(t *testing.T) {
-	srv, st := newTaskTestServerWithStore(t)
+	srv, st := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 	ctx := context.Background()
-	payload := []byte(withCreateChecklist(`{"title":"T","priority":"medium"}`))
+	payload := []byte(withCreateChecklistForURL(srv.URL, `{"title":"T","priority":"medium"}`))
 	tmpl, err := st.SaveTemplate(ctx, "", "T", payload)
 	if err != nil {
 		t.Fatal(err)
@@ -299,10 +299,10 @@ func TestHTTP_task_templates_instantiate_invalid_count(t *testing.T) {
 }
 
 func TestHTTP_task_templates_instantiate_total_cap_exceeded(t *testing.T) {
-	srv, st := newTaskTestServerWithStore(t)
+	srv, st := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 	ctx := context.Background()
-	payload := []byte(withCreateChecklist(`{"title":"T","priority":"medium"}`))
+	payload := []byte(withCreateChecklistForURL(srv.URL, `{"title":"T","priority":"medium"}`))
 	tmpl, err := st.SaveTemplate(ctx, "", "T", payload)
 	if err != nil {
 		t.Fatal(err)
@@ -320,10 +320,10 @@ func TestHTTP_task_templates_instantiate_total_cap_exceeded(t *testing.T) {
 }
 
 func TestHTTP_task_templates_instantiate_duplicate_items(t *testing.T) {
-	srv, st := newTaskTestServerWithStore(t)
+	srv, st := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 	ctx := context.Background()
-	payload := []byte(withCreateChecklist(`{"title":"T","priority":"medium"}`))
+	payload := []byte(withCreateChecklistForURL(srv.URL, `{"title":"T","priority":"medium"}`))
 	tmpl, err := st.SaveTemplate(ctx, "", "T", payload)
 	if err != nil {
 		t.Fatal(err)
@@ -341,7 +341,7 @@ func TestHTTP_task_templates_instantiate_duplicate_items(t *testing.T) {
 }
 
 func TestHTTP_task_templates_save_requires_valid_payload(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 	res, err := http.Post(srv.URL+"/task-templates", "application/json",
 		strings.NewReader(`{"payload":{"title":"   ","priority":"medium","checklist_items":[{"text":"x"}]}}`))
@@ -356,10 +356,10 @@ func TestHTTP_task_templates_save_requires_valid_payload(t *testing.T) {
 }
 
 func TestHTTP_task_templates_list_primary_tag(t *testing.T) {
-	srv, st := newTaskTestServerWithStore(t)
+	srv, st := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 	ctx := context.Background()
-	payload := []byte(withCreateChecklist(`{"title":"Tagged","priority":"medium","tags":["Refactor","Docs"]}`))
+	payload := []byte(withCreateChecklistForURL(srv.URL, `{"title":"Tagged","priority":"medium","tags":["Refactor","Docs"]}`))
 	if _, err := st.SaveTemplate(ctx, "", "Tagged", payload); err != nil {
 		t.Fatal(err)
 	}
@@ -393,11 +393,11 @@ func TestHTTP_task_templates_list_primary_tag(t *testing.T) {
 }
 
 func TestHTTP_task_templates_list_sort_by_name(t *testing.T) {
-	srv, st := newTaskTestServerWithStore(t)
+	srv, st := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 	ctx := context.Background()
 	for _, name := range []string{"Zebra tpl", "Alpha tpl"} {
-		payload := []byte(withCreateChecklist(`{"title":"` + name + `","priority":"medium"}`))
+		payload := []byte(withCreateChecklistForURL(srv.URL, `{"title":"`+name+`","priority":"medium"}`))
 		if _, err := st.SaveTemplate(ctx, "", name, payload); err != nil {
 			t.Fatal(err)
 		}
@@ -428,14 +428,14 @@ func TestHTTP_task_templates_list_sort_by_name(t *testing.T) {
 }
 
 func TestHTTP_task_templates_list_tag_filter(t *testing.T) {
-	srv, st := newTaskTestServerWithStore(t)
+	srv, st := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 	ctx := context.Background()
-	refactorPayload := []byte(withCreateChecklist(`{"title":"Refactor task","priority":"medium","tags":["Refactor"]}`))
+	refactorPayload := []byte(withCreateChecklistForURL(srv.URL, `{"title":"Refactor task","priority":"medium","tags":["Refactor"]}`))
 	if _, err := st.SaveTemplate(ctx, "", "Refactor task", refactorPayload); err != nil {
 		t.Fatal(err)
 	}
-	bugPayload := []byte(withCreateChecklist(`{"title":"Bug task","priority":"medium","tags":["Bugfix"]}`))
+	bugPayload := []byte(withCreateChecklistForURL(srv.URL, `{"title":"Bug task","priority":"medium","tags":["Bugfix"]}`))
 	if _, err := st.SaveTemplate(ctx, "", "Bug task", bugPayload); err != nil {
 		t.Fatal(err)
 	}
@@ -465,7 +465,7 @@ func TestHTTP_task_templates_list_tag_filter(t *testing.T) {
 }
 
 func TestHTTP_task_templates_list_invalid_sort(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 	res, err := http.Get(srv.URL + "/task-templates?sort=title")
 	if err != nil {
@@ -478,10 +478,10 @@ func TestHTTP_task_templates_list_invalid_sort(t *testing.T) {
 }
 
 func TestHTTP_task_templates_instantiate_count_increment(t *testing.T) {
-	srv, st := newTaskTestServerWithStore(t)
+	srv, st := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 	ctx := context.Background()
-	payload := []byte(withCreateChecklist(`{"title":"Counter tpl","priority":"medium"}`))
+	payload := []byte(withCreateChecklistForURL(srv.URL, `{"title":"Counter tpl","priority":"medium"}`))
 	tmpl, err := st.SaveTemplate(ctx, "", "Counter tpl", payload)
 	if err != nil {
 		t.Fatal(err)

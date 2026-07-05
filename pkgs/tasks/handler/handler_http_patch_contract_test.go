@@ -14,7 +14,7 @@ import (
 )
 
 func TestHTTP_patchTask_cursorModel(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	id := mustCreateTask(t, srv.URL,
@@ -45,7 +45,7 @@ func TestHTTP_patchTask_cursorModel(t *testing.T) {
 }
 
 func TestHTTP_patchTask_cursorModelTooLong(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	id := mustCreateTask(t, srv.URL, `{"title":"m","priority":"medium"}`)
@@ -90,7 +90,7 @@ func patchTask(t *testing.T, baseURL, id, body string) (*http.Response, []byte) 
 // drives a distinct rejection path so a future refactor that changes the
 // store/handler wording breaks loudly here, in lockstep with the doc.
 func TestHTTP_patchTask_400ErrorStrings(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	id := mustCreateTask(t, srv.URL, `{"title":"base","priority":"medium"}`)
@@ -129,7 +129,7 @@ func TestHTTP_patchTask_400ErrorStrings(t *testing.T) {
 // uncompleted, and asserts the bare 400 phrase from
 // validateChecklistCompleteTx propagates.
 func TestHTTP_patchTask_doneBlockedByIncompleteChecklist(t *testing.T) {
-	srv, st := newTaskTestServerWithStore(t)
+	srv, st := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 
 	id := mustCreateTask(t, srv.URL, `{"title":"t","priority":"medium"}`)
@@ -155,7 +155,7 @@ func TestHTTP_patchTask_doneBlockedByIncompleteChecklist(t *testing.T) {
 // with an RFC3339 `pickup_not_before` mutates the column and surfaces the new
 // time on the response envelope (UTC, second-precision).
 func TestHTTP_patchTask_setsPickupNotBefore(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	id := mustCreateTask(t, srv.URL, `{"title":"sched","priority":"medium"}`)
@@ -180,7 +180,7 @@ func TestHTTP_patchTask_setsPickupNotBefore(t *testing.T) {
 // it symmetric with the null path so SPA code never needs to special-case
 // either.
 func TestHTTP_patchTask_clearsPickupNotBefore(t *testing.T) {
-	srv, st := newTaskTestServerWithStore(t)
+	srv, st := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 
 	cases := []struct {
@@ -221,7 +221,7 @@ func TestHTTP_patchTask_clearsPickupNotBefore(t *testing.T) {
 // surfaces the bare error string because the same UnmarshalJSON gate fires
 // before the store layer ever sees the value.
 func TestHTTP_patchTask_rejectsBadPickupNotBefore(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	id := mustCreateTask(t, srv.URL, `{"title":"x","priority":"medium"}`)
@@ -257,7 +257,7 @@ func TestHTTP_patchTask_rejectsBadPickupNotBefore(t *testing.T) {
 // in.PickupNotBefore; this regression test fails on an upstream that forgets
 // to add the new field to that guard.
 func TestHTTP_patchTask_pickupNotBeforeAloneCounts(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	id := mustCreateTask(t, srv.URL, `{"title":"alone","priority":"medium"}`)

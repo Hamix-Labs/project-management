@@ -22,7 +22,7 @@ func getTask(t *testing.T, baseURL, id string) (*http.Response, []byte) {
 }
 
 func TestHTTP_getTask_flatTaskEnvelope(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	id := mustCreateTask(t, srv.URL, `{"title":"root-leaf","priority":"medium"}`)
@@ -37,7 +37,7 @@ func TestHTTP_getTask_flatTaskEnvelope(t *testing.T) {
 		t.Fatalf("decode envelope: %v body=%s", err, raw)
 	}
 
-	wantKeys := []string{"created_at", "cursor_model", "id", "initial_prompt", "pickup_not_before", "priority", "runner", "runner_config", "status", "title"}
+	wantKeys := []string{"created_at", "cursor_model", "id", "initial_prompt", "pickup_not_before", "priority", "project_id", "runner", "runner_config", "status", "title", "worktree_id"}
 	gotKeys := make([]string, 0, len(top))
 	for k := range top {
 		gotKeys = append(gotKeys, k)
@@ -53,7 +53,7 @@ func TestHTTP_getTask_flatTaskEnvelope(t *testing.T) {
 }
 
 func TestHTTP_getTask_pathSegmentGuard(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	cases := []struct {
@@ -82,7 +82,7 @@ func TestHTTP_getTask_pathSegmentGuard(t *testing.T) {
 }
 
 func TestHTTP_getTask_unknownIDIs404(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	res, raw := getTask(t, srv.URL, "11111111-1111-4111-8111-111111111111")
@@ -99,7 +99,7 @@ func TestHTTP_getTask_unknownIDIs404(t *testing.T) {
 }
 
 func TestHTTP_getTask_trailingSlashIsMux404(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	res, err := http.Get(srv.URL + "/tasks/")

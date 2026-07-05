@@ -78,17 +78,14 @@ func TestHTTP_repoRoutes_followRegisteredWorktree(t *testing.T) {
 	}
 }
 
-// TestHTTP_createTask_skipsMentionValidationWhenNoWorktree pins that POST /tasks
-// accepts a prompt without @-mentions even when no git worktree is registered.
-func TestHTTP_createTask_skipsMentionValidationWhenNoWorktree(t *testing.T) {
-	db := tasktestdb.OpenSQLite(t)
-	st := store.NewStore(db)
-	h := NewHandler(st, NewSSEHub(), nil, WithRepoProvider(NewSettingsRepoProvider(st)))
-	srv := httptest.NewServer(h)
+// TestHTTP_createTask_skipsMentionValidationWhenNoMentions pins that POST /tasks
+// accepts a prompt without @-mentions when a git worktree is bound.
+func TestHTTP_createTask_skipsMentionValidationWhenNoMentions(t *testing.T) {
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	res, err := http.Post(srv.URL+"/tasks", "application/json",
-		strings.NewReader(withCreateChecklist(`{"title":"t","initial_prompt":"plain prompt","priority":"medium"}`)))
+		strings.NewReader(withCreateChecklistForURL(srv.URL, `{"title":"t","initial_prompt":"plain prompt","priority":"medium"}`)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -99,15 +96,13 @@ func TestHTTP_createTask_skipsMentionValidationWhenNoWorktree(t *testing.T) {
 	}
 }
 
-func TestHTTP_createTask_mentionRequiresWorktreeID(t *testing.T) {
-	db := tasktestdb.OpenSQLite(t)
-	st := store.NewStore(db)
-	h := NewHandler(st, NewSSEHub(), nil, WithRepoProvider(NewSettingsRepoProvider(st)))
-	srv := httptest.NewServer(h)
+func TestHTTP_createTask_mentionRejectsMissingFile(t *testing.T) {
+	dir := t.TempDir()
+	srv, _, _, _ := newTaskTestServerWithRepoStore(t, dir)
 	defer srv.Close()
 
 	res, err := http.Post(srv.URL+"/tasks", "application/json",
-		strings.NewReader(withCreateChecklist(`{"title":"t","initial_prompt":"@nope.txt","priority":"medium"}`)))
+		strings.NewReader(withCreateChecklistForURL(srv.URL, `{"title":"t","initial_prompt":"@nope.txt","priority":"medium"}`)))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -368,9 +368,11 @@ func TestWorker_SelectedProjectContext_injectsAndSnapshotsOnlySelectedItems(t *t
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	repoID := h.repositoryID()
 	project, err := h.store.CreateProject(ctx, store.CreateProjectInput{
 		Name:           "Moat",
 		ContextSummary: "Use user-selected shared memory only.",
+		RepositoryID:   &repoID,
 	})
 	if err != nil {
 		t.Fatalf("create project: %v", err)

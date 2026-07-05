@@ -14,7 +14,7 @@ import (
 func createProjectGitRepo(t *testing.T, h http.Handler, main string) string {
 	t.Helper()
 	body, _ := json.Marshal(map[string]string{"path": main})
-	req := httptest.NewRequest(http.MethodPost, "/projects/"+domain.DefaultProjectID+"/git/repositories", bytes.NewReader(body))
+	req := httptest.NewRequest(http.MethodPost, "/projects/"+domain.LegacyGlobalDefaultProjectID+"/git/repositories", bytes.NewReader(body))
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
 	if rec.Code != http.StatusCreated {
@@ -31,7 +31,7 @@ func TestHandler_projectGitWorktreeRoutes(t *testing.T) {
 	h, main := gitHandlerTest(t)
 	repoID := createProjectGitRepo(t, h, main)
 
-	listReq := httptest.NewRequest(http.MethodGet, "/projects/"+domain.DefaultProjectID+"/git/repositories/"+repoID+"/worktrees", nil)
+	listReq := httptest.NewRequest(http.MethodGet, "/projects/"+domain.LegacyGlobalDefaultProjectID+"/git/repositories/"+repoID+"/worktrees", nil)
 	listRec := httptest.NewRecorder()
 	h.ServeHTTP(listRec, listReq)
 	if listRec.Code != http.StatusOK {
@@ -44,7 +44,7 @@ func TestHandler_projectGitWorktreeRoutes(t *testing.T) {
 		Branch:       "proj-http",
 		CreateBranch: true,
 	})
-	createReq := httptest.NewRequest(http.MethodPost, "/projects/"+domain.DefaultProjectID+"/git/repositories/"+repoID+"/worktrees", bytes.NewReader(createBody))
+	createReq := httptest.NewRequest(http.MethodPost, "/projects/"+domain.LegacyGlobalDefaultProjectID+"/git/repositories/"+repoID+"/worktrees", bytes.NewReader(createBody))
 	createRec := httptest.NewRecorder()
 	h.ServeHTTP(createRec, createReq)
 	if createRec.Code != http.StatusCreated {
@@ -55,7 +55,7 @@ func TestHandler_projectGitWorktreeRoutes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	delReq := httptest.NewRequest(http.MethodDelete, "/projects/"+domain.DefaultProjectID+"/git/worktrees/"+wt.ID+"?force=true", nil)
+	delReq := httptest.NewRequest(http.MethodDelete, "/projects/"+domain.LegacyGlobalDefaultProjectID+"/git/worktrees/"+wt.ID+"?force=true", nil)
 	delRec := httptest.NewRecorder()
 	h.ServeHTTP(delRec, delReq)
 	if delRec.Code != http.StatusNoContent {
@@ -67,7 +67,7 @@ func TestHandler_projectGitBranchRoutes(t *testing.T) {
 	h, main := gitHandlerTest(t)
 	repoID := createProjectGitRepo(t, h, main)
 
-	listReq := httptest.NewRequest(http.MethodGet, "/projects/"+domain.DefaultProjectID+"/git/repositories/"+repoID+"/branches", nil)
+	listReq := httptest.NewRequest(http.MethodGet, "/projects/"+domain.LegacyGlobalDefaultProjectID+"/git/repositories/"+repoID+"/branches", nil)
 	listRec := httptest.NewRecorder()
 	h.ServeHTTP(listRec, listReq)
 	if listRec.Code != http.StatusOK {
@@ -75,7 +75,7 @@ func TestHandler_projectGitBranchRoutes(t *testing.T) {
 	}
 
 	createBody, _ := json.Marshal(gitBranchCreateJSON{Name: "proj-branch", StartPoint: "main"})
-	createReq := httptest.NewRequest(http.MethodPost, "/projects/"+domain.DefaultProjectID+"/git/repositories/"+repoID+"/branches", bytes.NewReader(createBody))
+	createReq := httptest.NewRequest(http.MethodPost, "/projects/"+domain.LegacyGlobalDefaultProjectID+"/git/repositories/"+repoID+"/branches", bytes.NewReader(createBody))
 	createRec := httptest.NewRecorder()
 	h.ServeHTTP(createRec, createReq)
 	if createRec.Code != http.StatusCreated {
@@ -86,7 +86,7 @@ func TestHandler_projectGitBranchRoutes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	delReq := httptest.NewRequest(http.MethodDelete, "/projects/"+domain.DefaultProjectID+"/git/branches/"+br.ID+"?force=true", nil)
+	delReq := httptest.NewRequest(http.MethodDelete, "/projects/"+domain.LegacyGlobalDefaultProjectID+"/git/branches/"+br.ID+"?force=true", nil)
 	delRec := httptest.NewRecorder()
 	h.ServeHTTP(delRec, delReq)
 	if delRec.Code != http.StatusNoContent {
@@ -98,14 +98,14 @@ func TestHandler_projectGitRepositoryGetAndDelete(t *testing.T) {
 	h, main := gitHandlerTest(t)
 	repoID := createProjectGitRepo(t, h, main)
 
-	getReq := httptest.NewRequest(http.MethodGet, "/projects/"+domain.DefaultProjectID+"/git/repositories/"+repoID, nil)
+	getReq := httptest.NewRequest(http.MethodGet, "/projects/"+domain.LegacyGlobalDefaultProjectID+"/git/repositories/"+repoID, nil)
 	getRec := httptest.NewRecorder()
 	h.ServeHTTP(getRec, getReq)
 	if getRec.Code != http.StatusOK {
 		t.Fatalf("get status=%d body=%s", getRec.Code, getRec.Body.String())
 	}
 
-	delReq := httptest.NewRequest(http.MethodDelete, "/projects/"+domain.DefaultProjectID+"/git/repositories/"+repoID, nil)
+	delReq := httptest.NewRequest(http.MethodDelete, "/projects/"+domain.LegacyGlobalDefaultProjectID+"/git/repositories/"+repoID, nil)
 	delRec := httptest.NewRecorder()
 	h.ServeHTTP(delRec, delReq)
 	if delRec.Code != http.StatusNoContent {
@@ -116,7 +116,7 @@ func TestHandler_projectGitRepositoryGetAndDelete(t *testing.T) {
 func TestHandler_projectGitReconcile_dryRun(t *testing.T) {
 	h, main := gitHandlerTest(t)
 	repoID := createProjectGitRepo(t, h, main)
-	req := httptest.NewRequest(http.MethodPost, "/projects/"+domain.DefaultProjectID+"/git/repositories/"+repoID+"/reconcile", bytes.NewReader([]byte(`{"dry_run":true}`)))
+	req := httptest.NewRequest(http.MethodPost, "/projects/"+domain.LegacyGlobalDefaultProjectID+"/git/repositories/"+repoID+"/reconcile", bytes.NewReader([]byte(`{"dry_run":true}`)))
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
 	if rec.Code != http.StatusAccepted {

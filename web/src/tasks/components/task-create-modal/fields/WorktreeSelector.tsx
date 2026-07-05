@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { DEFAULT_PROJECT_ID } from "@/types";
-import { isUiFeatureOmitted } from "@/launch/omittedFeatures";
 import { CustomSelect } from "@/components/custom-select";
 import {
   WorktreesBranchIcon,
@@ -14,8 +12,6 @@ import { isFullyRegisteredWorktree } from "@/worktrees/worktreeRegistration";
 
 type Props = {
   idsPrefix: string;
-  /** Current project scoping. Non-default project drives Case B (project → repo). */
-  projectId?: string;
   worktreeId: string;
   onWorktreeChange: (worktreeId: string) => void;
   disabled?: boolean;
@@ -23,18 +19,10 @@ type Props = {
 
 export function WorktreeSelector({
   idsPrefix,
-  projectId,
   worktreeId,
   onWorktreeChange,
   disabled = false,
 }: Props) {
-  const projectsEnabled = !isUiFeatureOmitted("projects");
-  const hasProject =
-    projectsEnabled &&
-    typeof projectId === "string" &&
-    projectId.trim() !== "" &&
-    projectId !== DEFAULT_PROJECT_ID;
-
   const repositoriesQuery = useGlobalRepositories();
   const repositories = repositoriesQuery.data ?? [];
 
@@ -95,27 +83,21 @@ export function WorktreeSelector({
 
   return (
     <div className="worktrees-git-selector worktrees-git-selector--modal" aria-busy={loading ? "true" : undefined}>
-      {hasProject ? (
-        <p className="worktrees-git-selector__project-hint">
-          Using project repository
-        </p>
-      ) : (
-        <CustomSelect
-          id={`${idsPrefix}-repo`}
-          label="Repository"
-          value={selectedRepoId}
-          options={repoOptions}
-          disabled={disabled || repositoriesQuery.isLoading || repoOptions.length === 0}
-          requirement="required"
-          leadingIcon={
-            <WorktreesFolderGitIcon className="worktrees-git-selector__icon" />
-          }
-          onChange={(id) => {
-            setSelectedRepoId(id);
-            onWorktreeChange("");
-          }}
-        />
-      )}
+      <CustomSelect
+        id={`${idsPrefix}-repo`}
+        label="Repository"
+        value={selectedRepoId}
+        options={repoOptions}
+        disabled={disabled || repositoriesQuery.isLoading || repoOptions.length === 0}
+        requirement="required"
+        leadingIcon={
+          <WorktreesFolderGitIcon className="worktrees-git-selector__icon" />
+        }
+        onChange={(id) => {
+          setSelectedRepoId(id);
+          onWorktreeChange("");
+        }}
+      />
 
       <CustomSelect
         id={`${idsPrefix}-worktree`}

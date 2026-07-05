@@ -6,13 +6,11 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
-	"net/http/httptest"
 	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
 
-	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/logctx"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 	"github.com/google/uuid"
@@ -76,14 +74,14 @@ func TestWithAccessLog_idempotencyCacheEviction_logIncludesRequestID(t *testing.
 	base := logctx.WrapSlogHandlerWithRequestContext(slog.NewJSONHandler(&buf, &slog.HandlerOptions{Level: slog.LevelWarn}))
 	slog.SetDefault(slog.New(logctx.WrapSlogHandlerWithLogSequence(base, &processSeq)))
 
-	db := tasktestdb.OpenSQLite(t)
-	srv := httptest.NewServer(WithAccessLog(WithIdempotency(NewHandler(store.NewStore(db), NewSSEHub(), nil))))
-	t.Cleanup(srv.Close)
+	srv := newBoundTaskServer(t, func(st *store.Store) http.Handler {
+		return WithAccessLog(WithIdempotency(boundTaskHandler(st)))
+	})
 
 	const rid = "rid-idem-cache-evict"
 	post := func(key, title string) {
 		t.Helper()
-		body := withCreateChecklist(`{"title":"` + title + `","priority":"medium"}`)
+		body := withCreateChecklistForURL(srv.URL, `{"title":"`+title+`","priority":"medium"}`)
 		req, err := http.NewRequest(http.MethodPost, srv.URL+"/tasks", strings.NewReader(body))
 		if err != nil {
 			t.Fatal(err)

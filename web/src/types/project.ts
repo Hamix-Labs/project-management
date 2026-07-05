@@ -1,7 +1,5 @@
 export type ProjectStatus = "active" | "archived";
 
-export const DEFAULT_PROJECT_ID = "00000000-0000-4000-8000-000000000001";
-
 export type ProjectContextKind = string;
 export type ProjectContextRelation =
   | "supports"
@@ -17,6 +15,7 @@ export type Project = {
   status: ProjectStatus;
   context_summary: string;
   repository_id?: string;
+  is_default: boolean;
   created_at: string;
   updated_at: string;
 };

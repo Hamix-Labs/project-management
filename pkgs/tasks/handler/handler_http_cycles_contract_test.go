@@ -28,7 +28,7 @@ func mustStartCycle(t *testing.T, baseURL, taskID string) string {
 // for POST /tasks/{id}/cycles. Drift in any of these phrases breaks the test
 // in lockstep with docs/api.md (Stage 6 commits the doc rows).
 func TestHTTP_postTaskCycle_400ErrorStrings(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 	taskID := mustCreateTaskForCycles(t, srv.URL)
 
@@ -74,7 +74,7 @@ func TestHTTP_postTaskCycle_400ErrorStrings(t *testing.T) {
 // running cycle per task" invariant from the store surfaces as a 400 with
 // the documented bare phrase, not a 500.
 func TestHTTP_postTaskCycle_rejectsConcurrentRunning(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 	taskID := mustCreateTaskForCycles(t, srv.URL)
 	_ = mustStartCycle(t, srv.URL, taskID)
@@ -96,7 +96,7 @@ func TestHTTP_postTaskCycle_rejectsConcurrentRunning(t *testing.T) {
 // 404 path: nonexistent task → ErrNotFound mapped to 404 with the standard
 // "not found" body.
 func TestHTTP_postTaskCycle_taskNotFound_returns_404(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	res, raw := doCyclesRequest(t, http.MethodPost,
@@ -117,7 +117,7 @@ func TestHTTP_postTaskCycle_taskNotFound_returns_404(t *testing.T) {
 // 201 success path. Adding or removing a top-level key without updating
 // the docs (and the web client) breaks here.
 func TestHTTP_postTaskCycle_response_shape(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 	taskID := mustCreateTaskForCycles(t, srv.URL)
 
@@ -148,7 +148,7 @@ func TestHTTP_postTaskCycle_response_shape(t *testing.T) {
 
 // TestHTTP_getTaskCycles_400ErrorStrings pins limit-validation messages.
 func TestHTTP_getTaskCycles_400ErrorStrings(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 	taskID := mustCreateTaskForCycles(t, srv.URL)
 
@@ -186,7 +186,7 @@ func TestHTTP_getTaskCycles_400ErrorStrings(t *testing.T) {
 // TestHTTP_getTaskCycles_response_shape pins the envelope for the empty
 // case (no cycles yet). Cycles must be `[]`, never null or omitted.
 func TestHTTP_getTaskCycles_response_shape(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 	taskID := mustCreateTaskForCycles(t, srv.URL)
 
@@ -225,7 +225,7 @@ func TestHTTP_getTaskCycles_response_shape(t *testing.T) {
 // query param parse, the limit+1 fan-out, or the cursor write-back
 // would fail loudly.
 func TestHTTP_getTaskCycles_keysetCursor(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 	taskID := mustCreateTaskForCycles(t, srv.URL)
 	listURL := srv.URL + "/tasks/" + taskID + "/cycles"
@@ -301,7 +301,7 @@ func TestHTTP_getTaskCycles_keysetCursor(t *testing.T) {
 // id smuggling: a valid cycle id under a different task must surface as
 // 404, not the foreign cycle's contents.
 func TestHTTP_getTaskCycle_404_when_taskMismatch(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 	taskA := mustCreateTaskForCycles(t, srv.URL)
 	taskB := mustCreateTaskForCycles(t, srv.URL)
@@ -316,7 +316,7 @@ func TestHTTP_getTaskCycle_404_when_taskMismatch(t *testing.T) {
 // TestHTTP_patchTaskCycle_404_when_taskMismatch covers the same protection
 // for the terminate path: a foreign cycle id must not be mutated.
 func TestHTTP_patchTaskCycle_404_when_taskMismatch(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 	taskA := mustCreateTaskForCycles(t, srv.URL)
 	taskB := mustCreateTaskForCycles(t, srv.URL)
@@ -331,7 +331,7 @@ func TestHTTP_patchTaskCycle_404_when_taskMismatch(t *testing.T) {
 
 // TestHTTP_patchTaskCycle_400ErrorStrings pins terminate-status validation.
 func TestHTTP_patchTaskCycle_400ErrorStrings(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 	taskID := mustCreateTaskForCycles(t, srv.URL)
 	cycleID := mustStartCycle(t, srv.URL, taskID)
@@ -367,7 +367,7 @@ func TestHTTP_patchTaskCycle_400ErrorStrings(t *testing.T) {
 // documented 400 path, confirming the store's terminal guard reaches the
 // HTTP boundary intact.
 func TestHTTP_patchTaskCycle_alreadyTerminal_400(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 	taskID := mustCreateTaskForCycles(t, srv.URL)
 	cycleID := mustStartCycle(t, srv.URL, taskID)
@@ -390,7 +390,7 @@ func TestHTTP_patchTaskCycle_alreadyTerminal_400(t *testing.T) {
 
 // TestHTTP_postTaskCyclePhase_400ErrorStrings pins phase-start validation.
 func TestHTTP_postTaskCyclePhase_400ErrorStrings(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 	taskID := mustCreateTaskForCycles(t, srv.URL)
 	cycleID := mustStartCycle(t, srv.URL, taskID)
@@ -425,7 +425,7 @@ func TestHTTP_postTaskCyclePhase_400ErrorStrings(t *testing.T) {
 // TestHTTP_postTaskCyclePhase_invalid_transition_400 — phase state machine
 // rejection from the store reaches HTTP unchanged.
 func TestHTTP_postTaskCyclePhase_invalid_transition_400(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 	taskID := mustCreateTaskForCycles(t, srv.URL)
 	cycleID := mustStartCycle(t, srv.URL, taskID)
@@ -446,7 +446,7 @@ func TestHTTP_postTaskCyclePhase_invalid_transition_400(t *testing.T) {
 
 // TestHTTP_postTaskCyclePhase_404_when_taskMismatch — same cross-task guard.
 func TestHTTP_postTaskCyclePhase_404_when_taskMismatch(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 	taskA := mustCreateTaskForCycles(t, srv.URL)
 	taskB := mustCreateTaskForCycles(t, srv.URL)
@@ -461,7 +461,7 @@ func TestHTTP_postTaskCyclePhase_404_when_taskMismatch(t *testing.T) {
 
 // TestHTTP_patchTaskCyclePhase_400_path_validation pins {phaseSeq} parsing.
 func TestHTTP_patchTaskCyclePhase_400_path_validation(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 	taskID := mustCreateTaskForCycles(t, srv.URL)
 	cycleID := mustStartCycle(t, srv.URL, taskID)
@@ -497,7 +497,7 @@ func TestHTTP_patchTaskCyclePhase_400_path_validation(t *testing.T) {
 // TestHTTP_patchTaskCyclePhase_400ErrorStrings pins phase-complete status
 // validation including the body-level enum guards.
 func TestHTTP_patchTaskCyclePhase_400ErrorStrings(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 	taskID := mustCreateTaskForCycles(t, srv.URL)
 	cycleID := mustStartCycle(t, srv.URL, taskID)
@@ -539,7 +539,7 @@ func TestHTTP_patchTaskCyclePhase_400ErrorStrings(t *testing.T) {
 // TestHTTP_cycle_path_segment_caps pins the 128-byte abuse guard for {id}
 // and {cycleId}. The same cap is documented for every other task route.
 func TestHTTP_cycle_path_segment_caps(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 	long := strings.Repeat("a", 129)
 
@@ -576,7 +576,7 @@ func TestHTTP_cycle_path_segment_caps(t *testing.T) {
 // TestHTTP_getTaskCycle_phase_response_shape pins the envelope and per-phase
 // keys returned by GET /tasks/{id}/cycles/{cycleId}.
 func TestHTTP_getTaskCycle_phase_response_shape(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 	taskID := mustCreateTaskForCycles(t, srv.URL)
 	cycleID := mustStartCycle(t, srv.URL, taskID)

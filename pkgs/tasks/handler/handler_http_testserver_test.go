@@ -12,16 +12,29 @@ import (
 )
 
 func taskTestHandlerBuilder(st *store.Store, workspace *repo.Root) http.Handler {
-	opts := []HandlerOption{}
-	if workspace != nil {
-		opts = append(opts, WithRepoProvider(NewSettingsRepoProvider(st)))
-	}
-	return NewHandler(st, NewSSEHub(), workspace, opts...)
+	return NewHandler(st, NewSSEHub(), workspace, WithRepoProvider(NewSettingsRepoProvider(st)))
+}
+
+func newTaskTestHandler(st *store.Store, opts ...HandlerOption) http.Handler {
+	return newTaskTestHandlerWithHub(st, NewSSEHub(), opts...)
+}
+
+func newTaskTestHandlerWithHub(st *store.Store, hub *SSEHub, opts ...HandlerOption) http.Handler {
+	base := []HandlerOption{WithRepoProvider(NewSettingsRepoProvider(st))}
+	return NewHandler(st, hub, nil, append(base, opts...)...)
 }
 
 func newTaskTestServer(t *testing.T) *httptest.Server {
 	t.Helper()
 	return tasktestserver.New(t, taskTestHandlerBuilder)
+}
+
+func newTaskCreateTestServer(t *testing.T) *httptest.Server {
+	t.Helper()
+	st, srv := tasktestserver.NewWithStore(t, taskTestHandlerBuilder)
+	binding := seedHandlerTestGitRepo(t, st)
+	registerHandlerGitBinding(t, srv.URL, binding)
+	return srv
 }
 
 func newTaskTestServerWithStore(t *testing.T) (*httptest.Server, *store.Store) {
@@ -30,19 +43,47 @@ func newTaskTestServerWithStore(t *testing.T) (*httptest.Server, *store.Store) {
 	return srv, st
 }
 
+func newTaskCreateTestServerWithStore(t *testing.T) (*httptest.Server, *store.Store) {
+	t.Helper()
+	st, srv := tasktestserver.NewWithStore(t, taskTestHandlerBuilder)
+	binding := seedHandlerTestGitRepo(t, st)
+	registerHandlerGitBinding(t, srv.URL, binding)
+	return srv, st
+}
+
+func newTaskCreateTestServerWithHub(t *testing.T, hub *SSEHub, opts ...HandlerOption) (*httptest.Server, *store.Store) {
+	t.Helper()
+	st, srv := tasktestserver.NewWithStore(t, func(s *store.Store, workspace *repo.Root) http.Handler {
+		return newTaskTestHandlerWithHub(s, hub, opts...)
+	})
+	binding := seedHandlerTestGitRepo(t, st)
+	registerHandlerGitBinding(t, srv.URL, binding)
+	return srv, st
+}
+
+func newTaskCreateTestServerFromStore(t *testing.T, st *store.Store, opts ...HandlerOption) *httptest.Server {
+	t.Helper()
+	binding := seedHandlerTestGitRepo(t, st)
+	srv := httptest.NewServer(newTaskTestHandler(st, opts...))
+	registerHandlerGitBinding(t, srv.URL, binding)
+	return srv
+}
+
 func seedTestGitWorktree(t *testing.T, st *store.Store, repoDir string) (worktreeID, branchID string) {
 	t.Helper()
 	return tasktestserver.SeedWorktree(t, st, repoDir)
 }
 
 func newTaskTestServerWithRepo(t *testing.T, repoDir string) (*httptest.Server, string, string) {
-	srv, _, wt, br, _ := tasktestserver.NewWithRepoStore(t, repoDir, taskTestHandlerBuilder)
+	srv, _, wt, br := newTaskTestServerWithRepoStore(t, repoDir)
 	return srv, wt, br
 }
 
 func newTaskTestServerWithRepoStore(t *testing.T, repoDir string) (*httptest.Server, *store.Store, string, string) {
 	t.Helper()
 	srv, st, wt, br, _ := tasktestserver.NewWithRepoStore(t, repoDir, taskTestHandlerBuilder)
+	binding := setHandlerTestGitBinding(t, st, wt)
+	registerHandlerGitBinding(t, srv.URL, binding)
 	return srv, st, wt, br
 }
 

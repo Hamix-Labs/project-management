@@ -76,7 +76,7 @@ func mustFailedTaskWithTerminalCycle(t *testing.T, baseURL string) (taskID, cycl
 }
 
 func TestHTTP_postTaskRetry_fresh(t *testing.T) {
-	srv, st := newTaskTestServerWithStore(t)
+	srv, st := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 	taskID, cycleID := mustFailedTaskWithTerminalCycle(t, srv.URL)
 
@@ -106,7 +106,7 @@ func TestHTTP_postTaskRetry_fresh(t *testing.T) {
 }
 
 func TestHTTP_postTaskRetry_resume(t *testing.T) {
-	srv, st := newTaskTestServerWithStore(t)
+	srv, st := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 	taskID, cycleID := mustFailedTaskWithTerminalCycle(t, srv.URL)
 
@@ -131,7 +131,7 @@ func TestHTTP_postTaskRetry_resume(t *testing.T) {
 }
 
 func TestHTTP_postTaskRetry_defaultParentCycle(t *testing.T) {
-	srv, st := newTaskTestServerWithStore(t)
+	srv, st := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 	taskID, cycleID := mustFailedTaskWithTerminalCycle(t, srv.URL)
 
@@ -149,7 +149,7 @@ func TestHTTP_postTaskRetry_defaultParentCycle(t *testing.T) {
 }
 
 func TestHTTP_postTaskRetry_rejectsWrongStatus(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 	taskID := mustCreateTask(t, srv.URL, `{"title":"ready","priority":"medium","status":"ready"}`)
 
@@ -160,7 +160,7 @@ func TestHTTP_postTaskRetry_rejectsWrongStatus(t *testing.T) {
 }
 
 func TestHTTP_postTaskRetry_rejectsBadParent(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 	taskID, _ := mustFailedTaskWithTerminalCycle(t, srv.URL)
 
@@ -171,7 +171,7 @@ func TestHTTP_postTaskRetry_rejectsBadParent(t *testing.T) {
 }
 
 func TestHTTP_postTaskRetry_conflictDifferentIntent(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 	taskID, cycleID := mustFailedTaskWithTerminalCycle(t, srv.URL)
 

@@ -39,8 +39,11 @@ type Props = {
   appTimezone: string;
   tagsCsv: string;
   milestone: string;
+  repositoryId: string;
   projectId: string;
   worktreeId: string;
+  onRepositoryChange: (repositoryId: string) => void;
+  onProjectChange: (projectId: string) => void;
   onWorktreeChange: (worktreeId: string) => void;
   dependsOn: string[];
   onTagsCsvChange: (value: string) => void;
@@ -78,8 +81,11 @@ export function TaskCreateModalFormBody(props: Props) {
     appTimezone,
     tagsCsv,
     milestone,
+    repositoryId,
     projectId,
     worktreeId,
+    onRepositoryChange,
+    onProjectChange,
     onWorktreeChange,
     dependsOn,
     onTagsCsvChange,
@@ -109,12 +115,15 @@ export function TaskCreateModalFormBody(props: Props) {
           idsPrefix={presentation.idsPrefix}
           title={title}
           priority={priority}
+          repositoryId={repositoryId}
           projectId={projectId}
           worktreeId={worktreeId}
           disabled={presentation.disabled}
           showWorktree={!presentation.isTaskEdit}
           onTitleChange={onTitleChange}
           onPriorityChange={onPriorityChange}
+          onRepositoryChange={onRepositoryChange}
+          onProjectChange={onProjectChange}
           onWorktreeChange={onWorktreeChange}
         />
       </TaskCreateModalSection>

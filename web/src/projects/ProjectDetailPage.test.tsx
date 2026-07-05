@@ -4,7 +4,7 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ROUTER_FUTURE_FLAGS } from "@/lib/routerFutureFlags";
 import { requestUrl } from "@/test/requestUrl";
-import { DEFAULT_PROJECT_ID, type Project } from "@/types";
+import { type Project } from "@/types";
 import { ProjectDetailPage } from "./ProjectDetailPage";
 import { projectQueryKeys } from "./queryKeys";
 
@@ -23,6 +23,7 @@ const testProject: Project = {
   description: "Shared context",
   status: "active",
   context_summary: "Shared context",
+  is_default: false,
   created_at: "2026-04-27T00:00:00Z",
   updated_at: "2026-04-27T00:00:00Z",
 };
@@ -99,10 +100,11 @@ describe("ProjectDetailPage", () => {
   it("does not show delete project action for the built-in default project", () => {
     const builtIn: Project = {
       ...testProject,
-      id: DEFAULT_PROJECT_ID,
-      name: "Default project",
+      id: "00000000-0000-4000-8000-000000000099",
+      name: "Default",
+      is_default: true,
     };
-    renderPage(builtIn, `/projects/${encodeURIComponent(DEFAULT_PROJECT_ID)}`);
+    renderPage(builtIn, `/projects/${encodeURIComponent(builtIn.id)}`);
     expect(screen.queryByRole("button", { name: /^Delete project$/ })).not.toBeInTheDocument();
   });
 });

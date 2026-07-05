@@ -44,7 +44,7 @@ func doCyclesRequest(t *testing.T, method, url, body string) (*http.Response, []
 }
 
 func TestHTTP_postTaskCycle_creates_running_cycle(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 	taskID := mustCreateTaskForCycles(t, srv.URL)
 
@@ -84,7 +84,7 @@ func TestHTTP_postTaskCycle_creates_running_cycle(t *testing.T) {
 }
 
 func TestHTTP_getTaskCycles_lists_in_attempt_desc(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 	taskID := mustCreateTaskForCycles(t, srv.URL)
 
@@ -129,7 +129,7 @@ func TestHTTP_getTaskCycles_lists_in_attempt_desc(t *testing.T) {
 }
 
 func TestHTTP_getTaskCycleStream_listsPersistedEvents(t *testing.T) {
-	srv, st := newTaskTestServerWithStore(t)
+	srv, st := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 	taskID := mustCreateTaskForCycles(t, srv.URL)
 	cycle, phase := mustCreateCycleWithExecutePhase(t, st, context.Background(), taskID)
@@ -168,7 +168,7 @@ func TestHTTP_getTaskCycleStream_listsPersistedEvents(t *testing.T) {
 }
 
 func TestHTTP_getTaskCycleStream_crossTaskCycleIsNotFound(t *testing.T) {
-	srv, st := newTaskTestServerWithStore(t)
+	srv, st := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 	taskA := mustCreateTaskForCycles(t, srv.URL)
 	taskB := mustCreateTaskForCycles(t, srv.URL)
@@ -194,7 +194,7 @@ func mustCreateCycleWithExecutePhase(t *testing.T, st *store.Store, ctx context.
 }
 
 func TestHTTP_getTaskCycles_has_more_when_overflow(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 	taskID := mustCreateTaskForCycles(t, srv.URL)
 	for i := 0; i < 3; i++ {
@@ -223,7 +223,7 @@ func TestHTTP_getTaskCycles_has_more_when_overflow(t *testing.T) {
 }
 
 func TestHTTP_getTaskCycle_embeds_phases(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 	taskID := mustCreateTaskForCycles(t, srv.URL)
 
@@ -280,7 +280,7 @@ func TestHTTP_getTaskCycle_embeds_phases(t *testing.T) {
 }
 
 func TestHTTP_patchTaskCycle_terminates_and_returns_terminal_state(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 	taskID := mustCreateTaskForCycles(t, srv.URL)
 	_, createdRaw := doCyclesRequest(t, http.MethodPost, srv.URL+"/tasks/"+taskID+"/cycles", `{}`)
@@ -307,7 +307,7 @@ func TestHTTP_patchTaskCycle_terminates_and_returns_terminal_state(t *testing.T)
 }
 
 func TestHTTP_postTaskCyclePhase_starts_running_phase(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 	taskID := mustCreateTaskForCycles(t, srv.URL)
 	_, createdRaw := doCyclesRequest(t, http.MethodPost, srv.URL+"/tasks/"+taskID+"/cycles", `{}`)
@@ -336,7 +336,7 @@ func TestHTTP_postTaskCyclePhase_starts_running_phase(t *testing.T) {
 }
 
 func TestHTTP_patchTaskCyclePhase_completes_with_summary_and_details(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 	taskID := mustCreateTaskForCycles(t, srv.URL)
 	_, createdRaw := doCyclesRequest(t, http.MethodPost, srv.URL+"/tasks/"+taskID+"/cycles", `{}`)
@@ -385,7 +385,7 @@ func TestHTTP_patchTaskCyclePhase_completes_with_summary_and_details(t *testing.
 // cycle/phase mutation must produce a matching task_events row visible from
 // GET /tasks/{id}/events.
 func TestHTTP_cycle_routes_appendMirrorEvents_into_audit_log(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 	taskID := mustCreateTaskForCycles(t, srv.URL)
 

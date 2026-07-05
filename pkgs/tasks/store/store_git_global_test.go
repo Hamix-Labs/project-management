@@ -120,8 +120,8 @@ func TestStore_ProjectRepositoryBinding(t *testing.T) {
 		t.Fatalf("CreateProject: %v", err)
 	}
 	byRepo, err := s.ListProjectsByRepository(ctx, repo.ID)
-	if err != nil || len(byRepo) != 1 {
-		t.Fatalf("ListProjectsByRepository: %v len=%d", err, len(byRepo))
+	if err != nil || len(byRepo) != 2 {
+		t.Fatalf("ListProjectsByRepository: %v len=%d want 2 (default + overlay)", err, len(byRepo))
 	}
 	wtPath := filepath.Join(filepath.Dir(main), "wt-proj")
 	wt, err := s.CreateGitWorktreeForRepo(ctx, repo.ID, CreateGitWorktreeInput{

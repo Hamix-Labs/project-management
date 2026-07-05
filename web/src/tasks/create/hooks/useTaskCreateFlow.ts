@@ -1,9 +1,11 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useLayoutEffect, useMemo } from "react";
 import { listTaskDrafts as apiListDrafts } from "@/api";
 import { TASK_DRAFTS } from "@/constants/tasks";
 import { taskQueryKeys } from "../../task-query";
+import { computeDraftAutosaveSignature } from "../draftPayload";
 import { deriveCreateFlowError, mapCreateFlowViewModel } from "../mapCreateFlowViewModel";
+import { normalizeDraftPromptForDirty } from "../../task-drafts";
 import { useTaskCreateChecklistActions } from "./useTaskCreateChecklistActions";
 import { useTaskCreateDraftAutosave } from "./useTaskCreateDraftAutosave";
 import { useTaskCreateEntryActions } from "./useTaskCreateEntryActions";
@@ -42,6 +44,42 @@ export function useTaskCreateFlow() {
     createModalOpen: modal.createModalOpen,
     editingTemplateId: modal.editingTemplateId,
   });
+
+  // Repo/project/worktree cascade pre-selects system defaults on open. That is not
+  // operator input — fold it into the autosave baseline so an untouched modal stays clean.
+  // useLayoutEffect runs before draft autosave's useEffect on the same commit.
+  useLayoutEffect(() => {
+    if (!modal.createModalOpen || modal.editingTaskId || modal.composeTarget !== "task") {
+      return;
+    }
+    if (form.draftAutosaveBaselineID !== form.newDraftID) return;
+    if (!form.newProjectID) return;
+    const hasUserContent =
+      form.newTitle.trim() !== "" ||
+      form.newPriority !== "" ||
+      form.newChecklistItems.length > 0 ||
+      normalizeDraftPromptForDirty(form.newPrompt) !== "";
+    if (hasUserContent) return;
+    const sig = computeDraftAutosaveSignature(form.formFields);
+    if (sig !== form.draftAutosaveBaseline) {
+      form.setDraftAutosaveBaseline(sig);
+    }
+  }, [
+    form.draftAutosaveBaseline,
+    form.draftAutosaveBaselineID,
+    form.formFields,
+    form.newChecklistItems.length,
+    form.newDraftID,
+    form.newPriority,
+    form.newProjectID,
+    form.newPrompt,
+    form.newTitle,
+    form.setDraftAutosaveBaseline,
+    modal.composeTarget,
+    modal.createModalOpen,
+    modal.editingTaskId,
+  ]);
+
   const autosave = useTaskCreateDraftAutosave({
     formFields: form.formFields,
     draftAutosaveBaseline: form.draftAutosaveBaseline,
@@ -62,6 +100,7 @@ export function useTaskCreateFlow() {
   });
   const submitActions = useTaskCreateSubmitActions({ form, modal, mutations });
   const checklistActions = useTaskCreateChecklistActions({ form });
+
   const actions = { ...entryActions, ...submitActions, ...checklistActions };
   const createFlowError = useMemo(
     () => deriveCreateFlowError(mutations),

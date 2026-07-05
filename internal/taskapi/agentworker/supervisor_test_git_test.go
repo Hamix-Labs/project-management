@@ -28,7 +28,7 @@ func (rig *supervisorTestRig) seedGitRepository(t *testing.T, dir string) {
 	}
 	_ = exec.Command("git", "-C", dir, "commit", "-m", "init", "--allow-empty").Run()
 	ctx := context.Background()
-	if _, err := rig.store.CreateGitRepository(ctx, domain.DefaultProjectID, store.CreateGitRepositoryInput{
+	if _, err := rig.store.CreateGitRepository(ctx, domain.LegacyGlobalDefaultProjectID, store.CreateGitRepositoryInput{
 		Path: dir,
 	}, gitwork.New()); err != nil {
 		t.Fatalf("CreateGitRepository: %v", err)

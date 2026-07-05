@@ -1,5 +1,4 @@
 import type { JsonBodyType } from "msw";
-import { DEFAULT_PROJECT_ID } from "@/types";
 import {
   globalGitBranchesResponse,
   globalGitLiveBranchesResponse,
@@ -9,6 +8,7 @@ import {
   gitRepositoryFactory,
   gitWorktreeFactory,
 } from "../factories/git";
+import { FACTORY_REPO_DEFAULT_PROJECT_ID, repoDefaultProjectFactory } from "../factories/project";
 
 export type GitRouteScope = "project" | "global";
 
@@ -62,7 +62,7 @@ export function gitRouteJsonBody(match: GitRouteMatch, scope: GitRouteScope): Js
       if (scope === "global") return globalGitRepositoriesResponse();
       return {
         repositories: [
-          { ...gitRepositoryFactory(), project_id: DEFAULT_PROJECT_ID },
+          { ...gitRepositoryFactory(), project_id: FACTORY_REPO_DEFAULT_PROJECT_ID },
         ],
       };
     case "repositories-create": {
@@ -102,7 +102,7 @@ export function gitRouteJsonBody(match: GitRouteMatch, scope: GitRouteScope): Js
     case "branches-live":
       return globalGitLiveBranchesResponse();
     case "repo-projects":
-      return { projects: [], limit: 100 };
+      return { projects: [repoDefaultProjectFactory()], limit: 100 };
   }
 }
 

@@ -3,7 +3,8 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import type { FormEvent, ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { TaskDraftDetail } from "@/types";
-import { DEFAULT_PROJECT_ID } from "@/types";
+import { FACTORY_REPO_DEFAULT_PROJECT_ID } from "@/test/factories/project";
+import { FACTORY_GIT_REPO_ID, FACTORY_GIT_WORKTREE_ID } from "@/test/factories/git";
 import { settingsQueryKeys } from "@/settings/settingsQueryKeys";
 import { useTaskCreateFlow } from "./useTaskCreateFlow";
 
@@ -75,7 +76,7 @@ describe("useTaskCreateFlow", () => {
     vi.restoreAllMocks();
   });
 
-  it("submits the default project for a fresh task when the dropdown is left unchanged", async () => {
+  it("submits project and worktree ids when set on the form", async () => {
     const { Wrapper } = makeWrapper();
     const { result } = renderHook(() => useTaskCreateFlow(), { wrapper: Wrapper });
 
@@ -87,6 +88,9 @@ describe("useTaskCreateFlow", () => {
       result.current.openCreateModal();
       result.current.setNewTitle("Fresh task");
       result.current.setNewPriority("medium");
+      result.current.setNewRepositoryID(FACTORY_GIT_REPO_ID);
+      result.current.setNewProjectID(FACTORY_REPO_DEFAULT_PROJECT_ID);
+      result.current.setNewWorktreeID(FACTORY_GIT_WORKTREE_ID);
       result.current.appendNewChecklistCriterion("Ship with tests");
     });
 
@@ -101,7 +105,8 @@ describe("useTaskCreateFlow", () => {
     });
     expect(mockedCreateTask).toHaveBeenCalledWith(
       expect.objectContaining({
-        project_id: DEFAULT_PROJECT_ID,
+        project_id: FACTORY_REPO_DEFAULT_PROJECT_ID,
+        worktree_id: FACTORY_GIT_WORKTREE_ID,
         checklist_items: [{ text: "Ship with tests" }],
       }),
     );

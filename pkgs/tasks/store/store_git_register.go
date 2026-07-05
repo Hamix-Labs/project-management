@@ -12,6 +12,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/kernel"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/projects"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -65,6 +66,9 @@ func (s *Store) registerGitRepository(ctx context.Context, input CreateGitReposi
 				return domain.NewGitErr(domain.GitCodeDuplicate, "repository already registered")
 			}
 			return err
+		}
+		if _, err := projects.CreateDefaultProjectForRepo(ctx, tx, repo.ID, now); err != nil {
+			return fmt.Errorf("seed default project: %w", err)
 		}
 		return nil
 	})

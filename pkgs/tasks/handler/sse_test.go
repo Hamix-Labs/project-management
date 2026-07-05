@@ -156,9 +156,7 @@ func TestHTTP_SSE_responseHeaders(t *testing.T) {
 }
 
 func TestHTTP_SSE_receivesEventAfterCreate(t *testing.T) {
-	db := tasktestdb.OpenSQLite(t)
-	h := NewHandler(store.NewStore(db), NewSSEHub(), nil)
-	srv := httptest.NewServer(h)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	streamReady := make(chan struct{})
@@ -216,7 +214,7 @@ func TestHTTP_SSE_receivesEventAfterCreate(t *testing.T) {
 	}()
 
 	<-streamReady
-	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklist(`{"title":"sse","priority":"medium"}`)))
+	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklistForURL(srv.URL, `{"title":"sse","priority":"medium"}`)))
 	if err != nil {
 		t.Fatal(err)
 	}

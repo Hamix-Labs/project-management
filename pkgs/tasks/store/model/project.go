@@ -14,6 +14,7 @@ type Project struct {
 	Status         domain.ProjectStatus `gorm:"not null;index;default:active;check:chk_projects_status,status IN ('active','archived')"`
 	ContextSummary string               `gorm:"type:text;not null;default:''"`
 	RepositoryID   *string              `gorm:"index"`
+	IsDefault      bool                 `gorm:"not null;default:false;index"`
 	CreatedAt      time.Time            `gorm:"not null;index"`
 	UpdatedAt      time.Time            `gorm:"not null;index"`
 }

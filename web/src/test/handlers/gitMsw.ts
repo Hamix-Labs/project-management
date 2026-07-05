@@ -1,10 +1,10 @@
 import { http, HttpResponse } from "msw";
-import { DEFAULT_PROJECT_ID } from "@/types";
+import { FACTORY_REPO_DEFAULT_PROJECT_ID } from "../factories/project";
 import { gitRouteJsonBody } from "./gitRoutes";
 
-/** MSW handlers for project-scoped git REST paths. */
+/** MSW handlers for project-scoped git REST paths (legacy). */
 export function gitApiHandlers() {
-  const base = `/projects/${DEFAULT_PROJECT_ID}/git`;
+  const base = `/projects/${FACTORY_REPO_DEFAULT_PROJECT_ID}/git`;
   return [
     http.get(`${base}/repositories`, () =>
       HttpResponse.json(gitRouteJsonBody({ kind: "repositories-list" }, "project")),

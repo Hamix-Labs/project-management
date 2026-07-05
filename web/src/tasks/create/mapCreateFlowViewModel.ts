@@ -89,6 +89,8 @@ export function mapCreateFlowViewModel(input: {
     setNewTaskCursorModel: input.form.setNewTaskCursorModel,
     newProjectID: input.form.newProjectID,
     setNewProjectID: input.form.setNewProjectID,
+    newRepositoryID: input.form.newRepositoryID,
+    setNewRepositoryID: input.form.setNewRepositoryID,
     newProjectContextItemIDs: input.form.newProjectContextItemIDs,
     setNewProjectContextItemIDs: input.form.setNewProjectContextItemIDs,
     newWorktreeID: input.form.newWorktreeID,

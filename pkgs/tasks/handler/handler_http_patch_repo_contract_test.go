@@ -30,7 +30,7 @@ func patchRepoTestSetup(t *testing.T) (srv *httptest.Server, dir, taskID, worktr
 	t.Cleanup(srv.Close)
 
 	res, err := http.Post(srv.URL+"/tasks", "application/json",
-		strings.NewReader(withCreateChecklist(fmt.Sprintf(
+		strings.NewReader(withCreateChecklistForURL(srv.URL, fmt.Sprintf(
 			`{"title":"seed","priority":"medium","worktree_id":%q}`,
 			worktreeID))))
 	if err != nil {
@@ -137,7 +137,7 @@ func TestHTTP_patchTask_repoMentionValidation(t *testing.T) {
 // TestHTTP_patchTask_mentionRequiresWorktreeOnTask pins that PATCH with @-mentions
 // requires the task (or patch body) to carry worktree_id once Plan 4 scoping is active.
 func TestHTTP_patchTask_mentionRequiresWorktreeOnTask(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 	id := mustCreateTask(t, srv.URL, `{"title":"x","priority":"medium"}`)
 	res, raw := patchTask(t, srv.URL, id, `{"initial_prompt":"see @nope.txt"}`)

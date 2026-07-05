@@ -13,11 +13,11 @@ import (
 )
 
 func TestHTTP_patch_task_event_user_response(t *testing.T) {
-	srv, st := newTaskTestServerWithStore(t)
+	srv, st := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 	ctx := context.Background()
 
-	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklist(`{"title":"hello","priority":"medium"}`)))
+	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklistForURL(srv.URL, `{"title":"hello","priority":"medium"}`)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -153,10 +153,10 @@ func TestHTTP_patch_task_event_user_response(t *testing.T) {
 }
 
 func TestHTTP_get_task_event(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
-	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklist(`{"title":"hello","priority":"medium"}`)))
+	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklistForURL(srv.URL, `{"title":"hello","priority":"medium"}`)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -236,10 +236,10 @@ func TestHTTP_get_task_event(t *testing.T) {
 }
 
 func TestHTTP_task_events_query_validation_error_messages(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
-	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklist(`{"title":"e","priority":"medium"}`)))
+	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklistForURL(srv.URL, `{"title":"e","priority":"medium"}`)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -320,11 +320,11 @@ func TestHTTP_task_events_query_validation_error_messages(t *testing.T) {
 }
 
 func TestHTTP_patch_task_event_rejects_overlong_seq(t *testing.T) {
-	srv, st := newTaskTestServerWithStore(t)
+	srv, st := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 	ctx := context.Background()
 
-	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklist(`{"title":"hello","priority":"medium"}`)))
+	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklistForURL(srv.URL, `{"title":"hello","priority":"medium"}`)))
 	if err != nil {
 		t.Fatal(err)
 	}

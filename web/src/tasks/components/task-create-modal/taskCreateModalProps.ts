@@ -45,8 +45,11 @@ export type TaskCreateModalProps = {
   autonomyDisabled?: boolean;
   tagsCsv: string;
   milestone: string;
+  repositoryId: string;
   projectId: string;
   worktreeId: string;
+  onRepositoryChange: (repositoryId: string) => void;
+  onProjectChange: (projectId: string) => void;
   onWorktreeChange: (worktreeId: string) => void;
   dependsOn: string[];
   onTagsCsvChange: (value: string) => void;

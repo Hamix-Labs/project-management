@@ -9,10 +9,10 @@ import (
 )
 
 func TestHTTP_create_rejects_unknown_field(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
-	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklist(`{"title":"x","nope":1,"priority":"medium"}`)))
+	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklistForURL(srv.URL, `{"title":"x","nope":1,"priority":"medium"}`)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,7 +35,7 @@ func TestHTTP_create_rejects_unknown_field(t *testing.T) {
 }
 
 func TestHTTP_list_bad_limit(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	res, err := http.Get(srv.URL + "/tasks?limit=999")
@@ -60,7 +60,7 @@ func TestHTTP_list_bad_limit(t *testing.T) {
 }
 
 func TestHTTP_get_task_rejects_overlong_path_id(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	long := strings.Repeat("a", maxTaskPathIDBytes+1)
@@ -75,7 +75,7 @@ func TestHTTP_get_task_rejects_overlong_path_id(t *testing.T) {
 }
 
 func TestHTTP_list_query_validation_error_messages(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	getErr := func(rawURL string) string {
@@ -132,10 +132,10 @@ func TestHTTP_list_query_validation_error_messages(t *testing.T) {
 }
 
 func TestHTTP_create_rejects_empty_title(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
-	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklist(`{"title":"   ","priority":"medium"}`)))
+	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklistForURL(srv.URL, `{"title":"   ","priority":"medium"}`)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -146,7 +146,7 @@ func TestHTTP_create_rejects_empty_title(t *testing.T) {
 }
 
 func TestHTTP_create_rejects_invalid_status(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	body := `{"title":"ok","status":"not_a_real_status","priority":"medium"}`
@@ -161,10 +161,10 @@ func TestHTTP_create_rejects_invalid_status(t *testing.T) {
 }
 
 func TestHTTP_create_rejects_missing_priority(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
-	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklist(`{"title":"ok"}`)))
+	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklistForURL(srv.URL, `{"title":"ok"}`)))
 	if err != nil {
 		t.Fatal(err)
 	}

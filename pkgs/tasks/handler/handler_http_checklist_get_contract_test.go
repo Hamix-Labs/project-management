@@ -16,7 +16,7 @@ import (
 // only the `items` key at top level, each item exactly `{id, sort_order, text, done}`.
 // `done` is a JSON boolean (not a string or number) and `sort_order` is a JSON number.
 func TestHTTP_getChecklist_envelopeShape(t *testing.T) {
-	srv, st := newTaskTestServerWithStore(t)
+	srv, st := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 	taskID := mustCreateChecklistTask(t, srv, "chk-get-shape")
 	if _, err := st.AddChecklistItem(context.Background(), taskID, "alpha", nil, domain.ActorUser); err != nil {
@@ -96,7 +96,7 @@ func TestHTTP_getChecklist_envelopeShape(t *testing.T) {
 // We assert directly on the raw JSON so a future change to `var items []…` (which
 // marshals to `null`) would fail loudly.
 func TestHTTP_getChecklist_emptyItemsIsArrayNotNull(t *testing.T) {
-	srv, st := newTaskTestServerWithStore(t)
+	srv, st := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 	ctx := context.Background()
 	created, err := st.Create(ctx, store.CreateTaskInput{
@@ -137,7 +137,7 @@ func TestHTTP_getChecklist_emptyItemsIsArrayNotNull(t *testing.T) {
 // returned order matches their insertion order (since AddChecklistItem assigns
 // `MAX(sort_order)+1`, insertion order == sort_order order).
 func TestHTTP_getChecklist_orderIsSortOrderAscThenIDAsc(t *testing.T) {
-	srv, st := newTaskTestServerWithStore(t)
+	srv, st := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 	taskID := mustCreateChecklistTask(t, srv, "chk-order")
 	ctx := context.Background()

@@ -11,7 +11,7 @@ import (
 )
 
 func TestHTTP_createTask_tagsMilestoneDependsOn(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	dep := mustCreateTask(t, srv.URL, `{"title":"dep","priority":"medium","status":"ready"}`)
@@ -46,7 +46,7 @@ func TestHTTP_createTask_tagsMilestoneDependsOn(t *testing.T) {
 }
 
 func TestHTTP_patchTask_depCycleRejected(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	a := mustCreateTask(t, srv.URL, `{"title":"a","priority":"medium"}`)
@@ -65,7 +65,7 @@ func TestHTTP_patchTask_depCycleRejected(t *testing.T) {
 }
 
 func TestHTTP_taskDependencies_endpoints(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	a := mustCreateTask(t, srv.URL, `{"title":"a","priority":"medium"}`)
@@ -93,7 +93,7 @@ func TestHTTP_taskDependencies_endpoints(t *testing.T) {
 }
 
 func TestHTTP_patchTaskGate_release(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	id := mustCreateTask(t, srv.URL, `{

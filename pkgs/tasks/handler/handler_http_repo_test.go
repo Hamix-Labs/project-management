@@ -50,7 +50,7 @@ func TestHTTP_repo_search_and_create_rejects_bad_file_mention(t *testing.T) {
 	}
 
 	res2, err := http.Post(srv.URL+"/tasks", "application/json",
-		strings.NewReader(withCreateChecklist(fmt.Sprintf(
+		strings.NewReader(withCreateChecklistForURL(srv.URL, fmt.Sprintf(
 			`{"title":"t","initial_prompt":"@nope.txt","priority":"medium","worktree_id":%q}`,
 			wtID))))
 	if err != nil {
@@ -70,7 +70,7 @@ func TestHTTP_repo_search_and_create_rejects_bad_file_mention(t *testing.T) {
 	}
 
 	res3, err := http.Post(srv.URL+"/tasks", "application/json",
-		strings.NewReader(withCreateChecklist(fmt.Sprintf(
+		strings.NewReader(withCreateChecklistForURL(srv.URL, fmt.Sprintf(
 			`{"title":"t2","initial_prompt":"@note.txt(1-2)","priority":"medium","worktree_id":%q}`,
 			wtID))))
 	if err != nil {

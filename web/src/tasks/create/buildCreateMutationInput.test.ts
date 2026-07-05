@@ -9,6 +9,7 @@ const baseFields: TaskCreateFormFields = {
   newTaskRunner: "cursor",
   newTaskCursorModel: "",
   newProjectID: "",
+  newRepositoryID: "",
   newProjectContextItemIDs: [],
   newSchedule: "",
   newAutonomyEnabled: true,

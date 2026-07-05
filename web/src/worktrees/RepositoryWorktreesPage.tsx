@@ -13,6 +13,7 @@ import { RepositoryDetailCard } from "./components/RepositoryDetailCard";
 import { RepositoryDetailHeader } from "./components/RepositoryDetailHeader";
 import { RepositoryWorktreesSearch } from "./components/RepositoryWorktreesSearch";
 import { RepositoryWorktreesSection } from "./components/RepositoryWorktreesSection";
+import { RepositoryProjectsSection } from "./components/RepositoryProjectsSection";
 import { DeleteConfirmDialog } from "./components/DeleteConfirmDialog";
 import { RegisterWorktreeModal } from "./modals/RegisterWorktreeModal";
 import { CreateWorktreeModal } from "./modals/CreateWorktreeModal";
@@ -100,6 +101,7 @@ export function RepositoryWorktreesPage() {
               }}
             />
             <RepositoryWorktreesSearch value={searchInput} onChange={setSearchInput} />
+            <RepositoryProjectsSection repositoryId={repository.id} />
           </>
         ) : null}
 

@@ -7,7 +7,7 @@ import {
   useState,
 } from "react";
 import type { QueryClient } from "@tanstack/react-query";
-import { DEFAULT_PROJECT_ID, type ChecklistItemDraft, type PriorityChoice, type Task } from "@/types";
+import type { ChecklistItemDraft, PriorityChoice, Task } from "@/types";
 import { settingsQueryKeys } from "@/settings/settingsQueryKeys";
 import {
   buildFreshDraftAutosaveBaseline,
@@ -23,7 +23,8 @@ export function useTaskCreateFormState(queryClient: QueryClient) {
   const [newPriority, setNewPriority] = useState<PriorityChoice>("");
   const [newTaskRunner, setNewTaskRunner] = useState("cursor");
   const [newTaskCursorModel, setNewTaskCursorModel] = useState("");
-  const [newProjectID, setNewProjectID] = useState(DEFAULT_PROJECT_ID);
+  const [newRepositoryID, setNewRepositoryID] = useState("");
+  const [newProjectID, setNewProjectID] = useState("");
   const [newProjectContextItemIDs, setNewProjectContextItemIDs] = useState<string[]>([]);
   const [newWorktreeID, setNewWorktreeID] = useState("");
   const [newSchedule, setNewSchedule] = useState<string | null>(null);
@@ -64,7 +65,8 @@ export function useTaskCreateFormState(queryClient: QueryClient) {
     setNewPriority("");
     setNewTaskRunner(defaultRunnerFromSettings(settings));
     setNewTaskCursorModel(defaultCursorModelFromSettings(settings));
-    setNewProjectID(DEFAULT_PROJECT_ID);
+    setNewRepositoryID("");
+    setNewProjectID("");
     setNewProjectContextItemIDs([]);
     setNewWorktreeID("");
     setNewSchedule(null);
@@ -87,7 +89,7 @@ export function useTaskCreateFormState(queryClient: QueryClient) {
     setNewPriority(t.priority);
     setNewTaskRunner(t.runner);
     setNewTaskCursorModel(t.cursor_model ?? "");
-    setNewProjectID(t.project_id || DEFAULT_PROJECT_ID);
+    setNewProjectID(t.project_id ?? "");
     setNewProjectContextItemIDs(t.project_context_item_ids ?? []);
     setNewWorktreeID(t.worktree_id ?? "");
     setNewSchedule(t.pickup_not_before ?? null);
@@ -106,6 +108,7 @@ export function useTaskCreateFormState(queryClient: QueryClient) {
       newTaskRunner,
       newTaskCursorModel,
       newProjectID,
+      newRepositoryID,
       newProjectContextItemIDs,
       newWorktreeID,
       newSchedule,
@@ -124,6 +127,7 @@ export function useTaskCreateFormState(queryClient: QueryClient) {
       newMilestone,
       newPriority,
       newProjectContextItemIDs,
+      newRepositoryID,
       newWorktreeID,
       newProjectID,
       newPrompt,
@@ -155,6 +159,7 @@ export function useTaskCreateFormState(queryClient: QueryClient) {
     setNewPriority,
     setNewTaskRunner,
     setNewTaskCursorModel,
+    setNewRepositoryID,
     setNewProjectID,
     setNewProjectContextItemIDs,
     setNewWorktreeID,
@@ -171,6 +176,7 @@ export function useTaskCreateFormState(queryClient: QueryClient) {
     newTaskRunner,
     newTaskCursorModel,
     newProjectID,
+    newRepositoryID,
     newProjectContextItemIDs,
     newWorktreeID,
     newSchedule,

@@ -46,8 +46,11 @@ export function TaskCreateModal({
   autonomyDisabled = false,
   tagsCsv,
   milestone,
+  repositoryId,
   projectId,
   worktreeId,
+  onRepositoryChange,
+  onProjectChange,
   onWorktreeChange,
   dependsOn,
   onTagsCsvChange,
@@ -117,8 +120,11 @@ export function TaskCreateModal({
       autonomyDisabled={autonomyDisabled}
       tagsCsv={tagsCsv}
       milestone={milestone}
+      repositoryId={repositoryId}
       projectId={projectId}
       worktreeId={worktreeId}
+      onRepositoryChange={onRepositoryChange}
+      onProjectChange={onProjectChange}
       onWorktreeChange={onWorktreeChange}
       dependsOn={dependsOn}
       onTagsCsvChange={onTagsCsvChange}

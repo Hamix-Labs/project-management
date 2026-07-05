@@ -1,8 +1,6 @@
 import {
   ProjectContextPicker,
-  ProjectSelect,
   useProjectContextPromptBinding,
-  useProjects,
 } from "@/projects";
 import { isUiFeatureOmitted } from "@/launch/omittedFeatures";
 import { useAppTimezone } from "@/shared/time/appTimezone";
@@ -15,11 +13,6 @@ export function TaskCreateModalsLayer() {
   const app = useTasksAppContext();
   const appTimezone = useAppTimezone();
   const projectsUiEnabled = !isUiFeatureOmitted("projects");
-  const projects = useProjects({
-    includeArchived: false,
-    limit: 100,
-    enabled: projectsUiEnabled && app.createModalOpen,
-  });
   const promptProjectContext = useProjectContextPromptBinding({
     projectId:
       projectsUiEnabled && app.createModalOpen ? app.newProjectID : "",
@@ -27,8 +20,6 @@ export function TaskCreateModalsLayer() {
     onSelectedIdsChange: app.setNewProjectContextItemIDs,
   });
 
-  const assignmentControlsDisabled =
-    app.saving || app.createModalAssignmentLocked;
   const isEditing = app.editingTaskId != null;
   const isTemplateMode = app.composeTarget === "template";
   const isTemplateEdit = isTemplateMode && app.composeOperation === "edit";
@@ -92,19 +83,8 @@ export function TaskCreateModalsLayer() {
             projectsUiEnabled ? (
               <section
                 className="task-create-project"
-                aria-label="Project assignment"
+                aria-label="Project context"
               >
-                <ProjectSelect
-                  id={isEditing ? "task-edit-project" : "task-create-project"}
-                  value={app.newProjectID}
-                  projects={projects.data?.projects ?? []}
-                  loading={projects.isLoading}
-                  disabled={assignmentControlsDisabled}
-                  onChange={(projectId) => {
-                    app.setNewProjectID(projectId);
-                    app.setNewProjectContextItemIDs([]);
-                  }}
-                />
                 <ProjectContextPicker
                   projectId={app.newProjectID}
                   selectedIds={app.newProjectContextItemIDs}
@@ -127,8 +107,19 @@ export function TaskCreateModalsLayer() {
           autonomyDisabled={isEditing}
           tagsCsv={app.newTagsCsv}
           milestone={app.newMilestone}
+          repositoryId={app.newRepositoryID}
           projectId={app.newProjectID}
           worktreeId={app.newWorktreeID}
+          onRepositoryChange={(repositoryId) => {
+            app.setNewRepositoryID(repositoryId);
+            app.setNewProjectID("");
+            app.setNewWorktreeID("");
+            app.setNewProjectContextItemIDs([]);
+          }}
+          onProjectChange={(projectId) => {
+            app.setNewProjectID(projectId);
+            app.setNewProjectContextItemIDs([]);
+          }}
           onWorktreeChange={app.setNewWorktreeID}
           dependsOn={app.newDependsOn}
           onTagsCsvChange={app.setNewTagsCsv}

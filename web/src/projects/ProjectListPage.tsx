@@ -7,7 +7,7 @@ import { EmptyState } from "@/shared/EmptyState";
 import { useDocumentTitle } from "@/shared/useDocumentTitle";
 import type { Project } from "@/types";
 import { useProjects } from "./hooks";
-import { ProjectCreateDialog } from "./ProjectCreateDialog";
+import { ProjectCreateDialog } from "@/components/projects/ProjectCreateDialog";
 import { projectQueryKeys } from "./queryKeys";
 
 export function ProjectListPage() {
@@ -79,7 +79,13 @@ export function ProjectListPage() {
           saving={createMutation.isPending}
           error={createMutation.error}
           onCancel={closeCreateDialog}
-          onSubmit={(input) => createMutation.mutate(input)}
+          onSubmit={(input) =>
+            createMutation.mutate({
+              name: input.name,
+              description: input.description,
+              repository_id: input.repository_id,
+            })
+          }
         />
       ) : null}
 

@@ -1,6 +1,6 @@
 import type { AppSettings } from "@/api/settings";
 import { TASK_DRAFTS } from "@/constants/tasks";
-import { DEFAULT_NEW_TASK_STATUS, DEFAULT_PROJECT_ID, type Status } from "@/types";
+import { DEFAULT_NEW_TASK_STATUS, type Status } from "@/types";
 import { draftAutosaveSignature } from "../task-drafts";
 
 export function generateTaskDraftID(): string {
@@ -33,7 +33,7 @@ export function buildFreshDraftAutosaveBaseline(
     priority: "",
     runner: defaultRunnerFromSettings(settings),
     cursorModel: defaultCursorModelFromSettings(settings),
-    projectId: DEFAULT_PROJECT_ID,
+    projectId: "",
     projectContextItemIds: [],
     checklistItems: [],
   });

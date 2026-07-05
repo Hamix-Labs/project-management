@@ -16,7 +16,7 @@ import (
 // distinct rejection path so a future refactor that changes the store/handler
 // wording breaks loudly here, in lockstep with the doc.
 func TestHTTP_createTask_400ErrorStrings(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	cases := []struct {
@@ -36,7 +36,14 @@ func TestHTTP_createTask_400ErrorStrings(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			res, raw := postCreateRaw(t, srv.URL, tc.body)
+			body := tc.body
+			switch tc.name {
+			case "checklistMissing", "checklistEmpty", "checklistWhitespaceOnly":
+				body = withCreateGitBinding(srv.URL, tc.body)
+			default:
+				body = withCreateChecklistForURL(srv.URL, tc.body)
+			}
+			res, raw := postCreateRaw(t, srv.URL, body)
 			if res.StatusCode != http.StatusBadRequest {
 				t.Fatalf("status %d (want 400) body=%s", res.StatusCode, raw)
 			}
@@ -58,7 +65,7 @@ func TestHTTP_createTask_400ErrorStrings(t *testing.T) {
 // file's perspective so a future split of the drafts-eval suite cannot lose
 // the assertion.
 func TestHTTP_createTask_409DuplicateID(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	const id = "60000000-0000-4000-8000-000000000099"
@@ -83,7 +90,7 @@ func TestHTTP_createTask_409DuplicateID(t *testing.T) {
 // TestHTTP_createTask_defaults pins the documented default: omitted/empty
 // `status` falls back to `ready`.
 func TestHTTP_createTask_defaults(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	t.Run("statusOmittedDefaultsToReady", func(t *testing.T) {
@@ -104,7 +111,7 @@ func TestHTTP_createTask_defaults(t *testing.T) {
 // TestHTTP_createTask_doneStatusWithCriteriaRejected pins that creating a task
 // as done while checklist items are not verified complete returns 400.
 func TestHTTP_createTask_doneStatusWithCriteriaRejected(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	res, raw := postCreate(t, srv.URL, withCreateChecklist(`{"title":"born-done","priority":"medium","status":"done"}`))
@@ -122,7 +129,7 @@ func TestHTTP_createTask_doneStatusWithCriteriaRejected(t *testing.T) {
 
 // TestHTTP_createTask_201ResponseShape pins the flat domain.Task 201 envelope.
 func TestHTTP_createTask_201ResponseShape(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	res, raw := postCreate(t, srv.URL, withCreateChecklist(`{"title":"leaf","priority":"medium"}`))
@@ -151,7 +158,7 @@ func TestHTTP_createTask_201ResponseShape(t *testing.T) {
 // now+1h must surface the explicit time on the wire (NOT now+5s) so operator
 // intent always wins over the system-wide deferral.
 func TestHTTP_createTask_acceptsPickupNotBefore_overrideGlobalDelay(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	want := time.Now().UTC().Add(1 * time.Hour).Truncate(time.Second)
@@ -178,7 +185,7 @@ func TestHTTP_createTask_acceptsPickupNotBefore_overrideGlobalDelay(t *testing.T
 // rejection path so a future refactor breaks loudly here, in lockstep with
 // docs/data-model.md.
 func TestHTTP_createTask_rejectsBadPickupNotBefore(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	cases := []struct {
@@ -225,7 +232,7 @@ func TestHTTP_createTask_rejectsBadPickupNotBefore(t *testing.T) {
 // no-op deferral that the worker treats as immediately eligible — see the
 // Stage 0 `shouldNotifyReadyNow` gate in pkgs/tasks/store/facade_tasks.go.
 func TestHTTP_createTask_pickupNotBefore_pastIsAllowed(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	past := time.Now().UTC().Add(-1 * time.Hour).Truncate(time.Second)
@@ -265,10 +272,10 @@ func TestHTTP_createTask_publishesTaskCreated(t *testing.T) {
 
 // TestHTTP_createTask_checklistItemsPersisted pins atomic checklist insert on create.
 func TestHTTP_createTask_checklistItemsPersisted(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
-	res, raw := postCreateRaw(t, srv.URL, `{"title":"with-criteria","priority":"medium","checklist_items":[{"text":"Ship feature"},{"text":"Add tests"}]}`)
+	res, raw := postCreateRaw(t, srv.URL, withCreateGitBinding(srv.URL, `{"title":"with-criteria","priority":"medium","checklist_items":[{"text":"Ship feature"},{"text":"Add tests"}]}`))
 	if res.StatusCode != http.StatusCreated {
 		t.Fatalf("status %d body=%s", res.StatusCode, raw)
 	}
@@ -304,10 +311,10 @@ func TestHTTP_createTask_checklistItemsPersisted(t *testing.T) {
 // TestHTTP_createTask_checklistVerifyCommandsPersisted pins POST /tasks accepting
 // verify_commands on checklist_items (docs/api.md).
 func TestHTTP_createTask_checklistVerifyCommandsPersisted(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
-	body := `{"title":"with-verify","priority":"medium","checklist_items":[{"text":"Ship feature","verify_commands":[{"command":"go test ./...","expected_outcome":"pass"}]}]}`
+	body := withCreateGitBinding(srv.URL, `{"title":"with-verify","priority":"medium","checklist_items":[{"text":"Ship feature","verify_commands":[{"command":"go test ./...","expected_outcome":"pass"}]}]}`)
 	res, raw := postCreateRaw(t, srv.URL, body)
 	if res.StatusCode != http.StatusCreated {
 		t.Fatalf("status %d body=%s", res.StatusCode, raw)

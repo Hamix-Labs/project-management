@@ -12,10 +12,10 @@ import (
 )
 
 func TestHTTP_get_task_events(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
-	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklist(`{"title":"hello","priority":"medium"}`)))
+	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklistForURL(srv.URL, `{"title":"hello","priority":"medium"}`)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,10 +58,10 @@ func TestHTTP_get_task_events(t *testing.T) {
 }
 
 func TestHTTP_get_task_events_paged_cursor(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
-	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklist(`{"title":"paged","priority":"medium"}`)))
+	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklistForURL(srv.URL, `{"title":"paged","priority":"medium"}`)))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -62,7 +62,7 @@ func TestHandler_listGlobalGitRepositories(t *testing.T) {
 func TestHandler_createGitRepository(t *testing.T) {
 	h, main := gitHandlerTest(t)
 	body, _ := json.Marshal(map[string]string{"path": main})
-	req := httptest.NewRequest(http.MethodPost, "/projects/"+domain.DefaultProjectID+"/git/repositories", bytes.NewReader(body))
+	req := httptest.NewRequest(http.MethodPost, "/projects/"+domain.LegacyGlobalDefaultProjectID+"/git/repositories", bytes.NewReader(body))
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
 	if rec.Code != http.StatusCreated {
@@ -74,7 +74,7 @@ func TestHandler_createGitRepository_notGit(t *testing.T) {
 	h, _ := gitHandlerTest(t)
 	dir := t.TempDir()
 	body, _ := json.Marshal(map[string]string{"path": dir})
-	req := httptest.NewRequest(http.MethodPost, "/projects/"+domain.DefaultProjectID+"/git/repositories", bytes.NewReader(body))
+	req := httptest.NewRequest(http.MethodPost, "/projects/"+domain.LegacyGlobalDefaultProjectID+"/git/repositories", bytes.NewReader(body))
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
 	if rec.Code != http.StatusConflict {
@@ -92,13 +92,13 @@ func TestHandler_createGitRepository_notGit(t *testing.T) {
 func TestHandler_listGitRepositories(t *testing.T) {
 	h, main := gitHandlerTest(t)
 	createBody, _ := json.Marshal(map[string]string{"path": main})
-	create := httptest.NewRequest(http.MethodPost, "/projects/"+domain.DefaultProjectID+"/git/repositories", bytes.NewReader(createBody))
+	create := httptest.NewRequest(http.MethodPost, "/projects/"+domain.LegacyGlobalDefaultProjectID+"/git/repositories", bytes.NewReader(createBody))
 	createRec := httptest.NewRecorder()
 	h.ServeHTTP(createRec, create)
 	if createRec.Code != http.StatusCreated {
 		t.Fatal(createRec.Body.String())
 	}
-	list := httptest.NewRequest(http.MethodGet, "/projects/"+domain.DefaultProjectID+"/git/repositories", nil)
+	list := httptest.NewRequest(http.MethodGet, "/projects/"+domain.LegacyGlobalDefaultProjectID+"/git/repositories", nil)
 	listRec := httptest.NewRecorder()
 	h.ServeHTTP(listRec, list)
 	if listRec.Code != http.StatusOK {

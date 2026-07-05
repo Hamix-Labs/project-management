@@ -11,7 +11,7 @@ import (
 )
 
 func TestHTTP_task_drafts_crud(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	saveRes, err := http.Post(srv.URL+"/task-drafts", "application/json", strings.NewReader(`{
@@ -67,7 +67,7 @@ func TestHTTP_task_drafts_crud(t *testing.T) {
 }
 
 func TestHTTP_task_drafts_list_limit_zero_coerces_to_default(t *testing.T) {
-	srv, st := newTaskTestServerWithStore(t)
+	srv, st := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 	ctx := context.Background()
 	for i := 0; i < 55; i++ {
@@ -96,7 +96,7 @@ func TestHTTP_task_drafts_list_limit_zero_coerces_to_default(t *testing.T) {
 }
 
 func TestHTTP_task_drafts_list_overlong_limit(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	long := strings.Repeat("1", maxListIntQueryParamBytes+1)
@@ -111,11 +111,11 @@ func TestHTTP_task_drafts_list_overlong_limit(t *testing.T) {
 }
 
 func TestHTTP_create_duplicate_client_id_returns_409(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 	id := "30000000-0000-4000-8000-000000000099"
 	res1, err := http.Post(srv.URL+"/tasks", "application/json",
-		strings.NewReader(withCreateChecklist(`{"id":"`+id+`","title":"first","priority":"medium"}`)))
+		strings.NewReader(withCreateChecklistForURL(srv.URL, `{"id":"`+id+`","title":"first","priority":"medium"}`)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -124,7 +124,7 @@ func TestHTTP_create_duplicate_client_id_returns_409(t *testing.T) {
 		t.Fatalf("first create status %d", res1.StatusCode)
 	}
 	res2, err := http.Post(srv.URL+"/tasks", "application/json",
-		strings.NewReader(withCreateChecklist(`{"id":"`+id+`","title":"second","priority":"medium"}`)))
+		strings.NewReader(withCreateChecklistForURL(srv.URL, `{"id":"`+id+`","title":"second","priority":"medium"}`)))
 	if err != nil {
 		t.Fatal(err)
 	}

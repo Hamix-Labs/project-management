@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"os/exec"
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
+	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
@@ -15,13 +17,54 @@ func newProjectStore(t *testing.T) (*Store, context.Context) {
 	return NewStore(tasktestdb.OpenSQLite(t)), context.Background()
 }
 
+func mustRepoDefaultProject(t *testing.T, s *Store, ctx context.Context) (repoID string, defaultProj domain.Project) {
+	t.Helper()
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git not on PATH")
+	}
+	main := initGitRepo(t)
+	repo, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main}, gitwork.New())
+	if err != nil {
+		t.Fatalf("CreateGlobalGitRepository: %v", err)
+	}
+	defaultProj, err = s.GetDefaultProjectForRepository(ctx, repo.ID)
+	if err != nil {
+		t.Fatalf("GetDefaultProjectForRepository: %v", err)
+	}
+	return repo.ID, defaultProj
+}
+
+func TestStore_CreateGlobalGitRepository_seedsDefaultProject(t *testing.T) {
+	s, ctx := newProjectStore(t)
+	repoID, defaultProj := mustRepoDefaultProject(t, s, ctx)
+	if !defaultProj.IsDefault || defaultProj.RepositoryID == nil || *defaultProj.RepositoryID != repoID {
+		t.Fatalf("default project = %#v", defaultProj)
+	}
+	byRepo, err := s.ListProjectsByRepository(ctx, repoID)
+	if err != nil {
+		t.Fatalf("ListProjectsByRepository: %v", err)
+	}
+	if len(byRepo) != 1 || !byRepo[0].IsDefault {
+		t.Fatalf("projects by repo = %#v", byRepo)
+	}
+}
+
+func TestStore_CreateProject_requiresRepositoryID(t *testing.T) {
+	s, ctx := newProjectStore(t)
+	if _, err := s.CreateProject(ctx, CreateProjectInput{Name: "No repo"}); !errors.Is(err, domain.ErrInvalidInput) {
+		t.Fatalf("create without repo err = %v, want ErrInvalidInput", err)
+	}
+}
+
 func TestStore_ProjectCRUD_roundtrip(t *testing.T) {
 	s, ctx := newProjectStore(t)
+	repoID, defaultProj := mustRepoDefaultProject(t, s, ctx)
 
 	project, err := s.CreateProject(ctx, CreateProjectInput{
 		Name:           "Project moat",
 		Description:    "Long-running project context",
 		ContextSummary: "Shared memory for related tasks",
+		RepositoryID:   &repoID,
 	})
 	if err != nil {
 		t.Fatalf("create project: %v", err)
@@ -58,8 +101,8 @@ func TestStore_ProjectCRUD_roundtrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("list active projects: %v", err)
 	}
-	if len(active) != 1 || active[0].ID != domain.DefaultProjectID {
-		t.Fatalf("active projects = %#v, want default only", active)
+	if len(active) != 1 || active[0].ID != defaultProj.ID {
+		t.Fatalf("active projects = %#v, want default only after archive", active)
 	}
 
 	all, err := s.ListProjects(ctx, true, 10)
@@ -81,34 +124,36 @@ func TestStore_ProjectCRUD_roundtrip(t *testing.T) {
 
 func TestStore_DefaultProject_seededAndProtected(t *testing.T) {
 	s, ctx := newProjectStore(t)
+	_, defaultProj := mustRepoDefaultProject(t, s, ctx)
 
-	project, err := s.GetProject(ctx, domain.DefaultProjectID)
+	project, err := s.GetProject(ctx, defaultProj.ID)
 	if err != nil {
 		t.Fatalf("get default project: %v", err)
 	}
-	if project.Name == "" || project.Status != domain.ProjectStatusActive {
+	if project.Name != domain.DefaultProjectName || project.Status != domain.ProjectStatusActive {
 		t.Fatalf("default project = %#v", project)
 	}
 	renamed := "Renamed default"
-	if _, err := s.UpdateProject(ctx, domain.DefaultProjectID, UpdateProjectInput{
+	if _, err := s.UpdateProject(ctx, defaultProj.ID, UpdateProjectInput{
 		Name: &renamed,
 	}); !errors.Is(err, domain.ErrConflict) {
 		t.Fatalf("rename default err = %v, want ErrConflict", err)
 	}
 	archived := domain.ProjectStatusArchived
-	if _, err := s.UpdateProject(ctx, domain.DefaultProjectID, UpdateProjectInput{
+	if _, err := s.UpdateProject(ctx, defaultProj.ID, UpdateProjectInput{
 		Status: &archived,
 	}); !errors.Is(err, domain.ErrConflict) {
 		t.Fatalf("archive default err = %v, want ErrConflict", err)
 	}
-	if err := s.DeleteProject(ctx, domain.DefaultProjectID); !errors.Is(err, domain.ErrConflict) {
+	if err := s.DeleteProject(ctx, defaultProj.ID); !errors.Is(err, domain.ErrConflict) {
 		t.Fatalf("delete default err = %v, want ErrConflict", err)
 	}
 }
 
 func TestStore_ProjectContextCRUD_roundtrip(t *testing.T) {
 	s, ctx := newProjectStore(t)
-	project, err := s.CreateProject(ctx, CreateProjectInput{Name: "Context project"})
+	repoID, _ := mustRepoDefaultProject(t, s, ctx)
+	project, err := s.CreateProject(ctx, CreateProjectInput{Name: "Context project", RepositoryID: &repoID})
 	if err != nil {
 		t.Fatalf("create project: %v", err)
 	}
@@ -176,7 +221,8 @@ func TestStore_ProjectContextCRUD_roundtrip(t *testing.T) {
 
 func TestStore_ProjectContextEdges_roundtripAndValidation(t *testing.T) {
 	s, ctx := newProjectStore(t)
-	project, err := s.CreateProject(ctx, CreateProjectInput{Name: "Graph project"})
+	repoID, _ := mustRepoDefaultProject(t, s, ctx)
+	project, err := s.CreateProject(ctx, CreateProjectInput{Name: "Graph project", RepositoryID: &repoID})
 	if err != nil {
 		t.Fatalf("create project: %v", err)
 	}
@@ -265,7 +311,8 @@ func TestStore_ProjectContextEdges_roundtripAndValidation(t *testing.T) {
 
 func TestStore_TaskContextSnapshot_roundtrip(t *testing.T) {
 	s, ctx := newProjectStore(t)
-	project, err := s.CreateProject(ctx, CreateProjectInput{Name: "Snapshot project"})
+	repoID, _ := mustRepoDefaultProject(t, s, ctx)
+	project, err := s.CreateProject(ctx, CreateProjectInput{Name: "Snapshot project", RepositoryID: &repoID})
 	if err != nil {
 		t.Fatalf("create project: %v", err)
 	}
@@ -310,7 +357,8 @@ func TestStore_Project_validation_errors(t *testing.T) {
 		t.Fatalf("create empty name err = %v, want ErrInvalidInput", err)
 	}
 
-	project, err := s.CreateProject(ctx, CreateProjectInput{Name: "Validation project"})
+	repoID, _ := mustRepoDefaultProject(t, s, ctx)
+	project, err := s.CreateProject(ctx, CreateProjectInput{Name: "Validation project", RepositoryID: &repoID})
 	if err != nil {
 		t.Fatalf("create project: %v", err)
 	}

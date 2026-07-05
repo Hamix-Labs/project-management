@@ -1,6 +1,7 @@
 package worker_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/internal/gittest"
@@ -15,4 +16,13 @@ func seedWorkerTestGit(t *testing.T, st *store.Store) (worktreeID, workDir strin
 func (h *harness) gitBinding() *string {
 	wt := h.worktreeID
 	return &wt
+}
+
+func (h *harness) repositoryID() string {
+	h.t.Helper()
+	wt, err := h.store.GetGitWorktreeByID(context.Background(), h.worktreeID)
+	if err != nil {
+		h.t.Fatalf("GetGitWorktreeByID: %v", err)
+	}
+	return wt.RepositoryID
 }

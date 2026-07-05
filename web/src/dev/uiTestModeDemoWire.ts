@@ -1,5 +1,4 @@
-import { DEFAULT_PROJECT_ID } from "@/types";
-
+export const DEMO_PRIMARY_PROJECT_ID = "00000000-0000-4000-8000-000000000001";
 export const DEMO_SECOND_PROJECT_ID = "22222222-2222-4222-8222-222222222222";
 export const DEMO_THIRD_PROJECT_ID = "33333333-3333-4333-8333-333333333333";
 
@@ -25,7 +24,7 @@ const CREATED = {
 } as const;
 
 const DEMO_PROJECT_IDS = new Set([
-  DEFAULT_PROJECT_ID,
+  DEMO_PRIMARY_PROJECT_ID,
   DEMO_SECOND_PROJECT_ID,
   DEMO_THIRD_PROJECT_ID,
 ]);
@@ -90,7 +89,7 @@ const ROOT_TASKS: Record<string, unknown>[] = [
     "Replace session cookies with short-lived JWT access tokens and refresh rotation across internal services. Acceptance: zero-downtime deploy with a 72-hour backward-compatibility window.",
     CREATED.h3,
     {
-      project_id: DEFAULT_PROJECT_ID,
+      project_id: DEMO_PRIMARY_PROJECT_ID,
       milestone: M_JWT,
       tags: ["auth"],
     },
@@ -103,7 +102,7 @@ const ROOT_TASKS: Record<string, unknown>[] = [
     "Audit and revoke stale sessions older than 90 days. Cross-reference recent password resets and security alerts before bulk invalidation.",
     CREATED.d3,
     {
-      project_id: DEFAULT_PROJECT_ID,
+      project_id: DEMO_PRIMARY_PROJECT_ID,
       milestone: M_SESS,
       tags: ["auth"],
     },
@@ -116,7 +115,7 @@ const ROOT_TASKS: Record<string, unknown>[] = [
     "Legal must approve updated OAuth consent screen copy before the partner portal ships. Blocked on compliance review ticket #4421.",
     CREATED.w2,
     {
-      project_id: DEFAULT_PROJECT_ID,
+      project_id: DEMO_PRIMARY_PROJECT_ID,
       milestone: M_DISC,
     },
   ),
@@ -128,7 +127,7 @@ const ROOT_TASKS: Record<string, unknown>[] = [
     "Build k6 scripts simulating 500 concurrent logins against staging. Agent finished the scripts; operator review needed for thresholds and alerting config.",
     CREATED.h9,
     {
-      project_id: DEFAULT_PROJECT_ID,
+      project_id: DEMO_PRIMARY_PROJECT_ID,
       milestone: M_TEST,
     },
   ),
@@ -140,7 +139,7 @@ const ROOT_TASKS: Record<string, unknown>[] = [
     "Final pre-launch checklist: feature flags, rollback plan, monitoring dashboards, and on-call runbook. All items verified and signed off.",
     CREATED.mo3,
     {
-      project_id: DEFAULT_PROJECT_ID,
+      project_id: DEMO_PRIMARY_PROJECT_ID,
       milestone: M_REL,
     },
   ),
@@ -152,7 +151,7 @@ const ROOT_TASKS: Record<string, unknown>[] = [
     "Backfill missing audit events from the Jan–Feb migration window into the central log store. Estimated volume: 2.4M records.",
     CREATED.w1,
     {
-      project_id: DEFAULT_PROJECT_ID,
+      project_id: DEMO_PRIMARY_PROJECT_ID,
     },
   ),
   task(
@@ -163,7 +162,7 @@ const ROOT_TASKS: Record<string, unknown>[] = [
     "Dry-run migration of 50 pilot customers to AuthV2. Failed at step 3 when session mapping hit an edge case with federated accounts.",
     CREATED.d1,
     {
-      project_id: DEFAULT_PROJECT_ID,
+      project_id: DEMO_PRIMARY_PROJECT_ID,
       milestone: M_TEST,
     },
   ),
@@ -206,7 +205,7 @@ const ROOT_TASKS: Record<string, unknown>[] = [
     "Coordinate new-user onboarding improvements across empty states, analytics beacons, and help-center links.",
     CREATED.mo2,
     {
-      project_id: DEFAULT_PROJECT_ID,
+      project_id: DEMO_PRIMARY_PROJECT_ID,
       milestone: M_DISC,
       children: [
         task(
@@ -218,7 +217,7 @@ const ROOT_TASKS: Record<string, unknown>[] = [
           CREATED.mo3,
           {
             parent_id: "f000000b-0000-4000-8000-00000000000b",
-            project_id: DEFAULT_PROJECT_ID,
+            project_id: DEMO_PRIMARY_PROJECT_ID,
           },
         ),
         task(
@@ -230,7 +229,7 @@ const ROOT_TASKS: Record<string, unknown>[] = [
           CREATED.d3,
           {
             parent_id: "f000000b-0000-4000-8000-00000000000b",
-            project_id: DEFAULT_PROJECT_ID,
+            project_id: DEMO_PRIMARY_PROJECT_ID,
           },
         ),
       ],
@@ -244,7 +243,7 @@ const ROOT_TASKS: Record<string, unknown>[] = [
     "Rotate staging signing keys ahead of production rollout. Verify all services pick up the new JWKS endpoint within the 72-hour overlap window.",
     CREATED.mo5,
     {
-      project_id: DEFAULT_PROJECT_ID,
+      project_id: DEMO_PRIMARY_PROJECT_ID,
       milestone: M_JWT,
     },
   ),
@@ -276,7 +275,7 @@ const ROOT_TASKS: Record<string, unknown>[] = [
     "Convert remaining cookie-based sessions to JWT pairs on next login. Blocked until the mobile app ships token refresh support.",
     CREATED.mo1,
     {
-      project_id: DEFAULT_PROJECT_ID,
+      project_id: DEMO_PRIMARY_PROJECT_ID,
       milestone: M_JWT,
     },
   ),
@@ -299,7 +298,7 @@ const ROOT_TASKS: Record<string, unknown>[] = [
     "Issue a CSRF token on the login page and validate it server-side on POST. Regression-test OAuth redirect flows.",
     CREATED.mo2,
     {
-      project_id: DEFAULT_PROJECT_ID,
+      project_id: DEMO_PRIMARY_PROJECT_ID,
       milestone: M_JWT,
     },
   ),
@@ -331,7 +330,7 @@ const ROOT_TASKS: Record<string, unknown>[] = [
     "Users on iOS 17 Safari hit an infinite redirect during OAuth login. Reproduce on device farm and patch redirect URI validation.",
     CREATED.d3,
     {
-      project_id: DEFAULT_PROJECT_ID,
+      project_id: DEMO_PRIMARY_PROJECT_ID,
     },
   ),
   task(
@@ -362,11 +361,12 @@ export function demoProjectsListWire(): unknown {
   return {
     projects: [
       {
-        id: DEFAULT_PROJECT_ID,
+        id: DEMO_PRIMARY_PROJECT_ID,
         name: "AuthV2",
         description: "JWT + session hardening across services.",
         status: "active",
         context_summary: "Primary operator sandbox project.",
+        is_default: false,
         created_at: ISO,
         updated_at: ISO,
       },
@@ -376,6 +376,7 @@ export function demoProjectsListWire(): unknown {
         description: "Usage metering, exports, and anomaly detection.",
         status: "active",
         context_summary: "Cross-team billing context.",
+        is_default: false,
         created_at: ISO,
         updated_at: ISO,
       },
@@ -385,6 +386,7 @@ export function demoProjectsListWire(): unknown {
         description: "Superseded experiment — kept for layout regression.",
         status: "archived",
         context_summary: "",
+        is_default: false,
         created_at: ISO,
         updated_at: ISO,
       },
@@ -400,14 +402,14 @@ export function demoProjectWire(id: string): unknown | null {
 }
 
 export function demoContextWire(projectId: string): unknown {
-  if (projectId !== DEFAULT_PROJECT_ID) {
+  if (projectId !== DEMO_PRIMARY_PROJECT_ID) {
     return { items: [], edges: [], limit: 100 };
   }
   return {
     items: [
       {
         id: C1,
-        project_id: DEFAULT_PROJECT_ID,
+        project_id: DEMO_PRIMARY_PROJECT_ID,
         kind: "decision",
         title: "JWT-first for partner APIs",
         body: "Partners accept bearer tokens only; cookies reserved for first-party.",
@@ -418,7 +420,7 @@ export function demoContextWire(projectId: string): unknown {
       },
       {
         id: C2,
-        project_id: DEFAULT_PROJECT_ID,
+        project_id: DEMO_PRIMARY_PROJECT_ID,
         kind: "constraint",
         title: "No PII in logs",
         body: "Structured logs must redact email and phone by default.",
@@ -429,7 +431,7 @@ export function demoContextWire(projectId: string): unknown {
       },
       {
         id: C3,
-        project_id: DEFAULT_PROJECT_ID,
+        project_id: DEMO_PRIMARY_PROJECT_ID,
         kind: "note",
         title: "Rotation cadence",
         body: "Signing keys rotate every 30 days; overlap window 72h.",
@@ -440,7 +442,7 @@ export function demoContextWire(projectId: string): unknown {
       },
       {
         id: C4,
-        project_id: DEFAULT_PROJECT_ID,
+        project_id: DEMO_PRIMARY_PROJECT_ID,
         kind: "decision",
         title: "Session fixation mitigation",
         body: "Regenerate session id post-auth; SameSite=Lax default.",
@@ -451,7 +453,7 @@ export function demoContextWire(projectId: string): unknown {
       },
       {
         id: C5,
-        project_id: DEFAULT_PROJECT_ID,
+        project_id: DEMO_PRIMARY_PROJECT_ID,
         kind: "constraint",
         title: "EU residency",
         body: "Auth metadata stores primary region EU.",
@@ -462,7 +464,7 @@ export function demoContextWire(projectId: string): unknown {
       },
       {
         id: C6,
-        project_id: DEFAULT_PROJECT_ID,
+        project_id: DEMO_PRIMARY_PROJECT_ID,
         kind: "note",
         title: "Load test window",
         body: "Saturdays 02:00–06:00 UTC only.",
@@ -475,7 +477,7 @@ export function demoContextWire(projectId: string): unknown {
     edges: [
       {
         id: E1,
-        project_id: DEFAULT_PROJECT_ID,
+        project_id: DEMO_PRIMARY_PROJECT_ID,
         source_context_id: C1,
         target_context_id: C2,
         relation: "refines",
@@ -486,7 +488,7 @@ export function demoContextWire(projectId: string): unknown {
       },
       {
         id: "e2222222-2222-4222-8222-222222222222",
-        project_id: DEFAULT_PROJECT_ID,
+        project_id: DEMO_PRIMARY_PROJECT_ID,
         source_context_id: C2,
         target_context_id: C5,
         relation: "supports",
@@ -497,7 +499,7 @@ export function demoContextWire(projectId: string): unknown {
       },
       {
         id: "e3333333-3333-4333-8333-333333333333",
-        project_id: DEFAULT_PROJECT_ID,
+        project_id: DEMO_PRIMARY_PROJECT_ID,
         source_context_id: C3,
         target_context_id: C1,
         relation: "depends_on",
@@ -508,7 +510,7 @@ export function demoContextWire(projectId: string): unknown {
       },
       {
         id: "e4444444-4444-4444-8444-444444444444",
-        project_id: DEFAULT_PROJECT_ID,
+        project_id: DEMO_PRIMARY_PROJECT_ID,
         source_context_id: C4,
         target_context_id: C1,
         relation: "related",

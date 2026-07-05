@@ -67,7 +67,7 @@ func TestMigrateContractGitTree_dropsColumns(t *testing.T) {
 	ctx := context.Background()
 	now := time.Now().UTC()
 
-	proj := domain.DefaultProject(now)
+	proj := domain.LegacyGlobalDefaultProject(now)
 	if err := db.WithContext(ctx).Create(&proj).Error; err != nil {
 		t.Fatal(err)
 	}

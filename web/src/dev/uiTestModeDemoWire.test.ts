@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_PROJECT_ID } from "@/types";
+import { DEMO_PRIMARY_PROJECT_ID } from "./uiTestModeDemoWire";
 import {
   parseProjectContextListResponse,
   parseProjectListResponse,
@@ -15,7 +15,7 @@ import {
 describe("uiTestModeDemoWire", () => {
   it("parses as valid API payloads", () => {
     expect(() => parseProjectListResponse(demoProjectsListWire())).not.toThrow();
-    expect(() => parseProjectContextListResponse(demoContextWire(DEFAULT_PROJECT_ID))).not.toThrow();
+    expect(() => parseProjectContextListResponse(demoContextWire(DEMO_PRIMARY_PROJECT_ID))).not.toThrow();
     expect(() => parseTaskListResponse(demoTasksListWire(200, 0, null))).not.toThrow();
     expect(() => parseTaskStatsResponse(demoTaskStatsWire())).not.toThrow();
   });

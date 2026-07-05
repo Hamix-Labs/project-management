@@ -1,7 +1,6 @@
 import type { AppSettings } from "@/api/settings";
 import { TASK_DRAFTS } from "@/constants/tasks";
 import {
-  DEFAULT_PROJECT_ID,
   type ChecklistItemDraft,
   type PriorityChoice,
   type TaskDraftChecklistItem,
@@ -130,9 +129,9 @@ export function applyResumedDraftToForm(input: {
   input.setNewPriority(input.draft.payload.priority ?? "");
   input.setNewChecklistItems(mapDraftChecklistItems(input.draft.payload.checklist_items));
   const resumedProjectID =
-    typeof input.draft.payload.project_id === "string" && input.draft.payload.project_id
+    typeof input.draft.payload.project_id === "string"
       ? input.draft.payload.project_id
-      : DEFAULT_PROJECT_ID;
+      : "";
   const resumedProjectContextIds = Array.isArray(input.draft.payload.project_context_item_ids)
     ? input.draft.payload.project_context_item_ids
     : [];

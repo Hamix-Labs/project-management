@@ -62,7 +62,7 @@ type statsRunnerBucketRaw struct {
 // keys are mandatory; this test fails if a future refactor adds extras or
 // silently drops `has_more` to omitempty.
 func TestHTTP_listTasks_envelopeShape(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	t.Run("emptyDatabase", func(t *testing.T) {
@@ -114,7 +114,7 @@ func TestHTTP_listTasks_envelopeShape(t *testing.T) {
 // returns `"limit":200` (max boundary). This is the contract the web client
 // relies on to know the actual page size used.
 func TestHTTP_listTasks_limitCoercedEcho(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	cases := []struct {
@@ -144,7 +144,7 @@ func TestHTTP_listTasks_limitCoercedEcho(t *testing.T) {
 // what the user paginated with previously. This complements
 // TestHTTP_list_keyset_after_id which already covers the row-set side.
 func TestHTTP_listTasks_keysetClampsOffsetToZero(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	id1 := "30000000-0000-4000-8000-000000000001"
@@ -172,7 +172,7 @@ func TestHTTP_listTasks_keysetClampsOffsetToZero(t *testing.T) {
 // boundary, since handler_http_validation_test.go covers `?limit=999` but not
 // the +1-over-max edge.
 func TestHTTP_listTasks_limitRejectsOverMax(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	res, err := http.Get(srv.URL + "/tasks?limit=201")
@@ -197,7 +197,7 @@ func TestHTTP_listTasks_limitRejectsOverMax(t *testing.T) {
 // by_priority, by_scope}`. Asserts the shape on an empty database so a future
 // refactor that conditionally omits any key (e.g. via omitempty) trips here.
 func TestHTTP_statsEnvelopeShape(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	raw, _ := mustGetJSON(t, srv.URL, "/tasks/stats")
@@ -207,7 +207,7 @@ func TestHTTP_statsEnvelopeShape(t *testing.T) {
 // TestHTTP_statsByScopeAlwaysHasTaskKey pins the documented invariant that
 // `by_scope` is the single-key object `{task}` even on an empty database.
 func TestHTTP_statsByScopeAlwaysHasTaskKey(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	t.Run("emptyDatabase", func(t *testing.T) {
@@ -247,7 +247,7 @@ func TestHTTP_statsByScopeAlwaysHasTaskKey(t *testing.T) {
 
 // TestHTTP_statsArithmeticInvariant pins `total == by_scope.task == sum(by_status)`.
 func TestHTTP_statsArithmeticInvariant(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	mustCreateTaskBody(t, srv.URL, `{"title":"ready-low","priority":"low","status":"ready"}`)

@@ -53,7 +53,7 @@ Git context follows [ADR-0037](./adr/ADR-0037-global-repos-project-tree.md) (glo
 | Method | Path | Notes |
 |---|---|---|
 | GET | `/git/repositories` | `{ repositories: [...] }`. Each repository includes `main_branch_name` (branch checked out on the main worktree, when bound) and `linked_worktree_count` (non-main worktrees with a bound `branch_id`, matching the Repositories list UI). |
-| POST | `/git/repositories` | Register checkout. Body `{ path, host_path? }`. Resolves main worktree path and `git_common_dir`. **201**. Does not auto-create worktrees/branches. **409** `not_a_git_repository`, `duplicate` (same git object database). |
+| POST | `/git/repositories` | Register checkout. Body `{ path, host_path? }`. Resolves main worktree path and `git_common_dir`. **201**. Seeds the main worktree row and a **system default project** for the repo (`is_default: true`, name `"Default"`). Does not auto-create additional worktrees/branches. **409** `not_a_git_repository`, `duplicate` (same git object database). |
 | GET | `/git/repositories/{repoId}` | Single repository. **404** `repository_not_found`. |
 | DELETE | `/git/repositories/{repoId}` | **204**. **409** `has_running_task`. |
 | GET | `/git/repositories/{repoId}/worktrees` | `{ worktrees: [...] }`. |
@@ -96,7 +96,7 @@ Model semantics (tags, milestone, `depends_on`, gate, worker readiness): [data-m
 
 | Method | Path | Notes |
 |---|---|---|
-| POST | `/tasks` | Create. Title required; `priority` required; `checklist_items` required — `[{ "text": "..." , "verify_commands"?: [{ "command": "...", "expected_outcome"?: "..." }] }]`, at least one non-empty `text` (persisted atomically with the task row). `400` `at least one done criterion required` when missing, empty, or all-blank. Optional `id`, `draft_id`, `project_id`, `worktree_id`, `pickup_not_before`, `cursor_model`, `tags`, `milestone`, `depends_on` (string[] legacy or `{ task_id, satisfies }[]` with `satisfies: done`). Returns flat `domain.Task`. `409` on duplicate `id`. Publishes `task_created`. |
+| POST | `/tasks` | Create. Title required; `priority` required; `checklist_items` required — `[{ "text": "..." , "verify_commands"?: [{ "command": "...", "expected_outcome"?: "..." }] }]`, at least one non-empty `text` (persisted atomically with the task row). `400` `at least one done criterion required` when missing, empty, or all-blank. **`project_id` and `worktree_id` required** for agent runs; `project.repository_id` must match the worktree's repo (`409` `project_repo_mismatch`). Optional `id`, `draft_id`, `pickup_not_before`, `cursor_model`, `tags`, `milestone`, `depends_on` (string[] legacy or `{ task_id, satisfies }[]` with `satisfies: done`). Returns flat `domain.Task`. `409` on duplicate `id`. Publishes `task_created`. |
 | GET | `/tasks` | List all tasks (flat). Pagination: `?limit` (0–200, default 50) + `?offset` (≥ 0) **or** `?after_id` (keyset, mutually exclusive with offset). Envelope `{ tasks, limit, offset, has_more }`. Each element is a flat `domain.Task` (no nested `children`). Rows are ordered **newest first** by `created_at` (from the `task_created` audit event). |
 | GET | `/tasks/stats` | Counters: `total`, `ready`, `critical`, `scheduled`, `by_status`, `by_priority`, `cycles`, `phases`, `runner`, `recent_failures`. |
 | GET | `/tasks/cycle-failures` | Paginated terminal cycle failures. `?limit`, `?offset`, `?sort ∈ at_desc | at_asc | reason_asc | reason_desc`. |

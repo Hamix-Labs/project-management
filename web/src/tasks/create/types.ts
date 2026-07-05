@@ -44,6 +44,7 @@ export type TaskCreateFormFields = {
   newTaskRunner: string;
   newTaskCursorModel: string;
   newProjectID: string;
+  newRepositoryID: string;
   newProjectContextItemIDs: string[];
   newWorktreeID: string;
   newSchedule: string | null;

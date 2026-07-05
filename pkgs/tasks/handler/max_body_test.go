@@ -98,11 +98,11 @@ func TestHTTP_max_body_rejects_content_length_over_limit(t *testing.T) {
 
 func TestHTTP_max_body_allows_under_limit(t *testing.T) {
 	t.Setenv("HAMIX_MAX_REQUEST_BODY_BYTES", "4096")
-	db := tasktestdb.OpenSQLite(t)
-	srv := httptest.NewServer(WithMaxRequestBody(NewHandler(store.NewStore(db), NewSSEHub(), nil)))
-	t.Cleanup(srv.Close)
+	srv := newBoundTaskServer(t, func(st *store.Store) http.Handler {
+		return WithMaxRequestBody(boundTaskHandler(st))
+	})
 
-	body := withCreateChecklist(`{"title":"ok","priority":"medium"}`)
+	body := withCreateChecklistForURL(srv.URL, `{"title":"ok","priority":"medium"}`)
 	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(body))
 	if err != nil {
 		t.Fatal(err)
@@ -116,11 +116,11 @@ func TestHTTP_max_body_allows_under_limit(t *testing.T) {
 
 func TestHTTP_max_body_unknown_content_length_still_bounded(t *testing.T) {
 	t.Setenv("HAMIX_MAX_REQUEST_BODY_BYTES", "48")
-	db := tasktestdb.OpenSQLite(t)
-	h := WithMaxRequestBody(NewHandler(store.NewStore(db), NewSSEHub(), nil))
+	h := newDirectBoundHandler(t, func(st *store.Store) http.Handler {
+		return WithMaxRequestBody(boundTaskHandler(st))
+	})
 
-	// Valid create JSON > 48 bytes; ContentLength -1 so middleware cannot pre-reject on length.
-	body := withCreateChecklist(`{"title":"` + strings.Repeat("x", 40) + `","priority":"medium"}`)
+	body := withCreateChecklistForURL(directHandlerTestURL, `{"title":"`+strings.Repeat("x", 40)+`","priority":"medium"}`)
 	if len(body) <= 48 {
 		t.Fatalf("body len %d need >48", len(body))
 	}

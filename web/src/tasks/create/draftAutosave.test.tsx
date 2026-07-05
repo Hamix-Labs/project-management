@@ -1,4 +1,4 @@
-import { screen, within, act } from "@testing-library/react";
+import { screen, within, act, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -108,6 +108,11 @@ describe("draft autosave on create modal", () => {
 
     const dialog = await openNewTaskModal(user);
     expect(dialog).toBeInTheDocument();
+
+    await waitFor(() => {
+      const repo = within(dialog).getByRole("combobox", { name: /^repository$/i });
+      expect(repo).not.toHaveTextContent(/^select repository$/i);
+    });
 
     vi.useFakeTimers();
     try {

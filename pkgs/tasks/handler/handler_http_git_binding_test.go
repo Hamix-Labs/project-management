@@ -97,3 +97,56 @@ func TestHTTP_createTask_projectRepoMismatch_returns409(t *testing.T) {
 		t.Fatalf("code=%q want %q", errBody.Code, domain.GitCodeProjectRepoMismatch)
 	}
 }
+
+func TestHTTP_createTask_withRepoDefault_returns201(t *testing.T) {
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git not on PATH")
+	}
+	dir := t.TempDir()
+	srv, st, worktreeID, _ := newTaskTestServerWithRepoStore(t, dir)
+	t.Cleanup(srv.Close)
+
+	ctx := context.Background()
+	repos, err := st.ListAllGitRepositories(ctx)
+	if err != nil || len(repos) == 0 {
+		t.Fatalf("ListAllGitRepositories: %v len=%d", err, len(repos))
+	}
+	defaultProj, err := st.GetDefaultProjectForRepository(ctx, repos[0].ID)
+	if err != nil {
+		t.Fatalf("GetDefaultProjectForRepository: %v", err)
+	}
+
+	body := fmt.Sprintf(
+		`{"title":"default binding","priority":"medium","project_id":%q,"worktree_id":%q,"checklist_items":[{"text":"done"}]}`,
+		defaultProj.ID, worktreeID,
+	)
+	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(body))
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw, _ := io.ReadAll(res.Body)
+	_ = res.Body.Close()
+	if res.StatusCode != http.StatusCreated {
+		t.Fatalf("status %d body=%s want 201", res.StatusCode, raw)
+	}
+}
+
+func TestHTTP_createTask_missingProjectID_returns422(t *testing.T) {
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git not on PATH")
+	}
+	dir := t.TempDir()
+	srv, _, worktreeID, _ := newTaskTestServerWithRepoStore(t, dir)
+	t.Cleanup(srv.Close)
+
+	body := fmt.Sprintf(`{"title":"no project","priority":"medium","worktree_id":%q,"checklist_items":[{"text":"done"}]}`, worktreeID)
+	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(body))
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw, _ := io.ReadAll(res.Body)
+	_ = res.Body.Close()
+	if res.StatusCode != http.StatusBadRequest {
+		t.Fatalf("status %d body=%s want 400", res.StatusCode, raw)
+	}
+}

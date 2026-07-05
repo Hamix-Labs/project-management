@@ -7,7 +7,6 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
@@ -20,11 +19,11 @@ func TestStore_ValidateTaskWorktreeBinding(t *testing.T) {
 		t.Fatalf("git init: %v %s", err, out)
 	}
 
-	repoRow, err := s.CreateGitRepository(ctx, domain.DefaultProjectID, store.CreateGitRepositoryInput{Path: dir}, gitSvc)
+	repoRow, err := s.CreateGlobalGitRepository(ctx, store.CreateGitRepositoryInput{Path: dir}, gitSvc)
 	if err != nil {
-		t.Fatalf("CreateGitRepository: %v", err)
+		t.Fatalf("CreateGlobalGitRepository: %v", err)
 	}
-	wts, err := s.ListGitWorktrees(ctx, domain.DefaultProjectID, repoRow.ID)
+	wts, err := s.ListGitWorktreesByRepo(ctx, repoRow.ID)
 	if err != nil || len(wts) == 0 {
 		t.Fatalf("ListGitWorktrees: %v", err)
 	}
@@ -56,11 +55,11 @@ func TestStore_ResolveTaskGitContextByWorktree(t *testing.T) {
 	if out, err := exec.Command("git", "init", "-b", "main", dir).CombinedOutput(); err != nil {
 		t.Fatalf("git init: %v %s", err, out)
 	}
-	repoRow, err := s.CreateGitRepository(ctx, domain.DefaultProjectID, store.CreateGitRepositoryInput{Path: dir}, gitSvc)
+	repoRow, err := s.CreateGlobalGitRepository(ctx, store.CreateGitRepositoryInput{Path: dir}, gitSvc)
 	if err != nil {
 		t.Fatal(err)
 	}
-	wts, _ := s.ListGitWorktrees(ctx, domain.DefaultProjectID, repoRow.ID)
+	wts, _ := s.ListGitWorktreesByRepo(ctx, repoRow.ID)
 	gitCtx, err := s.ResolveTaskGitContext(ctx, wts[0].ID)
 	if err != nil {
 		t.Fatalf("ResolveTaskGitContext: %v", err)

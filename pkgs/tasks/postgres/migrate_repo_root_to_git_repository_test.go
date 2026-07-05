@@ -116,7 +116,7 @@ func seedLegacyAppSettingsWithRepoRoot(ctx context.Context, t *testing.T, db *go
 	); err != nil {
 		t.Fatal(err)
 	}
-	defaultProject := domain.DefaultProject(time.Now().UTC())
+	defaultProject := domain.LegacyGlobalDefaultProject(time.Now().UTC())
 	if err := db.WithContext(ctx).Clauses(clause.OnConflict{DoNothing: true}).Create(&defaultProject).Error; err != nil {
 		t.Fatal(err)
 	}

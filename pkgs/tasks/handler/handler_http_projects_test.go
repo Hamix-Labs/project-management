@@ -12,10 +12,11 @@ import (
 )
 
 func TestHTTP_projectsCRUDAndContext(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
+	git := mustHandlerGitBinding(t, srv.URL)
 
-	res, err := http.Post(srv.URL+"/projects", "application/json", strings.NewReader(`{"name":"Moat","description":"Long work","context_summary":"Shared memory"}`))
+	res, err := http.Post(srv.URL+"/projects", "application/json", strings.NewReader(`{"name":"Moat","description":"Long work","context_summary":"Shared memory","repository_id":"`+git.repositoryID+`"}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,6 +36,9 @@ func TestHTTP_projectsCRUDAndContext(t *testing.T) {
 	}
 	if project.ID == "" || project.Status != domain.ProjectStatusActive {
 		t.Fatalf("project = %#v", project)
+	}
+	if project.RepositoryID == nil || *project.RepositoryID != git.repositoryID {
+		t.Fatalf("project repository_id = %#v, want %s", project.RepositoryID, git.repositoryID)
 	}
 
 	itemRes, err := http.Post(srv.URL+"/projects/"+project.ID+"/context", "application/json", strings.NewReader(`{"kind":"requirement","title":"Use relational context","body":"No vector store in v1","pinned":true}`))
@@ -145,11 +149,12 @@ func TestHTTP_projectsCRUDAndContext(t *testing.T) {
 }
 
 func TestHTTP_taskProjectIDCreatePatchAndClear(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
+	git := mustHandlerGitBinding(t, srv.URL)
 
-	project := postProjectJSON(t, srv, `{"name":"Project owner"}`, http.StatusCreated)
-	task := postTaskJSON(t, srv, `{"title":"linked","priority":"medium","project_id":"`+project.ID+`"}`, http.StatusCreated)
+	project := postProjectJSON(t, srv, `{"name":"Project owner","repository_id":"`+git.repositoryID+`"}`, http.StatusCreated)
+	task := postTaskJSON(t, srv, `{"title":"linked","priority":"medium","project_id":"`+project.ID+`","worktree_id":"`+git.worktreeID+`"}`, http.StatusCreated)
 	if task.ProjectID == nil || *task.ProjectID != project.ID {
 		t.Fatalf("created task project_id = %#v, want %s", task.ProjectID, project.ID)
 	}

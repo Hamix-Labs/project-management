@@ -14,10 +14,10 @@ import (
 )
 
 func TestHTTP_create_and_list(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
-	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklist(`{"title":"hello","priority":"medium"}`)))
+	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklistForURL(srv.URL, `{"title":"hello","priority":"medium"}`)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,7 +60,7 @@ func TestHTTP_create_and_list(t *testing.T) {
 }
 
 func TestHTTP_get_not_found(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	res, err := http.Get(srv.URL + "/tasks/missing")
@@ -83,10 +83,10 @@ func TestHTTP_get_not_found(t *testing.T) {
 }
 
 func TestHTTP_patch_and_delete(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
-	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklist(`{"title":"t","priority":"medium"}`)))
+	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklistForURL(srv.URL, `{"title":"t","priority":"medium"}`)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -148,10 +148,10 @@ func TestHTTP_patch_and_delete(t *testing.T) {
 }
 
 func TestHTTP_patch_json_null_leaves_field_unchanged(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
-	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklist(`{"title":"t","priority":"medium"}`)))
+	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklistForURL(srv.URL, `{"title":"t","priority":"medium"}`)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -207,10 +207,10 @@ func TestHTTP_patch_json_null_leaves_field_unchanged(t *testing.T) {
 }
 
 func TestHTTP_patch_rejects_empty_patch(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
-	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklist(`{"title":"x","priority":"medium"}`)))
+	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklistForURL(srv.URL, `{"title":"x","priority":"medium"}`)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -245,7 +245,7 @@ func TestHTTP_patch_rejects_empty_patch(t *testing.T) {
 }
 
 func TestHTTP_patch_not_found(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	req, err := http.NewRequest(http.MethodPatch, srv.URL+"/tasks/00000000-0000-0000-0000-000000000001",
@@ -265,7 +265,7 @@ func TestHTTP_patch_not_found(t *testing.T) {
 }
 
 func TestHTTP_delete_not_found(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	req, err := http.NewRequest(http.MethodDelete, srv.URL+"/tasks/00000000-0000-0000-0000-000000000002", nil)
@@ -283,7 +283,7 @@ func TestHTTP_delete_not_found(t *testing.T) {
 }
 
 func TestHTTP_list_limit_200_ok(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	res, err := http.Get(srv.URL + "/tasks?limit=200&offset=0")
@@ -297,7 +297,7 @@ func TestHTTP_list_limit_200_ok(t *testing.T) {
 }
 
 func TestHTTP_list_limit_zero_reports_coerced_default(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	res, err := http.Get(srv.URL + "/tasks?limit=0&offset=0")
@@ -320,7 +320,7 @@ func TestHTTP_list_limit_zero_reports_coerced_default(t *testing.T) {
 }
 
 func TestHTTP_method_not_allowed_routes_only_registered_verbs(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	req, err := http.NewRequest(http.MethodPut, srv.URL+"/tasks", bytes.NewReader(nil))
@@ -341,10 +341,10 @@ func TestHTTP_domain_tasks_created_and_updated_counters(t *testing.T) {
 	beforeC := testutil.ToFloat64(taskapiDomainTasksCreatedTotal)
 	beforeU := testutil.ToFloat64(taskapiDomainTasksUpdatedTotal)
 
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
-	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklist(`{"title":"metric-t","priority":"medium"}`)))
+	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklistForURL(srv.URL, `{"title":"metric-t","priority":"medium"}`)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -383,10 +383,10 @@ func TestHTTP_domain_tasks_created_and_updated_counters(t *testing.T) {
 
 func TestHTTP_domain_tasks_deleted_counter(t *testing.T) {
 	beforeD := testutil.ToFloat64(taskapiDomainTasksDeletedTotal)
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
-	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklist(`{"title":"to-delete","priority":"medium"}`)))
+	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklistForURL(srv.URL, `{"title":"to-delete","priority":"medium"}`)))
 	if err != nil {
 		t.Fatal(err)
 	}

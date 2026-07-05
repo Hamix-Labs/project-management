@@ -17,7 +17,7 @@ import (
 // on_hold is the supported way to keep a brand-new task out of the
 // pickup queue without coupling to a deferred pickup_not_before.
 func TestHTTP_createTask_onHoldStatusAllowed(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	res, raw := postCreate(t, srv.URL, withCreateChecklist(`{"title":"hold","priority":"medium","status":"on_hold"}`))
@@ -40,7 +40,7 @@ func TestHTTP_createTask_onHoldStatusAllowed(t *testing.T) {
 // patch shape; the AutonomyConfirmDialog is purely a client-side
 // safety net.
 func TestHTTP_patchTask_onHoldRoundTrip(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	id := mustCreateTask(t, srv.URL, `{"title":"toggle","priority":"medium"}`)

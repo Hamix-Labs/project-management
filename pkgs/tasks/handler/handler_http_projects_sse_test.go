@@ -12,7 +12,8 @@ func TestHTTP_projectRoutesPublishSSE(t *testing.T) {
 
 	ch, cancel := hub.Subscribe()
 	defer cancel()
-	project := postProjectJSON(t, srv, `{"name":"SSE project"}`, http.StatusCreated)
+	git := mustHandlerGitBinding(t, srv.URL)
+	project := postProjectJSON(t, srv, `{"name":"SSE project","repository_id":"`+git.repositoryID+`"}`, http.StatusCreated)
 	got := summarize(drainSSE(t, ch, 1, 2*time.Second))
 	mustEqualEvents(t, "POST /projects", got, []string{"project_created:" + project.ID})
 

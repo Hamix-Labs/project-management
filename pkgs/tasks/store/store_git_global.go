@@ -347,7 +347,7 @@ func (s *Store) ListProjectsByRepository(ctx context.Context, repoID string) ([]
 	var rows []model.Project
 	err := s.db.WithContext(ctx).
 		Where("repository_id = ?", repoID).
-		Order("updated_at DESC").
+		Order("is_default DESC, updated_at DESC").
 		Find(&rows).Error
 	if err != nil {
 		return nil, fmt.Errorf("list projects by repository: %w", err)

@@ -3,7 +3,6 @@ package handler
 import (
 	"context"
 	"net/http"
-	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
@@ -29,11 +28,10 @@ func TestUserCreatedTaskEnqueuesForAgents(t *testing.T) {
 	if _, err := st.UpdateSettings(context.Background(), store.SettingsPatch{AgentPickupDelaySeconds: &zero}); err != nil {
 		t.Fatalf("UpdateSettings: %v", err)
 	}
-	h := NewHandler(st, NewSSEHub(), nil)
-	srv := httptest.NewServer(h)
+	srv := newTaskCreateTestServerFromStore(t, st)
 	t.Cleanup(srv.Close)
 
-	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklist(`{"title":"from-user","priority":"medium"}`)))
+	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklistForURL(srv.URL, `{"title":"from-user","priority":"medium"}`)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,11 +64,10 @@ func TestAgentActorCreateEnqueuesWhenReady(t *testing.T) {
 	if _, err := st.UpdateSettings(context.Background(), store.SettingsPatch{AgentPickupDelaySeconds: &zero}); err != nil {
 		t.Fatalf("UpdateSettings: %v", err)
 	}
-	h := NewHandler(st, NewSSEHub(), nil)
-	srv := httptest.NewServer(h)
+	srv := newTaskCreateTestServerFromStore(t, st)
 	t.Cleanup(srv.Close)
 
-	req, err := http.NewRequest(http.MethodPost, srv.URL+"/tasks", strings.NewReader(withCreateChecklist(`{"title":"from-agent","priority":"medium"}`)))
+	req, err := http.NewRequest(http.MethodPost, srv.URL+"/tasks", strings.NewReader(withCreateChecklistForURL(srv.URL, `{"title":"from-agent","priority":"medium"}`)))
 	if err != nil {
 		t.Fatal(err)
 	}

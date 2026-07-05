@@ -4,7 +4,6 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { deleteProject } from "@/api";
 import { EmptyState } from "@/shared/EmptyState";
 import { useDocumentTitle } from "@/shared/useDocumentTitle";
-import { DEFAULT_PROJECT_ID } from "@/types";
 import { useProject } from "./hooks";
 import { ProjectDeleteConfirmDialog } from "./ProjectDeleteConfirmDialog";
 import { ProjectSettingsPanel } from "./ProjectSettingsPanel";
@@ -21,7 +20,7 @@ export function ProjectDetailPage() {
   const title = project.data?.name ? `${project.data.name} project` : "Project";
   useDocumentTitle(title);
 
-  const isDefaultProject = project.data?.id === DEFAULT_PROJECT_ID;
+  const isDefaultProject = project.data?.is_default === true;
 
   const deleteProjectMutation = useMutation({
     mutationFn: () => deleteProject(projectId),

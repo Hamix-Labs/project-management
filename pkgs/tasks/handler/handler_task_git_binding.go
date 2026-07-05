@@ -25,9 +25,20 @@ func (h *Handler) validateTaskGitBindingV2(
 	worktreeID *string,
 ) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.validateTaskGitBindingV2")
+	pid := trimmedOptionalID(projectID)
+	if pid == "" {
+		return fmt.Errorf("%w: project_id required", domain.ErrInvalidInput)
+	}
 	wtID := trimmedOptionalID(worktreeID)
 	if wtID == "" {
-		return nil
+		return fmt.Errorf("%w: worktree_id required", domain.ErrInvalidInput)
+	}
+	proj, err := h.store.GetProject(ctx, pid)
+	if err != nil {
+		return err
+	}
+	if proj.RepositoryID == nil || strings.TrimSpace(*proj.RepositoryID) == "" {
+		return fmt.Errorf("%w: project not bound to repository", domain.ErrInvalidInput)
 	}
 	return h.store.ValidateTaskWorktreeBinding(ctx, projectID, wtID)
 }

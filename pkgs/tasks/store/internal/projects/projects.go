@@ -6,6 +6,7 @@ import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -76,11 +77,12 @@ func CreateProject(ctx context.Context, db *gorm.DB, input CreateProjectInput) (
 		return domain.Project{}, fmt.Errorf("%w: project name required", domain.ErrInvalidInput)
 	}
 	repoID := trimOptional(input.RepositoryID)
-	if repoID != nil {
-		var repo model.GitRepository
-		if err := db.WithContext(ctx).First(&repo, "id = ?", *repoID).Error; err != nil {
-			return domain.Project{}, kernel.MapNotFound(err)
-		}
+	if repoID == nil {
+		return domain.Project{}, fmt.Errorf("%w: repository_id required", domain.ErrInvalidInput)
+	}
+	var repo model.GitRepository
+	if err := db.WithContext(ctx).First(&repo, "id = ?", *repoID).Error; err != nil {
+		return domain.Project{}, kernel.MapNotFound(err)
 	}
 	now := time.Now().UTC()
 	drow := domain.Project{
@@ -181,7 +183,11 @@ func DeleteProject(ctx context.Context, db *gorm.DB, id string) error {
 	if id == "" {
 		return fmt.Errorf("%w: project id required", domain.ErrInvalidInput)
 	}
-	if id == domain.DefaultProjectID {
+	var row model.Project
+	if err := db.WithContext(ctx).First(&row, "id = ?", id).Error; err != nil {
+		return kernel.MapNotFound(err)
+	}
+	if row.IsDefault {
 		return fmt.Errorf("%w: default project cannot be deleted", domain.ErrConflict)
 	}
 	res := db.WithContext(ctx).Delete(&model.Project{}, "id = ?", id)
@@ -423,10 +429,10 @@ func validateProjectPatch(input UpdateProjectInput) error {
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func validateDefaultProjectPatch(row domain.Project, input UpdateProjectInput) error {
-	if row.ID != domain.DefaultProjectID {
+	if !row.IsDefault {
 		return nil
 	}
-	if input.Name != nil && strings.TrimSpace(*input.Name) != domain.DefaultProject(time.Now()).Name {
+	if input.Name != nil && strings.TrimSpace(*input.Name) != domain.DefaultProjectName {
 		return fmt.Errorf("%w: default project name cannot be changed", domain.ErrConflict)
 	}
 	if input.Status != nil && *input.Status != domain.ProjectStatusActive {
@@ -505,4 +511,60 @@ func trimOptional(value *string) *string {
 		return nil
 	}
 	return &trimmed
+}
+
+// CreateDefaultProjectForRepo inserts the non-deletable default for a newly registered repo.
+// Idempotent: returns the existing default when one is already present.
+func CreateDefaultProjectForRepo(ctx context.Context, tx *gorm.DB, repoID string, now time.Time) (domain.Project, error) {
+	defer kernel.DeferLatency(kernel.OpCreateProject)()
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.projects.CreateDefaultProjectForRepo")
+	repoID = strings.TrimSpace(repoID)
+	if repoID == "" {
+		return domain.Project{}, fmt.Errorf("%w: repository_id required", domain.ErrInvalidInput)
+	}
+	var existing model.Project
+	err := tx.WithContext(ctx).
+		Where("repository_id = ? AND is_default = ?", repoID, true).
+		First(&existing).Error
+	if err == nil {
+		return model.ToDomainProject(existing), nil
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return domain.Project{}, fmt.Errorf("lookup default project: %w", err)
+	}
+	now = now.UTC()
+	drow := domain.Project{
+		ID:             kernel.ResolveID(""),
+		Name:           domain.DefaultProjectName,
+		Description:    "Built-in project for tasks tied to this repository.",
+		Status:         domain.ProjectStatusActive,
+		ContextSummary: "Default project for this repository.",
+		RepositoryID:   &repoID,
+		IsDefault:      true,
+		CreatedAt:      now,
+		UpdatedAt:      now,
+	}
+	row := model.FromDomainProject(drow)
+	if err := tx.WithContext(ctx).Create(&row).Error; err != nil {
+		return domain.Project{}, kernel.MapWriteError(err, "duplicate default project")
+	}
+	return drow, nil
+}
+
+// GetDefaultProjectForRepository returns the system default project for a repo.
+func GetDefaultProjectForRepository(ctx context.Context, db *gorm.DB, repoID string) (domain.Project, error) {
+	defer kernel.DeferLatency(kernel.OpGetProject)()
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.projects.GetDefaultProjectForRepository")
+	repoID = strings.TrimSpace(repoID)
+	if repoID == "" {
+		return domain.Project{}, fmt.Errorf("%w: repository_id required", domain.ErrInvalidInput)
+	}
+	var row model.Project
+	err := db.WithContext(ctx).
+		Where("repository_id = ? AND is_default = ?", repoID, true).
+		First(&row).Error
+	if err != nil {
+		return domain.Project{}, kernel.MapNotFound(err)
+	}
+	return model.ToDomainProject(row), nil
 }

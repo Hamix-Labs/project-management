@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_PROJECT_ID } from "@/types";
+import { FACTORY_REPO_DEFAULT_PROJECT_ID } from "@/test/factories/project";
 import { CREATE_CHECKLIST_REQUIRED_MSG } from "../task-compose/checklistRequirement";
 import { validateCreateFormChecklist } from "./validateCreateForm";
 
@@ -26,7 +26,8 @@ describe("buildCreateTaskMutationInput", () => {
       newPriority: "medium",
       newTaskRunner: "cursor",
       newTaskCursorModel: "",
-      newProjectID: DEFAULT_PROJECT_ID,
+      newProjectID: FACTORY_REPO_DEFAULT_PROJECT_ID,
+      newRepositoryID: "",
       newProjectContextItemIDs: [],
       newWorktreeID: "wt-1",
       newSchedule: null,
@@ -37,6 +38,6 @@ describe("buildCreateTaskMutationInput", () => {
       newChecklistItems: [{ text: "Criterion" }],
       newDraftID: "draft-1",
     });
-    expect(input.project_id).toBe(DEFAULT_PROJECT_ID);
+    expect(input.project_id).toBe(FACTORY_REPO_DEFAULT_PROJECT_ID);
   });
 });

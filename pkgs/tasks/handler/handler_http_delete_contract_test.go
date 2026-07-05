@@ -33,7 +33,7 @@ func deleteTask(t *testing.T, baseURL, id string) (*http.Response, []byte) {
 // payload here would silently break clients that rely on the 204 / empty-body
 // pair (the SPA uses fetch with .text() and does not attempt a JSON parse).
 func TestHTTP_deleteTask_204EmptyBody(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	id := mustCreateTask(t, srv.URL, `{"title":"to-delete","priority":"medium"}`)
@@ -57,7 +57,7 @@ func TestHTTP_deleteTask_204EmptyBody(t *testing.T) {
 // "missing segment" case (a bare `DELETE /tasks/`) is covered separately
 // because it is a mux 404 with no JSON body, not a handler 400.
 func TestHTTP_deleteTask_pathSegmentGuard(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	cases := []struct {
@@ -91,7 +91,7 @@ func TestHTTP_deleteTask_pathSegmentGuard(t *testing.T) {
 // 400 covered above. The doc explicitly calls this out so a client that
 // distinguishes "no such route" from "bad path segment" stays correct.
 func TestHTTP_deleteTask_missingPathSegmentIs404(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	req, err := http.NewRequest(http.MethodDelete, srv.URL+"/tasks/", nil)
@@ -121,7 +121,7 @@ func TestHTTP_deleteTask_missingPathSegmentIs404(t *testing.T) {
 // been created, so parseTaskPathID accepts it and the store returns
 // ErrNotFound from the initial First() lookup.
 func TestHTTP_deleteTask_unknownIDIs404(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
 	res, raw := deleteTask(t, srv.URL, "00000000-0000-0000-0000-0000000000ff")

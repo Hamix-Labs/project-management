@@ -13,6 +13,7 @@ func FromDomainProject(d domain.Project) Project {
 		Status:         d.Status,
 		ContextSummary: d.ContextSummary,
 		RepositoryID:   d.RepositoryID,
+		IsDefault:      d.IsDefault,
 		CreatedAt:      d.CreatedAt,
 		UpdatedAt:      d.UpdatedAt,
 	}
@@ -29,6 +30,7 @@ func ToDomainProject(m Project) domain.Project {
 		Status:         m.Status,
 		ContextSummary: m.ContextSummary,
 		RepositoryID:   m.RepositoryID,
+		IsDefault:      m.IsDefault,
 		CreatedAt:      m.CreatedAt,
 		UpdatedAt:      m.UpdatedAt,
 	}

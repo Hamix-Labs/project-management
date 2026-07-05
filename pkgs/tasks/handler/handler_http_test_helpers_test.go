@@ -11,10 +11,10 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
-// postTask POSTs jsonBody to /tasks with checklist injection applied.
+// postTask POSTs jsonBody to /tasks with checklist and git binding applied.
 func postTask(t *testing.T, baseURL, jsonBody string) (*http.Response, []byte) {
 	t.Helper()
-	res, err := http.Post(baseURL+"/tasks", "application/json", strings.NewReader(withCreateChecklist(jsonBody)))
+	res, err := http.Post(baseURL+"/tasks", "application/json", strings.NewReader(withCreateChecklistForURL(baseURL, jsonBody)))
 	if err != nil {
 		t.Fatal(err)
 	}
