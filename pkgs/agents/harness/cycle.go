@@ -210,7 +210,7 @@ func (h *Harness) invokeRunnerWithDecision(
 	runCtx, cancelCause := context.WithCancelCause(parentCtx)
 	if h.opts.RunTimeout > 0 {
 		var timeoutCancel context.CancelFunc
-		runCtx, timeoutCancel = context.WithTimeout(runCtx, h.opts.RunTimeout)
+		runCtx, timeoutCancel = withRunTimeout(runCtx, h.opts.RunTimeout)
 		defer timeoutCancel()
 	}
 	cancel := func() { cancelCause(context.Canceled) }
@@ -295,16 +295,12 @@ func (h *Harness) persistProgress(ctx context.Context, taskID, cycleID string, p
 	}
 }
 
-// withOptionalRunTimeout returns a derived context that either inherits
-// only the parent (no cap) or carries an additional WithTimeout. Pulled
-// out so the no-cap path is a single function call rather than a branch
-// inside invokeRunner. The returned cancel func MUST be called either
-// directly (defer) or via CancelCurrentRun.
-func withOptionalRunTimeout(parent context.Context, d time.Duration) (context.Context, context.CancelFunc) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.withOptionalRunTimeout",
-		"timeout_ns", int64(d))
+// withRunTimeout returns parent unchanged when d <= 0; otherwise wraps with WithTimeout.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by invokeRunnerWithDecision."
+func withRunTimeout(parent context.Context, d time.Duration) (context.Context, context.CancelFunc) {
 	if d <= 0 {
-		return context.WithCancel(parent)
+		return parent, func() {}
 	}
 	return context.WithTimeout(parent, d)
 }
