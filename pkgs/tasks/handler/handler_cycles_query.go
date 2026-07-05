@@ -161,3 +161,28 @@ func parseCycleStreamLimit(ctx context.Context, q url.Values) (int, error) {
 	limit = n
 	return limit, nil
 }
+
+// paginateMappedRows applies limit+1 paging: trims overflow, maps domain rows to
+// wire responses, and returns an optional cursor from the last mapped item.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling cycle list handler."
+func paginateMappedRows[T any, R any](
+	rows []T,
+	limit int,
+	mapFn func(*T) R,
+	cursorFn func(R) int64,
+) (out []R, hasMore bool, next *int64) {
+	if len(rows) > limit {
+		hasMore = true
+		rows = rows[:limit]
+	}
+	out = make([]R, 0, len(rows))
+	for i := range rows {
+		out = append(out, mapFn(&rows[i]))
+	}
+	if hasMore && len(out) > 0 {
+		n := cursorFn(out[len(out)-1])
+		next = &n
+	}
+	return out, hasMore, next
+}

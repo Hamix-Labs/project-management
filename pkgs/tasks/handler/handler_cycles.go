@@ -69,24 +69,15 @@ func (h *Handler) getTaskCycles(w http.ResponseWriter, r *http.Request) {
 		writeStoreError(w, r, op, err)
 		return
 	}
-	hasMore := false
-	if len(rows) > limit {
-		hasMore = true
-		rows = rows[:limit]
-	}
-	out := make([]taskCycleResponse, 0, len(rows))
-	for i := range rows {
-		out = append(out, taskCycleResponseFromDomain(&rows[i]))
-	}
+	out, hasMore, next := paginateMappedRows(rows, limit, taskCycleResponseFromDomain, func(r taskCycleResponse) int64 {
+		return r.AttemptSeq
+	})
 	resp := taskCyclesListResponse{
-		TaskID:  taskID,
-		Cycles:  out,
-		Limit:   limit,
-		HasMore: hasMore,
-	}
-	if hasMore && len(out) > 0 {
-		next := out[len(out)-1].AttemptSeq
-		resp.NextBeforeAttemptSeq = &next
+		TaskID:               taskID,
+		Cycles:               out,
+		Limit:                limit,
+		HasMore:              hasMore,
+		NextBeforeAttemptSeq: next,
 	}
 	writeJSONWithETag(w, r, op, http.StatusOK, resp)
 }
@@ -148,25 +139,16 @@ func (h *Handler) getTaskCycleStream(w http.ResponseWriter, r *http.Request) {
 		writeStoreError(w, r, op, err)
 		return
 	}
-	hasMore := false
-	if len(rows) > limit {
-		hasMore = true
-		rows = rows[:limit]
-	}
-	out := make([]taskCycleStreamEventResponse, 0, len(rows))
-	for i := range rows {
-		out = append(out, taskCycleStreamEventResponseFromDomain(&rows[i]))
-	}
+	out, hasMore, next := paginateMappedRows(rows, limit, taskCycleStreamEventResponseFromDomain, func(r taskCycleStreamEventResponse) int64 {
+		return r.StreamSeq
+	})
 	resp := taskCycleStreamListResponse{
-		TaskID:  taskID,
-		CycleID: cycleID,
-		Events:  out,
-		Limit:   limit,
-		HasMore: hasMore,
-	}
-	if hasMore && len(out) > 0 {
-		next := out[len(out)-1].StreamSeq
-		resp.NextAfterSeq = &next
+		TaskID:       taskID,
+		CycleID:      cycleID,
+		Events:       out,
+		Limit:        limit,
+		HasMore:      hasMore,
+		NextAfterSeq: next,
 	}
 	writeJSON(w, r, op, http.StatusOK, resp)
 }
