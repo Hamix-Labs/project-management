@@ -24,17 +24,7 @@ export function TaskCreateModalActionFooter({
   onClose,
   onSaveDraft,
 }: Props) {
-  if (presentation.isTaskEdit) {
-    return (
-      <TaskCreateModalEditFooterActions
-        disabled={presentation.disabled}
-        saveDisabled={!title.trim()}
-        onClose={onClose}
-      />
-    );
-  }
-
-  if (presentation.isTemplateMode && presentation.isEdit) {
+  if (presentation.isEdit) {
     return (
       <TaskCreateModalEditFooterActions
         disabled={presentation.disabled}
