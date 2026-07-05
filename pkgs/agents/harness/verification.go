@@ -76,19 +76,19 @@ func (h *Harness) runVerificationPipeline(
 	svc.SetPlanVerifyRun(func(ctx context.Context, in verify.PlanVerifyRunInput) (verify.VerifyRunPlan, error) {
 		return h.planVerifyRun(ctx, in.Task, in.Cycle, state, in.Snap, in.VerifyAttempt, in.Feedback, in.CmdEvidence, in.SelfReport)
 	})
-	return svc.RunPipeline(parentCtx, task, cycle, snap, state.verifyAttempt, state.previouslyPassed, feedback, verify.PhaseCallbacks{
+	return svc.RunPipeline(parentCtx, task, cycle, snap, state.verify.verifyAttempt, state.verify.previouslyPassed, feedback, verify.PhaseCallbacks{
 		OnStarted: func(phase *domain.TaskCyclePhase) {
-			state.runningPhase = domain.PhaseVerify
-			state.runningPhaseSeq = phase.PhaseSeq
+			state.phase.runningPhase = domain.PhaseVerify
+			state.phase.runningPhaseSeq = phase.PhaseSeq
 			id := domain.RunCorrelationIDFromDetailsJSON(phase.DetailsJSON)
-			state.runCorrelationID = id
+			state.phase.runCorrelationID = id
 			h.setPhaseRunCorrelationID(id)
 		},
 		OnEnded: func() {
-			state.lastVerifyAfterExecuteSeq = state.lastCompletedExecutePhaseSeq
-			state.runningPhase = ""
-			state.runningPhaseSeq = 0
-			state.runCorrelationID = ""
+			state.phase.lastVerifyAfterExecuteSeq = state.phase.lastCompletedExecutePhaseSeq
+			state.phase.runningPhase = ""
+			state.phase.runningPhaseSeq = 0
+			state.phase.runCorrelationID = ""
 			h.setPhaseRunCorrelationID("")
 		},
 	})

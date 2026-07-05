@@ -62,7 +62,7 @@ type RunMetrics interface {
 // Defensive against zero/negative durations (e.g. tests with a fake
 // clock that runs backwards): clamp to 0 so the histogram never sees a
 // negative observation, and skip the record entirely when the worker
-// did not actually start the cycle (state.startedAt zero) so we do not
+// did not actually start the cycle (state.cycle.startedAt zero) so we do not
 // pollute the histogram with sub-millisecond garbage.
 func (h *Harness) recordRun(terminalStatus, runnerName, model string, started time.Time) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.recordRun",

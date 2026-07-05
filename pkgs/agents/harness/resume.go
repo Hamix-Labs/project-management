@@ -25,15 +25,19 @@ func (h *Harness) Resume(parentCtx context.Context, task *domain.Task, cycle *do
 	}
 
 	state := processState{
-		cycleID:          cycle.ID,
-		cycleStarted:     true,
-		startedAt:        startedAt,
-		previouslyPassed: harnessVerdictsFromResume(cp.PreviouslyPassed),
-		verifyAttempt:    cp.VerifyAttempt,
-		verifyFeedback:   cp.VerifyFeedback,
-		effectiveModel:   effectiveModelFromCycleMeta(h.runner, task, cycle),
+		cycle: cycleLifecycleState{
+			cycleID:        cycle.ID,
+			cycleStarted:   true,
+			startedAt:      startedAt,
+			effectiveModel: effectiveModelFromCycleMeta(h.runner, task, cycle),
+		},
+		verify: verifyLifecycleState{
+			previouslyPassed: harnessVerdictsFromResume(cp.PreviouslyPassed),
+			verifyAttempt:    cp.VerifyAttempt,
+			verifyFeedback:   cp.VerifyFeedback,
+		},
 	}
-	state.verifySnap, _ = h.loadVerificationSnapshot(parentCtx, task.ID)
+	state.verify.verifySnap, _ = h.loadVerificationSnapshot(parentCtx, task.ID)
 
 	defer h.recoverFromPanic(&state, *task)
 

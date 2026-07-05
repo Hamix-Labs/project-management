@@ -29,19 +29,19 @@ func (h *Harness) anchorPostExecuteState(
 	ingestOutcome executeCommitIngestOutcome,
 	ingestErr error,
 ) {
-	state.executeReachedVerify = true
-	state.lastCommitIngestOK = commitIngestOK(snap, ingestAttempted, ingestOutcome, ingestErr)
+	state.phase.executeReachedVerify = true
+	state.git.lastCommitIngestOK = commitIngestOK(snap, ingestAttempted, ingestOutcome, ingestErr)
 	head, ok, err := h.resolveCurrentHeadSHA(ctx, snap)
 	if err != nil {
 		slog.Warn("agent harness post-execute head anchor failed", "cmd", calltrace.LogCmd,
 			"operation", "agent.harness.Harness.anchorPostExecuteState.head",
-			"cycle_id", state.cycleID, "err", err)
+			"cycle_id", state.cycle.cycleID, "err", err)
 		return
 	}
 	if ok {
-		state.postExecuteHeadSHA = head
+		state.git.postExecuteHeadSHA = head
 	}
-	state.lastCompletedExecutePhaseSeq = execPhaseSeq
+	state.phase.lastCompletedExecutePhaseSeq = execPhaseSeq
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
@@ -96,16 +96,16 @@ func (h *Harness) gatherRetryClassifyInput(
 ) orchestration.ClassifyInput {
 	reportValid := true
 	h.probeCriteriaReport(state, cycle.ID)
-	if state.reportParseErr != "" {
+	if state.verify.reportParseErr != "" {
 		reportValid = false
 	}
 	headMatches := true
-	if state.postExecuteHeadSHA != "" {
-		current, ok, err := h.resolveCurrentHeadSHA(ctx, state.gitSnap)
+	if state.git.postExecuteHeadSHA != "" {
+		current, ok, err := h.resolveCurrentHeadSHA(ctx, state.git.gitSnap)
 		if err != nil {
 			headMatches = false
 		} else if ok {
-			headMatches = strings.EqualFold(strings.TrimSpace(current), strings.TrimSpace(state.postExecuteHeadSHA))
+			headMatches = strings.EqualFold(strings.TrimSpace(current), strings.TrimSpace(state.git.postExecuteHeadSHA))
 		}
 	}
 	pipelineFailed := verifyErr != nil
@@ -114,7 +114,7 @@ func (h *Harness) gatherRetryClassifyInput(
 		FailureClass:         failureClass,
 		CriteriaReportValid:  reportValid,
 		GitHeadMatchesAnchor: headMatches,
-		CommitIngestOK:       state.lastCommitIngestOK,
-		ExecuteReachedVerify: state.executeReachedVerify,
+		CommitIngestOK:       state.git.lastCommitIngestOK,
+		ExecuteReachedVerify: state.phase.executeReachedVerify,
 	}
 }

@@ -11,7 +11,7 @@ func TestSelectRecoveryKind_criteriaReportInvalidFromState(t *testing.T) {
 	t.Parallel()
 	h := &Harness{}
 	state := &processState{
-		reportParseErr: "criteria report invalid: unknown field function",
+		verify: verifyLifecycleState{reportParseErr: "criteria report invalid: unknown field function"},
 	}
 	kind := h.selectRecoveryKind(domain.PhaseExecute, state, cycleLoopOpts{}, domain.RetryFresh)
 	if kind != prompt.RecoveryCriteriaReportInvalid {
@@ -23,7 +23,7 @@ func TestSelectRecoveryKind_operatorRetryDefersToCriteriaProbeErr(t *testing.T) 
 	t.Parallel()
 	h := &Harness{}
 	state := &processState{
-		reportParseErr: "criteria report missing",
+		verify: verifyLifecycleState{reportParseErr: "criteria report missing"},
 	}
 	opts := cycleLoopOpts{continuation: &ContinuationBundle{ParentCycleID: "parent-1"}}
 	kind := h.selectRecoveryKind(domain.PhaseExecute, state, opts, domain.RetryResume)

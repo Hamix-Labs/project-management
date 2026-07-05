@@ -25,15 +25,26 @@ import (
 // processState records what the worker has written so far for a single
 // task. The deferred panic-recovery and the shutdown branch use it to
 // decide which cleanup writes are still needed.
-type processState struct {
-	cycleID          string
-	cycleStarted     bool
-	runningPhase     domain.Phase
-	runningPhaseSeq  int64
-	runCorrelationID string
-	verifySnap       verificationSnapshot
-	verifyAttempt    int
-	verifyFeedback   string
+type cycleLifecycleState struct {
+	cycleID        string
+	cycleStarted   bool
+	startedAt      time.Time
+	effectiveModel string
+}
+
+type phaseLifecycleState struct {
+	runningPhase                 domain.Phase
+	runningPhaseSeq              int64
+	runCorrelationID             string
+	executeReachedVerify         bool
+	lastCompletedExecutePhaseSeq int64
+	lastVerifyAfterExecuteSeq    int64
+}
+
+type verifyLifecycleState struct {
+	verifySnap     verificationSnapshot
+	verifyAttempt  int
+	verifyFeedback string
 	// previouslyPassed accumulates criterion verdicts that earlier
 	// retry attempts proved passed. Keyed by criterion ID; carried in
 	// memory across the retry loop so the next execute prompt can list
@@ -43,41 +54,31 @@ type processState struct {
 	// because nothing here is committed to task_checklist_completions
 	// until the cycle succeeds and applyVerifiedCompletions is called
 	// with the union. On terminal failure the map is discarded.
-	previouslyPassed map[string]criterionVerdict
-	// startedAt is captured at processOne entry so every TerminateCycle
-	// path (happy / panic / shutdown / best-effort) observes the same
-	// wall-clock duration into the metrics histogram.
-	startedAt time.Time
-	// effectiveModel is captured in startCycle from
-	// runner.MetricsLabeler (or runner.EffectiveModel as fallback)
-	// so every TerminateCycle path emits the SAME model label into
-	// the by-model Prometheus series — even if the operator edited
-	// task.CursorModel between StartCycle and TerminateCycle.
-	effectiveModel string
-	// gitSnap holds execute-start anchors for commit ingest on success.
-	gitSnap git.PhaseSnapshot
-	// postExecuteHeadSHA is HEAD after a successful execute phase (ADR-0028).
-	postExecuteHeadSHA string
-	// lastCommitIngestOK records whether the latest execute commit ingest succeeded.
-	lastCommitIngestOK bool
-	// executeReachedVerify is true after execute completes with ContinueToVerify.
-	executeReachedVerify bool
-	// reportParseErr is set when criteria-report.json fails parse (ADR-0031).
-	reportParseErr string
-	// lastFailedVerdicts holds the latest verify failure verdicts for recovery deltas.
+	previouslyPassed   map[string]criterionVerdict
 	lastFailedVerdicts []criterionVerdict
-	// lastCompletedExecutePhaseSeq is the phase_seq of the last execute that continued to verify.
-	lastCompletedExecutePhaseSeq int64
-	// lastVerifyAfterExecuteSeq ties the verify session chain to an execute phase_seq.
-	lastVerifyAfterExecuteSeq int64
-	// lastCursorResumeMode is logged after each runner.Run plan.
+	reportParseErr     string
+	reportTampered     bool
+}
+
+type gitLifecycleState struct {
+	gitSnap            git.PhaseSnapshot
+	postExecuteHeadSHA string
+	lastCommitIngestOK bool
+}
+
+type resumeMirrorState struct {
+	continuation         *ContinuationBundle
+	resumeNotice         bool
+	interruptedPhase     domain.Phase
 	lastCursorResumeMode CursorResumeMode
-	// reportTampered is set when verify detects tampering (deny cursor resume).
-	reportTampered bool
-	// continuation/resumeNotice/interruptedPhase mirror cycleLoopOpts for verify planning.
-	continuation     *ContinuationBundle
-	resumeNotice     bool
-	interruptedPhase domain.Phase
+}
+
+type processState struct {
+	cycle  cycleLifecycleState
+	phase  phaseLifecycleState
+	verify verifyLifecycleState
+	git    gitLifecycleState
+	resume resumeMirrorState
 }
 
 // Run drives the harness cycle body for one task already in StatusRunning.
@@ -145,13 +146,13 @@ func (h *Harness) startCycle(ctx context.Context, task *domain.Task, state *proc
 			"operation", "agent.harness.Harness.startCycle.err", "task_id", task.ID, "err", err)
 		return nil, false
 	}
-	state.cycleID = cycle.ID
-	state.cycleStarted = true
+	state.cycle.cycleID = cycle.ID
+	state.cycle.cycleStarted = true
 	if ml, ok := h.runner.(runner.MetricsLabeler); ok {
 		labels := ml.MetricsLabels(req)
-		state.effectiveModel = labels["model"]
+		state.cycle.effectiveModel = labels["model"]
 	} else {
-		state.effectiveModel = h.runner.EffectiveModel(req)
+		state.cycle.effectiveModel = h.runner.EffectiveModel(req)
 	}
 	h.publish(task.ID, cycle.ID)
 	return cycle, true
@@ -170,10 +171,10 @@ func (h *Harness) startExecutePhase(ctx context.Context, cycle *domain.TaskCycle
 			"cycle_id", cycle.ID, "err", err)
 		return nil, false
 	}
-	state.runningPhase = domain.PhaseExecute
-	state.runningPhaseSeq = exec.PhaseSeq
-	state.runCorrelationID = domain.RunCorrelationIDFromDetailsJSON(exec.DetailsJSON)
-	h.setPhaseRunCorrelationID(state.runCorrelationID)
+	state.phase.runningPhase = domain.PhaseExecute
+	state.phase.runningPhaseSeq = exec.PhaseSeq
+	state.phase.runCorrelationID = domain.RunCorrelationIDFromDetailsJSON(exec.DetailsJSON)
+	h.setPhaseRunCorrelationID(state.phase.runCorrelationID)
 	h.publish(cycle.TaskID, cycle.ID)
 	return exec, true
 }
@@ -349,15 +350,15 @@ func (h *Harness) completeExecutePhase(ctx context.Context, state *processState,
 		// deferred recoverFromPanic only acts on actual panics, so
 		// leaving cycleStarted=true here cannot cause a double
 		// TerminateCycle on the happy-error path.
-		state.runningPhase = ""
-		state.runningPhaseSeq = 0
-		state.runCorrelationID = ""
+		state.phase.runningPhase = ""
+		state.phase.runningPhaseSeq = 0
+		state.phase.runCorrelationID = ""
 		h.setPhaseRunCorrelationID("")
 		return false
 	}
-	state.runningPhase = ""
-	state.runningPhaseSeq = 0
-	state.runCorrelationID = ""
+	state.phase.runningPhase = ""
+	state.phase.runningPhaseSeq = 0
+	state.phase.runCorrelationID = ""
 	h.setPhaseRunCorrelationID("")
 	h.publish(cycle.TaskID, cycle.ID)
 	return true
@@ -369,33 +370,33 @@ func (h *Harness) completeExecutePhase(ctx context.Context, state *processState,
 // histogram see the happy-path attempt outcome.
 func (h *Harness) terminateCycle(ctx context.Context, state *processState, taskID string, status domain.CycleStatus, reason string) bool {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.terminateCycle",
-		"cycle_id", state.cycleID, "status", string(status), "reason", reason)
-	if state.cycleID == "" {
+		"cycle_id", state.cycle.cycleID, "status", string(status), "reason", reason)
+	if state.cycle.cycleID == "" {
 		return true
 	}
-	if _, err := h.store.TerminateCycle(ctx, state.cycleID, status, reason, domain.ActorAgent); err != nil {
+	if _, err := h.store.TerminateCycle(ctx, state.cycle.cycleID, status, reason, domain.ActorAgent); err != nil {
 		level := slog.LevelWarn
 		if errors.Is(err, domain.ErrNotFound) {
 			level = slog.LevelInfo
 		}
 		slog.Log(ctx, level, "agent harness TerminateCycle failed",
 			"cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.terminateCycle.err",
-			"cycle_id", state.cycleID, "err", err)
-		state.cycleStarted = false
+			"cycle_id", state.cycle.cycleID, "err", err)
+		state.cycle.cycleStarted = false
 		return false
 	}
-	state.cycleStarted = false
-	h.publish(taskID, state.cycleID)
-	h.recordRun(string(status), h.runner.Name(), state.effectiveModel, state.startedAt)
-	h.observeVerifyRetries(state.verifyAttempt)
+	state.cycle.cycleStarted = false
+	h.publish(taskID, state.cycle.cycleID)
+	h.recordRun(string(status), h.runner.Name(), state.cycle.effectiveModel, state.cycle.startedAt)
+	h.observeVerifyRetries(state.verify.verifyAttempt)
 	// GC the worker-managed scratch dir for this cycle. Idempotent
 	// against a missing dir; logged at Debug because operators rarely
 	// care unless cleanup itself errors. Closes the unbounded-disk-
 	// growth gap that existed when files were written under RepoRoot/.legacy-scratch.
-	if err := reports.CleanupReportDir(h.opts.ReportDir, state.cycleID); err != nil {
+	if err := reports.CleanupReportDir(h.opts.ReportDir, state.cycle.cycleID); err != nil {
 		slog.Warn("agent harness cleanupReportDir failed",
 			"cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.terminateCycle.cleanup_err",
-			"cycle_id", state.cycleID, "report_dir", h.opts.ReportDir, "err", err)
+			"cycle_id", state.cycle.cycleID, "report_dir", h.opts.ReportDir, "err", err)
 	}
 	return true
 }

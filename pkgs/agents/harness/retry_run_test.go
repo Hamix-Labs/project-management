@@ -278,9 +278,11 @@ func TestVerifyOnlyCrossCycleResume_runCycleLoopSkipsRunnerExecute(t *testing.T)
 		Clock:      func() time.Time { return time.Unix(0, 0).UTC() },
 	})
 	state := processState{
-		startedAt:        h.opts.Clock(),
-		previouslyPassed: harnessVerdictsFromResume(cp.PreviouslyPassed),
-		verifyFeedback:   cp.VerifyFeedback,
+		cycle: cycleLifecycleState{startedAt: h.opts.Clock()},
+		verify: verifyLifecycleState{
+			previouslyPassed: harnessVerdictsFromResume(cp.PreviouslyPassed),
+			verifyFeedback:   cp.VerifyFeedback,
+		},
 	}
 	parentID := parent.ID
 	child, ok := h.startCycle(ctx, tsk, &state, startCycleOpts{parentCycleID: &parentID, retryMode: domain.RetryResume})
@@ -294,7 +296,7 @@ func TestVerifyOnlyCrossCycleResume_runCycleLoopSkipsRunnerExecute(t *testing.T)
 		t.Fatal(err)
 	}
 	writeVerifyReportForTest(t, reportDir, child.ID, []string{item.ID})
-	state.verifySnap, _ = h.loadVerificationSnapshot(ctx, tsk.ID)
+	state.verify.verifySnap, _ = h.loadVerificationSnapshot(ctx, tsk.ID)
 	h.runCycleLoop(ctx, tsk, child, &state, cycleLoopOpts{
 		skipFirstExecute: true,
 		continuation:     cp.Continuation,

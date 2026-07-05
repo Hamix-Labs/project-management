@@ -29,11 +29,11 @@ func (h *Harness) composeExecutePrompt(ctx context.Context, task *domain.Task, c
 	promptText := task.InitialPrompt
 	promptText = prompt.InjectCriteria(
 		promptText,
-		checklistItemsForPrompt(state.verifySnap.Criteria),
+		checklistItemsForPrompt(state.verify.verifySnap.Criteria),
 		reports.CriteriaReportPath(h.opts.ReportDir, cycle.ID),
-		verifiedCriterionIDs(state.previouslyPassed),
+		verifiedCriterionIDs(state.verify.previouslyPassed),
 	)
-	promptText = prompt.AppendVerifyFeedback(promptText, state.verifyFeedback)
+	promptText = prompt.AppendVerifyFeedback(promptText, state.verify.verifyFeedback)
 	retryMode := retryModeFromCycleMeta(cycle)
 	if bundle := opts.continuation; bundle != nil {
 		promptText = prompt.ComposeContinuation(promptText, continuationInputFromBundle(cycle, bundle))
@@ -47,7 +47,7 @@ func (h *Harness) composeExecutePrompt(ctx context.Context, task *domain.Task, c
 			promptText = prompt.AppendResumeNotice(promptText, cycle, opts.interruptedPhase, opts.knownCommits)
 		}
 	}
-	if !state.gitSnap.Skipped {
+	if !state.git.gitSnap.Skipped {
 		promptText = prompt.AppendGitCommitPolicy(promptText, retryMode == domain.RetryResume)
 	}
 	return promptText
@@ -59,16 +59,16 @@ func recordPassedCriterionVerdicts(state *processState, verdicts []criterionVerd
 		if !v.Passed {
 			continue
 		}
-		if _, exists := state.previouslyPassed[v.ID]; !exists {
-			state.previouslyPassed[v.ID] = v
+		if _, exists := state.verify.previouslyPassed[v.ID]; !exists {
+			state.verify.previouslyPassed[v.ID] = v
 		}
 	}
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func unionPreviouslyPassedVerdicts(state *processState) []criterionVerdict {
-	unionVerdicts := make([]criterionVerdict, 0, len(state.previouslyPassed))
-	for _, v := range state.previouslyPassed {
+	unionVerdicts := make([]criterionVerdict, 0, len(state.verify.previouslyPassed))
+	for _, v := range state.verify.previouslyPassed {
 		unionVerdicts = append(unionVerdicts, v)
 	}
 	return unionVerdicts
@@ -102,7 +102,7 @@ func (h *Harness) runCycleLoopExecute(
 		h.bestEffortTerminate(parentCtx, state, task.ID, domain.CycleStatusFailed, "execute_git_snapshot_failed")
 		return false
 	}
-	state.gitSnap = snap
+	state.git.gitSnap = snap
 
 	decision, err := h.planExecuteRun(parentCtx, task, cycle, state, opts)
 	if err != nil {
@@ -154,7 +154,7 @@ func (h *Harness) runCycleLoopExecute(
 	if staleRecovery && effects.ContinueToVerify {
 		recovered := streamIdleRecoveredEvent()
 		h.persistProgress(parentCtx, task.ID, cycle.ID, execPhase.PhaseSeq, recovered)
-		h.publishProgress(task.ID, cycle.ID, execPhase.PhaseSeq, state.runCorrelationID, recovered)
+		h.publishProgress(task.ID, cycle.ID, execPhase.PhaseSeq, state.phase.runCorrelationID, recovered)
 	}
 	h.probeCriteriaReport(state, cycle.ID)
 	cont := h.applyExecuteEffects(parentCtx, task, cycle, state, execPhase, result, effects, commitCount, snap, operatorCancelled, staleRecovery)
@@ -174,7 +174,7 @@ func (h *Harness) runCycleLoopVerify(
 	cycle *domain.TaskCycle,
 	state *processState,
 ) (retryLoop bool, terminalFailure bool, skipNextExecute bool) {
-	if orchestration.VerifyDisabled(state.verifySnap.Enabled) {
+	if orchestration.VerifyDisabled(state.verify.verifySnap.Enabled) {
 		checklistErr := h.completeChecklistLegacy(parentCtx, task.ID)
 		if checklistErr != nil {
 			slog.Warn("agent harness checklist completion failed",
@@ -187,16 +187,16 @@ func (h *Harness) runCycleLoopVerify(
 		return retry, term, false
 	}
 
-	verdicts, feedback, verifyErr := h.runVerificationPipeline(parentCtx, task, cycle, state, state.verifySnap, state.verifyFeedback)
+	verdicts, feedback, verifyErr := h.runVerificationPipeline(parentCtx, task, cycle, state, state.verify.verifySnap, state.verify.verifyFeedback)
 	if verifyErr != nil && feedback != "" {
-		state.verifyFeedback = feedback
+		state.verify.verifyFeedback = feedback
 	}
 	recordPassedCriterionVerdicts(state, verdicts)
 	if verifyErr != nil {
-		state.lastFailedVerdicts = append([]criterionVerdict(nil), verdicts...)
+		state.verify.lastFailedVerdicts = append([]criterionVerdict(nil), verdicts...)
 		var tampered *verify.TamperedError
 		if errors.As(verifyErr, &tampered) {
-			state.reportTampered = true
+			state.verify.reportTampered = true
 		}
 	}
 	if verifyErr == nil {
@@ -214,7 +214,7 @@ func (h *Harness) runCycleLoopVerify(
 	classifyIn := h.gatherRetryClassifyInput(parentCtx, cycle, state, verdicts, verifyErr)
 	retryMode, reasonCode := orchestration.ClassifyVerifyRetryMode(classifyIn)
 	executeStillValid := retryMode == orchestration.RetryModeVerifyOnly
-	effects := orchestration.DecideVerifyRetryWithValidity(state.verifyAttempt, state.verifySnap.MaxRetries, result, executeStillValid)
+	effects := orchestration.DecideVerifyRetryWithValidity(state.verify.verifyAttempt, state.verify.verifySnap.MaxRetries, result, executeStillValid)
 	if effects.RetryLoop {
 		slog.Info("agent harness verify retry classified", "cmd", calltrace.LogCmd,
 			"operation", "agent.harness.Harness.runCycleLoopVerify.retry_mode",
@@ -222,7 +222,7 @@ func (h *Harness) runCycleLoopVerify(
 			"retry_mode", string(retryMode), "reason_code", string(reasonCode),
 			"skip_next_execute", effects.SkipNextExecute)
 	}
-	terminalReason := formatVerificationFailedReason(verdicts, state.previouslyPassed)
+	terminalReason := formatVerificationFailedReason(verdicts, state.verify.previouslyPassed)
 	retry, term := h.applyVerifyEffects(parentCtx, task, cycle, state, effects, terminalReason)
 	return retry, term, effects.SkipNextExecute
 }
@@ -247,11 +247,11 @@ func (h *Harness) runCycleLoopFinalizeSuccess(
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (h *Harness) runCycleLoop(parentCtx context.Context, task *domain.Task, cycle *domain.TaskCycle, state *processState, opts cycleLoopOpts) {
-	state.continuation = opts.continuation
-	state.resumeNotice = opts.resumeNotice
-	state.interruptedPhase = opts.interruptedPhase
+	state.resume.continuation = opts.continuation
+	state.resume.resumeNotice = opts.resumeNotice
+	state.resume.interruptedPhase = opts.interruptedPhase
 	if bundle := opts.continuation; bundle != nil {
-		state.reportParseErr = strings.TrimSpace(bundle.CriteriaReportProbeErr)
+		state.verify.reportParseErr = strings.TrimSpace(bundle.CriteriaReportProbeErr)
 	}
 	skipExecute := opts.skipFirstExecute
 	for {

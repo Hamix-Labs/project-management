@@ -68,10 +68,12 @@ func (h *Harness) runResumeRetry(parentCtx context.Context, task *domain.Task, i
 	}
 	startedAt := h.opts.Clock()
 	state := processState{
-		startedAt:        startedAt,
-		previouslyPassed: harnessVerdictsFromResume(cp.PreviouslyPassed),
-		verifyAttempt:    0,
-		verifyFeedback:   cp.VerifyFeedback,
+		cycle: cycleLifecycleState{startedAt: startedAt},
+		verify: verifyLifecycleState{
+			previouslyPassed: harnessVerdictsFromResume(cp.PreviouslyPassed),
+			verifyAttempt:    0,
+			verifyFeedback:   cp.VerifyFeedback,
+		},
 	}
 	defer h.recoverFromPanic(&state, *task)
 
@@ -100,7 +102,7 @@ func (h *Harness) runResumeRetry(parentCtx context.Context, task *domain.Task, i
 			return
 		}
 	}
-	state.verifySnap, _ = h.loadVerificationSnapshot(parentCtx, task.ID)
+	state.verify.verifySnap, _ = h.loadVerificationSnapshot(parentCtx, task.ID)
 	h.runCycleLoop(parentCtx, task, cycle, &state, cycleLoopOpts{
 		resumeNotice:     true,
 		interruptedPhase: domain.PhaseExecute,
@@ -113,7 +115,10 @@ func (h *Harness) runResumeRetry(parentCtx context.Context, task *domain.Task, i
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (h *Harness) runFreshCycle(parentCtx context.Context, task *domain.Task, opts startCycleOpts) {
 	startedAt := h.opts.Clock()
-	state := processState{startedAt: startedAt, previouslyPassed: map[string]criterionVerdict{}}
+	state := processState{
+		cycle:  cycleLifecycleState{startedAt: startedAt},
+		verify: verifyLifecycleState{previouslyPassed: map[string]criterionVerdict{}},
+	}
 	defer h.recoverFromPanic(&state, *task)
 
 	cycle, ok := h.startCycle(parentCtx, task, &state, opts)
@@ -121,7 +126,7 @@ func (h *Harness) runFreshCycle(parentCtx context.Context, task *domain.Task, op
 		h.bestEffortFailTask(parentCtx, task.ID)
 		return
 	}
-	state.verifySnap, _ = h.loadVerificationSnapshot(parentCtx, task.ID)
+	state.verify.verifySnap, _ = h.loadVerificationSnapshot(parentCtx, task.ID)
 	h.runCycleLoop(parentCtx, task, cycle, &state, cycleLoopOpts{})
 }
 

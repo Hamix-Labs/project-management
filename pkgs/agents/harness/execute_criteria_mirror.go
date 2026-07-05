@@ -17,7 +17,7 @@ func (h *Harness) bestEffortMirrorExecuteCriteria(
 ) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.bestEffortMirrorExecuteCriteria",
 		"cycle_id", cycleID)
-	if !state.verifySnap.Enabled || len(state.verifySnap.Criteria) == 0 {
+	if !state.verify.verifySnap.Enabled || len(state.verify.verifySnap.Criteria) == 0 {
 		return
 	}
 	selfReport, err := reports.ParseCriteriaReportPartial(h.opts.ReportDir, cycleID)
@@ -30,7 +30,7 @@ func (h *Harness) bestEffortMirrorExecuteCriteria(
 		return
 	}
 	if uerr := h.persistCriteriaReports(ctx, cycleID, domain.ExecuteCriteriaReportAttemptSeq,
-		state.verifySnap.Criteria, state.previouslyPassed, selfReport); uerr != nil {
+		state.verify.verifySnap.Criteria, state.verify.previouslyPassed, selfReport); uerr != nil {
 		slog.Warn("agent harness execute criteria mirror upsert failed",
 			"cmd", calltrace.LogCmd, "operation", "agent.harness.bestEffortMirrorExecuteCriteria.upsert_err",
 			"cycle_id", cycleID, "err", uerr)

@@ -41,7 +41,7 @@ func (h *Harness) applyExecuteEffects(
 
 	phaseStatus := executePhaseStatusFromEffects(effects)
 	phaseDetails := mergeRunnerDetailsWithGit(detailsBytes(result), snap, commitCount)
-	phaseDetails = git.MergeCriteriaReportProbeErr(phaseDetails, state.reportParseErr)
+	phaseDetails = git.MergeCriteriaReportProbeErr(phaseDetails, state.verify.reportParseErr)
 	if streamIdleRecovery && effects.ContinueToVerify {
 		phaseDetails = mergeStreamIdleRecoveryDetails(phaseDetails, h.opts.StreamIdleStuck)
 	}
@@ -90,7 +90,7 @@ func (h *Harness) applyVerifyEffects(
 		return false, true
 	}
 	if effects.RetryLoop {
-		state.verifyAttempt++
+		state.verify.verifyAttempt++
 		return true, false
 	}
 	if effects.TerminalFailure {
@@ -145,6 +145,6 @@ func (h *Harness) applyFinalizeEffects(
 		"task_id", task.ID, "cycle_id", cycle.ID, "attempt_seq", cycle.AttemptSeq,
 		"terminal_cycle_status", string(effects.CycleStatus), "task_status", string(effects.TaskStatus),
 		"runner", h.runner.Name(), "runner_version", h.runner.Version(),
-		"duration_ms", h.opts.Clock().Sub(state.startedAt).Milliseconds())
+		"duration_ms", h.opts.Clock().Sub(state.cycle.startedAt).Milliseconds())
 	return true
 }

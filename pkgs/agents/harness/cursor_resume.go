@@ -92,9 +92,9 @@ func (h *Harness) planVerifyRun(
 	selfReport map[string]reports.CriteriaEntry,
 ) (verify.VerifyRunPlan, error) {
 	opts := cycleLoopOpts{
-		resumeNotice:     state.resumeNotice,
-		interruptedPhase: state.interruptedPhase,
-		continuation:     state.continuation,
+		resumeNotice:     state.resume.resumeNotice,
+		interruptedPhase: state.resume.interruptedPhase,
+		continuation:     state.resume.continuation,
 	}
 	decision, err := h.resolveCursorResume(ctx, domain.PhaseVerify, task, cycle, state, opts, false)
 	if err != nil {
@@ -103,17 +103,17 @@ func (h *Harness) planVerifyRun(
 			"cycle_id", cycle.ID, "err", err)
 		decision = CursorResumeDecision{
 			Mode:       CursorResumeFresh,
-			Prompt:     h.verifySvc().BuildVerifyPrompt(ctx, task.ID, snap, cycle.ID, state.previouslyPassed, selfReport, feedback, cmdEvidence),
+			Prompt:     h.verifySvc().BuildVerifyPrompt(ctx, task.ID, snap, cycle.ID, state.verify.previouslyPassed, selfReport, feedback, cmdEvidence),
 			DenyReason: "policy_error",
 		}
 	} else if decision.Mode == CursorResumeFresh || decision.Mode == CursorResumeFallback {
-		decision.Prompt = h.verifySvc().BuildVerifyPrompt(ctx, task.ID, snap, cycle.ID, state.previouslyPassed, selfReport, feedback, cmdEvidence)
+		decision.Prompt = h.verifySvc().BuildVerifyPrompt(ctx, task.ID, snap, cycle.ID, state.verify.previouslyPassed, selfReport, feedback, cmdEvidence)
 	} else {
 		rc := h.buildRecoveryContext(domain.PhaseVerify, task, cycle, state, opts, retryModeFromCycleMeta(cycle))
 		rc.CommandEvidenceDelta = commandEvidenceLines(cmdEvidence)
 		decision.Prompt = prompt.ComposeRecoveryDelta(rc)
 	}
-	state.lastCursorResumeMode = decision.Mode
+	state.resume.lastCursorResumeMode = decision.Mode
 	logRecoveryCompose(decision)
 	return verify.VerifyRunPlan{
 		Prompt:           decision.Prompt,
@@ -163,26 +163,26 @@ func (h *Harness) resolveCursorResume(
 		return CursorResumeDecision{Mode: CursorResumeFresh, DenyReason: "retry_fresh"}, nil
 	}
 	if opts.resumeNotice && retryMode != domain.RetryResume && phase == domain.PhaseExecute {
-		if state.reportTampered {
+		if state.verify.reportTampered {
 			return CursorResumeDecision{Mode: CursorResumeFresh, DenyReason: "tamper"}, nil
 		}
 	}
 	if phase == domain.PhaseVerify && h.firstVerifyAfterNewExecute(state) {
 		return CursorResumeDecision{Mode: CursorResumeFresh, DenyReason: "verify_fresh_after_execute"}, nil
 	}
-	if !state.gitSnap.Skipped && state.postExecuteHeadSHA != "" {
+	if !state.git.gitSnap.Skipped && state.git.postExecuteHeadSHA != "" {
 		headMatches := true
-		current, ok, herr := h.resolveCurrentHeadSHA(ctx, state.gitSnap)
+		current, ok, herr := h.resolveCurrentHeadSHA(ctx, state.git.gitSnap)
 		if herr != nil {
 			headMatches = false
 		} else if ok {
-			headMatches = strings.EqualFold(strings.TrimSpace(current), strings.TrimSpace(state.postExecuteHeadSHA))
+			headMatches = strings.EqualFold(strings.TrimSpace(current), strings.TrimSpace(state.git.postExecuteHeadSHA))
 		}
 		if !headMatches {
 			return CursorResumeDecision{Mode: CursorResumeFresh, DenyReason: "head_drift"}, nil
 		}
 	}
-	if state.reportTampered {
+	if state.verify.reportTampered {
 		return CursorResumeDecision{Mode: CursorResumeFresh, DenyReason: "tamper"}, nil
 	}
 	lookupCycleID := h.sessionLookupCycleID(ctx, cycle, phase, retryMode, opts)
@@ -206,7 +206,7 @@ func (h *Harness) resolveCursorResume(
 		Prompt:          delta,
 		RecoveryKind:    recoveryCtx.Kind,
 	}
-	state.lastCursorResumeMode = decision.Mode
+	state.resume.lastCursorResumeMode = decision.Mode
 	logRecoveryCompose(decision)
 	return decision, nil
 }
@@ -238,7 +238,7 @@ func (h *Harness) sessionLookupCycleID(
 
 //funclogmeasure:skip category=hot-path reason="Pure state comparison for verify fresh-after-execute deny."
 func (h *Harness) firstVerifyAfterNewExecute(state *processState) bool {
-	return state.lastVerifyAfterExecuteSeq < state.lastCompletedExecutePhaseSeq
+	return state.phase.lastVerifyAfterExecuteSeq < state.phase.lastCompletedExecutePhaseSeq
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure DTO assembly; ComposeRecoveryDelta logs hint metrics."
@@ -251,7 +251,7 @@ func (h *Harness) buildRecoveryContext(
 	retryMode domain.RetryMode,
 ) prompt.RecoveryContext {
 	reportPath := reports.CriteriaReportPath(h.opts.ReportDir, cycle.ID)
-	locked := lockedCriterionIDs(state.previouslyPassed)
+	locked := lockedCriterionIDs(state.verify.previouslyPassed)
 	expected := activeCriterionIDs(state)
 	kind := h.selectRecoveryKind(phase, state, opts, retryMode)
 	ctx := prompt.RecoveryContext{
@@ -259,14 +259,14 @@ func (h *Harness) buildRecoveryContext(
 		Phase:               phase,
 		CycleID:             cycle.ID,
 		AttemptSeq:          cycle.AttemptSeq,
-		VerifyAttempt:       state.verifyAttempt,
+		VerifyAttempt:       state.verify.verifyAttempt,
 		ReportPath:          reportPath,
-		FailedCriteria:      failedCriteriaFromVerdicts(state.lastFailedVerdicts),
+		FailedCriteria:      failedCriteriaFromVerdicts(state.verify.lastFailedVerdicts),
 		LockedCriteria:      locked,
-		ReportParseErr:      state.reportParseErr,
+		ReportParseErr:      state.verify.reportParseErr,
 		ExpectedIDs:         expected,
 		InterruptedPhase:    opts.interruptedPhase,
-		PriorVerifyFeedback: state.verifyFeedback,
+		PriorVerifyFeedback: state.verify.verifyFeedback,
 	}
 	if bundle := opts.continuation; bundle != nil && kind == prompt.RecoveryOperatorRetryResume {
 		ctx.FailureClass = string(bundle.FailureClass)
@@ -287,13 +287,13 @@ func (h *Harness) selectRecoveryKind(
 	retryMode domain.RetryMode,
 ) prompt.RecoveryKind {
 	if phase == domain.PhaseVerify {
-		if state.verifyAttempt > 0 {
+		if state.verify.verifyAttempt > 0 {
 			return prompt.RecoveryVerifyFeedback
 		}
 		return prompt.RecoveryVerifyInfra
 	}
-	if state.reportParseErr != "" {
-		if strings.Contains(strings.ToLower(state.reportParseErr), "missing") {
+	if state.verify.reportParseErr != "" {
+		if strings.Contains(strings.ToLower(state.verify.reportParseErr), "missing") {
 			return prompt.RecoveryCriteriaReportMissing
 		}
 		return prompt.RecoveryCriteriaReportInvalid
@@ -304,7 +304,7 @@ func (h *Harness) selectRecoveryKind(
 	if opts.resumeNotice {
 		return prompt.RecoveryProcessRestart
 	}
-	if len(state.lastFailedVerdicts) > 0 {
+	if len(state.verify.lastFailedVerdicts) > 0 {
 		return prompt.RecoveryVerifyImplementation
 	}
 	return prompt.RecoveryVerifyImplementation
@@ -342,8 +342,8 @@ func lockedCriterionIDs(locked map[string]criterionVerdict) []string {
 //funclogmeasure:skip category=hot-path reason="Pure active checklist id list from state."
 func activeCriterionIDs(state *processState) []string {
 	expected := make([]string, 0)
-	for _, it := range state.verifySnap.Criteria {
-		if _, ok := state.previouslyPassed[it.ID]; ok {
+	for _, it := range state.verify.verifySnap.Criteria {
+		if _, ok := state.verify.previouslyPassed[it.ID]; ok {
 			continue
 		}
 		expected = append(expected, it.ID)
