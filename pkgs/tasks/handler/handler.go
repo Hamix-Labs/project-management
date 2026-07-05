@@ -123,6 +123,17 @@ func WithRepoProvider(p RepoProvider) HandlerOption {
 	}
 }
 
+// WithGitService replaces the default gitwork.New() wiring so handler
+// tests can inject a stub without touching the real git binary.
+func WithGitService(s gitwork.Service) HandlerOption {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.WithGitService")
+	return func(h *Handler) {
+		if s != nil {
+			h.git = s
+		}
+	}
+}
+
 // WithSchemaDriftReport wires startup schema revision drift for GET /health/ready.
 func WithSchemaDriftReport(r postgres.SchemaDriftReport) HandlerOption {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.WithSchemaDriftReport")
