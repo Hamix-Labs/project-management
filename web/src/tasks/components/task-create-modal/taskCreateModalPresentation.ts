@@ -19,7 +19,21 @@ export type TaskCreateModalPresentation = {
   showDraftStatus: boolean;
 };
 
-export function resolveTaskCreateModalPresentation(input: {
+type TaskCreateModalMode =
+  | "task-edit"
+  | "template-edit"
+  | "template-create"
+  | "task-create";
+
+type PresentationPreset = {
+  modalTitle: string;
+  modalTitleId: string;
+  idsPrefix: string;
+  modalDescribedBy: string | undefined;
+  modalBusy: (input: ResolvePresentationInput) => boolean;
+};
+
+type ResolvePresentationInput = {
   editingTaskId: string | null;
   composeTarget: "task" | "template";
   composeOperation: "create" | "edit";
@@ -29,38 +43,61 @@ export function resolveTaskCreateModalPresentation(input: {
   patchPending: boolean;
   draftSaveLabel: string | null;
   onApplyTestScenario?: (scenario: TestScenario) => void;
-}): TaskCreateModalPresentation {
+};
+
+const PRESENTATION_PRESETS: Record<TaskCreateModalMode, PresentationPreset> = {
+  "task-edit": {
+    modalTitle: "Edit task",
+    modalTitleId: "task-edit-modal-title",
+    idsPrefix: "task-edit",
+    modalDescribedBy: "task-edit-modal-description",
+    modalBusy: (input) => input.patchPending,
+  },
+  "template-edit": {
+    modalTitle: "Edit template",
+    modalTitleId: "task-template-edit-modal-title",
+    idsPrefix: "task-template-edit",
+    modalDescribedBy: undefined,
+    modalBusy: (input) => input.pending || input.saving,
+  },
+  "template-create": {
+    modalTitle: "New template",
+    modalTitleId: "task-template-create-modal-title",
+    idsPrefix: "task-template-new",
+    modalDescribedBy: undefined,
+    modalBusy: (input) => input.pending || input.saving,
+  },
+  "task-create": {
+    modalTitle: "New task",
+    modalTitleId: "task-create-modal-title",
+    idsPrefix: "task-new",
+    modalDescribedBy: undefined,
+    modalBusy: (input) => input.pending,
+  },
+};
+
+function resolveTaskCreateModalMode(input: ResolvePresentationInput): TaskCreateModalMode {
+  const isTaskEdit = input.editingTaskId != null;
+  if (isTaskEdit) {
+    return "task-edit";
+  }
+  if (input.composeTarget === "template") {
+    return input.composeOperation === "edit" ? "template-edit" : "template-create";
+  }
+  return "task-create";
+}
+
+export function resolveTaskCreateModalPresentation(
+  input: ResolvePresentationInput,
+): TaskCreateModalPresentation {
   const isTaskEdit = input.editingTaskId != null;
   const isTemplateMode = input.composeTarget === "template";
   const isEdit = isTaskEdit || (isTemplateMode && input.composeOperation === "edit");
+  const mode = resolveTaskCreateModalMode(input);
+  const preset = PRESENTATION_PRESETS[mode];
   const disabled = input.pending || input.saving;
   const tagsAndDependenciesUiEnabled = !isUiFeatureOmitted("tagsAndDependencies");
   const scheduleUiEnabled = !isUiFeatureOmitted("schedule");
-  const modalBusy = isTaskEdit
-    ? input.patchPending
-    : input.pending || (isTemplateMode && input.saving);
-  const modalTitle = isTaskEdit
-    ? "Edit task"
-    : isTemplateMode
-      ? input.composeOperation === "edit"
-        ? "Edit template"
-        : "New template"
-      : "New task";
-  const modalTitleId = isEdit
-    ? isTemplateMode
-      ? "task-template-edit-modal-title"
-      : "task-edit-modal-title"
-    : isTemplateMode
-      ? "task-template-create-modal-title"
-      : "task-create-modal-title";
-  const modalDescribedBy = isTaskEdit ? "task-edit-modal-description" : undefined;
-  const idsPrefix = isEdit
-    ? isTemplateMode
-      ? "task-template-edit"
-      : "task-edit"
-    : isTemplateMode
-      ? "task-template-new"
-      : "task-new";
   const status = input.composeStatus ?? "ready";
   const showTestScenarios = !isEdit && Boolean(input.onApplyTestScenario);
   const showDraftStatus = !isEdit && !isTemplateMode && Boolean(input.draftSaveLabel);
@@ -72,11 +109,11 @@ export function resolveTaskCreateModalPresentation(input: {
     disabled,
     tagsAndDependenciesUiEnabled,
     scheduleUiEnabled,
-    modalBusy,
-    modalTitle,
-    modalTitleId,
-    modalDescribedBy,
-    idsPrefix,
+    modalBusy: preset.modalBusy(input),
+    modalTitle: preset.modalTitle,
+    modalTitleId: preset.modalTitleId,
+    modalDescribedBy: preset.modalDescribedBy,
+    idsPrefix: preset.idsPrefix,
     status,
     showTestScenarios,
     showDraftStatus,
