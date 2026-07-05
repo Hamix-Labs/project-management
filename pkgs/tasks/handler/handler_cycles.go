@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
@@ -103,13 +102,13 @@ func (h *Handler) getTaskCycle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	debugHTTPRequest(r, op, "task_id", taskID, "cycle_id", cycleID)
-	cycle, err := h.store.GetCycle(r.Context(), cycleID)
-	if err != nil {
+	if err := assertCycleBelongsToTask(r.Context(), h.store, taskID, cycleID); err != nil {
 		writeStoreError(w, r, op, err)
 		return
 	}
-	if cycle.TaskID != taskID {
-		writeStoreError(w, r, op, domain.ErrNotFound)
+	cycle, err := h.store.GetCycle(r.Context(), cycleID)
+	if err != nil {
+		writeStoreError(w, r, op, err)
 		return
 	}
 	phases, err := h.store.ListPhasesForCycle(r.Context(), cycleID)
