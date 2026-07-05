@@ -7,13 +7,18 @@ textarea {
    scoped rules like button.task-detail-btn-edit / button.secondary stay authoritative.
    .btn-utility / .task-event-data-tab are excluded (see app-task-timeline.css).
    .task-detail-agent-model-cta is a compact secondary control (model config panel; app-task-detail.css).
-   Workspace folder picker rows/crumbs use workspace-picker.css. */
+   Workspace folder picker rows/crumbs use workspace-picker.css.
+   .ui-btn uses components/ui/ui.css; table sort headers use app-task-list-card.css. */
 :where(
   button:not(.custom-select-trigger):not(.settings-dropdown-trigger):not(.btn-utility):not(
       .task-event-data-tab
     ):not(.task-detail-agent-model-cta):not(.pg__toggle-btn):not(.test-scenarios-popover__row):not(
       .task-commit-diff-view-btn
-    ):not(.workspace-picker-back):not(.workspace-picker-row):not(.workspace-picker-crumb)
+    ):not(.workspace-picker-back):not(.workspace-picker-row):not(.workspace-picker-crumb):not(
+      .templates-tag-chip
+    ):not(.templates-toolbar__search-clear):not(.templates-page-header__new-btn):not(.ui-btn):not(
+      .task-list-table-sort-btn
+    ):not(.task-list-status-tab)
 ) {
   font: inherit;
   font-weight: 500;
@@ -35,7 +40,11 @@ textarea {
     .task-detail-agent-model-cta
   ):not(.pg__toggle-btn):not(.test-scenarios-popover__row):not(.task-commit-diff-view-btn):not(
     .workspace-picker-back
-  ):not(.workspace-picker-row):not(.workspace-picker-crumb)
+  ):not(.workspace-picker-row):not(.workspace-picker-crumb):not(.templates-tag-chip):not(
+    .templates-toolbar__search-clear
+  ):not(.templates-page-header__new-btn):not(.ui-btn):not(.task-list-table-sort-btn):not(
+    .task-list-status-tab
+  )
 ):not(:disabled):hover {
   background: var(--control-primary-hover-bg);
   box-shadow: none;
@@ -48,7 +57,11 @@ textarea {
     .task-detail-agent-model-cta
   ):not(.pg__toggle-btn):not(.test-scenarios-popover__row):not(.task-commit-diff-view-btn):not(
     .workspace-picker-back
-  ):not(.workspace-picker-row):not(.workspace-picker-crumb)
+  ):not(.workspace-picker-row):not(.workspace-picker-crumb):not(.templates-tag-chip):not(
+    .templates-toolbar__search-clear
+  ):not(.templates-page-header__new-btn):not(.ui-btn):not(.task-list-table-sort-btn):not(
+    .task-list-status-tab
+  )
 ):not(:disabled):active {
   transform: scale(0.98);
   box-shadow: none;

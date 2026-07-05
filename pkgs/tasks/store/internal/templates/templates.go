@@ -18,7 +18,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type Summary = namedpayload.Summary
+type Summary = namedpayload.TemplateSummary
 type Detail = namedpayload.Detail
 
 //funclogmeasure:skip category=hot-path reason="Thin delegate to namedpayload; operation trace is emitted there."
@@ -27,8 +27,8 @@ func Save(ctx context.Context, db *gorm.DB, id, name string, payload json.RawMes
 }
 
 //funclogmeasure:skip category=hot-path reason="Thin delegate to namedpayload; operation trace is emitted there."
-func List(ctx context.Context, db *gorm.DB, limit int, q string) ([]Summary, error) {
-	return namedpayload.ListTemplates(ctx, db, limit, q)
+func List(ctx context.Context, db *gorm.DB, limit int, q, sort, order, tag string) ([]Summary, error) {
+	return namedpayload.ListTemplates(ctx, db, limit, q, sort, order, tag)
 }
 
 //funclogmeasure:skip category=hot-path reason="Thin delegate to namedpayload; operation trace is emitted there."
@@ -74,4 +74,9 @@ func Patch(ctx context.Context, db *gorm.DB, id string, name *string, payload js
 //funclogmeasure:skip category=hot-path reason="Thin delegate to namedpayload; operation trace is emitted there."
 func Delete(ctx context.Context, db *gorm.DB, id string) error {
 	return namedpayload.DeleteTemplate(ctx, db, id)
+}
+
+//funclogmeasure:skip category=hot-path reason="Thin delegate to namedpayload; operation trace is emitted there."
+func IncrementInstantiateCounts(ctx context.Context, db *gorm.DB, counts map[string]int) error {
+	return namedpayload.IncrementTemplateInstantiateCounts(ctx, db, counts)
 }

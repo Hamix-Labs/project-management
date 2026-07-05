@@ -1,3 +1,5 @@
+import type { TaskTemplateListParams } from "@/types";
+
 /** Keyset cursor for paged `GET /tasks/{id}/events` (stable when new events append). */
 export type TaskEventsCursorKey =
   | { k: "head" }
@@ -74,7 +76,17 @@ export const taskQueryKeys = {
     [...taskQueryKeys.cycleFailuresRoot(), sort, offset] as const,
   /** GET /task-drafts list and draft mutations invalidation. */
   drafts: () => ["task-drafts"] as const,
-  /** GET /task-templates list; keyed by search query. */
-  templates: (params?: { q?: string }) =>
-    params?.q ? (["task-templates", { q: params.q }] as const) : (["task-templates"] as const),
+  /** GET /task-templates list; keyed by search, sort, order, and tag filters. */
+  templates: (params?: Pick<TaskTemplateListParams, "q" | "sort" | "order" | "tag">) => {
+    const key: Pick<TaskTemplateListParams, "q" | "sort" | "order" | "tag"> = {};
+    const q = params?.q?.trim();
+    if (q) key.q = q;
+    if (params?.sort) key.sort = params.sort;
+    if (params?.order) key.order = params.order;
+    const tag = params?.tag?.trim();
+    if (tag) key.tag = tag;
+    return Object.keys(key).length > 0
+      ? (["task-templates", key] as const)
+      : (["task-templates"] as const);
+  },
 };

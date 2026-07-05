@@ -48,11 +48,12 @@ func ToDomainTaskDrafts(rows []TaskDraft) []domain.TaskDraft {
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func FromDomainTaskTemplate(d domain.TaskTemplate) TaskTemplate {
 	return TaskTemplate{
-		ID:          d.ID,
-		Name:        d.Name,
-		PayloadJSON: d.PayloadJSON,
-		CreatedAt:   d.CreatedAt,
-		UpdatedAt:   d.UpdatedAt,
+		ID:               d.ID,
+		Name:             d.Name,
+		PayloadJSON:      d.PayloadJSON,
+		InstantiateCount: d.InstantiateCount,
+		CreatedAt:        d.CreatedAt,
+		UpdatedAt:        d.UpdatedAt,
 	}
 }
 
@@ -68,11 +69,12 @@ func FromDomainTaskTemplatePtr(d *domain.TaskTemplate) *TaskTemplate {
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func ToDomainTaskTemplate(m TaskTemplate) domain.TaskTemplate {
 	return domain.TaskTemplate{
-		ID:          m.ID,
-		Name:        m.Name,
-		PayloadJSON: m.PayloadJSON,
-		CreatedAt:   m.CreatedAt,
-		UpdatedAt:   m.UpdatedAt,
+		ID:               m.ID,
+		Name:             m.Name,
+		PayloadJSON:      m.PayloadJSON,
+		InstantiateCount: m.InstantiateCount,
+		CreatedAt:        m.CreatedAt,
+		UpdatedAt:        m.UpdatedAt,
 	}
 }
 

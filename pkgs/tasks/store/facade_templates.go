@@ -18,9 +18,14 @@ func (s *Store) SaveTemplate(ctx context.Context, id, name string, payload json.
 	return templates.Save(ctx, s.db, id, name, payload)
 }
 
-func (s *Store) ListTemplates(ctx context.Context, limit int, q string) ([]TemplateSummary, error) {
+func (s *Store) ListTemplates(ctx context.Context, limit int, q, sort, order, tag string) ([]TemplateSummary, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ListTemplates")
-	return templates.List(ctx, s.db, limit, q)
+	return templates.List(ctx, s.db, limit, q, sort, order, tag)
+}
+
+func (s *Store) IncrementTemplateInstantiateCounts(ctx context.Context, counts map[string]int) error {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.IncrementTemplateInstantiateCounts")
+	return templates.IncrementInstantiateCounts(ctx, s.db, counts)
 }
 
 func (s *Store) GetTemplate(ctx context.Context, id string) (*TemplateDetail, error) {

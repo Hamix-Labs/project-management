@@ -136,12 +136,12 @@ Named, durable task compose blueprints. Payload shape matches task create fields
 
 | Method | Path | Notes |
 |---|---|---|
-| POST | `/task-templates` | Upsert. Body `{ id?, name?, payload }`. `name` defaults to trimmed `payload.title`. Validates like `POST /tasks` (title, priority, checklist, runner/model, prompt @-mentions when repo enabled). **201** summary `{ id, name, created_at, updated_at }`. |
-| GET | `/task-templates` | List summaries (without `payload`). `?limit` (0–100, default 50). `?q=` ILIKE search on `name`. |
+| POST | `/task-templates` | Upsert. Body `{ id?, name?, payload }`. `name` defaults to trimmed `payload.title`. Validates like `POST /tasks` (title, priority, checklist, runner/model, prompt @-mentions when repo enabled). **201** summary `{ id, name, created_at, updated_at, primary_tag?, instantiate_count }`. `primary_tag` is the first entry in `payload.tags` when present; omitted when `payload.tags` is empty. `instantiate_count` is always present (default **0**). |
+| GET | `/task-templates` | List summaries (without `payload`). `?limit` (0–100, default 50). `?q=` ILIKE search on `name`. `?sort=` one of `updated_at` (default), `name`, `instantiate_count`. `?order=` `asc` or `desc` (default `desc`). Invalid `sort` or `order` → **400**. `?tag=` case-insensitive match on the first `payload.tags` entry. Summary fields match POST **201** (`primary_tag?`, `instantiate_count`). |
 | GET | `/task-templates/{id}` | Full template with `payload`. |
 | PATCH | `/task-templates/{id}` | Partial `{ name?, payload? }`. **200** full detail. |
 | DELETE | `/task-templates/{id}` | `204`. |
-| POST | `/task-templates/instantiate` | Body `{ template_ids: string[], count?: number }` **or** `{ items: { template_id, count? }[] }`. When `items` is non-empty it takes precedence over `template_ids` / top-level `count`. Omitted `count` defaults to **1** per template. Per-item and top-level `count` must be **1..25**; total creates (`sum(counts)`) must not exceed **100**. Duplicate `template_id` in `items` is **400**. Processes each item in order, creating `count` tasks per item. **200** `{ tasks: Task[], errors: { template_id, error }[] }`. Strips `depends_on`; omits past `pickup_not_before`. **400** when neither `template_ids` nor `items` is provided. |
+| POST | `/task-templates/instantiate` | Body `{ template_ids: string[], count?: number }` **or** `{ items: { template_id, count? }[] }`. When `items` is non-empty it takes precedence over `template_ids` / top-level `count`. Omitted `count` defaults to **1** per template. Per-item and top-level `count` must be **1..25**; total creates (`sum(counts)`) must not exceed **100**. Duplicate `template_id` in `items` is **400**. Processes each item in order, creating `count` tasks per item. On each successful create, increments that template's `instantiate_count` by **1**. **200** `{ tasks: Task[], errors: { template_id, error }[] }`. Strips `depends_on`; omits past `pickup_not_before`. **400** when neither `template_ids` nor `items` is provided. |
 
 ### Execution cycles
 

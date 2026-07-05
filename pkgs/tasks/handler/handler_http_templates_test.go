@@ -354,3 +354,171 @@ func TestHTTP_task_templates_save_requires_valid_payload(t *testing.T) {
 		t.Fatalf("status %d body %s", res.StatusCode, b)
 	}
 }
+
+func TestHTTP_task_templates_list_primary_tag(t *testing.T) {
+	srv, st := newTaskTestServerWithStore(t)
+	defer srv.Close()
+	ctx := context.Background()
+	payload := []byte(withCreateChecklist(`{"title":"Tagged","priority":"medium","tags":["Refactor","Docs"]}`))
+	if _, err := st.SaveTemplate(ctx, "", "Tagged", payload); err != nil {
+		t.Fatal(err)
+	}
+
+	res, err := http.Get(srv.URL + "/task-templates")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("status %d", res.StatusCode)
+	}
+	var body struct {
+		Templates []struct {
+			PrimaryTag       string `json:"primary_tag"`
+			InstantiateCount int    `json:"instantiate_count"`
+		} `json:"templates"`
+	}
+	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
+		t.Fatal(err)
+	}
+	if len(body.Templates) != 1 {
+		t.Fatalf("got %d templates want 1", len(body.Templates))
+	}
+	if body.Templates[0].PrimaryTag != "Refactor" {
+		t.Fatalf("primary_tag %q want Refactor", body.Templates[0].PrimaryTag)
+	}
+	if body.Templates[0].InstantiateCount != 0 {
+		t.Fatalf("instantiate_count %d want 0", body.Templates[0].InstantiateCount)
+	}
+}
+
+func TestHTTP_task_templates_list_sort_by_name(t *testing.T) {
+	srv, st := newTaskTestServerWithStore(t)
+	defer srv.Close()
+	ctx := context.Background()
+	for _, name := range []string{"Zebra tpl", "Alpha tpl"} {
+		payload := []byte(withCreateChecklist(`{"title":"` + name + `","priority":"medium"}`))
+		if _, err := st.SaveTemplate(ctx, "", name, payload); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	res, err := http.Get(srv.URL + "/task-templates?sort=name&order=asc")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("status %d", res.StatusCode)
+	}
+	var body struct {
+		Templates []struct {
+			Name string `json:"name"`
+		} `json:"templates"`
+	}
+	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
+		t.Fatal(err)
+	}
+	if len(body.Templates) != 2 {
+		t.Fatalf("got %d templates want 2", len(body.Templates))
+	}
+	if body.Templates[0].Name != "Alpha tpl" || body.Templates[1].Name != "Zebra tpl" {
+		t.Fatalf("order %q then %q want Alpha tpl then Zebra tpl", body.Templates[0].Name, body.Templates[1].Name)
+	}
+}
+
+func TestHTTP_task_templates_list_tag_filter(t *testing.T) {
+	srv, st := newTaskTestServerWithStore(t)
+	defer srv.Close()
+	ctx := context.Background()
+	refactorPayload := []byte(withCreateChecklist(`{"title":"Refactor task","priority":"medium","tags":["Refactor"]}`))
+	if _, err := st.SaveTemplate(ctx, "", "Refactor task", refactorPayload); err != nil {
+		t.Fatal(err)
+	}
+	bugPayload := []byte(withCreateChecklist(`{"title":"Bug task","priority":"medium","tags":["Bugfix"]}`))
+	if _, err := st.SaveTemplate(ctx, "", "Bug task", bugPayload); err != nil {
+		t.Fatal(err)
+	}
+
+	res, err := http.Get(srv.URL + "/task-templates?tag=refactor")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("status %d", res.StatusCode)
+	}
+	var body struct {
+		Templates []struct {
+			Name string `json:"name"`
+		} `json:"templates"`
+	}
+	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
+		t.Fatal(err)
+	}
+	if len(body.Templates) != 1 {
+		t.Fatalf("got %d templates want 1", len(body.Templates))
+	}
+	if body.Templates[0].Name != "Refactor task" {
+		t.Fatalf("name %q want Refactor task", body.Templates[0].Name)
+	}
+}
+
+func TestHTTP_task_templates_list_invalid_sort(t *testing.T) {
+	srv := newTaskTestServer(t)
+	defer srv.Close()
+	res, err := http.Get(srv.URL + "/task-templates?sort=title")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusBadRequest {
+		t.Fatalf("status %d want 400", res.StatusCode)
+	}
+}
+
+func TestHTTP_task_templates_instantiate_count_increment(t *testing.T) {
+	srv, st := newTaskTestServerWithStore(t)
+	defer srv.Close()
+	ctx := context.Background()
+	payload := []byte(withCreateChecklist(`{"title":"Counter tpl","priority":"medium"}`))
+	tmpl, err := st.SaveTemplate(ctx, "", "Counter tpl", payload)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	res, err := http.Post(srv.URL+"/task-templates/instantiate", "application/json",
+		strings.NewReader(`{"template_ids":["`+tmpl.ID+`"],"count":3}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(res.Body)
+		t.Fatalf("status %d body %s", res.StatusCode, b)
+	}
+
+	listRes, err := http.Get(srv.URL + "/task-templates")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer listRes.Body.Close()
+	var body struct {
+		Templates []struct {
+			ID               string `json:"id"`
+			InstantiateCount int    `json:"instantiate_count"`
+		} `json:"templates"`
+	}
+	if err := json.NewDecoder(listRes.Body).Decode(&body); err != nil {
+		t.Fatal(err)
+	}
+	if len(body.Templates) != 1 {
+		t.Fatalf("got %d templates want 1", len(body.Templates))
+	}
+	if body.Templates[0].ID != tmpl.ID {
+		t.Fatalf("id %q want %q", body.Templates[0].ID, tmpl.ID)
+	}
+	if body.Templates[0].InstantiateCount != 3 {
+		t.Fatalf("instantiate_count %d want 3", body.Templates[0].InstantiateCount)
+	}
+}

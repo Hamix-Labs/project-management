@@ -21,6 +21,7 @@ import { SchedulePicker } from "@/shared/time/SchedulePicker";
 import { TestScenariosTrigger } from "./TestScenariosTrigger";
 import { TestScenariosPopover } from "./TestScenariosPopover";
 import { advancedSummaryLine } from "./advancedSummaryLine";
+import { TaskCreateModalTemplateCategoryField } from "./fields/TaskCreateModalTemplateCategoryField";
 
 const noopOnDependsOnChange = (): void => {};
 
@@ -534,6 +535,14 @@ function TaskCreateModalFormBody(props: {
           onRemoveChecklistRow={onRemoveChecklistRow}
           registerOpenNew={registerOpenNew}
         />
+        {presentation.isTemplateMode ? (
+          <TaskCreateModalTemplateCategoryField
+            idsPrefix={presentation.idsPrefix}
+            tagsCsv={tagsCsv}
+            disabled={presentation.disabled}
+            onTagsCsvChange={onTagsCsvChange}
+          />
+        ) : null}
       </TaskCreateModalSection>
 
       {projectAssignment ? (

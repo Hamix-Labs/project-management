@@ -161,7 +161,8 @@
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  padding: 0;
+  min-height: 0;
+  padding: 0.1rem 0.35rem;
   font: inherit;
   font-size: inherit;
   font-weight: 600;
@@ -170,7 +171,19 @@
   color: inherit;
   background: none;
   border: 0;
+  border-radius: var(--radius-sm);
   cursor: pointer;
+  transition:
+    color var(--duration-short) var(--ease-out),
+    background var(--duration-short) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .task-list-table-sort-btn:not(:disabled):hover {
+    color: var(--text-primary);
+    background: var(--bg-subtle);
+    transform: none;
+  }
 }
 
 .task-list-table-sort-btn:focus-visible {

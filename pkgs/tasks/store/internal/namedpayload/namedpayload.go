@@ -18,12 +18,22 @@ import (
 	"gorm.io/gorm"
 )
 
-// Summary is the listing-row shape for drafts and templates.
+// Summary is the listing-row shape for drafts.
 type Summary struct {
 	ID        string    `json:"id"`
 	Name      string    `json:"name"`
 	UpdatedAt time.Time `json:"updated_at"`
 	CreatedAt time.Time `json:"created_at"`
+}
+
+// TemplateSummary is the listing-row shape for task templates.
+type TemplateSummary struct {
+	ID               string    `json:"id"`
+	Name             string    `json:"name"`
+	UpdatedAt        time.Time `json:"updated_at"`
+	CreatedAt        time.Time `json:"created_at"`
+	PrimaryTag       string    `json:"primary_tag,omitempty"`
+	InstantiateCount int       `json:"instantiate_count"`
 }
 
 // Detail is the GET-by-id body shape for drafts and templates.
@@ -96,7 +106,7 @@ func saveTemplateRow(
 	saveErr string,
 	updateErr string,
 	newRow func(string, string, datatypes.JSON, time.Time) model.TaskTemplate,
-) (*Summary, error) {
+) (*TemplateSummary, error) {
 	defer kernel.DeferLatency(opSave)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", logOp)
 	id = kernel.ResolveID(id)
@@ -121,7 +131,14 @@ func saveTemplateRow(
 	}).Error; err != nil {
 		return nil, fmt.Errorf("%s: %w", updateErr, err)
 	}
-	return &Summary{ID: id, Name: name, UpdatedAt: now, CreatedAt: row.CreatedAt}, nil
+	return &TemplateSummary{
+		ID:               id,
+		Name:             name,
+		UpdatedAt:        now,
+		CreatedAt:        row.CreatedAt,
+		PrimaryTag:       primaryTagFromPayload(datatypes.JSON(payload)),
+		InstantiateCount: row.InstantiateCount,
+	}, nil
 }
 
 func SaveDraft(ctx context.Context, db *gorm.DB, id, name string, payload json.RawMessage) (*Summary, error) {
@@ -136,7 +153,7 @@ func SaveDraft(ctx context.Context, db *gorm.DB, id, name string, payload json.R
 	)
 }
 
-func SaveTemplate(ctx context.Context, db *gorm.DB, id, name string, payload json.RawMessage) (*Summary, error) {
+func SaveTemplate(ctx context.Context, db *gorm.DB, id, name string, payload json.RawMessage) (*TemplateSummary, error) {
 	return saveTemplateRow(ctx, db, id, name, payload,
 		"template name required",
 		kernel.OpSaveTemplate,
@@ -159,15 +176,24 @@ func ListDrafts(ctx context.Context, db *gorm.DB, limit int) ([]Summary, error) 
 	return summariesFromDraftRows(rows), nil
 }
 
-func ListTemplates(ctx context.Context, db *gorm.DB, limit int, q string) ([]Summary, error) {
+func ListTemplates(ctx context.Context, db *gorm.DB, limit int, q, sort, order, tag string) ([]TemplateSummary, error) {
 	defer kernel.DeferLatency(kernel.OpListTemplates)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.templates.List")
 	limit = clampLimit(limit)
-	query := db.WithContext(ctx).Model(&model.TaskTemplate{}).Order("updated_at DESC").Limit(limit)
+	orderClause := sort + " " + order
+	query := db.WithContext(ctx).Model(&model.TaskTemplate{}).Order(orderClause).Limit(limit)
 	q = strings.TrimSpace(q)
 	if q != "" {
 		like := "%" + escapeLike(strings.ToLower(q)) + "%"
 		query = query.Where("LOWER(name) LIKE ?", like)
+	}
+	tag = strings.TrimSpace(tag)
+	if tag != "" {
+		if isSQLiteDialect(db) {
+			query = query.Where("LOWER(json_extract(payload_json, '$.tags[0]')) = LOWER(?)", tag)
+		} else {
+			query = query.Where("LOWER(payload_json->'tags'->>0) = LOWER(?)", tag)
+		}
 	}
 	var rows []model.TaskTemplate
 	if err := query.Find(&rows).Error; err != nil {
@@ -246,13 +272,64 @@ func summariesFromDraftRows(rows []model.TaskDraft) []Summary {
 	return out
 }
 
+func IncrementTemplateInstantiateCounts(ctx context.Context, db *gorm.DB, counts map[string]int) error {
+	defer kernel.DeferLatency(kernel.OpIncrementTemplateInstantiateCounts)()
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.templates.IncrementInstantiateCounts")
+	for id, delta := range counts {
+		if delta <= 0 {
+			continue
+		}
+		res := db.WithContext(ctx).Model(&model.TaskTemplate{}).
+			Where("id = ?", id).
+			UpdateColumn("instantiate_count", gorm.Expr("instantiate_count + ?", delta))
+		if res.Error != nil {
+			return fmt.Errorf("increment template instantiate_count: %w", res.Error)
+		}
+	}
+	return nil
+}
+
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by ListTemplates."
-func summariesFromTemplateRows(rows []model.TaskTemplate) []Summary {
-	out := make([]Summary, 0, len(rows))
+func summariesFromTemplateRows(rows []model.TaskTemplate) []TemplateSummary {
+	out := make([]TemplateSummary, 0, len(rows))
 	for _, r := range rows {
-		out = append(out, Summary{ID: r.ID, Name: r.Name, UpdatedAt: r.UpdatedAt, CreatedAt: r.CreatedAt})
+		out = append(out, templateSummaryFromRow(r))
 	}
 	return out
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by ListTemplates."
+func templateSummaryFromRow(r model.TaskTemplate) TemplateSummary {
+	s := TemplateSummary{
+		ID:               r.ID,
+		Name:             r.Name,
+		UpdatedAt:        r.UpdatedAt,
+		CreatedAt:        r.CreatedAt,
+		InstantiateCount: r.InstantiateCount,
+	}
+	if tag := primaryTagFromPayload(r.PayloadJSON); tag != "" {
+		s.PrimaryTag = tag
+	}
+	return s
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by ListTemplates."
+func primaryTagFromPayload(payload datatypes.JSON) string {
+	var p struct {
+		Tags []string `json:"tags"`
+	}
+	if err := json.Unmarshal(payload, &p); err != nil || len(p.Tags) == 0 {
+		return ""
+	}
+	return strings.TrimSpace(p.Tags[0])
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by ListTemplates."
+func isSQLiteDialect(db *gorm.DB) bool {
+	if db == nil {
+		return false
+	}
+	return strings.Contains(strings.ToLower(db.Dialector.Name()), "sqlite")
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."

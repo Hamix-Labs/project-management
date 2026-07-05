@@ -43,18 +43,28 @@ function renderPage(app: App) {
   );
 }
 
+function createTasksButton(_total: number) {
+  return screen.getByRole("button", { name: new RegExp(`create tasks`, "i") });
+}
+
+function createTasksTotalBadge(total: number) {
+  return screen.getByText(String(total), { selector: ".template-batch-bar__create-badge" });
+}
+
 const templates = [
   {
     id: "tmpl-1",
     name: "Alpha template",
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-02T00:00:00Z",
+    instantiate_count: 0,
   },
   {
     id: "tmpl-2",
     name: "Beta template",
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-02T00:00:00Z",
+    instantiate_count: 0,
   },
 ];
 
@@ -81,7 +91,8 @@ describe("TaskTemplatesPage", () => {
     renderPage(makeApp());
 
     await user.click(screen.getByLabelText(/select alpha template/i));
-    expect(screen.getByRole("button", { name: /create tasks \(1\)/i })).toBeInTheDocument();
+    expect(createTasksButton(1)).toBeInTheDocument();
+    expect(createTasksTotalBadge(1)).toBeInTheDocument();
   });
 
   it("calls instantiate with selected template items in order", async () => {
@@ -91,7 +102,7 @@ describe("TaskTemplatesPage", () => {
 
     await user.click(screen.getByLabelText(/select alpha template/i));
     await user.click(screen.getByLabelText(/select beta template/i));
-    await user.click(screen.getByRole("button", { name: /create tasks \(2\)/i }));
+    await user.click(createTasksButton(2));
 
     await waitFor(() => {
       expect(instantiateTemplates).toHaveBeenCalledWith([
@@ -109,18 +120,18 @@ describe("TaskTemplatesPage", () => {
     await user.click(screen.getByLabelText(/select alpha template/i));
     await user.click(screen.getByLabelText(/select beta template/i));
 
-    const batchDefault = screen.getByLabelText(/instances per template/i);
+    const batchDefault = screen.getByLabelText(/instances per selected template/i);
     fireEvent.change(batchDefault, { target: { value: "5" } });
     await waitFor(() => {
-      expect(batchDefault).toHaveValue(5);
+      expect(batchDefault).toHaveValue("5");
     });
-    await user.click(screen.getByRole("button", { name: /apply to all selected/i }));
+    await user.click(screen.getByRole("button", { name: /apply to all/i }));
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /create tasks \(10\)/i })).toBeInTheDocument();
+      expect(createTasksTotalBadge(10)).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole("button", { name: /create tasks \(10\)/i }));
+    await user.click(createTasksButton(10));
 
     await waitFor(() => {
       expect(instantiateTemplates).toHaveBeenCalledWith([
@@ -141,14 +152,14 @@ describe("TaskTemplatesPage", () => {
     const alphaQty = screen.getByLabelText(/instances for alpha template/i);
     fireEvent.change(alphaQty, { target: { value: "3" } });
     await waitFor(() => {
-      expect(alphaQty).toHaveValue(3);
+      expect(alphaQty).toHaveValue("3");
     });
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /create tasks \(4\)/i })).toBeInTheDocument();
+      expect(createTasksTotalBadge(4)).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole("button", { name: /create tasks \(4\)/i }));
+    await user.click(createTasksButton(4));
 
     await waitFor(() => {
       expect(instantiateTemplates).toHaveBeenCalledWith([

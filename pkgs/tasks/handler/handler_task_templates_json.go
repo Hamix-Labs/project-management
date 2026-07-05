@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
@@ -61,6 +62,32 @@ type taskTemplateInstantiateErrorJSON struct {
 type taskTemplateInstantiateResponseJSON struct {
 	Tasks  []domain.Task                      `json:"tasks"`
 	Errors []taskTemplateInstantiateErrorJSON `json:"errors"`
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by listTaskTemplates."
+func parseTemplateListQuery(q url.Values) (sort, order, tag string, err error) {
+	sort = strings.TrimSpace(q.Get("sort"))
+	if sort == "" {
+		sort = "updated_at"
+	} else {
+		switch sort {
+		case "updated_at", "name", "instantiate_count":
+		default:
+			return "", "", "", fmt.Errorf("%w: invalid sort %q", domain.ErrInvalidInput, sort)
+		}
+	}
+	order = strings.ToLower(strings.TrimSpace(q.Get("order")))
+	if order == "" {
+		order = "desc"
+	} else {
+		switch order {
+		case "asc", "desc":
+		default:
+			return "", "", "", fmt.Errorf("%w: invalid order %q", domain.ErrInvalidInput, order)
+		}
+	}
+	tag = strings.TrimSpace(q.Get("tag"))
+	return sort, strings.ToUpper(order), tag, nil
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."

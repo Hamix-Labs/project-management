@@ -1,4 +1,9 @@
-import type { TaskComposePayload, TaskTemplateDetail, TaskTemplateSummary } from "@/types";
+import type {
+  TaskComposePayload,
+  TaskTemplateDetail,
+  TaskTemplateListParams,
+  TaskTemplateSummary,
+} from "@/types";
 import {
   parseTaskTemplateDetail,
   parseTaskTemplateInstantiateResponse,
@@ -17,12 +22,16 @@ export type { TaskTemplateInstantiateItem };
 export { maxTemplateInstantiateCountPerItem } from "./taskRequestBounds";
 
 export async function listTaskTemplates(
-  options?: { limit?: number; q?: string; signal?: AbortSignal },
+  options?: TaskTemplateListParams & { signal?: AbortSignal },
 ): Promise<TaskTemplateSummary[]> {
   const limit = assertListIntQuery("limit", options?.limit ?? 50, 0, 100);
   const params = new URLSearchParams({ limit: String(limit) });
   const q = options?.q?.trim();
   if (q) params.set("q", q);
+  if (options?.sort) params.set("sort", options.sort);
+  if (options?.order) params.set("order", options.order);
+  const tag = options?.tag?.trim();
+  if (tag) params.set("tag", tag);
   const res = await fetchWithTimeout(`/task-templates?${params.toString()}`, {
     headers: { Accept: "application/json" },
     signal: options?.signal,

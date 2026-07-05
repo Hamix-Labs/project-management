@@ -7,12 +7,49 @@ import {
 import { parseChecklistItemWire, parseTask } from "./parseTaskApiTasks";
 import {
   isRecord,
-  parseNamedEntitySummaryList,
+  parseFiniteNumber,
   parseNonEmptyString,
   parsePriorityChoice,
   parseStatus,
   parseString,
 } from "./parseTaskApiCore";
+
+function parseOptionalPrimaryTag(value: unknown): string | undefined {
+  if (value === undefined || value === null) return undefined;
+  const tag = parseString(value, "primary_tag");
+  const trimmed = tag.trim();
+  return trimmed === "" ? undefined : trimmed;
+}
+
+function parseInstantiateCount(value: unknown, field: string): number {
+  if (value === undefined || value === null) return 0;
+  const n = parseFiniteNumber(value, field);
+  if (!Number.isInteger(n) || n < 0) {
+    throw new Error(`Invalid API response: ${field} must be a non-negative integer`);
+  }
+  return n;
+}
+
+function parseTaskTemplateSummaryFields(
+  item: Record<string, unknown>,
+  pathPrefix: string,
+): TaskTemplateSummary {
+  const summary: TaskTemplateSummary = {
+    id: parseNonEmptyString(item.id, `${pathPrefix}.id`),
+    name: parseString(item.name, `${pathPrefix}.name`),
+    created_at: parseString(item.created_at, `${pathPrefix}.created_at`),
+    updated_at: parseString(item.updated_at, `${pathPrefix}.updated_at`),
+    instantiate_count: parseInstantiateCount(
+      item.instantiate_count,
+      `${pathPrefix}.instantiate_count`,
+    ),
+  };
+  const primaryTag = parseOptionalPrimaryTag(item.primary_tag);
+  if (primaryTag !== undefined) {
+    summary.primary_tag = primaryTag;
+  }
+  return summary;
+}
 
 function parseComposeChecklistItem(
   value: unknown,
@@ -91,16 +128,25 @@ export function parseTaskComposePayload(value: unknown): TaskComposePayload {
 }
 
 export function parseTaskTemplateSummaryList(value: unknown): TaskTemplateSummary[] {
-  return parseNamedEntitySummaryList(value, "templates", "template");
+  if (!isRecord(value)) {
+    throw new Error("Invalid API response: template list must be object");
+  }
+  const raw = value.templates;
+  if (!Array.isArray(raw)) {
+    throw new Error("Invalid API response: templates must be array");
+  }
+  return raw.map((item, i) => {
+    if (!isRecord(item)) {
+      throw new Error(`Invalid API response: templates[${i}] must be object`);
+    }
+    return parseTaskTemplateSummaryFields(item, `templates[${i}]`);
+  });
 }
 
 export function parseTaskTemplateDetail(value: unknown): TaskTemplateDetail {
   if (!isRecord(value)) throw new Error("Invalid API response: template detail must be object");
   return {
-    id: parseNonEmptyString(value.id, "id"),
-    name: parseString(value.name, "name"),
-    created_at: parseString(value.created_at, "created_at"),
-    updated_at: parseString(value.updated_at, "updated_at"),
+    ...parseTaskTemplateSummaryFields(value, "template"),
     payload: parseTaskComposePayload(value.payload),
   };
 }

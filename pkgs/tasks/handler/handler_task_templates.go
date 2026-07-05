@@ -21,7 +21,12 @@ func (h *Handler) listTaskTemplates(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	q := strings.TrimSpace(r.URL.Query().Get("q"))
-	rows, err := h.store.ListTemplates(r.Context(), limit, q)
+	sort, order, tag, err := parseTemplateListQuery(r.URL.Query())
+	if err != nil {
+		writeStoreError(w, r, op, err)
+		return
+	}
+	rows, err := h.store.ListTemplates(r.Context(), limit, q, sort, order, tag)
 	if err != nil {
 		writeStoreError(w, r, op, err)
 		return
@@ -171,6 +176,7 @@ func (h *Handler) instantiateTaskTemplates(w http.ResponseWriter, r *http.Reques
 		Tasks:  make([]domain.Task, 0),
 		Errors: make([]taskTemplateInstantiateErrorJSON, 0),
 	}
+	successCounts := make(map[string]int)
 	for _, item := range items {
 		for range item.Count {
 			detail, err := h.store.GetTemplate(r.Context(), item.TemplateID)
@@ -202,6 +208,13 @@ func (h *Handler) instantiateTaskTemplates(w http.ResponseWriter, r *http.Reques
 				continue
 			}
 			resp.Tasks = append(resp.Tasks, *task)
+			successCounts[item.TemplateID]++
+		}
+	}
+	if len(successCounts) > 0 {
+		if err := h.store.IncrementTemplateInstantiateCounts(r.Context(), successCounts); err != nil {
+			writeStoreError(w, r, op, err)
+			return
 		}
 	}
 	writeJSON(w, r, op, http.StatusOK, resp)
