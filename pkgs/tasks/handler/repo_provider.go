@@ -8,8 +8,12 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/repo"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
+
+// GitWorktreeResolver loads git worktree rows for repo path resolution.
+type GitWorktreeResolver interface {
+	GetGitWorktreeByID(ctx context.Context, id string) (domain.GitWorktree, error)
+}
 
 // RepoProvider returns the *repo.Root that /repo/* handlers and prompt
 // mention validation should consult for the current request. Production
@@ -49,27 +53,27 @@ func (p *staticRepoProvider) OpenWorktreeRoot(_ context.Context, worktreeID stri
 	return p.root, "", nil
 }
 
-// settingsRepoProvider opens git worktree paths from the store at request time.
+// settingsRepoProvider opens git worktree paths from the resolver at request time.
 type settingsRepoProvider struct {
-	store *store.Store
+	resolver GitWorktreeResolver
 }
 
-// NewSettingsRepoProvider returns a provider backed by git_worktrees in s.
-func NewSettingsRepoProvider(s *store.Store) RepoProvider {
+// NewSettingsRepoProvider returns a provider backed by git_worktrees in r.
+func NewSettingsRepoProvider(r GitWorktreeResolver) RepoProvider {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.NewSettingsRepoProvider")
-	return &settingsRepoProvider{store: s}
+	return &settingsRepoProvider{resolver: r}
 }
 
 func (p *settingsRepoProvider) OpenWorktreeRoot(ctx context.Context, worktreeID string) (*repo.Root, string, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.settingsRepoProvider.OpenWorktreeRoot")
-	if p == nil || p.store == nil {
+	if p == nil || p.resolver == nil {
 		return nil, RepoReasonWorktreeNotFound, nil
 	}
 	worktreeID = strings.TrimSpace(worktreeID)
 	if worktreeID == "" {
 		return nil, RepoReasonWorktreeIDRequired, nil
 	}
-	wt, err := p.store.GetGitWorktreeByID(ctx, worktreeID)
+	wt, err := p.resolver.GetGitWorktreeByID(ctx, worktreeID)
 	if err != nil {
 		if domain.GitErrCode(err) == domain.GitCodeWorktreeNotFound {
 			return nil, RepoReasonWorktreeNotFound, nil
