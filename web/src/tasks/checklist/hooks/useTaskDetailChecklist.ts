@@ -132,26 +132,43 @@ function finalizeGuardedChecklistMutationSuccess(
   }
 }
 
-function buildAddChecklistMutationOptions(deps: AddChecklistMutationDeps) {
+type GuardedChecklistMutationConfig<TVars, TData> = {
+  deps: ChecklistMutationDeps;
+  rumKind: RUMMutationKind;
+  mutationFn: (vars: TVars) => Promise<TData>;
+  applyOptimistic: (
+    prev: TaskChecklistResponse | undefined,
+    vars: TVars,
+  ) => { next: TaskChecklistResponse; tempItemId?: string } | null;
+  errorToast: string;
+  shouldRestore: (context: ChecklistOptimisticContext) => boolean;
+  onSuccess?: (
+    vars: TVars,
+    context: ChecklistOptimisticContext | undefined,
+  ) => void | boolean | Promise<void | boolean>;
+};
+
+function buildGuardedChecklistMutation<TVars, TData>(
+  config: GuardedChecklistMutationConfig<TVars, TData>,
+) {
+  const {
+    deps,
+    rumKind,
+    mutationFn,
+    applyOptimistic,
+    errorToast,
+    shouldRestore,
+    onSuccess,
+  } = config;
   const { taskId, queryClient, optimisticMutationsEnabled } = deps;
+
   return {
-    mutationFn: (input: {
-      text: string;
-      verify_commands: ChecklistVerifyCommandInput[];
-      submissionToken: number;
-    }) =>
-      addChecklistItem(taskId, input.text, {
-        verify_commands: input.verify_commands,
-      }),
-    onMutate: async (input: {
-      text: string;
-      verify_commands: ChecklistVerifyCommandInput[];
-      submissionToken: number;
-    }) => {
+    mutationFn,
+    onMutate: async (vars: TVars) => {
       const guard = beginGuardedTaskWrite({
         taskId,
         optimisticEnabled: optimisticMutationsEnabled,
-        rumKind: "checklist_add",
+        rumKind,
       });
       if (!guard.guarded) {
         return { prev: undefined, startedAtMs: guard.startedAtMs, guarded: false };
@@ -160,6 +177,72 @@ function buildAddChecklistMutationOptions(deps: AddChecklistMutationDeps) {
         queryKey: taskQueryKeys.checklist(taskId),
       });
       const prev = snapshotChecklist(queryClient, taskId);
+      const patch = applyOptimistic(prev, vars);
+      if (patch) {
+        queryClient.setQueryData(taskQueryKeys.checklist(taskId), patch.next);
+      }
+      recordOptimisticApplied(rumKind, guard.startedAtMs);
+      return {
+        prev,
+        startedAtMs: guard.startedAtMs,
+        tempItemId: patch?.tempItemId,
+        guarded: true,
+      };
+    },
+    onError: (
+      _err: unknown,
+      _vars: TVars,
+      context: ChecklistOptimisticContext | undefined,
+    ) => {
+      handleGuardedChecklistMutationError(rumKind, context, deps, {
+        toastMessage: errorToast,
+        shouldRestore,
+      });
+    },
+    onSuccess: async (
+      _data: TData,
+      variables: TVars,
+      context: ChecklistOptimisticContext | undefined,
+    ) => {
+      await invalidateTaskChecklistQueries(queryClient, taskId);
+      let finalize = true;
+      if (onSuccess) {
+        const result = await onSuccess(variables, context);
+        if (result === false) {
+          finalize = false;
+        }
+      }
+      if (finalize) {
+        finalizeGuardedChecklistMutationSuccess(rumKind, context);
+      }
+    },
+    onSettled: (
+      _data: TData | undefined,
+      _err: unknown,
+      _vars: TVars | undefined,
+      context: ChecklistOptimisticContext | undefined,
+    ) => {
+      if (context?.guarded) {
+        endGuardedTaskWrite(taskId);
+      }
+    },
+  };
+}
+
+function buildAddChecklistMutationOptions(deps: AddChecklistMutationDeps) {
+  const { taskId } = deps;
+  return buildGuardedChecklistMutation({
+    deps,
+    rumKind: "checklist_add",
+    mutationFn: (input: {
+      text: string;
+      verify_commands: ChecklistVerifyCommandInput[];
+      submissionToken: number;
+    }) =>
+      addChecklistItem(taskId, input.text, {
+        verify_commands: input.verify_commands,
+      }),
+    applyOptimistic: (prev, input) => {
       const tempId = nextOptimisticChecklistId();
       const sortOrder = prev?.items.length
         ? Math.max(...prev.items.map((i) => i.sort_order)) + 1
@@ -170,165 +253,67 @@ function buildAddChecklistMutationOptions(deps: AddChecklistMutationDeps) {
         text: input.text,
         done: false,
       };
-      const next: TaskChecklistResponse = {
-        items: [...(prev?.items ?? []), synthetic],
+      return {
+        next: { items: [...(prev?.items ?? []), synthetic] },
+        tempItemId: tempId,
       };
-      queryClient.setQueryData(taskQueryKeys.checklist(taskId), next);
-      recordOptimisticApplied("checklist_add", guard.startedAtMs);
-      return { prev, startedAtMs: guard.startedAtMs, tempItemId: tempId, guarded: true };
     },
-    onError: (
-      _err: unknown,
-      _vars: { text: string; verify_commands: ChecklistVerifyCommandInput[]; submissionToken: number },
-      context: ChecklistOptimisticContext | undefined,
-    ) => {
-      handleGuardedChecklistMutationError("checklist_add", context, deps, {
-        toastMessage: "Couldn't add criterion - reverted.",
-        shouldRestore: (ctx) => ctx.tempItemId !== undefined,
-      });
-    },
-    onSuccess: async (
-      _item: void,
-      variables: { text: string; verify_commands: ChecklistVerifyCommandInput[]; submissionToken: number },
-      context: ChecklistOptimisticContext | undefined,
-    ) => {
-      await invalidateTaskChecklistQueries(queryClient, taskId);
+    errorToast: "Couldn't add criterion - reverted.",
+    shouldRestore: (ctx) => ctx.tempItemId !== undefined,
+    onSuccess: async (variables) => {
       if (deps.addSubmissionTokenRef.current !== variables.submissionToken) {
-        return;
+        return false;
       }
       deps.setNewChecklistText("");
       deps.setNewChecklistVerifyCommands([]);
       deps.setChecklistModalOpen(false);
-      finalizeGuardedChecklistMutationSuccess("checklist_add", context);
     },
-    onSettled: (
-      _data: void | undefined,
-      _err: unknown,
-      _vars: { text: string; verify_commands: ChecklistVerifyCommandInput[]; submissionToken: number } | undefined,
-      context: ChecklistOptimisticContext | undefined,
-    ) => {
-      if (context?.guarded) {
-        endGuardedTaskWrite(taskId);
-      }
-    },
-  };
+  });
 }
 
 function buildUpdateChecklistTextMutationOptions(deps: ChecklistMutationDeps) {
-  const { taskId, queryClient, optimisticMutationsEnabled } = deps;
-  return {
+  const { taskId } = deps;
+  return buildGuardedChecklistMutation({
+    deps,
+    rumKind: "checklist_edit",
     mutationFn: (input: { itemId: string; text: string }) =>
       patchChecklistItemText(taskId, input.itemId, input.text),
-    onMutate: async (input: { itemId: string; text: string }) => {
-      const guard = beginGuardedTaskWrite({
-        taskId,
-        optimisticEnabled: optimisticMutationsEnabled,
-        rumKind: "checklist_edit",
-      });
-      if (!guard.guarded) {
-        return { prev: undefined, startedAtMs: guard.startedAtMs, guarded: false };
+    applyOptimistic: (prev, input) => {
+      if (!prev) {
+        return null;
       }
-      await queryClient.cancelQueries({
-        queryKey: taskQueryKeys.checklist(taskId),
-      });
-      const prev = snapshotChecklist(queryClient, taskId);
-      if (prev) {
-        const next: TaskChecklistResponse = {
+      return {
+        next: {
           items: prev.items.map((it) =>
             it.id === input.itemId ? { ...it, text: input.text } : it,
           ),
-        };
-        queryClient.setQueryData(taskQueryKeys.checklist(taskId), next);
-      }
-      recordOptimisticApplied("checklist_edit", guard.startedAtMs);
-      return { prev, startedAtMs: guard.startedAtMs, guarded: true };
+        },
+      };
     },
-    onError: (
-      _err: unknown,
-      _vars: { itemId: string; text: string },
-      context: ChecklistOptimisticContext | undefined,
-    ) => {
-      handleGuardedChecklistMutationError("checklist_edit", context, deps, {
-        toastMessage: "Couldn't update criterion - reverted.",
-        shouldRestore: (ctx) => ctx.prev !== undefined,
-      });
-    },
-    onSuccess: async (
-      _item: TaskChecklistResponse,
-      _variables: { itemId: string; text: string },
-      context: ChecklistOptimisticContext | undefined,
-    ) => {
-      await invalidateTaskChecklistQueries(queryClient, taskId);
-      finalizeGuardedChecklistMutationSuccess("checklist_edit", context);
-    },
-    onSettled: (
-      _data: TaskChecklistResponse | undefined,
-      _err: unknown,
-      _vars: { itemId: string; text: string } | undefined,
-      context: ChecklistOptimisticContext | undefined,
-    ) => {
-      if (context?.guarded) {
-        endGuardedTaskWrite(taskId);
-      }
-    },
-  };
+    errorToast: "Couldn't update criterion - reverted.",
+    shouldRestore: (ctx) => ctx.prev !== undefined,
+  });
 }
 
 function buildDeleteChecklistMutationOptions(deps: ChecklistMutationDeps) {
-  const { taskId, queryClient, optimisticMutationsEnabled } = deps;
-  return {
+  const { taskId } = deps;
+  return buildGuardedChecklistMutation({
+    deps,
+    rumKind: "checklist_delete",
     mutationFn: (itemId: string) => deleteChecklistItem(taskId, itemId),
-    onMutate: async (itemId: string) => {
-      const guard = beginGuardedTaskWrite({
-        taskId,
-        optimisticEnabled: optimisticMutationsEnabled,
-        rumKind: "checklist_delete",
-      });
-      if (!guard.guarded) {
-        return { prev: undefined, startedAtMs: guard.startedAtMs, guarded: false };
+    applyOptimistic: (prev, itemId) => {
+      if (!prev) {
+        return null;
       }
-      await queryClient.cancelQueries({
-        queryKey: taskQueryKeys.checklist(taskId),
-      });
-      const prev = snapshotChecklist(queryClient, taskId);
-      if (prev) {
-        const next: TaskChecklistResponse = {
+      return {
+        next: {
           items: prev.items.filter((it) => it.id !== itemId),
-        };
-        queryClient.setQueryData(taskQueryKeys.checklist(taskId), next);
-      }
-      recordOptimisticApplied("checklist_delete", guard.startedAtMs);
-      return { prev, startedAtMs: guard.startedAtMs, guarded: true };
+        },
+      };
     },
-    onError: (
-      _err: unknown,
-      _vars: string,
-      context: ChecklistOptimisticContext | undefined,
-    ) => {
-      handleGuardedChecklistMutationError("checklist_delete", context, deps, {
-        toastMessage: "Couldn't delete criterion - reverted.",
-        shouldRestore: (ctx) => ctx.prev !== undefined,
-      });
-    },
-    onSuccess: async (
-      _data: void,
-      _itemId: string,
-      context: ChecklistOptimisticContext | undefined,
-    ) => {
-      await invalidateTaskChecklistQueries(queryClient, taskId);
-      finalizeGuardedChecklistMutationSuccess("checklist_delete", context);
-    },
-    onSettled: (
-      _data: void | undefined,
-      _err: unknown,
-      _vars: string | undefined,
-      context: ChecklistOptimisticContext | undefined,
-    ) => {
-      if (context?.guarded) {
-        endGuardedTaskWrite(taskId);
-      }
-    },
-  };
+    errorToast: "Couldn't delete criterion - reverted.",
+    shouldRestore: (ctx) => ctx.prev !== undefined,
+  });
 }
 
 function resetChecklistAddFormState(
