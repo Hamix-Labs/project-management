@@ -1,13 +1,11 @@
 import { useId, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import type { AppSettings } from "@/api/settings";
 import {
   filterCursorModelsForSelect,
   normalizeCursorModelSelectValue,
 } from "@/api/cursorModels";
-import { fetchAppSettings, listCursorModels } from "@/api/settings";
-import { settingsQueryKeys } from "@/settings/settingsQueryKeys";
+import { useAppSettings } from "@/settings/useAppSettings";
+import { useCursorModels } from "@/settings/hooks/useCursorModels";
 import {
   CustomSelect,
   type CustomSelectOption,
@@ -65,36 +63,14 @@ export function TaskCreateModalAgentSection({
   const runnerId = `${baseId}-runner`;
   const modelId = `${baseId}-model`;
 
-  const settingsQuery = useQuery<AppSettings>({
-    queryKey: settingsQueryKeys.app(),
-    queryFn: ({ signal }) => fetchAppSettings({ signal }),
-  });
+  const { settings } = useAppSettings();
+  const cursorBinKey = (settings?.cursor_bin ?? "").trim();
 
-  const cursorBinKey = (settingsQuery.data?.cursor_bin ?? "").trim();
-
-  const modelsQuery = useQuery({
-    queryKey: [
-      ...settingsQueryKeys.all,
-      "create-modal-cursor-models",
-      runner,
-      cursorBinKey,
-    ],
-    queryFn: ({ signal }) =>
-      listCursorModels(
-        {
-          runner,
-          binary_path: cursorBinKey || undefined,
-        },
-        { signal },
-      ),
-    enabled: runner === "cursor",
-  });
-
-  const modelIdsFromList = useMemo(() => {
-    const m = modelsQuery.data;
-    if (!m?.ok || !m.models) return new Set<string>();
-    return new Set(m.models.map((x) => x.id));
-  }, [modelsQuery.data]);
+  const { query: modelsQuery, modelIds: modelIdsFromList } = useCursorModels(
+    runner,
+    cursorBinKey,
+    runner === "cursor",
+  );
 
   const modelSelectBusy = modelsQuery.isFetching;
   const modelSelectDisabled = disabled || modelSelectBusy;

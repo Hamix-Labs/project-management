@@ -1,9 +1,8 @@
 import { type FormEvent, type Dispatch, type SetStateAction, useEffect, useMemo, useState } from "react";
-import { type UseMutationResult, type UseQueryResult, useQuery } from "@tanstack/react-query";
+import { type UseMutationResult, type UseQueryResult } from "@tanstack/react-query";
 import { useLocation } from "react-router-dom";
 import { useDocumentTitle } from "@/shared/useDocumentTitle";
 import {
-  listCursorModels,
   type AppSettings,
   type AppSettingsPatch,
   type ListCursorModelsResult,
@@ -15,6 +14,8 @@ import {
   getTimezoneSelectOptions,
 } from "@/shared/time/appTimezone";
 import { useAppSettings } from "./useAppSettings";
+import { settingsQueryKeys } from "./settingsQueryKeys";
+import { useCursorModels } from "./hooks/useCursorModels";
 import {
   DisplaySettingsSection,
   PhasesSettingsSection,
@@ -101,13 +102,6 @@ function parseSettingsNumericValidation(
     streamIdleInvalid: parseNonNegativeIntField(form.streamIdleStuckSeconds),
     pickupInvalid,
   };
-}
-
-function modelIdsFromListResponse(
-  data: ListCursorModelsResult | undefined,
-): Set<string> {
-  if (!data?.ok || !data.models) return new Set<string>();
-  return new Set(data.models.map((x) => x.id));
 }
 
 function resolveVerifyEffectiveRunner(
@@ -253,57 +247,34 @@ function useSettingsCursorModelQueries(
   settings: AppSettings | undefined,
   form: SettingsFormState | null,
 ) {
-  const cursorModelsQuery = useQuery({
-    queryKey: [
-      "settings",
-      "cursor-models",
-      settings?.cursor_bin,
-      form?.cursorBin,
-      form?.runner,
-    ],
-    queryFn: ({ signal }) =>
-      listCursorModels(
-        {
-          runner: form?.runner ?? settings?.runner ?? "cursor",
-          binary_path: (form?.cursorBin ?? "").trim() || undefined,
-        },
-        { signal },
-      ),
-    enabled: Boolean(settings && form),
-  });
+  const runner = form?.runner ?? settings?.runner ?? "cursor";
+  const formBin = form?.cursorBin ?? "";
 
-  const modelIdsFromList = useMemo(
-    () => modelIdsFromListResponse(cursorModelsQuery.data),
-    [cursorModelsQuery.data],
-  );
+  const { query: cursorModelsQuery, modelIds: modelIdsFromList } =
+    useCursorModels(runner, formBin, {
+      enabled: Boolean(settings && form),
+      queryKey: settingsQueryKeys.cursorModelsSettings(
+        settings?.cursor_bin,
+        form?.cursorBin,
+        runner,
+      ),
+    });
 
   const verifyEffectiveRunner =
     form && settings
       ? resolveVerifyEffectiveRunner(form, settings)
       : "cursor";
 
-  const verifyModelsQuery = useQuery({
-    queryKey: [
-      "settings",
-      "verify-models",
+  const {
+    query: verifyModelsQuery,
+    modelIds: verifyModelIdsFromList,
+  } = useCursorModels(verifyEffectiveRunner, formBin, {
+    enabled: Boolean(settings && form),
+    queryKey: settingsQueryKeys.verifyModels(
       verifyEffectiveRunner,
       form?.cursorBin,
-    ],
-    queryFn: ({ signal }) =>
-      listCursorModels(
-        {
-          runner: verifyEffectiveRunner,
-          binary_path: (form?.cursorBin ?? "").trim() || undefined,
-        },
-        { signal },
-      ),
-    enabled: Boolean(settings && form),
+    ),
   });
-
-  const verifyModelIdsFromList = useMemo(
-    () => modelIdsFromListResponse(verifyModelsQuery.data),
-    [verifyModelsQuery.data],
-  );
 
   return {
     cursorModelsQuery,

@@ -100,7 +100,10 @@ export function decideSyncFrame(input: DecideSyncFrameInput): SyncFrameDecision 
     return {
       schedule: "immediate",
       pendingDelta: {},
-      effects: [{ kind: "invalidate", queryKey: settingsQueryKeys.app() }],
+      effects: [
+        { kind: "invalidate", queryKey: settingsQueryKeys.app() },
+        { kind: "invalidate", queryKey: settingsQueryKeys.modelsRoot() },
+      ],
     };
   }
   return { schedule: "debounce", pendingDelta: {}, effects: [] };

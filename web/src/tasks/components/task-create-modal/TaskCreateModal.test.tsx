@@ -87,7 +87,7 @@ function renderModal(props?: Partial<ComponentProps<typeof TaskCreateModal>>) {
   });
   client.setQueryData(settingsQueryKeys.app(), testAppSettings);
   client.setQueryData(
-    [...settingsQueryKeys.all, "create-modal-cursor-models", "cursor", ""],
+    settingsQueryKeys.cursorModels("cursor", ""),
     testCursorModelsEmpty,
   );
   return render(

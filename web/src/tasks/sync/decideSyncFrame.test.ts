@@ -70,6 +70,22 @@ describe("decideSyncFrame", () => {
     });
   });
 
+  it("invalidates settings app and model queries on settings frames", () => {
+    const decision = decideSyncFrame({
+      frame: { kind: "settings" },
+      shouldSuppressTaskEcho: noSuppress,
+    });
+    expect(decision.schedule).toBe("immediate");
+    expect(decision.effects).toContainEqual({
+      kind: "invalidate",
+      queryKey: settingsQueryKeys.app(),
+    });
+    expect(decision.effects).toContainEqual({
+      kind: "invalidate",
+      queryKey: settingsQueryKeys.modelsRoot(),
+    });
+  });
+
   it("queues cycle frames with optional patch", () => {
     const data = { cycle: {}, phases: [] };
     const decision = decideSyncFrame({
