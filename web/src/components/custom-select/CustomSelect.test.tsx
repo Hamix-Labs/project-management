@@ -115,4 +115,24 @@ describe("CustomSelect", () => {
     expect(listbox).toHaveTextContent("No statuses available");
     expect(screen.queryAllByRole("option")).toHaveLength(0);
   });
+
+  it("renders a leading icon inside the trigger when leadingIcon is set", () => {
+    render(
+      <CustomSelect
+        id="repo"
+        label="Repository"
+        value="ready"
+        options={OPTIONS}
+        onChange={() => {}}
+        leadingIcon={<span data-testid="repo-icon">icon</span>}
+      />,
+    );
+
+    expect(screen.getByTestId("repo-icon")).toBeInTheDocument();
+    expect(
+      screen.getByRole("combobox", { name: /repository/i }).closest(
+        ".field--custom-select--leading-icon",
+      ),
+    ).not.toBeNull();
+  });
 });

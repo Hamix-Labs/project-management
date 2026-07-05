@@ -116,9 +116,20 @@ describe("TaskCreateModal", () => {
   it("marks Done criteria as required", () => {
     renderModal({ checklistItems: [] });
     const heading = screen.getByRole("heading", { name: /done criteria/i });
-    const row = heading.closest(".task-create-checklist-title-row");
+    const row = heading.closest(".task-create-modal-section__title-row");
     expect(row).not.toBeNull();
     expect(within(row as HTMLElement).getByText("*")).toBeInTheDocument();
+  });
+
+  it("shows the create subtitle and header close control", async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    renderModal({ onClose });
+    expect(
+      screen.getByText(/define the work, then hand it off to your agent/i),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /^close$/i }));
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it("shows Save draft action and calls onSaveDraft", async () => {

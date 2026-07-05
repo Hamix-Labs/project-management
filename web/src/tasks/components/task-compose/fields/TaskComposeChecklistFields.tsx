@@ -9,6 +9,10 @@ type Props = {
   /** When `required`, shows the required badge and create-time helper copy. */
   checklistRequirement?: "optional" | "required";
   disabled: boolean;
+  /** Section header owns the title when true (create modal). */
+  hideSectionHeading?: boolean;
+  /** Hide inline New criterion when rendered in section action slot. */
+  hideNewCriterionButton?: boolean;
   onOpenNewCriterion: () => void;
   onOpenEditCriterion: (index: number, item: ChecklistItemDraft) => void;
   onRemoveRow: (index: number) => void;
@@ -19,6 +23,8 @@ export function TaskComposeChecklistFields({
   checklistItems,
   checklistRequirement = "optional",
   disabled,
+  hideSectionHeading = false,
+  hideNewCriterionButton = false,
   onOpenNewCriterion,
   onOpenEditCriterion,
   onRemoveRow,
@@ -27,22 +33,26 @@ export function TaskComposeChecklistFields({
 
   return (
     <div className="task-create-checklist">
-      <div className="task-create-checklist-head">
-        <div className="field-heading-with-req task-create-checklist-title-row">
-          <h3 className="task-create-checklist-heading" id={checklistHeadingId}>
-            Done criteria
-          </h3>
-          <FieldRequirementBadge requirement={checklistRequirement} />
+      {hideSectionHeading ? null : (
+        <div className="task-create-checklist-head">
+          <div className="field-heading-with-req task-create-checklist-title-row">
+            <h3 className="task-create-checklist-heading" id={checklistHeadingId}>
+              Done criteria
+            </h3>
+            <FieldRequirementBadge requirement={checklistRequirement} />
+          </div>
+          {hideNewCriterionButton ? null : (
+            <button
+              type="button"
+              className="task-detail-add-checklist-btn"
+              disabled={disabled}
+              onClick={onOpenNewCriterion}
+            >
+              New criterion
+            </button>
+          )}
         </div>
-        <button
-          type="button"
-          className="task-detail-add-checklist-btn"
-          disabled={disabled}
-          onClick={onOpenNewCriterion}
-        >
-          New criterion
-        </button>
-      </div>
+      )}
 
       {isEmpty ? (
         <div

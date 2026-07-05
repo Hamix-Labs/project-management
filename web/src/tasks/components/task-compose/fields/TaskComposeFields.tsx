@@ -1,14 +1,11 @@
-import { useState, type FormEvent, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import type { PriorityChoice, ChecklistItemDraft } from "@/types";
-import { normalizeVerifyCommands } from "@/tasks/task-compose/checklistRequirement";
-import { FieldLabel } from "@/shared/FieldLabel";
-import { PrioritySelect } from "./PrioritySelect";
-import {
-  RichPromptEditor,
-  type RichPromptEditorProjectContextProps,
-} from "../../rich-prompt";
+import type { RichPromptEditorProjectContextProps } from "../../rich-prompt";
 import { ChecklistCriterionModal } from "../modals/ChecklistCriterionModal";
 import { TaskComposeChecklistFields } from "./TaskComposeChecklistFields";
+import { TaskComposePromptField } from "./TaskComposePromptField";
+import { TaskComposeTitlePriorityRow } from "./TaskComposeTitlePriorityRow";
+import { useChecklistCriterionModal } from "../hooks/useChecklistCriterionModal";
 
 export type TaskComposeFieldsProps = {
   /** Prefix for stable `id`s, e.g. `task-new` → `task-new-title`. */
@@ -66,109 +63,46 @@ export function TaskComposeFields({
   betweenTitleAndPrompt,
   worktreeId,
 }: TaskComposeFieldsProps) {
-  const titleId = `${idsPrefix}-title`;
-  const promptId = `${idsPrefix}-prompt`;
-  const priorityId = `${idsPrefix}-priority`;
   const checklistHeadingId = `${idsPrefix}-checklist-heading`;
 
-  const [criterionModalOpen, setCriterionModalOpen] = useState(false);
-  const [criterionModalText, setCriterionModalText] = useState("");
-  const [criterionModalCommands, setCriterionModalCommands] = useState<
-    ChecklistItemDraft["verify_commands"]
-  >([]);
-  const [criterionEditIndex, setCriterionEditIndex] = useState<number | null>(null);
-
-  const openCriterionModal = () => {
-    setCriterionEditIndex(null);
-    setCriterionModalText("");
-    setCriterionModalCommands([]);
-    setCriterionModalOpen(true);
-  };
-
-  const openEditCriterionModal = (index: number, item: ChecklistItemDraft) => {
-    setCriterionEditIndex(index);
-    setCriterionModalText(item.text);
-    setCriterionModalCommands(item.verify_commands ?? []);
-    setCriterionModalOpen(true);
-  };
-
-  const closeCriterionModal = () => {
-    setCriterionModalOpen(false);
-    setCriterionEditIndex(null);
-    setCriterionModalText("");
-    setCriterionModalCommands([]);
-  };
-
-  const submitCriterionModal = (e: FormEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const t = criterionModalText.trim();
-    if (!t) return;
-    const item: ChecklistItemDraft = {
-      text: t,
-      verify_commands: normalizeVerifyCommands(criterionModalCommands ?? []),
-    };
-    if (criterionEditIndex === null) {
-      onAppendChecklistCriterion(item);
-    } else {
-      onUpdateChecklistRow(criterionEditIndex, item);
-    }
-    closeCriterionModal();
-  };
+  const {
+    criterionModalOpen,
+    criterionModalText,
+    criterionModalCommands,
+    criterionEditIndex,
+    setCriterionModalText,
+    setCriterionModalCommands,
+    openCriterionModal,
+    openEditCriterionModal,
+    closeCriterionModal,
+    submitCriterionModal,
+  } = useChecklistCriterionModal({
+    onAppendChecklistCriterion,
+    onUpdateChecklistRow,
+  });
 
   return (
     <>
-      <div className="task-create-title-row">
-        <div className="field grow">
-          <FieldLabel htmlFor={titleId} requirement="required">
-            Title
-          </FieldLabel>
-          <input
-            id={titleId}
-            className="task-create-title-input"
-            value={title}
-            onChange={(ev) => onTitleChange(ev.target.value)}
-            placeholder="What should get done?"
-            required
-            aria-required="true"
-            disabled={disabled}
-          />
-        </div>
-        <PrioritySelect
-          id={priorityId}
-          value={priority}
-          compact
-          onChange={onPriorityChange}
-        />
-      </div>
+      <TaskComposeTitlePriorityRow
+        idsPrefix={idsPrefix}
+        title={title}
+        priority={priority}
+        disabled={disabled}
+        onTitleChange={onTitleChange}
+        onPriorityChange={onPriorityChange}
+      />
 
       {betweenTitleAndPrompt}
 
-      <div className="field grow stack-tight prompt-field-full task-create-prompt">
-        <FieldLabel
-          id={`${promptId}-label`}
-          htmlFor={promptId}
-          requirement="optional"
-        >
-          Initial prompt
-        </FieldLabel>
-        <div className="task-create-editor-shell">
-          <RichPromptEditor
-            key={editorKey}
-            id={promptId}
-            value={prompt}
-            onChange={onPromptChange}
-            disabled={disabled}
-            placeholder={
-              projectContext
-                ? "Optional context. Toolbar for headings and bold; type @ to mention a repo file or # to reference project context."
-                : "Optional context. Toolbar for headings and bold; type @ to mention a repo file."
-            }
-            projectContext={projectContext}
-            worktreeId={worktreeId}
-          />
-        </div>
-      </div>
+      <TaskComposePromptField
+        idsPrefix={idsPrefix}
+        editorKey={editorKey}
+        prompt={prompt}
+        disabled={disabled}
+        onPromptChange={onPromptChange}
+        projectContext={projectContext}
+        worktreeId={worktreeId}
+      />
 
       {!hideChecklist ? (
         <TaskComposeChecklistFields

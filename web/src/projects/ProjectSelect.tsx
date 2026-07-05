@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { CustomSelect, type CustomSelectOption } from "@/components/custom-select";
 import type { Project } from "@/types";
 import { DEFAULT_PROJECT_ID } from "@/types";
+import { ProjectsStackIcon } from "./ProjectsStackIcon";
 
 type Props = {
   id: string;
@@ -39,6 +40,7 @@ export function ProjectSelect({
       options={options}
       onChange={onChange}
       disabled={disabled || loading}
+      leadingIcon={<ProjectsStackIcon className="project-select__icon" />}
     />
   );
 }

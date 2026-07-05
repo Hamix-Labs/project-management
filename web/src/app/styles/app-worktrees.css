@@ -738,7 +738,7 @@
 }
 
 .worktrees-git-selector__manage a {
-  color: var(--color-brand);
+  color: var(--brand);
   font-weight: 500;
 }
 

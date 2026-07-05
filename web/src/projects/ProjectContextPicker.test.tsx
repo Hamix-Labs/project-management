@@ -153,6 +153,37 @@ describe("ProjectContextPicker", () => {
     expect(chip?.textContent).toContain("ctxris");
   });
 
+  it("renders compact summary copy for the create-task modal", () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false, staleTime: Infinity },
+        mutations: { retry: false },
+      },
+    });
+    queryClient.setQueryData(projectQueryKeys.context(projectId), {
+      items: contextItems,
+      edges: contextEdges,
+      limit: 100,
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <ModalStackProvider>
+          <ProjectContextPicker
+            projectId={projectId}
+            selectedIds={[]}
+            compact
+            onChange={vi.fn()}
+          />
+        </ModalStackProvider>
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByText("0 selected")).toBeInTheDocument();
+    expect(screen.getByText("No context attached yet")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^choose$/i })).toBeInTheDocument();
+  });
+
   it("offers the same expandable tree view for choosing task context", async () => {
     const user = userEvent.setup();
     const { onChange } = renderPicker();

@@ -3,6 +3,10 @@ import { Link } from "react-router-dom";
 import { DEFAULT_PROJECT_ID } from "@/types";
 import { isUiFeatureOmitted } from "@/launch/omittedFeatures";
 import { CustomSelect } from "@/components/custom-select";
+import {
+  WorktreesBranchIcon,
+  WorktreesFolderGitIcon,
+} from "@/worktrees/components/WorktreesIcons";
 import { useGlobalRepositories } from "@/worktrees/hooks/useGlobalRepositories";
 import { useGlobalWorktrees } from "@/worktrees/hooks/useGlobalWorktrees";
 import { useGlobalBranches } from "@/worktrees/hooks/useGlobalBranches";
@@ -90,7 +94,7 @@ export function WorktreeSelector({
   }
 
   return (
-    <div className="worktrees-git-selector" aria-busy={loading ? "true" : undefined}>
+    <div className="worktrees-git-selector worktrees-git-selector--modal" aria-busy={loading ? "true" : undefined}>
       {hasProject ? (
         <p className="worktrees-git-selector__project-hint">
           Using project repository
@@ -103,6 +107,9 @@ export function WorktreeSelector({
           options={repoOptions}
           disabled={disabled || repositoriesQuery.isLoading || repoOptions.length === 0}
           requirement="required"
+          leadingIcon={
+            <WorktreesFolderGitIcon className="worktrees-git-selector__icon" />
+          }
           onChange={(id) => {
             setSelectedRepoId(id);
             onWorktreeChange("");
@@ -122,6 +129,9 @@ export function WorktreeSelector({
           worktreeOptions.length === 0
         }
         requirement="required"
+        leadingIcon={
+          <WorktreesBranchIcon className="worktrees-git-selector__icon" />
+        }
         onChange={onWorktreeChange}
       />
 

@@ -1,10 +1,9 @@
-import { useRef, useState, type FormEvent, type LegacyRef, type ReactNode, type RefObject } from "react";
+import { useCallback, useRef, useState, type FormEvent, type LegacyRef, type ReactNode, type RefObject } from "react";
 import type { ChecklistItemDraft, PriorityChoice, Status } from "@/types";
 import type { RichPromptEditorProjectContextProps } from "../rich-prompt";
 import type { TestScenario } from "@/tasks/test-scenarios";
 import { Modal } from "../../../shared/Modal";
 import { MutationErrorBanner } from "../../../shared/MutationErrorBanner";
-import { TaskCreateModalPrimaryFields } from "./fields/TaskCreateModalPrimaryFields";
 import { taskCreateModalBusyLabel } from "./taskCreateModalBusyLabel";
 import { TaskCreateModalFooterActions } from "./fields/TaskCreateModalFooterActions";
 import { TaskCreateModalEditFooterActions } from "./fields/TaskCreateModalEditFooterActions";
@@ -14,12 +13,14 @@ import { TaskCreateModalSchedulingFields } from "./fields/TaskCreateModalSchedul
 import { TaskCreateModalSection } from "./fields/TaskCreateModalSection";
 import { TaskCreateModalStatusField } from "./fields/TaskCreateModalStatusField";
 import { TaskCreateModalPickupScheduleField } from "./fields/TaskCreateModalPickupScheduleField";
+import { TaskCreateModalEssentialsFields } from "./fields/TaskCreateModalEssentialsFields";
+import { TaskCreateModalPromptFields } from "./fields/TaskCreateModalPromptFields";
+import { TaskCreateModalCriteriaFields } from "./fields/TaskCreateModalCriteriaFields";
 import { isUiFeatureOmitted } from "@/launch/omittedFeatures";
 import { SchedulePicker } from "@/shared/time/SchedulePicker";
 import { TestScenariosTrigger } from "./TestScenariosTrigger";
 import { TestScenariosPopover } from "./TestScenariosPopover";
 import { advancedSummaryLine } from "./advancedSummaryLine";
-import { WorktreeSelector } from "./fields/WorktreeSelector";
 
 const noopOnDependsOnChange = (): void => {};
 
@@ -170,6 +171,7 @@ function TaskCreateModalHeader(props: {
   scenariosOpen: boolean;
   scenariosTriggerRef: RefObject<HTMLButtonElement | null>;
   onToggleScenarios: () => void;
+  onClose: () => void;
 }) {
   const {
     presentation,
@@ -180,22 +182,44 @@ function TaskCreateModalHeader(props: {
     scenariosOpen,
     scenariosTriggerRef,
     onToggleScenarios,
+    onClose,
   } = props;
+
+  const showSubtitle =
+    !presentation.isEdit && !presentation.isTemplateMode;
 
   return (
     <header className="task-create-modal-header">
       <div className="task-create-modal-header__top">
-        <h2 id={presentation.modalTitleId} className="task-create-modal-title">
-          {presentation.modalTitle}
-        </h2>
-        {!presentation.showTestScenarios ? null : (
-          <TestScenariosTrigger
-            ref={scenariosTriggerRef as LegacyRef<HTMLButtonElement>}
-            open={scenariosOpen}
+        <div className="task-create-modal-header__title-block">
+          <h2 id={presentation.modalTitleId} className="task-create-modal-title">
+            {presentation.modalTitle}
+          </h2>
+          {showSubtitle ? (
+            <p className="task-create-modal-subtitle">
+              Define the work, then hand it off to your agent.
+            </p>
+          ) : null}
+        </div>
+        <div className="task-create-modal-header__actions">
+          {!presentation.showTestScenarios ? null : (
+            <TestScenariosTrigger
+              ref={scenariosTriggerRef as LegacyRef<HTMLButtonElement>}
+              open={scenariosOpen}
+              disabled={disabled}
+              onToggle={onToggleScenarios}
+            />
+          )}
+          <button
+            type="button"
+            className="task-create-modal-close"
+            aria-label="Close"
             disabled={disabled}
-            onToggle={onToggleScenarios}
-          />
-        )}
+            onClick={onClose}
+          >
+            <CloseIcon />
+          </button>
+        </div>
       </div>
       {presentation.isTaskEdit && editingTaskId ? (
         <p
@@ -219,6 +243,23 @@ function TaskCreateModalHeader(props: {
         </p>
       ) : null}
     </header>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
+      <path d="M4 4l8 8M12 4l-8 8" />
+    </svg>
   );
 }
 
@@ -419,49 +460,79 @@ function TaskCreateModalFormBody(props: {
     onDependsOnChange,
   } = props;
 
+  const openNewCriterionRef = useRef<(() => void) | null>(null);
+  const registerOpenNew = useCallback((open: (() => void) | null) => {
+    openNewCriterionRef.current = open;
+  }, []);
+  const editorKey = presentation.isTaskEdit
+    ? editingTaskId ?? "edit-prompt-modal"
+    : presentation.isTemplateMode
+      ? "template-prompt-modal"
+      : "create-prompt-modal";
+  const checklistRequirement = presentation.isTaskEdit ? "optional" : "required";
+
   return (
-    <div className="task-create-modal-body">
+    <div className="task-create-modal-scroll">
       <TaskCreateModalSection
         variant="essentials"
         title="Essentials"
         lede="What to do, how urgent it is, and how success is judged."
       >
-        <TaskCreateModalPrimaryFields
+        <TaskCreateModalEssentialsFields
           idsPrefix={presentation.idsPrefix}
-          editorKey={
-            presentation.isTaskEdit
-              ? editingTaskId ?? "edit-prompt-modal"
-              : presentation.isTemplateMode
-                ? "template-prompt-modal"
-                : "create-prompt-modal"
-          }
-          disabled={presentation.disabled}
           title={title}
-          onTitleChange={onTitleChange}
           priority={priority}
+          projectId={projectId}
+          worktreeId={worktreeId}
+          disabled={presentation.disabled}
+          showWorktree={!presentation.isTaskEdit}
+          onTitleChange={onTitleChange}
           onPriorityChange={onPriorityChange}
+          onWorktreeChange={onWorktreeChange}
+        />
+      </TaskCreateModalSection>
+
+      <TaskCreateModalSection
+        variant="prompt"
+        title="Initial prompt"
+        lede="The full brief the agent starts from. Supports Markdown."
+      >
+        <TaskCreateModalPromptFields
+          idsPrefix={presentation.idsPrefix}
+          editorKey={editorKey}
           prompt={prompt}
-          checklistItems={checklistItems}
-          hideComposeChecklist={false}
-          checklistRequirement={presentation.isTaskEdit ? "optional" : "required"}
-          checklistDisabled={presentation.isTaskEdit}
+          disabled={presentation.disabled}
           onPromptChange={onPromptChange}
+          projectContext={promptProjectContext}
+          worktreeId={worktreeId.trim() || undefined}
+        />
+      </TaskCreateModalSection>
+
+      <TaskCreateModalSection
+        variant="criteria"
+        title="Done criteria"
+        lede="Clear, checkable conditions that define when this task is complete."
+        requirement={checklistRequirement}
+        action={
+          <button
+            type="button"
+            className="task-detail-add-checklist-btn"
+            disabled={presentation.disabled || presentation.isTaskEdit}
+            onClick={() => openNewCriterionRef.current?.()}
+          >
+            New criterion
+          </button>
+        }
+      >
+        <TaskCreateModalCriteriaFields
+          checklistItems={checklistItems}
+          checklistRequirement={checklistRequirement}
+          checklistDisabled={presentation.isTaskEdit}
+          disabled={presentation.disabled}
           onAppendChecklistCriterion={onAppendChecklistCriterion}
           onUpdateChecklistRow={onUpdateChecklistRow}
           onRemoveChecklistRow={onRemoveChecklistRow}
-          projectContext={promptProjectContext}
-          worktreeId={worktreeId.trim() || undefined}
-          betweenTitleAndPrompt={
-            presentation.isTaskEdit ? null : (
-              <WorktreeSelector
-                idsPrefix={presentation.idsPrefix}
-                projectId={projectId}
-                worktreeId={worktreeId}
-                onWorktreeChange={onWorktreeChange}
-                disabled={presentation.disabled}
-              />
-            )
-          }
+          registerOpenNew={registerOpenNew}
         />
       </TaskCreateModalSection>
 
@@ -704,6 +775,7 @@ export function TaskCreateModal({
             scenariosOpen={scenariosOpen}
             scenariosTriggerRef={scenariosTriggerRef}
             onToggleScenarios={() => setScenariosOpen((open) => !open)}
+            onClose={onClose}
           />
 
           <form
@@ -756,16 +828,18 @@ export function TaskCreateModal({
               patchError={patchError}
             />
 
-            <TaskCreateModalActionFooter
-              presentation={presentation}
-              title={title}
-              priority={priority}
-              checklistItems={checklistItems}
-              worktreeId={worktreeId}
-              draftSaving={draftSaving}
-              onClose={onClose}
-              onSaveDraft={onSaveDraft}
-            />
+            <footer className="task-create-modal-footer">
+              <TaskCreateModalActionFooter
+                presentation={presentation}
+                title={title}
+                priority={priority}
+                checklistItems={checklistItems}
+                worktreeId={worktreeId}
+                draftSaving={draftSaving}
+                onClose={onClose}
+                onSaveDraft={onSaveDraft}
+              />
+            </footer>
           </form>
         </section>
       </Modal>

@@ -63,8 +63,26 @@ export function ProjectContextPicker({
     () => selectedProjectContextItems(items, selectedIds),
     [items, selectedIds],
   );
-  const selectedCountLabel =
-    selectedIds.length === 1 ? "1 node selected" : `${selectedIds.length} nodes selected`;
+  const selectedCountLabel = compact
+    ? `${selectedIds.length} selected`
+    : selectedIds.length === 1
+      ? "1 node selected"
+      : `${selectedIds.length} nodes selected`;
+
+  const compactSummaryText = useMemo(() => {
+    if (!compact) return "";
+    if (contextQuery.isPending) return "Loading project context…";
+    if (contextQuery.error) return "Project context unavailable.";
+    if (items.length === 0) return "This project has no context nodes yet.";
+    if (selectedItems.length === 0) return "No context attached yet";
+    return selectedItems.map((item) => item.title || "(untitled)").join(", ");
+  }, [
+    compact,
+    contextQuery.error,
+    contextQuery.isPending,
+    items.length,
+    selectedItems,
+  ]);
 
   const handleToggle = useCallback(
     (item: ProjectContextItem) => {
@@ -109,6 +127,85 @@ export function ProjectContextPicker({
 
   if (!projectId) return null;
 
+  const summaryBody = compact ? (
+    <>
+      <span
+        className={[
+          "project-context-picker__count-pill",
+          selectedIds.length > 0 ? "project-context-picker__count-pill--active" : "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+      >
+        {selectedCountLabel}
+      </span>
+      <span className="project-context-picker__summary-text">
+        {compactSummaryText}
+      </span>
+    </>
+  ) : (
+    <>
+      <strong>{selectedCountLabel}</strong>
+      {contextQuery.isPending ? (
+        <span>Loading project context...</span>
+      ) : contextQuery.error ? (
+        // The error is also surfaced inside the chooser modal with a real
+        // `role="alert"`. Keeping the summary line non-alert prevents
+        // duplicated alert nodes in tests and avoids shouting at the user
+        // before they've taken any action.
+        <span className="muted">Project context unavailable.</span>
+      ) : items.length === 0 ? (
+        <span>This project has no context nodes yet.</span>
+      ) : selectedItems.length > 0 ? (
+        <ul className="project-context-picker__chips">
+          {selectedItems.map((item) => {
+            const shortId = projectContextShortId(item.id);
+            return (
+              <li
+                key={item.id}
+                className="project-context-picker__chip"
+                data-project-context-id={item.id}
+              >
+                <span className="project-context-picker__chip-title">
+                  {item.title || "(untitled)"}
+                </span>
+                {shortId ? (
+                  <span className="project-context-picker__chip-short-id muted">
+                    · {shortId}
+                  </span>
+                ) : null}
+                <button
+                  type="button"
+                  className="project-context-picker__chip-remove"
+                  onClick={() => handleRemoveSelected(item.id)}
+                  disabled={disabled}
+                  aria-label={`Remove reference to ${item.title || "context node"}`}
+                >
+                  <svg
+                    width="10"
+                    height="10"
+                    viewBox="0 0 12 12"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M3 3l6 6M9 3l-6 6"
+                      stroke="currentColor"
+                      strokeWidth="1.4"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <span>Open the chooser to search the list or inspect the tree.</span>
+      )}
+    </>
+  );
+
   return (
     <section
       className={[
@@ -120,22 +217,20 @@ export function ProjectContextPicker({
       aria-labelledby="task-context-picker-title"
     >
       <div className="project-context-picker__head">
-        <div>
-          <h3 id="task-context-picker-title">
-            {compact ? "Project context" : "Context for this task"}
-          </h3>
-          {compact ? (
-            <p className="project-context-picker__lede">
-              Type <kbd>#</kbd> in the prompt or choose nodes below.
-            </p>
-          ) : (
+        {compact ? (
+          <span id="task-context-picker-title" className="project-context-picker__label">
+            Project context
+          </span>
+        ) : (
+          <div>
+            <h3 id="task-context-picker-title">Context for this task</h3>
             <p>
               Reference project memory the agent may use. Add from the prompt
               with <kbd>#</kbd> or open the chooser. Backend resolves the full
               node memory at run time — chips here are display labels only.
             </p>
-          )}
-        </div>
+          </div>
+        )}
         <button
           type="button"
           className="pc__btn-secondary project-context-picker__button"
@@ -146,73 +241,18 @@ export function ProjectContextPicker({
         </button>
       </div>
 
+      {compact ? (
+        <p className="project-context-picker__lede">
+          Type <kbd>#</kbd> in the prompt or choose nodes below.
+        </p>
+      ) : null}
+
       <div
         className="project-context-picker__summary"
         aria-live="polite"
         data-project-references-summary="true"
       >
-        <strong>{selectedCountLabel}</strong>
-        {contextQuery.isPending ? (
-          <span>Loading project context...</span>
-        ) : contextQuery.error ? (
-          // The error is also surfaced inside the chooser modal with a real
-          // `role="alert"`. Keeping the summary line non-alert prevents
-          // duplicated alert nodes in tests and avoids shouting at the user
-          // before they've taken any action.
-          <span className="muted">Project context unavailable.</span>
-        ) : items.length === 0 ? (
-          <span>This project has no context nodes yet.</span>
-        ) : selectedItems.length > 0 ? (
-          <ul className="project-context-picker__chips">
-            {selectedItems.map((item) => {
-              const shortId = projectContextShortId(item.id);
-              return (
-                <li
-                  key={item.id}
-                  className="project-context-picker__chip"
-                  data-project-context-id={item.id}
-                >
-                  <span className="project-context-picker__chip-title">
-                    {item.title || "(untitled)"}
-                  </span>
-                  {shortId ? (
-                    <span className="project-context-picker__chip-short-id muted">
-                      · {shortId}
-                    </span>
-                  ) : null}
-                  <button
-                    type="button"
-                    className="project-context-picker__chip-remove"
-                    onClick={() => handleRemoveSelected(item.id)}
-                    disabled={disabled}
-                    aria-label={`Remove reference to ${item.title || "context node"}`}
-                  >
-                    <svg
-                      width="10"
-                      height="10"
-                      viewBox="0 0 12 12"
-                      fill="none"
-                      aria-hidden="true"
-                    >
-                      <path
-                        d="M3 3l6 6M9 3l-6 6"
-                        stroke="currentColor"
-                        strokeWidth="1.4"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        ) : (
-          <span>
-            {compact
-              ? "None selected"
-              : "Open the chooser to search the list or inspect the tree."}
-          </span>
-        )}
+        {summaryBody}
       </div>
 
       {chooserOpen ? (

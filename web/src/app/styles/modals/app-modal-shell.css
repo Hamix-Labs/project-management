@@ -50,6 +50,10 @@
 }
 
 .modal-shell--wide {
+  width: min(100%, 42rem);
+}
+
+.modal-shell--wide:has(.task-create-modal-sheet.task-create) {
   width: min(100%, 52rem);
 }
 

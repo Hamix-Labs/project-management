@@ -50,6 +50,21 @@ button.custom-select-trigger:focus-visible {
   box-shadow: 0 0 0 3px var(--brand-muted);
 }
 
+.field--custom-select--leading-icon button.custom-select-trigger {
+  position: relative;
+  padding-left: 2.25rem;
+}
+
+.custom-select-leading-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  color: var(--text-tertiary);
+  pointer-events: none;
+}
+
 /* Match input::placeholder (see app-base.css) when no real value is selected */
 .custom-select-value-neutral--placeholder {
   color: var(--text-tertiary);

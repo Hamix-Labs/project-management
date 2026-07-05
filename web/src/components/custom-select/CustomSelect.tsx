@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
+  type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -53,6 +54,8 @@ type Props = {
   placeholder?: string;
   /** Optional `data-testid` on the combobox trigger (for tests). */
   triggerTestId?: string;
+  /** Optional icon rendered inset on the left of the trigger (e.g. repo / project). */
+  leadingIcon?: ReactNode;
 };
 
 export function CustomSelect({
@@ -70,6 +73,7 @@ export function CustomSelect({
   disabled = false,
   placeholder,
   triggerTestId,
+  leadingIcon,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [highlight, setHighlight] = useState(0);
@@ -285,6 +289,7 @@ export function CustomSelect({
         compact
           ? "field field--custom-select field--custom-select--compact"
           : "field field--custom-select",
+        leadingIcon ? "field--custom-select--leading-icon" : "",
         className ?? "",
       ]
         .filter(Boolean)
@@ -311,6 +316,11 @@ export function CustomSelect({
         }}
         onKeyDown={onButtonKeyDown}
       >
+        {leadingIcon ? (
+          <span className="custom-select-leading-icon" aria-hidden="true">
+            {leadingIcon}
+          </span>
+        ) : null}
         <CustomSelectRowBody
           variant="value"
           rowTag={current.rowTag}
