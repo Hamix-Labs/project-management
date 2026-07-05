@@ -405,11 +405,9 @@ function useSettingsSelectController({
     [filteredRows, activeIndex, closeMenu, commitOption],
   );
 
-  const onTriggerKeyDown = createComboboxTriggerKeyDownHandler(
-    disabled,
-    open,
-    openMenu,
-    closeMenu,
+  const onTriggerKeyDown = useMemo(
+    () => createComboboxTriggerKeyDownHandler(disabled, open, openMenu, closeMenu),
+    [disabled, open, openMenu, closeMenu],
   );
   const onMenuKeyDown = createComboboxMenuKeyDownHandler(keyboardCtx);
 
