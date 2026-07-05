@@ -4,7 +4,7 @@
 
 Control plane for coding agents. Coordinates Cursor CLI, Claude Code, Codex, and other agentic systems.
 
-![Hamix task board — structured tasks with status, priority, and acceptance criteria](assets/hamix_main_page.png)
+![Hamix task board — structured tasks with status, priority, and acceptance criteria](assets/Hamix_Tasks_Menu.png)
 
 ## Why Hamix exists
 
