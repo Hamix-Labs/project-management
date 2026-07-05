@@ -5,16 +5,17 @@ import (
 	"encoding/json"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/checklist"
 )
 
 // HandlerAPI is the persistence contract required by pkgs/tasks/handler.
-// *Store implements it; tests may pass a narrower fake.
+// *Store implements it; tests may pass a narrower fake. Method groups are
+// decomposed into pkgs/tasks/contract slices for compile-time asserts and
+// incremental store fakes.
 type HandlerAPI interface {
-	// Health
-	Ready(ctx context.Context) error
-	CountGitRepositories(ctx context.Context) (int64, error)
+	contract.HealthStore
 
 	// Settings
 	GetSettings(ctx context.Context) (AppSettings, error)
