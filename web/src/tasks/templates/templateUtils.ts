@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { maxTemplateInstantiateCountPerItem } from "@/api";
 import { formatRelativeTime } from "@/shared/time/relativeTime";
 import { isRowActionExcluded } from "@/tasks/components/saved-entities/rowActionUtils";
@@ -8,17 +7,6 @@ type InstantiateTemplatesBatchResult = {
   tasks: Task[];
   errors: { template_id: string; error: string }[];
 };
-
-export function useDebouncedTrimmedValue(value: string, delayMs: number): string {
-  const [debounced, setDebounced] = useState(value.trim());
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setDebounced(value.trim()), delayMs);
-    return () => window.clearTimeout(timer);
-  }, [value, delayMs]);
-
-  return debounced;
-}
 
 export function clampInstanceCount(value: number): number {
   if (!Number.isFinite(value)) return 1;

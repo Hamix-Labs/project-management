@@ -4,6 +4,7 @@ import { Button } from "@/components/ui";
 import { useDocumentTitle } from "@/shared/useDocumentTitle";
 import { EmptyState } from "@/shared/EmptyState";
 import { useDelayedTrue } from "@/lib/useDelayedTrue";
+import { useDebouncedTrimmedValue } from "@/hooks/useDebouncedTrimmedValue";
 import { TASK_TIMINGS } from "@/constants/tasks";
 import { TaskDraftsListSkeleton } from "@/components/skeletons/TaskDraftsListSkeleton";
 import { useGlobalRepositories } from "./hooks/useGlobalRepositories";
@@ -22,17 +23,6 @@ import {
   WorktreesSearchIcon,
   WorktreesClearIcon,
 } from "./components/WorktreesIcons";
-
-function useDebouncedTrimmedValue(value: string, delayMs: number): string {
-  const [debounced, setDebounced] = useState(value.trim());
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setDebounced(value.trim()), delayMs);
-    return () => window.clearTimeout(timer);
-  }, [value, delayMs]);
-
-  return debounced;
-}
 
 export function RepositoriesListPage() {
   const repositoriesQuery = useGlobalRepositories();

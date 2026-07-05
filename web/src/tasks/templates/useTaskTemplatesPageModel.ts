@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { listTaskTemplates } from "@/api";
 import { TASK_TIMINGS } from "@/constants/tasks";
 import { useDelayedTrue } from "@/lib/useDelayedTrue";
+import { useDebouncedTrimmedValue } from "@/hooks/useDebouncedTrimmedValue";
 import type { TaskTemplateSummary } from "@/types";
 import { useDeleteWithExitAnimation } from "../hooks/useDeleteWithExitAnimation";
 import { taskQueryKeys } from "../task-query";
@@ -14,7 +15,6 @@ import {
   clampInstanceCount,
   formatInstantiateBatchError,
   sumSelectedInstanceCounts,
-  useDebouncedTrimmedValue,
 } from "./templateUtils";
 
 type TaskTemplatesApp = ReturnType<typeof useTasksAppContext>;
