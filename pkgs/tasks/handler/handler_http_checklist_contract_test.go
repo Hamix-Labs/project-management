@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
@@ -683,25 +682,6 @@ func TestHTTP_deleteChecklistItem_errorPathsNeverPublish(t *testing.T) {
 	if len(got) != 0 {
 		t.Fatalf("drained SSE events %v after DELETE checklist error round-trips; want zero (400/404 paths must never publish)", got)
 	}
-}
-
-func mustCreateChecklistTask(t *testing.T, srv *httptest.Server, title string) string {
-	t.Helper()
-	res, err := http.Post(srv.URL+"/tasks", "application/json",
-		strings.NewReader(withCreateChecklist(`{"title":"`+title+`","priority":"medium"}`)))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer res.Body.Close()
-	body, _ := io.ReadAll(res.Body)
-	if res.StatusCode != http.StatusCreated {
-		t.Fatalf("create task status %d body=%s", res.StatusCode, body)
-	}
-	var task domain.Task
-	if err := json.Unmarshal(body, &task); err != nil {
-		t.Fatal(err)
-	}
-	return task.ID
 }
 
 func keysOf(m map[string]json.RawMessage) []string {

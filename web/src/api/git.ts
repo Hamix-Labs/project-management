@@ -9,23 +9,23 @@ import {
   parseGitWorktreeList,
 } from "./parseGitApi";
 import { assertTaskPathId } from "./taskRequestBounds";
-import { apiErrorFromResponse, fetchWithTimeout, jsonHeaders } from "./shared";
-
-function gitBase(projectId: string): string {
-  const pid = assertTaskPathId(projectId, "project id");
-  return `/projects/${encodeURIComponent(pid)}/git`;
-}
+import {
+  gitApiRoot,
+  gitDeleteInit,
+  gitFetchJson,
+  gitFetchVoid,
+  gitJsonGetInit,
+  gitJsonPostInit,
+} from "./gitClient";
 
 export async function listGitRepositories(
   projectId: string,
   options?: { signal?: AbortSignal },
 ): Promise<GitRepository[]> {
-  const res = await fetchWithTimeout(`${gitBase(projectId)}/repositories`, {
-    headers: { Accept: "application/json" },
-    signal: options?.signal,
-  });
-  if (!res.ok) throw await apiErrorFromResponse(res);
-  const raw: unknown = await res.json();
+  const raw = await gitFetchJson(
+    `${gitApiRoot(projectId)}/repositories`,
+    gitJsonGetInit(options?.signal),
+  );
   return parseGitRepositoryList(raw);
 }
 
@@ -33,13 +33,10 @@ export async function createGitRepository(
   projectId: string,
   input: { path: string; host_path?: string; default_branch?: string },
 ): Promise<GitRepository> {
-  const res = await fetchWithTimeout(`${gitBase(projectId)}/repositories`, {
-    method: "POST",
-    headers: jsonHeaders,
-    body: JSON.stringify(input),
-  });
-  if (!res.ok) throw await apiErrorFromResponse(res);
-  const raw: unknown = await res.json();
+  const raw = await gitFetchJson(
+    `${gitApiRoot(projectId)}/repositories`,
+    gitJsonPostInit(input),
+  );
   return parseGitRepository(raw);
 }
 
@@ -48,11 +45,10 @@ export async function deleteGitRepository(
   repositoryId: string,
 ): Promise<void> {
   const repoId = assertTaskPathId(repositoryId, "repository id");
-  const res = await fetchWithTimeout(
-    `${gitBase(projectId)}/repositories/${encodeURIComponent(repoId)}`,
-    { method: "DELETE" },
+  await gitFetchVoid(
+    `${gitApiRoot(projectId)}/repositories/${encodeURIComponent(repoId)}`,
+    gitDeleteInit(),
   );
-  if (!res.ok) throw await apiErrorFromResponse(res);
 }
 
 export async function listGitWorktrees(
@@ -61,15 +57,10 @@ export async function listGitWorktrees(
   options?: { signal?: AbortSignal },
 ): Promise<GitWorktree[]> {
   const repoId = assertTaskPathId(repositoryId, "repository id");
-  const res = await fetchWithTimeout(
-    `${gitBase(projectId)}/repositories/${encodeURIComponent(repoId)}/worktrees`,
-    {
-      headers: { Accept: "application/json" },
-      signal: options?.signal,
-    },
+  const raw = await gitFetchJson(
+    `${gitApiRoot(projectId)}/repositories/${encodeURIComponent(repoId)}/worktrees`,
+    gitJsonGetInit(options?.signal),
   );
-  if (!res.ok) throw await apiErrorFromResponse(res);
-  const raw: unknown = await res.json();
   return parseGitWorktreeList(raw);
 }
 
@@ -85,16 +76,10 @@ export async function createGitWorktree(
   },
 ): Promise<GitWorktree> {
   const repoId = assertTaskPathId(repositoryId, "repository id");
-  const res = await fetchWithTimeout(
-    `${gitBase(projectId)}/repositories/${encodeURIComponent(repoId)}/worktrees`,
-    {
-      method: "POST",
-      headers: jsonHeaders,
-      body: JSON.stringify(input),
-    },
+  const raw = await gitFetchJson(
+    `${gitApiRoot(projectId)}/repositories/${encodeURIComponent(repoId)}/worktrees`,
+    gitJsonPostInit(input),
   );
-  if (!res.ok) throw await apiErrorFromResponse(res);
-  const raw: unknown = await res.json();
   return parseGitWorktree(raw);
 }
 
@@ -103,11 +88,10 @@ export async function unregisterGitWorktree(
   worktreeId: string,
 ): Promise<void> {
   const wtId = assertTaskPathId(worktreeId, "worktree id");
-  const res = await fetchWithTimeout(
-    `${gitBase(projectId)}/worktrees/${encodeURIComponent(wtId)}`,
-    { method: "DELETE" },
+  await gitFetchVoid(
+    `${gitApiRoot(projectId)}/worktrees/${encodeURIComponent(wtId)}`,
+    gitDeleteInit(),
   );
-  if (!res.ok) throw await apiErrorFromResponse(res);
 }
 
 export async function listGitBranches(
@@ -116,15 +100,10 @@ export async function listGitBranches(
   options?: { signal?: AbortSignal },
 ): Promise<GitBranch[]> {
   const repoId = assertTaskPathId(repositoryId, "repository id");
-  const res = await fetchWithTimeout(
-    `${gitBase(projectId)}/repositories/${encodeURIComponent(repoId)}/branches`,
-    {
-      headers: { Accept: "application/json" },
-      signal: options?.signal,
-    },
+  const raw = await gitFetchJson(
+    `${gitApiRoot(projectId)}/repositories/${encodeURIComponent(repoId)}/branches`,
+    gitJsonGetInit(options?.signal),
   );
-  if (!res.ok) throw await apiErrorFromResponse(res);
-  const raw: unknown = await res.json();
   return parseGitBranchList(raw);
 }
 
@@ -134,16 +113,10 @@ export async function createGitBranch(
   input: { name: string; start_point?: string },
 ): Promise<GitBranch> {
   const repoId = assertTaskPathId(repositoryId, "repository id");
-  const res = await fetchWithTimeout(
-    `${gitBase(projectId)}/repositories/${encodeURIComponent(repoId)}/branches`,
-    {
-      method: "POST",
-      headers: jsonHeaders,
-      body: JSON.stringify(input),
-    },
+  const raw = await gitFetchJson(
+    `${gitApiRoot(projectId)}/repositories/${encodeURIComponent(repoId)}/branches`,
+    gitJsonPostInit(input),
   );
-  if (!res.ok) throw await apiErrorFromResponse(res);
-  const raw: unknown = await res.json();
   return parseGitBranch(raw);
 }
 
@@ -156,11 +129,10 @@ export async function deleteGitBranch(
   const params = new URLSearchParams();
   if (options?.force) params.set("force", "true");
   const qs = params.toString();
-  const res = await fetchWithTimeout(
-    `${gitBase(projectId)}/branches/${encodeURIComponent(bid)}${qs ? `?${qs}` : ""}`,
-    { method: "DELETE" },
+  await gitFetchVoid(
+    `${gitApiRoot(projectId)}/branches/${encodeURIComponent(bid)}${qs ? `?${qs}` : ""}`,
+    gitDeleteInit(),
   );
-  if (!res.ok) throw await apiErrorFromResponse(res);
 }
 
 export async function reconcileGitRepository(
@@ -168,11 +140,9 @@ export async function reconcileGitRepository(
   repositoryId: string,
 ): Promise<GitReconcileResult> {
   const repoId = assertTaskPathId(repositoryId, "repository id");
-  const res = await fetchWithTimeout(
-    `${gitBase(projectId)}/repositories/${encodeURIComponent(repoId)}/reconcile`,
-    { method: "POST", headers: jsonHeaders, body: "{}" },
+  const raw = await gitFetchJson(
+    `${gitApiRoot(projectId)}/repositories/${encodeURIComponent(repoId)}/reconcile`,
+    gitJsonPostInit({}),
   );
-  if (!res.ok) throw await apiErrorFromResponse(res);
-  const raw: unknown = await res.json();
   return parseGitReconcileResult(raw);
 }

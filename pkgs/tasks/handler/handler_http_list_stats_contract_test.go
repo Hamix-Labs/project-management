@@ -3,9 +3,7 @@ package handler
 import (
 	"bytes"
 	"encoding/json"
-	"io"
 	"net/http"
-	"strings"
 	"testing"
 	"time"
 )
@@ -55,36 +53,6 @@ type statsRunnerBucketRaw struct {
 	Succeeded                   int64            `json:"succeeded"`
 	DurationP50SucceededSeconds float64          `json:"duration_p50_succeeded_seconds"`
 	DurationP95SucceededSeconds float64          `json:"duration_p95_succeeded_seconds"`
-}
-
-func mustGetJSON(t *testing.T, baseURL, path string) ([]byte, *http.Response) {
-	t.Helper()
-	res, err := http.Get(baseURL + path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	raw, err := io.ReadAll(res.Body)
-	_ = res.Body.Close()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if res.StatusCode != http.StatusOK {
-		t.Fatalf("GET %s: status %d (want 200) body=%s", path, res.StatusCode, raw)
-	}
-	return raw, res
-}
-
-func mustCreateTaskBody(t *testing.T, baseURL, body string) {
-	t.Helper()
-	res, err := http.Post(baseURL+"/tasks", "application/json", strings.NewReader(withCreateChecklist(body)))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer res.Body.Close()
-	if res.StatusCode != http.StatusCreated {
-		raw, _ := io.ReadAll(res.Body)
-		t.Fatalf("create task body=%s status %d resp=%s", body, res.StatusCode, raw)
-	}
 }
 
 // TestHTTP_listTasks_envelopeShape pins the documented `GET /tasks` 200 envelope:

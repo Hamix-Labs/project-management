@@ -13,32 +13,6 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
-// mustCreateTaskForCycles is the cycles-suite POST /tasks helper. It is
-// scoped to this file (other suites have their own narrower variants) so the
-// cycles tests can stay focused on the cycle/phase round-trip.
-func mustCreateTaskForCycles(t *testing.T, baseURL string) string {
-	t.Helper()
-	res, err := http.Post(baseURL+"/tasks", "application/json", strings.NewReader(withCreateChecklist(`{"title":"cycles-task","priority":"medium"}`)))
-	if err != nil {
-		t.Fatal(err)
-	}
-	body, err := io.ReadAll(res.Body)
-	if cerr := res.Body.Close(); cerr != nil {
-		t.Fatal(cerr)
-	}
-	if err != nil {
-		t.Fatal(err)
-	}
-	if res.StatusCode != http.StatusCreated {
-		t.Fatalf("create task: status %d body=%s", res.StatusCode, body)
-	}
-	var task domain.Task
-	if err := json.Unmarshal(body, &task); err != nil {
-		t.Fatalf("decode created task: %v body=%s", err, body)
-	}
-	return task.ID
-}
-
 // doCyclesRequest issues a request with X-Actor: agent (cycle/phase mutations
 // are typically agent-driven) and returns the response and body for assertions.
 func doCyclesRequest(t *testing.T, method, url, body string) (*http.Response, []byte) {

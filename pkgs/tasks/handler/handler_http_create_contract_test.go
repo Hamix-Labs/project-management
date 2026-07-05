@@ -11,27 +11,6 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
-// postCreate centralizes the documented POST /tasks round-trip so the
-// table-driven 400 string subtests stay focused on the assertion side.
-// (`mustCreateTask` from handler_http_patch_contract_test.go asserts a
-// specific success path; this helper keeps the response intact so error-path
-// subtests can read it.) Injects checklist_items unless already present.
-func postCreate(t *testing.T, baseURL, jsonBody string) (*http.Response, []byte) {
-	t.Helper()
-	return postCreateRaw(t, baseURL, withCreateChecklist(jsonBody))
-}
-
-func postCreateRaw(t *testing.T, baseURL, jsonBody string) (*http.Response, []byte) {
-	t.Helper()
-	res, err := http.Post(baseURL+"/tasks", "application/json", strings.NewReader(jsonBody))
-	if err != nil {
-		t.Fatal(err)
-	}
-	raw, _ := io.ReadAll(res.Body)
-	_ = res.Body.Close()
-	return res, raw
-}
-
 // TestHTTP_createTask_400ErrorStrings pins every documented POST /tasks 400
 // string from docs/api.md against the live handler. Each subtest drives a
 // distinct rejection path so a future refactor that changes the store/handler

@@ -1,3 +1,11 @@
+import {
+  firstComboboxSelectableIndex,
+  lastComboboxSelectableIndex,
+  nextComboboxSelectableIndex,
+  prevComboboxSelectableIndex,
+  type ComboboxRow,
+} from "@/components/combobox";
+
 export type CustomSelectOption =
   | { type: "header"; label: string }
   | {
@@ -16,40 +24,36 @@ export function isCustomSelectHeader(
   return "type" in o && o.type === "header";
 }
 
+function customSelectOptionsToComboboxRows(
+  opts: CustomSelectOption[],
+): ComboboxRow[] {
+  return opts.map((o) =>
+    isCustomSelectHeader(o)
+      ? { type: "header", label: o.label }
+      : { type: "option", value: o.value, label: o.label },
+  );
+}
+
 export function firstSelectableIndex(opts: CustomSelectOption[]): number {
-  const i = opts.findIndex((o) => !isCustomSelectHeader(o));
-  return i >= 0 ? i : 0;
+  if (opts.length === 0) return 0;
+  const idx = firstComboboxSelectableIndex(customSelectOptionsToComboboxRows(opts));
+  return idx >= 0 ? idx : 0;
 }
 
 export function lastSelectableIndex(opts: CustomSelectOption[]): number {
-  for (let i = opts.length - 1; i >= 0; i--) {
-    if (!isCustomSelectHeader(opts[i])) return i;
-  }
-  return 0;
+  return lastComboboxSelectableIndex(customSelectOptionsToComboboxRows(opts));
 }
 
 export function nextSelectable(
   opts: CustomSelectOption[],
   from: number,
 ): number {
-  for (let i = from + 1; i < opts.length; i++) {
-    if (!isCustomSelectHeader(opts[i])) return i;
-  }
-  for (let i = 0; i < opts.length; i++) {
-    if (!isCustomSelectHeader(opts[i])) return i;
-  }
-  return from;
+  return nextComboboxSelectableIndex(customSelectOptionsToComboboxRows(opts), from);
 }
 
 export function prevSelectable(
   opts: CustomSelectOption[],
   from: number,
 ): number {
-  for (let i = from - 1; i >= 0; i--) {
-    if (!isCustomSelectHeader(opts[i])) return i;
-  }
-  for (let i = opts.length - 1; i >= 0; i--) {
-    if (!isCustomSelectHeader(opts[i])) return i;
-  }
-  return from;
+  return prevComboboxSelectableIndex(customSelectOptionsToComboboxRows(opts), from);
 }

@@ -25,19 +25,22 @@ import {
   parseGitReconcileResult,
 } from "./parseGitApi";
 import { assertTaskPathId } from "./taskRequestBounds";
-import { apiErrorFromResponse, fetchWithTimeout, jsonHeaders } from "./shared";
+import {
+  gitApiRoot,
+  gitDeleteInit,
+  gitFetchJson,
+  gitFetchVoid,
+  gitJsonGetInit,
+  gitJsonPostInit,
+} from "./gitClient";
 
-const gitRoot = "/git";
+const gitRoot = gitApiRoot();
 
 export async function listGlobalGitRepositories(
   options?: { signal?: AbortSignal },
 ): Promise<GitRepository[]> {
-  const res = await fetchWithTimeout(`${gitRoot}/repositories`, {
-    headers: { Accept: "application/json" },
-    signal: options?.signal,
-  });
-  if (!res.ok) throw await apiErrorFromResponse(res);
-  return parseGitRepositoryList((await res.json()) as unknown);
+  const raw = await gitFetchJson(`${gitRoot}/repositories`, gitJsonGetInit(options?.signal));
+  return parseGitRepositoryList(raw);
 }
 
 export async function createGlobalGitRepository(input: {
@@ -45,13 +48,8 @@ export async function createGlobalGitRepository(input: {
   host_path?: string;
   default_branch?: string;
 }): Promise<GitRepository> {
-  const res = await fetchWithTimeout(`${gitRoot}/repositories`, {
-    method: "POST",
-    headers: jsonHeaders,
-    body: JSON.stringify(input),
-  });
-  if (!res.ok) throw await apiErrorFromResponse(res);
-  return parseGitRepository((await res.json()) as unknown);
+  const raw = await gitFetchJson(`${gitRoot}/repositories`, gitJsonPostInit(input));
+  return parseGitRepository(raw);
 }
 
 export async function getGlobalGitRepository(
@@ -59,20 +57,16 @@ export async function getGlobalGitRepository(
   options?: { signal?: AbortSignal },
 ): Promise<GitRepository> {
   const repoId = assertTaskPathId(repositoryId, "repository id");
-  const res = await fetchWithTimeout(`${gitRoot}/repositories/${encodeURIComponent(repoId)}`, {
-    headers: { Accept: "application/json" },
-    signal: options?.signal,
-  });
-  if (!res.ok) throw await apiErrorFromResponse(res);
-  return parseGitRepository((await res.json()) as unknown);
+  const raw = await gitFetchJson(
+    `${gitRoot}/repositories/${encodeURIComponent(repoId)}`,
+    gitJsonGetInit(options?.signal),
+  );
+  return parseGitRepository(raw);
 }
 
 export async function deleteGlobalGitRepository(repositoryId: string): Promise<void> {
   const repoId = assertTaskPathId(repositoryId, "repository id");
-  const res = await fetchWithTimeout(`${gitRoot}/repositories/${encodeURIComponent(repoId)}`, {
-    method: "DELETE",
-  });
-  if (!res.ok) throw await apiErrorFromResponse(res);
+  await gitFetchVoid(`${gitRoot}/repositories/${encodeURIComponent(repoId)}`, gitDeleteInit());
 }
 
 export async function listGlobalGitWorktrees(
@@ -80,12 +74,11 @@ export async function listGlobalGitWorktrees(
   options?: { signal?: AbortSignal },
 ): Promise<GitWorktree[]> {
   const repoId = assertTaskPathId(repositoryId, "repository id");
-  const res = await fetchWithTimeout(
+  const raw = await gitFetchJson(
     `${gitRoot}/repositories/${encodeURIComponent(repoId)}/worktrees`,
-    { headers: { Accept: "application/json" }, signal: options?.signal },
+    gitJsonGetInit(options?.signal),
   );
-  if (!res.ok) throw await apiErrorFromResponse(res);
-  return parseGitWorktreeList((await res.json()) as unknown);
+  return parseGitWorktreeList(raw);
 }
 
 export async function listGlobalGitWorktreeCheckoutStatus(
@@ -93,12 +86,11 @@ export async function listGlobalGitWorktreeCheckoutStatus(
   options?: { signal?: AbortSignal },
 ): Promise<GitWorktreeCheckoutStatus[]> {
   const repoId = assertTaskPathId(repositoryId, "repository id");
-  const res = await fetchWithTimeout(
+  const raw = await gitFetchJson(
     `${gitRoot}/repositories/${encodeURIComponent(repoId)}/worktrees/checkout-status`,
-    { headers: { Accept: "application/json" }, signal: options?.signal },
+    gitJsonGetInit(options?.signal),
   );
-  if (!res.ok) throw await apiErrorFromResponse(res);
-  return parseGitWorktreeCheckoutStatusList((await res.json()) as unknown);
+  return parseGitWorktreeCheckoutStatusList(raw);
 }
 
 export async function createGlobalGitWorktree(
@@ -112,12 +104,11 @@ export async function createGlobalGitWorktree(
   },
 ): Promise<GitWorktree> {
   const repoId = assertTaskPathId(repositoryId, "repository id");
-  const res = await fetchWithTimeout(
+  const raw = await gitFetchJson(
     `${gitRoot}/repositories/${encodeURIComponent(repoId)}/worktrees`,
-    { method: "POST", headers: jsonHeaders, body: JSON.stringify(input) },
+    gitJsonPostInit(input),
   );
-  if (!res.ok) throw await apiErrorFromResponse(res);
-  return parseGitWorktree((await res.json()) as unknown);
+  return parseGitWorktree(raw);
 }
 
 export async function registerGlobalGitWorktree(
@@ -129,21 +120,16 @@ export async function registerGlobalGitWorktree(
   },
 ): Promise<GitWorktree> {
   const repoId = assertTaskPathId(repositoryId, "repository id");
-  const res = await fetchWithTimeout(
+  const raw = await gitFetchJson(
     `${gitRoot}/repositories/${encodeURIComponent(repoId)}/worktrees/register`,
-    { method: "POST", headers: jsonHeaders, body: JSON.stringify(input) },
+    gitJsonPostInit(input),
   );
-  if (!res.ok) throw await apiErrorFromResponse(res);
-  return parseGitWorktree((await res.json()) as unknown);
+  return parseGitWorktree(raw);
 }
 
 export async function unregisterGlobalGitWorktree(worktreeId: string): Promise<void> {
   const wtId = assertTaskPathId(worktreeId, "worktree id");
-  const res = await fetchWithTimeout(
-    `${gitRoot}/worktrees/${encodeURIComponent(wtId)}`,
-    { method: "DELETE" },
-  );
-  if (!res.ok) throw await apiErrorFromResponse(res);
+  await gitFetchVoid(`${gitRoot}/worktrees/${encodeURIComponent(wtId)}`, gitDeleteInit());
 }
 
 export async function deleteGlobalGitWorktreeFromDisk(
@@ -155,11 +141,10 @@ export async function deleteGlobalGitWorktreeFromDisk(
   if (options?.force) {
     params.set("force", "true");
   }
-  const res = await fetchWithTimeout(
+  await gitFetchVoid(
     `${gitRoot}/worktrees/${encodeURIComponent(wtId)}?${params.toString()}`,
-    { method: "DELETE" },
+    gitDeleteInit(),
   );
-  if (!res.ok) throw await apiErrorFromResponse(res);
 }
 
 export async function listGlobalGitBranches(
@@ -167,12 +152,11 @@ export async function listGlobalGitBranches(
   options?: { signal?: AbortSignal },
 ): Promise<GitBranch[]> {
   const repoId = assertTaskPathId(repositoryId, "repository id");
-  const res = await fetchWithTimeout(
+  const raw = await gitFetchJson(
     `${gitRoot}/repositories/${encodeURIComponent(repoId)}/branches`,
-    { headers: { Accept: "application/json" }, signal: options?.signal },
+    gitJsonGetInit(options?.signal),
   );
-  if (!res.ok) throw await apiErrorFromResponse(res);
-  return parseGitBranchList((await res.json()) as unknown);
+  return parseGitBranchList(raw);
 }
 
 export async function listGlobalGitLiveWorktrees(
@@ -180,12 +164,11 @@ export async function listGlobalGitLiveWorktrees(
   options?: { signal?: AbortSignal },
 ): Promise<GitLiveWorktree[]> {
   const repoId = assertTaskPathId(repositoryId, "repository id");
-  const res = await fetchWithTimeout(
+  const raw = await gitFetchJson(
     `${gitRoot}/repositories/${encodeURIComponent(repoId)}/worktrees/live`,
-    { headers: { Accept: "application/json" }, signal: options?.signal },
+    gitJsonGetInit(options?.signal),
   );
-  if (!res.ok) throw await apiErrorFromResponse(res);
-  return parseGitLiveWorktreeList((await res.json()) as unknown);
+  return parseGitLiveWorktreeList(raw);
 }
 
 export async function probeGlobalGitWorktree(
@@ -195,12 +178,11 @@ export async function probeGlobalGitWorktree(
 ): Promise<GitWorktreeProbe> {
   const repoId = assertTaskPathId(repositoryId, "repository id");
   const params = new URLSearchParams({ path });
-  const res = await fetchWithTimeout(
+  const raw = await gitFetchJson(
     `${gitRoot}/repositories/${encodeURIComponent(repoId)}/worktrees/probe?${params}`,
-    { headers: { Accept: "application/json" }, signal: options?.signal },
+    gitJsonGetInit(options?.signal),
   );
-  if (!res.ok) throw await apiErrorFromResponse(res);
-  return parseGitWorktreeProbe((await res.json()) as unknown);
+  return parseGitWorktreeProbe(raw);
 }
 
 export async function listGlobalGitLiveBranches(
@@ -208,12 +190,11 @@ export async function listGlobalGitLiveBranches(
   options?: { signal?: AbortSignal },
 ): Promise<GitLiveBranch[]> {
   const repoId = assertTaskPathId(repositoryId, "repository id");
-  const res = await fetchWithTimeout(
+  const raw = await gitFetchJson(
     `${gitRoot}/repositories/${encodeURIComponent(repoId)}/branches/live`,
-    { headers: { Accept: "application/json" }, signal: options?.signal },
+    gitJsonGetInit(options?.signal),
   );
-  if (!res.ok) throw await apiErrorFromResponse(res);
-  return parseGitLiveBranchList((await res.json()) as unknown);
+  return parseGitLiveBranchList(raw);
 }
 
 export async function reconcileGlobalGitRepository(
@@ -222,12 +203,11 @@ export async function reconcileGlobalGitRepository(
 ): Promise<GitReconcileResult> {
   const repoId = assertTaskPathId(repositoryId, "repository id");
   const body: GitReconcileInput = input ?? {};
-  const res = await fetchWithTimeout(
+  const raw = await gitFetchJson(
     `${gitRoot}/repositories/${encodeURIComponent(repoId)}/reconcile`,
-    { method: "POST", headers: jsonHeaders, body: JSON.stringify(body) },
+    gitJsonPostInit(body),
   );
-  if (!res.ok) throw await apiErrorFromResponse(res);
-  return parseGitReconcileResult((await res.json()) as unknown);
+  return parseGitReconcileResult(raw);
 }
 
 export async function relocateGlobalGitRepository(
@@ -235,12 +215,11 @@ export async function relocateGlobalGitRepository(
   input: { path: string },
 ): Promise<GitReconcileResult> {
   const repoId = assertTaskPathId(repositoryId, "repository id");
-  const res = await fetchWithTimeout(
+  const raw = await gitFetchJson(
     `${gitRoot}/repositories/${encodeURIComponent(repoId)}/relocate`,
-    { method: "POST", headers: jsonHeaders, body: JSON.stringify(input) },
+    gitJsonPostInit(input),
   );
-  if (!res.ok) throw await apiErrorFromResponse(res);
-  return parseGitReconcileResult((await res.json()) as unknown);
+  return parseGitReconcileResult(raw);
 }
 
 export async function listProjectsByRepository(
@@ -248,10 +227,9 @@ export async function listProjectsByRepository(
   options?: { signal?: AbortSignal },
 ): Promise<ProjectListResponse> {
   const repoId = assertTaskPathId(repositoryId, "repository id");
-  const res = await fetchWithTimeout(
+  const raw = await gitFetchJson(
     `${gitRoot}/repositories/${encodeURIComponent(repoId)}/projects`,
-    { headers: { Accept: "application/json" }, signal: options?.signal },
+    gitJsonGetInit(options?.signal),
   );
-  if (!res.ok) throw await apiErrorFromResponse(res);
-  return parseProjectListResponse((await res.json()) as unknown);
+  return parseProjectListResponse(raw);
 }

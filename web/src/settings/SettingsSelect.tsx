@@ -11,15 +11,22 @@ import {
   type RefObject,
 } from "react";
 import { createPortal } from "react-dom";
+import {
+  comboboxSelectableRows,
+  createComboboxMenuKeyDownHandler,
+  createComboboxTriggerKeyDownHandler,
+  filterComboboxRowsWithHeaders,
+  isComboboxSelectableRow,
+  resolveComboboxActiveIndexForOpen,
+  type ComboboxRow,
+} from "@/components/combobox";
 
 export type SettingsSelectOption = {
   value: string;
   label: string;
 };
 
-export type SettingsSelectRow =
-  | { type: "header"; label: string }
-  | { type: "option"; value: string; label: string };
+export type SettingsSelectRow = ComboboxRow;
 
 type Props = {
   value: string;
@@ -76,78 +83,6 @@ function CheckIcon() {
       />
     </svg>
   );
-}
-
-function isSelectableRow(
-  row: SettingsSelectRow,
-): row is { type: "option"; value: string; label: string } {
-  return row.type === "option";
-}
-
-function selectableRows(rows: SettingsSelectRow[]) {
-  return rows.filter(isSelectableRow);
-}
-
-function firstSelectableIndex(rows: SettingsSelectRow[]): number {
-  return rows.findIndex(isSelectableRow);
-}
-
-function nextSelectableIndex(rows: SettingsSelectRow[], from: number): number {
-  for (let i = from + 1; i < rows.length; i++) {
-    if (isSelectableRow(rows[i])) return i;
-  }
-  for (let i = 0; i < rows.length; i++) {
-    if (isSelectableRow(rows[i])) return i;
-  }
-  return from;
-}
-
-function prevSelectableIndex(rows: SettingsSelectRow[], from: number): number {
-  for (let i = from - 1; i >= 0; i--) {
-    if (isSelectableRow(rows[i])) return i;
-  }
-  for (let i = rows.length - 1; i >= 0; i--) {
-    if (isSelectableRow(rows[i])) return i;
-  }
-  return from;
-}
-
-function filterSettingsSelectRows(
-  baseRows: SettingsSelectRow[],
-  search: string,
-): SettingsSelectRow[] {
-  const q = search.trim().toLowerCase();
-  if (!q) return baseRows;
-  const out: SettingsSelectRow[] = [];
-  let pendingHeader: SettingsSelectRow | null = null;
-  for (const row of baseRows) {
-    if (row.type === "header") {
-      pendingHeader = row;
-      continue;
-    }
-    const haystack = `${row.label} ${row.value}`.toLowerCase();
-    if (!haystack.includes(q)) continue;
-    if (pendingHeader) {
-      out.push(pendingHeader);
-      pendingHeader = null;
-    }
-    out.push(row);
-  }
-  return out;
-}
-
-function resolveActiveIndexForOpenMenu(
-  filteredRows: SettingsSelectRow[],
-  value: string,
-  search: string,
-): number {
-  if (!search.trim()) {
-    const idx = filteredRows.findIndex(
-      (row) => isSelectableRow(row) && row.value === value,
-    );
-    return idx >= 0 ? idx : firstSelectableIndex(filteredRows);
-  }
-  return firstSelectableIndex(filteredRows);
 }
 
 function useDropdownPanelPosition(
@@ -229,103 +164,8 @@ function useSyncActiveIndexOnOpen(
 ) {
   useEffect(() => {
     if (!open) return;
-    setActiveIndex(resolveActiveIndexForOpenMenu(filteredRows, value, search));
+    setActiveIndex(resolveComboboxActiveIndexForOpen(filteredRows, value, search));
   }, [open, search, filteredRows, value, setActiveIndex]);
-}
-
-type MenuKeyboardContext = {
-  filteredRows: SettingsSelectRow[];
-  selectable: SettingsSelectOption[];
-  activeIndex: number;
-  setActiveIndex: (index: number | ((current: number) => number)) => void;
-  closeMenu: () => void;
-  commitOption: (opt: SettingsSelectOption) => void;
-};
-
-function handleMenuArrowNavigation(
-  e: KeyboardEvent,
-  filteredRows: SettingsSelectRow[],
-  setActiveIndex: MenuKeyboardContext["setActiveIndex"],
-  direction: "down" | "up",
-) {
-  e.preventDefault();
-  setActiveIndex((i) =>
-    direction === "down"
-      ? nextSelectableIndex(filteredRows, i)
-      : prevSelectableIndex(filteredRows, i),
-  );
-}
-
-function handleMenuEnterSelection(
-  e: KeyboardEvent,
-  ctx: MenuKeyboardContext,
-) {
-  if (ctx.selectable.length === 0) return;
-  e.preventDefault();
-  const row = ctx.filteredRows[ctx.activeIndex];
-  if (row && isSelectableRow(row)) ctx.commitOption(row);
-}
-
-function createTriggerKeyDownHandler(
-  disabled: boolean,
-  open: boolean,
-  openMenu: () => void,
-  closeMenu: () => void,
-) {
-  return (e: KeyboardEvent<HTMLButtonElement>) => {
-    if (disabled) return;
-    if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      openMenu();
-      return;
-    }
-    if (e.key === "Escape" && open) {
-      e.preventDefault();
-      closeMenu();
-    }
-  };
-}
-
-function createSearchKeyDownHandler(ctx: MenuKeyboardContext) {
-  return (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Escape") {
-      e.preventDefault();
-      ctx.closeMenu();
-      return;
-    }
-    if (e.key === "ArrowDown") {
-      handleMenuArrowNavigation(e, ctx.filteredRows, ctx.setActiveIndex, "down");
-      return;
-    }
-    if (e.key === "ArrowUp") {
-      handleMenuArrowNavigation(e, ctx.filteredRows, ctx.setActiveIndex, "up");
-      return;
-    }
-    if (e.key === "Enter") {
-      handleMenuEnterSelection(e, ctx);
-    }
-  };
-}
-
-function createListKeyDownHandler(ctx: MenuKeyboardContext) {
-  return (e: KeyboardEvent<HTMLUListElement>) => {
-    if (e.key === "Escape") {
-      e.preventDefault();
-      ctx.closeMenu();
-      return;
-    }
-    if (e.key === "ArrowDown") {
-      handleMenuArrowNavigation(e, ctx.filteredRows, ctx.setActiveIndex, "down");
-      return;
-    }
-    if (e.key === "ArrowUp") {
-      handleMenuArrowNavigation(e, ctx.filteredRows, ctx.setActiveIndex, "up");
-      return;
-    }
-    if (e.key === "Enter") {
-      handleMenuEnterSelection(e, ctx);
-    }
-  };
 }
 
 type SettingsSelectPanelProps = {
@@ -345,8 +185,7 @@ type SettingsSelectPanelProps = {
   value: string;
   setActiveIndex: (index: number) => void;
   commitOption: (opt: SettingsSelectOption) => void;
-  onSearchKeyDown: (e: KeyboardEvent<HTMLInputElement>) => void;
-  onListKeyDown: (e: KeyboardEvent<HTMLUListElement>) => void;
+  onMenuKeyDown: (e: KeyboardEvent<HTMLInputElement | HTMLUListElement>) => void;
 };
 
 function SettingsSelectPanel({
@@ -366,8 +205,7 @@ function SettingsSelectPanel({
   value,
   setActiveIndex,
   commitOption,
-  onSearchKeyDown,
-  onListKeyDown,
+  onMenuKeyDown,
 }: SettingsSelectPanelProps) {
   return createPortal(
     <div
@@ -395,7 +233,7 @@ function SettingsSelectPanel({
             aria-controls={listId}
             aria-autocomplete="list"
             onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={onSearchKeyDown}
+            onKeyDown={onMenuKeyDown}
           />
         </div>
       ) : null}
@@ -407,11 +245,11 @@ function SettingsSelectPanel({
           tabIndex={searchable ? -1 : 0}
           className="settings-dropdown-list settings-dropdown-list--portal"
           aria-activedescendant={
-            filteredRows[activeIndex] && isSelectableRow(filteredRows[activeIndex])
+            filteredRows[activeIndex] && isComboboxSelectableRow(filteredRows[activeIndex])
               ? `${baseId}-opt-${activeIndex}`
               : undefined
           }
-          onKeyDown={onListKeyDown}
+          onKeyDown={onMenuKeyDown}
         >
           {filteredRows.map((row, idx) => {
             if (row.type === "header") {
@@ -522,12 +360,12 @@ function useSettingsSelectController({
   }, [options, value]);
 
   const filteredRows = useMemo(
-    () => filterSettingsSelectRows(baseRows, search),
+    () => filterComboboxRowsWithHeaders(baseRows, search),
     [baseRows, search],
   );
 
   const selectable = useMemo(
-    () => selectableRows(filteredRows),
+    () => comboboxSelectableRows(filteredRows),
     [filteredRows],
   );
 
@@ -557,25 +395,23 @@ function useSettingsSelectController({
   }, [disabled]);
 
   const keyboardCtx = useMemo(
-    (): MenuKeyboardContext => ({
+    () => ({
       filteredRows,
-      selectable,
       activeIndex,
       setActiveIndex,
       closeMenu,
-      commitOption,
+      commitRow: commitOption,
     }),
-    [filteredRows, selectable, activeIndex, closeMenu, commitOption],
+    [filteredRows, activeIndex, closeMenu, commitOption],
   );
 
-  const onTriggerKeyDown = createTriggerKeyDownHandler(
+  const onTriggerKeyDown = createComboboxTriggerKeyDownHandler(
     disabled,
     open,
     openMenu,
     closeMenu,
   );
-  const onSearchKeyDown = createSearchKeyDownHandler(keyboardCtx);
-  const onListKeyDown = createListKeyDownHandler(keyboardCtx);
+  const onMenuKeyDown = createComboboxMenuKeyDownHandler(keyboardCtx);
 
   const shellClass = open
     ? "settings-dropdown-shell settings-dropdown-shell--open"
@@ -600,8 +436,7 @@ function useSettingsSelectController({
         value={value}
         setActiveIndex={setActiveIndex}
         commitOption={commitOption}
-        onSearchKeyDown={onSearchKeyDown}
-        onListKeyDown={onListKeyDown}
+        onMenuKeyDown={onMenuKeyDown}
       />
     ) : null;
 

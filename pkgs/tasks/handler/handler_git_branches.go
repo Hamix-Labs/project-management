@@ -21,25 +21,15 @@ func toGitBranchJSON(b domain.GitBranch) gitBranchJSON {
 	}
 }
 
+//funclogmeasure:skip category=delegate-already-logs reason="Project-scoped route wrapper; serve* emits operation trace."
 func (h *Handler) listGitBranches(w http.ResponseWriter, r *http.Request) {
 	const op = "git.branches.list"
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.listGitBranches")
-	r = calltrace.WithRequestRoot(r, op)
 	projectID, err := parseGitProjectID(r)
 	if err != nil {
 		writeGitStoreError(w, r, op, err)
 		return
 	}
-	rows, err := h.store.ListGitBranches(r.Context(), projectID, r.PathValue("repoId"))
-	if err != nil {
-		writeGitStoreError(w, r, op, err)
-		return
-	}
-	out := make([]gitBranchJSON, 0, len(rows))
-	for _, row := range rows {
-		out = append(out, toGitBranchJSON(row))
-	}
-	writeJSON(w, r, op, http.StatusOK, gitBranchesListResponse{Branches: out})
+	h.serveListGitBranches(w, r, op, gitProjectScope(projectID))
 }
 
 func (h *Handler) createGitBranch(w http.ResponseWriter, r *http.Request) {

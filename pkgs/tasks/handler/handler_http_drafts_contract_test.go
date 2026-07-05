@@ -21,7 +21,6 @@ package handler
 // view).
 
 import (
-	"encoding/json"
 	"net/http"
 	"strings"
 	"testing"
@@ -32,8 +31,7 @@ import (
 // GET-detail and DELETE routes (the same `parseTaskPathID` guard covered by
 // Session 14's DELETE /tasks/{id} contract). Two sub-tests cover both verbs.
 func TestHTTP_draftsPathSegmentGuard(t *testing.T) {
-	srv := newTaskTestServer(t)
-	defer srv.Close()
+	srv := startContractServer(t)
 
 	cases := []struct {
 		name string
@@ -95,37 +93,5 @@ func TestHTTP_drafts_neverPublishOnSSE(t *testing.T) {
 	got := summarize(drainSSE(t, ch, 0, 200*time.Millisecond))
 	if len(got) != 0 {
 		t.Fatalf("drained SSE events %v after /task-drafts/* round-trip; want zero (docs/api.md: /task-drafts/* is not part of the SSE surface)", got)
-	}
-}
-
-// equalStringSlices is a tiny test-only helper. The contract suites grew
-// independently so each file rolls its own; the shared signal is "did the
-// keys come back as the documented set?"
-func equalStringSlices(a, b []string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-	return true
-}
-
-// assertBareError centralizes the "status 4xx + JSON body whose `error`
-// matches a wire-stable bare phrase" assertion used by both verbs in the
-// path-segment-guard suite.
-func assertBareError(t *testing.T, res *http.Response, raw []byte, wantStatus int, wantError string) {
-	t.Helper()
-	if res.StatusCode != wantStatus {
-		t.Fatalf("status %d (want %d) body=%s", res.StatusCode, wantStatus, raw)
-	}
-	var errBody jsonErrorBody
-	if err := json.Unmarshal(raw, &errBody); err != nil {
-		t.Fatalf("decode: %v body=%s", err, raw)
-	}
-	if errBody.Error != wantError {
-		t.Fatalf("error=%q want %q (docs/api.md /task-drafts/* 400 strings)", errBody.Error, wantError)
 	}
 }

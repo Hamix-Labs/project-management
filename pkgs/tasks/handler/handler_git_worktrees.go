@@ -1,13 +1,10 @@
 package handler
 
 import (
-	"log/slog"
 	"net/http"
 	"time"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
@@ -24,74 +21,35 @@ func (h *Handler) gitWorktreeJSON(w domain.GitWorktree) gitWorktreeJSON {
 	}
 }
 
+//funclogmeasure:skip category=delegate-already-logs reason="Project-scoped route wrapper; serve* emits operation trace."
 func (h *Handler) listGitWorktrees(w http.ResponseWriter, r *http.Request) {
 	const op = "git.worktrees.list"
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.listGitWorktrees")
-	r = calltrace.WithRequestRoot(r, op)
 	projectID, err := parseGitProjectID(r)
 	if err != nil {
 		writeGitStoreError(w, r, op, err)
 		return
 	}
-	rows, err := h.store.ListGitWorktrees(r.Context(), projectID, r.PathValue("repoId"))
-	if err != nil {
-		writeGitStoreError(w, r, op, err)
-		return
-	}
-	out := make([]gitWorktreeJSON, 0, len(rows))
-	for _, row := range rows {
-		out = append(out, h.gitWorktreeJSON(row))
-	}
-	writeJSON(w, r, op, http.StatusOK, gitWorktreesListResponse{Worktrees: out})
+	h.serveListGitWorktrees(w, r, op, gitProjectScope(projectID))
 }
 
+//funclogmeasure:skip category=delegate-already-logs reason="Project-scoped route wrapper; serve* emits operation trace."
 func (h *Handler) createGitWorktree(w http.ResponseWriter, r *http.Request) {
 	const op = "git.worktrees.create"
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.createGitWorktree")
-	r = calltrace.WithRequestRoot(r, op)
 	projectID, err := parseGitProjectID(r)
 	if err != nil {
 		writeGitStoreError(w, r, op, err)
 		return
 	}
-	var body gitWorktreeCreateJSON
-	if err := decodeJSON(r.Context(), r.Body, &body); err != nil {
-		writeError(w, r, op, err, http.StatusBadRequest)
-		return
-	}
-	wt, err := h.store.CreateGitWorktree(r.Context(), projectID, r.PathValue("repoId"), store.CreateGitWorktreeInput{
-		Path:         body.Path,
-		Name:         body.Name,
-		Branch:       body.Branch,
-		CreateBranch: body.CreateBranch,
-		StartPoint:   body.StartPoint,
-		ForceRemove:  body.ForceRemove,
-	}, h.gitService())
-	if err != nil {
-		writeGitStoreError(w, r, op, err)
-		return
-	}
-	writeJSON(w, r, op, http.StatusCreated, h.gitWorktreeJSON(wt))
+	h.serveCreateGitWorktree(w, r, op, gitProjectScope(projectID))
 }
 
+//funclogmeasure:skip category=delegate-already-logs reason="Project-scoped route wrapper; serve* emits operation trace."
 func (h *Handler) deleteGitWorktree(w http.ResponseWriter, r *http.Request) {
 	const op = "git.worktrees.delete"
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.deleteGitWorktree")
-	r = calltrace.WithRequestRoot(r, op)
 	projectID, err := parseGitProjectID(r)
 	if err != nil {
 		writeGitStoreError(w, r, op, err)
 		return
 	}
-	removeFromDisk, force := gitWorktreeDeleteQuery(r, op)
-	if removeFromDisk {
-		if err := h.store.RemoveGitWorktreeFromDisk(r.Context(), projectID, r.PathValue("worktreeId"), force, h.gitService()); err != nil {
-			writeGitStoreError(w, r, op, err)
-			return
-		}
-	} else if err := h.store.UnregisterGitWorktree(r.Context(), projectID, r.PathValue("worktreeId")); err != nil {
-		writeGitStoreError(w, r, op, err)
-		return
-	}
-	w.WriteHeader(http.StatusNoContent)
+	h.serveDeleteGitWorktree(w, r, op, gitProjectScope(projectID))
 }

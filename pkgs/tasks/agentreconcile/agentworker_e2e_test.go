@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/internal/gittest"
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
@@ -39,7 +40,7 @@ func TestAgentWorkerE2E_readyTaskRunsThroughReconcileAndWorker(t *testing.T) {
 	st := store.NewStore(tasktestdb.OpenSQLite(t))
 	q := agents.NewMemoryQueue(4)
 
-	wtID, _ := seedAgentReconcileGit(t, st)
+	wtID, _ := gittest.SeedWorktreeTemp(t, st)
 	tsk, err := st.Create(rootCtx, store.CreateTaskInput{
 		Title:         "e2e",
 		InitialPrompt: "do the thing",
@@ -150,7 +151,7 @@ func TestAgentWorkerE2E_worktreeBinding(t *testing.T) {
 	st := store.NewStore(tasktestdb.OpenSQLite(t))
 	q := agents.NewMemoryQueue(4)
 
-	wtID, _ := seedAgentReconcileGit(t, st)
+	wtID, _ := gittest.SeedWorktreeTemp(t, st)
 	tsk, err := st.Create(rootCtx, store.CreateTaskInput{
 		Title:         "e2e-wb",
 		InitialPrompt: "via association",
@@ -209,7 +210,7 @@ func TestAgentWorkerE2E_sameWorktreeSequential(t *testing.T) {
 	st := store.NewStore(tasktestdb.OpenSQLite(t))
 	q := agents.NewMemoryQueue(4)
 
-	wtID, _ := seedAgentReconcileGit(t, st)
+	wtID, _ := gittest.SeedWorktreeTemp(t, st)
 	taskA, err := st.Create(rootCtx, store.CreateTaskInput{
 		Title:         "task-a",
 		InitialPrompt: "first",
@@ -285,7 +286,7 @@ func TestAgentWorkerE2E_differentWorktreesParallel(t *testing.T) {
 	st := store.NewStore(tasktestdb.OpenSQLite(t))
 	q := agents.NewMemoryQueue(8)
 
-	wtA, _ := seedAgentReconcileGit(t, st)
+	wtA, _ := gittest.SeedWorktreeTemp(t, st)
 	wtB := seedSecondWorktreeOnRepo(t, st, wtA)
 	taskA, err := st.Create(rootCtx, store.CreateTaskInput{
 		Title:         "parallel-a",
@@ -360,7 +361,7 @@ func TestAgentWorkerE2E_dependencyBlocksUntilUpstreamDone(t *testing.T) {
 	st := store.NewStore(tasktestdb.OpenSQLite(t))
 	q := agents.NewMemoryQueue(8)
 
-	wtID, _ := seedAgentReconcileGit(t, st)
+	wtID, _ := gittest.SeedWorktreeTemp(t, st)
 	upstream, err := st.Create(rootCtx, store.CreateTaskInput{
 		Title:         "upstream",
 		InitialPrompt: "first",

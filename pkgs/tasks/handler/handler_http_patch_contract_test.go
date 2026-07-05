@@ -85,39 +85,6 @@ func patchTask(t *testing.T, baseURL, id, body string) (*http.Response, []byte) 
 	return res, raw
 }
 
-// mustCreateTask is a tiny POST /tasks helper for the patch contract suite.
-// Other contract files have their own narrower variants (mustCreateChecklistTask,
-// mustCreateChildInheriting); this one accepts an arbitrary body fragment so a
-// single helper can drive parent/child/done permutations.
-func mustCreateTask(t *testing.T, baseURL, jsonBody string) string {
-	t.Helper()
-	res, err := http.Post(baseURL+"/tasks", "application/json", strings.NewReader(withCreateChecklist(jsonBody)))
-	if err != nil {
-		t.Fatal(err)
-	}
-	body, _ := io.ReadAll(res.Body)
-	_ = res.Body.Close()
-	if res.StatusCode != http.StatusCreated {
-		t.Fatalf("create task status %d body=%s", res.StatusCode, body)
-	}
-	var task domain.Task
-	if err := json.Unmarshal(body, &task); err != nil {
-		t.Fatalf("decode created task: %v body=%s", err, body)
-	}
-	return task.ID
-}
-
-func postTask(t *testing.T, baseURL, jsonBody string) (*http.Response, []byte) {
-	t.Helper()
-	res, err := http.Post(baseURL+"/tasks", "application/json", strings.NewReader(withCreateChecklist(jsonBody)))
-	if err != nil {
-		t.Fatal(err)
-	}
-	raw, _ := io.ReadAll(res.Body)
-	_ = res.Body.Close()
-	return res, raw
-}
-
 // TestHTTP_patchTask_400ErrorStrings pins every documented PATCH /tasks/{id}
 // 400 string from docs/api.md against the live handler. Each subtest
 // drives a distinct rejection path so a future refactor that changes the
