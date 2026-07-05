@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { listTaskEvents } from "@/api";
 import { errorMessage } from "@/lib/errorMessage";
 import { phaseLabel } from "@/observability";
-import { EmptyState } from "@/shared/EmptyState";
 import type { TaskCycleDetail, TaskCycleStreamEvent } from "@/types";
 import type { UseTaskCycleStreamResult } from "@/tasks/hooks/useTaskCycles";
 import { TaskTimelineSkeleton } from "@/tasks/components/skeletons";
@@ -11,6 +10,7 @@ import { activityCountCaption } from "@/tasks/pages/attempt/filterActivityByPhas
 import type { TaskCycleDetailPageState } from "@/tasks/pages/attempt/useTaskCycleDetailPageState";
 import { AttemptAuditTimeline } from "./AttemptAuditTimeline";
 import { PhaseSeqBadge } from "./AttemptPhaseSeqBadge";
+import { PhaseFilteredEmpty } from "./PhaseFilteredEmpty";
 
 const STREAM_VISIBLE_INITIAL = 6;
 const AUDIT_VISIBLE_INITIAL = 6;
@@ -192,22 +192,11 @@ function CursorActivityPanel({
           </p>
         </div>
       ) : streamEvents.length === 0 ? (
-        filterLabel ? (
-          <EmptyState
-            title={`No Cursor output for ${filterLabel}`}
-            description="Try another phase or show all activity."
-            density="compact"
-            hideIcon
-            action={{ label: "Show all phases", onClick: onClearPhaseFilter }}
-          />
-        ) : (
-          <EmptyState
-            title="No Cursor output yet"
-            description="Stream lines appear here as the agent runs."
-            density="compact"
-            hideIcon
-          />
-        )
+        <PhaseFilteredEmpty
+          filterLabel={filterLabel}
+          kind="cursor"
+          onClearPhaseFilter={onClearPhaseFilter}
+        />
       ) : (
         <>
           <ol
@@ -285,22 +274,11 @@ function AuditActivityPanel({
           </div>
         </div>
       ) : auditEvents.length === 0 ? (
-        filterLabel ? (
-          <EmptyState
-            title={`No audit events for ${filterLabel}`}
-            description="Try another phase or show all activity."
-            density="compact"
-            hideIcon
-            action={{ label: "Show all phases", onClick: onClearPhaseFilter }}
-          />
-        ) : (
-          <EmptyState
-            title="No audit events yet"
-            description="System events for this attempt appear here."
-            density="compact"
-            hideIcon
-          />
-        )
+        <PhaseFilteredEmpty
+          filterLabel={filterLabel}
+          kind="audit"
+          onClearPhaseFilter={onClearPhaseFilter}
+        />
       ) : (
         <>
           <AttemptAuditTimeline
