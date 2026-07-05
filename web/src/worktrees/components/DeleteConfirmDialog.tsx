@@ -29,7 +29,7 @@ function dialogTitle(target: GitDeleteTarget): string {
   if (target.kind === "worktree") {
     return target.mode === "remove_from_disk"
       ? worktreeGitCopy.deleteWorktreeConfirmTitle
-      : "Unregister worktree?";
+      : worktreeGitCopy.unregisterWorktreeConfirmTitle;
   }
   return `Delete ${targetNoun(target.kind)}?`;
 }
@@ -62,8 +62,7 @@ function dialogDescription(
   if (target.kind === "worktree") {
     return (
       <>
-        <strong>{target.label}</strong> will be removed from Hamix. Your checkout directory and git
-        worktree stay on disk — register it again anytime from the live inventory.
+        <strong>{target.label}</strong> {worktreeGitCopy.unregisterWorktreeConfirmDescription}
       </>
     );
   }
@@ -122,7 +121,7 @@ export function DeleteConfirmDialog({
         target.kind === "worktree" && target.mode === "remove_from_disk"
           ? worktreeGitCopy.deleteWorktreeConfirmFootnote
           : target.kind === "worktree"
-            ? "To remove the directory from git, use Delete worktree instead."
+            ? worktreeGitCopy.unregisterWorktreeConfirmFootnote
             : "This action cannot be undone."
       }
       confirmLabel={confirmLabel(target, pending)}

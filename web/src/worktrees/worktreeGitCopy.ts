@@ -11,11 +11,16 @@ export const worktreeGitCopy = {
   deleteRepository: "Delete",
   unregisterWorktree: "Unregister worktree",
   deleteWorktree: "Delete worktree",
+  unregisterWorktreeConfirmTitle: "Unregister worktree?",
+  unregisterWorktreeConfirmDescription:
+    "will be removed from Hamix only. The checkout stays on disk.",
+  unregisterWorktreeConfirmFootnote:
+    "Use Delete worktree to remove the checkout from git.",
   deleteWorktreeConfirmTitle: "Delete worktree?",
   deleteWorktreeConfirmDescription:
-    "will be removed from Hamix and deleted from disk with git worktree remove.",
+    "will be removed from Hamix and deleted from disk.",
   deleteWorktreeConfirmFootnote:
-    "This permanently removes the checkout directory. Use unregister if you only want to drop Hamix tracking.",
+    "Use Unregister to keep the checkout on disk.",
   deleteWorktreeForceLabel: "Force remove (discard uncommitted changes)",
   repositoryActions: "Repository actions",
   worktreeActions: (name: string) => `Worktree actions for ${name}`,

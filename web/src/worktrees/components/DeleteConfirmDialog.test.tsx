@@ -2,9 +2,34 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/api";
+import { worktreeGitCopy } from "../worktreeGitCopy";
 import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
 
 describe("DeleteConfirmDialog", () => {
+  it("shows unregister copy for inventory-only mode", () => {
+    render(
+      <DeleteConfirmDialog
+        target={{
+          kind: "worktree",
+          mode: "unregister",
+          id: "wt-1",
+          label: "feature-a",
+          repositoryId: "repo-1",
+        }}
+        pending={false}
+        error={null}
+        onClose={() => {}}
+        onConfirm={() => {}}
+      />,
+    );
+
+    expect(
+      screen.getByRole("heading", { name: worktreeGitCopy.unregisterWorktreeConfirmTitle }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/removed from Hamix only/i)).toBeInTheDocument();
+    expect(screen.getByText(worktreeGitCopy.unregisterWorktreeConfirmFootnote)).toBeInTheDocument();
+  });
+
   it("shows delete copy for remove_from_disk mode", () => {
     render(
       <DeleteConfirmDialog
@@ -22,8 +47,11 @@ describe("DeleteConfirmDialog", () => {
       />,
     );
 
-    expect(screen.getByRole("heading", { name: /delete worktree/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: worktreeGitCopy.deleteWorktreeConfirmTitle }),
+    ).toBeInTheDocument();
     expect(screen.getByText(/deleted from disk/i)).toBeInTheDocument();
+    expect(screen.getByText(worktreeGitCopy.deleteWorktreeConfirmFootnote)).toBeInTheDocument();
   });
 
   it("offers force remove when delete fails on dirty worktree", async () => {
