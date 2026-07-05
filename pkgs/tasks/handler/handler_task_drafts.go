@@ -45,32 +45,12 @@ func (h *Handler) getTaskDraft(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.getTaskDraft")
 	const op = "task_drafts.get"
 	r = calltrace.WithRequestRoot(r, op)
-	id, err := parseTaskPathID(r.PathValue("id"))
-	if err != nil {
-		writeStoreError(w, r, op, err)
-		return
-	}
-	row, err := h.store.GetDraft(r.Context(), id)
-	if err != nil {
-		writeStoreError(w, r, op, err)
-		return
-	}
-	writeJSON(w, r, op, http.StatusOK, row)
+	getNamedPayload(w, r, op, h.store.GetDraft)
 }
 
 func (h *Handler) deleteTaskDraft(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.deleteTaskDraft")
 	const op = "task_drafts.delete"
 	r = calltrace.WithRequestRoot(r, op)
-	id, err := parseTaskPathID(r.PathValue("id"))
-	if err != nil {
-		writeStoreError(w, r, op, err)
-		return
-	}
-	if err := h.store.DeleteDraft(r.Context(), id); err != nil {
-		writeStoreError(w, r, op, err)
-		return
-	}
-	debugHTTPOut(r.Context(), op, http.StatusNoContent, "draft_id", id, "response_empty", true)
-	w.WriteHeader(http.StatusNoContent)
+	deleteNamedPayload(w, r, op, "draft_id", h.store.DeleteDraft)
 }

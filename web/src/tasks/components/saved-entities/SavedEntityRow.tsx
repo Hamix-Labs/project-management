@@ -16,6 +16,9 @@ type Props = {
   onOpen: () => void;
   onDelete: () => void;
   leading?: ReactNode;
+  subline?: ReactNode;
+  trailing?: ReactNode;
+  timePrefix?: string;
 };
 
 export function SavedEntityRow({
@@ -31,6 +34,9 @@ export function SavedEntityRow({
   onOpen,
   onDelete,
   leading,
+  subline,
+  trailing,
+  timePrefix = "Edited",
 }: Props) {
   const relative = lastEdited ? formatRelativeTime(lastEdited, renderNow) : null;
 
@@ -64,23 +70,26 @@ export function SavedEntityRow({
         </span>
         {lastEdited && relative ? (
           <time className="draft-row__time" dateTime={lastEdited} title={lastEdited}>
-            Edited {relative}
+            {timePrefix} {relative}
           </time>
         ) : null}
+        {subline}
       </div>
       <div className="draft-row__actions">
-        <div className="task-list-row-actions">
-          <button
-            type="button"
-            className="task-list-icon-btn task-list-icon-btn--delete"
-            aria-label={isDeleting ? deletingLabel : deleteLabel}
-            onClick={() => void onDelete()}
-            disabled={rowDisabled}
-            aria-busy={isDeleting || undefined}
-          >
-            <TaskListDeleteGlyph />
-          </button>
-        </div>
+        {trailing ?? (
+          <div className="task-list-row-actions">
+            <button
+              type="button"
+              className="task-list-icon-btn task-list-icon-btn--delete"
+              aria-label={isDeleting ? deletingLabel : deleteLabel}
+              onClick={() => void onDelete()}
+              disabled={rowDisabled}
+              aria-busy={isDeleting || undefined}
+            >
+              <TaskListDeleteGlyph />
+            </button>
+          </div>
+        )}
       </div>
     </li>
   );

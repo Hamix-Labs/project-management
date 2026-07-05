@@ -4,7 +4,8 @@ import {
   type TaskTemplateDetail,
   type TaskTemplateSummary,
 } from "@/types";
-import { parseChecklistItemWire, parseTask } from "./parseTaskApiTasks";
+import { parseComposePayloadCore } from "./parseTaskApiCompose";
+import { parseTask } from "./parseTaskApiTasks";
 import {
   isRecord,
   parseFiniteNumber,
@@ -51,13 +52,6 @@ function parseTaskTemplateSummaryFields(
   return summary;
 }
 
-function parseComposeChecklistItem(
-  value: unknown,
-  path: string,
-): TaskComposePayload["checklist_items"][number] {
-  return parseChecklistItemWire(value, path);
-}
-
 function parseDependsOnWire(value: unknown): TaskComposePayload["depends_on"] {
   if (value === undefined || value === null) return [];
   if (!Array.isArray(value)) {
@@ -79,34 +73,11 @@ function parseDependsOnWire(value: unknown): TaskComposePayload["depends_on"] {
 
 export function parseTaskComposePayload(value: unknown): TaskComposePayload {
   if (!isRecord(value)) throw new Error("Invalid API response: payload must be object");
-  const checklistRaw = value.checklist_items;
-  if (!Array.isArray(checklistRaw)) {
-    throw new Error("Invalid API response: payload.checklist_items must be array");
-  }
+  const core = parseComposePayloadCore(value);
   return {
-    title: parseString(value.title, "payload.title"),
-    initial_prompt: parseString(value.initial_prompt, "payload.initial_prompt"),
+    ...core,
     status: parseStatus(value.status),
     priority: parsePriorityChoice(value.priority) as TaskComposePayload["priority"],
-    checklist_items: checklistRaw.map((row, i) =>
-      parseComposeChecklistItem(row, `payload.checklist_items[${i}]`),
-    ),
-    ...(typeof value.runner === "string"
-      ? { runner: parseString(value.runner, "payload.runner") }
-      : {}),
-    ...(typeof value.cursor_model === "string"
-      ? { cursor_model: parseString(value.cursor_model, "payload.cursor_model") }
-      : {}),
-    ...(typeof value.project_id === "string"
-      ? { project_id: parseString(value.project_id, "payload.project_id") }
-      : {}),
-    ...(Array.isArray(value.project_context_item_ids)
-      ? {
-          project_context_item_ids: value.project_context_item_ids.map((id, i) =>
-            parseString(id, `payload.project_context_item_ids[${i}]`),
-          ),
-        }
-      : {}),
     ...(typeof value.pickup_not_before === "string"
       ? {
           pickup_not_before: parseString(

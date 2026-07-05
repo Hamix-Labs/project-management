@@ -1,55 +1,49 @@
 package handler
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
 
-	"github.com/AlexsanderHamir/Hamix/internal/gittest"
-	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
+	"github.com/AlexsanderHamir/Hamix/internal/tasktestserver"
 	"github.com/AlexsanderHamir/Hamix/pkgs/repo"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
-// Whitebox handler tests cannot import internal/handlertest (import cycle:
-// handlertest → handler). Server wiring mirrors internal/handlertest/server.go.
+func taskTestHandlerBuilder(st *store.Store, workspace *repo.Root) http.Handler {
+	opts := []HandlerOption{}
+	if workspace != nil {
+		opts = append(opts, WithRepoProvider(NewSettingsRepoProvider(st)))
+	}
+	return NewHandler(st, NewSSEHub(), workspace, opts...)
+}
 
 func newTaskTestServer(t *testing.T) *httptest.Server {
 	t.Helper()
-	db := tasktestdb.OpenSQLite(t)
-	h := NewHandler(store.NewStore(db), NewSSEHub(), nil)
-	return httptest.NewServer(h)
+	return tasktestserver.New(t, taskTestHandlerBuilder)
 }
 
 func newTaskTestServerWithStore(t *testing.T) (*httptest.Server, *store.Store) {
 	t.Helper()
-	db := tasktestdb.OpenSQLite(t)
-	st := store.NewStore(db)
-	h := NewHandler(st, NewSSEHub(), nil)
-	return httptest.NewServer(h), st
+	st, srv := tasktestserver.NewWithStore(t, taskTestHandlerBuilder)
+	return srv, st
 }
 
 func seedTestGitWorktree(t *testing.T, st *store.Store, repoDir string) (worktreeID, branchID string) {
 	t.Helper()
-	return gittest.SeedWorktree(t, st, repoDir)
+	return tasktestserver.SeedWorktree(t, st, repoDir)
 }
 
 func newTaskTestServerWithRepo(t *testing.T, repoDir string) (*httptest.Server, string, string) {
-	srv, _, wt, br := newTaskTestServerWithRepoStore(t, repoDir)
+	srv, _, wt, br, _ := tasktestserver.NewWithRepoStore(t, repoDir, taskTestHandlerBuilder)
 	return srv, wt, br
 }
 
 func newTaskTestServerWithRepoStore(t *testing.T, repoDir string) (*httptest.Server, *store.Store, string, string) {
 	t.Helper()
-	db := tasktestdb.OpenSQLite(t)
-	st := store.NewStore(db)
-	worktreeID, branchID := seedTestGitWorktree(t, st, repoDir)
-	r, err := repo.OpenRoot(repoDir)
-	if err != nil {
-		t.Fatal(err)
-	}
-	h := NewHandler(st, NewSSEHub(), r, WithRepoProvider(NewSettingsRepoProvider(st)))
-	return httptest.NewServer(h), st, worktreeID, branchID
+	srv, st, wt, br, _ := tasktestserver.NewWithRepoStore(t, repoDir, taskTestHandlerBuilder)
+	return srv, st, wt, br
 }
 
 func repoPathWithWorktree(worktreeID, path string) string {

@@ -43,28 +43,14 @@ func (h *Handler) saveTaskTemplate(w http.ResponseWriter, r *http.Request) {
 		writeError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
-	compose, err := decodeComposePayload(body.Payload)
+	payloadRaw, compose, err := h.normalizeComposePayloadRaw(r.Context(), body.Payload)
 	if err != nil {
-		writeStoreError(w, r, op, err)
-		return
-	}
-	settings, err := h.store.GetSettings(r.Context())
-	if err != nil {
-		writeStoreError(w, r, op, err)
-		return
-	}
-	if err := h.validateComposePayload(r.Context(), compose, settings); err != nil {
 		writeStoreError(w, r, op, err)
 		return
 	}
 	name := strings.TrimSpace(body.Name)
 	if name == "" {
 		name = strings.TrimSpace(compose.Title)
-	}
-	payloadRaw, err := composePayloadToRaw(compose)
-	if err != nil {
-		writeStoreError(w, r, op, err)
-		return
 	}
 	saved, err := h.store.SaveTemplate(r.Context(), body.ID, name, payloadRaw)
 	if err != nil {
@@ -78,17 +64,7 @@ func (h *Handler) getTaskTemplate(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.getTaskTemplate")
 	const op = "task_templates.get"
 	r = calltrace.WithRequestRoot(r, op)
-	id, err := parseTaskPathID(r.PathValue("id"))
-	if err != nil {
-		writeStoreError(w, r, op, err)
-		return
-	}
-	row, err := h.store.GetTemplate(r.Context(), id)
-	if err != nil {
-		writeStoreError(w, r, op, err)
-		return
-	}
-	writeJSON(w, r, op, http.StatusOK, row)
+	getNamedPayload(w, r, op, h.store.GetTemplate)
 }
 
 func (h *Handler) patchTaskTemplate(w http.ResponseWriter, r *http.Request) {
@@ -107,23 +83,10 @@ func (h *Handler) patchTaskTemplate(w http.ResponseWriter, r *http.Request) {
 	}
 	var payloadRaw json.RawMessage
 	if len(body.Payload) > 0 {
-		compose, derr := decodeComposePayload(body.Payload)
-		if derr != nil {
-			writeStoreError(w, r, op, derr)
-			return
-		}
-		settings, serr := h.store.GetSettings(r.Context())
-		if serr != nil {
-			writeStoreError(w, r, op, serr)
-			return
-		}
-		if err := h.validateComposePayload(r.Context(), compose, settings); err != nil {
-			writeStoreError(w, r, op, err)
-			return
-		}
-		payloadRaw, err = composePayloadToRaw(compose)
-		if err != nil {
-			writeStoreError(w, r, op, err)
+		var nerr error
+		payloadRaw, _, nerr = h.normalizeComposePayloadRaw(r.Context(), body.Payload)
+		if nerr != nil {
+			writeStoreError(w, r, op, nerr)
 			return
 		}
 	}
@@ -144,17 +107,7 @@ func (h *Handler) deleteTaskTemplate(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.deleteTaskTemplate")
 	const op = "task_templates.delete"
 	r = calltrace.WithRequestRoot(r, op)
-	id, err := parseTaskPathID(r.PathValue("id"))
-	if err != nil {
-		writeStoreError(w, r, op, err)
-		return
-	}
-	if err := h.store.DeleteTemplate(r.Context(), id); err != nil {
-		writeStoreError(w, r, op, err)
-		return
-	}
-	debugHTTPOut(r.Context(), op, http.StatusNoContent, "template_id", id, "response_empty", true)
-	w.WriteHeader(http.StatusNoContent)
+	deleteNamedPayload(w, r, op, "template_id", h.store.DeleteTemplate)
 }
 
 func (h *Handler) instantiateTaskTemplates(w http.ResponseWriter, r *http.Request) {

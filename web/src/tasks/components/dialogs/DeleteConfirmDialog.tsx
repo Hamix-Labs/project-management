@@ -1,4 +1,5 @@
 import { ConfirmDialog } from "@/components/feedback/ConfirmDialog";
+import { deleteEntityConfirmProps } from "@/components/feedback/confirmDialogPresets";
 
 type Props = {
   taskTitle: string;
@@ -17,25 +18,21 @@ export function DeleteConfirmDialog({
   onCancel,
   onConfirm,
 }: Props) {
+  const preset = deleteEntityConfirmProps({
+    noun: "task",
+    name: taskTitle,
+    titleId: "delete-dialog-title",
+    descriptionId: "delete-dialog-description",
+  });
   return (
     <ConfirmDialog
-      title="Delete this task?"
-      description={
-        <>
-          <strong>{taskTitle}</strong> will be permanently deleted.
-        </>
-      }
-      footnote="This action cannot be undone."
-      confirmLabel="Delete"
-      confirmVariant="danger"
+      {...preset}
       busy={deletePending}
       cancelDisabled={saving}
       confirmDisabled={saving}
       error={error}
       onCancel={onCancel}
       onConfirm={onConfirm}
-      titleId="delete-dialog-title"
-      descriptionId="delete-dialog-description"
     />
   );
 }

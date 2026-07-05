@@ -1,15 +1,24 @@
 package handlertest
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/AlexsanderHamir/Hamix/internal/gittest"
-	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
+	"github.com/AlexsanderHamir/Hamix/internal/tasktestserver"
 	"github.com/AlexsanderHamir/Hamix/pkgs/repo"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
+
+//funclogmeasure:skip category=tool-required-noop reason="Test-only handler wiring; not part of production trace paths."
+func buildHandler(st *store.Store, workspace *repo.Root) http.Handler {
+	opts := []handler.HandlerOption{}
+	if workspace != nil {
+		opts = append(opts, handler.WithRepoProvider(handler.NewSettingsRepoProvider(st)))
+	}
+	return handler.NewHandler(st, handler.NewSSEHub(), workspace, opts...)
+}
 
 // NewServer returns an httptest.Server wrapping handler.NewHandler with SQLite,
 // SSE hub, and no workspace repo.
@@ -17,9 +26,7 @@ import (
 //funclogmeasure:skip category=tool-required-noop reason="Test-only HTTP wiring; not part of production trace paths."
 func NewServer(t *testing.T) *httptest.Server {
 	t.Helper()
-	db := tasktestdb.OpenSQLite(t)
-	h := handler.NewHandler(store.NewStore(db), handler.NewSSEHub(), nil)
-	return httptest.NewServer(h)
+	return tasktestserver.New(t, buildHandler)
 }
 
 // NewServerWithStore is like [NewServer] but also returns the store for direct DB setup.
@@ -27,10 +34,8 @@ func NewServer(t *testing.T) *httptest.Server {
 //funclogmeasure:skip category=tool-required-noop reason="Test-only HTTP wiring; not part of production trace paths."
 func NewServerWithStore(t *testing.T) (*httptest.Server, *store.Store) {
 	t.Helper()
-	db := tasktestdb.OpenSQLite(t)
-	st := store.NewStore(db)
-	h := handler.NewHandler(st, handler.NewSSEHub(), nil)
-	return httptest.NewServer(h), st
+	st, srv := tasktestserver.NewWithStore(t, buildHandler)
+	return srv, st
 }
 
 // NewServerWithRepo is like [NewServer] but mounts a workspace repo rooted at repoDir.
@@ -38,8 +43,7 @@ func NewServerWithStore(t *testing.T) (*httptest.Server, *store.Store) {
 //funclogmeasure:skip category=tool-required-noop reason="Test-only HTTP wiring; not part of production trace paths."
 func NewServerWithRepo(t *testing.T, repoDir string) *httptest.Server {
 	t.Helper()
-	srv, _, _, _, _ := NewServerWithRepoStore(t, repoDir)
-	return srv
+	return tasktestserver.NewWithRepo(t, repoDir, buildHandler)
 }
 
 // NewServerWithRepoStore mounts a workspace repo, seeds git worktree rows, and returns IDs for repo routes.
@@ -47,13 +51,5 @@ func NewServerWithRepo(t *testing.T, repoDir string) *httptest.Server {
 //funclogmeasure:skip category=tool-required-noop reason="Test-only HTTP wiring; not part of production trace paths."
 func NewServerWithRepoStore(t *testing.T, repoDir string) (*httptest.Server, *store.Store, string, string, string) {
 	t.Helper()
-	db := tasktestdb.OpenSQLite(t)
-	st := store.NewStore(db)
-	worktreeID, branchID, worktreeBranchID := gittest.SeedWorktreeBranch(t, st, repoDir)
-	r, err := repo.OpenRoot(repoDir)
-	if err != nil {
-		t.Fatal(err)
-	}
-	h := handler.NewHandler(st, handler.NewSSEHub(), r, handler.WithRepoProvider(handler.NewSettingsRepoProvider(st)))
-	return httptest.NewServer(h), st, worktreeID, branchID, worktreeBranchID
+	return tasktestserver.NewWithRepoStore(t, repoDir, buildHandler)
 }

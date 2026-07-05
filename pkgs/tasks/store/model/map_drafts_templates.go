@@ -15,11 +15,7 @@ func FromDomainTaskDraft(d domain.TaskDraft) TaskDraft {
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func FromDomainTaskDraftPtr(d *domain.TaskDraft) *TaskDraft {
-	if d == nil {
-		return nil
-	}
-	m := FromDomainTaskDraft(*d)
-	return &m
+	return MapPtr(d, FromDomainTaskDraft)
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
@@ -35,14 +31,7 @@ func ToDomainTaskDraft(m TaskDraft) domain.TaskDraft {
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func ToDomainTaskDrafts(rows []TaskDraft) []domain.TaskDraft {
-	if len(rows) == 0 {
-		return nil
-	}
-	out := make([]domain.TaskDraft, len(rows))
-	for i := range rows {
-		out[i] = ToDomainTaskDraft(rows[i])
-	}
-	return out
+	return MapSlice(rows, ToDomainTaskDraft)
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
@@ -59,11 +48,7 @@ func FromDomainTaskTemplate(d domain.TaskTemplate) TaskTemplate {
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func FromDomainTaskTemplatePtr(d *domain.TaskTemplate) *TaskTemplate {
-	if d == nil {
-		return nil
-	}
-	m := FromDomainTaskTemplate(*d)
-	return &m
+	return MapPtr(d, FromDomainTaskTemplate)
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
@@ -80,12 +65,5 @@ func ToDomainTaskTemplate(m TaskTemplate) domain.TaskTemplate {
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func ToDomainTaskTemplates(rows []TaskTemplate) []domain.TaskTemplate {
-	if len(rows) == 0 {
-		return nil
-	}
-	out := make([]domain.TaskTemplate, len(rows))
-	for i := range rows {
-		out[i] = ToDomainTaskTemplate(rows[i])
-	}
-	return out
+	return MapSlice(rows, ToDomainTaskTemplate)
 }

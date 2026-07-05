@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { TASK_TIMINGS } from "@/constants/tasks";
+import { isRowActionExcluded } from "../components/saved-entities/rowActionUtils";
 
 type Options = {
   entityIds: readonly string[];
@@ -64,5 +65,5 @@ export function useDeleteWithExitAnimation({ entityIds, onDelete }: Options) {
 
 export function isSavedEntityRowActionExcluded(target: EventTarget | null): boolean {
   if (!(target instanceof Element)) return true;
-  return Boolean(target.closest("button"));
+  return isRowActionExcluded(target, "button");
 }

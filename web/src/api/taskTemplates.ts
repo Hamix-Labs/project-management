@@ -9,6 +9,7 @@ import {
   parseTaskTemplateInstantiateResponse,
   parseTaskTemplateSummaryList,
 } from "./parseTaskApiTemplates";
+import { fetchNamedEntityJson, fetchNamedEntityVoid } from "./namedEntityClient";
 import { apiErrorFromResponse, fetchWithTimeout, jsonHeaders } from "./shared";
 import {
   assertInstantiateTemplateItems,
@@ -67,13 +68,11 @@ export async function getTaskTemplate(
   options?: { signal?: AbortSignal },
 ): Promise<TaskTemplateDetail> {
   const tid = assertTaskPathId(id, "template id");
-  const res = await fetchWithTimeout(`/task-templates/${encodeURIComponent(tid)}`, {
-    headers: { Accept: "application/json" },
-    signal: options?.signal,
-  });
-  if (!res.ok) throw await apiErrorFromResponse(res);
-  const raw: unknown = await res.json();
-  return parseTaskTemplateDetail(raw);
+  return fetchNamedEntityJson(
+    `/task-templates/${encodeURIComponent(tid)}`,
+    { headers: { Accept: "application/json" }, signal: options?.signal },
+    parseTaskTemplateDetail,
+  );
 }
 
 export async function patchTaskTemplate(
@@ -81,34 +80,27 @@ export async function patchTaskTemplate(
   patch: { name?: string; payload?: TaskComposePayload },
 ): Promise<TaskTemplateDetail> {
   const tid = assertTaskPathId(id, "template id");
-  const res = await fetchWithTimeout(`/task-templates/${encodeURIComponent(tid)}`, {
-    method: "PATCH",
-    headers: jsonHeaders,
-    body: JSON.stringify(patch),
-  });
-  if (!res.ok) throw await apiErrorFromResponse(res);
-  const raw: unknown = await res.json();
-  return parseTaskTemplateDetail(raw);
+  return fetchNamedEntityJson(
+    `/task-templates/${encodeURIComponent(tid)}`,
+    { method: "PATCH", headers: jsonHeaders, body: JSON.stringify(patch) },
+    parseTaskTemplateDetail,
+  );
 }
 
 export async function deleteTaskTemplate(id: string): Promise<void> {
   const tid = assertTaskPathId(id, "template id");
-  const res = await fetchWithTimeout(`/task-templates/${encodeURIComponent(tid)}`, {
+  await fetchNamedEntityVoid(`/task-templates/${encodeURIComponent(tid)}`, {
     method: "DELETE",
   });
-  if (!res.ok) throw await apiErrorFromResponse(res);
 }
 
 export async function instantiateTaskTemplates(
   items: TaskTemplateInstantiateItem[],
 ): Promise<{ tasks: import("@/types").Task[]; errors: { template_id: string; error: string }[] }> {
   const normalized = assertInstantiateTemplateItems(items);
-  const res = await fetchWithTimeout("/task-templates/instantiate", {
-    method: "POST",
-    headers: jsonHeaders,
-    body: JSON.stringify({ items: normalized }),
-  });
-  if (!res.ok) throw await apiErrorFromResponse(res);
-  const raw: unknown = await res.json();
-  return parseTaskTemplateInstantiateResponse(raw);
+  return fetchNamedEntityJson(
+    "/task-templates/instantiate",
+    { method: "POST", headers: jsonHeaders, body: JSON.stringify({ items: normalized }) },
+    parseTaskTemplateInstantiateResponse,
+  );
 }

@@ -15,6 +15,7 @@ import {
   parseTaskChecklistResponse,
   parseTaskEventDetail,
 } from "./parseTaskApi";
+import { fetchNamedEntityVoid } from "./namedEntityClient";
 import { fetchWithTimeout, jsonHeaders, apiErrorFromResponse } from "./shared";
 import {
   assertOptionalTaskPathId,
@@ -154,10 +155,9 @@ export async function saveTaskDraft(input: {
 
 export async function deleteTaskDraft(id: string): Promise<void> {
   const did = assertTaskPathId(id, "draft id");
-  const res = await fetchWithTimeout(`/task-drafts/${encodeURIComponent(did)}`, {
+  await fetchNamedEntityVoid(`/task-drafts/${encodeURIComponent(did)}`, {
     method: "DELETE",
   });
-  if (!res.ok) throw await apiErrorFromResponse(res);
 }
 
 export async function patchTask(

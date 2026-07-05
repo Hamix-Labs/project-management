@@ -22,6 +22,7 @@ import {
   parseTaskStatsResponse,
   parseCycleFailuresListResponse,
 } from "./parseTaskApi";
+import { fetchNamedEntityJson } from "./namedEntityClient";
 import { fetchWithTimeout, apiErrorFromResponse } from "./shared";
 import {
   assertAfterId,
@@ -202,13 +203,11 @@ export async function getTaskDraft(
   options?: { signal?: AbortSignal },
 ): Promise<TaskDraftDetail> {
   const did = assertTaskPathId(id, "draft id");
-  const res = await fetchWithTimeout(`/task-drafts/${encodeURIComponent(did)}`, {
-    headers: { Accept: "application/json" },
-    signal: options?.signal,
-  });
-  if (!res.ok) throw await apiErrorFromResponse(res);
-  const raw: unknown = await res.json();
-  return parseTaskDraftDetail(raw);
+  return fetchNamedEntityJson(
+    `/task-drafts/${encodeURIComponent(did)}`,
+    { headers: { Accept: "application/json" }, signal: options?.signal },
+    parseTaskDraftDetail,
+  );
 }
 
 export function parseDependsOnList(raw: unknown): TaskDependencyEdge[] {
