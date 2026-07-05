@@ -69,6 +69,31 @@ type ReconcileNeedsBranchBind struct {
 	Branch string
 }
 
+//funclogmeasure:skip category=hot-path reason="Internal reconcile helper; operation trace is emitted by ReconcileGitRepository."
+func tryRemoveStaleWorktreeRow(
+	ctx context.Context,
+	tx *gorm.DB,
+	row model.GitWorktree,
+	report *ReconcileReport,
+) error {
+	ref, err := hasAnyTaskOnWorktree(ctx, tx, row.ID)
+	if err != nil {
+		return err
+	}
+	if ref {
+		report.WorktreesSkipped = append(report.WorktreesSkipped, ReconcileSkippedWorktree{
+			WorktreeID: row.ID,
+			Reason:     "has_task_ref",
+		})
+		return nil
+	}
+	if err := tx.Delete(&model.GitWorktree{}, "id = ?", row.ID).Error; err != nil {
+		return err
+	}
+	report.WorktreesRemoved++
+	return nil
+}
+
 // ReconcileGitRepository syncs Hamix git rows with git worktree list output,
 // preserving stable worktree IDs when paths move on disk.
 func (s *Store) ReconcileGitRepository(
@@ -293,21 +318,9 @@ func (s *Store) ReconcileGitRepository(
 		if input.AllowRemove {
 			for _, row := range dbRows {
 				if strings.TrimSpace(row.BranchID) == "" {
-					ref, err := hasAnyTaskOnWorktree(ctx, tx, row.ID)
-					if err != nil {
+					if err := tryRemoveStaleWorktreeRow(ctx, tx, row, &report); err != nil {
 						return err
 					}
-					if ref {
-						report.WorktreesSkipped = append(report.WorktreesSkipped, ReconcileSkippedWorktree{
-							WorktreeID: row.ID,
-							Reason:     "has_task_ref",
-						})
-						continue
-					}
-					if err := tx.Delete(&model.GitWorktree{}, "id = ?", row.ID).Error; err != nil {
-						return err
-					}
-					report.WorktreesRemoved++
 					continue
 				}
 				if row.IsMain {
@@ -319,31 +332,12 @@ func (s *Store) ReconcileGitRepository(
 				if _, ok := matchedLive[worktreePathKey(row.Path)]; ok {
 					continue
 				}
-				stillLive := false
-				for _, wt := range live {
-					if worktreePathKey(wt.Path) == worktreePathKey(row.Path) {
-						stillLive = true
-						break
-					}
-				}
-				if stillLive {
+				if _, stillLive := liveByPath[worktreePathKey(row.Path)]; stillLive {
 					continue
 				}
-				ref, err := hasAnyTaskOnWorktree(ctx, tx, row.ID)
-				if err != nil {
+				if err := tryRemoveStaleWorktreeRow(ctx, tx, row, &report); err != nil {
 					return err
 				}
-				if ref {
-					report.WorktreesSkipped = append(report.WorktreesSkipped, ReconcileSkippedWorktree{
-						WorktreeID: row.ID,
-						Reason:     "has_task_ref",
-					})
-					continue
-				}
-				if err := tx.Delete(&model.GitWorktree{}, "id = ?", row.ID).Error; err != nil {
-					return err
-				}
-				report.WorktreesRemoved++
 			}
 		}
 
