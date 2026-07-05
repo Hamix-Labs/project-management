@@ -158,7 +158,7 @@
 | SSE `Subscribe()` legacy channel | Active in-process test/subscriber API |
 | `@/tasks` barrel | Used by `App.tsx` lazy routes (intentional narrow export) |
 | `gitApiHandlers()` in default MSW | Supports dead project git until #1 removed |
-| `withOptionalRunTimeout` | Dead code but owned by [logic-simplification-roi.md](./logic-simplification-roi.md) #12 |
+| `withOptionalRunTimeout` | Removed in logic-simplification #12 (harness timeout dedup) |
 
 ## Suggested deletion order
 
