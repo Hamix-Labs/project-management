@@ -11,7 +11,7 @@ type Props = {
 
 export function ProjectContextEntryCard({ projectId }: Props) {
   const contextQuery = useQuery({
-    queryKey: [...projectQueryKeys.context(projectId), "entry-meta"],
+    queryKey: projectQueryKeys.contextEntryMeta(projectId),
     queryFn: ({ signal }) =>
       listProjectContext(projectId, { signal, limit: ENTRY_META_LIMIT }),
     enabled: Boolean(projectId),

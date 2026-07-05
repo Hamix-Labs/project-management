@@ -23,6 +23,8 @@ export const taskQueryKeys = {
    */
   list: (params: TaskListParams) =>
     [...taskQueryKeys.listRoot(), params] as const,
+  /** Prefix for all task detail queries (SSE flush partial match). */
+  detailRoot: () => [...taskQueryKeys.all, "detail"] as const,
   detail: (id: string) => [...taskQueryKeys.all, "detail", id] as const,
   checklist: (id: string) =>
     [...taskQueryKeys.all, "detail", id, "checklist"] as const,
@@ -51,6 +53,9 @@ export const taskQueryKeys = {
   },
   eventDetail: (id: string, seq: number) =>
     [...taskQueryKeys.all, "detail", id, "event", seq] as const,
+  /** Bidirectional infinite events feed on task detail (useInfiniteQuery). */
+  eventsInfinite: (id: string) =>
+    [...taskQueryKeys.detail(id), "events", "infinite"] as const,
   /** Prefix for all cycle queries on a task; partial-match invalidation hits both list and per-cycle. */
   cycles: (id: string) =>
     [...taskQueryKeys.all, "detail", id, "cycles"] as const,

@@ -41,7 +41,7 @@ export function TaskEventDetailPage() {
     onSuccess: (updated) => {
       qc.setQueryData(taskQueryKeys.eventDetail(taskId, eventSeq), updated);
       void qc.invalidateQueries({
-        queryKey: [...taskQueryKeys.all, "detail", taskId],
+        queryKey: taskQueryKeys.detail(taskId),
       });
       setDraft("");
     },

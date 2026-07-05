@@ -25,7 +25,7 @@ export function decideFlushBatch(pending: PendingInvalidations): SyncFlushDecisi
     keys.push(taskQueryKeys.listRoot());
     const allTasksEnriched = taskIds.every((id) => enrichedTaskIds.has(id));
     if (!allTasksEnriched) {
-      keys.push([...taskQueryKeys.all, "detail"]);
+      keys.push(taskQueryKeys.detailRoot());
     }
   }
 

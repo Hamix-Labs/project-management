@@ -69,16 +69,10 @@ export function useTaskDetailEvents(
     TaskEventsResponse,
     Error,
     EventsInfiniteData,
-    readonly [...typeof taskQueryKeys.all, "detail", string, "events", "infinite"],
+    ReturnType<typeof taskQueryKeys.eventsInfinite>,
     CursorParam
   >({
-    queryKey: [
-      ...taskQueryKeys.all,
-      "detail",
-      taskId,
-      "events",
-      "infinite",
-    ] as const,
+    queryKey: taskQueryKeys.eventsInfinite(taskId),
     initialPageParam: { k: "head" },
     queryFn: ({ pageParam, signal }) => {
       const opts: {

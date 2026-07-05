@@ -22,6 +22,7 @@ describe("taskQueryKeys", () => {
   });
 
   it("scopes detail, checklist, and event detail under the task id", () => {
+    expect(taskQueryKeys.detailRoot()).toEqual(["tasks", "detail"]);
     expect(taskQueryKeys.detail("t1")).toEqual(["tasks", "detail", "t1"]);
     expect(taskQueryKeys.checklist("t1")).toEqual([
       "tasks",
@@ -77,6 +78,16 @@ describe("taskQueryKeys", () => {
       "events",
       "after",
       10,
+    ]);
+  });
+
+  it("defines infinite events key for bidirectional task detail feed", () => {
+    expect(taskQueryKeys.eventsInfinite("t1")).toEqual([
+      "tasks",
+      "detail",
+      "t1",
+      "events",
+      "infinite",
     ]);
   });
 

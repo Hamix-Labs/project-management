@@ -18,7 +18,7 @@ describe("decideFlushBatch", () => {
     pending.enrichedTasks.add("t1");
     const decision = decideFlushBatch(pending);
     expect(decision.invalidateKeys).toContainEqual(taskQueryKeys.listRoot());
-    expect(decision.invalidateKeys).not.toContainEqual([...taskQueryKeys.all, "detail"]);
+    expect(decision.invalidateKeys).not.toContainEqual(taskQueryKeys.detailRoot());
     expect(decision.invalidateKeys).toContainEqual(taskQueryKeys.commits("t1"));
   });
 
@@ -28,7 +28,7 @@ describe("decideFlushBatch", () => {
     pending.tasks.add("t2");
     pending.enrichedTasks.add("t1");
     const decision = decideFlushBatch(pending);
-    expect(decision.invalidateKeys).toContainEqual([...taskQueryKeys.all, "detail"]);
+    expect(decision.invalidateKeys).toContainEqual(taskQueryKeys.detailRoot());
   });
 
   it("invalidates cycles bucket when cycle-only and not all enriched", () => {

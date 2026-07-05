@@ -5,4 +5,6 @@ export const projectQueryKeys = {
   detail: (id: string) => [...projectQueryKeys.all, "detail", id] as const,
   context: (id: string) =>
     [...projectQueryKeys.all, "detail", id, "context"] as const,
+  contextEntryMeta: (projectId: string) =>
+    [...projectQueryKeys.context(projectId), "entry-meta"] as const,
 };
