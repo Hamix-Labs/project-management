@@ -69,6 +69,46 @@ type ReconcileNeedsBranchBind struct {
 	Branch string
 }
 
+type liveWorktreeMatchResult struct {
+	worktree *gitwork.Worktree
+	skip     *ReconcileSkippedWorktree
+}
+
+// resolveLiveWorktree matches a non-main DB row to a live git worktree by path or branch.
+//
+//funclogmeasure:skip category=hot-path reason="Internal reconcile helper; operation trace is emitted by ReconcileGitRepository."
+func resolveLiveWorktree(
+	row model.GitWorktree,
+	liveByPath map[string]gitwork.Worktree,
+	liveByBranch map[string]gitwork.Worktree,
+	branchByID map[string]domain.GitBranch,
+	dbRows []model.GitWorktree,
+) (liveWorktreeMatchResult, error) {
+	const reasonNotFound = "path_and_branch_not_found"
+	if wt, ok := liveByPath[worktreePathKey(row.Path)]; ok {
+		return liveWorktreeMatchResult{worktree: &wt}, nil
+	}
+	if strings.TrimSpace(row.BranchID) == "" {
+		return liveWorktreeMatchResult{}, nil
+	}
+	br, ok := branchByID[row.BranchID]
+	if !ok {
+		return liveWorktreeMatchResult{
+			skip: &ReconcileSkippedWorktree{WorktreeID: row.ID, Reason: reasonNotFound},
+		}, nil
+	}
+	wt, ok := liveByBranch[br.Name]
+	if !ok {
+		return liveWorktreeMatchResult{
+			skip: &ReconcileSkippedWorktree{WorktreeID: row.ID, Reason: reasonNotFound},
+		}, nil
+	}
+	if git.CountBranchOwners(dbRows, br.Name, branchByID) > 1 {
+		return liveWorktreeMatchResult{}, fmt.Errorf("%w: duplicate worktree rows for branch %q", domain.ErrInvalidInput, br.Name)
+	}
+	return liveWorktreeMatchResult{worktree: &wt}, nil
+}
+
 //funclogmeasure:skip category=hot-path reason="Internal reconcile helper; operation trace is emitted by ReconcileGitRepository."
 func tryRemoveStaleWorktreeRow(
 	ctx context.Context,
@@ -213,45 +253,18 @@ func (s *Store) ReconcileGitRepository(
 				continue
 			}
 
-			var liveWT *gitwork.Worktree
-			matched := false
-
-			if wt, ok := liveByPath[worktreePathKey(row.Path)]; ok {
-				liveWT = &wt
-				matched = true
-			} else if strings.TrimSpace(row.BranchID) != "" {
-				br, ok := branchByID[row.BranchID]
-				if !ok {
-					report.WorktreesSkipped = append(report.WorktreesSkipped, ReconcileSkippedWorktree{
-						WorktreeID: row.ID,
-						Reason:     "path_and_branch_not_found",
-					})
-					continue
-				}
-				wt, ok := liveByBranch[br.Name]
-				if !ok {
-					report.WorktreesSkipped = append(report.WorktreesSkipped, ReconcileSkippedWorktree{
-						WorktreeID: row.ID,
-						Reason:     "path_and_branch_not_found",
-					})
-					continue
-				}
-				if git.CountBranchOwners(dbRows, br.Name, branchByID) > 1 {
-					return fmt.Errorf("%w: duplicate worktree rows for branch %q", domain.ErrInvalidInput, br.Name)
-				}
-				liveWT = &wt
-				matched = true
+			match, err := resolveLiveWorktree(row, liveByPath, liveByBranch, branchByID, dbRows)
+			if err != nil {
+				return err
 			}
-
-			if !matched {
-				if strings.TrimSpace(row.BranchID) != "" {
-					report.WorktreesSkipped = append(report.WorktreesSkipped, ReconcileSkippedWorktree{
-						WorktreeID: row.ID,
-						Reason:     "path_and_branch_not_found",
-					})
-				}
+			if match.skip != nil {
+				report.WorktreesSkipped = append(report.WorktreesSkipped, *match.skip)
 				continue
 			}
+			if match.worktree == nil {
+				continue
+			}
+			liveWT := match.worktree
 
 			if strings.TrimSpace(row.BranchID) != "" && strings.TrimSpace(liveWT.Branch) != "" {
 				br, ok := branchByID[row.BranchID]
