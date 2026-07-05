@@ -8,15 +8,13 @@ import (
 	"log/slog"
 	"sync"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/agents"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 // Pool runs N queue consumers sharing one MemoryQueue and WorktreeGate.
 type Pool struct {
-	store *store.Store
-	queue *agents.MemoryQueue
+	store Store
+	queue ReadyTaskQueue
 	gate  *WorktreeGate
 	slots []*Worker
 }
@@ -24,7 +22,7 @@ type Pool struct {
 // NewPool constructs a worker pool with one harness per slot.
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func NewPool(st *store.Store, q *agents.MemoryQueue, r runner.Runner, opts Options, concurrency int) *Pool {
+func NewPool(st Store, q ReadyTaskQueue, r runner.Runner, opts Options, concurrency int) *Pool {
 	if concurrency < 1 {
 		concurrency = 1
 	}

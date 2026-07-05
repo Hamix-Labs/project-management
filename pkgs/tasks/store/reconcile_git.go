@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/git"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
@@ -25,49 +26,19 @@ const (
 )
 
 // ReconcileGitInput configures repository/worktree path sync with git.
-type ReconcileGitInput struct {
-	BootstrapPath string
-	RepairGit     bool
-	DryRun        bool
-	AllowRemove   bool
-	// AllowCheckoutDiscover runs bounded sibling-folder search when the cached main
-	// path is missing (gitwork OpenRegisteredCheckout). Operator reconcile enables this.
-	AllowCheckoutDiscover bool
-	// AllowDiscover inserts git-linked worktrees Hamix has not registered. Default
-	// operator reconcile leaves this false — use Register worktree + live inventory.
-	AllowDiscover bool
-}
+type ReconcileGitInput = contract.ReconcileGitInput
 
 // ReconcileGitOutput is the structured reconcile result for API and operators.
-type ReconcileGitOutput struct {
-	Status string
-	Report ReconcileReport
-}
+type ReconcileGitOutput = contract.ReconcileGitOutput
 
 // ReconcileReport counts reconcile actions and skipped rows.
-type ReconcileReport struct {
-	RepoPathUpdated      bool
-	WorktreesPathUpdated int
-	WorktreesAdded       int
-	WorktreesRemoved     int
-	BranchesHeadUpdated  int
-	ResolutionSource     string
-	DiscoveredPath       string
-	WorktreesSkipped     []ReconcileSkippedWorktree
-	NeedsBranchBind      []ReconcileNeedsBranchBind
-}
+type ReconcileReport = contract.ReconcileReport
 
 // ReconcileSkippedWorktree describes a DB row reconcile could not remove.
-type ReconcileSkippedWorktree struct {
-	WorktreeID string
-	Reason     string
-}
+type ReconcileSkippedWorktree = contract.ReconcileSkippedWorktree
 
 // ReconcileNeedsBranchBind describes a live worktree without Hamix branch binding.
-type ReconcileNeedsBranchBind struct {
-	Path   string
-	Branch string
-}
+type ReconcileNeedsBranchBind = contract.ReconcileNeedsBranchBind
 
 type liveWorktreeMatchResult struct {
 	worktree *gitwork.Worktree

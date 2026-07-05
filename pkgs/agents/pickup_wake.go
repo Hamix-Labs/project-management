@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/agents/worker"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
@@ -16,7 +17,7 @@ import (
 // (pickup_not_before, task_id) with one timer for the earliest deadline.
 // On fire it loads the task and enqueues when ShouldNotifyReadyNow holds.
 type PickupWakeScheduler struct {
-	st *store.Store
+	st worker.Store
 	q  *MemoryQueue
 
 	mu      sync.Mutex
@@ -70,7 +71,7 @@ func (h *wakeHeap) Pop() interface{} {
 // NewPickupWakeScheduler returns a scheduler backed by st and q. The
 // caller must register it with (*store.Store).SetPickupWake and call
 // Hydrate once at startup.
-func NewPickupWakeScheduler(st *store.Store, q *MemoryQueue) *PickupWakeScheduler {
+func NewPickupWakeScheduler(st worker.Store, q *MemoryQueue) *PickupWakeScheduler {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agents.NewPickupWakeScheduler")
 	return &PickupWakeScheduler{
 		st:   st,

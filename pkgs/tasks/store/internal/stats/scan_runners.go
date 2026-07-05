@@ -10,6 +10,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"gorm.io/datatypes"
@@ -34,55 +35,13 @@ import (
 // stable. Duration percentiles are SUCCEEDED-ONLY (decision D3) so
 // failed runs that abort early do not skew the success-path latency
 // the operator actually cares about.
-type RunnerStats struct {
-	// ByRunner aggregates terminal cycles by Runner.Name() (verbatim
-	// from cycle_meta.runner). Cycles whose meta predates the V2
-	// keys, or whose runner key is empty, fall into the bucket
-	// keyed by RunnerUnknownKey so they remain countable.
-	ByRunner map[string]RunnerBucket
-	// ByModel aggregates terminal cycles by the runner's resolved
-	// effective model (verbatim from cycle_meta.cursor_model_effective).
-	// The empty-string key is preserved (NOT renamed to "default")
-	// so the SPA can render the explicit "default model" bucket
-	// without an extra projection. Pre-feature cycles also fall
-	// here.
-	ByModel map[string]RunnerBucket
-	// ByRunnerModel keys the (runner|model) pair using a
-	// pipe-delimited composite key. The frontend splits on the
-	// delimiter to render the two-level table; pipe is used because
-	// neither runner names nor model names contain "|" today.
-	ByRunnerModel map[string]RunnerBucket
-	// ByRunnerModelResolved keys the (runner|effective|resolved)
-	// triple using a pipe-delimited composite key. Only populated
-	// for cycles whose execute-phase details_json surfaced a non-
-	// empty resolved_model (the cursor adapter lifts this from
-	// cursor-agent's stream-json `system.init.model` event — the
-	// only signal that exposes what model `auto` actually routed
-	// to). Cycles without a resolved model are intentionally absent
-	// from this map so the SPA can render "Cursor CLI · Auto →
-	// Claude 4 Sonnet" style sub-rows only when there is a real
-	// observation, not a placeholder.
-	ByRunnerModelResolved map[string]RunnerBucket
-}
+type RunnerStats = contract.RunnerStats
 
 // RunnerBucket is the per-bucket payload: the by-status counter the
 // observability page already renders for the global block, plus the
 // succeeded-only duration percentiles. Counts are non-nil; duration
 // values are zero when there are no SUCCEEDED cycles in the bucket.
-type RunnerBucket struct {
-	ByStatus map[domain.CycleStatus]int64
-	// Succeeded carries the raw success count (mirrors
-	// ByStatus[CycleStatusSucceeded]) for caller convenience and
-	// to avoid a "missing key" check on the percentile gate.
-	Succeeded int64
-	// DurationP50SucceededSeconds / DurationP95SucceededSeconds
-	// are computed only over CycleStatusSucceeded rows (decision
-	// D3). Both are 0 when Succeeded == 0; doc-comment pins this
-	// so the SPA can decide whether to render "—" instead of
-	// "0.00s" for empty buckets.
-	DurationP50SucceededSeconds float64
-	DurationP95SucceededSeconds float64
-}
+type RunnerBucket = contract.RunnerBucket
 
 // RunnerUnknownKey is the bucket key used for cycles whose meta
 // predates the V2 attribution keys (or whose runner is otherwise

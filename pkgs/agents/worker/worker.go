@@ -7,18 +7,16 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/agents"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 // Worker is an in-process consumer of the MemoryQueue (contract:
 // docs/architecture.md). Pool mode runs N Workers sharing one queue and gate.
 type Worker struct {
-	store   *store.Store
-	queue   *agents.MemoryQueue
+	store   Store
+	queue   ReadyTaskQueue
 	harness *harness.Harness
 	opts    Options
 	gitSvc  gitwork.Service
@@ -28,14 +26,14 @@ type Worker struct {
 // NewWorker constructs a Worker with sensible defaults applied to opts.
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func NewWorker(st *store.Store, q *agents.MemoryQueue, r runner.Runner, opts Options) *Worker {
+func NewWorker(st Store, q ReadyTaskQueue, r runner.Runner, opts Options) *Worker {
 	return NewWorkerWithGate(st, q, r, opts, &WorktreeGate{})
 }
 
 // NewWorkerWithGate constructs a Worker that shares gate with a pool.
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func NewWorkerWithGate(st *store.Store, q *agents.MemoryQueue, r runner.Runner, opts Options, gate *WorktreeGate) *Worker {
+func NewWorkerWithGate(st Store, q ReadyTaskQueue, r runner.Runner, opts Options, gate *WorktreeGate) *Worker {
 	if opts.ShutdownAbortTimeout <= 0 {
 		opts.ShutdownAbortTimeout = DefaultShutdownAbortTimeout
 	}

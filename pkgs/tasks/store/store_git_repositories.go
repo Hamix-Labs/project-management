@@ -10,17 +10,14 @@ import (
 	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"gorm.io/gorm"
 )
 
 // CreateGitRepositoryInput registers a main git checkout for a project.
-type CreateGitRepositoryInput struct {
-	Path          string
-	HostPath      string
-	DefaultBranch string
-}
+type CreateGitRepositoryInput = contract.CreateGitRepositoryInput
 
 // ListGitRepositories returns all registered repositories ordered by created_at.
 // projectID is accepted for API-route compatibility but ignored (repos are global).

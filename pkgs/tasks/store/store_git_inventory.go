@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
@@ -43,24 +44,10 @@ func (s *Store) findGitWorktreeByRepoPath(
 }
 
 // WorktreeInventoryRow is a live git worktree plus Hamix registration state.
-type WorktreeInventoryRow struct {
-	Path       string
-	Branch     string
-	IsMain     bool
-	Detached   bool
-	Registered bool
-	Locked     bool
-	Prunable   bool
-}
+type WorktreeInventoryRow = contract.WorktreeInventoryRow
 
 // GitWorktreeProbeResult describes whether a path is a linked, registerable worktree.
-type GitWorktreeProbeResult struct {
-	Path       string
-	Linked     bool
-	IsMain     bool
-	Branch     string
-	Registered bool
-}
+type GitWorktreeProbeResult = contract.GitWorktreeProbeResult
 
 // RepoWorktreeInventory lists live git worktrees for a repository and marks registered paths.
 func (s *Store) RepoWorktreeInventory(
@@ -121,12 +108,7 @@ func FindWorktreeInInventory(rows []WorktreeInventoryRow, path string) (*Worktre
 }
 
 // WorktreeCheckoutStatusRow is live checkout git state for one registered worktree.
-type WorktreeCheckoutStatusRow struct {
-	WorktreeID string
-	Available  bool
-	Reason     string // path_missing | git_error
-	Status     gitwork.CheckoutStatus
-}
+type WorktreeCheckoutStatusRow = contract.WorktreeCheckoutStatusRow
 
 const worktreeCheckoutStatusParallel = 4
 

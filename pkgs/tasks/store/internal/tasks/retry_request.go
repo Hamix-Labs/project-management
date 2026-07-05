@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"strings"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/kernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
@@ -17,11 +18,7 @@ import (
 )
 
 // RequestRetryInput is the store payload for operator retry after failure.
-type RequestRetryInput struct {
-	TaskID        string
-	Mode          domain.RetryMode
-	ParentCycleID string // optional; latest terminal cycle when empty
-}
+type RequestRetryInput = contract.RequestRetryInput
 
 // RequestTaskRetry sets pending_retry and status=ready for a failed task.
 // Returns (task, prevStatus, err). Idempotent when the task is already ready

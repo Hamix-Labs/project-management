@@ -4,10 +4,14 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"sort"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler/storefake"
 )
 
 func getTask(t *testing.T, baseURL, id string) (*http.Response, []byte) {
@@ -82,10 +86,13 @@ func TestHTTP_getTask_pathSegmentGuard(t *testing.T) {
 }
 
 func TestHTTP_getTask_unknownIDIs404(t *testing.T) {
-	srv := newTaskCreateTestServer(t)
-	defer srv.Close()
+	st := storefake.NewHandlerStore()
+	st.FailGet(domain.ErrNotFound)
+	srv := httptest.NewServer(NewHandler(st, NewSSEHub(), nil))
+	t.Cleanup(srv.Close)
 
-	res, raw := getTask(t, srv.URL, "11111111-1111-4111-8111-111111111111")
+	taskID := "11111111-1111-4111-8111-111111111111"
+	res, raw := getTask(t, srv.URL, taskID)
 	if res.StatusCode != http.StatusNotFound {
 		t.Fatalf("status %d (want 404) body=%s", res.StatusCode, raw)
 	}
@@ -95,6 +102,13 @@ func TestHTTP_getTask_unknownIDIs404(t *testing.T) {
 	}
 	if errBody.Error != "not found" {
 		t.Fatalf("error=%q want %q", errBody.Error, "not found")
+	}
+	calls := st.GetCalls()
+	if len(calls) != 1 {
+		t.Fatalf("Get calls=%d want 1", len(calls))
+	}
+	if calls[0].ID != taskID {
+		t.Fatalf("Get id=%q want %q", calls[0].ID, taskID)
 	}
 }
 

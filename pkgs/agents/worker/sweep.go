@@ -41,7 +41,7 @@ type SweepResult struct {
 // cycles stay running so Harness.Resume can continue the same attempt.
 //
 // Idempotent: re-running on a clean DB is a no-op.
-func FinalizeInterruptedPhases(ctx context.Context, st *store.Store) (FinalizeResult, error) {
+func FinalizeInterruptedPhases(ctx context.Context, st Store) (FinalizeResult, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.worker.FinalizeInterruptedPhases")
 	var res FinalizeResult
 	if st == nil {
@@ -85,7 +85,7 @@ func FinalizeInterruptedPhases(ctx context.Context, st *store.Store) (FinalizeRe
 // SweepOrphanRunningCycles is deprecated: it now delegates to
 // FinalizeInterruptedPhases only. Cycles and tasks are no longer aborted
 // or failed on startup.
-func SweepOrphanRunningCycles(ctx context.Context, st *store.Store) (SweepResult, error) {
+func SweepOrphanRunningCycles(ctx context.Context, st Store) (SweepResult, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.worker.SweepOrphanRunningCycles")
 	fr, err := FinalizeInterruptedPhases(ctx, st)
 	if err != nil {

@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/agents/worker"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
@@ -32,7 +33,7 @@ type ReconcileResult struct {
 // ReconcileReadyTasksNotQueued loads ready tasks from the store and enqueues any whose ids are
 // not already pending in q. Pagination uses store.ListReadyTaskQueueCandidates (FIFO by
 // task_created time, then id) so older backlog is offered slots before lexicographic id order alone would.
-func ReconcileReadyTasksNotQueued(ctx context.Context, st *store.Store, q *MemoryQueue, pageSize int) (ReconcileResult, error) {
+func ReconcileReadyTasksNotQueued(ctx context.Context, st worker.Store, q *MemoryQueue, pageSize int) (ReconcileResult, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agents.ReconcileReadyTasksNotQueued")
 	var res ReconcileResult
 	if st == nil {
@@ -84,7 +85,7 @@ func ReconcileReadyTasksNotQueued(ctx context.Context, st *store.Store, q *Memor
 // ReconcileRunningTasksNotQueued enqueues running tasks whose open cycle
 // was interrupted by a process restart. The queue may hold running tasks
 // with open cycles while Harness.Resume continues the same attempt.
-func ReconcileRunningTasksNotQueued(ctx context.Context, st *store.Store, q *MemoryQueue) (ReconcileResult, error) {
+func ReconcileRunningTasksNotQueued(ctx context.Context, st worker.Store, q *MemoryQueue) (ReconcileResult, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agents.ReconcileRunningTasksNotQueued")
 	var res ReconcileResult
 	if st == nil {
@@ -132,7 +133,7 @@ func ReconcileRunningTasksNotQueued(ctx context.Context, st *store.Store, q *Mem
 // while ctx is active. When tickInterval <= 0, only the initial run executes.
 // When afterEach is non-nil it runs after every successful reconcile pass (including the initial run);
 // failures are logged and do not stop the loop.
-func RunReconcileLoop(ctx context.Context, st *store.Store, q *MemoryQueue, tickInterval time.Duration, afterEach func(context.Context, *store.Store) error) {
+func RunReconcileLoop(ctx context.Context, st worker.Store, q *MemoryQueue, tickInterval time.Duration, afterEach func(context.Context, worker.Store) error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agents.RunReconcileLoop", "tick_interval", tickInterval.String())
 	runOnce := func() {
 		res, err := ReconcileReadyTasksNotQueued(ctx, st, q, 200)

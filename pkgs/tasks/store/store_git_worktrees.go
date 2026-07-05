@@ -8,20 +8,14 @@ import (
 	"log/slog"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"gorm.io/gorm"
 )
 
 // CreateGitWorktreeInput adds a worktree on disk and persists the row.
-type CreateGitWorktreeInput struct {
-	Path         string
-	Name         string
-	Branch       string
-	CreateBranch bool
-	StartPoint   string
-	ForceRemove  bool
-}
+type CreateGitWorktreeInput = contract.CreateGitWorktreeInput
 
 // ListGitWorktrees returns worktrees for a repository.
 func (s *Store) ListGitWorktrees(ctx context.Context, projectID, repoID string) ([]domain.GitWorktree, error) {

@@ -11,6 +11,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/kernel"
 	"gorm.io/gorm"
@@ -20,45 +21,17 @@ import (
 // that every map field is non-nil (empty `{}` on empty database, never
 // `null`) and that RecentFailures is non-nil (empty slice). The HTTP
 // handler relies on this invariant to serve a stable wire shape.
-type TaskStats struct {
-	Total    int64
-	Ready    int64
-	Critical int64
-	// Scheduled is the count of ready tasks deferred into the
-	// future via `pickup_not_before > now`. Surfaces the
-	// "intentionally deferred" state in stats consumers so
-	// "0 ready, 12 scheduled" reads differently from "0 ready, 0
-	// scheduled" — see docs/data-model.md "the two queues" section.
-	Scheduled  int64
-	ByStatus   map[domain.Status]int64
-	ByPriority map[domain.Priority]int64
-	ByScope    map[string]int64
-	Cycles     CycleStats
-	Phases     PhaseStats
-	// Runner is the (runner, model, runner|model) breakdown of
-	// terminal cycles introduced in Phase 2 of the per-task
-	// runner/model attribution plan. Always populated (empty maps
-	// on a fresh database) so the wire shape stays stable; see
-	// RunnerStats for the per-bucket payload (by-status counts +
-	// succeeded-only p50/p95 durations).
-	Runner         RunnerStats
-	RecentFailures []RecentFailure
-}
+type TaskStats = contract.TaskStats
 
 // CycleStats aggregates task_cycles for stats consumers. Both maps are
 // always non-nil; absent enum keys mean zero.
-type CycleStats struct {
-	ByStatus      map[domain.CycleStatus]int64
-	ByTriggeredBy map[domain.Actor]int64
-}
+type CycleStats = contract.CycleStats
 
 // PhaseStats aggregates task_cycle_phases by (phase, status). Each
 // ByPhaseStatus[phase] key is always present for every domain Phase
 // value; the inner map is non-nil but only carries enum keys with
 // nonzero count.
-type PhaseStats struct {
-	ByPhaseStatus map[domain.Phase]map[domain.PhaseStatus]int64
-}
+type PhaseStats = contract.PhaseStats
 
 // allPhases is the canonical Phase list seeded into PhaseStats so the
 // outer map always carries every enum key — empty inner map for phases

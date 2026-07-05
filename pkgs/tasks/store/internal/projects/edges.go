@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/kernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
@@ -16,21 +17,10 @@ import (
 )
 
 // CreateContextEdgeInput is the store input for connecting two project context nodes.
-type CreateContextEdgeInput struct {
-	ID              string
-	SourceContextID string
-	TargetContextID string
-	Relation        domain.ProjectContextRelation
-	Strength        int
-	Note            string
-}
+type CreateContextEdgeInput = contract.CreateProjectContextEdgeInput
 
 // UpdateContextEdgeInput is a partial patch for one project context edge.
-type UpdateContextEdgeInput struct {
-	Relation *domain.ProjectContextRelation
-	Strength *int
-	Note     *string
-}
+type UpdateContextEdgeInput = contract.UpdateProjectContextEdgeInput
 
 // CreateContextEdge inserts one relationship between project-owned context nodes.
 func CreateContextEdge(ctx context.Context, db *gorm.DB, projectID string, input CreateContextEdgeInput) (domain.ProjectContextEdge, error) {

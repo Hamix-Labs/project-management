@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"strings"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/kernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
@@ -16,21 +17,9 @@ import (
 )
 
 // CreateChecklistItemInput is one criterion seeded at task create.
-type CreateChecklistItemInput struct {
-	Text           string               `json:"text"`
-	VerifyCommands []VerifyCommandInput `json:"verify_commands,omitempty"`
-}
-type VerifyCommandInput struct {
-	Command         string `json:"command"`
-	ExpectedOutcome string `json:"expected_outcome,omitempty"`
-}
-
-// VerifyCommandView is a persisted command row on checklist API responses.
-type VerifyCommandView struct {
-	SortOrder       int    `json:"sort_order"`
-	Command         string `json:"command"`
-	ExpectedOutcome string `json:"expected_outcome,omitempty"`
-}
+type CreateChecklistItemInput = contract.CreateChecklistItemInput
+type VerifyCommandInput = contract.VerifyCommandInput
+type VerifyCommandView = contract.VerifyCommandView
 
 // NormalizeVerifyCommandInputs trims, drops blank commands, and validates limits.
 //

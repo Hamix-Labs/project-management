@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/kernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
@@ -21,61 +22,7 @@ import (
 // fields distinguish "not provided" (nil) from "set to zero value"
 // (e.g. *int = 0 means MaxRunDurationSeconds explicitly set to 0 == "no
 // limit"; nil means "leave unchanged").
-type Patch struct {
-	AgentPaused             *bool
-	Runner                  *string
-	CursorBin               *string
-	CursorModel             *string
-	MaxRunDurationSeconds   *int
-	StreamIdleStuckSeconds  *int
-	AgentPickupDelaySeconds *int
-	// DisplayTimezone is an IANA timezone identifier validated via
-	// time.LoadLocation. Empty string ("") is accepted and means
-	// "clear the override — let the SPA auto-detect the operator's
-	// browser timezone" (the domain.DefaultDisplayTimezone sentinel).
-	// Any non-empty value must parse via time.LoadLocation.
-	DisplayTimezone *string
-	// OptimisticMutationsEnabled / SSEReplayEnabled are realtime rollout flags.
-	// See domain.AppSettings for the per-flag semantics.
-	OptimisticMutationsEnabled *bool
-	SSEReplayEnabled           *bool
-	// RunnerConfigs is the full replacement blob for the per-runner
-	// config map. When non-nil, it replaces the entire runner_configs
-	// column. The handler is responsible for merging deltas before
-	// passing the blob here.
-	RunnerConfigs               *json.RawMessage
-	VerifyMaxRetries            *int
-	VerifyRunnerName            *string
-	VerifyRunnerModel           *string
-	VerifyCommandTimeoutSeconds *int
-	CursorSessionResumeEnabled  *bool
-}
-
-// IsEmpty reports whether the patch has nothing to apply. Used by the
-// HTTP handler to short-circuit no-op PATCH calls without a DB write.
-// Skip-listed in cmd/funclogmeasure/analyze.go: pure five-pointer-nil
-// predicate called once per PATCH /settings request, where the surrounding
-// handler already logs the no-op short-circuit decision.
-//
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func (p Patch) IsEmpty() bool {
-	return p.AgentPaused == nil &&
-		p.Runner == nil &&
-		p.CursorBin == nil &&
-		p.CursorModel == nil &&
-		p.MaxRunDurationSeconds == nil &&
-		p.StreamIdleStuckSeconds == nil &&
-		p.AgentPickupDelaySeconds == nil &&
-		p.DisplayTimezone == nil &&
-		p.OptimisticMutationsEnabled == nil &&
-		p.SSEReplayEnabled == nil &&
-		p.RunnerConfigs == nil &&
-		p.VerifyMaxRetries == nil &&
-		p.VerifyRunnerName == nil &&
-		p.VerifyRunnerModel == nil &&
-		p.VerifyCommandTimeoutSeconds == nil &&
-		p.CursorSessionResumeEnabled == nil
-}
+type Patch = contract.SettingsPatch
 
 // Get returns the singleton app_settings row, creating it with
 // domain.DefaultAppSettings on first read so callers always observe a

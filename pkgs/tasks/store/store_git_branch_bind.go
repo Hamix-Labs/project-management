@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/kernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
@@ -18,11 +19,7 @@ import (
 )
 
 // BindBranchInput registers or creates a repo-level branch row for worktree assignment.
-type BindBranchInput struct {
-	Name         string
-	CreateBranch bool
-	StartPoint   string
-}
+type BindBranchInput = contract.BindBranchInput
 
 // ResolveOrCreateBranchForRepo returns a git_branches row for name, creating via git when requested.
 func (s *Store) ResolveOrCreateBranchForRepo(

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/kernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
@@ -29,11 +30,7 @@ func (s *Store) ListAllGitRepositories(ctx context.Context) ([]domain.GitReposit
 }
 
 // GitRepositoryListSummary augments a repository row with list-page metadata.
-type GitRepositoryListSummary struct {
-	Repository          domain.GitRepository
-	MainBranchName      string
-	LinkedWorktreeCount int
-}
+type GitRepositoryListSummary = contract.GitRepositoryListSummary
 
 // ListAllGitRepositoriesWithSummary returns repositories with main-branch name and
 // linked worktree counts for the global list UI (mirrors web isLinkedWorktreeForDisplay).

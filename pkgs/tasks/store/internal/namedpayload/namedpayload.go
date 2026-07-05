@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/kernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
@@ -19,31 +20,13 @@ import (
 )
 
 // Summary is the listing-row shape for drafts.
-type Summary struct {
-	ID        string    `json:"id"`
-	Name      string    `json:"name"`
-	UpdatedAt time.Time `json:"updated_at"`
-	CreatedAt time.Time `json:"created_at"`
-}
+type Summary = contract.DraftSummary
 
 // TemplateSummary is the listing-row shape for task templates.
-type TemplateSummary struct {
-	ID               string    `json:"id"`
-	Name             string    `json:"name"`
-	UpdatedAt        time.Time `json:"updated_at"`
-	CreatedAt        time.Time `json:"created_at"`
-	PrimaryTag       string    `json:"primary_tag,omitempty"`
-	InstantiateCount int       `json:"instantiate_count"`
-}
+type TemplateSummary = contract.TemplateSummary
 
 // Detail is the GET-by-id body shape for drafts and templates.
-type Detail struct {
-	ID        string          `json:"id"`
-	Name      string          `json:"name"`
-	Payload   json.RawMessage `json:"payload"`
-	UpdatedAt time.Time       `json:"updated_at"`
-	CreatedAt time.Time       `json:"created_at"`
-}
+type Detail = contract.DraftDetail
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func clampLimit(limit int) int {

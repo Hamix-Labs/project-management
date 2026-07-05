@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/cycles"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
@@ -33,19 +34,7 @@ const RecentFailureLimit = 25
 // from the failed execute phase at terminate time), then falls back to
 // the mirror reason code, then — for older rows — enrichment from a
 // matching phase_failed audit event.
-type RecentFailure struct {
-	TaskID     string
-	EventSeq   int64
-	At         time.Time
-	CycleID    string
-	AttemptSeq int64
-	// Status is the terminal CycleStatus the worker recorded ("failed"
-	// or "aborted"). EventCycleFailed folds both cases per
-	// mirrorEventTypeForCycleStatus, so we recover the distinction
-	// from the event payload.
-	Status string
-	Reason string
-}
+type RecentFailure = contract.RecentFailure
 
 // cycleFailedRow is the raw projection from task_events for one
 // cycle_failed mirror; we unmarshal data_json in Go (rather than

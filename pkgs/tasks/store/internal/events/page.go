@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"strings"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/kernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
@@ -18,14 +19,7 @@ import (
 // paging metadata. RangeStart / RangeEnd are 1-based positions
 // counted from the newest row, so the UI can render "showing N-M
 // of Total" without re-counting.
-type Page struct {
-	Events       []domain.TaskEvent
-	Total        int64
-	RangeStart   int64
-	RangeEnd     int64
-	HasMoreNewer bool
-	HasMoreOlder bool
-}
+type Page = contract.TaskEventsPage
 
 // PageCursor returns events in descending seq (newest first) using
 // keyset paging. Neither cursor: first page (newest rows). beforeSeq:

@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/kernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
@@ -21,17 +22,7 @@ import (
 // ItemView is one definition row plus completion for a subject task.
 // Re-aliased by the store facade as store.ChecklistItemView so the
 // JSON field tags stay stable on the wire.
-type ItemView struct {
-	ID                string              `json:"id"`
-	SortOrder         int                 `json:"sort_order"`
-	Text              string              `json:"text"`
-	VerifyCommands    []VerifyCommandView `json:"verify_commands,omitempty"`
-	Done              bool                `json:"done"`
-	Evidence          string              `json:"evidence,omitempty"`
-	VerifiedBy        string              `json:"verified_by,omitempty"`
-	VerifierReasoning string              `json:"verifier_reasoning,omitempty"`
-	CycleID           string              `json:"cycle_id,omitempty"`
-}
+type ItemView = contract.ChecklistItemView
 
 // DefinitionSourceTaskID returns the task id that owns checklist item
 // definitions for taskID. Walks the ParentID chain through any

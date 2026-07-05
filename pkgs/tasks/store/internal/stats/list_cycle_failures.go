@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"gorm.io/gorm"
@@ -28,23 +29,10 @@ const (
 
 // ListCycleFailuresInput is the paginated / sorted query for the
 // dedicated cycle failures view.
-type ListCycleFailuresInput struct {
-	Limit  int
-	Offset int
-	Sort   string
-}
+type ListCycleFailuresInput = contract.ListCycleFailuresInput
 
 // ListCycleFailuresResult is returned by ListCycleFailures.
-type ListCycleFailuresResult struct {
-	Total int64
-	// Failures is the current page (may be shorter than Limit after
-	// decode skips malformed rows).
-	Failures []RecentFailure
-	// ReasonSortTruncated is true when sort is reason_* and the database
-	// has more cycle_failed rows than reasonSortFetchCap, so only the
-	// newest cap rows participated in the sort.
-	ReasonSortTruncated bool
-}
+type ListCycleFailuresResult = contract.ListCycleFailuresResult
 
 // ListCycleFailures returns cycle_failed mirror rows with the same
 // enrichment as /tasks/stats recent_failures. Time-based sorts use SQL

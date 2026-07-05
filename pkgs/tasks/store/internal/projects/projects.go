@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/kernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
@@ -20,41 +21,16 @@ import (
 )
 
 // CreateProjectInput is the store input for creating a project.
-type CreateProjectInput struct {
-	ID             string
-	Name           string
-	Description    string
-	ContextSummary string
-	RepositoryID   *string
-}
+type CreateProjectInput = contract.CreateProjectInput
 
 // UpdateProjectInput is a partial patch for project metadata.
-type UpdateProjectInput struct {
-	Name           *string
-	Description    *string
-	Status         *domain.ProjectStatus
-	ContextSummary *string
-}
+type UpdateProjectInput = contract.UpdateProjectInput
 
 // CreateContextInput is the store input for appending a project context item.
-type CreateContextInput struct {
-	ID            string
-	Kind          domain.ProjectContextKind
-	Title         string
-	Body          string
-	SourceTaskID  *string
-	SourceCycleID *string
-	CreatedBy     domain.Actor
-	Pinned        bool
-}
+type CreateContextInput = contract.CreateProjectContextInput
 
 // UpdateContextInput is a partial patch for one project context item.
-type UpdateContextInput struct {
-	Kind   *domain.ProjectContextKind
-	Title  *string
-	Body   *string
-	Pinned *bool
-}
+type UpdateContextInput = contract.UpdateProjectContextInput
 
 // CreateSnapshotInput records the exact context bundle handed to one cycle.
 type CreateSnapshotInput struct {

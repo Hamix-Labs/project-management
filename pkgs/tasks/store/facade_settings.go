@@ -5,6 +5,7 @@ import (
 	"context"
 	"log/slog"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/settings"
 )
@@ -17,7 +18,7 @@ type AppSettings = domain.AppSettings
 // SettingsPatch is the partial-update payload for UpdateSettings.
 // Pointer-typed fields distinguish "not provided" (nil) from an
 // explicit zero value (e.g. *int = 0 means "no limit").
-type SettingsPatch = settings.Patch
+type SettingsPatch = contract.SettingsPatch
 
 // GetSettings returns the singleton app_settings row, creating it from
 // hard-coded defaults on first read so callers always see a populated

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/kernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
@@ -18,10 +19,7 @@ import (
 )
 
 // CreateGitBranchInput creates a local branch via git.
-type CreateGitBranchInput struct {
-	Name       string
-	StartPoint string
-}
+type CreateGitBranchInput = contract.CreateGitBranchInput
 
 // ListGitBranches returns branches for a repository.
 func (s *Store) ListGitBranches(ctx context.Context, projectID, repoID string) ([]domain.GitBranch, error) {
