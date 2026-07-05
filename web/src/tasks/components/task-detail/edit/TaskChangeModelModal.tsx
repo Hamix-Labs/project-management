@@ -2,6 +2,7 @@ import type { FormEvent } from "react";
 import type { Task } from "@/types";
 import { Modal } from "@/shared/Modal";
 import { MutationErrorBanner } from "@/shared/MutationErrorBanner";
+import { useTaskCreateAgentOptions } from "@/tasks/create/hooks/useTaskCreateAgentOptions";
 import { TaskCreateModalAgentSection } from "../../task-create-modal/fields/TaskCreateModalAgentSection";
 
 type Props = {
@@ -25,6 +26,8 @@ export function TaskChangeModelModal({
   onSubmit,
   onCancel,
 }: Props) {
+  const agentOptions = useTaskCreateAgentOptions(task.runner);
+
   return (
     <Modal
       onClose={onCancel}
@@ -52,6 +55,7 @@ export function TaskChangeModelModal({
             lockRunner
             runner={task.runner}
             cursorModel={cursorModel}
+            {...agentOptions}
             onRunnerChange={() => {}}
             onCursorModelChange={onCursorModelChange}
           />

@@ -1,5 +1,6 @@
 import type { Status } from "@/types";
 import { SchedulePicker } from "@/shared/time/SchedulePicker";
+import { useTaskCreateAgentOptions } from "@/tasks/create/hooks/useTaskCreateAgentOptions";
 import { advancedSummaryLine } from "./advancedSummaryLine";
 import { TaskCreateModalAgentSection } from "./fields/TaskCreateModalAgentSection";
 import { TaskCreateModalPickupScheduleField } from "./fields/TaskCreateModalPickupScheduleField";
@@ -48,6 +49,9 @@ export function TaskCreateModalAdvancedOptions({
   onMilestoneChange,
   onDependsOnChange,
 }: Props) {
+  const agentRunner = presentation.isTaskEdit ? editingTaskRunner : taskRunner;
+  const agentOptions = useTaskCreateAgentOptions(agentRunner);
+
   return (
     <details className="task-create-advanced">
       <summary
@@ -83,8 +87,9 @@ export function TaskCreateModalAdvancedOptions({
           disabled={presentation.disabled}
           variant="createModal"
           lockRunner={presentation.isTaskEdit}
-          runner={presentation.isTaskEdit ? editingTaskRunner : taskRunner}
+          runner={agentRunner}
           cursorModel={taskCursorModel}
+          {...agentOptions}
           onRunnerChange={presentation.isTaskEdit ? () => {} : onTaskRunnerChange}
           onCursorModelChange={onTaskCursorModelChange}
         />

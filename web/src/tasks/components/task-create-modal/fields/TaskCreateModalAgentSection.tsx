@@ -1,11 +1,7 @@
 import { useId, useMemo } from "react";
 import { Link } from "react-router-dom";
-import {
-  filterCursorModelsForSelect,
-  normalizeCursorModelSelectValue,
-} from "@/api/cursorModels";
-import { useAppSettings } from "@/settings/useAppSettings";
-import { useCursorModels } from "@/settings/hooks/useCursorModels";
+import { normalizeCursorModelSelectValue } from "@/api/cursorModels";
+import type { CursorModelOption } from "@/api/cursorModels";
 import {
   CustomSelect,
   type CustomSelectOption,
@@ -37,6 +33,11 @@ type Props = {
   variant?: "default" | "modelDialog" | "createModal";
   runner: string;
   cursorModel: string;
+  modelIds: Set<string>;
+  modelsForSelect: CursorModelOption[];
+  modelSelectBusy: boolean;
+  modelFetchError: string | null;
+  modelServerError: string | null;
   onRunnerChange: (runner: string) => void;
   onCursorModelChange: (v: string) => void;
 };
@@ -56,6 +57,11 @@ export function TaskCreateModalAgentSection({
   variant = "default",
   runner,
   cursorModel,
+  modelIds,
+  modelsForSelect,
+  modelSelectBusy,
+  modelFetchError,
+  modelServerError,
   onRunnerChange,
   onCursorModelChange,
 }: Props) {
@@ -63,21 +69,8 @@ export function TaskCreateModalAgentSection({
   const runnerId = `${baseId}-runner`;
   const modelId = `${baseId}-model`;
 
-  const { settings } = useAppSettings();
-  const cursorBinKey = (settings?.cursor_bin ?? "").trim();
-
-  const { query: modelsQuery, modelIds: modelIdsFromList } = useCursorModels(
-    runner,
-    cursorBinKey,
-    runner === "cursor",
-  );
-
-  const modelSelectBusy = modelsQuery.isFetching;
   const modelSelectDisabled = disabled || modelSelectBusy;
   const cursorModelSelectValue = normalizeCursorModelSelectValue(cursorModel);
-  const modelsForSelect = filterCursorModelsForSelect(
-    modelsQuery.data?.ok ? modelsQuery.data.models : undefined,
-  );
 
   const modelOptions = useMemo((): CustomSelectOption[] => {
     const opts: CustomSelectOption[] = [{ value: "", label: "Auto" }];
@@ -86,7 +79,7 @@ export function TaskCreateModalAgentSection({
     }
     if (
       cursorModelSelectValue !== "" &&
-      !modelIdsFromList.has(cursorModelSelectValue)
+      !modelIds.has(cursorModelSelectValue)
     ) {
       opts.push({
         value: cursorModelSelectValue,
@@ -94,17 +87,7 @@ export function TaskCreateModalAgentSection({
       });
     }
     return opts;
-  }, [modelsForSelect, cursorModelSelectValue, modelIdsFromList]);
-
-  const modelFetchError = modelsQuery.isError
-    ? modelsQuery.error instanceof Error
-      ? modelsQuery.error.message
-      : String(modelsQuery.error)
-    : null;
-  const modelServerError =
-    modelsQuery.data && !modelsQuery.data.ok
-      ? (modelsQuery.data.error ?? "Model list failed.")
-      : null;
+  }, [modelsForSelect, cursorModelSelectValue, modelIds]);
 
   const isModelDialog = variant === "modelDialog";
   const isCreateModal = variant === "createModal";
