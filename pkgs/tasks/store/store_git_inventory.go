@@ -14,13 +14,6 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
-// worktreePathKey delegates to gitwork.PathKey for Hamix ↔ git path compare.
-//
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by RepoWorktreeInventory."
-func worktreePathKey(path string) string {
-	return gitwork.PathKey(path)
-}
-
 // gitWorktreeIsFullyRegistered reports whether Hamix has a branch-bound worktree row.
 // Reconcile discover may insert path-only rows (empty branch_id); those are not
 // operator-registered and must remain selectable in live inventory.

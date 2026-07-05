@@ -1,9 +1,8 @@
-import {
-  type Task,
-  type TaskComposePayload,
-  type TaskTemplateDetail,
-  type TaskTemplateSummary,
-} from "@/types";
+import type { Task, TaskComposePayload } from "@/types/taskCore";
+import type {
+  TaskTemplateDetail,
+  TaskTemplateSummary,
+} from "@/types/taskTemplates";
 import { parseComposePayloadCore } from "./parseTaskApiCompose";
 import { parseTask } from "./parseTaskApiTasks";
 import {

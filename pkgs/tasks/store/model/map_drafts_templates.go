@@ -7,7 +7,7 @@ func FromDomainTaskDraft(d domain.TaskDraft) TaskDraft {
 	return TaskDraft{
 		ID:          d.ID,
 		Name:        d.Name,
-		PayloadJSON: d.PayloadJSON,
+		PayloadJSON: datatypesFromRaw(d.PayloadJSON),
 		CreatedAt:   d.CreatedAt,
 		UpdatedAt:   d.UpdatedAt,
 	}
@@ -15,7 +15,11 @@ func FromDomainTaskDraft(d domain.TaskDraft) TaskDraft {
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func FromDomainTaskDraftPtr(d *domain.TaskDraft) *TaskDraft {
-	return MapPtr(d, FromDomainTaskDraft)
+	if d == nil {
+		return nil
+	}
+	m := FromDomainTaskDraft(*d)
+	return &m
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
@@ -23,7 +27,7 @@ func ToDomainTaskDraft(m TaskDraft) domain.TaskDraft {
 	return domain.TaskDraft{
 		ID:          m.ID,
 		Name:        m.Name,
-		PayloadJSON: m.PayloadJSON,
+		PayloadJSON: rawFromDatatypes(m.PayloadJSON),
 		CreatedAt:   m.CreatedAt,
 		UpdatedAt:   m.UpdatedAt,
 	}
@@ -31,39 +35,55 @@ func ToDomainTaskDraft(m TaskDraft) domain.TaskDraft {
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func ToDomainTaskDrafts(rows []TaskDraft) []domain.TaskDraft {
-	return MapSlice(rows, ToDomainTaskDraft)
+	if len(rows) == 0 {
+		return nil
+	}
+	out := make([]domain.TaskDraft, len(rows))
+	for i := range rows {
+		out[i] = ToDomainTaskDraft(rows[i])
+	}
+	return out
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func FromDomainTaskTemplate(d domain.TaskTemplate) TaskTemplate {
 	return TaskTemplate{
-		ID:               d.ID,
-		Name:             d.Name,
-		PayloadJSON:      d.PayloadJSON,
-		InstantiateCount: d.InstantiateCount,
-		CreatedAt:        d.CreatedAt,
-		UpdatedAt:        d.UpdatedAt,
+		ID:          d.ID,
+		Name:        d.Name,
+		PayloadJSON: datatypesFromRaw(d.PayloadJSON),
+		CreatedAt:   d.CreatedAt,
+		UpdatedAt:   d.UpdatedAt,
 	}
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func FromDomainTaskTemplatePtr(d *domain.TaskTemplate) *TaskTemplate {
-	return MapPtr(d, FromDomainTaskTemplate)
+	if d == nil {
+		return nil
+	}
+	m := FromDomainTaskTemplate(*d)
+	return &m
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func ToDomainTaskTemplate(m TaskTemplate) domain.TaskTemplate {
 	return domain.TaskTemplate{
-		ID:               m.ID,
-		Name:             m.Name,
-		PayloadJSON:      m.PayloadJSON,
-		InstantiateCount: m.InstantiateCount,
-		CreatedAt:        m.CreatedAt,
-		UpdatedAt:        m.UpdatedAt,
+		ID:          m.ID,
+		Name:        m.Name,
+		PayloadJSON: rawFromDatatypes(m.PayloadJSON),
+		CreatedAt:   m.CreatedAt,
+		UpdatedAt:   m.UpdatedAt,
 	}
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func ToDomainTaskTemplates(rows []TaskTemplate) []domain.TaskTemplate {
-	return MapSlice(rows, ToDomainTaskTemplate)
+	if len(rows) == 0 {
+		return nil
+	}
+	out := make([]domain.TaskTemplate, len(rows))
+	for i := range rows {
+		out[i] = ToDomainTaskTemplate(rows[i])
+	}
+	return out
 }

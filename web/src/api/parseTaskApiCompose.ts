@@ -1,4 +1,5 @@
-import type { TaskDraftChecklistItem, TaskDraftPayload } from "@/types";
+import type { TaskDraftChecklistItem } from "@/types/taskCore";
+import type { TaskDraftPayload } from "@/types/taskDrafts";
 import { parseChecklistItemWire } from "./parseTaskApiTasks";
 import {
   isRecord,

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -64,7 +65,9 @@ func Open(dsn string, cfg *gorm.Config) (*gorm.DB, error) {
 	return db, nil
 }
 
-// Migrate runs AutoMigrate for domain.Task and domain.TaskEvent (works with any GORM dialector, e.g. tests on SQLite).
+// Migrate runs AutoMigrate for store persistence models via model.AutoMigrateAll
+// (works with any GORM dialector, e.g. tests on SQLite). Domain types are not
+// passed to GORM — see pkgs/tasks/store/model.
 func Migrate(ctx context.Context, db *gorm.DB) error {
 	slog.Debug("trace", "operation", "postgres.Migrate")
 	db = db.Session(&gorm.Session{
@@ -83,33 +86,11 @@ func Migrate(ctx context.Context, db *gorm.DB) error {
 	if err := migrateExpandFixedWorktreeBranch(ctx, db); err != nil {
 		return fmt.Errorf("expand fixed worktree branch: %w", err)
 	}
-	if err := db.WithContext(ctx).AutoMigrate(
-		&domain.Project{},
-		&domain.Task{},
-		&domain.TaskDependency{},
-		&domain.TaskEvent{},
-		&domain.TaskChecklistItem{},
-		&domain.TaskChecklistItemCommand{},
-		&domain.TaskChecklistCompletion{},
-		&domain.TaskDraft{},
-		&domain.TaskTemplate{},
-		&domain.TaskCycle{},
-		&domain.TaskCyclePhase{},
-		&domain.TaskCycleStreamEvent{},
-		&domain.TaskCycleCriteriaReport{},
-		&domain.TaskCycleVerifyReport{},
-		&domain.TaskCycleCommandRun{},
-		&domain.TaskCycleCommit{},
-		&domain.ProjectContextItem{},
-		&domain.ProjectContextEdge{},
-		&domain.TaskContextSnapshot{},
-		&domain.AppSettings{},
-		&domain.GitRepository{},
-		&domain.GitWorktree{},
-		&domain.GitBranch{},
-		&SchemaMeta{},
-	); err != nil {
-		return fmt.Errorf("automigrate task models: %w", err)
+	if err := model.AutoMigrateAll(db.WithContext(ctx)); err != nil {
+		return fmt.Errorf("automigrate store models: %w", err)
+	}
+	if err := db.WithContext(ctx).AutoMigrate(&SchemaMeta{}); err != nil {
+		return fmt.Errorf("automigrate schema meta: %w", err)
 	}
 	if err := migrateRemoveSubtasks(ctx, db); err != nil {
 		return fmt.Errorf("migrate remove subtasks: %w", err)
@@ -120,7 +101,7 @@ func Migrate(ctx context.Context, db *gorm.DB) error {
 	if err := migrateRemoveDraftEvaluations(ctx, db); err != nil {
 		return fmt.Errorf("migrate remove draft evaluations: %w", err)
 	}
-	defaultProject := domain.DefaultProject(time.Now().UTC())
+	defaultProject := model.FromDomainProject(domain.DefaultProject(time.Now().UTC()))
 	if err := db.WithContext(ctx).Clauses(clause.OnConflict{DoNothing: true}).Create(&defaultProject).Error; err != nil {
 		return fmt.Errorf("seed default project: %w", err)
 	}

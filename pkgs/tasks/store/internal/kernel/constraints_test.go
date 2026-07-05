@@ -8,6 +8,7 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"gorm.io/gorm"
 )
 
@@ -136,7 +137,7 @@ func TestConstraintClassifiers_sqlite(t *testing.T) {
 
 	t.Run("duplicate key", func(t *testing.T) {
 		id := "kernel-dup-project"
-		row := domain.Project{
+		row := model.Project{
 			ID:        id,
 			Name:      "dup",
 			Status:    domain.ProjectStatusActive,
@@ -157,7 +158,7 @@ func TestConstraintClassifiers_sqlite(t *testing.T) {
 
 	t.Run("foreign key", func(t *testing.T) {
 		badProject := "missing-project-id"
-		task := domain.Task{
+		task := model.Task{
 			ID:            "kernel-fk-task",
 			Title:         "fk",
 			InitialPrompt: "x",
@@ -176,7 +177,7 @@ func TestConstraintClassifiers_sqlite(t *testing.T) {
 	})
 
 	t.Run("check constraint", func(t *testing.T) {
-		task := domain.Task{
+		task := model.Task{
 			ID:            "kernel-check-task",
 			Title:         "check",
 			InitialPrompt: "x",

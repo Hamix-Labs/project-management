@@ -37,7 +37,7 @@ func (h *Handler) runGitReconcile(w http.ResponseWriter, r *http.Request, op, pr
 		writeError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
-	out, err := h.store.ReconcileGitRepository(r.Context(), projectID, repoID, input, h.gitService())
+	out, err := h.gitOps.ReconcileRepository(r.Context(), projectID, repoID, input)
 	if err != nil {
 		writeGitStoreError(w, r, op, err)
 		return
@@ -74,7 +74,7 @@ func (h *Handler) relocateGlobalGitRepository(w http.ResponseWriter, r *http.Req
 		writeError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
-	out, err := h.store.RelocateGitRepository(r.Context(), "", repoID, body.Path, h.gitService())
+	out, err := h.gitOps.RelocateRepository(r.Context(), "", repoID, body.Path)
 	if err != nil {
 		writeGitStoreError(w, r, op, err)
 		return
@@ -91,7 +91,7 @@ func (h *Handler) relocateGlobalGitWorktree(w http.ResponseWriter, r *http.Reque
 		writeError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
-	wt, err := h.store.RelocateGitWorktree(r.Context(), r.PathValue("worktreeId"), body.Path, h.gitService())
+	wt, err := h.gitOps.RelocateWorktree(r.Context(), r.PathValue("worktreeId"), body.Path)
 	if err != nil {
 		writeGitStoreError(w, r, op, err)
 		return

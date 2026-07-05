@@ -1,4 +1,4 @@
-import { apiErrorFromResponse } from "./shared";
+import { apiErrorFromResponse, fetchWithTimeout } from "./shared";
 
 /** Match pkgs/tasks/handler/repo_handlers.go and docs/api.md (abuse guards). */
 export const maxRepoPathQueryBytes = 4096;
@@ -49,43 +49,6 @@ function assertRepoLineQueryParam(name: string, n: number): string {
   return s;
 }
 
-/**
- * Build an AbortSignal that fires when either the caller's signal aborts or
- * the shared `repoFetchTimeoutMs` deadline elapses. Shared by every fetch
- * in this module so abort/timeout semantics stay consistent across endpoints.
- */
-function repoFetchCombinedSignal(
-  user?: AbortSignal,
-): AbortSignal | undefined {
-  const AT = AbortSignal as typeof AbortSignal & {
-    timeout?: (ms: number) => AbortSignal;
-    any?: (signals: AbortSignal[]) => AbortSignal;
-  };
-  const timeoutSig =
-    typeof AT.timeout === "function" ? AT.timeout(repoFetchTimeoutMs) : undefined;
-  if (!timeoutSig) {
-    return user;
-  }
-  if (!user) {
-    return timeoutSig;
-  }
-  if (typeof AT.any === "function") {
-    return AT.any([user, timeoutSig]);
-  }
-  const combined = new AbortController();
-  const abortCombined = () => {
-    if (!combined.signal.aborted) {
-      combined.abort();
-    }
-  };
-  user.addEventListener("abort", abortCombined, { once: true });
-  timeoutSig.addEventListener("abort", abortCombined, { once: true });
-  if (user.aborted || timeoutSig.aborted) {
-    abortCombined();
-  }
-  return combined.signal;
-}
-
 /** Result of probing whether taskapi has a usable workspace repo (see GET /health/ready). */
 export type RepoWorkspaceProbe =
   | { state: "available" }
@@ -127,10 +90,14 @@ export async function probeRepoWorkspace(
   options?: { signal?: AbortSignal },
 ): Promise<RepoWorkspaceProbe> {
   try {
-    const res = await fetch("/health/ready", {
-      headers: { Accept: "application/json" },
-      signal: repoFetchCombinedSignal(options?.signal),
-    });
+    const res = await fetchWithTimeout(
+      "/health/ready",
+      {
+        headers: { Accept: "application/json" },
+        signal: options?.signal,
+      },
+      { timeoutMs: repoFetchTimeoutMs },
+    );
     let raw: unknown;
     try {
       raw = await res.json();
@@ -181,10 +148,14 @@ export async function searchRepoFiles(
   if (worktreeId) {
     params.set("worktree_id", worktreeId);
   }
-  const res = await fetch(`/repo/search?${params}`, {
-    headers: { Accept: "application/json" },
-    signal: repoFetchCombinedSignal(options?.signal),
-  });
+  const res = await fetchWithTimeout(
+    `/repo/search?${params}`,
+    {
+      headers: { Accept: "application/json" },
+      signal: options?.signal,
+    },
+    { timeoutMs: repoFetchTimeoutMs },
+  );
   if (res.status === 503 || res.status === 409) {
     return null;
   }
@@ -222,10 +193,14 @@ export async function validateRepoRange(
     start: assertRepoLineQueryParam("start", start),
     end: assertRepoLineQueryParam("end", end),
   });
-  const res = await fetch(`/repo/validate-range?${params}`, {
-    headers: { Accept: "application/json" },
-    signal: repoFetchCombinedSignal(options?.signal),
-  });
+  const res = await fetchWithTimeout(
+    `/repo/validate-range?${params}`,
+    {
+      headers: { Accept: "application/json" },
+      signal: options?.signal,
+    },
+    { timeoutMs: repoFetchTimeoutMs },
+  );
   if (res.status === 503 || res.status === 409) {
     return null;
   }
@@ -263,10 +238,14 @@ export async function fetchRepoFile(
 ): Promise<RepoFileResult | null> {
   const p = assertRepoRelPath(path);
   const params = new URLSearchParams({ path: p });
-  const res = await fetch(`/repo/file?${params}`, {
-    headers: { Accept: "application/json" },
-    signal: repoFetchCombinedSignal(options?.signal),
-  });
+  const res = await fetchWithTimeout(
+    `/repo/file?${params}`,
+    {
+      headers: { Accept: "application/json" },
+      signal: options?.signal,
+    },
+    { timeoutMs: repoFetchTimeoutMs },
+  );
   if (res.status === 503 || res.status === 409) {
     return null;
   }
@@ -384,10 +363,14 @@ export async function fetchRepoCommitDiff(
 ): Promise<RepoDiffResult | null> {
   const s = assertRepoSha(sha);
   const params = new URLSearchParams({ sha: s });
-  const res = await fetch(`/repo/diff?${params}`, {
-    headers: { Accept: "application/json" },
-    signal: repoFetchCombinedSignal(options?.signal),
-  });
+  const res = await fetchWithTimeout(
+    `/repo/diff?${params}`,
+    {
+      headers: { Accept: "application/json" },
+      signal: options?.signal,
+    },
+    { timeoutMs: repoFetchTimeoutMs },
+  );
   if (res.status === 503 || res.status === 409) {
     return null;
   }

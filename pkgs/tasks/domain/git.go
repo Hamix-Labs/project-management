@@ -16,14 +16,21 @@ const (
 	GitCodeWorktreeNotFound   = "worktree_not_found"
 	GitCodeBranchNotFound     = "branch_not_found"
 	GitCodeDuplicate          = "duplicate"
-	// GitCodeBranchBoundToWorktree is returned when a branch is already assigned
-	// to a different worktree at register/create time. See ADR-0039.
+	// GitCodeBranchBoundToWorktree is returned when a branch is already bound
+	// to a different worktree row in the fixed worktree-branch model.
 	GitCodeBranchBoundToWorktree = "branch_bound_to_worktree"
+	// GitCodeBranchActiveElsewhere is returned when a branch is the active
+	// checkout in another worktree and Hamix rejects binding/running against
+	// it (replaces the soft "checked out elsewhere" warning). See ADR-0037.
+	GitCodeBranchActiveElsewhere = "branch_active_elsewhere"
+	// GitCodeBranchNotAssociated is returned when a task binds a (worktree,
+	// branch) pair that has no worktree_branches association row.
+	GitCodeBranchNotAssociated = "branch_not_associated"
 	// GitCodeProjectRepoMismatch is returned when a task's project belongs to
 	// a different repository than its bound worktree.
 	GitCodeProjectRepoMismatch = "project_repo_mismatch"
-	// GitCodeBootstrapMismatch is returned when bootstrap_path does not refer
-	// to the same git repository as the registered row.
+	// GitCodeBootstrapMismatch is returned when a bootstrap/relocate path is
+	// not the same git repository as the registered row.
 	GitCodeBootstrapMismatch = "bootstrap_mismatch"
 )
 
@@ -54,34 +61,36 @@ func GitErrCode(err error) string {
 }
 
 // GitRepository is a registered main git checkout. Globally unique on Path
-// and GitCommonDir (one row per git object database). See ADR-0037.
+// (one row per canonical path, shared across projects). See ADR-0037.
 type GitRepository struct {
-	ID            string    `json:"id" gorm:"primaryKey"`
-	Path          string    `json:"path" gorm:"not null;uniqueIndex:idx_git_repo_path"`
-	GitCommonDir  string    `json:"git_common_dir" gorm:"not null;default:'';uniqueIndex:idx_git_repo_common_dir"`
-	HostPath      string    `json:"host_path" gorm:"not null;default:''"`
-	DefaultBranch string    `json:"default_branch" gorm:"not null;default:''"`
-	CreatedAt     time.Time `json:"created_at" gorm:"not null;index"`
-	UpdatedAt     time.Time `json:"updated_at" gorm:"not null;index"`
+	ID            string    `json:"id"`
+	Path          string    `json:"path"`
+	GitCommonDir  string    `json:"git_common_dir"`
+	HostPath      string    `json:"host_path"`
+	DefaultBranch string    `json:"default_branch"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
 }
 
-// GitWorktree is a linked working directory for a GitRepository with a fixed
-// branch assignment. See ADR-0039.
+// GitWorktree is a linked working directory for a GitRepository.
+//
+// BranchID binds the worktree to a repo-level branch row (fixed worktree-branch
+// model). Plain indexed column — set at registration; see migrate contract.
 type GitWorktree struct {
-	ID           string    `json:"id" gorm:"primaryKey"`
-	RepositoryID string    `json:"repository_id" gorm:"not null;index;uniqueIndex:idx_git_worktree_repo_path,priority:1"`
-	Path         string    `json:"path" gorm:"not null;uniqueIndex:idx_git_worktree_repo_path,priority:2"`
-	Name         string    `json:"name" gorm:"not null"`
-	IsMain       bool      `json:"is_main" gorm:"not null;default:false"`
-	BranchID     string    `json:"branch_id" gorm:"not null;index;uniqueIndex:idx_git_worktree_branch_unique"`
-	CreatedAt    time.Time `json:"created_at" gorm:"not null;index"`
+	ID           string    `json:"id"`
+	RepositoryID string    `json:"repository_id"`
+	Path         string    `json:"path"`
+	Name         string    `json:"name"`
+	IsMain       bool      `json:"is_main"`
+	BranchID     string    `json:"branch_id,omitempty"`
+	CreatedAt    time.Time `json:"created_at"`
 }
 
 // GitBranch is a local branch tracked for a GitRepository (repo-level ref).
 type GitBranch struct {
-	ID           string    `json:"id" gorm:"primaryKey"`
-	RepositoryID string    `json:"repository_id" gorm:"not null;index;uniqueIndex:idx_git_branch_repo_name,priority:1"`
-	Name         string    `json:"name" gorm:"not null;uniqueIndex:idx_git_branch_repo_name,priority:2"`
-	HeadSHA      string    `json:"head_sha" gorm:"not null;default:''"`
-	CreatedAt    time.Time `json:"created_at" gorm:"not null;index"`
+	ID           string    `json:"id"`
+	RepositoryID string    `json:"repository_id"`
+	Name         string    `json:"name"`
+	HeadSHA      string    `json:"head_sha"`
+	CreatedAt    time.Time `json:"created_at"`
 }

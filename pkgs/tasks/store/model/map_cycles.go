@@ -13,7 +13,7 @@ func FromDomainTaskCycle(d domain.TaskCycle) TaskCycle {
 		EndedAt:       d.EndedAt,
 		TriggeredBy:   d.TriggeredBy,
 		ParentCycleID: d.ParentCycleID,
-		MetaJSON:      d.MetaJSON,
+		MetaJSON:      datatypesFromRaw(d.MetaJSON),
 	}
 }
 
@@ -37,7 +37,7 @@ func ToDomainTaskCycle(m TaskCycle) domain.TaskCycle {
 		EndedAt:       m.EndedAt,
 		TriggeredBy:   m.TriggeredBy,
 		ParentCycleID: m.ParentCycleID,
-		MetaJSON:      m.MetaJSON,
+		MetaJSON:      rawFromDatatypes(m.MetaJSON),
 	}
 }
 
@@ -73,7 +73,7 @@ func FromDomainTaskCyclePhase(d domain.TaskCyclePhase) TaskCyclePhase {
 		StartedAt:   d.StartedAt,
 		EndedAt:     d.EndedAt,
 		Summary:     d.Summary,
-		DetailsJSON: d.DetailsJSON,
+		DetailsJSON: datatypesFromRaw(d.DetailsJSON),
 		EventSeq:    d.EventSeq,
 	}
 }
@@ -98,7 +98,7 @@ func ToDomainTaskCyclePhase(m TaskCyclePhase) domain.TaskCyclePhase {
 		StartedAt:   m.StartedAt,
 		EndedAt:     m.EndedAt,
 		Summary:     m.Summary,
-		DetailsJSON: m.DetailsJSON,
+		DetailsJSON: rawFromDatatypes(m.DetailsJSON),
 		EventSeq:    m.EventSeq,
 	}
 }
@@ -138,7 +138,7 @@ func FromDomainTaskCycleStreamEvent(d domain.TaskCycleStreamEvent) TaskCycleStre
 		Subtype:     d.Subtype,
 		Message:     d.Message,
 		Tool:        d.Tool,
-		PayloadJSON: d.PayloadJSON,
+		PayloadJSON: datatypesFromRaw(d.PayloadJSON),
 	}
 }
 
@@ -165,7 +165,7 @@ func ToDomainTaskCycleStreamEvent(m TaskCycleStreamEvent) domain.TaskCycleStream
 		Subtype:     m.Subtype,
 		Message:     m.Message,
 		Tool:        m.Tool,
-		PayloadJSON: m.PayloadJSON,
+		PayloadJSON: rawFromDatatypes(m.PayloadJSON),
 	}
 }
 

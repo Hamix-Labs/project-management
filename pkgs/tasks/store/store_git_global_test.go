@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 )
 
 func TestStore_GlobalGitRepository_andWorktreeBinding(t *testing.T) {
@@ -235,7 +236,7 @@ func TestUnregisterGitWorktreeByID_rejectsRunningTask(t *testing.T) {
 		t.Fatal(err)
 	}
 	wtID := wt.ID
-	task := domain.Task{
+	task := model.Task{
 		ID:            "task-global-running",
 		Title:         "running",
 		InitialPrompt: "x",

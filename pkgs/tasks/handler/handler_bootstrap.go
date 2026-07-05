@@ -4,12 +4,9 @@ import (
 	"log/slog"
 	"net/http"
 
-	"golang.org/x/sync/errgroup"
-
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler/readpolicy"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/service"
 )
 
 // bootstrapTasksPayload mirrors listResponse so the SPA can seed
@@ -55,66 +52,25 @@ func (h *Handler) bootstrap(w http.ResponseWriter, r *http.Request) {
 	debugHTTPRequest(r, op)
 
 	ctx := r.Context()
-	var (
-		settings store.AppSettings
-		taskRows []domain.Task
-		hasMore  bool
-		stats    store.TaskStats
-		projects []domain.Project
-		drafts   any
-	)
-
-	g, gctx := errgroup.WithContext(ctx)
-	g.Go(func() error {
-		v, err := h.store.GetSettings(gctx)
-		if err == nil {
-			settings = v
-		}
-		return err
+	data, err := service.Bootstrap(ctx, h.store, service.BootstrapLimits{
+		TasksLimit:    readpolicy.BootstrapListLimit,
+		ProjectsLimit: readpolicy.BootstrapProjectsLimit,
+		DraftsLimit:   readpolicy.BootstrapDraftsLimit,
 	})
-	g.Go(func() error {
-		rows, more, err := h.store.ListFlatPage(gctx, readpolicy.BootstrapListLimit, 0, nil)
-		if err == nil {
-			taskRows = rows
-			hasMore = more
-		}
-		return err
-	})
-	g.Go(func() error {
-		v, err := h.store.TaskStats(gctx)
-		if err == nil {
-			stats = v
-		}
-		return err
-	})
-	g.Go(func() error {
-		v, err := h.store.ListProjects(gctx, false, readpolicy.BootstrapProjectsLimit)
-		if err == nil {
-			projects = v
-		}
-		return err
-	})
-	g.Go(func() error {
-		v, err := h.store.ListDrafts(gctx, readpolicy.BootstrapDraftsLimit)
-		if err == nil {
-			drafts = v
-		}
-		return err
-	})
-	if err := g.Wait(); err != nil {
+	if err != nil {
 		writeStoreError(w, r, op, err)
 		return
 	}
 
 	resp := bootstrapResponse{
-		Settings: h.settingsResponseFrom(settings),
-		Tasks:    buildListResponse(taskRows, readpolicy.BootstrapListLimit, 0, hasMore),
-		Stats:    taskStatsResponseFromStore(stats),
+		Settings: h.settingsResponseFrom(data.Settings),
+		Tasks:    buildListResponse(data.Tasks, readpolicy.BootstrapListLimit, 0, data.HasMore),
+		Stats:    taskStatsResponseFromStore(data.Stats),
 		Projects: projectsListResponse{
-			Projects: projects,
+			Projects: data.Projects,
 			Limit:    readpolicy.BootstrapProjectsLimit,
 		},
-		Drafts: bootstrapDraftsPayload{Drafts: drafts},
+		Drafts: bootstrapDraftsPayload{Drafts: data.Drafts},
 	}
 	writeJSONWithETag(w, r, op, http.StatusOK, resp)
 }

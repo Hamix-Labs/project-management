@@ -1,0 +1,61 @@
+import type { FormEvent, ReactNode } from "react";
+import type { ChecklistItemDraft, PriorityChoice, Status } from "@/types";
+import type { RichPromptEditorProjectContextProps } from "../rich-prompt";
+import type { TestScenario } from "@/tasks/test-scenarios";
+
+export type TaskCreateModalProps = {
+  /** When set, the modal edits an existing task using the same layout as create. */
+  editingTaskId?: string | null;
+  composeTarget?: "task" | "template";
+  composeOperation?: "create" | "edit";
+  editingTaskRunner?: string;
+  composeStatus?: Status;
+  onComposeStatusChange?: (status: Status) => void;
+  /** Edit-mode PATCH in flight (maps to modal `busy`). */
+  patchPending?: boolean;
+  patchError?: string | null;
+  /** Client-side validation (e.g. missing title) in edit mode. */
+  formError?: string | null;
+  pending: boolean;
+  saving: boolean;
+  draftSaving: boolean;
+  draftSaveLabel: string | null;
+  draftSaveError: boolean;
+  onClose: () => void;
+  title: string;
+  prompt: string;
+  priority: PriorityChoice;
+  checklistItems: ChecklistItemDraft[];
+  onTitleChange: (v: string) => void;
+  onPromptChange: (v: string) => void;
+  onPriorityChange: (p: PriorityChoice) => void;
+  onAppendChecklistCriterion: (item: ChecklistItemDraft | string) => void;
+  onUpdateChecklistRow: (index: number, item: ChecklistItemDraft) => void;
+  onRemoveChecklistRow: (index: number) => void;
+  taskRunner: string;
+  taskCursorModel: string;
+  onTaskRunnerChange: (runner: string) => void;
+  onTaskCursorModelChange: (v: string) => void;
+  projectAssignment?: ReactNode;
+  promptProjectContext?: RichPromptEditorProjectContextProps;
+  schedule: string | null;
+  onScheduleChange: (next: string | null) => void;
+  autonomyEnabled: boolean;
+  onAutonomyChange: (enabled: boolean) => void;
+  autonomyDisabled?: boolean;
+  tagsCsv: string;
+  milestone: string;
+  projectId: string;
+  worktreeId: string;
+  onWorktreeChange: (worktreeId: string) => void;
+  dependsOn: string[];
+  onTagsCsvChange: (value: string) => void;
+  onMilestoneChange: (value: string) => void;
+  onDependsOnChange: (value: string[]) => void;
+  appTimezone: string;
+  onSaveDraft: () => void;
+  onSubmit: (e: FormEvent) => void;
+  createError?: Error | null;
+  createFormError?: string | null;
+  onApplyTestScenario?: (scenario: TestScenario) => void;
+};

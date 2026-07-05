@@ -1,8 +1,8 @@
-import {
-  type TaskDraftDetail,
-  type TaskDraftPayload,
-  type TaskDraftSummary,
-} from "@/types";
+import type {
+  TaskDraftDetail,
+  TaskDraftPayload,
+  TaskDraftSummary,
+} from "@/types/taskDrafts";
 import { parseComposePayloadCore } from "./parseTaskApiCompose";
 import {
   isRecord,

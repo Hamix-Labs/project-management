@@ -12,6 +12,7 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/git"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -114,7 +115,7 @@ func (s *Store) ReconcileGitRepository(
 	if err != nil {
 		return ReconcileGitOutput{}, fmt.Errorf("list worktrees: %w", err)
 	}
-	live = filterLiveWorktrees(live)
+	live = git.FilterLiveWorktrees(live)
 
 	branches, err := s.ListGitBranchesByRepo(ctx, repoID)
 	if err != nil {
@@ -163,8 +164,8 @@ func (s *Store) ReconcileGitRepository(
 
 		matchedLive := make(map[string]struct{}, len(live))
 		matchedRowIDs := make(map[string]struct{}, len(dbRows))
-		liveByPath := liveWorktreesByPath(live)
-		liveByBranch := liveWorktreesByBranch(live)
+		liveByPath := git.LiveWorktreesByPath(live)
+		liveByBranch := git.LiveWorktreesByBranch(live)
 
 		for i := range dbRows {
 			row := dbRows[i]
@@ -210,7 +211,7 @@ func (s *Store) ReconcileGitRepository(
 					})
 					continue
 				}
-				if countBranchOwners(dbRows, br.Name, branchByID) > 1 {
+				if git.CountBranchOwners(dbRows, br.Name, branchByID) > 1 {
 					return fmt.Errorf("%w: duplicate worktree rows for branch %q", domain.ErrInvalidInput, br.Name)
 				}
 				liveWT = &wt
@@ -424,7 +425,7 @@ func (s *Store) RelocateGitWorktree(
 			return domain.GitWorktree{}, err
 		}
 		if err := gitSvc.VerifySameRepository(ctx, registeredCheckoutFromRepo(repo, branches), opened); err != nil {
-			return domain.GitWorktree{}, mapGitworkBootstrapErr(err)
+			return domain.GitWorktree{}, git.MapGitworkBootstrapErr(err)
 		}
 	}
 	belongs, err := gitSvc.BelongsToRepository(ctx, path, opened.Root)
@@ -526,62 +527,6 @@ func registeredCheckoutFromRepo(repo domain.GitRepository, branches []domain.Git
 		CachedCommonDir: repo.GitCommonDir,
 		BranchHeads:     heads,
 	}
-}
-
-//funclogmeasure:skip category=hot-path reason="Pure error mapper; operation trace is emitted by openRegisteredRepo."
-func mapGitworkBootstrapErr(err error) error {
-	if errors.Is(err, gitwork.ErrBootstrapMismatch) {
-		return domain.NewGitErr(domain.GitCodeBootstrapMismatch, "bootstrap path is not the same repository")
-	}
-	return err
-}
-
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by ReconcileGitRepository."
-func filterLiveWorktrees(live []gitwork.Worktree) []gitwork.Worktree {
-	out := make([]gitwork.Worktree, 0, len(live))
-	for _, wt := range live {
-		if wt.Prunable {
-			continue
-		}
-		out = append(out, wt)
-	}
-	return out
-}
-
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by ReconcileGitRepository."
-func liveWorktreesByPath(live []gitwork.Worktree) map[string]gitwork.Worktree {
-	out := make(map[string]gitwork.Worktree, len(live))
-	for _, wt := range live {
-		out[worktreePathKey(wt.Path)] = wt
-	}
-	return out
-}
-
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by ReconcileGitRepository."
-func liveWorktreesByBranch(live []gitwork.Worktree) map[string]gitwork.Worktree {
-	out := make(map[string]gitwork.Worktree, len(live))
-	for _, wt := range live {
-		if wt.IsMain || strings.TrimSpace(wt.Branch) == "" {
-			continue
-		}
-		out[wt.Branch] = wt
-	}
-	return out
-}
-
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by ReconcileGitRepository."
-func countBranchOwners(rows []model.GitWorktree, branchName string, branchByID map[string]domain.GitBranch) int {
-	n := 0
-	for _, row := range rows {
-		if row.IsMain {
-			continue
-		}
-		br, ok := branchByID[row.BranchID]
-		if ok && br.Name == branchName {
-			n++
-		}
-	}
-	return n
 }
 
 // ReconcileGitRepositoriesOnStartup runs conservative reconcile for repositories whose stored main path exists.

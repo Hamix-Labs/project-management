@@ -9,7 +9,7 @@ Read-only audits completed 2026-07-05. Each report ranks findings by ROI (1–10
 | ~~duplication-roi.md~~ | Shared code for duplicated logic | 15 (completed) | — |
 | [abstractions-roi.md](./abstractions-roi.md) | Interfaces and dependency inversion | 12 | 4 |
 | [logic-simplification-roi.md](./logic-simplification-roi.md) | Simpler control flow without new layers | 12 | 5 |
-| [lld-patterns-roi.md](./lld-patterns-roi.md) | SOLID, layering, design patterns | 12 | 4 |
+| ~~lld-patterns-roi.md~~ | SOLID, layering, design patterns | 12 (completed) | — |
 | [dead-code-roi.md](./dead-code-roi.md) | Unused exports, legacy stacks, pointless lines | 15 | 5 |
 
 ## Top 10 overall (cross-report)
@@ -19,10 +19,10 @@ Ranked by composite ROI considering effort, risk, and lines/clarity impact. Prim
 | Rank | ROI | Finding | Primary report | Effort |
 | --- | --- | --- | --- | --- |
 | 1 | 10 | Remove legacy project-scoped git stack (~900–1,100 lines, zero UI consumers) | [dead-code](./dead-code-roi.md#1-legacy-project-scoped-git-stack--roi-1010-high) | 1–2 days |
-| 2 | 10 | Domain layer persistence split (GORM out of `domain/`) | [lld-patterns](./lld-patterns-roi.md#1-domain-layer-is-persistence-aware--roi-1010-high) | 3–5 days |
+| 2 | 10 | ~~Domain layer persistence split (GORM out of `domain/`)~~ (done) | lld-patterns (removed) | — |
 | 3 | 9 | ~~Consolidate `mustCreateTask` test helpers~~ (done) | duplication (removed) | — |
 | 4 | 9 | Centralize settings cursor-model query keys | [abstractions](./abstractions-roi.md#1-centralize-settings-runnermodel-query-keys--roi-910-high) | Low |
-| 5 | 9 | Git store → facade/internal pattern (`reconcile_git.go` Red) | [lld-patterns](./lld-patterns-roi.md#2-git-persistence-bypasses-facadeinternal-pattern--roi-910-high) | 3–4 days |
+| 5 | 9 | ~~Git store → facade/internal pattern (`reconcile_git.go` Red)~~ (done) | lld-patterns (removed) | — |
 | 6 | 9 | Reconcile worktree matching simplification | [logic-simplification](./logic-simplification-roi.md#1-reconcile-worktree-row-matching--triple-skip-paths--roi-910-high) | 4–6 hours |
 | 7 | 9 | Checklist mutation optimistic pipeline factory | [logic-simplification](./logic-simplification-roi.md#2-checklist-mutations--three-optimistic-pipelines--roi-910-high) | 4–6 hours |
 | 8 | 9 | ~~Unify global vs project git HTTP handlers~~ (done) | duplication (removed) | — |
@@ -41,7 +41,7 @@ Do these first for immediate payoff without architectural risk:
 6. Harness timeout: use or delete `withOptionalRunTimeout` — [logic-simplification #12](./logic-simplification-roi.md)
 7. Delete `taskDescendantCount` stub — [dead-code #3](./dead-code-roi.md)
 8. `GitWorktreeResolver` narrow interface — [abstractions #4](./abstractions-roi.md)
-9. Route registration split in `handler.go` — [lld-patterns #3](./lld-patterns-roi.md)
+9. ~~Route registration split in `handler.go`~~ — done
 
 ## Structural themes (multi-PR)
 
@@ -62,7 +62,7 @@ These recur across reports — batch related PRs:
 | Same code copied 3+ times | duplication (completed) | logic-simplification |
 | Missing interface on hot path | [abstractions](./abstractions-roi.md) | lld-patterns |
 | Over-nested conditionals | [logic-simplification](./logic-simplification-roi.md) | — |
-| God file / SRP violation | [lld-patterns](./lld-patterns-roi.md) | abstractions |
+| God file / SRP violation | abstractions | lld-patterns (completed) |
 | Unused export / pass-through barrel | [dead-code](./dead-code-roi.md) | duplication |
 
 ## ROI legend (shared)

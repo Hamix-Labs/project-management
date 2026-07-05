@@ -19,7 +19,7 @@ func FromDomainTask(d domain.Task) Task {
 		Gate:                  d.Gate,
 		Runner:                d.Runner,
 		CursorModel:           d.CursorModel,
-		RunnerConfig:          d.RunnerConfig,
+		RunnerConfig:          datatypesFromRaw(d.RunnerConfig),
 		PickupNotBefore:       d.PickupNotBefore,
 		CriteriaSatisfiedAt:   d.CriteriaSatisfiedAt,
 		PendingRetry:          d.PendingRetry,
@@ -32,6 +32,10 @@ func FromDomainTask(d domain.Task) Task {
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func ToDomainTask(m Task) domain.Task {
+	runnerConfig := rawFromDatatypes(m.RunnerConfig)
+	if len(runnerConfig) == 0 {
+		runnerConfig = jsonRawObject()
+	}
 	return domain.Task{
 		ID:                    m.ID,
 		Title:                 m.Title,
@@ -45,7 +49,7 @@ func ToDomainTask(m Task) domain.Task {
 		Gate:                  m.Gate,
 		Runner:                m.Runner,
 		CursorModel:           m.CursorModel,
-		RunnerConfig:          m.RunnerConfig,
+		RunnerConfig:          runnerConfig,
 		PickupNotBefore:       m.PickupNotBefore,
 		CriteriaSatisfiedAt:   m.CriteriaSatisfiedAt,
 		PendingRetry:          m.PendingRetry,

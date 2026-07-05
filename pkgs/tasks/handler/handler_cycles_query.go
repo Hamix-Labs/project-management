@@ -45,7 +45,7 @@ func parseCyclePathPair(r *http.Request) (string, string, error) {
 // different task surfaces as 404 instead of mutating the wrong row. The
 // store does not enforce this implicitly because cycleId is unique on its
 // own, so the handler must check.
-func assertCycleBelongsToTask(ctx context.Context, s *store.Store, taskID, cycleID string) error {
+func assertCycleBelongsToTask(ctx context.Context, s store.HandlerAPI, taskID, cycleID string) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.assertCycleBelongsToTask")
 	c, err := s.GetCycle(ctx, cycleID)
 	if err != nil {

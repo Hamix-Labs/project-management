@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -94,14 +95,14 @@ func TestMigrateExpandFixedWorktreeBranch_backfillsBeforeAutoMigrate(t *testing.
 	if err := migrateExpandFixedWorktreeBranch(ctx, db); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.WithContext(ctx).AutoMigrate(&domain.GitWorktree{}, &domain.Task{}); err != nil {
+	if err := db.WithContext(ctx).AutoMigrate(&model.GitWorktree{}, &model.Task{}); err != nil {
 		t.Fatalf("automigrate after expand: %v", err)
 	}
 	if err := migrateFixedWorktreeBranch(ctx, db); err != nil {
 		t.Fatal(err)
 	}
 
-	var got domain.GitWorktree
+	var got model.GitWorktree
 	if err := db.WithContext(ctx).First(&got, "id = ?", wt.ID).Error; err != nil {
 		t.Fatal(err)
 	}

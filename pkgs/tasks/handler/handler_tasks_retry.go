@@ -6,6 +6,7 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/service"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
@@ -36,7 +37,7 @@ func (h *Handler) postTaskRetry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	debugHTTPRequest(r, op, "task_id", taskID, "mode", string(body.Mode), "parent_cycle_id", body.ParentCycleID)
-	t, err := h.store.RequestTaskRetry(r.Context(), store.RequestRetryInput{
+	t, err := service.RequestTaskRetry(r.Context(), h.store, store.RequestRetryInput{
 		TaskID:        taskID,
 		Mode:          body.Mode,
 		ParentCycleID: body.ParentCycleID,
