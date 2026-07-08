@@ -85,14 +85,13 @@
   - **ci:** [check-go.sh](../../scripts/check-go.sh), [check-go.ps1](../../scripts/check-go.ps1) — `sse publish boundary` step
 - **Evidence (exit gate):** `rg 'h\.hub\.Publish' pkgs/tasks/handler -g '*.go' -g '!*_test.go'` → only `sse_notify.go`
 
-### 6. Checklist verify-commands patch uses ad-hoc invalidation — ROI 7/10 (Medium)
+### 6. Checklist verify-commands patch uses ad-hoc invalidation — ROI 7/10 (Medium) — **Status: done (2026-07-08)**
 
+- **PR:** [#152](https://github.com/AlexsanderHamir/Hamix/pull/152) (`cleanup/boundaries-checklist-verify-guard`)
 - **Boundary violated:** Sync/mutations policy
-- **Location:** [useTaskDetailChecklist.ts](../../web/src/tasks/checklist/hooks/useTaskDetailChecklist.ts) L507–511 — `patchChecklistItemVerifyCommands` then manual `invalidateQueries` for checklist key
-- **Issue:** Most checklist mutations use `beginGuardedTaskWrite` + optimistic pipeline; verify-command-only edits bypass the shared mutation options and invalidate outside `applySyncEffects`.
-- **Proposed change:** Add a `useMutation` for verify-command patch using the same `build*MutationOptions` factory as other checklist ops, or route invalidation through guarded write.
-- **Effort / risk / blast radius:** 2–4 hours; low risk; 1 hook file.
-- **Evidence:** `beginGuardedTaskWrite` used in same file for other mutations; this path is the exception.
+- **Resolution:** Added `buildUpdateChecklistVerifyCommandsMutationOptions` via `buildGuardedChecklistMutation`; `submitEditChecklistCriterionForm` routes verify-only and combined edits through `updateChecklistVerifyCommandsMutation`. Verify edits now get mutation guard, optimistic `verify_commands` cache surgery, and `invalidateTaskChecklistQueries` (checklist + detail).
+- **Location (was):** [useTaskDetailChecklist.ts](../../web/src/tasks/checklist/hooks/useTaskDetailChecklist.ts) — raw `patchChecklistItemVerifyCommands` + manual checklist-only invalidation
+- **Evidence (exit gate):** `rg 'patchChecklistItemVerifyCommands' web/src/tasks --glob '!*.test.*'` → only `mutationFn` in `useTaskDetailChecklist.ts`; `rg 'buildGuardedChecklistMutation' web/src/tasks/checklist/hooks/useTaskDetailChecklist.ts` → four mutation builders (add, text, verify, delete)
 
 ### 7. `TaskEventDetailPage` ad-hoc cache updates — ROI 6/10 (Medium)
 
@@ -159,7 +158,7 @@
 | Schema migrate targets store models | [postgres.go](../../pkgs/tasks/postgres/postgres.go) `model.AutoMigrateAll` | **Clean** |
 | `fetch` only in `api/` | `rg '\bfetch\s*\(' web/src` | **Clean** — sole call in [api/shared.ts](../../web/src/api/shared.ts) |
 | Task CRUD/retry enriched SSE | `notifyTaskChanged` / `notifyTaskUpdatedEnriched` in handlers | **Clean** for checklist, CRUD, gate (with inline task), compose create |
-| Guarded writes on detail mutations | `useTaskPatchFlow`, `useTaskDeleteFlow`, `useTaskDetailMutations`, checklist add/update | **Clean** (except finding #6) |
+| Guarded writes on detail mutations | `useTaskPatchFlow`, `useTaskDeleteFlow`, `useTaskDetailMutations`, checklist add/update/delete/verify | **Clean** |
 | Reverse vertical imports | `rg 'from "@/tasks/' web/src/projects web/src/worktrees` | **Clean** — one-way coupling only |
 | Bootstrap list limit parity | `readpolicy.BootstrapListLimit` (20) vs `TASK_LIST_PAGE_SIZE` (20) | **Aligned** |
 
@@ -171,7 +170,7 @@
 2. **#5** — Settings notify helper (small backend win)
 3. **#4** + **#7** — Event response SSE/cache (pair backend + frontend)
 4. **#2** — Create/bulk guarded mutations (high traffic)
-5. **#6** + **#8** — Remaining task hook policy gaps
+5. ~~**#6**~~ + **#8** — Remaining task hook policy gaps
 6. **#3** — Project/worktree invalidation modules
 7. **#1** — Vertical decoupling (largest structural slice; may span multiple PRs)
 8. **#9** — Postgres migrate model alignment

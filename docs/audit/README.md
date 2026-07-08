@@ -29,7 +29,7 @@ Ranked by composite ROI considering effort, risk, and lines/clarity impact. Prim
 | 6 | 8 | Delete `taskDescendantCount()` stub | [dead-code](./dead-code-roi.md#3-taskdescendantcount-always-returns-0--roi-810-high) | 15 min |
 | 7 | ~~7~~ | ~~`handler_task_events` hint-only `task_updated` on event append~~ **done** | [boundaries](./boundaries-roi.md#4-handler_task_events-publishes-hint-only-task_updated--roi-710-medium--status-done-2026-07-08) | 4–8 hours |
 | 8 | ~~7~~ | ~~`handler_settings` bypasses `notifyChange` helper~~ **done** | [boundaries](./boundaries-roi.md#5-handler_settings-bypasses-notifychange-helper--roi-710-medium--status-done-2026-07-08) | 1–2 hours |
-| 9 | 7 | Checklist verify-commands ad-hoc invalidation | [boundaries](./boundaries-roi.md#6-checklist-verify-commands-patch-uses-ad-hoc-invalidation--roi-710-medium) | 2–4 hours |
+| 9 | ~~7~~ | ~~Checklist verify-commands ad-hoc invalidation~~ **done** | [boundaries](./boundaries-roi.md#6-checklist-verify-commands-patch-uses-ad-hoc-invalidation--roi-710-medium--status-done-2026-07-08) | 2–4 hours |
 | 10 | 5 | Close ADR-0039 as Accepted (store/model landed) | [boundaries](./boundaries-roi.md#10-close-adr-0039-as-accepted--roi-510-medium) | 30 min |
 
 ## Quick wins (≤1 day, low risk)
@@ -54,7 +54,7 @@ These recur across reports — batch related PRs:
 | --- | --- | --- |
 | **Git vertical cleanup** | dead-code #1, duplication #2/#4, lld #2/#6 | Delete legacy → extract helpers → facade/internal |
 | **Web vertical boundaries** | boundaries #1, #3 | Decouple tasks↔projects/worktrees → unify cache invalidation |
-| **Frontend mutation policy** | boundaries #2, #6–#8 | Guarded create/bulk → checklist/scheduling gaps |
+| **Frontend mutation policy** | boundaries #2, ~~#6~~, #7–#8 | Guarded create/bulk → checklist/scheduling gaps |
 | **Handler test consolidation** | duplication (done), lld #9 | Contract harness done; tasktestserver extracted |
 | **Web god-file splits** | lld #5/#8/#11 | Cycle detail page → create modal → task detail page |
 | **Store/handler DIP** | abstractions (done) | Query keys → GitWorktreeResolver → handler store slices → worker Store → fakes |

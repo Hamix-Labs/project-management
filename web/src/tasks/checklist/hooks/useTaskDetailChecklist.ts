@@ -295,6 +295,31 @@ function buildUpdateChecklistTextMutationOptions(deps: ChecklistMutationDeps) {
   });
 }
 
+function buildUpdateChecklistVerifyCommandsMutationOptions(deps: ChecklistMutationDeps) {
+  const { taskId } = deps;
+  return buildGuardedChecklistMutation({
+    deps,
+    rumKind: "checklist_edit",
+    mutationFn: (input: { itemId: string; verify_commands: ChecklistVerifyCommandInput[] }) =>
+      patchChecklistItemVerifyCommands(taskId, input.itemId, input.verify_commands),
+    applyOptimistic: (prev, input) => {
+      if (!prev) {
+        return null;
+      }
+      const cmds = normalizeVerifyCommands(input.verify_commands);
+      return {
+        next: {
+          items: prev.items.map((it) =>
+            it.id === input.itemId ? { ...it, verify_commands: cmds } : it,
+          ),
+        },
+      };
+    },
+    errorToast: "Couldn't update verify commands — reverted.",
+    shouldRestore: (ctx) => ctx.prev !== undefined,
+  });
+}
+
 function buildDeleteChecklistMutationOptions(deps: ChecklistMutationDeps) {
   const { taskId } = deps;
   return buildGuardedChecklistMutation({
@@ -472,12 +497,17 @@ function createSubmitNewChecklistCriterionHandler(
 async function submitEditChecklistCriterionForm(
   e: FormEvent,
   deps: {
-    taskId: string;
-    queryClient: QueryClient;
     modal: ReturnType<typeof useChecklistModalControls>;
     updateChecklistTextMutation: {
       isPending: boolean;
       mutateAsync: (input: { itemId: string; text: string }) => Promise<TaskChecklistResponse>;
+    };
+    updateChecklistVerifyCommandsMutation: {
+      isPending: boolean;
+      mutateAsync: (input: {
+        itemId: string;
+        verify_commands: ChecklistVerifyCommandInput[];
+      }) => Promise<TaskChecklistResponse>;
     };
     closeEditCriterionModal: () => void;
   },
@@ -487,7 +517,12 @@ async function submitEditChecklistCriterionForm(
   if (!id) return;
   const newText = deps.modal.editChecklistText.trim();
   if (!newText) return;
-  if (deps.updateChecklistTextMutation.isPending) return;
+  if (
+    deps.updateChecklistTextMutation.isPending ||
+    deps.updateChecklistVerifyCommandsMutation.isPending
+  ) {
+    return;
+  }
   const newCommands = normalizeVerifyCommands(deps.modal.editChecklistVerifyCommands);
   const textChanged = newText !== deps.modal.editChecklistOriginalText;
   const commandsChanged =
@@ -505,9 +540,9 @@ async function submitEditChecklistCriterionForm(
       });
     }
     if (commandsChanged) {
-      await patchChecklistItemVerifyCommands(deps.taskId, id, newCommands);
-      await deps.queryClient.invalidateQueries({
-        queryKey: taskQueryKeys.checklist(deps.taskId),
+      await deps.updateChecklistVerifyCommandsMutation.mutateAsync({
+        itemId: id,
+        verify_commands: newCommands,
       });
     }
     if (deps.modal.editingChecklistItemIdRef.current === id) {
@@ -560,16 +595,22 @@ export function useTaskDetailChecklist(taskId: string) {
     ChecklistOptimisticContext
   >(buildUpdateChecklistTextMutationOptions(mutationDeps));
 
+  const updateChecklistVerifyCommandsMutation = useMutation<
+    TaskChecklistResponse,
+    unknown,
+    { itemId: string; verify_commands: ChecklistVerifyCommandInput[] },
+    ChecklistOptimisticContext
+  >(buildUpdateChecklistVerifyCommandsMutationOptions(mutationDeps));
+
   const submitEditChecklistCriterion = useCallback(
     (e: FormEvent) =>
       submitEditChecklistCriterionForm(e, {
-        taskId,
-        queryClient,
         modal,
         updateChecklistTextMutation,
+        updateChecklistVerifyCommandsMutation,
         closeEditCriterionModal: modal.closeEditCriterionModal,
       }),
-    [taskId, queryClient, modal, updateChecklistTextMutation],
+    [modal, updateChecklistTextMutation, updateChecklistVerifyCommandsMutation],
   );
 
   const deleteChecklistMutation = useMutation<
@@ -598,6 +639,7 @@ export function useTaskDetailChecklist(taskId: string) {
     addChecklistMutation,
     submitNewChecklistCriterion,
     updateChecklistTextMutation,
+    updateChecklistVerifyCommandsMutation,
     submitEditChecklistCriterion,
     deleteChecklistMutation,
   };
