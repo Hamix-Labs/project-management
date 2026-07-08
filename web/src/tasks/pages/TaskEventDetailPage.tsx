@@ -1,10 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { getTaskEvent, patchTaskEventUserResponse } from "@/api";
+import { getTaskEvent } from "@/api";
 import { useDocumentTitle } from "@/shared/useDocumentTitle";
 import { FieldRequirementBadge } from "@/shared/FieldLabel";
 import { errorMessage } from "@/lib/errorMessage";
+import { useRolloutFlags } from "@/settings";
+import { buildPatchTaskEventUserResponseMutationOptions } from "@/tasks/mutations/patchTaskEventUserResponseMutation";
 import {
   awaitingUserReply,
   eventTypeLabel,
@@ -17,6 +19,7 @@ import { taskQueryKeys } from "../task-query";
 
 export function TaskEventDetailPage() {
   const qc = useQueryClient();
+  const { optimisticMutationsEnabled } = useRolloutFlags();
   const { taskId = "", eventSeq: eventSeqParam = "" } = useParams<{
     taskId: string;
     eventSeq: string;
@@ -35,17 +38,15 @@ export function TaskEventDetailPage() {
     enabled: Boolean(taskId) && seqValid,
   });
 
-  const saveMutation = useMutation({
-    mutationFn: (text: string) =>
-      patchTaskEventUserResponse(taskId, eventSeq, text),
-    onSuccess: (updated) => {
-      qc.setQueryData(taskQueryKeys.eventDetail(taskId, eventSeq), updated);
-      void qc.invalidateQueries({
-        queryKey: taskQueryKeys.detail(taskId),
-      });
-      setDraft("");
-    },
-  });
+  const saveMutation = useMutation(
+    buildPatchTaskEventUserResponseMutationOptions({
+      taskId,
+      eventSeq,
+      queryClient: qc,
+      optimisticMutationsEnabled,
+      onDraftCleared: () => setDraft(""),
+    }),
+  );
 
   const eventDocPageTitle = (() => {
     if (!taskId) return undefined;

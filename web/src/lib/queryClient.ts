@@ -3,8 +3,8 @@ import {
   QueryCache,
   QueryClient,
 } from "@tanstack/react-query";
-import { isSseLiveForQueries } from "@/tasks/sync/connectionPolicy";
-import { QUERY_POLICY } from "@/tasks/queryPolicy";
+import { isSseLiveForQueries } from "@/lib/queryConnectionPolicy";
+import { QUERY_POLICY } from "@/lib/queryPolicy";
 
 /** Dev-only: production builds omit cache `console.error` noise (UI still surfaces query errors). */
 function logQueryError(scope: string, err: unknown): void {

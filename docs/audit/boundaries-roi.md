@@ -76,7 +76,7 @@
 
 ### 5. `handler_settings` bypasses `notifyChange` helper — ROI 7/10 (Medium) — **Status: done (2026-07-08)**
 
-- **PR:** (pending — `cleanup/boundaries-settings-notify`)
+- **PR:** [#151](https://github.com/AlexsanderHamir/Hamix/pull/151)
 - **Boundary violated:** Write publish — centralized notify path ([ADR-0026](../adr/ADR-0026-backend-data-coherence.md) S1)
 - **Resolution:** Added `notifyScopelessChange` for id-less hint-only frames (`settings_changed`, `agent_run_cancelled`). `handler_settings.go` now routes both publish sites through the helper; CI gate blocks direct `h.hub.Publish` outside `sse_notify.go`.
 - **New locations:**
@@ -93,59 +93,35 @@
 - **Location (was):** [useTaskDetailChecklist.ts](../../web/src/tasks/checklist/hooks/useTaskDetailChecklist.ts) — raw `patchChecklistItemVerifyCommands` + manual checklist-only invalidation
 - **Evidence (exit gate):** `rg 'patchChecklistItemVerifyCommands' web/src/tasks --glob '!*.test.*'` → only `mutationFn` in `useTaskDetailChecklist.ts`; `rg 'buildGuardedChecklistMutation' web/src/tasks/checklist/hooks/useTaskDetailChecklist.ts` → four mutation builders (add, text, verify, delete)
 
-### 7. `TaskEventDetailPage` ad-hoc cache updates — ROI 6/10 (Medium)
+### 7. `TaskEventDetailPage` ad-hoc cache updates — ROI 6/10 (Medium) — **Status: done (2026-07-08)**
 
-- **Boundary violated:** Sync/mutations policy
-- **Location:** [TaskEventDetailPage.tsx](../../web/src/tasks/pages/TaskEventDetailPage.tsx) L41–45 — `setQueryData` + `invalidateQueries` on `taskQueryKeys.detail` after `patchTaskEventUserResponse`
-- **Issue:** Page-level mutation success handler duplicates cache policy; no mutation guard for SSE echo on task detail.
-- **Proposed change:** Extract to `tasks/mutations/` helper or rely on backend fix (#4) so SSE drives invalidation consistently.
-- **Effort / risk / blast radius:** 2–4 hours; low risk; 1 page + test.
-- **Evidence:** `rg guardedTaskWrite web/src/tasks/pages` → no matches.
+- **Resolution:** `buildPatchTaskEventUserResponseMutationOptions` applies mutation guard, updates event detail cache, invalidates `eventsRoot` only (pairs with #4 `task_event_changed`).
+- **Evidence (exit gate):** `rg 'taskQueryKeys\.detail' web/src/tasks/pages/TaskEventDetailPage.tsx` → zero
 
-### 8. `useTaskDetailScheduling` ad-hoc list invalidation — ROI 6/10 (Medium)
+### 8. `useTaskDetailScheduling` ad-hoc list invalidation — ROI 6/10 (Medium) — **Status: done (2026-07-08)**
 
-- **Boundary violated:** Sync/mutations policy
-- **Location:** [useTaskDetailScheduling.ts](../../web/src/tasks/hooks/useTaskDetailScheduling.ts) L19 — `invalidateQueries({ queryKey: taskQueryKeys.all })` after schedule patch
-- **Issue:** Scheduling mutation invalidates full task list prefix without guarded write; patch flow in `useTaskPatchFlow.ts` already centralizes this pattern.
-- **Proposed change:** Reuse guarded patch helper from `useTaskPatchFlow` or shared scheduling mutation module.
-- **Effort / risk / blast radius:** 2–3 hours; low risk; 1 hook.
-- **Evidence:** Compare with [useTaskPatchFlow.ts](../../web/src/tasks/hooks/useTaskPatchFlow.ts) which uses `beginGuardedTaskWrite`.
+- **Resolution:** Guarded scheduling mutations; hint ops use `invalidateTaskDetailCoherence`; tags/milestone use optimistic detail + `invalidateTaskListAndStats`.
+- **Evidence (exit gate):** `rg 'taskQueryKeys\.all' web/src/tasks/hooks/useTaskDetailScheduling.ts` → zero
 
-### 9. Postgres data migrations still query via `domain.*` GORM models — ROI 6/10 (Medium)
+### 9. Postgres data migrations still query via `domain.*` GORM models — ROI 6/10 (Medium) — **Status: done (2026-07-08)**
 
-- **Boundary violated:** Domain vs persistence ([ADR-0039](../adr/ADR-0039-domain-persistence-separation.md))
-- **Location:** [migrate_repo_root_to_git_repository.go](../../pkgs/tasks/postgres/migrate_repo_root_to_git_repository.go), [migrate_git_common_dir.go](../../pkgs/tasks/postgres/migrate_git_common_dir.go), [migrate_seed_worktree_branch_tree.go](../../pkgs/tasks/postgres/migrate_seed_worktree_branch_tree.go) — `db.Model(&domain.GitRepository{})` etc.
-- **Issue:** Runtime store uses [store/model](../../pkgs/tasks/store/model/); one-off SQL migrations still treat domain structs as GORM models. Domain is json-only today, but migrate scripts reintroduce persistence coupling at the seam.
-- **Proposed change:** Use `store/model` types + mappers in migrate scripts (follow [migrate_compose_payload_worktree_test.go](../../pkgs/tasks/postgres/migrate_compose_payload_worktree_test.go) pattern with `model.FromDomain*`).
-- **Effort / risk / blast radius:** 1 day; medium risk (schema migration); 3–5 migrate files.
-- **Evidence:** `rg 'domain\.(Git|Project|Task)' pkgs/tasks/postgres` vs `postgres.go` L88 `model.AutoMigrateAll` for schema.
+- **Resolution:** Data migrations use `store/model` for GORM; domain values via `FromDomain*` mappers.
+- **Evidence (exit gate):** `rg 'Model\(&domain\.(Git|Project)' pkgs/tasks/postgres/migrate_*.go` → zero on targeted files
 
-### 10. Close ADR-0039 as Accepted — ROI 5/10 (Medium)
+### 10. Close ADR-0039 as Accepted — ROI 5/10 (Medium) — **Status: done (2026-07-08)**
 
-- **Boundary violated:** Documentation drift
-- **Location:** [ADR-0039](../adr/ADR-0039-domain-persistence-separation.md) status **Proposed**; implementation landed in `pkgs/tasks/store/model/`
-- **Issue:** Agents and contributors may re-plan a completed split. [store/model/doc.go](../../pkgs/tasks/store/model/doc.go) documents the intended boundary.
-- **Proposed change:** Update ADR status to **Accepted**; note residual migrate-script gap (#9) as follow-up, not blocker.
-- **Effort / risk / blast radius:** 30 minutes; none; docs only.
-- **Evidence:** `rg 'gorm:' pkgs/tasks/domain` → no matches; `postgres.Migrate` uses `model.AutoMigrateAll`.
+- **Resolution:** ADR-0039 status **Accepted**.
+- **Evidence (exit gate):** ADR status Accepted; `rg 'gorm:' pkgs/tasks/domain` → no matches
 
-### 11. `lib/queryClient` coupled to `tasks/sync` — ROI 5/10 (Medium)
+### 11. `lib/queryClient` coupled to `tasks/sync` — ROI 5/10 (Medium) — **Status: done (2026-07-08)**
 
-- **Boundary violated:** Shell should not depend on feature sync internals
-- **Location:** [queryClient.ts](../../web/src/lib/queryClient.ts) imports `isSseLiveForQueries` from `@/tasks/sync/connectionPolicy`; [queryPersist.ts](../../web/src/lib/queryPersist.ts) imports `QUERY_POLICY` + task/project query keys
-- **Issue:** Global query client configuration is pinned to tasks-domain policy. Adding a second major vertical or testing query client in isolation requires tasks tree.
-- **Proposed change:** Promote `connectionPolicy` + stale-time tiers to `web/src/lib/queryPolicy.ts` (or merge with existing shared constants); keep tasks-specific keys in tasks.
-- **Effort / risk / blast radius:** 4–8 hours; low risk; 2 lib files + app bootstrap tests.
-- **Evidence:** `rg 'from "@/tasks/' web/src/lib`.
+- **Resolution:** `QUERY_POLICY` and SSE connection flag promoted to `web/src/lib/`; tasks modules re-export.
+- **Evidence (exit gate):** `rg 'from "@/tasks/' web/src/lib/queryClient.ts` → no matches
 
-### 12. Bootstrap cold-start `setQueryData` — ROI 4/10 (Low)
+### 12. Bootstrap cold-start `setQueryData` — ROI 4/10 (Low) — **Status: done (2026-07-08)**
 
-- **Boundary violated:** Sync policy (surface-level)
-- **Location:** [useBootstrap.ts](../../web/src/app/hooks/useBootstrap.ts) L71–81
-- **Issue:** App shell seeds TanStack Query directly instead of going through `tasks/sync/`. Intentional for cold start but undocumented as an exception.
-- **Proposed change:** Document in [web.md](../web.md) §Cold start as allowed exception; optionally wrap in `seedBootstrapCache(queryClient, payload)` in `tasks/sync/` for discoverability.
-- **Effort / risk / blast radius:** 1–2 hours; low risk; docs + optional thin wrapper.
-- **Evidence:** Comments in `useBootstrap.ts` L62–67 already explain parity with query keys; no bug identified.
+- **Resolution:** `seedBootstrapCache` in `tasks/sync/`; documented in web.md §Cold start.
+- **Evidence (exit gate):** `rg 'seedBootstrapCache' web/src` → sync module + useBootstrap
 
 ---
 

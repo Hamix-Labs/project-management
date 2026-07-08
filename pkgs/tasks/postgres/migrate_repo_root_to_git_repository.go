@@ -9,12 +9,11 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
-// migrateRepoRootToGitRepository backfills git_repositories from app_settings.repo_root.
-// Idempotent; failures log a warning and do not block startup.
 func migrateRepoRootToGitRepository(ctx context.Context, db *gorm.DB) error {
 	slog.Debug("trace", "operation", "postgres.migrateRepoRootToGitRepository")
 	var path string
@@ -25,7 +24,6 @@ func migrateRepoRootToGitRepository(ctx context.Context, db *gorm.DB) error {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		}
-		// Column already dropped on upgraded DBs — nothing to backfill.
 		if strings.Contains(strings.ToLower(err.Error()), "repo_root") {
 			return nil
 		}
@@ -43,7 +41,7 @@ func migrateRepoRootToGitRepository(ctx context.Context, db *gorm.DB) error {
 	}
 	repoRoot := opened.Root
 	var existing int64
-	if err := db.WithContext(ctx).Model(&domain.GitRepository{}).
+	if err := db.WithContext(ctx).Model(&model.GitRepository{}).
 		Where("path = ?", repoRoot).
 		Count(&existing).Error; err != nil {
 		return err
@@ -57,38 +55,22 @@ func migrateRepoRootToGitRepository(ctx context.Context, db *gorm.DB) error {
 		return nil
 	}
 	now := time.Now().UTC()
-	repo := domain.GitRepository{
-		ID:            uuid.NewString(),
-		Path:          opened.Root,
-		DefaultBranch: "main",
-		CreatedAt:     now,
-		UpdatedAt:     now,
-	}
-	mainWT := domain.GitWorktree{
-		ID:           uuid.NewString(),
-		RepositoryID: repo.ID,
-		Path:         opened.Root,
-		Name:         "main",
-		IsMain:       true,
-		CreatedAt:    now,
-	}
-	var branchRows []domain.GitBranch
+	repo := model.FromDomainGitRepository(domain.GitRepository{
+		ID: uuid.NewString(), Path: opened.Root, DefaultBranch: "main", CreatedAt: now, UpdatedAt: now,
+	})
+	mainWT := model.FromDomainGitWorktree(domain.GitWorktree{
+		ID: uuid.NewString(), RepositoryID: repo.ID, Path: opened.Root, Name: "main", IsMain: true, CreatedAt: now,
+	})
+	var branchRows []model.GitBranch
 	for _, b := range branches {
-		branchRows = append(branchRows, domain.GitBranch{
-			ID:           uuid.NewString(),
-			RepositoryID: repo.ID,
-			Name:         b.Name,
-			HeadSHA:      b.HeadSHA,
-			CreatedAt:    now,
-		})
+		branchRows = append(branchRows, model.FromDomainGitBranch(domain.GitBranch{
+			ID: uuid.NewString(), RepositoryID: repo.ID, Name: b.Name, HeadSHA: b.HeadSHA, CreatedAt: now,
+		}))
 	}
 	if len(branchRows) == 0 {
-		branchRows = append(branchRows, domain.GitBranch{
-			ID:           uuid.NewString(),
-			RepositoryID: repo.ID,
-			Name:         "main",
-			CreatedAt:    now,
-		})
+		branchRows = append(branchRows, model.FromDomainGitBranch(domain.GitBranch{
+			ID: uuid.NewString(), RepositoryID: repo.ID, Name: "main", CreatedAt: now,
+		}))
 	}
 	return db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Create(&repo).Error; err != nil {

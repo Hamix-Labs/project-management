@@ -1,6 +1,6 @@
 import type { Query } from "@tanstack/react-query";
 import { projectQueryKeys } from "@/projects/queryKeys";
-import { QUERY_POLICY } from "@/tasks/queryPolicy";
+import { QUERY_POLICY } from "@/lib/queryPolicy";
 import { settingsQueryKeys } from "@/settings/settingsQueryKeys";
 import { taskQueryKeys } from "@/tasks/task-query";
 

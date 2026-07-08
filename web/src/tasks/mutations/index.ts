@@ -10,6 +10,8 @@ export {
   removeTaskFromListCaches,
 } from "./optimisticTaskList";
 export { invalidateTaskListAndStats } from "./invalidateTaskListCoherence";
+export { invalidateTaskDetailCoherence } from "./invalidateTaskDetailCoherence";
+export { buildPatchTaskEventUserResponseMutationOptions } from "./patchTaskEventUserResponseMutation";
 export {
   beginGuardedTaskWrite,
   cancelQueriesForKeys,

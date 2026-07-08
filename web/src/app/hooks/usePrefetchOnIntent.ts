@@ -2,7 +2,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo, useRef } from "react";
 import { taskQueryKeys } from "@/tasks/task-query";
-import { QUERY_POLICY } from "@/tasks/queryPolicy";
+import { QUERY_POLICY } from "@/lib/queryPolicy";
 import { projectQueryKeys } from "@/projects/queryKeys";
 
 /**

@@ -71,7 +71,7 @@ describe("useTaskDetailScheduling", () => {
     });
 
     act(() => {
-      result.current.addDepMutation.mutate();
+      result.current.addDepMutation.mutate(undefined);
     });
 
     await waitFor(() => {
@@ -80,7 +80,9 @@ describe("useTaskDetailScheduling", () => {
     await waitFor(() => {
       expect(result.current.depAddValue).toBe("");
     });
-    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: taskQueryKeys.all });
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: taskQueryKeys.detail(TASK_ID),
+    });
   });
 
   it("removes a dependency and invalidates task queries", async () => {
@@ -97,7 +99,9 @@ describe("useTaskDetailScheduling", () => {
     await waitFor(() => {
       expect(mockRemoveTaskDependency).toHaveBeenCalledWith(TASK_ID, UPSTREAM_ID);
     });
-    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: taskQueryKeys.all });
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: taskQueryKeys.detail(TASK_ID),
+    });
   });
 
   it("releases the gate via patchTaskGate", async () => {

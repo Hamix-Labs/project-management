@@ -35,7 +35,9 @@ Primary nav links: Tasks, Templates, Drafts, Projects (Settings is header gear).
 
 ## Cold start
 
-`web/src/app/hooks/useBootstrap.ts` seeds TanStack Query from `GET /v1/bootstrap` (settings, root task list, stats, projects, draft head). Per-page hooks fall back to individual GETs when bootstrap is absent.
+`web/src/app/hooks/useBootstrap.ts` seeds TanStack Query from `GET /v1/bootstrap`. Per-page hooks fall back to individual GETs when bootstrap is absent.
+
+**Sync policy exception:** bootstrap calls `seedBootstrapCache` in [`tasks/sync/seedBootstrapCache.ts`](../web/src/tasks/sync/seedBootstrapCache.ts) — intentional direct `setQueryData`, not SSE-driven.
 
 ## Task sync (SSE cache coherence)
 
@@ -65,7 +67,7 @@ Modal UI stays in `web/src/tasks/components/task-create-modal/` for V1. **`compo
 
 ## Query policy
 
-TanStack Query staleTime tiers live in [`web/src/tasks/queryPolicy.ts`](../web/src/tasks/queryPolicy.ts). Read order:
+TanStack Query staleTime tiers live in [`web/src/lib/queryPolicy.ts`](../web/src/lib/queryPolicy.ts) (re-exported from [`tasks/queryPolicy.ts`](../web/src/tasks/queryPolicy.ts)). SSE connection policy: [`web/src/lib/queryConnectionPolicy.ts`](../web/src/lib/queryConnectionPolicy.ts). Read order:
 
 1. [ADR-0025](./adr/ADR-0025-frontend-data-coherence.md) — query tiers, mutation guard M1–M3, render isolation
 2. `queryPolicy.ts` — `QUERY_POLICY` constants consumed by `queryClient`, list hooks, prefetch

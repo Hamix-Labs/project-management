@@ -1,7 +1,7 @@
 # ADR-0039: Separate GORM persistence models from domain types
 
 **Date:** 2026-06-25  
-**Status:** Proposed  
+**Status:** Accepted  
 **Deciders:** Hamix maintainers  
 **Tracking:** Issue #61 (follow-up to PR #56 engineering-structure work)
 
@@ -45,11 +45,12 @@ public API.
 
 ## Decision
 
-**Recommend Option B (separate persistence models)** for acceptance and a
-follow-up implementation issue. This ADR records the decision only; **no
-production code changes** land in issue #61.
+**Option B (separate persistence models)** is accepted. Runtime store paths use
+`pkgs/tasks/store/model/` with explicit mappers; `postgres.Migrate` calls
+`model.AutoMigrateAll`. Domain structs are json-only. Data migrations under
+`pkgs/tasks/postgres/migrate_*.go` use store models for GORM reads/writes.
 
-When Accepted:
+Implementation requirements:
 
 1. **Domain structs become persistence-agnostic.** Remove all `gorm:"..."` tags,
    GORM association fields, `TableName()` methods, and `gorm.io/datatypes`
@@ -139,6 +140,6 @@ lint/rule wording to "domain avoids persistence where possible."
 
 ## Acceptance (issue #61)
 
-- [ ] ADR-0039 merged with clear recommendation (Option B) and consequences.
-- [ ] No production code change in the ADR PR.
-- [ ] Open implementation issue only if status moves to **Accepted**.
+- [x] ADR-0039 merged with clear recommendation (Option B) and consequences.
+- [x] Store model split landed in `pkgs/tasks/store/model/` (2026-07).
+- [x] Status moved to **Accepted**; migrate scripts aligned to store models.
