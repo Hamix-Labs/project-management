@@ -51,6 +51,7 @@ export type TaskCreateModalProps = {
   onRepositoryChange: (repositoryId: string) => void;
   onProjectChange: (projectId: string) => void;
   onWorktreeChange: (worktreeId: string) => void;
+  onProjectContextClear: () => void;
   dependsOn: string[];
   onTagsCsvChange: (value: string) => void;
   onMilestoneChange: (value: string) => void;

@@ -52,6 +52,7 @@ export function TaskCreateModal({
   onRepositoryChange,
   onProjectChange,
   onWorktreeChange,
+  onProjectContextClear,
   dependsOn,
   onTagsCsvChange,
   onMilestoneChange,
@@ -126,6 +127,7 @@ export function TaskCreateModal({
       onRepositoryChange={onRepositoryChange}
       onProjectChange={onProjectChange}
       onWorktreeChange={onWorktreeChange}
+      onProjectContextClear={onProjectContextClear}
       dependsOn={dependsOn}
       onTagsCsvChange={onTagsCsvChange}
       onMilestoneChange={onMilestoneChange}

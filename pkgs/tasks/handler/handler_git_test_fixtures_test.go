@@ -115,6 +115,31 @@ func withCreateGitBinding(baseURL, jsonBody string) string {
 	return jsonBody[:len(jsonBody)-1] + `,` + strings.Join(extra, ",") + `}`
 }
 
+func withComposeGitBinding(baseURL, jsonBody string) string {
+	jsonBody = strings.TrimSpace(jsonBody)
+	binding, ok := handlerGitBindingForURL(baseURL)
+	if !ok {
+		return jsonBody
+	}
+	if !strings.HasSuffix(jsonBody, "}") {
+		return jsonBody
+	}
+	var extra []string
+	if !strings.Contains(jsonBody, "repository_id") {
+		extra = append(extra, `"repository_id":"`+binding.repositoryID+`"`)
+	}
+	if !strings.Contains(jsonBody, "project_id") {
+		extra = append(extra, `"project_id":"`+binding.projectID+`"`)
+	}
+	if !strings.Contains(jsonBody, "worktree_id") {
+		extra = append(extra, `"worktree_id":"`+binding.worktreeID+`"`)
+	}
+	if len(extra) == 0 {
+		return jsonBody
+	}
+	return jsonBody[:len(jsonBody)-1] + `,` + strings.Join(extra, ",") + `}`
+}
+
 func withCreateChecklistForURL(baseURL, jsonBody string) string {
 	jsonBody = strings.TrimSpace(jsonBody)
 	if strings.Contains(jsonBody, "checklist_items") {
@@ -125,6 +150,18 @@ func withCreateChecklistForURL(baseURL, jsonBody string) string {
 	}
 	out := jsonBody[:len(jsonBody)-1] + `,"checklist_items":[{"text":"` + testCriterionText + `"}]}`
 	return withCreateGitBinding(baseURL, out)
+}
+
+func withComposeChecklistForURL(baseURL, jsonBody string) string {
+	jsonBody = strings.TrimSpace(jsonBody)
+	if strings.Contains(jsonBody, "checklist_items") {
+		return withComposeGitBinding(baseURL, jsonBody)
+	}
+	if !strings.HasSuffix(jsonBody, "}") {
+		return withComposeGitBinding(baseURL, jsonBody)
+	}
+	out := jsonBody[:len(jsonBody)-1] + `,"checklist_items":[{"text":"` + testCriterionText + `"}]}`
+	return withComposeGitBinding(baseURL, out)
 }
 
 func withCreateTaskDefaults(baseURL, jsonBody string) string {

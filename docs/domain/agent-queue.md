@@ -236,7 +236,7 @@ Full scheduling fields: [data-model.md](../data-model.md) (`pickup_not_before`).
 | Knob | Default | Reference |
 | --- | --- | --- |
 | `HAMIX_USER_TASK_AGENT_QUEUE_CAP` | 256 | [configuration.md](../configuration.md) |
-| `HAMIX_AGENT_WORKER_CONCURRENCY` | 4 | In-process pool size (1–32); [configuration.md](../configuration.md) |
+| `HAMIX_AGENT_WORKER_CONCURRENCY` | 4 | In-process pool size (any positive integer); [configuration.md](../configuration.md) |
 | `agent_pickup_delay_seconds` | app_settings | Default deferral on create when client omits pickup |
 | `pickup_not_before` | per task | Operator or worker-set deferral |
 | Reconcile tick | 2m | `ReconcileTickInterval` in code |

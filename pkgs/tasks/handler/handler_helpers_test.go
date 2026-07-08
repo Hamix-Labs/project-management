@@ -88,6 +88,12 @@ func TestStoreErrHTTPResponse(t *testing.T) {
 		{name: "deadline_exceeded", err: context.DeadlineExceeded, wantCode: http.StatusGatewayTimeout, wantMsg: "request timed out"},
 		{name: "context_canceled", err: context.Canceled, wantCode: http.StatusRequestTimeout, wantMsg: "request canceled"},
 		{name: "conflict", err: domain.ErrConflict, wantCode: http.StatusConflict, wantMsg: "task id already exists"},
+		{
+			name:     "payload persistence",
+			err:      fmt.Errorf("%w: payload could not be saved", domain.ErrInvalidInput),
+			wantCode: http.StatusBadRequest,
+			wantMsg:  "payload could not be saved",
+		},
 		{name: "internal", err: errors.New("db unavailable"), wantCode: http.StatusInternalServerError, wantMsg: "internal server error"},
 	}
 	for _, tt := range tests {

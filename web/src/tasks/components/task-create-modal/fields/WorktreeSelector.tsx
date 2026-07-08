@@ -8,7 +8,7 @@ import {
 import { useGlobalRepositories } from "@/worktrees/hooks/useGlobalRepositories";
 import { useGlobalWorktrees } from "@/worktrees/hooks/useGlobalWorktrees";
 import { useGlobalBranches } from "@/worktrees/hooks/useGlobalBranches";
-import { isFullyRegisteredWorktree } from "@/worktrees/worktreeRegistration";
+import { isFullyRegisteredWorktree, pickDefaultWorktreeId } from "@/worktrees/worktreeRegistration";
 
 type Props = {
   idsPrefix: string;
@@ -46,10 +46,21 @@ export function WorktreeSelector({
   const branchById = new Map(branches.map((b) => [b.id, b]));
 
   useEffect(() => {
-    if (worktrees.length === 1 && worktreeId === "") {
-      onWorktreeChange(worktrees[0]!.id);
+    if (selectedRepoId === "" || worktreesQuery.isLoading) return;
+    const valid =
+      worktreeId !== "" && worktrees.some((wt) => wt.id === worktreeId);
+    if (valid) return;
+    const next = pickDefaultWorktreeId(worktrees);
+    if (next !== "" && next !== worktreeId) {
+      onWorktreeChange(next);
     }
-  }, [worktrees, worktreeId, onWorktreeChange]);
+  }, [
+    selectedRepoId,
+    worktreesQuery.isLoading,
+    worktrees,
+    worktreeId,
+    onWorktreeChange,
+  ]);
 
   const loading =
     repositoriesQuery.isLoading ||

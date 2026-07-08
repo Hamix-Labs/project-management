@@ -16,6 +16,7 @@ type taskComposePayloadJSON struct {
 	Status                domain.Status                    `json:"status"`
 	Priority              domain.Priority                  `json:"priority"`
 	ProjectID             *string                          `json:"project_id"`
+	RepositoryID          *string                          `json:"repository_id,omitempty"`
 	ProjectContextItemIDs []string                         `json:"project_context_item_ids"`
 	Runner                *string                          `json:"runner"`
 	CursorModel           *string                          `json:"cursor_model"`

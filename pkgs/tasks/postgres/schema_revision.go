@@ -24,7 +24,9 @@ import (
 // Rev 5: git_repositories.git_common_dir (unique repo identity); main path normalization.
 //
 // Rev 6 (ADR-0042): projects.is_default; per-repo default projects; remove global default row.
-const SchemaRevision = 6
+//
+// Rev 7: backfill worktree_id in task_templates / task_drafts compose payloads.
+const SchemaRevision = 7
 
 const schemaMetaRowID = 1
 

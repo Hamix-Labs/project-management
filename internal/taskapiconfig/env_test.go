@@ -227,3 +227,22 @@ func TestGitReconcileOnStartupMode(t *testing.T) {
 		t.Fatalf("unsupported got %q want empty", got)
 	}
 }
+
+func TestAgentWorkerConcurrency(t *testing.T) {
+	t.Setenv(EnvAgentWorkerConcurrency, "")
+	if AgentWorkerConcurrency() != defaultAgentWorkerConcurrency {
+		t.Fatalf("unset got %d want %d", AgentWorkerConcurrency(), defaultAgentWorkerConcurrency)
+	}
+	t.Setenv(EnvAgentWorkerConcurrency, "8")
+	if AgentWorkerConcurrency() != 8 {
+		t.Fatalf("got %d want 8", AgentWorkerConcurrency())
+	}
+	t.Setenv(EnvAgentWorkerConcurrency, "64")
+	if AgentWorkerConcurrency() != 64 {
+		t.Fatalf("got %d want 64", AgentWorkerConcurrency())
+	}
+	t.Setenv(EnvAgentWorkerConcurrency, "0")
+	if AgentWorkerConcurrency() != defaultAgentWorkerConcurrency {
+		t.Fatalf("zero should fall back to default, got %d", AgentWorkerConcurrency())
+	}
+}

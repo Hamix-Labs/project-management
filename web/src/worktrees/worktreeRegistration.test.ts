@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { GitWorktree } from "@/types/git";
-import { isFullyRegisteredWorktree, isLinkedWorktreeForDisplay, isDetailPageWorktree } from "./worktreeRegistration";
+import { isFullyRegisteredWorktree, isLinkedWorktreeForDisplay, isDetailPageWorktree, pickDefaultWorktreeId } from "./worktreeRegistration";
 
 const linked: GitWorktree = {
   id: "00000000-0000-4000-8000-000000000020",
@@ -45,5 +45,11 @@ describe("worktreeRegistration", () => {
     expect(isDetailPageWorktree(linked)).toBe(true);
     expect(isDetailPageWorktree(mainSeeded)).toBe(true);
     expect(isDetailPageWorktree(incompleteMainStub)).toBe(false);
+  });
+
+  it("prefers main checkout when picking default worktree", () => {
+    expect(pickDefaultWorktreeId([linked, mainSeeded])).toBe(mainSeeded.id);
+    expect(pickDefaultWorktreeId([linked])).toBe(linked.id);
+    expect(pickDefaultWorktreeId([incompleteMainStub])).toBe("");
   });
 });

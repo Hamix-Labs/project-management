@@ -1327,6 +1327,11 @@
     padding-inline: var(--space-5);
   }
 
+  .worktree-list__head {
+    padding-block: var(--space-4);
+    min-height: 3.25rem;
+  }
+
   .worktree-row__expand-panel {
     padding-inline: var(--space-5);
     padding-inline-start: calc(var(--space-5) + 1.5rem + var(--space-3));
@@ -1348,10 +1353,16 @@
 }
 
 .worktree-list__head {
+  padding: var(--space-3) var(--space-4);
+  min-height: 3rem;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.worktree-list__row-layout {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-2) var(--space-4);
+  width: 100%;
 }
 
 .worktree-list__head-spacer {
@@ -1359,13 +1370,8 @@
   flex-shrink: 0;
 }
 
-.worktree-list__head-labels {
-  display: flex;
-  flex: 1;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  min-width: 0;
+.worktree-list__head .worktree-row__content {
+  gap: 0;
 }
 
 .worktree-list__head-label {

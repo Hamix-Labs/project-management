@@ -288,7 +288,7 @@ Per [ADR-0039](./adr/ADR-0039-fixed-worktree-branch.md), tasks bind `worktree_id
 
 - **`WorktreeGate`** — one mutex per worktree id. Ready admission uses `TryLock`: if the worktree is busy, the slot defers pickup (~5s) without blocking other slots.
 - **No checkout at pickup** — `prepareGitRun` verifies HEAD matches the bound branch and sets `WorkingDir`; the worker does not run `git checkout`.
-- **Pool sizing** — `HAMIX_AGENT_WORKER_CONCURRENCY` (1–32, default 4) caps concurrent harness runs. Effective parallelism is bounded by distinct worktrees with ready tasks, not by queue depth alone.
+- **Pool sizing** — `HAMIX_AGENT_WORKER_CONCURRENCY` (any positive integer, default 4) sets concurrent harness run slots. Effective parallelism is bounded by distinct worktrees with ready tasks, not by queue depth alone.
 
 See [domain/worktrees-and-branches.md](domain/worktrees-and-branches.md) and [domain/agent-queue.md](domain/agent-queue.md).
 

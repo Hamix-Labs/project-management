@@ -413,6 +413,7 @@ export type TaskComposePayload = {
   runner?: string;
   cursor_model?: string;
   project_id?: string;
+  repository_id?: string;
   project_context_item_ids?: string[];
   worktree_id?: string;
   pickup_not_before?: string;

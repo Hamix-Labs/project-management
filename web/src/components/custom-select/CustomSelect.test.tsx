@@ -62,6 +62,22 @@ describe("CustomSelect", () => {
     expect(onChange).toHaveBeenCalledWith("running");
   });
 
+  it("does not show the first option label when unset and no placeholder", () => {
+    render(
+      <CustomSelect
+        id="status"
+        label="Status"
+        value=""
+        options={OPTIONS}
+        onChange={() => {}}
+      />,
+    );
+
+    const trigger = screen.getByRole("combobox", { name: /status/i });
+    expect(trigger).not.toHaveTextContent("Ready");
+    expect(trigger).not.toHaveTextContent("Running");
+  });
+
   it("shows placeholder on trigger when unset and options exist", () => {
     render(
       <CustomSelect

@@ -16,6 +16,7 @@ type Props = {
   onRepositoryChange: (repositoryId: string) => void;
   onProjectChange: (projectId: string) => void;
   onWorktreeChange: (worktreeId: string) => void;
+  onProjectContextClear: () => void;
 };
 
 export function TaskCreateModalEssentialsFields({
@@ -32,6 +33,7 @@ export function TaskCreateModalEssentialsFields({
   onRepositoryChange,
   onProjectChange,
   onWorktreeChange,
+  onProjectContextClear,
 }: Props) {
   return (
     <>
@@ -50,9 +52,18 @@ export function TaskCreateModalEssentialsFields({
           repositoryId={repositoryId}
           projectId={projectId}
           worktreeId={worktreeId}
-          onRepositoryChange={onRepositoryChange}
-          onProjectChange={onProjectChange}
-          onWorktreeChange={onWorktreeChange}
+          onAssignmentChange={(next) => {
+            if (next.repositoryId !== repositoryId) {
+              onRepositoryChange(next.repositoryId);
+            }
+            if (next.projectId !== projectId) {
+              onProjectChange(next.projectId);
+            }
+            if (next.worktreeId !== worktreeId) {
+              onWorktreeChange(next.worktreeId);
+            }
+          }}
+          onProjectContextClear={onProjectContextClear}
           disabled={disabled}
         />
       ) : null}

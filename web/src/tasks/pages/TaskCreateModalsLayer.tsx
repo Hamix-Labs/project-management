@@ -121,6 +121,7 @@ export function TaskCreateModalsLayer() {
             app.setNewProjectContextItemIDs([]);
           }}
           onWorktreeChange={app.setNewWorktreeID}
+          onProjectContextClear={() => app.setNewProjectContextItemIDs([])}
           dependsOn={app.newDependsOn}
           onTagsCsvChange={app.setNewTagsCsv}
           onMilestoneChange={app.setNewMilestone}

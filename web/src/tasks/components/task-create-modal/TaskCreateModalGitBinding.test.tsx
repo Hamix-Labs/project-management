@@ -1,0 +1,178 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render, screen, waitFor } from "@testing-library/react";
+import type { ComponentProps } from "react";
+import { useState } from "react";
+import { MemoryRouter } from "react-router-dom";
+import { describe, expect, it, vi } from "vitest";
+import type { AppSettings, ListCursorModelsResult } from "@/api/settings";
+import { settingsQueryKeys } from "@/settings/settingsQueryKeys";
+import { TASK_TEST_DEFAULTS } from "@/test/taskDefaults";
+import { respondGlobalGitApi } from "@/test/handlers/gitGlobal";
+import { APP_SETTINGS_DEFAULTS } from "@/test/settingsDefaults";
+import { TaskCreateModal } from "./TaskCreateModal";
+
+const testAppSettings: AppSettings = {
+  ...APP_SETTINGS_DEFAULTS,
+  ...TASK_TEST_DEFAULTS,
+  optimistic_mutations_enabled: false,
+};
+
+const testCursorModelsEmpty: ListCursorModelsResult = {
+  ok: true,
+  runner: TASK_TEST_DEFAULTS.runner,
+  models: [],
+};
+
+function renderModal(props?: Partial<ComponentProps<typeof TaskCreateModal>>) {
+  const base: ComponentProps<typeof TaskCreateModal> = {
+    pending: false,
+    saving: false,
+    draftSaving: false,
+    draftSaveLabel: null,
+    draftSaveError: false,
+    onClose: vi.fn(),
+    title: "Draft title",
+    prompt: "Draft prompt",
+    priority: "medium",
+    checklistItems: [{ text: "Criterion" }],
+    onTitleChange: vi.fn(),
+    onPromptChange: vi.fn(),
+    onPriorityChange: vi.fn(),
+    onAppendChecklistCriterion: vi.fn(),
+    onUpdateChecklistRow: vi.fn(),
+    onRemoveChecklistRow: vi.fn(),
+    taskRunner: TASK_TEST_DEFAULTS.runner,
+    taskCursorModel: TASK_TEST_DEFAULTS.cursor_model,
+    onTaskRunnerChange: vi.fn(),
+    onTaskCursorModelChange: vi.fn(),
+    schedule: null,
+    onScheduleChange: vi.fn(),
+    autonomyEnabled: true,
+    onAutonomyChange: vi.fn(),
+    tagsCsv: "",
+    milestone: "",
+    repositoryId: "",
+    projectId: "",
+    worktreeId: "",
+    onRepositoryChange: vi.fn(),
+    onProjectChange: vi.fn(),
+    onWorktreeChange: vi.fn(),
+    onProjectContextClear: vi.fn(),
+    dependsOn: [],
+    onTagsCsvChange: vi.fn(),
+    onMilestoneChange: vi.fn(),
+    onDependsOnChange: vi.fn(),
+    appTimezone: "UTC",
+    onSaveDraft: vi.fn(),
+    onSubmit: vi.fn(),
+  };
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false, staleTime: Infinity } },
+  });
+  client.setQueryData(settingsQueryKeys.app(), testAppSettings);
+  client.setQueryData(
+    settingsQueryKeys.cursorModels("cursor", ""),
+    testCursorModelsEmpty,
+  );
+  return render(
+    <MemoryRouter>
+      <QueryClientProvider client={client}>
+        <TaskCreateModal {...base} {...props} />
+      </QueryClientProvider>
+    </MemoryRouter>,
+  );
+}
+
+function stubGitFetch() {
+  vi.spyOn(globalThis, "fetch").mockImplementation(async (input: RequestInfo | URL) => {
+    const url = typeof input === "string" ? input : input.toString();
+    const git = respondGlobalGitApi(url);
+    if (git) return git;
+    return new Response("not found", { status: 404 });
+  });
+}
+
+describe("TaskCreateModal git binding", () => {
+  it("disables Create task until worktree is selected", async () => {
+    stubGitFetch();
+    renderModal({ worktreeId: "" });
+    expect(screen.getByRole("button", { name: /Create task/i })).toBeDisabled();
+  });
+
+  it("preselects when only one worktree exists", async () => {
+    stubGitFetch();
+
+    function Harness() {
+      const [repositoryId, setRepositoryId] = useState("");
+      const [projectId, setProjectId] = useState("");
+      const [worktreeId, setWorktreeId] = useState("");
+      return (
+        <TaskCreateModal
+          pending={false}
+          saving={false}
+          draftSaving={false}
+          draftSaveLabel={null}
+          draftSaveError={false}
+          onClose={vi.fn()}
+          title="Draft title"
+          prompt="Draft prompt"
+          priority="medium"
+          checklistItems={[{ text: "Criterion" }]}
+          onTitleChange={vi.fn()}
+          onPromptChange={vi.fn()}
+          onPriorityChange={vi.fn()}
+          onAppendChecklistCriterion={vi.fn()}
+          onUpdateChecklistRow={vi.fn()}
+          onRemoveChecklistRow={vi.fn()}
+          taskRunner={TASK_TEST_DEFAULTS.runner}
+          taskCursorModel={TASK_TEST_DEFAULTS.cursor_model}
+          onTaskRunnerChange={vi.fn()}
+          onTaskCursorModelChange={vi.fn()}
+          schedule={null}
+          onScheduleChange={vi.fn()}
+          autonomyEnabled={true}
+          onAutonomyChange={vi.fn()}
+          tagsCsv=""
+          milestone=""
+          repositoryId={repositoryId}
+          projectId={projectId}
+          worktreeId={worktreeId}
+          onRepositoryChange={setRepositoryId}
+          onProjectChange={setProjectId}
+          onWorktreeChange={setWorktreeId}
+          onProjectContextClear={vi.fn()}
+          dependsOn={[]}
+          onTagsCsvChange={vi.fn()}
+          onMilestoneChange={vi.fn()}
+          onDependsOnChange={vi.fn()}
+          appTimezone="UTC"
+          onSaveDraft={vi.fn()}
+          onSubmit={vi.fn()}
+        />
+      );
+    }
+
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false, staleTime: Infinity } },
+    });
+    client.setQueryData(settingsQueryKeys.app(), testAppSettings);
+    client.setQueryData(
+      settingsQueryKeys.cursorModels("cursor", ""),
+      testCursorModelsEmpty,
+    );
+
+    render(
+      <MemoryRouter>
+        <QueryClientProvider client={client}>
+          <Harness />
+        </QueryClientProvider>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole("combobox", { name: /worktree/i })).not.toHaveTextContent(
+        /^▾$/,
+      );
+    });
+  });
+});

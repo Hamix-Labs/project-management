@@ -55,7 +55,7 @@ func (h *Handler) createTaskFromComposeJSON(
 	if err != nil {
 		return nil, err
 	}
-	if err := h.validateComposePayload(r.Context(), payload, settings); err != nil {
+	if err := h.validateTaskCreateComposePayload(r.Context(), payload, settings); err != nil {
 		return nil, err
 	}
 	runner, cursorModel, err := resolveRunnerModelFields(payload.Runner, payload.CursorModel, settings)
@@ -124,9 +124,22 @@ func (h *Handler) finalizeCreatedTask(ctx context.Context, t *domain.Task) (*dom
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (h *Handler) validateComposePayload(ctx context.Context, payload taskComposePayloadJSON, settings domain.AppSettings) error {
+	if err := h.validateComposeGitBinding(ctx, payload.RepositoryID, payload.ProjectID, payload.WorktreeID); err != nil {
+		return err
+	}
+	return h.validateComposePayloadCommon(ctx, payload, settings)
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func (h *Handler) validateTaskCreateComposePayload(ctx context.Context, payload taskComposePayloadJSON, settings domain.AppSettings) error {
 	if err := h.validateTaskGitBindingV2(ctx, payload.ProjectID, payload.WorktreeID); err != nil {
 		return err
 	}
+	return h.validateComposePayloadCommon(ctx, payload, settings)
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func (h *Handler) validateComposePayloadCommon(ctx context.Context, payload taskComposePayloadJSON, settings domain.AppSettings) error {
 	if err := h.validatePromptMentionsForWorktree(ctx, payload.WorktreeID, payload.InitialPrompt); err != nil {
 		return err
 	}

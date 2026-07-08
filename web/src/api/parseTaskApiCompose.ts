@@ -37,6 +37,16 @@ export function parseComposePayloadCore(value: unknown): TaskDraftPayload {
           project_id: parseString(value.project_id, "payload.project_id"),
         }
       : {}),
+    ...(typeof value.repository_id === "string"
+      ? {
+          repository_id: parseString(value.repository_id, "payload.repository_id"),
+        }
+      : {}),
+    ...(typeof value.worktree_id === "string"
+      ? {
+          worktree_id: parseString(value.worktree_id, "payload.worktree_id"),
+        }
+      : {}),
     ...(Array.isArray(value.project_context_item_ids)
       ? {
           project_context_item_ids: value.project_context_item_ids.map((id, i) =>

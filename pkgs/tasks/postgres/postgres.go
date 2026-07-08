@@ -133,6 +133,9 @@ func Migrate(ctx context.Context, db *gorm.DB) error {
 	if err := migrateRepoDefaultProjects(ctx, db); err != nil {
 		return fmt.Errorf("repo default projects: %w", err)
 	}
+	if err := migrateComposePayloadWorktree(ctx, db); err != nil {
+		return fmt.Errorf("compose payload worktree: %w", err)
+	}
 	if err := RecordSchemaRevision(ctx, db, time.Now().UTC()); err != nil {
 		return fmt.Errorf("record schema revision: %w", err)
 	}

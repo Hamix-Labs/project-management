@@ -22,3 +22,10 @@ export function sortDetailPageWorktrees(worktrees: GitWorktree[]): GitWorktree[]
       a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
   );
 }
+
+/** Default worktree when compose payloads omit worktree_id (main checkout first). */
+export function pickDefaultWorktreeId(worktrees: GitWorktree[]): string {
+  const registered = worktrees.filter(isFullyRegisteredWorktree);
+  if (registered.length === 0) return "";
+  return sortDetailPageWorktrees(registered)[0]!.id;
+}

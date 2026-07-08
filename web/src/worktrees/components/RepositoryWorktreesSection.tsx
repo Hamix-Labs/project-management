@@ -65,13 +65,15 @@ export function RepositoryWorktreesSection({
 
   return (
     <div className="worktree-list">
-      <div className="worktree-list__head" role="row">
+      <div className="worktree-list__head worktree-list__row-layout" role="row">
         <span className="worktree-list__head-spacer" aria-hidden />
-        <div className="worktree-list__head-labels">
+        <div className="worktree-row__content">
           <span className="worktree-list__head-label" role="columnheader">
             {worktreeGitCopy.listColumnName}
           </span>
-          <span className="worktree-list__head-label worktree-list__head-label--branch" role="columnheader">
+        </div>
+        <div className="worktree-row__branch">
+          <span className="worktree-list__head-label" role="columnheader">
             {worktreeGitCopy.listColumnBranch}
           </span>
         </div>

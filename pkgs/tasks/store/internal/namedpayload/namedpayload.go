@@ -70,10 +70,10 @@ func saveRow(
 	}
 	if err := db.WithContext(ctx).Model(&model.TaskDraft{}).Where("id = ?", id).Updates(map[string]any{
 		"name":         name,
-		"payload_json": payload,
+		"payload_json": datatypes.JSON(payload),
 		"updated_at":   now,
 	}).Error; err != nil {
-		return nil, fmt.Errorf("%s: %w", updateErr, err)
+		return nil, kernel.MapPayloadPersistenceError(fmt.Errorf("%s: %w", updateErr, err))
 	}
 	return &Summary{ID: id, Name: name, UpdatedAt: now, CreatedAt: row.CreatedAt}, nil
 }
@@ -109,10 +109,10 @@ func saveTemplateRow(
 	}
 	if err := db.WithContext(ctx).Model(&model.TaskTemplate{}).Where("id = ?", id).Updates(map[string]any{
 		"name":         name,
-		"payload_json": payload,
+		"payload_json": datatypes.JSON(payload),
 		"updated_at":   now,
 	}).Error; err != nil {
-		return nil, fmt.Errorf("%s: %w", updateErr, err)
+		return nil, kernel.MapPayloadPersistenceError(fmt.Errorf("%s: %w", updateErr, err))
 	}
 	return &TemplateSummary{
 		ID:               id,

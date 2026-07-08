@@ -109,21 +109,10 @@ export function CustomSelect({
       } => !isCustomSelectHeader(o) && o.value === value,
     );
     if (sel) return sel;
-    if (value === "" && placeholder) {
-      return { value: "", label: placeholder };
+    if (value === "") {
+      return { value: "", label: placeholder ?? "" };
     }
-    const first = options.find(
-      (
-        o,
-      ): o is {
-        value: string;
-        label: string;
-        pillClass?: string;
-        depth?: number;
-        rowTag?: string;
-      } => !isCustomSelectHeader(o),
-    );
-    return first ?? { value: "", label: "" };
+    return { value, label: placeholder ?? "" };
   }, [options, value, placeholder]);
 
   const updatePosition = useCallback(() => {

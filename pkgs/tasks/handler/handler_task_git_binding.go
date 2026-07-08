@@ -43,6 +43,38 @@ func (h *Handler) validateTaskGitBindingV2(
 	return h.store.ValidateTaskWorktreeBinding(ctx, projectID, wtID)
 }
 
+func (h *Handler) validateComposeGitBinding(
+	ctx context.Context,
+	repositoryID *string,
+	projectID *string,
+	worktreeID *string,
+) error {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.validateComposeGitBinding")
+	repoID := trimmedOptionalID(repositoryID)
+	if repoID == "" {
+		return fmt.Errorf("%w: repository_id required", domain.ErrInvalidInput)
+	}
+	pid := trimmedOptionalID(projectID)
+	if pid == "" {
+		return fmt.Errorf("%w: project_id required", domain.ErrInvalidInput)
+	}
+	wtID := trimmedOptionalID(worktreeID)
+	if wtID == "" {
+		return fmt.Errorf("%w: worktree_id required", domain.ErrInvalidInput)
+	}
+	proj, err := h.store.GetProject(ctx, pid)
+	if err != nil {
+		return err
+	}
+	if proj.RepositoryID == nil || strings.TrimSpace(*proj.RepositoryID) == "" {
+		return fmt.Errorf("%w: project not bound to repository", domain.ErrInvalidInput)
+	}
+	if strings.TrimSpace(*proj.RepositoryID) != repoID {
+		return fmt.Errorf("%w: repository_id does not match project", domain.ErrInvalidInput)
+	}
+	return h.store.ValidateTaskWorktreeBinding(ctx, projectID, wtID)
+}
+
 func (h *Handler) validatePromptMentionsForWorktree(ctx context.Context, worktreeID *string, prompt string) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.validatePromptMentionsForWorktree")
 	wtID := trimmedOptionalID(worktreeID)

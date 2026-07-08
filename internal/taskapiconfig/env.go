@@ -186,7 +186,7 @@ func UserTaskAgentQueueCap() int {
 }
 
 // AgentWorkerConcurrency returns the in-process agent worker pool size.
-// Clamped to [1, 32]; default is 4 when unset or invalid.
+// Default is 4 when unset or invalid; valid values are any positive integer.
 func AgentWorkerConcurrency() int {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskapiconfig.AgentWorkerConcurrency")
 	s := strings.TrimSpace(os.Getenv(EnvAgentWorkerConcurrency))
@@ -199,9 +199,6 @@ func AgentWorkerConcurrency() int {
 			"operation", "taskapiconfig.agent_worker_concurrency_env",
 			"var", EnvAgentWorkerConcurrency, "value", s, "default", defaultAgentWorkerConcurrency)
 		return defaultAgentWorkerConcurrency
-	}
-	if n > 32 {
-		n = 32
 	}
 	return n
 }

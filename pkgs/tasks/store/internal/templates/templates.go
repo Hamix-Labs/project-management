@@ -15,6 +15,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/kernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/namedpayload"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
+	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
 
@@ -63,10 +64,10 @@ func Patch(ctx context.Context, db *gorm.DB, id string, name *string, payload js
 		if err != nil {
 			return nil, err
 		}
-		updates["payload_json"] = normalized
+		updates["payload_json"] = datatypes.JSON(normalized)
 	}
 	if err := db.WithContext(ctx).Model(&model.TaskTemplate{}).Where("id = ?", id).Updates(updates).Error; err != nil {
-		return nil, fmt.Errorf("patch template: %w", err)
+		return nil, kernel.MapPayloadPersistenceError(fmt.Errorf("patch template: %w", err))
 	}
 	return Get(ctx, db, id)
 }

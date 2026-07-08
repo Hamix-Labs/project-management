@@ -24,12 +24,16 @@ const baseFields: TaskCreateFormFields = {
 describe("composePayload", () => {
   it("round-trips form fields through hydrate", () => {
     const payload = buildComposePayloadFromForm(baseFields);
+    expect(payload.repository_id).toBe("repo-1");
+    expect(payload.worktree_id).toBe("wt-1");
     const hydrated = hydrateFormFromComposePayload(payload, undefined);
     expect(hydrated.title).toBe("Ship feature");
     expect(hydrated.prompt).toBe("<p>Do the thing</p>");
     expect(hydrated.priority).toBe("medium");
     expect(hydrated.runner).toBe("cursor");
     expect(hydrated.projectID).toBe("proj-1");
+    expect(hydrated.repositoryID).toBe("repo-1");
+    expect(hydrated.worktreeID).toBe("wt-1");
     expect(hydrated.schedule).toBe("2030-01-01T12:00:00Z");
     expect(hydrated.tagsCsv).toBe("alpha, beta");
     expect(hydrated.dependsOn).toEqual(["dep-1"]);

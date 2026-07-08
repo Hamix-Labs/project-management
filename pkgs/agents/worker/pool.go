@@ -26,9 +26,6 @@ func NewPool(st Store, q ReadyTaskQueue, r runner.Runner, opts Options, concurre
 	if concurrency < 1 {
 		concurrency = 1
 	}
-	if concurrency > 32 {
-		concurrency = 32
-	}
 	gate := &WorktreeGate{}
 	slots := make([]*Worker, concurrency)
 	for i := range slots {
