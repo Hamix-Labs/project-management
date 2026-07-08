@@ -63,14 +63,16 @@
 - **ADR:** [ADR-0044](../adr/ADR-0044-query-invalidation-catalog.md)
 - **Evidence (exit gate):** `rg 'invalidateQueries' web/src/projects web/src/worktrees --glob '!*.test.*' --glob '!**/mutations/**'` → zero matches
 
-### 4. `handler_task_events` publishes hint-only `task_updated` — ROI 7/10 (Medium)
+### 4. `handler_task_events` publishes hint-only `task_updated` — ROI 7/10 (Medium) — **Status: done (2026-07-08)**
 
+- **PR:** [#150](https://github.com/AlexsanderHamir/Hamix/pull/150)
 - **Boundary violated:** Write publish policy ([ADR-0026](../adr/ADR-0026-backend-data-coherence.md) — `task_updated` should be enriched when task row changes; [writepolicy/publish_policy.go](../../pkgs/tasks/handler/writepolicy/publish_policy.go))
-- **Location:** [handler_task_events.go](../../pkgs/tasks/handler/handler_task_events.go) L235 — `h.notifyChange(TaskUpdated, id)` after `AppendTaskEventResponseMessage`
-- **Issue:** Appending a user response to `task_events` does **not** mutate the `tasks` row, but emits id-only `task_updated`, forcing clients to refetch task detail unnecessarily. `EnrichedTaskChangeEvent(TaskUpdated)` is true in policy, but this path skips enrichment.
-- **Proposed change:** Remove the publish (event detail returned in HTTP body), or add a dedicated hint type (e.g. `task_event_changed`) and teach `decideSyncFrame` to invalidate `taskQueryKeys.events` only.
-- **Effort / risk / blast radius:** 4–8 hours; low–medium risk (event detail page + SSE); 1 handler + sync test.
-- **Evidence:** Handler calls `notifyChange` not `notifyTaskUpdatedEnriched`; store method is event append only.
+- **Resolution:** Added dedicated `task_event_changed` SSE type with `event_seq` for audit-log mutations. `PATCH /tasks/{id}/events/{seq}` now publishes `notifyTaskEventChanged` instead of misleading `task_updated`. Web sync invalidates `taskQueryKeys.eventsRoot` only (immediate, no detail/list storm).
+- **New locations:**
+  - **realtime:** [wire.go](../../pkgs/tasks/realtime/wire.go) — `TaskEventChanged`, `EventSeq`
+  - **handler:** [sse_notify.go](../../pkgs/tasks/handler/sse_notify.go) — `notifyTaskEventChanged`; [handler_task_events.go](../../pkgs/tasks/handler/handler_task_events.go) — publish swap
+  - **web:** [sseInvalidate.ts](../../web/src/tasks/task-query/sseInvalidate.ts), [decideSyncFrame.ts](../../web/src/tasks/sync/decideSyncFrame.ts), [taskQueryKeys.ts](../../web/src/lib/taskQueryKeys.ts) — `eventsRoot`
+- **Evidence (exit gate):** `rg 'notifyChange\(TaskUpdated' pkgs/tasks/handler/handler_task_events.go` → zero; `rg 'task_event_changed' pkgs/tasks/realtime web/src` → wire + handler + sync matches
 
 ### 5. `handler_settings` bypasses `notifyChange` helper — ROI 7/10 (Medium) — **Status: done (2026-07-08)**
 

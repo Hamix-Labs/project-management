@@ -105,7 +105,7 @@ Model semantics (tags, milestone, `depends_on`, gate, worker readiness): [data-m
 | DELETE | `/tasks/{id}` | `204` empty body. Publishes `task_deleted`. |
 | GET | `/tasks/{id}/events` | Audit log. Default: ascending all rows. With `limit` / `before_seq` / `after_seq`: keyset-paged newest-first slice with `range_*`, `has_more_*`, `approval_pending`. Deep dive: [domain/task-events.md](./domain/task-events.md). |
 | GET | `/tasks/{id}/events/{seq}` | Single event row. |
-| PATCH | `/tasks/{id}/events/{seq}` | Append a user-response message (max 10 000 bytes after trim, thread cap 200). Only for `approval_requested` and `task_failed`. Publishes `task_updated`. |
+| PATCH | `/tasks/{id}/events/{seq}` | Append a user-response message (max 10 000 bytes after trim, thread cap 200). Only for `approval_requested` and `task_failed`. Publishes `task_event_changed`. |
 | GET | `/tasks/{id}/dependencies` | `{ depends_on: [{ task_id, satisfies }] }`. |
 | POST | `/tasks/{id}/dependencies` | Body `{ depends_on_task_id, satisfies? }` (default `done`). Cycles / self-deps rejected. Publishes `task_dependency_changed`. |
 | DELETE | `/tasks/{id}/dependencies/{depId}` | `204`. Publishes `task_dependency_changed`. |
@@ -218,7 +218,8 @@ Lossless reconnects via `Last-Event-ID`: a ring buffer (default 1024 entries) re
 | Type | When | Payload |
 |---|---|---|
 | `task_created` | `POST /tasks` succeeds. | `{ type, id, data: <task> }` |
-| `task_updated` | Any task mutation (PATCH, checklist, event response, agent terminal status, etc.). `data` carries the full flat task when the publisher enriches post-commit; hint-only frames omit `data`. | `{ type, id, data?: <task> }` |
+| `task_updated` | Task-row mutations (PATCH, checklist, gate, retry; agent terminal status). `data` carries the full flat task when the publisher enriches post-commit; hint-only frames omit `data`. | `{ type, id, data?: <task> }` |
+| `task_event_changed` | Audit event thread append (`PATCH /tasks/{id}/events/{seq}`). Does not mutate the `tasks` row. | `{ type, id, event_seq }` |
 | `task_deleted` | `DELETE /tasks/{id}`. | `{ type, id }` |
 | `task_dependency_changed` | Dependency add/remove/replace. | `{ type, id }` |
 | `task_gate_changed` | Gate create/patch/action. | `{ type, id }` |

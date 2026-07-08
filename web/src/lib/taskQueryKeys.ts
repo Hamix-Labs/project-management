@@ -26,6 +26,8 @@ export const taskQueryKeys = {
   /** Prefix for all task detail queries (SSE flush partial match). */
   detailRoot: () => [...taskQueryKeys.all, "detail"] as const,
   detail: (id: string) => [...taskQueryKeys.all, "detail", id] as const,
+  /** Prefix for all events queries on a task (SSE partial match). */
+  eventsRoot: (id: string) => [...taskQueryKeys.detail(id), "events"] as const,
   checklist: (id: string) =>
     [...taskQueryKeys.all, "detail", id, "checklist"] as const,
   events: (id: string, cursor: TaskEventsCursorKey) => {

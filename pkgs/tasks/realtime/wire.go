@@ -10,6 +10,7 @@ const (
 	TaskGateChanged       ChangeType = "task_gate_changed"
 	TaskDependencyChanged ChangeType = "task_dependency_changed"
 	TaskCycleChanged      ChangeType = "task_cycle_changed"
+	TaskEventChanged      ChangeType = "task_event_changed"
 	AgentRunProgress      ChangeType = "agent_run_progress"
 	ProjectCreated        ChangeType = "project_created"
 	ProjectUpdated        ChangeType = "project_updated"
@@ -26,6 +27,7 @@ type Event struct {
 	Type             ChangeType          `json:"type"`
 	ID               string              `json:"id"`
 	CycleID          string              `json:"cycle_id,omitempty"`
+	EventSeq         int64               `json:"event_seq,omitempty"`
 	PhaseSeq         int64               `json:"phase_seq,omitempty"`
 	RunCorrelationID string              `json:"run_correlation_id,omitempty"`
 	Progress         *RunProgressPayload `json:"progress,omitempty"`

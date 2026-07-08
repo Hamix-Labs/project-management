@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -270,13 +271,13 @@ func TestHTTP_patchEvent_threadFullIs400(t *testing.T) {
 	}
 }
 
-// TestHTTP_patchEvent_publishesTaskUpdated pins the SSE invariant: a
-// successful PATCH publishes exactly `task_updated:{id}` (and nothing else).
-// Subscribing AFTER seed avoids draining the task_created event from the
-// fixture. Mirrors Sessions 14–16 colocation pattern: the SSE assertion
-// lives next to the rest of this route's contract instead of only in
-// sse_trigger_surface_test.go.
-func TestHTTP_patchEvent_publishesTaskUpdated(t *testing.T) {
+// TestHTTP_patchEvent_publishesTaskEventChanged pins the SSE invariant: a
+// successful PATCH publishes exactly `task_event_changed:{id}/{seq}` (and
+// nothing else). Subscribing AFTER seed avoids draining the task_created
+// event from the fixture. Mirrors Sessions 14–16 colocation pattern: the SSE
+// assertion lives next to the rest of this route's contract instead of only
+// in sse_trigger_surface_test.go.
+func TestHTTP_patchEvent_publishesTaskEventChanged(t *testing.T) {
 	srv, st, hub := newSSETriggerServer(t)
 	defer srv.Close()
 	id, approvalSeq := seedApprovalRequested(t, srv, st)
@@ -290,7 +291,7 @@ func TestHTTP_patchEvent_publishesTaskUpdated(t *testing.T) {
 	}
 
 	got := summarize(drainSSE(t, ch, 1, 2*time.Second))
-	mustEqualEvents(t, "PATCH /tasks/{id}/events/{seq}", got, []string{"task_updated:" + id})
+	mustEqualEvents(t, "PATCH /tasks/{id}/events/{seq}", got, []string{fmt.Sprintf("task_event_changed:%s/%d", id, approvalSeq)})
 }
 
 // TestHTTP_patchEvent_errorPathsNeverPublish pins the negative-side SSE

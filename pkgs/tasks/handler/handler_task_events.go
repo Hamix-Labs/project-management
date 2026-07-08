@@ -232,7 +232,7 @@ func (h *Handler) patchTaskEventUserResponse(w http.ResponseWriter, r *http.Requ
 		writeStoreError(w, r, op, err)
 		return
 	}
-	h.notifyChange(TaskUpdated, id)
+	h.notifyTaskEventChanged(id, seq)
 	writeJSON(w, r, op, http.StatusOK, taskEventDetailFromDomain(ev, id))
 }
 

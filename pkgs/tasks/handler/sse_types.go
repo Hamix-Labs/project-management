@@ -18,6 +18,7 @@ const (
 	TaskGateChanged       = realtime.TaskGateChanged
 	TaskDependencyChanged = realtime.TaskDependencyChanged
 	TaskCycleChanged      = realtime.TaskCycleChanged
+	TaskEventChanged      = realtime.TaskEventChanged
 	AgentRunProgress      = realtime.AgentRunProgress
 	ProjectCreated        = realtime.ProjectCreated
 	ProjectUpdated        = realtime.ProjectUpdated

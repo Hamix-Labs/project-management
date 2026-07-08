@@ -21,6 +21,15 @@ describe("taskQueryKeys", () => {
     ]);
   });
 
+  it("defines eventsRoot prefix covering paged and infinite event queries", () => {
+    const root = taskQueryKeys.eventsRoot("t1");
+    expect(root).toEqual(["tasks", "detail", "t1", "events"]);
+    expect(taskQueryKeys.events("t1", { k: "head" }).slice(0, root.length)).toEqual(
+      root,
+    );
+    expect(taskQueryKeys.eventsInfinite("t1").slice(0, root.length)).toEqual(root);
+  });
+
   it("scopes detail, checklist, and event detail under the task id", () => {
     expect(taskQueryKeys.detailRoot()).toEqual(["tasks", "detail"]);
     expect(taskQueryKeys.detail("t1")).toEqual(["tasks", "detail", "t1"]);

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { decideProjectInvalidationKeys } from "@/lib/queryInvalidation";
 import { settingsQueryKeys } from "@/settings/settingsQueryKeys";
+import { taskQueryKeys } from "../task-query";
 import { decideSyncFrame } from "./decideSyncFrame";
 
 function invalidationEffects(keys: ReturnType<typeof decideProjectInvalidationKeys>) {
@@ -94,6 +95,23 @@ describe("decideSyncFrame", () => {
     expect(decision.effects).toContainEqual({
       kind: "invalidate",
       queryKey: settingsQueryKeys.modelsRoot(),
+    });
+  });
+
+  it("invalidates events queries immediately on task_event frames", () => {
+    const decision = decideSyncFrame({
+      frame: { kind: "task_event", taskId: "t1", eventSeq: 42 },
+      shouldSuppressTaskEcho: noSuppress,
+    });
+    expect(decision.schedule).toBe("immediate");
+    expect(decision.pendingDelta).toEqual({});
+    expect(decision.effects).toContainEqual({
+      kind: "invalidate",
+      queryKey: taskQueryKeys.eventsRoot("t1"),
+    });
+    expect(decision.effects).toContainEqual({
+      kind: "invalidate",
+      queryKey: taskQueryKeys.eventDetail("t1", 42),
     });
   });
 

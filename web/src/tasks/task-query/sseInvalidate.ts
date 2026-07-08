@@ -17,6 +17,8 @@ import {
  *     "id": "<task uuid>" }
  *   { "type": "task_cycle_changed",
  *     "id": "<task uuid>", "cycle_id": "<cycle uuid>" }
+ *   { "type": "task_event_changed",
+ *     "id": "<task uuid>", "event_seq": <positive int> }
  */
 export type TaskChangeFrame =
   | {
@@ -47,6 +49,11 @@ export type TaskChangeFrame =
        * applying.
        */
       data?: unknown;
+    }
+  | {
+      kind: "task_event";
+      taskId: string;
+      eventSeq: number;
     }
   | {
       kind: "progress";
@@ -179,6 +186,17 @@ export function parseTaskChangeFrame(data: string): TaskChangeFrame | null {
       frame.data = o.data;
     }
     return frame;
+  }
+  if (o.type === SSE_CHANGE_TYPE.taskEventChanged) {
+    const eventSeq = o.event_seq;
+    if (
+      typeof eventSeq !== "number" ||
+      !Number.isFinite(eventSeq) ||
+      eventSeq < 1
+    ) {
+      return null;
+    }
+    return { kind: "task_event", taskId: id, eventSeq };
   }
   if (isProjectHintType(o.type)) {
     return { kind: "project", projectId: id };

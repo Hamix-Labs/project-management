@@ -223,6 +223,7 @@ export const SSE_CHANGE_TYPE = {
   taskGateChanged: "task_gate_changed",
   taskDependencyChanged: "task_dependency_changed",
   taskCycleChanged: "task_cycle_changed",
+  taskEventChanged: "task_event_changed",
   agentRunProgress: "agent_run_progress",
   projectCreated: "project_created",
   projectUpdated: "project_updated",

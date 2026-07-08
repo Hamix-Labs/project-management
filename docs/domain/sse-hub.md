@@ -194,7 +194,8 @@ Constants: [`TaskChangeType`](../../pkgs/tasks/handler/sse.go). Authoritative li
 | Type | Typical publisher | Coalesced? | `data` enrichment |
 | --- | --- | --- | --- |
 | `task_created` | HTTP create | Hint-only yes | Full task tree |
-| `task_updated` | HTTP patch, checklist, gate, retry; harness terminal status via worker adapter | Hint-only yes | Full `domain.Task` on task-row mutations ([ADR-0026](../adr/ADR-0026-backend-data-coherence.md) S2, S5) |
+| `task_updated` | HTTP patch, checklist, gate, retry; harness terminal status via worker adapter | Hint-only yes | Full `domain.Task` on task-row mutations only ([ADR-0026](../adr/ADR-0026-backend-data-coherence.md) S2, S5) |
+| `task_event_changed` | HTTP `PATCH /tasks/{id}/events/{seq}` user-response append | Yes | No |
 | `task_deleted` | HTTP delete | Yes | No |
 | `task_cycle_changed` | Harness via worker adapter | **Never** | Sometimes cycle detail |
 | `agent_run_progress` | Worker progress adapter | **Never** | N/A (progress sub-object) |
@@ -226,6 +227,7 @@ First frame after connect: `retry: 3000\n\n`.
 | --- | --- |
 | `type` | Always |
 | `id` | Task or project uuid (omitted for settings/cancel/resync) |
+| `event_seq` | `task_event_changed` (audit thread append) |
 | `cycle_id` | `task_cycle_changed`, `agent_run_progress` |
 | `phase_seq` | `agent_run_progress` |
 | `progress` | Normalized runner hint (kind, message, tool, …) |
@@ -246,8 +248,9 @@ Architecture: [ADR-0022](../adr/ADR-0022-task-sync-policy.md). Entry hook: [`use
 3. **`resync`** → invalidate all task queries + RUM `rumSSEResyncReceived`
 4. **Task frames** → queue task id; if `data` present, validate via `parseTask` and `setQueryData`
 5. **Cycle frames** → queue `(taskId, cycleId)`; optional enriched cycle detail via `parseTaskCycleDetail`
-6. **Progress** → separate debounced path to `useAgentRunProgress` (not full invalidation storm)
-7. **Flush** — trailing debounce **900ms**, max wait **2500ms** so worker burst (~4 cycle frames per run) collapses to one invalidation batch
+6. **`task_event_changed`** → immediate invalidation of `taskQueryKeys.eventsRoot(id)` (+ `eventDetail` when `event_seq` present); does not queue task-row refetch
+7. **Progress** → separate debounced path to `useAgentRunProgress` (not full invalidation storm)
+8. **Flush** — trailing debounce **900ms**, max wait **2500ms** so worker burst (~4 cycle frames per run) collapses to one invalidation batch
 
 Cycle frames drive most agent UI updates — the worker emits `task_cycle_changed`, not `task_updated`. Invalidating the `["tasks","detail"]` prefix keeps checklist, events, and nested subtask trees consistent when SSE only names one task id.
 

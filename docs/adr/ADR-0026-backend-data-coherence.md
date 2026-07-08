@@ -31,8 +31,8 @@ Add [`handler_writepolicy.go`](../../pkgs/tasks/handler/handler_writepolicy.go) 
 | ID | Rule |
 |----|------|
 | S1 | `hub.Publish` for mutation hints never runs before store returns nil |
-| S2 | Enriched `task_updated` uses post-commit `store.Get` |
-| S3 | Hint-only events remain id-only: `task_deleted`, `task_gate_changed`, `task_dependency_changed`, `project_*`, `settings_changed` |
+| S2 | Enriched `task_updated` uses post-commit `store.Get`; **`task_updated` is only for `tasks` row mutations** |
+| S3 | Hint-only events remain id-only: `task_deleted`, `task_gate_changed`, `task_dependency_changed`, `task_event_changed`, `project_*`, `settings_changed` |
 | S4 | Harness/worker `task_cycle_changed` lifecycle publishes unchanged (hint or enriched cycle detail) |
 | S5 | Harness terminal `task.status` transitions (`done`, `failed`) publish enriched `task_updated` post-commit via the same helper as HTTP handlers |
 
@@ -43,6 +43,7 @@ Add [`handler_writepolicy.go`](../../pkgs/tasks/handler/handler_writepolicy.go) 
 | `task_created`, `task_updated` | Enriched `domain.Task` in `data` | Task row changed (CRUD, checklist, gate action, retry, **agent terminal status**) |
 | `task_deleted` | Hint only | Delete succeeded |
 | `task_gate_changed`, `task_dependency_changed` | Hint only | Sidecar resource changed |
+| `task_event_changed` | Hint with `id` + `event_seq` | Audit event thread append (`PATCH /tasks/{id}/events/{seq}`) |
 | `task_cycle_changed` | Enriched cycle (existing) | Unchanged |
 
 Checklist and gate handlers now use enriched `task_updated` after successful mutations.

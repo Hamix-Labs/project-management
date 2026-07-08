@@ -20,9 +20,9 @@ describe("cross-stack contract manifests", () => {
     }
   });
 
-  it("SSE_CHANGE_TYPES mirrors realtime/wire.go (14 ChangeType values)", () => {
-    expect(SSE_CHANGE_TYPES).toHaveLength(14);
-    expect(new Set(SSE_CHANGE_TYPES).size).toBe(14);
+  it("SSE_CHANGE_TYPES mirrors realtime/wire.go (15 ChangeType values)", () => {
+    expect(SSE_CHANGE_TYPES).toHaveLength(15);
+    expect(new Set(SSE_CHANGE_TYPES).size).toBe(15);
     expect(SSE_CHANGE_TYPES).toEqual(Object.values(SSE_CHANGE_TYPE));
   });
 

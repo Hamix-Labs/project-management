@@ -27,6 +27,7 @@ var HintOnlyChangeTypes = []realtime.ChangeType{
 	realtime.TaskDeleted,
 	realtime.TaskGateChanged,
 	realtime.TaskDependencyChanged,
+	realtime.TaskEventChanged,
 	realtime.ProjectCreated,
 	realtime.ProjectUpdated,
 	realtime.ProjectDeleted,

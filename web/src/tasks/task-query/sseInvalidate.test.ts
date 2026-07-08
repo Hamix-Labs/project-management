@@ -90,6 +90,31 @@ describe("parseTaskChangeFrame", () => {
     ).toEqual({ kind: "project_context", projectId: "project-1" });
   });
 
+  it("returns a task_event frame when event_seq is present", () => {
+    expect(
+      parseTaskChangeFrame(
+        '{"type":"task_event_changed","id":"task-1","event_seq":42}',
+      ),
+    ).toEqual({ kind: "task_event", taskId: "task-1", eventSeq: 42 });
+    expect(
+      parseTaskChangeFrame('{"type":"task_event_changed","id":"task-1"}'),
+    ).toBeNull();
+    expect(
+      parseTaskChangeFrame(
+        '{"type":"task_event_changed","id":"task-1","event_seq":0}',
+      ),
+    ).toBeNull();
+  });
+
+  it("does not collect task ids from task_event frames", () => {
+    const s = new Set<string>();
+    collectTaskIdFromSSEData(
+      '{"type":"task_event_changed","id":"task-1","event_seq":3}',
+      s,
+    );
+    expect(s.size).toBe(0);
+  });
+
   it("returns a cycle frame only when both id and cycle_id are present", () => {
     expect(
       parseTaskChangeFrame(
@@ -210,6 +235,8 @@ describe("parseTaskChangeFrame", () => {
         '{"type":"task_dependency_changed","id":"t-1"}',
       [SSE_CHANGE_TYPE.taskCycleChanged]:
         '{"type":"task_cycle_changed","id":"t-1","cycle_id":"c-1"}',
+      [SSE_CHANGE_TYPE.taskEventChanged]:
+        '{"type":"task_event_changed","id":"t-1","event_seq":1}',
       [SSE_CHANGE_TYPE.agentRunProgress]:
         '{"type":"agent_run_progress","id":"t-1","cycle_id":"c-1","phase_seq":1,"progress":{"kind":"status"}}',
       [SSE_CHANGE_TYPE.projectCreated]: '{"type":"project_created","id":"p-1"}',

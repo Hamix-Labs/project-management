@@ -44,6 +44,36 @@ describe("useTaskEventStream", () => {
     vi.useRealTimers();
   });
 
+  it("task_event_changed invalidates events queries only without detail or list refetch", () => {
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const inv = vi.spyOn(qc, "invalidateQueries");
+
+    renderHook(() => useTaskEventStream(), {
+      wrapper: createWrapper(qc),
+    });
+    const mockES = getCurrentMockES();
+    act(() => {
+      mockES!.onopen?.();
+    });
+    act(() => {
+      mockES!.onmessage?.({
+        data: '{"type":"task_event_changed","id":"task-events-only","event_seq":7}',
+      });
+    });
+    // Immediate invalidation — no debounce window.
+    const calls = inv.mock.calls.map(
+      (c) => (c[0] as { queryKey: readonly unknown[] }).queryKey,
+    );
+    expect(calls).toContainEqual(taskQueryKeys.eventsRoot("task-events-only"));
+    expect(calls).toContainEqual(
+      taskQueryKeys.eventDetail("task-events-only", 7),
+    );
+    for (const key of calls) {
+      expect(key).not.toEqual(["tasks", "list"]);
+      expect(key).not.toEqual(["tasks", "detail"]);
+    }
+  });
+
   it("debounced SSE message triggers query invalidation after delay", () => {
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const inv = vi.spyOn(qc, "invalidateQueries");

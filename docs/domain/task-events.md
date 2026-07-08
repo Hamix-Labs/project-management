@@ -33,7 +33,7 @@ The **`task_events`** table is the append-only audit log for a task. Every meani
 
 Clients read history through REST (`GET /tasks/{id}/events`, `GET /tasks/{id}/events/{seq}`). They do **not** receive audit rows over SSE.
 
-> **Important** — `GET /events` (SSE) publishes **change hints** (`task_updated`, `task_cycle_changed`, …). It does **not** replay `task_events`. After an SSE hint, the SPA refetches REST — including the events list when the timeline is visible. See [sse-hub.md](./sse-hub.md).
+> **Important** — `GET /events` (SSE) publishes **change hints** (`task_updated`, `task_event_changed`, `task_cycle_changed`, …). It does **not** replay `task_events`. After an SSE hint, the SPA refetches REST — including the events list when the timeline is visible. See [sse-hub.md](./sse-hub.md).
 
 ### In scope
 
@@ -205,7 +205,7 @@ Body: `{ "user_response": "<text>" }` (required non-empty after trim).
 5. Sync `user_response` / `user_response_at` to the **latest user** message in the thread (legacy clients).
 6. Return updated row.
 
-**Handler:** On success, `notifyChange(TaskUpdated, taskID)` → SSE hint-only `task_updated`. The audit row itself is not streamed.
+**Handler:** On success, `notifyTaskEventChanged(taskID, seq)` → SSE hint-only `task_event_changed` with `event_seq`. The audit row itself is not streamed.
 
 **Display helper:** `store.ThreadEntriesForDisplay(ev)` merges thread JSON with legacy columns for API responses and devsim.
 
@@ -329,7 +329,7 @@ The SPA uses **two complementary surfaces**:
 | **Event detail page** | `GET /tasks/{id}/events/{seq}` | Deep-dive on one row; structured phase/cycle overviews from `parsePhaseEventOverview.ts` |
 | **Runner stream (optional)** | `GET …/cycles/{cycleId}/stream` | Tool-level history, not mixed into the audit timeline |
 
-**React Query:** `useTaskDetailEvents` uses `useInfiniteQuery` with keyset cursors (`before_seq` / `after_seq`) matching server `has_more_older` / `has_more_newer`. SSE `task_updated` invalidates task detail queries; the timeline refetches when mounted — it does not subscribe to per-row audit streaming.
+**React Query:** `useTaskDetailEvents` uses `useInfiniteQuery` with keyset cursors (`before_seq` / `after_seq`) matching server `has_more_older` / `has_more_newer`. SSE `task_event_changed` invalidates events queries only (`taskQueryKeys.eventsRoot`); the timeline refetches when mounted — it does not subscribe to per-row audit streaming.
 
 **Authority rule for contributors:** UI that answers “can the agent proceed?” or “which phase is running?” must read **cycles**. UI that answers “what did we already tell the user?” or “show the conversation on this failure” reads **events** (and response threads).
 

@@ -69,11 +69,15 @@ func drainSSE(t *testing.T, ch <-chan string, want int, timeout time.Duration) [
 
 // summarize collapses a TaskChangeEvent slice into a stable string set so
 // tests can compare published events without relying on publish order. The
-// format is "type:id" for task-only events and "type:id/cycle_id" for
-// task_cycle_changed events so the cycle identity is asserted explicitly.
+// format is "type:id" for task-only events, "type:id/cycle_id" for
+// task_cycle_changed events, and "type:id/seq" when event_seq is set.
 func summarize(events []TaskChangeEvent) []string {
 	out := make([]string, 0, len(events))
 	for _, ev := range events {
+		if ev.EventSeq > 0 {
+			out = append(out, fmt.Sprintf("%s:%s/%d", ev.Type, ev.ID, ev.EventSeq))
+			continue
+		}
 		if ev.CycleID != "" {
 			out = append(out, fmt.Sprintf("%s:%s/%s", ev.Type, ev.ID, ev.CycleID))
 			continue
@@ -186,7 +190,7 @@ func TestHTTP_SSE_triggerSurface(t *testing.T) {
 		mustEqualEvents(t, "DELETE /tasks/{id}/checklist/items/{itemId}", got, []string{"task_updated:" + task.ID})
 	})
 
-	t.Run("PATCH /tasks/{id}/events/{seq} user response emits task_updated", func(t *testing.T) {
+	t.Run("PATCH /tasks/{id}/events/{seq} user response emits task_event_changed", func(t *testing.T) {
 		srv, st, hub := newSSETriggerServer(t)
 		defer srv.Close()
 		task := postTaskJSON(t, srv, `{"title":"a","priority":"medium"}`, http.StatusCreated)
@@ -197,7 +201,7 @@ func TestHTTP_SSE_triggerSurface(t *testing.T) {
 		mustDoJSON(t, http.MethodPatch, srv.URL+"/tasks/"+task.ID+"/events/"+formatEventSeq(approvalSeq),
 			`{"user_response":"ok"}`, "agent", http.StatusOK)
 		got := summarize(drainSSE(t, ch, 1, 2*time.Second))
-		mustEqualEvents(t, "PATCH /tasks/{id}/events/{seq}", got, []string{"task_updated:" + task.ID})
+		mustEqualEvents(t, "PATCH /tasks/{id}/events/{seq}", got, []string{fmt.Sprintf("task_event_changed:%s/%d", task.ID, approvalSeq)})
 	})
 
 	t.Run("DELETE /tasks/{id} (no parent) emits task_deleted", func(t *testing.T) {

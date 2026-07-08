@@ -48,6 +48,16 @@ export function decideSyncFrame(input: DecideSyncFrameInput): SyncFrameDecision 
       })),
     };
   }
+  if (frame.kind === "task_event") {
+    const effects: SyncFrameDecision["effects"] = [
+      { kind: "invalidate", queryKey: taskQueryKeys.eventsRoot(frame.taskId) },
+      {
+        kind: "invalidate",
+        queryKey: taskQueryKeys.eventDetail(frame.taskId, frame.eventSeq),
+      },
+    ];
+    return { schedule: "immediate", pendingDelta: {}, effects };
+  }
   if (frame.kind === "cycle") {
     const pendingDelta: SyncFrameDecision["pendingDelta"] = {
       addTaskId: frame.taskId,
