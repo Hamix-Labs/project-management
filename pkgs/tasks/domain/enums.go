@@ -89,6 +89,9 @@ const (
 	EventOnTaskDone            EventType = "on_task_done"
 	EventTaskFailed            EventType = "task_failed"
 	EventTaskRetryRequested    EventType = "task_retry_requested"
+	// EventTaskPickupFailed is emitted when the worker cannot persist ready→running
+	// (e.g. store/jsonb errors). The task stays ready; pickup is deferred.
+	EventTaskPickupFailed EventType = "task_pickup_failed"
 	// Execution-cycle audit mirrors. Emitted in the same SQL transaction as writes to
 	// task_cycles / task_cycle_phases so GET /tasks/{id}/events stays a complete witness
 	// of cycle activity. See docs/data-model.md.

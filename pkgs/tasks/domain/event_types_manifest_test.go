@@ -28,6 +28,7 @@ func productionEventTypes() []EventType {
 		EventOnTaskDone,
 		EventTaskFailed,
 		EventTaskRetryRequested,
+		EventTaskPickupFailed,
 		EventCycleStarted,
 		EventCycleCompleted,
 		EventCycleFailed,
@@ -43,8 +44,8 @@ func TestProductionEventTypesManifest(t *testing.T) {
 	t.Parallel()
 
 	types := productionEventTypes()
-	if len(types) != 29 {
-		t.Fatalf("productionEventTypes len = %d, want 29 (update manifest when adding EventType)", len(types))
+	if len(types) != 30 {
+		t.Fatalf("productionEventTypes len = %d, want 30 (update manifest when adding EventType)", len(types))
 	}
 
 	seen := make(map[EventType]struct{}, len(types))

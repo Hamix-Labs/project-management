@@ -79,6 +79,7 @@ Calibrate on **Linux CI** if Windows and Linux totals diverge by more than ~1%.
 | **Pure** | FSM, policy tables, formatting | stdlib + domain only |
 | **Contract** | Handler HTTP via `httptest`, harness via `harness.Run` + fakes | `tasktestdb` / `storefake`, `runnerfake` |
 | **Store facade** | `*store.Store` on SQLite | `internal/tasktestdb` |
+| **Store facade (Postgres)** | `*store.Store` on Postgres | `tasktestdb.OpenPostgres` — skips unless `HAMIX_TEST_POSTGRES_URL` or `DATABASE_URL` is set |
 | **Git wrapper** | Real `git` in `t.TempDir()` | git binary + fakes for store |
 | **Opt-in real Cursor** | Runner integration | `HAMIX_TEST_REAL_CURSOR=1` (local only; never CI) |
 

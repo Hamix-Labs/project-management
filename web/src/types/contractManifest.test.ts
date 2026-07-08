@@ -11,7 +11,7 @@ const REMOVED_EVENT_TYPES = ["subtask_added", "task_type"] as const;
 
 describe("cross-stack contract manifests", () => {
   it("TASK_EVENT_TYPES matches production EventType count (pkgs/tasks/domain/event_types_manifest_test.go)", () => {
-    expect(TASK_EVENT_TYPES).toHaveLength(29);
+    expect(TASK_EVENT_TYPES).toHaveLength(30);
   });
 
   it("TASK_EVENT_TYPES excludes intentionally removed event types", () => {

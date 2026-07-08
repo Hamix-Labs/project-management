@@ -226,6 +226,8 @@ Authoritative enum: `pkgs/tasks/domain/enums.go`. Parser allowlist: `parseEventT
 | `artifact_added` | Artifact recording |
 | `approval_requested`, `approval_granted` | Approval gate flow |
 | `task_completed`, `task_failed` | Terminal outcomes |
+| `task_retry_requested` | Operator retry after failure |
+| `task_pickup_failed` | Agent worker could not persist ready→running (task stays ready; pickup deferred) |
 
 ### Checklist
 

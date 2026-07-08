@@ -104,6 +104,13 @@ export function formatEventSummaryCompact(ev: TaskEvent): string | null {
     }
   }
 
+  if (ev.type === "task_pickup_failed") {
+    const reason = ev.data.reason;
+    if (typeof reason === "string" && reason.trim()) {
+      return reason === "persistence" ? "Could not save running state" : reason;
+    }
+  }
+
   return null;
 }
 
@@ -239,6 +246,7 @@ const TASK_SCOPE_TYPES = new Set<TaskEventType>([
   "task_completed",
   "task_failed",
   "task_retry_requested",
+  "task_pickup_failed",
   "sync_ping",
 ]);
 

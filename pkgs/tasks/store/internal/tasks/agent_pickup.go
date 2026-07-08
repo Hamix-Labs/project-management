@@ -57,8 +57,15 @@ func AgentPickup(ctx context.Context, db *gorm.DB, taskID string, by domain.Acto
 		if err := applyStatusPatch(tx, taskID, &dcur, &running, by, &nextSeq); err != nil {
 			return err
 		}
-		cur = model.FromDomainTask(dcur)
-		if err := tx.Save(&cur).Error; err != nil {
+		pendingRetryJSON, err := model.NullableStructJSON(dcur.PendingRetry)
+		if err != nil {
+			return fmt.Errorf("marshal pending_retry: %w", err)
+		}
+		updates := map[string]any{
+			"status":        running,
+			"pending_retry": pendingRetryJSON,
+		}
+		if err := tx.Model(&model.Task{}).Where("id = ?", taskID).Updates(updates).Error; err != nil {
 			return fmt.Errorf("save task: %w", err)
 		}
 		if err := hydrateDependsOn(ctx, tx, &dcur); err != nil {

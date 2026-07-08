@@ -8,10 +8,19 @@ import {
   statusListLabel,
   statusNeedsUserInput,
 } from "../../../task-display";
+import { TaskDetailGitBinding } from "./TaskDetailGitBinding";
 
 type TaskDetailHeaderTask = Pick<
   Task,
-  "title" | "status" | "priority" | "runner" | "cursor_model" | "tags" | "milestone"
+  | "title"
+  | "status"
+  | "priority"
+  | "runner"
+  | "cursor_model"
+  | "tags"
+  | "milestone"
+  | "worktree_id"
+  | "project_id"
 >;
 
 type Props = {
@@ -87,6 +96,10 @@ export function TaskDetailHeader({ task }: Props) {
             </span>
           ))}
         </div>
+        <TaskDetailGitBinding
+          worktreeId={task.worktree_id}
+          projectId={task.project_id}
+        />
       </header>
     </>
   );

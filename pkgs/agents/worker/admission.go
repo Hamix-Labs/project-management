@@ -3,6 +3,7 @@ package worker
 import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"log/slog"
 	"strings"
@@ -11,6 +12,8 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
+
+const pickupPersistenceDefer = 2 * time.Minute
 
 // reloadTask fetches the freshest task row from the store. ok==false
 // means the caller should bail (and AckAfterRecv via the deferred path).
@@ -44,7 +47,7 @@ func (w *Worker) deferTaskPickup(ctx context.Context, taskID string, delay time.
 
 // transitionTaskToRunning flips the task to running before the harness runs.
 // Returns the post-pickup task row and any consumed retry intent.
-func (w *Worker) transitionTaskToRunning(ctx context.Context, taskID string) (*domain.Task, *domain.PendingRetry, bool) {
+func (w *Worker) transitionTaskToRunning(ctx context.Context, taskID string) (*domain.Task, *domain.PendingRetry, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.worker.Worker.transitionTaskToRunning",
 		"task_id", taskID)
 	res, err := w.store.AgentPickup(ctx, taskID, domain.ActorAgent)
@@ -56,9 +59,37 @@ func (w *Worker) transitionTaskToRunning(ctx context.Context, taskID string) (*d
 		slog.Log(ctx, level, "agent worker task pickup failed",
 			"cmd", calltrace.LogCmd, "operation", "agent.worker.Worker.transitionTaskToRunning.err",
 			"task_id", taskID, "err", err)
-		return nil, nil, false
+		return nil, nil, err
 	}
-	return res.Task, res.ConsumedRetry, true
+	return res.Task, res.ConsumedRetry, nil
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func pickupPersistenceFailure(err error) bool {
+	if err == nil {
+		return false
+	}
+	if errors.Is(err, domain.ErrNotFound) || errors.Is(err, domain.ErrInvalidInput) {
+		return false
+	}
+	return true
+}
+
+func (w *Worker) recordPickupPersistenceFailure(ctx context.Context, taskID string, pickupErr error) {
+	slog.Warn("agent worker pickup persistence failure; deferring retry",
+		"cmd", calltrace.LogCmd, "operation", "agent.worker.Worker.recordPickupPersistenceFailure",
+		"task_id", taskID, "err", pickupErr)
+	w.deferTaskPickup(ctx, taskID, pickupPersistenceDefer)
+	payload, err := json.Marshal(map[string]string{"reason": "persistence"})
+	if err != nil {
+		slog.Warn("agent worker pickup failure event marshal failed", "cmd", calltrace.LogCmd,
+			"operation", "agent.worker.Worker.recordPickupPersistenceFailure.marshal", "task_id", taskID, "err", err)
+		return
+	}
+	if err := w.store.AppendTaskEvent(ctx, taskID, domain.EventTaskPickupFailed, domain.ActorAgent, payload); err != nil {
+		slog.Warn("agent worker pickup failure event append failed", "cmd", calltrace.LogCmd,
+			"operation", "agent.worker.Worker.recordPickupPersistenceFailure.append", "task_id", taskID, "err", err)
+	}
 }
 
 func (w *Worker) openRunningCycle(ctx context.Context, taskID string) (*domain.TaskCycle, bool) {
@@ -150,8 +181,11 @@ func (w *Worker) processOne(parentCtx context.Context, task domain.Task) {
 		return
 	}
 	defer unlock()
-	picked, consumedRetry, ok := w.transitionTaskToRunning(parentCtx, task.ID)
-	if !ok {
+	picked, consumedRetry, err := w.transitionTaskToRunning(parentCtx, task.ID)
+	if err != nil {
+		if pickupPersistenceFailure(err) {
+			w.recordPickupPersistenceFailure(parentCtx, task.ID, err)
+		}
 		return
 	}
 	w.runWithGitPrep(parentCtx, picked, func() {

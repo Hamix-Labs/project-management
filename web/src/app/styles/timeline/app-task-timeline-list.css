@@ -180,6 +180,12 @@ a.task-timeline-item-hit {
   border-color: color-mix(in srgb, var(--danger-border) 88%, var(--border-soft));
 }
 
+.task-timeline-type-pill[data-event-type="task_pickup_failed"] {
+  background: color-mix(in srgb, var(--warning-soft) 85%, var(--bg-elevated));
+  color: color-mix(in srgb, var(--warning) 92%, var(--text-primary));
+  border-color: color-mix(in srgb, var(--warning-border) 88%, var(--border-soft));
+}
+
 .task-timeline-type-pill[data-event-type="sync_ping"] {
   background: color-mix(in srgb, var(--neutral-fill-subtle) 75%, var(--bg-elevated));
   color: var(--text-secondary);
