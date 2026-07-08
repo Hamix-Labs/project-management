@@ -31,7 +31,7 @@ Implementations live in **[`pkgs/tasks/middleware`](../middleware/)** (no import
 | `sse_types.go` | Wire type aliases to `pkgs/tasks/realtime`. |
 | `sse_hub.go` | `SSEHub`, publish fanout, ring buffer, eviction. |
 | `sse_stream.go` | `streamEvents` (`GET /events`). |
-| `sse_notify.go` | `notifyChange` / enriched publish helpers. Domain doc: [docs/domain/sse-hub.md](../../docs/domain/sse-hub.md). |
+| `sse_notify.go` | `notifyChange` / enriched publish helpers; `notifyScopelessChange` for id-less hints (`settings_changed`, `agent_run_cancelled`). Domain doc: [docs/domain/sse-hub.md](../../docs/domain/sse-hub.md). |
 
 ## Route handlers (inner mux)
 

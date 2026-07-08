@@ -72,14 +72,16 @@
 - **Effort / risk / blast radius:** 4–8 hours; low–medium risk (event detail page + SSE); 1 handler + sync test.
 - **Evidence:** Handler calls `notifyChange` not `notifyTaskUpdatedEnriched`; store method is event append only.
 
-### 5. `handler_settings` bypasses `notifyChange` helper — ROI 7/10 (Medium)
+### 5. `handler_settings` bypasses `notifyChange` helper — ROI 7/10 (Medium) — **Status: done (2026-07-08)**
 
+- **PR:** (pending — `cleanup/boundaries-settings-notify`)
 - **Boundary violated:** Write publish — centralized notify path ([ADR-0026](../adr/ADR-0026-backend-data-coherence.md) S1)
-- **Location:** [handler_settings.go](../../pkgs/tasks/handler/handler_settings.go) L184 (`SettingsChanged`), L311 (`AgentRunCancelled`) — direct `h.hub.Publish(...)`
-- **Issue:** Settings mutations skip `notifyChange`, duplicating hub access and bypassing any future publish instrumentation in [sse_notify.go](../../pkgs/tasks/handler/sse_notify.go).
-- **Proposed change:** Replace with `h.notifyChange(SettingsChanged, "")` and `h.notifyChange(AgentRunCancelled, taskID)` (or add typed helpers). `SettingsChanged` is correctly hint-only per `writepolicy.HintOnlyChangeTypes`.
-- **Effort / risk / blast radius:** 1–2 hours; low risk; 1 file + settings contract test.
-- **Evidence:** `rg 'h\.hub\.Publish' pkgs/tasks/handler` → only `handler_settings.go` and `sse_notify.go`.
+- **Resolution:** Added `notifyScopelessChange` for id-less hint-only frames (`settings_changed`, `agent_run_cancelled`). `handler_settings.go` now routes both publish sites through the helper; CI gate blocks direct `h.hub.Publish` outside `sse_notify.go`.
+- **New locations:**
+  - **writepolicy:** [publish_policy.go](../../pkgs/tasks/handler/writepolicy/publish_policy.go) — `ScopelessHintChangeTypes`, `IsScopelessHint`
+  - **handler:** [sse_notify.go](../../pkgs/tasks/handler/sse_notify.go) — `notifyScopelessChange`; [handler_settings.go](../../pkgs/tasks/handler/handler_settings.go) — publish swap
+  - **ci:** [check-go.sh](../../scripts/check-go.sh), [check-go.ps1](../../scripts/check-go.ps1) — `sse publish boundary` step
+- **Evidence (exit gate):** `rg 'h\.hub\.Publish' pkgs/tasks/handler -g '*.go' -g '!*_test.go'` → only `sse_notify.go`
 
 ### 6. Checklist verify-commands patch uses ad-hoc invalidation — ROI 7/10 (Medium)
 

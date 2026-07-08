@@ -28,7 +28,7 @@ Ranked by composite ROI considering effort, risk, and lines/clarity impact. Prim
 | 5 | ~~8~~ | ~~Project/worktree cache invalidation outside `tasks/sync/`~~ **done** | [boundaries](./boundaries-roi.md#3-projectworktree-cache-invalidation-outside-taskssync--roi-810-high--status-done-2026-07-08) | 2–3 days |
 | 6 | 8 | Delete `taskDescendantCount()` stub | [dead-code](./dead-code-roi.md#3-taskdescendantcount-always-returns-0--roi-810-high) | 15 min |
 | 7 | 7 | `handler_task_events` hint-only `task_updated` on event append | [boundaries](./boundaries-roi.md#4-handler_task_events-publishes-hint-only-task_updated--roi-710-medium) | 4–8 hours |
-| 8 | 7 | `handler_settings` bypasses `notifyChange` helper | [boundaries](./boundaries-roi.md#5-handler_settings-bypasses-notifychange-helper--roi-710-medium) | 1–2 hours |
+| 8 | ~~7~~ | ~~`handler_settings` bypasses `notifyChange` helper~~ **done** | [boundaries](./boundaries-roi.md#5-handler_settings-bypasses-notifychange-helper--roi-710-medium--status-done-2026-07-08) | 1–2 hours |
 | 9 | 7 | Checklist verify-commands ad-hoc invalidation | [boundaries](./boundaries-roi.md#6-checklist-verify-commands-patch-uses-ad-hoc-invalidation--roi-710-medium) | 2–4 hours |
 | 10 | 5 | Close ADR-0039 as Accepted (store/model landed) | [boundaries](./boundaries-roi.md#10-close-adr-0039-as-accepted--roi-510-medium) | 30 min |
 

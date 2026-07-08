@@ -139,9 +139,12 @@ From [`Publish`](../../pkgs/tasks/handler/sse.go):
 
 HTTP handlers use:
 
-- `notifyChange(type, id)` — hint-only
+- `notifyChange(type, id)` — hint-only with task or project id
+- `notifyScopelessChange(type)` — id-less hints (`settings_changed`, `agent_run_cancelled`); classified in [`writepolicy.ScopelessHintChangeTypes`](../../pkgs/tasks/handler/writepolicy/publish_policy.go)
 - `notifyTaskChanged(type, id, data)` — optional enriched task tree
 - `notifyCycleChanged(...)` — cycle frames with `cycle_id`
+
+Direct `h.hub.Publish` is confined to [`sse_notify.go`](../../pkgs/tasks/handler/sse_notify.go); CI enforces this via the `sse publish boundary` step in [`scripts/check-go.sh`](../../scripts/check-go.sh).
 
 Publish only **after** the store transaction commits. Failed writes never publish ([api.md](../api.md)).
 

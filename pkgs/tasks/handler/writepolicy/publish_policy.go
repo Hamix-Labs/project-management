@@ -44,3 +44,21 @@ func IsHintOnly(typ realtime.ChangeType) bool {
 	}
 	return false
 }
+
+// ScopelessHintChangeTypes are hint-only events published without task or
+// project id. Clients refetch global resources (settings, agent run state).
+var ScopelessHintChangeTypes = []realtime.ChangeType{
+	realtime.SettingsChanged,
+	realtime.AgentRunCancelled,
+}
+
+// IsScopelessHint reports whether typ is published via notifyScopelessChange.
+func IsScopelessHint(typ realtime.ChangeType) bool {
+	slog.Debug("trace", "operation", "writepolicy.IsScopelessHint")
+	for _, scopeless := range ScopelessHintChangeTypes {
+		if typ == scopeless {
+			return true
+		}
+	}
+	return false
+}

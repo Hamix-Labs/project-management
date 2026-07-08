@@ -181,7 +181,7 @@ func (h *Handler) patchSettings(w http.ResponseWriter, r *http.Request) {
 		writeJSONError(w, r, op, http.StatusInternalServerError, "settings saved but worker reload failed")
 		return
 	}
-	h.hub.Publish(TaskChangeEvent{Type: SettingsChanged})
+	h.notifyScopelessChange(SettingsChanged)
 	writeJSON(w, r, op, http.StatusOK, h.settingsResponseFrom(updated))
 }
 
@@ -308,7 +308,7 @@ func (h *Handler) cancelCurrentRun(w http.ResponseWriter, r *http.Request) {
 	}
 	cancelled := h.agent.CancelCurrentRun()
 	if cancelled {
-		h.hub.Publish(TaskChangeEvent{Type: AgentRunCancelled})
+		h.notifyScopelessChange(AgentRunCancelled)
 	}
 	writeJSON(w, r, op, http.StatusOK, cancelRunResponse{Cancelled: cancelled})
 }

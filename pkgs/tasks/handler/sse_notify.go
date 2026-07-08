@@ -39,6 +39,14 @@ func (h *Handler) notifyCycleChanged(taskID, cycleID string, data any) {
 	h.hub.Publish(TaskChangeEvent{Type: TaskCycleChanged, ID: taskID, CycleID: cycleID, Data: data})
 }
 
+func (h *Handler) notifyScopelessChange(typ TaskChangeType) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.notifyScopelessChange", "change_type", typ)
+	if h.hub == nil {
+		return
+	}
+	h.hub.Publish(TaskChangeEvent{Type: typ})
+}
+
 func (h *Handler) notifyCycleChangedFromStore(ctx context.Context, taskID, cycleID string) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.notifyCycleChangedFromStore", "task_id", taskID, "cycle_id", cycleID)
 	if h.hub == nil || taskID == "" || cycleID == "" {

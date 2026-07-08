@@ -209,6 +209,27 @@ function Step-SchedulingBoundary {
     Write-OkLine $label $sw.Elapsed
 }
 
+function Step-SSEPublishBoundary {
+    $label = "sse publish boundary"
+    Write-StepPrefix
+    Write-Host -NoNewline "$label "
+
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
+    $allHits = & rg -n "h\.hub\.Publish" pkgs/tasks/handler -g "*.go" -g "!*_test.go" 2>$null
+    $badHits = $allHits | Where-Object { $_ -notmatch "sse_notify\.go" }
+    $sw.Stop()
+
+    if ($badHits) {
+        Write-Host "FAILED" -ForegroundColor Red
+        Write-Host "h.hub.Publish must only appear in pkgs/tasks/handler/sse_notify.go:" -ForegroundColor Red
+        $badHits
+        Fail-Step $label 1
+    }
+
+    $script:Passed++
+    Write-OkLine $label $sw.Elapsed
+}
+
 function Step-TestGroupCoverage {
     $label = "test group coverage"
     Write-StepPrefix
@@ -341,6 +362,7 @@ Step-Gofmt
 Invoke-CapturedStep "schema revision" { & "$PSScriptRoot\check-schema-revision.ps1" }
 Invoke-CapturedStep "go vet" { go vet ./... }
 Step-SchedulingBoundary
+Step-SSEPublishBoundary
 
 if ($LintOnly) {
     Step-TestGroupCoverage

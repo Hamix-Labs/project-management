@@ -155,6 +155,30 @@ step_scheduling_boundary() {
   print_ok_line "$label" "$elapsed"
 }
 
+step_sse_publish_boundary() {
+  local label="sse publish boundary"
+  local start=$SECONDS
+  step_prefix
+  printf '%s ' "$label"
+
+  local hits=""
+  if rg -q 'h\.hub\.Publish' pkgs/tasks/handler -g '*.go' -g '!*_test.go' 2>/dev/null; then
+    hits="$(rg -n 'h\.hub\.Publish' pkgs/tasks/handler -g '*.go' -g '!*_test.go' 2>/dev/null | grep -v 'sse_notify\.go' || true)"
+  fi
+  local elapsed=$((SECONDS - start))
+  add_section_time "$elapsed"
+
+  if [[ -n "$hits" ]]; then
+    echo "${C_RED}FAILED${C_RESET}"
+    echo "h.hub.Publish must only appear in pkgs/tasks/handler/sse_notify.go:"
+    echo "$hits"
+    fail_step "$label" 1
+  fi
+
+  PASSED=$((PASSED + 1))
+  print_ok_line "$label" "$elapsed"
+}
+
 step_test_group_coverage() {
   local label="test group coverage"
   local start=$SECONDS
@@ -288,6 +312,7 @@ step_gofmt
 run_cmd "schema revision" bash "$script_dir/check-schema-revision.sh"
 run_cmd "go vet" go vet ./...
 step_scheduling_boundary
+step_sse_publish_boundary
 
 if [[ "$LINT_ONLY" -eq 1 ]]; then
   step_test_group_coverage
