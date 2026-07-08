@@ -65,6 +65,15 @@ type ProgressNotifier interface {
 	PublishRunProgress(taskID, cycleID string, phaseSeq int64, runCorrelationID string, ev runner.ProgressEvent)
 }
 
+// TaskUpdatedNotifier is the optional SSE seam for terminal task.status transitions.
+// cmd/taskapi wires an adapter that publishes enriched task_updated; tests pass nil.
+//
+// Implementations MUST NOT block: the harness invokes PublishTaskUpdated
+// synchronously after a successful terminal transitionTask.
+type TaskUpdatedNotifier interface {
+	PublishTaskUpdated(taskID string)
+}
+
 // Options bundles the per-Harness tunables. Zero values pick documented
 // defaults so cmd/taskapi can construct a Harness without filling in
 // every field.
@@ -76,6 +85,7 @@ type Options struct {
 	ReportDir            string
 	Notifier             CycleChangeNotifier
 	ProgressNotifier     ProgressNotifier
+	TaskUpdatedNotifier  TaskUpdatedNotifier
 	VerifyRunner         runner.Runner
 	Metrics              RunMetrics
 	Clock                func() time.Time
@@ -170,6 +180,14 @@ func (h *Harness) publish(taskID, cycleID string) {
 		return
 	}
 	h.opts.Notifier.PublishCycleChange(taskID, cycleID)
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func (h *Harness) publishTaskUpdated(taskID string) {
+	if h.opts.TaskUpdatedNotifier == nil || taskID == "" {
+		return
+	}
+	h.opts.TaskUpdatedNotifier.PublishTaskUpdated(taskID)
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."

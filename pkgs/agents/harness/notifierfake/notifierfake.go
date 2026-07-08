@@ -1,4 +1,5 @@
-// Package notifierfake records harness CycleChangeNotifier and ProgressNotifier calls.
+// Package notifierfake records harness CycleChangeNotifier, TaskUpdatedNotifier,
+// and ProgressNotifier calls.
 package notifierfake
 
 import (
@@ -43,6 +44,39 @@ func (r *RecordingCycleNotifier) Snapshot() []PublishCall {
 	defer r.mu.Unlock()
 	out := make([]PublishCall, len(r.calls))
 	copy(out, r.calls)
+	return out
+}
+
+// RecordingTaskUpdatedNotifier implements harness.TaskUpdatedNotifier for tests.
+type RecordingTaskUpdatedNotifier struct {
+	mu      sync.Mutex
+	taskIDs []string
+}
+
+// NewRecordingTaskUpdatedNotifier constructs an empty recorder.
+//
+//funclogmeasure:skip category=tool-required-noop reason="Harness test fake only; SSE publish traces live on production harness.Run chokepoints."
+func NewRecordingTaskUpdatedNotifier() *RecordingTaskUpdatedNotifier {
+	return &RecordingTaskUpdatedNotifier{}
+}
+
+// PublishTaskUpdated records the call.
+//
+//funclogmeasure:skip category=hot-path reason="Test-only in-memory recorder; operation trace is emitted by harness.Run in production."
+func (r *RecordingTaskUpdatedNotifier) PublishTaskUpdated(taskID string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.taskIDs = append(r.taskIDs, taskID)
+}
+
+// Snapshot returns a copy of recorded task IDs.
+//
+//funclogmeasure:skip category=hot-path reason="Test-only assertion helper; no production I/O boundary."
+func (r *RecordingTaskUpdatedNotifier) Snapshot() []string {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	out := make([]string, len(r.taskIDs))
+	copy(out, r.taskIDs)
 	return out
 }
 

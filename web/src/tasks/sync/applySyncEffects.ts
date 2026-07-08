@@ -10,6 +10,7 @@ import {
   type PendingInvalidations,
   type PendingProgressStreams,
 } from "./syncConstants";
+import { isTerminalTaskStatus } from "./terminalTaskStatus";
 
 export function mergePendingDelta(
   pending: PendingInvalidations,
@@ -63,6 +64,10 @@ export function applySyncEffects(
         const parsed = parseTask(effect.data);
         queryClient.setQueryData(taskQueryKeys.detail(effect.taskId), parsed);
         enrichmentMarks.markTaskEnriched = effect.taskId;
+        if (isTerminalTaskStatus(parsed.status)) {
+          void queryClient.invalidateQueries({ queryKey: taskQueryKeys.listRoot() });
+          void queryClient.invalidateQueries({ queryKey: taskQueryKeys.stats() });
+        }
       } catch {
         /* fall back to invalidate-and-refetch on flush */
       }

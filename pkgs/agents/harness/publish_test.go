@@ -22,6 +22,7 @@ func TestHarness_HappyPath_emitsTrailingPublishAfterTerminalStatus(t *testing.T)
 	tsk := env.TransitionRunning(ctx, env.CreateReadyTask(ctx, "trailing-publish"))
 
 	snap := &harnesstest.StatusSnappingNotifier{Store: env.Store}
+	taskUpdated := notifierfake.NewRecordingTaskUpdatedNotifier()
 
 	r := runnerfake.New()
 	r.Script(tsk.ID, domain.PhaseExecute, runner.NewResult(
@@ -29,7 +30,10 @@ func TestHarness_HappyPath_emitsTrailingPublishAfterTerminalStatus(t *testing.T)
 		json.RawMessage(`{"ok":true}`), "",
 	))
 
-	done := env.RunHarness(ctx, env.NewHarness(r, harness.Options{Notifier: snap}), tsk)
+	done := env.RunHarness(ctx, env.NewHarness(r, harness.Options{
+		Notifier:            snap,
+		TaskUpdatedNotifier: taskUpdated,
+	}), tsk)
 	<-done
 	final := env.WaitTaskStatus(ctx, tsk.ID, domain.StatusDone)
 	if final.Status != domain.StatusDone {
@@ -45,6 +49,14 @@ func TestHarness_HappyPath_emitsTrailingPublishAfterTerminalStatus(t *testing.T)
 	}
 	if cycles[len(cycles)-1] == "" {
 		t.Fatal("trailing publish used empty cycle id")
+	}
+
+	taskIDs := taskUpdated.Snapshot()
+	if len(taskIDs) != 1 {
+		t.Fatalf("task_updated publishes: got %d want 1 (%v)", len(taskIDs), taskIDs)
+	}
+	if taskIDs[0] != tsk.ID {
+		t.Fatalf("task_updated task id = %q, want %q", taskIDs[0], tsk.ID)
 	}
 }
 

@@ -2,10 +2,10 @@ package handler
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 )
 
 // notifyTaskUpdatedEnriched loads the post-commit task row and publishes an
@@ -13,10 +13,10 @@ import (
 // (ADR-0026 invariant S1–S2).
 func (h *Handler) notifyTaskUpdatedEnriched(ctx context.Context, taskID string) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.notifyTaskUpdatedEnriched")
-	task, err := h.store.Get(ctx, taskID)
-	if err != nil {
-		return fmt.Errorf("notify task_updated enriched: %w", err)
+	if h.hub == nil {
+		return nil
 	}
-	h.notifyTaskChanged(TaskUpdated, taskID, task)
-	return nil
+	return realtime.PublishEnrichedTaskUpdated(ctx, h.hub, func(ctx context.Context, id string) (any, error) {
+		return h.store.Get(ctx, id)
+	}, taskID)
 }

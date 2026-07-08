@@ -12,6 +12,7 @@ type (
 	RunMetrics          = harness.RunMetrics
 	CycleChangeNotifier = harness.CycleChangeNotifier
 	ProgressNotifier    = harness.ProgressNotifier
+	TaskUpdatedNotifier = harness.TaskUpdatedNotifier
 )
 
 const (

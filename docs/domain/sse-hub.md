@@ -76,7 +76,7 @@ Production wiring: [`cmd/taskapi/run_helpers.go`](../../cmd/taskapi/run_helpers.
 | Actor | Role | Trust |
 | --- | --- | --- |
 | **HTTP handlers** | Publish after successful store commits | Trusted to publish only on success |
-| **Harness / worker** | Publish `task_cycle_changed`, `agent_run_progress` via adapters | Trusted; must not block harness loop |
+| **Harness / worker** | Publish `task_cycle_changed`, `agent_run_progress`, and enriched `task_updated` on terminal task status via adapters | Trusted; must not block harness loop |
 | **SSEHub** | Fanout, replay, eviction | Trusted transport |
 | **Browser EventSource** | Reconnect with `Last-Event-ID` | Untrusted consumer speed |
 | **React Query** | Cache invalidation / enrichment apply | Authoritative after REST refetch |
@@ -191,7 +191,7 @@ Constants: [`TaskChangeType`](../../pkgs/tasks/handler/sse.go). Authoritative li
 | Type | Typical publisher | Coalesced? | `data` enrichment |
 | --- | --- | --- | --- |
 | `task_created` | HTTP create | Hint-only yes | Full task tree |
-| `task_updated` | HTTP patch, checklist, gate, retry | Hint-only yes | Full `domain.Task` on task-row mutations ([ADR-0026](../adr/ADR-0026-backend-data-coherence.md)) |
+| `task_updated` | HTTP patch, checklist, gate, retry; harness terminal status via worker adapter | Hint-only yes | Full `domain.Task` on task-row mutations ([ADR-0026](../adr/ADR-0026-backend-data-coherence.md) S2, S5) |
 | `task_deleted` | HTTP delete | Yes | No |
 | `task_cycle_changed` | Harness via worker adapter | **Never** | Sometimes cycle detail |
 | `agent_run_progress` | Worker progress adapter | **Never** | N/A (progress sub-object) |

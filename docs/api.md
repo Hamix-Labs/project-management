@@ -218,7 +218,7 @@ Lossless reconnects via `Last-Event-ID`: a ring buffer (default 1024 entries) re
 | Type | When | Payload |
 |---|---|---|
 | `task_created` | `POST /tasks` succeeds. | `{ type, id, data: <task> }` |
-| `task_updated` | Any task mutation (PATCH, checklist, event response, etc.). `data` carries the full flat task for `PATCH /tasks/{id}`; other publishers emit hint-only frames (no `data`). | `{ type, id, data?: <task> }` |
+| `task_updated` | Any task mutation (PATCH, checklist, event response, agent terminal status, etc.). `data` carries the full flat task when the publisher enriches post-commit; hint-only frames omit `data`. | `{ type, id, data?: <task> }` |
 | `task_deleted` | `DELETE /tasks/{id}`. | `{ type, id }` |
 | `task_dependency_changed` | Dependency add/remove/replace. | `{ type, id }` |
 | `task_gate_changed` | Gate create/patch/action. | `{ type, id }` |

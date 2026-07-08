@@ -45,6 +45,8 @@ Live task UI cache policy lives in [`web/src/tasks/sync/`](../../web/src/tasks/s
 3. `decideFlushBatch.ts` — debounced invalidation targets
 4. `taskSyncCoordinator.ts` — pending state + debounce wiring consumed by `useTaskEventStream`
 
+Enriched `task_updated` with terminal status (`done`, `failed`) patches task detail via `setQueryData` and **immediately** invalidates the home list and stats queries (`terminalTaskStatus.ts` + `applySyncEffects.ts`) so status badges update without waiting for the debounced cycle flush.
+
 Wire decode stays in `web/src/tasks/task-query/sseInvalidate.ts`. Event catalog and operator tuning: [domain/sse-hub.md](./domain/sse-hub.md).
 
 ## Task create flow

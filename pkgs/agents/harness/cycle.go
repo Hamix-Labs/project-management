@@ -103,6 +103,7 @@ func (h *Harness) transitionTask(ctx context.Context, taskID string, next domain
 			"task_id", taskID, "next", string(next), "op", op, "err", err)
 		return false
 	}
+	h.publishTaskUpdated(taskID)
 	return true
 }
 

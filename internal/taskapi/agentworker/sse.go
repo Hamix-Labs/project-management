@@ -2,19 +2,22 @@ package agentworker
 
 import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"sync"
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 )
 
-const (
-	agentRunProgressMinInterval     = 750 * time.Millisecond
-	agentRunProgressThrottleEntries = 512
-)
+const taskUpdatedPublishTimeout = 5 * time.Second
+
+type taskGetter interface {
+	Get(ctx context.Context, id string) (*domain.Task, error)
+}
 
 type cycleChangeSSEAdapter struct {
 	pub realtime.Publisher
@@ -37,6 +40,38 @@ func (a *cycleChangeSSEAdapter) PublishCycleChange(taskID, cycleID string) {
 		CycleID: cycleID,
 	})
 }
+
+type taskUpdatedSSEAdapter struct {
+	pub   realtime.Publisher
+	store taskGetter
+}
+
+func newTaskUpdatedSSEAdapter(pub realtime.Publisher, store taskGetter) *taskUpdatedSSEAdapter {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskapi.newTaskUpdatedSSEAdapter")
+	return &taskUpdatedSSEAdapter{pub: pub, store: store}
+}
+
+func (a *taskUpdatedSSEAdapter) PublishTaskUpdated(taskID string) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskapi.taskUpdatedSSEAdapter.PublishTaskUpdated",
+		"task_id", taskID)
+	if a == nil || a.pub == nil || a.store == nil || taskID == "" {
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), taskUpdatedPublishTimeout)
+	defer cancel()
+	if err := realtime.PublishEnrichedTaskUpdated(ctx, a.pub, func(ctx context.Context, id string) (any, error) {
+		return a.store.Get(ctx, id)
+	}, taskID); err != nil {
+		slog.Warn("agent worker task_updated publish failed", "cmd", calltrace.LogCmd,
+			"operation", "taskapi.taskUpdatedSSEAdapter.PublishTaskUpdated.err",
+			"task_id", taskID, "err", err)
+	}
+}
+
+const (
+	agentRunProgressMinInterval     = 750 * time.Millisecond
+	agentRunProgressThrottleEntries = 512
+)
 
 type runProgressSSEAdapter struct {
 	pub         realtime.Publisher

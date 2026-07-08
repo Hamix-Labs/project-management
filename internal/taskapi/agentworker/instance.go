@@ -77,6 +77,7 @@ func (s *Supervisor) spawnWorkerInstance(ctx context.Context, cfg store.AppSetti
 	runTimeout := time.Duration(cfg.MaxRunDurationSeconds) * time.Second
 	streamIdleStuck := time.Duration(cfg.StreamIdleStuckSeconds) * time.Second
 	notifier := newCycleChangeSSEAdapter(s.publisher)
+	taskUpdatedNotifier := newTaskUpdatedSSEAdapter(s.publisher, s.store)
 	progressNotifier := newRunProgressSSEAdapter(s.publisher, agentRunProgressMinInterval)
 	verifyRunner, verifyStatus := s.buildVerifyRunner(ctx, cfg)
 	reportDir := taskapiconfig.WorkerReportDir()
@@ -86,13 +87,14 @@ func (s *Supervisor) spawnWorkerInstance(ctx context.Context, cfg store.AppSetti
 			"path", reportDir, "err", err)
 	}
 	w := worker.NewPool(s.store, s.queue, r, worker.Options{
-		RunTimeout:       runTimeout,
-		StreamIdleStuck:  streamIdleStuck,
-		ReportDir:        reportDir,
-		Notifier:         notifier,
-		ProgressNotifier: progressNotifier,
-		Metrics:          s.metrics,
-		VerifyRunner:     verifyRunner,
+		RunTimeout:          runTimeout,
+		StreamIdleStuck:     streamIdleStuck,
+		ReportDir:           reportDir,
+		Notifier:            notifier,
+		TaskUpdatedNotifier: taskUpdatedNotifier,
+		ProgressNotifier:    progressNotifier,
+		Metrics:             s.metrics,
+		VerifyRunner:        verifyRunner,
 	}, taskapiconfig.AgentWorkerConcurrency())
 
 	workerCtx, cancelWorker := context.WithCancel(s.parentCtx)
