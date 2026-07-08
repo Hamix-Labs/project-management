@@ -1,5 +1,7 @@
 import { useCallback } from "react";
 import { deleteTask as deleteTaskApi } from "@/api";
+import { removeTaskFromListCaches } from "@/tasks/mutations";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   useBulkTaskMutation,
   type BulkTaskFailure,
@@ -18,14 +20,22 @@ export type BulkDeleteResult = BulkTaskResult;
  * invalidate the task query namespace (same as bulk schedule PATCH).
  */
 export function useBulkDeleteMutation() {
+  const queryClient = useQueryClient();
   const { run: runBulk, reset, isPending, lastResult } = useBulkTaskMutation({
     concurrency: BULK_DELETE_CONCURRENCY,
     failureMessage: "Could not delete the task.",
   });
 
   const run = useCallback(
-    (taskIds: ReadonlyArray<string>) => runBulk(taskIds, (id) => deleteTaskApi(id)),
-    [runBulk],
+    (taskIds: ReadonlyArray<string>) =>
+      runBulk(taskIds, (id) => deleteTaskApi(id), {
+        applyOptimistic: (ids) => {
+          for (const id of ids) {
+            removeTaskFromListCaches(queryClient, id);
+          }
+        },
+      }),
+    [queryClient, runBulk],
   );
 
   return { run, reset, isPending, lastResult } as const;

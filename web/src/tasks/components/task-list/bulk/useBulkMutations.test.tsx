@@ -89,7 +89,7 @@ describe("useBulkDeleteMutation", () => {
     });
 
     expect(inv.mock.calls.map((c) => c[0]?.queryKey)).toEqual([
-      taskQueryKeys.all,
+      taskQueryKeys.listRoot(),
       taskQueryKeys.stats(),
     ]);
     expect(result.current.lastResult).toMatchObject({
@@ -122,7 +122,7 @@ describe("useBulkScheduleMutation", () => {
     });
 
     expect(inv.mock.calls.map((c) => c[0]?.queryKey)).toEqual([
-      taskQueryKeys.all,
+      taskQueryKeys.listRoot(),
       taskQueryKeys.stats(),
     ]);
   });

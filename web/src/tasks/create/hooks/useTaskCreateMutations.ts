@@ -12,6 +12,20 @@ import {
   saveTaskTemplate as apiSaveTemplate,
 } from "@/api";
 import type { PriorityChoice } from "@/types";
+import {
+  rumMutationSettled,
+} from "@/observability";
+import {
+  applyCreatedTaskToCache,
+  applyCreatedTasksToCache,
+  beginGuardedTaskWrite,
+  endGuardedTaskWrite,
+  invalidateTaskListAndStats,
+} from "@/tasks/mutations";
+import {
+  beginBulkTaskMutationGuard,
+  endBulkTaskMutationGuard,
+} from "@/tasks/sync";
 import { normalizeChecklistItems } from "../../task-compose/checklistRequirement";
 import { taskQueryKeys } from "../../task-query";
 import { buildComposePayloadFromForm } from "../composePayload";
@@ -58,14 +72,28 @@ export function useTaskCreateMutations(input: {
       });
       return { task, input: mutationInput };
     },
-    onSuccess: (_result, variables) => {
+    onSuccess: async (result, variables) => {
       // I3 — close modal only when create succeeded for the active draft.
       if (input.newDraftIDRef.current === variables.draft_id) {
         input.closeCreateModal();
       }
-      void input.queryClient.invalidateQueries({ queryKey: taskQueryKeys.all });
-      void input.queryClient.invalidateQueries({ queryKey: taskQueryKeys.stats() });
-      void input.queryClient.invalidateQueries({ queryKey: taskQueryKeys.drafts() });
+      const guard = beginGuardedTaskWrite({
+        taskId: result.task.id,
+        // Post-create cache seeding always arms the guard so enriched
+        // task_created SSE echoes do not race narrow invalidation.
+        optimisticEnabled: true,
+        rumKind: "task_create",
+      });
+      try {
+        applyCreatedTaskToCache(input.queryClient, result.task);
+        await invalidateTaskListAndStats(input.queryClient);
+        await input.queryClient.invalidateQueries({ queryKey: taskQueryKeys.drafts() });
+        rumMutationSettled("task_create", performance.now() - guard.startedAtMs, 201);
+      } finally {
+        if (guard.guarded) {
+          endGuardedTaskWrite(result.task.id);
+        }
+      }
     },
   });
 
@@ -157,10 +185,19 @@ export function useTaskCreateMutations(input: {
   const instantiateTemplatesMutation = useMutation({
     mutationFn: (items: import("@/api").TaskTemplateInstantiateItem[]) =>
       apiInstantiateTemplates(items),
-    onSuccess: (result) => {
-      if (result.tasks.length > 0) {
-        void input.queryClient.invalidateQueries({ queryKey: taskQueryKeys.all });
-        void input.queryClient.invalidateQueries({ queryKey: taskQueryKeys.stats() });
+    onSuccess: async (result) => {
+      if (result.tasks.length === 0) {
+        return;
+      }
+      const taskIds = result.tasks.map((task) => task.id);
+      beginBulkTaskMutationGuard(taskIds);
+      const startedAtMs = performance.now();
+      try {
+        applyCreatedTasksToCache(input.queryClient, result.tasks);
+        await invalidateTaskListAndStats(input.queryClient);
+        rumMutationSettled("task_create", performance.now() - startedAtMs, 201);
+      } finally {
+        endBulkTaskMutationGuard(taskIds);
       }
     },
   });

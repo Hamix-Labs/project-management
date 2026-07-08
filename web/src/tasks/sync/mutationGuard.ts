@@ -52,6 +52,26 @@ export function endTaskMutationGuard(taskId: string): void {
   versions.set(taskId, v - 1);
 }
 
+/** Bump guard for every id in a bulk session (ADR-0025 M2). */
+export function beginBulkTaskMutationGuard(taskIds: readonly string[]): void {
+  for (const taskId of taskIds) {
+    const id = taskId.trim();
+    if (id !== "") {
+      beginTaskMutationGuard(id);
+    }
+  }
+}
+
+/** End a bulk session — decrements each id bumped in beginBulkTaskMutationGuard. */
+export function endBulkTaskMutationGuard(taskIds: readonly string[]): void {
+  for (const taskId of taskIds) {
+    const id = taskId.trim();
+    if (id !== "") {
+      endTaskMutationGuard(id);
+    }
+  }
+}
+
 /** Test-only: reset module state between cases. */
 export function __resetMutationGuardForTests(): void {
   versions.clear();

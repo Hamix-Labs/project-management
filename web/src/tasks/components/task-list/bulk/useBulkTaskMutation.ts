@@ -5,7 +5,16 @@ import {
   runWithConcurrency,
   type RunResult,
 } from "@/lib/runWithConcurrency";
-import { taskQueryKeys } from "../../../task-query";
+import { rumMutationSettled, rumMutationStarted } from "@/observability";
+import { useRolloutFlags } from "@/settings";
+import {
+  invalidateTaskListAndStats,
+  recordOptimisticApplied,
+} from "@/tasks/mutations";
+import {
+  beginBulkTaskMutationGuard,
+  endBulkTaskMutationGuard,
+} from "@/tasks/sync";
 
 export type BulkTaskFailure = {
   taskId: string;
@@ -23,8 +32,14 @@ type Options = {
   failureMessage: string;
 };
 
+export type BulkTaskRunOptions = {
+  /** Optimistic list surgery before concurrent API calls (schedule/delete). */
+  applyOptimistic?: (taskIds: ReadonlyArray<string>) => void | Promise<void>;
+};
+
 export function useBulkTaskMutation({ concurrency, failureMessage }: Options) {
   const queryClient = useQueryClient();
+  const { optimisticMutationsEnabled } = useRolloutFlags();
   const [isPending, setPending] = useState(false);
   const [lastResult, setLastResult] = useState<BulkTaskResult | null>(null);
   const inFlightRef = useRef(0);
@@ -37,6 +52,7 @@ export function useBulkTaskMutation({ concurrency, failureMessage }: Options) {
     async (
       taskIds: ReadonlyArray<string>,
       runOne: (taskId: string) => Promise<unknown>,
+      runOptions?: BulkTaskRunOptions,
     ): Promise<BulkTaskResult> => {
       if (taskIds.length === 0) {
         const empty: BulkTaskResult = {
@@ -49,7 +65,15 @@ export function useBulkTaskMutation({ concurrency, failureMessage }: Options) {
       }
       inFlightRef.current += 1;
       setPending(true);
+      const startedAtMs = performance.now();
+      rumMutationStarted("task_patch");
+      beginBulkTaskMutationGuard(taskIds);
       try {
+        if (optimisticMutationsEnabled && runOptions?.applyOptimistic) {
+          await runOptions.applyOptimistic(taskIds);
+          recordOptimisticApplied("task_patch", startedAtMs);
+        }
+
         const calls = taskIds.map((id) => () => runOne(id));
         const results: RunResult<unknown>[] = await runWithConcurrency(
           calls,
@@ -74,15 +98,18 @@ export function useBulkTaskMutation({ concurrency, failureMessage }: Options) {
           failed,
         };
         setLastResult(summary);
-        await queryClient.invalidateQueries({ queryKey: taskQueryKeys.all });
-        await queryClient.invalidateQueries({ queryKey: taskQueryKeys.stats() });
+        if (succeeded > 0) {
+          await invalidateTaskListAndStats(queryClient);
+        }
+        rumMutationSettled("task_patch", performance.now() - startedAtMs, 200);
         return summary;
       } finally {
+        endBulkTaskMutationGuard(taskIds);
         inFlightRef.current -= 1;
         if (inFlightRef.current === 0) setPending(false);
       }
     },
-    [concurrency, failureMessage, queryClient],
+    [concurrency, failureMessage, optimisticMutationsEnabled, queryClient],
   );
 
   return { run, reset, isPending, lastResult } as const;

@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
   __resetMutationGuardForTests,
+  beginBulkTaskMutationGuard,
   beginTaskMutationGuard,
+  endBulkTaskMutationGuard,
   endTaskMutationGuard,
   shouldSuppressTaskMutationEcho,
 } from "./mutationGuard";
@@ -38,5 +40,14 @@ describe("mutationGuard", () => {
     expect(shouldSuppressTaskMutationEcho("t1")).toBe(true);
     endTaskMutationGuard("t1");
     expect(shouldSuppressTaskMutationEcho("t1")).toBe(false);
+  });
+
+  it("beginBulkTaskMutationGuard suppresses echo for every id in the session", () => {
+    beginBulkTaskMutationGuard(["a", "b"]);
+    expect(shouldSuppressTaskMutationEcho("a")).toBe(true);
+    expect(shouldSuppressTaskMutationEcho("b")).toBe(true);
+    endBulkTaskMutationGuard(["a", "b"]);
+    expect(shouldSuppressTaskMutationEcho("a")).toBe(false);
+    expect(shouldSuppressTaskMutationEcho("b")).toBe(false);
   });
 });

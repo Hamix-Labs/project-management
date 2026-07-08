@@ -6,8 +6,8 @@
 
 - Items found: **12** (High: 3, Medium: 7, Low: 2)
 - Top 3 by ROI:
-  1. `tasks/` imports `projects/` and `worktrees/` directly (create flow + sync)
-  2. Create/bulk task mutations bypass guarded write + mutation guard
+  1. ~~`tasks/` imports `projects/` and `worktrees/` directly~~ **done** ([#147](https://github.com/AlexsanderHamir/Hamix/pull/147))
+  2. ~~Create/bulk task mutations bypass guarded write + mutation guard~~ **done** ([#148](https://github.com/AlexsanderHamir/Hamix/pull/148))
   3. `projects/` and `worktrees/` hooks invalidate cache outside `tasks/sync/`
 
 ## ROI legend
@@ -37,16 +37,18 @@
 - **Deleted:** `WorktreeSelector.tsx` (zero consumers; superseded by `TaskCreateAssignmentFields`)
 - **Evidence (exit gate):** `rg 'from ["'']@/(projects|worktrees)/' web/src/tasks` → zero matches
 
-### 2. Create/bulk task mutations bypass guarded write — ROI 9/10 (High)
+### 2. Create/bulk task mutations bypass guarded write — ROI 9/10 (High) — **Status: done (2026-07-08)**
 
+- **PR:** [#148](https://github.com/AlexsanderHamir/Hamix/pull/148)
 - **Boundary violated:** Mutations policy — guarded writes + mutation guard ([ADR-0025](../adr/ADR-0025-frontend-data-coherence.md), [guardedTaskWrite.ts](../../web/src/tasks/mutations/guardedTaskWrite.ts))
-- **Location:**
-  - [useTaskCreateMutations.ts](../../web/src/tasks/create/hooks/useTaskCreateMutations.ts) — `createMutation`, draft/template saves: raw `invalidateQueries` on success (lines 66–68, 91–163); no `beginGuardedTaskWrite` / `endGuardedTaskWrite`
-  - [useBulkTaskMutation.ts](../../web/src/tasks/components/task-list/bulk/useBulkTaskMutation.ts) — bulk status/priority/reschedule: `invalidateQueries` for `taskQueryKeys.all` + `stats()` (lines 77–78); no mutation guard
-- **Issue:** SSE echo suppression and optimistic coherence are bypassed on high-traffic write paths (create task, bulk ops). Race with enriched `task_updated` events can cause stale list rows or double refetch.
-- **Proposed change:** Route create/bulk mutations through `runGuardedMutation` / `beginGuardedTaskWrite`; align invalidation with `applySyncEffects` patterns or rely on SSE where enriched events already cover the write.
-- **Effort / risk / blast radius:** 1–2 days; medium risk (create + bulk UX); 2 hook files + tests.
-- **Evidence:** `rg beginGuardedTaskWrite web/src/tasks/create` → no matches. `useTaskPatchFlow.ts`, `useTaskDeleteFlow.ts`, `useTaskDetailMutations.ts` already use guarded writes — inconsistent policy.
+- **Resolution:** Create and template-instantiate mutations seed cache under `beginGuardedTaskWrite`; bulk schedule/delete use `beginBulkTaskMutationGuard` (ADR M2) with optional optimistic list surgery. Broad `taskQueryKeys.all` invalidation replaced by [`invalidateTaskListAndStats`](../../web/src/tasks/mutations/invalidateTaskListCoherence.ts) (`listRoot` + `stats`).
+- **New / updated modules:**
+  - [optimisticTaskList.ts](../../web/src/tasks/mutations/optimisticTaskList.ts) — `applyCreatedTaskToCache`, list insert/remove/schedule patches
+  - [mutationGuard.ts](../../web/src/tasks/sync/mutationGuard.ts) — `beginBulkTaskMutationGuard` / `endBulkTaskMutationGuard`
+  - [useTaskCreateMutations.ts](../../web/src/tasks/create/hooks/useTaskCreateMutations.ts) — guarded `createMutation` + `instantiateTemplatesMutation`
+  - [useBulkTaskMutation.ts](../../web/src/tasks/components/task-list/bulk/useBulkTaskMutation.ts) — bulk guard session + narrowed invalidation
+- **Out of scope (ADR M3):** draft/template autosave mutations still invalidate `drafts()` / `templates()` only — no task guard.
+- **Evidence (exit gate):** `rg 'taskQueryKeys\.all' web/src/tasks/create/hooks/useTaskCreateMutations.ts web/src/tasks/components/task-list/bulk` → zero matches; `rg beginGuardedTaskWrite web/src/tasks/create` → matches create path; bulk guard tests green.
 
 ### 3. Project/worktree cache invalidation outside `tasks/sync/` — ROI 8/10 (High)
 
