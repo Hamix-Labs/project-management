@@ -1,31 +1,22 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useProjectDetailPrefetcher } from "@/app/hooks/usePrefetchOnIntent";
-import { createProject } from "@/api";
 import { EmptyState } from "@/shared/EmptyState";
 import { useDocumentTitle } from "@/shared/useDocumentTitle";
 import type { Project } from "@/types";
 import { useProjects } from "./hooks";
 import { ProjectCreateDialog } from "@/components/projects/ProjectCreateDialog";
-import { projectQueryKeys } from "./queryKeys";
+import { useCreateProjectMutation } from "./mutations";
 
 export function ProjectListPage() {
   useDocumentTitle("Projects");
-  const queryClient = useQueryClient();
   const { data, isLoading, error } = useProjects({ includeArchived: true });
   const projects = data?.projects ?? [];
   const activeCount = projects.filter((p) => p.status === "active").length;
   const archivedCount = projects.length - activeCount;
   const [createOpen, setCreateOpen] = useState(false);
 
-  const createMutation = useMutation({
-    mutationFn: createProject,
-    onSuccess: async () => {
-      setCreateOpen(false);
-      await queryClient.invalidateQueries({ queryKey: projectQueryKeys.all });
-    },
-  });
+  const createMutation = useCreateProjectMutation();
 
   function openCreateDialog() {
     createMutation.reset();
@@ -80,11 +71,14 @@ export function ProjectListPage() {
           error={createMutation.error}
           onCancel={closeCreateDialog}
           onSubmit={(input) =>
-            createMutation.mutate({
-              name: input.name,
-              description: input.description,
-              repository_id: input.repository_id,
-            })
+            createMutation.mutate(
+              {
+                name: input.name,
+                description: input.description,
+                repository_id: input.repository_id,
+              },
+              { onSuccess: () => setCreateOpen(false) },
+            )
           }
         />
       ) : null}

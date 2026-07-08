@@ -1,4 +1,4 @@
-import { projectQueryKeys } from "@/lib/projectQueryKeys";
+import { decideProjectInvalidationKeys } from "@/lib/queryInvalidation";
 import { settingsQueryKeys } from "@/settings/settingsQueryKeys";
 import { taskQueryKeys } from "../task-query";
 import type { DecideSyncFrameInput, SyncFrameDecision } from "./syncTypes";
@@ -29,20 +29,23 @@ export function decideSyncFrame(input: DecideSyncFrameInput): SyncFrameDecision 
     return {
       schedule: "immediate",
       pendingDelta: {},
-      effects: [
-        { kind: "invalidate", queryKey: projectQueryKeys.all },
-        { kind: "invalidate", queryKey: taskQueryKeys.listRoot() },
-      ],
+      effects: decideProjectInvalidationKeys({ scope: "list" }).map((queryKey) => ({
+        kind: "invalidate",
+        queryKey,
+      })),
     };
   }
   if (frame.kind === "project_context") {
     return {
       schedule: "immediate",
       pendingDelta: {},
-      effects: [
-        { kind: "invalidate", queryKey: projectQueryKeys.context(frame.projectId) },
-        { kind: "invalidate", queryKey: projectQueryKeys.detail(frame.projectId) },
-      ],
+      effects: decideProjectInvalidationKeys({
+        scope: "context",
+        projectId: frame.projectId,
+      }).map((queryKey) => ({
+        kind: "invalidate",
+        queryKey,
+      })),
     };
   }
   if (frame.kind === "cycle") {

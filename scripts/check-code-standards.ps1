@@ -162,6 +162,29 @@ foreach ($feat in $featureDirs) {
     }
 }
 
+# TypeScript: project/worktree production code must not call invalidateQueries outside mutations/.
+$verticals = @(
+    @{ Name = "projects"; Path = (Join-Path $srcRoot "projects") },
+    @{ Name = "worktrees"; Path = (Join-Path $srcRoot "worktrees") }
+)
+$invalidatePat = 'invalidateQueries'
+foreach ($vertical in $verticals) {
+    if (-not (Test-Path $vertical.Path)) { continue }
+    $verticalFiles = Get-ChildItem -Path $vertical.Path -Recurse -Include *.ts, *.tsx -File |
+        Where-Object {
+            $_.Name -notmatch '\.test\.(ts|tsx)$' -and
+            ($_.FullName.Replace('\', '/') -notmatch '/mutations/')
+        }
+    foreach ($f in $verticalFiles) {
+        $text = Get-Content -LiteralPath $f.FullName -Raw
+        if ($null -eq $text) { continue }
+        if ($text -match $invalidatePat) {
+            Write-Host "VIOLATION: invalidateQueries outside $($vertical.Name)/mutations/: $($f.FullName)" -ForegroundColor Red
+            $failed = $true
+        }
+    }
+}
+
 if ($failed) {
     exit 1
 }

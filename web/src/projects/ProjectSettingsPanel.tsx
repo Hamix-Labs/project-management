@@ -1,6 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useRef, useState, type FormEvent } from "react";
-import { patchProject } from "@/api";
 import {
   CustomSelect,
   type CustomSelectOption,
@@ -10,14 +8,13 @@ import {
   type Project,
   type ProjectStatus,
 } from "@/types";
-import { projectQueryKeys } from "./queryKeys";
+import { usePatchProjectMutation } from "./mutations";
 
 type Props = {
   project: Project;
 };
 
 export function ProjectSettingsPanel({ project }: Props) {
-  const queryClient = useQueryClient();
   const isDefaultProject = project.is_default;
   const [status, setStatus] = useState<ProjectStatus>(project.status);
   const formRef = useRef<HTMLFormElement>(null);
@@ -31,19 +28,7 @@ export function ProjectSettingsPanel({ project }: Props) {
     [],
   );
 
-  const patchProjectMutation = useMutation({
-    mutationFn: (input: {
-      name?: string;
-      description?: string;
-      status?: ProjectStatus;
-    }) => patchProject(project.id, input),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: projectQueryKeys.all });
-      await queryClient.invalidateQueries({
-        queryKey: projectQueryKeys.detail(project.id),
-      });
-    },
-  });
+  const patchProjectMutation = usePatchProjectMutation(project);
 
   function submitProject(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

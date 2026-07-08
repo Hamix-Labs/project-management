@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { projectQueryKeys } from "@/lib/projectQueryKeys";
+import { decideProjectInvalidationKeys } from "@/lib/queryInvalidation";
 import { settingsQueryKeys } from "@/settings/settingsQueryKeys";
-import { taskQueryKeys } from "../task-query";
 import { decideSyncFrame } from "./decideSyncFrame";
+
+function invalidationEffects(keys: ReturnType<typeof decideProjectInvalidationKeys>) {
+  return keys.map((queryKey) => ({ kind: "invalidate" as const, queryKey }));
+}
 
 describe("decideSyncFrame", () => {
   const noSuppress = () => false;
@@ -46,14 +49,22 @@ describe("decideSyncFrame", () => {
       shouldSuppressTaskEcho: noSuppress,
     });
     expect(decision.schedule).toBe("immediate");
-    expect(decision.effects).toContainEqual({
-      kind: "invalidate",
-      queryKey: projectQueryKeys.all,
+    expect(decision.effects).toEqual(
+      invalidationEffects(decideProjectInvalidationKeys({ scope: "list" })),
+    );
+  });
+
+  it("invalidates project context queries immediately", () => {
+    const decision = decideSyncFrame({
+      frame: { kind: "project_context", projectId: "p1" },
+      shouldSuppressTaskEcho: noSuppress,
     });
-    expect(decision.effects).toContainEqual({
-      kind: "invalidate",
-      queryKey: taskQueryKeys.listRoot(),
-    });
+    expect(decision.schedule).toBe("immediate");
+    expect(decision.effects).toEqual(
+      invalidationEffects(
+        decideProjectInvalidationKeys({ scope: "context", projectId: "p1" }),
+      ),
+    );
   });
 
   it("resync clears pending and invalidates broadly", () => {

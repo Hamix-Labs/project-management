@@ -50,16 +50,18 @@
 - **Out of scope (ADR M3):** draft/template autosave mutations still invalidate `drafts()` / `templates()` only — no task guard.
 - **Evidence (exit gate):** `rg 'taskQueryKeys\.all' web/src/tasks/create/hooks/useTaskCreateMutations.ts web/src/tasks/components/task-list/bulk` → zero matches; `rg beginGuardedTaskWrite web/src/tasks/create` → matches create path; bulk guard tests green.
 
-### 3. Project/worktree cache invalidation outside `tasks/sync/` — ROI 8/10 (High)
+### 3. Project/worktree cache invalidation outside `tasks/sync/` — ROI 8/10 (High) — **Status: done (2026-07-08)**
 
+- **PR:** [#149](https://github.com/AlexsanderHamir/Hamix/pull/149) (`cleanup/boundaries-cache-invalidation`)
 - **Boundary violated:** Sync policy — cache effects centralized in `tasks/sync/` ([cleanup-order §1](../cleanup-order.md), [web.md](../web.md) §Task sync)
-- **Location:**
-  - [ProjectListPage.tsx](../../web/src/projects/ProjectListPage.tsx), [ProjectContextPanel.tsx](../../web/src/projects/ProjectContextPanel.tsx), [ProjectSettingsPanel.tsx](../../web/src/projects/ProjectSettingsPanel.tsx), [ProjectDetailPage.tsx](../../web/src/projects/ProjectDetailPage.tsx), [RepositoryProjectsSection.tsx](../../web/src/worktrees/components/RepositoryProjectsSection.tsx)
-  - [useGitMutations.ts](../../web/src/worktrees/hooks/useGitMutations.ts) (legacy), [useGlobalGitMutations.ts](../../web/src/worktrees/hooks/useGlobalGitMutations.ts)
-- **Issue:** Non-task verticals call `queryClient.invalidateQueries` directly after mutations. No shared invalidation table; project/git writes can miss keys that `decideSyncFrame` knows about (e.g. `projectsByRepo`).
-- **Proposed change:** Add `projects/mutations/` + `worktrees/mutations/` mirroring `tasks/mutations/`, or extend `decideSyncFrame` / a shared `web/src/lib/queryInvalidation.ts` with project/git mutation effects. Wire SSE `project_*` hints through the same coordinator where applicable.
-- **Effort / risk / blast radius:** 2–3 days; medium risk; 6+ production files.
-- **Evidence:** `rg invalidateQueries web/src/projects web/src/worktrees` (exclude `*.test.*`).
+- **Resolution:** Shared catalog in `web/src/lib/queryInvalidation/`; `projects/mutations/` and `worktrees/mutations/` own production invalidation; `decideSyncFrame` uses the same project scopes for SSE. CI gate blocks stray `invalidateQueries` in project/worktree pages.
+- **New locations:**
+  - **lib:** [queryInvalidation/](../../web/src/lib/queryInvalidation/) — `decideProjectInvalidationKeys`, `decideGitInvalidationKeys`, `applyQueryInvalidations`
+  - **projects:** [mutations/](../../web/src/projects/mutations/) — create/delete/patch/context hooks
+  - **worktrees:** [mutations/](../../web/src/worktrees/mutations/) — global and legacy git hooks
+  - **sync:** [decideSyncFrame.ts](../../web/src/tasks/sync/decideSyncFrame.ts) — project frames via catalog
+- **ADR:** [ADR-0044](../adr/ADR-0044-query-invalidation-catalog.md)
+- **Evidence (exit gate):** `rg 'invalidateQueries' web/src/projects web/src/worktrees --glob '!*.test.*' --glob '!**/mutations/**'` → zero matches
 
 ### 4. `handler_task_events` publishes hint-only `task_updated` — ROI 7/10 (Medium)
 

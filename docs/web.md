@@ -15,6 +15,7 @@ Vite + React client under `web/`. All `fetch` calls live in `web/src/api/`; resp
 - [Task sync (SSE cache coherence)](#task-sync-sse-cache-coherence)
 - [Task create flow](#task-create-flow)
 - [Query policy](#query-policy)
+- [Project/worktree mutation invalidation](#projectworktree-mutation-invalidation)
 - [Task detail — execution cycles](#task-detail--execution-cycles)
 - [See also](#see-also)
 
@@ -71,6 +72,16 @@ TanStack Query staleTime tiers live in [`web/src/tasks/queryPolicy.ts`](../web/s
 3. [`tasks/mutations/`](../web/src/tasks/mutations/) — guarded optimistic task writes (patch/delete/checklist, create/instantiate cache seed, bulk schedule/delete)
 4. [`tasks/checklist/`](../web/src/tasks/checklist/) — detail checklist mutations with guard
 5. [`tasks/app/TasksAppProvider.tsx`](../web/src/tasks/app/TasksAppProvider.tsx) — narrow selector hooks
+
+## Project/worktree mutation invalidation
+
+Project and git writes invalidate React Query through a shared catalog — not inline in pages.
+
+1. [ADR-0044](./adr/ADR-0044-query-invalidation-catalog.md) — catalog scopes and vertical mutation ownership
+2. [`lib/queryInvalidation/`](../web/src/lib/queryInvalidation/) — `decideProjectInvalidationKeys`, `decideGitInvalidationKeys`, `applyQueryInvalidations`
+3. [`projects/mutations/`](../web/src/projects/mutations/) — project create/delete/patch/context hooks
+4. [`worktrees/mutations/`](../web/src/worktrees/mutations/) — global and legacy git hooks
+5. [`tasks/sync/decideSyncFrame.ts`](../web/src/tasks/sync/decideSyncFrame.ts) — SSE `project` / `project_context` frames use the same project scopes
 
 ## Task detail — execution cycles
 

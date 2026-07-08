@@ -25,7 +25,7 @@ Ranked by composite ROI considering effort, risk, and lines/clarity impact. Prim
 | 2 | 9 | ~~Web vertical coupling (`tasks/` → `projects/` + `worktrees/`)~~ **done** | [boundaries](./boundaries-roi.md#1-web-vertical-coupling-tasks--projects--worktrees--roi-910-high--status-done-2026-07-08) | 2–3 days |
 | 3 | 9 | ~~Create/bulk mutations bypass guarded write + mutation guard~~ **done** | [boundaries](./boundaries-roi.md#2-createbulk-task-mutations-bypass-guarded-write--roi-910-high--status-done-2026-07-08) | 1–2 days |
 | 4 | 9 | Delete subtask-era CSS with no DOM (~120–150 lines) | [dead-code](./dead-code-roi.md#2-subtask-era-css-with-no-dom--roi-910-high) | 1–2 hours |
-| 5 | 8 | Project/worktree cache invalidation outside `tasks/sync/` | [boundaries](./boundaries-roi.md#3-projectworktree-cache-invalidation-outside-taskssync--roi-810-high) | 2–3 days |
+| 5 | ~~8~~ | ~~Project/worktree cache invalidation outside `tasks/sync/`~~ **done** | [boundaries](./boundaries-roi.md#3-projectworktree-cache-invalidation-outside-taskssync--roi-810-high--status-done-2026-07-08) | 2–3 days |
 | 6 | 8 | Delete `taskDescendantCount()` stub | [dead-code](./dead-code-roi.md#3-taskdescendantcount-always-returns-0--roi-810-high) | 15 min |
 | 7 | 7 | `handler_task_events` hint-only `task_updated` on event append | [boundaries](./boundaries-roi.md#4-handler_task_events-publishes-hint-only-task_updated--roi-710-medium) | 4–8 hours |
 | 8 | 7 | `handler_settings` bypasses `notifyChange` helper | [boundaries](./boundaries-roi.md#5-handler_settings-bypasses-notifychange-helper--roi-710-medium) | 1–2 hours |

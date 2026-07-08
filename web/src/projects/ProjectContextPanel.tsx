@@ -1,13 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState, type FormEvent } from "react";
-import {
-  createProjectContext,
-  createProjectContextEdge,
-  deleteProjectContext,
-  deleteProjectContextEdge,
-  patchProjectContext,
-  patchProjectContextEdge,
-} from "@/api";
 import { EmptyState } from "@/shared/EmptyState";
 import { FieldLabel } from "@/shared/FieldLabel";
 import { Modal } from "@/shared/Modal";
@@ -25,7 +16,7 @@ import { useProjectContext } from "./hooks";
 import { ProjectContextKindPicker } from "./ProjectContextKindPicker";
 import { ProjectContextListView } from "./ProjectContextListView";
 import { ProjectContextTreeView } from "./ProjectContextTreeView";
-import { projectQueryKeys } from "./queryKeys";
+import { useProjectContextMutations } from "./mutations";
 
 type Props = {
   projectId: string;
@@ -34,82 +25,6 @@ type Props = {
 const EMPTY_CONTEXT_ITEMS: ProjectContextItem[] = [];
 const EMPTY_CONTEXT_EDGES: ProjectContextEdge[] = [];
 type ContextView = "list" | "tree";
-
-function invalidateProjectContext(
-  queryClient: ReturnType<typeof useQueryClient>,
-  projectId: string,
-) {
-  return queryClient.invalidateQueries({
-    queryKey: projectQueryKeys.context(projectId),
-  });
-}
-
-function useProjectContextMutations(projectId: string) {
-  const queryClient = useQueryClient();
-  const invalidate = () => invalidateProjectContext(queryClient, projectId);
-
-  const createContextMutation = useMutation({
-    mutationFn: (input: {
-      kind: ProjectContextKind;
-      title: string;
-      body: string;
-      pinned: boolean;
-    }) => createProjectContext(projectId, input),
-    onSuccess: invalidate,
-  });
-  const patchContextMutation = useMutation({
-    mutationFn: (input: {
-      id: string;
-      kind: ProjectContextKind;
-      title: string;
-      body: string;
-      pinned: boolean;
-    }) => {
-      const { id, ...patch } = input;
-      return patchProjectContext(projectId, id, patch);
-    },
-    onSuccess: invalidate,
-  });
-  const deleteContextMutation = useMutation({
-    mutationFn: (contextId: string) => deleteProjectContext(projectId, contextId),
-    onSuccess: invalidate,
-  });
-  const createEdgeMutation = useMutation({
-    mutationFn: (input: {
-      source_context_id: string;
-      target_context_id: string;
-      relation: ProjectContextRelation;
-      strength: number;
-      note: string;
-    }) => createProjectContextEdge(projectId, input),
-    onSuccess: invalidate,
-  });
-  const patchEdgeMutation = useMutation({
-    mutationFn: (input: {
-      id: string;
-      relation: ProjectContextRelation;
-      strength: number;
-      note: string;
-    }) => {
-      const { id, ...patch } = input;
-      return patchProjectContextEdge(projectId, id, patch);
-    },
-    onSuccess: invalidate,
-  });
-  const deleteEdgeMutation = useMutation({
-    mutationFn: (edgeId: string) => deleteProjectContextEdge(projectId, edgeId),
-    onSuccess: invalidate,
-  });
-
-  return {
-    createContextMutation,
-    patchContextMutation,
-    deleteContextMutation,
-    createEdgeMutation,
-    patchEdgeMutation,
-    deleteEdgeMutation,
-  };
-}
 
 type ProjectContextMutations = ReturnType<typeof useProjectContextMutations>;
 

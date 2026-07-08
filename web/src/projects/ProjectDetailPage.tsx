@@ -1,7 +1,5 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { deleteProject } from "@/api";
 import { EmptyState } from "@/shared/EmptyState";
 import { useDocumentTitle } from "@/shared/useDocumentTitle";
 import { useProject } from "./hooks";
@@ -9,11 +7,10 @@ import { ProjectDeleteConfirmDialog } from "./ProjectDeleteConfirmDialog";
 import { ProjectSettingsPanel } from "./ProjectSettingsPanel";
 import { ProjectTasksPanel } from "./ProjectTasksPanel";
 import { ProjectContextEntryCard } from "./ProjectContextEntryCard";
-import { projectQueryKeys } from "./queryKeys";
+import { useDeleteProjectMutation } from "./mutations";
 
 export function ProjectDetailPage() {
   const { projectId = "" } = useParams();
-  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const project = useProject(projectId);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -22,14 +19,7 @@ export function ProjectDetailPage() {
 
   const isDefaultProject = project.data?.is_default === true;
 
-  const deleteProjectMutation = useMutation({
-    mutationFn: () => deleteProject(projectId),
-    onSuccess: async () => {
-      setDeleteOpen(false);
-      await queryClient.invalidateQueries({ queryKey: projectQueryKeys.all });
-      navigate("/projects");
-    },
-  });
+  const deleteProjectMutation = useDeleteProjectMutation(projectId);
 
   if (!projectId) {
     return (
@@ -93,7 +83,14 @@ export function ProjectDetailPage() {
               setDeleteOpen(false);
             }
           }}
-          onConfirm={() => void deleteProjectMutation.mutate()}
+          onConfirm={() =>
+            void deleteProjectMutation.mutate(undefined, {
+              onSuccess: () => {
+                setDeleteOpen(false);
+                navigate("/projects");
+              },
+            })
+          }
         />
       ) : null}
 
