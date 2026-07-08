@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { ProjectContextEdge, ProjectContextItem } from "@/types";
 import { ModalStackProvider } from "@/shared/ModalStackContext";
 import { ProjectContextPicker } from "./ProjectContextPicker";
-import { projectQueryKeys } from "./queryKeys";
+import { projectQueryKeys } from "@/lib/projectQueryKeys";
 
 const projectId = "project-1";
 

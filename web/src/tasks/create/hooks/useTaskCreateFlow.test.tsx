@@ -17,7 +17,7 @@ vi.mock("@/api", () => ({
   saveTaskDraft: vi.fn(),
 }));
 
-vi.mock("@/worktrees/ensureRepositoriesRegistered", () => ({
+vi.mock("@/lib/ensureRepositoriesRegistered", () => ({
   ensureRepositoriesRegistered: vi.fn().mockResolvedValue(true),
 }));
 
@@ -27,7 +27,7 @@ import {
   listTaskDrafts,
   saveTaskDraft,
 } from "@/api";
-import { ensureRepositoriesRegistered } from "@/worktrees/ensureRepositoriesRegistered";
+import { ensureRepositoriesRegistered } from "@/lib/ensureRepositoriesRegistered";
 
 const mockedCreateTask = vi.mocked(createTask);
 const mockedListDrafts = vi.mocked(listTaskDrafts);

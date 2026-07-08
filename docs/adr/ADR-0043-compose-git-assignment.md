@@ -12,9 +12,9 @@ The wire payload also omitted `repository_id`, forcing async `getProject` hydrat
 
 ## Decision
 
-1. **Single assignment model** — `ComposeGitAssignment { repositoryId, projectId, worktreeId }` in `web/src/tasks/create/composeGitAssignment.ts`. All transitions are pure functions: `initFreshAssignment`, `hydrateAssignmentFromPayload`, `selectRepository`, `selectProject`, `selectWorktree`, `applyRepoScopedDefaults`.
+1. **Single assignment model** — `ComposeGitAssignment { repositoryId, projectId, worktreeId }` in `web/src/lib/composeGitAssignment.ts`. All transitions are pure functions: `initFreshAssignment`, `hydrateAssignmentFromPayload`, `selectRepository`, `selectProject`, `selectWorktree`, `applyRepoScopedDefaults`.
 
-2. **Thin React shell** — `useComposeGitAssignment` loads git/project data and dispatches reducer actions. `TaskCreateAssignmentFields` is presentational (no assignment `useEffect`).
+2. **Thin React shell** — `useComposeGitAssignment` in `web/src/hooks/useComposeGitAssignment.ts` loads git/project data and dispatches reducer actions. `TaskCreateAssignmentFields` is presentational (no assignment `useEffect`).
 
 3. **Explicit init paths** — Fresh create runs `initFreshAssignment` once when all ids are empty. Edit/template hydrate sets three ids from payload without inferring mode from empty strings.
 

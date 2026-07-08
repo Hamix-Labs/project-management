@@ -5,7 +5,7 @@ import { Button } from "@/components/ui";
 import { TaskListSection } from "../components/task-list";
 import { useTasksAppList, useTasksAppModals } from "../app/TasksAppProvider";
 import { isUiFeatureOmitted } from "@/launch/omittedFeatures";
-import { useProjects } from "@/projects";
+import { useProjects } from "@/hooks/useProjects";
 
 export function TaskHome() {
   useDocumentTitle(undefined);

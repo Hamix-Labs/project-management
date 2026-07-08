@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { projectQueryKeys } from "@/projects/queryKeys";
+import { projectQueryKeys } from "@/lib/projectQueryKeys";
 import { settingsQueryKeys } from "@/settings/settingsQueryKeys";
 import { taskQueryKeys } from "../task-query";
 import { decideSyncFrame } from "./decideSyncFrame";

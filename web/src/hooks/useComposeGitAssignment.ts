@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef } from "react";
-import { useGlobalRepositories } from "@/worktrees/hooks/useGlobalRepositories";
-import { useGlobalWorktrees } from "@/worktrees/hooks/useGlobalWorktrees";
-import { useGlobalBranches } from "@/worktrees/hooks/useGlobalBranches";
-import { isFullyRegisteredWorktree } from "@/worktrees/worktreeRegistration";
-import { useProjectsByRepository } from "@/projects/useProjectsByRepository";
+import { useGlobalRepositories } from "@/hooks/useGlobalRepositories";
+import { useGlobalWorktrees } from "@/hooks/useGlobalWorktrees";
+import { useGlobalBranches } from "@/hooks/useGlobalBranches";
+import { isFullyRegisteredWorktree } from "@/lib/gitWorktreeRegistration";
+import { useProjectsByRepository } from "@/hooks/useProjectsByRepository";
 import {
   applyRepoScopedDefaults,
   assignmentEquals,
@@ -13,7 +13,7 @@ import {
   selectRepository as selectRepositoryState,
   selectWorktree as selectWorktreeState,
   type ComposeGitAssignment,
-} from "../composeGitAssignment";
+} from "@/lib/composeGitAssignment";
 
 type Input = {
   repositoryId: string;

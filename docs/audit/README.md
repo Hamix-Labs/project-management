@@ -2,10 +2,13 @@
 
 Read-only audits completed 2026-07-05. Each report ranks findings by ROI (1–10). No code was changed during investigation.
 
+**Cleanup phase order:** [cleanup-order.md](../cleanup-order.md) — agents pick tasks from this index but follow that priority stack (boundaries → delete → policy → DRY → structure → abstractions).
+
 ## Reports
 
 | Report | Focus | Items | High ROI (≥8) |
 | --- | --- | --- | --- |
+| [boundaries-roi.md](./boundaries-roi.md) | Layer boundaries & contract seams (Phase 1) | 12 | 3 |
 | ~~duplication-roi.md~~ | Shared code for duplicated logic | 15 (completed) | — |
 | ~~abstractions-roi.md~~ | Interfaces and dependency inversion | 12 (completed) | — |
 | ~~logic-simplification-roi.md~~ | Simpler control flow without new layers | 12 (completed) | — |
@@ -19,15 +22,15 @@ Ranked by composite ROI considering effort, risk, and lines/clarity impact. Prim
 | Rank | ROI | Finding | Primary report | Effort |
 | --- | --- | --- | --- | --- |
 | 1 | 10 | Remove legacy project-scoped git stack (~900–1,100 lines, zero UI consumers) | [dead-code](./dead-code-roi.md#1-legacy-project-scoped-git-stack--roi-1010-high) | 1–2 days |
-| 2 | 10 | ~~Domain layer persistence split (GORM out of `domain/`)~~ (done) | lld-patterns (removed) | — |
-| 3 | 9 | ~~Consolidate `mustCreateTask` test helpers~~ (done) | duplication (removed) | — |
-| 4 | 9 | ~~Centralize settings cursor-model query keys~~ (done) | abstractions (removed) | — |
-| 5 | 9 | ~~Git store → facade/internal pattern (`reconcile_git.go` Red)~~ (done) | lld-patterns (removed) | — |
-| 6 | 9 | ~~Reconcile worktree matching simplification~~ (done) | logic-simplification (removed) | — |
-| 7 | 9 | ~~Checklist mutation optimistic pipeline factory~~ (done) | logic-simplification (removed) | — |
-| 8 | 9 | ~~Unify global vs project git HTTP handlers~~ (done) | duplication (removed) | — |
-| 9 | 9 | ~~Handler `*store.Store` → composed interfaces~~ (done) | abstractions (removed) | — |
-| 10 | 9 | Delete subtask-era CSS with no DOM (~120–150 lines) | [dead-code](./dead-code-roi.md#2-subtask-era-css-with-no-dom--roi-910-high) | 1–2 hours |
+| 2 | 9 | ~~Web vertical coupling (`tasks/` → `projects/` + `worktrees/`)~~ **done** | [boundaries](./boundaries-roi.md#1-web-vertical-coupling-tasks--projects--worktrees--roi-910-high--status-done-2026-07-08) | 2–3 days |
+| 3 | 9 | Create/bulk mutations bypass guarded write + mutation guard | [boundaries](./boundaries-roi.md#2-createbulk-task-mutations-bypass-guarded-write--roi-910-high) | 1–2 days |
+| 4 | 9 | Delete subtask-era CSS with no DOM (~120–150 lines) | [dead-code](./dead-code-roi.md#2-subtask-era-css-with-no-dom--roi-910-high) | 1–2 hours |
+| 5 | 8 | Project/worktree cache invalidation outside `tasks/sync/` | [boundaries](./boundaries-roi.md#3-projectworktree-cache-invalidation-outside-taskssync--roi-810-high) | 2–3 days |
+| 6 | 8 | Delete `taskDescendantCount()` stub | [dead-code](./dead-code-roi.md#3-taskdescendantcount-always-returns-0--roi-810-high) | 15 min |
+| 7 | 7 | `handler_task_events` hint-only `task_updated` on event append | [boundaries](./boundaries-roi.md#4-handler_task_events-publishes-hint-only-task_updated--roi-710-medium) | 4–8 hours |
+| 8 | 7 | `handler_settings` bypasses `notifyChange` helper | [boundaries](./boundaries-roi.md#5-handler_settings-bypasses-notifychange-helper--roi-710-medium) | 1–2 hours |
+| 9 | 7 | Checklist verify-commands ad-hoc invalidation | [boundaries](./boundaries-roi.md#6-checklist-verify-commands-patch-uses-ad-hoc-invalidation--roi-710-medium) | 2–4 hours |
+| 10 | 5 | Close ADR-0039 as Accepted (store/model landed) | [boundaries](./boundaries-roi.md#10-close-adr-0039-as-accepted--roi-510-medium) | 30 min |
 
 ## Quick wins (≤1 day, low risk)
 
@@ -50,6 +53,8 @@ These recur across reports — batch related PRs:
 | Theme | Reports | Suggested sequence |
 | --- | --- | --- |
 | **Git vertical cleanup** | dead-code #1, duplication #2/#4, lld #2/#6 | Delete legacy → extract helpers → facade/internal |
+| **Web vertical boundaries** | boundaries #1, #3 | Decouple tasks↔projects/worktrees → unify cache invalidation |
+| **Frontend mutation policy** | boundaries #2, #6–#8 | Guarded create/bulk → checklist/scheduling gaps |
 | **Handler test consolidation** | duplication (done), lld #9 | Contract harness done; tasktestserver extracted |
 | **Web god-file splits** | lld #5/#8/#11 | Cycle detail page → create modal → task detail page |
 | **Store/handler DIP** | abstractions (done) | Query keys → GitWorktreeResolver → handler store slices → worker Store → fakes |
@@ -64,6 +69,7 @@ These recur across reports — batch related PRs:
 | Over-nested conditionals | logic-simplification (completed) | — |
 | God file / SRP violation | abstractions (completed) | lld-patterns (completed) |
 | Unused export / pass-through barrel | [dead-code](./dead-code-roi.md) | duplication |
+| Layer / contract seam violation | [boundaries](./boundaries-roi.md) | dead-code (if delete fixes seam) |
 
 ## ROI legend (shared)
 

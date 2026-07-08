@@ -139,6 +139,7 @@ if (Test-Path $createRoot) {
 
 # TypeScript: feature modules must not import other feature modules (CODE_STANDARDS Part 4).
 $featureDirs = @(
+    @{ Name = "tasks"; Path = (Join-Path $srcRoot "tasks"); Forbidden = @("projects", "worktrees") },
     @{ Name = "projects"; Path = (Join-Path $srcRoot "projects"); Forbidden = @("tasks", "settings", "worktrees") },
     @{ Name = "settings"; Path = (Join-Path $srcRoot "settings"); Forbidden = @("tasks", "projects", "worktrees") },
     @{ Name = "worktrees"; Path = (Join-Path $srcRoot "worktrees"); Forbidden = @("tasks", "projects", "settings") }

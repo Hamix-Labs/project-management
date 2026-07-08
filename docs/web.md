@@ -56,7 +56,7 @@ Create-task policy and hook composition live in [`web/src/tasks/create/`](../web
 1. [ADR-0024](./adr/ADR-0024-task-create-flow-slice.md) — Decide vs Apply boundaries, invariants I1–I7
 2. `decideCreateEntry.ts` — `openCreateModal` routing (loading / error / drafts / fresh)
 3. `composePayload.ts`, `validateCreateForm.ts`, `draftPayload.ts`, `buildCreateMutationInput.ts` — shared compose payload, validation, and wire shapes
-4. `composeGitAssignment.ts` + `hooks/useComposeGitAssignment.ts` — pure git assignment reducer and orchestration hook (repo / project / worktree); see [ADR-0043](./adr/ADR-0043-compose-git-assignment.md)
+4. [`lib/composeGitAssignment.ts`](../web/src/lib/composeGitAssignment.ts) + [`hooks/useComposeGitAssignment.ts`](../web/src/hooks/useComposeGitAssignment.ts) — pure git assignment reducer and orchestration hook (repo / project / worktree); see [ADR-0043](./adr/ADR-0043-compose-git-assignment.md)
 5. `mapCreateFlowViewModel.ts` — flat public return shape for `useTasksApp`
 6. `hooks/useTaskCreateFlow.ts` — composer; shim at `web/src/tasks/hooks/useTaskCreateFlow.ts`
 

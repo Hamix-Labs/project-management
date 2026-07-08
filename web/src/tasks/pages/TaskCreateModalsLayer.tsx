@@ -1,12 +1,10 @@
-import {
-  ProjectContextPicker,
-  useProjectContextPromptBinding,
-} from "@/projects";
+import { ProjectContextPicker } from "@/components/project-context/ProjectContextPicker";
+import { useProjectContextPromptBinding } from "@/hooks/useProjectContextPromptBinding";
 import { isUiFeatureOmitted } from "@/launch/omittedFeatures";
 import { useAppTimezone } from "@/shared/time/appTimezone";
 import { DraftResumeModal } from "../components/draft-resume";
 import { TaskCreateModal } from "../components/task-create-modal";
-import { RepositorySetupPrompt } from "@/worktrees/modals/RepositorySetupPrompt";
+import { RepositorySetupPrompt } from "@/components/git/RepositorySetupPrompt";
 import { useTasksAppContext } from "../app/TasksAppProvider";
 
 export function TaskCreateModalsLayer() {

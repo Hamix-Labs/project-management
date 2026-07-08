@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useGlobalRepositories } from "@/hooks/useGlobalRepositories";
 import { gitQueryKeys } from "@/lib/gitQueryKeys";
-import { useProject } from "@/projects/hooks";
+import { useProject } from "@/hooks/useProject";
 import { resolveTaskGitBinding } from "../task-git/resolveTaskGitBinding";
 
 export function useTaskGitBinding(

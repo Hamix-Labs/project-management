@@ -20,7 +20,7 @@ vi.mock("../../api", () => ({
   addChecklistItem: vi.fn(),
 }));
 
-vi.mock("@/worktrees/ensureRepositoriesRegistered", () => ({
+vi.mock("@/lib/ensureRepositoriesRegistered", () => ({
   ensureRepositoriesRegistered: vi.fn().mockResolvedValue(true),
 }));
 
@@ -33,7 +33,7 @@ import {
   createTask,
   deleteTask,
 } from "../../api";
-import { ensureRepositoriesRegistered } from "@/worktrees/ensureRepositoriesRegistered";
+import { ensureRepositoriesRegistered } from "@/lib/ensureRepositoriesRegistered";
 
 const mockedListTasks = vi.mocked(listTasks);
 const mockedGetStats = vi.mocked(getTaskStats);

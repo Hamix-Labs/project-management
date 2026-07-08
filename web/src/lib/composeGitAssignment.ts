@@ -1,5 +1,5 @@
 import type { GitWorktree } from "@/types/git";
-import { pickDefaultWorktreeId } from "@/worktrees/worktreeRegistration";
+import { pickDefaultWorktreeId } from "@/lib/gitWorktreeRegistration";
 
 export type ComposeGitAssignment = {
   repositoryId: string;

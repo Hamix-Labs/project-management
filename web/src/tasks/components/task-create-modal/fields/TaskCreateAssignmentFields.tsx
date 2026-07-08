@@ -4,10 +4,10 @@ import { CustomSelect } from "@/components/custom-select";
 import {
   WorktreesBranchIcon,
   WorktreesFolderGitIcon,
-} from "@/worktrees/components/WorktreesIcons";
-import { ProjectSelect } from "@/projects/ProjectSelect";
-import { useComposeGitAssignment } from "@/tasks/create/hooks/useComposeGitAssignment";
-import type { ComposeGitAssignment } from "@/tasks/create/composeGitAssignment";
+} from "@/components/git/GitWorktreeIcons";
+import { ProjectSelect } from "@/components/project/ProjectSelect";
+import { useComposeGitAssignment } from "@/hooks/useComposeGitAssignment";
+import type { ComposeGitAssignment } from "@/lib/composeGitAssignment";
 
 type Props = {
   idsPrefix: string;

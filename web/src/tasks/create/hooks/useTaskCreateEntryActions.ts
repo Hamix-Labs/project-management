@@ -6,7 +6,7 @@ import { settingsQueryKeys } from "@/settings/settingsQueryKeys";
 import { hydrateFormFromComposePayload } from "../composePayload";
 import { applyResumedDraftToForm } from "../draftPayload";
 import { decideCreateEntry } from "../decideCreateEntry";
-import { ensureRepositoriesRegistered } from "@/worktrees/ensureRepositoriesRegistered";
+import { ensureRepositoriesRegistered } from "@/lib/ensureRepositoriesRegistered";
 import type { ComposeOperation, ComposeTarget, TaskDraftsQuery } from "../types";
 import type { useTaskCreateFormState } from "./useTaskCreateFormState";
 import type { useTaskCreateModalState } from "./useTaskCreateModalState";

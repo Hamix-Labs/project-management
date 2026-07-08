@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { GitWorktree } from "@/types/git";
-import { isFullyRegisteredWorktree, isLinkedWorktreeForDisplay, isDetailPageWorktree, pickDefaultWorktreeId } from "./worktreeRegistration";
+import {
+  isDetailPageWorktree,
+  isFullyRegisteredWorktree,
+  isLinkedWorktreeForDisplay,
+  pickDefaultWorktreeId,
+} from "./gitWorktreeRegistration";
 
 const linked: GitWorktree = {
   id: "00000000-0000-4000-8000-000000000020",
@@ -29,7 +34,7 @@ const incompleteMainStub: GitWorktree = {
   branch_id: undefined,
 };
 
-describe("worktreeRegistration", () => {
+describe("gitWorktreeRegistration", () => {
   it("treats branch-bound rows as fully registered", () => {
     expect(isFullyRegisteredWorktree(linked)).toBe(true);
     expect(isFullyRegisteredWorktree(incompleteMainStub)).toBe(false);
