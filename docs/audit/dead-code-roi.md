@@ -6,7 +6,7 @@
 
 - Items found: 15 (High: 5, Medium: 6, Low: 4)
 - Top 3 by ROI:
-  1. Legacy project-scoped git stack (~900–1,100 lines, zero production UI consumers)
+  1. ~~Legacy project-scoped git stack~~ **done** ([#155](https://github.com/AlexsanderHamir/Hamix/pull/155), [#156](https://github.com/AlexsanderHamir/Hamix/pull/156))
   2. Subtask-era CSS with no DOM references (~120–150 lines)
   3. `taskDescendantCount()` always returns 0 (post-subtask-removal stub)
 
@@ -24,10 +24,10 @@
 
 ## Findings (ranked)
 
-### 1. Legacy project-scoped git stack — ROI 10/10 (High)
+### 1. Legacy project-scoped git stack — ROI 10/10 (High) — **Status: done (2026-07-08)**
 
-- **Location:**
-  - Web: `web/src/api/git.ts` (~178 lines), `worktrees/hooks/useRepositories.ts`, `useWorktrees.ts`, `useBranches.ts`, `useGitMutations.ts` (~148 lines), `lib/gitQueryKeys.ts` L3–9, `worktrees/index.ts` L5–8
+- **PRs:** [#155](https://github.com/AlexsanderHamir/Hamix/pull/155) (backend), [#156](https://github.com/AlexsanderHamir/Hamix/pull/156) (web); docs in this commit.
+- **Location (removed):** `web/src/api/git.ts` (~178 lines), `worktrees/hooks/useRepositories.ts`, `useWorktrees.ts`, `useBranches.ts`, `useGitMutations.ts` (~148 lines), `lib/gitQueryKeys.ts` L3–9, `worktrees/index.ts` L5–8
   - Test: `web/src/test/handlers/git.ts`, `gitMsw.ts` `gitApiHandlers()`
   - Go: `handler_git_repositories.go`, `handler_git_worktrees.go`, `handler_git_branches.go`, routes in `handler.go` L100–110, `handler_git_project_test.go`, `handler_git_test.go`
   - Docs: `docs/api.md` "Legacy per-project routes" (L73–87)
@@ -157,12 +157,12 @@
 | `CompleteChecklistLegacy` | Used in harness verify-off path (`cycle_loop.go`) |
 | SSE `Subscribe()` legacy channel | Active in-process test/subscriber API |
 | `@/tasks` barrel | Used by `App.tsx` lazy routes (intentional narrow export) |
-| `gitApiHandlers()` in default MSW | Supports dead project git until #1 removed |
+| `gitApiHandlers()` in default MSW | Removed with dead-code #1 (2026-07-08) |
 | `withOptionalRunTimeout` | Removed in logic-simplification #12 (harness timeout dedup) |
 
 ## Suggested deletion order
 
-1. **#1** (legacy git) — largest coherent slice, documented deprecated
+1. ~~**#1** (legacy git)~~ — done ([#155](https://github.com/AlexsanderHamir/Hamix/pull/155), [#156](https://github.com/AlexsanderHamir/Hamix/pull/156))
 2. **#2** (subtask CSS) — safe, visual-only
 3. **#3–#9** — small, low-risk stubs and orphans
 4. **#10–#15** — cleanup / import-path normalization

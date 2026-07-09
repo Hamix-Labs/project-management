@@ -21,7 +21,7 @@ Ranked by composite ROI considering effort, risk, and lines/clarity impact. Prim
 
 | Rank | ROI | Finding | Primary report | Effort |
 | --- | --- | --- | --- | --- |
-| 1 | 10 | Remove legacy project-scoped git stack (~900–1,100 lines, zero UI consumers) | [dead-code](./dead-code-roi.md#1-legacy-project-scoped-git-stack--roi-1010-high) | 1–2 days |
+| 1 | ~~10~~ | ~~Remove legacy project-scoped git stack~~ **done** | [dead-code](./dead-code-roi.md#1-legacy-project-scoped-git-stack--roi-1010-high--status-done-2026-07-08) | 1–2 days |
 | 2 | 9 | ~~Web vertical coupling (`tasks/` → `projects/` + `worktrees/`)~~ **done** | [boundaries](./boundaries-roi.md#1-web-vertical-coupling-tasks--projects--worktrees--roi-910-high--status-done-2026-07-08) | 2–3 days |
 | 3 | 9 | ~~Create/bulk mutations bypass guarded write + mutation guard~~ **done** | [boundaries](./boundaries-roi.md#2-createbulk-task-mutations-bypass-guarded-write--roi-910-high--status-done-2026-07-08) | 1–2 days |
 | 4 | 9 | Delete subtask-era CSS with no DOM (~120–150 lines) | [dead-code](./dead-code-roi.md#2-subtask-era-css-with-no-dom--roi-910-high) | 1–2 hours |

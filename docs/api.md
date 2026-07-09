@@ -70,22 +70,6 @@ Git context follows [ADR-0037](./adr/ADR-0037-global-repos-project-tree.md) (glo
 | GET | `/git/repositories/{repoId}/branches/live` | Live refs from `git branch` `{ branches: [{ name, head_sha }] }`. |
 | GET | `/git/repositories/{repoId}/projects` | Projects tied to this repo `{ projects, limit }`. |
 
-**Legacy per-project routes** (deprecated; removed after contract migration):
-
-| Method | Path | Notes |
-|---|---|---|
-| GET | `/projects/{id}/git/repositories` | `{ repositories: [...] }`. |
-| POST | `/projects/{id}/git/repositories` | Register main checkout. Body `{ path, host_path?, default_branch? }`. **201** repository. **409** `not_a_git_repository`, `duplicate`. |
-| GET | `/projects/{id}/git/repositories/{repoId}` | Single repository. **404** `repository_not_found`. |
-| DELETE | `/projects/{id}/git/repositories/{repoId}` | **204**. **409** `has_running_task` when a `running` task references the repo, a worktree, or a branch under it. |
-| GET | `/projects/{id}/git/repositories/{repoId}/worktrees` | `{ worktrees: [...] }`. |
-| POST | `/projects/{id}/git/repositories/{repoId}/worktrees` | Body `{ path, name?, branch, create_branch?, start_point? }`. **201**. **409** `path_exists`, `branch_checked_out`. |
-| DELETE | `/projects/{id}/git/worktrees/{worktreeId}` | Same as global delete: unregister by default; `?remove_from_disk=true` removes from disk. **409** `has_running_task`. |
-| GET | `/projects/{id}/git/repositories/{repoId}/branches` | `{ branches: [...] }`. |
-| POST | `/projects/{id}/git/repositories/{repoId}/branches` | Body `{ name, start_point? }`. **201**. **409** `branch_exists`. |
-| DELETE | `/projects/{id}/git/branches/{branchId}` | **204**. Query `?force=true` for unmerged. **409** `has_running_task`, `branch_checked_out`. |
-| POST | `/projects/{id}/git/repositories/{repoId}/reconcile` | Same body/response as global reconcile. **409** when a missing worktree is still referenced by tasks. |
-
 **Projects:** `POST /projects` accepts optional `repository_id` (repo must exist). Tasks accept optional `worktree_id` (required for agent runs; branch is derived from the worktree row).
 
 Stable error codes: `not_a_git_repository`, `path_exists`, `branch_exists`, `branch_checked_out`, `branch_bound_to_worktree`, `project_repo_mismatch`, `has_running_task`, `bootstrap_mismatch`, `repository_not_found`, `worktree_not_found`, `branch_not_found`, `duplicate`.
