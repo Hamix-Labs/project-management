@@ -45,18 +45,6 @@ func (h *Handler) runGitReconcile(w http.ResponseWriter, r *http.Request, op, pr
 	writeJSON(w, r, op, http.StatusAccepted, toGitReconcileResponse(out))
 }
 
-func (h *Handler) reconcileGitRepository(w http.ResponseWriter, r *http.Request) {
-	const op = "git.repositories.reconcile"
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.reconcileGitRepository")
-	r = calltrace.WithRequestRoot(r, op)
-	projectID, err := parseGitProjectID(r)
-	if err != nil {
-		writeGitStoreError(w, r, op, err)
-		return
-	}
-	h.runGitReconcile(w, r, op, projectID, r.PathValue("repoId"))
-}
-
 func (h *Handler) reconcileGlobalGitRepository(w http.ResponseWriter, r *http.Request) {
 	const op = "git.repositories.reconcile_global"
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.reconcileGlobalGitRepository")

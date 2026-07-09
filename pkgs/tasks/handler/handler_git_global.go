@@ -12,27 +12,27 @@ import (
 
 //funclogmeasure:skip category=delegate-already-logs reason="Global route wrapper; serve* emits operation trace."
 func (h *Handler) listGlobalGitRepositories(w http.ResponseWriter, r *http.Request) {
-	h.serveListGitRepositories(w, r, "git.repositories.list_global", "")
+	h.serveListGitRepositories(w, r, "git.repositories.list_global")
 }
 
 //funclogmeasure:skip category=delegate-already-logs reason="Global route wrapper; serve* emits operation trace."
 func (h *Handler) createGlobalGitRepository(w http.ResponseWriter, r *http.Request) {
-	h.serveCreateGitRepository(w, r, "git.repositories.create_global", "")
+	h.serveCreateGitRepository(w, r, "git.repositories.create_global")
 }
 
 //funclogmeasure:skip category=delegate-already-logs reason="Global route wrapper; serve* emits operation trace."
 func (h *Handler) getGlobalGitRepository(w http.ResponseWriter, r *http.Request) {
-	h.serveGetGitRepository(w, r, "git.repositories.get_global", "")
+	h.serveGetGitRepository(w, r, "git.repositories.get_global")
 }
 
 //funclogmeasure:skip category=delegate-already-logs reason="Global route wrapper; serve* emits operation trace."
 func (h *Handler) deleteGlobalGitRepository(w http.ResponseWriter, r *http.Request) {
-	h.serveDeleteGitRepository(w, r, "git.repositories.delete_global", "")
+	h.serveDeleteGitRepository(w, r, "git.repositories.delete_global")
 }
 
 //funclogmeasure:skip category=delegate-already-logs reason="Global route wrapper; serve* emits operation trace."
 func (h *Handler) listGlobalGitWorktrees(w http.ResponseWriter, r *http.Request) {
-	h.serveListGitWorktrees(w, r, "git.worktrees.list_global", "")
+	h.serveListGitWorktrees(w, r, "git.worktrees.list_global")
 }
 
 func (h *Handler) listGlobalGitWorktreesLive(w http.ResponseWriter, r *http.Request) {
@@ -137,7 +137,7 @@ func (h *Handler) probeGlobalGitWorktree(w http.ResponseWriter, r *http.Request)
 
 //funclogmeasure:skip category=delegate-already-logs reason="Global route wrapper; serve* emits operation trace."
 func (h *Handler) createGlobalGitWorktree(w http.ResponseWriter, r *http.Request) {
-	h.serveCreateGitWorktree(w, r, "git.worktrees.create_global", "")
+	h.serveCreateGitWorktree(w, r, "git.worktrees.create_global")
 }
 
 func (h *Handler) registerGlobalGitWorktree(w http.ResponseWriter, r *http.Request) {
@@ -167,12 +167,12 @@ func (h *Handler) registerGlobalGitWorktree(w http.ResponseWriter, r *http.Reque
 
 //funclogmeasure:skip category=delegate-already-logs reason="Global route wrapper; serve* emits operation trace."
 func (h *Handler) deleteGlobalGitWorktree(w http.ResponseWriter, r *http.Request) {
-	h.serveDeleteGitWorktree(w, r, "git.worktrees.delete_global", "")
+	h.serveDeleteGitWorktree(w, r, "git.worktrees.delete_global")
 }
 
 //funclogmeasure:skip category=delegate-already-logs reason="Global route wrapper; serve* emits operation trace."
 func (h *Handler) listGlobalGitBranches(w http.ResponseWriter, r *http.Request) {
-	h.serveListGitBranches(w, r, "git.branches.list_global", "")
+	h.serveListGitBranches(w, r, "git.branches.list_global")
 }
 
 func (h *Handler) listGlobalGitBranchesLive(w http.ResponseWriter, r *http.Request) {

@@ -88,10 +88,6 @@ func writeJSONCodedError(w http.ResponseWriter, r *http.Request, op string, stat
 	_ = enc.Encode(body)
 }
 
-func parseGitProjectID(r *http.Request) (string, error) {
-	return parseTaskPathID(r.PathValue("id"))
-}
-
 func gitWorktreeDeleteQuery(r *http.Request, op string) (removeFromDisk, force bool) {
 	removeFromDisk = r.URL.Query().Get("remove_from_disk") == "true"
 	force = r.URL.Query().Get("force") == "true"

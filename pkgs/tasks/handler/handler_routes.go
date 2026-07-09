@@ -6,7 +6,6 @@ import "net/http"
 func (h *Handler) registerRoutes(m *http.ServeMux) {
 	h.registerHealthRoutes(m)
 	h.registerProjectRoutes(m)
-	h.registerProjectGitRoutes(m)
 	h.registerGlobalGitRoutes(m)
 	h.registerTaskDraftTemplateRoutes(m)
 	h.registerTaskRoutes(m)
@@ -39,21 +38,6 @@ func (h *Handler) registerProjectRoutes(m *http.ServeMux) {
 	m.Handle("DELETE /projects/{id}/context/edges/{edgeId}", http.HandlerFunc(h.deleteProjectContextEdge))
 	m.Handle("PATCH /projects/{id}/context/{contextId}", http.HandlerFunc(h.patchProjectContext))
 	m.Handle("DELETE /projects/{id}/context/{contextId}", http.HandlerFunc(h.deleteProjectContext))
-}
-
-//funclogmeasure:skip category=hot-path reason="Route table wiring only; operation trace is emitted by registered handlers."
-func (h *Handler) registerProjectGitRoutes(m *http.ServeMux) {
-	m.Handle("GET /projects/{id}/git/repositories", http.HandlerFunc(h.listGitRepositories))
-	m.Handle("POST /projects/{id}/git/repositories", http.HandlerFunc(h.createGitRepository))
-	m.Handle("GET /projects/{id}/git/repositories/{repoId}", http.HandlerFunc(h.getGitRepository))
-	m.Handle("DELETE /projects/{id}/git/repositories/{repoId}", http.HandlerFunc(h.deleteGitRepository))
-	m.Handle("GET /projects/{id}/git/repositories/{repoId}/worktrees", http.HandlerFunc(h.listGitWorktrees))
-	m.Handle("POST /projects/{id}/git/repositories/{repoId}/worktrees", http.HandlerFunc(h.createGitWorktree))
-	m.Handle("DELETE /projects/{id}/git/worktrees/{worktreeId}", http.HandlerFunc(h.deleteGitWorktree))
-	m.Handle("GET /projects/{id}/git/repositories/{repoId}/branches", http.HandlerFunc(h.listGitBranches))
-	m.Handle("POST /projects/{id}/git/repositories/{repoId}/branches", http.HandlerFunc(h.createGitBranch))
-	m.Handle("DELETE /projects/{id}/git/branches/{branchId}", http.HandlerFunc(h.deleteGitBranch))
-	m.Handle("POST /projects/{id}/git/repositories/{repoId}/reconcile", http.HandlerFunc(h.reconcileGitRepository))
 }
 
 //funclogmeasure:skip category=hot-path reason="Route table wiring only; operation trace is emitted by registered handlers."
