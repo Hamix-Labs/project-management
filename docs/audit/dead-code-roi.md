@@ -36,9 +36,9 @@
 - **Effort / risk / blast radius:** 1–2 days; medium risk (HTTP contract); ~900–1,100 lines removed.
 - **Evidence:** Grep `useRepositories|useWorktrees|useBranches|useGitMutations` → only hook definitions + barrel export. `grep from "@/api/git"` → only those 4 hooks. `docs/api.md` marks routes deprecated.
 
-### 2. Subtask-era CSS with no DOM — ROI 9/10 (High)
+### 2. Subtask-era CSS with no DOM — ROI 9/10 (High) — **Status: done (2026-07-08)**
 
-- **Location:** `web/src/app/styles/task-create/app-task-create-modal-polish.css` (L269–345, `.task-create-modal-panel*`), `app-task-detail-section-controls.css` (`.task-detail-add-subtask-btn`), `.task-create-subtasks` container rules
+- **Location (removed):** `web/src/app/styles/task-create/app-task-create-modal-polish.css` (`.task-create-modal-panel*`), `app-task-detail-section-controls.css` (`.task-detail-add-subtask-btn`), `.task-create-subtasks` container rules
 - **Issue:** CSS for removed subtask UI and superseded modal layout; no TSX references.
 - **Proposed change:** Delete unused rules; keep `.task-create-subtasks-heading` (used in `TaskCreateModalAgentSection.tsx`).
 - **Effort / risk / blast radius:** 1–2 hours; low risk; ~120–150 CSS lines.

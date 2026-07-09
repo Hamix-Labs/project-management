@@ -545,34 +545,13 @@
    alternating with wells. Scoped via .task-create-modal-sheet so the
    task-detail page (which uses the same sub-components) is unaffected. —— */
 
-.task-create-modal-sheet .task-create-checklist .task-checklist-surface,
-.task-create-modal-sheet .task-create-subtasks .task-checklist-list,
-.task-create-modal-sheet .task-create-subtasks-empty {
+.task-create-modal-sheet .task-create-checklist .task-checklist-surface {
   margin-top: 0.55rem;
   padding: 0.75rem 1rem;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-hairline);
   background: var(--bg-elevated);
   box-shadow: none;
-}
-
-.task-create-modal-sheet .task-create-subtasks-empty {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  margin: 0.55rem 0 0;
-  font-size: var(--text-help);
-  line-height: 1.5;
-  color: var(--text-secondary);
-  border-style: dashed;
-  background: color-mix(in srgb, var(--bg-elevated) 92%, var(--bg-subtle));
-  box-shadow: none;
-}
-
-.task-create-modal-sheet .task-create-subtasks-empty span[aria-hidden="true"] {
-  flex-shrink: 0;
-  color: var(--brand-text-strong);
-  opacity: 0.7;
 }
 
 /* Section header rule: a thin tinted underline below each section's head
@@ -585,8 +564,7 @@
   position: relative;
 }
 
-.task-create-modal-sheet .task-create-checklist-head,
-.task-create-modal-sheet .task-create-subtasks-head {
+.task-create-modal-sheet .task-create-checklist-head {
   padding-bottom: 0.5rem;
   border-bottom: 1px solid color-mix(in srgb, var(--border-hairline) 60%, transparent);
 }

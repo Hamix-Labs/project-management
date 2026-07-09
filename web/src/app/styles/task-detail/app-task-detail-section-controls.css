@@ -63,7 +63,6 @@
    buttons on the page share identical dimensions; colour provides the
    hierarchy. Primary CTAs (`--primary` variant) keep weight 600 for
    emphasis. */
-button.task-detail-add-subtask-btn,
 button.task-detail-add-checklist-btn {
   display: inline-flex;
   align-items: center;
@@ -115,7 +114,6 @@ a.task-detail-open-graph-btn:focus-visible {
   box-shadow: 0 0 0 3px var(--brand-muted);
 }
 
-button.task-detail-add-subtask-btn:not(:disabled):hover,
 button.task-detail-add-checklist-btn:not(:disabled):hover {
   background: var(--bg-subtle);
   border-color: var(--border-chrome-muted);
@@ -124,14 +122,12 @@ button.task-detail-add-checklist-btn:not(:disabled):hover {
   box-shadow: none;
 }
 
-button.task-detail-add-subtask-btn:focus-visible,
 button.task-detail-add-checklist-btn:focus-visible {
   outline: none;
   border-color: var(--brand-border-focus);
   box-shadow: 0 0 0 3px var(--brand-muted);
 }
 
-button.task-detail-add-subtask-btn:disabled,
 button.task-detail-add-checklist-btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
@@ -145,25 +141,6 @@ button.task-detail-add-checklist-btn:disabled {
    buttons — see comment above). The dimensions remain identical to the
    secondary chrome so a primary CTA looks like the same button with a
    different colour, not a different size. */
-button.task-detail-add-subtask-btn--primary {
-  font-weight: 600;
-  color: var(--control-primary-fg);
-  background: var(--control-primary-bg);
-  border-color: var(--control-primary-bg);
-  box-shadow: none;
-}
-
-button.task-detail-add-subtask-btn--primary:not(:disabled):hover {
-  background: var(--control-primary-hover-bg);
-  border-color: var(--control-primary-hover-bg);
-  box-shadow: none;
-}
-
-button.task-detail-add-subtask-btn--primary:focus-visible {
-  outline: none;
-  box-shadow: var(--shadow-focus);
-}
-
 button.task-home-new-task-btn {
   display: inline-flex;
   align-items: center;

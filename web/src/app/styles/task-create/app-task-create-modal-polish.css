@@ -266,49 +266,6 @@
   min-height: var(--modal-control-size, 2.25rem);
 }
 
-/* Legacy panel aliases — kept for any non-modal surfaces */
-.task-create-modal-panel {
-  border: 1px solid var(--border-hairline);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  background: var(--bg-elevated);
-}
-
-.task-create-modal-panel__head {
-  padding: var(--space-3) var(--space-4);
-  border-bottom: 1px solid color-mix(in srgb, var(--border-hairline) 75%, transparent);
-  background: var(--bg-subtle);
-}
-
-.task-create-modal-panel__title {
-  margin: 0;
-  font-size: var(--text-sm);
-  font-weight: 600;
-  letter-spacing: -0.015em;
-  line-height: 1.25;
-  color: var(--text-primary);
-}
-
-.task-create-modal-panel__lede {
-  margin: var(--space-1) 0 0;
-  font-size: var(--text-xs);
-  line-height: 1.45;
-  color: var(--text-tertiary);
-  max-width: 42rem;
-}
-
-.task-create-modal-panel__body {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-  padding: var(--space-4) var(--space-4) var(--space-5);
-}
-
-.task-create-modal-panel--essentials .task-create-modal-panel__body > * + * {
-  padding-top: var(--space-5);
-  border-top: 1px solid color-mix(in srgb, var(--border-hairline) 58%, transparent);
-}
-
 .task-create-modal-section--execution .task-create-modal-section__body {
   gap: 0;
 }
@@ -317,29 +274,6 @@
   margin: 0;
   padding: 0;
   gap: var(--space-4);
-}
-
-/* Legacy panel aliases — execution/advanced rules kept for non-modal surfaces only */
-.task-create-modal-panel--execution .task-create-modal-panel__body {
-  gap: 0;
-  padding: 0;
-}
-
-.task-create-modal-panel--execution .task-create-advanced {
-  border: none;
-  border-radius: 0;
-  background: transparent;
-  border-top: 1px solid color-mix(in srgb, var(--border-hairline) 75%, transparent);
-}
-
-.task-create-modal-panel--execution .task-create-advanced[open] {
-  border-color: color-mix(in srgb, var(--border-hairline) 75%, transparent);
-  box-shadow: none;
-}
-
-.task-create-modal-panel--execution .task-create-advanced__body {
-  padding: var(--space-4) var(--space-4) var(--space-5);
-  background: color-mix(in srgb, var(--bg-subtle) 45%, var(--bg-elevated));
 }
 
 @media (min-width: 640px) {
@@ -504,20 +438,17 @@
 }
 
 .task-create-modal-sheet .task-create-checklist::before,
-.task-create-modal-sheet .task-create-subtasks::before,
 .task-create-modal-sheet .task-create-agent::before {
   display: none;
 }
 
 .task-create-modal-sheet .task-create-checklist,
-.task-create-modal-sheet .task-create-subtasks,
 .task-create-modal-sheet .task-create-agent {
   margin-top: 0;
   padding-top: 0;
 }
 
-.task-create-modal-sheet .task-create-checklist-head,
-.task-create-modal-sheet .task-create-subtasks-head {
+.task-create-modal-sheet .task-create-checklist-head {
   padding-bottom: var(--space-3);
   margin-bottom: 0;
   border-bottom: none;
@@ -542,9 +473,7 @@
   color: var(--text-tertiary);
 }
 
-.task-create-modal-sheet .task-create-checklist .task-checklist-surface,
-.task-create-modal-sheet .task-create-subtasks .task-checklist-list,
-.task-create-modal-sheet .task-create-subtasks-empty {
+.task-create-modal-sheet .task-create-checklist .task-checklist-surface {
   margin-top: var(--space-2);
   padding: 0;
   border: none;
@@ -728,12 +657,6 @@
   border-radius: var(--radius-lg);
   background: var(--bg-elevated);
   box-shadow: var(--shadow-xs);
-}
-
-.task-create-modal-sheet
-  .task-create-modal-panel--execution
-  .task-create-autonomy {
-  padding: var(--space-4);
 }
 
 .task-create-modal-sheet .task-create-autonomy__row {

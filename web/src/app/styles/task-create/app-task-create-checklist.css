@@ -5,8 +5,7 @@
   position: relative;
 }
 
-.task-create-checklist::before,
-.task-create-subtasks::before {
+.task-create-checklist::before {
   content: "";
   position: absolute;
   top: 0;
@@ -43,8 +42,7 @@
  * label hugs the start edge instead of centering inside an
  * over-wide button.
  */
-.task-create-modal-sheet button.task-detail-add-checklist-btn,
-.task-create-modal-sheet button.task-detail-add-subtask-btn {
+.task-create-modal-sheet button.task-detail-add-checklist-btn {
   min-height: 2rem;
   /*
    * 8.5rem (~119px) instead of the previous 7.5rem (~105px). The
@@ -78,15 +76,13 @@
   box-shadow: none;
 }
 
-.task-create-modal-sheet button.task-detail-add-checklist-btn:not(:disabled):hover,
-.task-create-modal-sheet button.task-detail-add-subtask-btn:not(:disabled):hover {
+.task-create-modal-sheet button.task-detail-add-checklist-btn:not(:disabled):hover {
   background: var(--brand-muted);
   border-color: transparent;
   box-shadow: none;
 }
 
-.task-create-modal-sheet button.task-detail-add-checklist-btn:focus-visible,
-.task-create-modal-sheet button.task-detail-add-subtask-btn:focus-visible {
+.task-create-modal-sheet button.task-detail-add-checklist-btn:focus-visible {
   outline: none;
   border-color: transparent;
   box-shadow: 0 0 0 2px var(--brand-muted);
