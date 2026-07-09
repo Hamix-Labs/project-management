@@ -28,24 +28,6 @@ describe("decideGitInvalidationKeys", () => {
         gitQueryKeys.projectsByRepo("repo-1"),
       ],
     },
-    {
-      name: "legacyRepositories",
-      input: { scope: "legacyRepositories", projectId: "proj-1" },
-      expected: [gitQueryKeys.repositories("proj-1")],
-    },
-    {
-      name: "legacyRepository",
-      input: {
-        scope: "legacyRepository",
-        projectId: "proj-1",
-        repositoryId: "repo-1",
-      },
-      expected: [
-        gitQueryKeys.repositories("proj-1"),
-        gitQueryKeys.worktrees("proj-1", "repo-1"),
-        gitQueryKeys.branches("proj-1", "repo-1"),
-      ],
-    },
   ];
 
   it.each(cases)("$name returns the catalog keys", ({ input, expected }) => {

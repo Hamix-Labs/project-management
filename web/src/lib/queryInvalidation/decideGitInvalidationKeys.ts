@@ -18,13 +18,5 @@ export function decideGitInvalidationKeys(
         gitQueryKeys.globalWorktreeCheckoutStatus(input.repositoryId),
         gitQueryKeys.projectsByRepo(input.repositoryId),
       ];
-    case "legacyRepositories":
-      return [gitQueryKeys.repositories(input.projectId)];
-    case "legacyRepository":
-      return [
-        gitQueryKeys.repositories(input.projectId),
-        gitQueryKeys.worktrees(input.projectId, input.repositoryId),
-        gitQueryKeys.branches(input.projectId, input.repositoryId),
-      ];
   }
 }

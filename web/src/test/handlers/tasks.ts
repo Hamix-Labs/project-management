@@ -2,7 +2,6 @@ import { http, HttpResponse, type JsonBodyType } from "msw";
 import type { Task } from "@/types/task";
 import { createDeferred } from "@/test/deferred";
 import { makeTask } from "@/test/taskDefaults";
-import { gitApiHandlers } from "@/test/handlers/gitMsw";
 import { globalGitApiHandlers } from "@/test/handlers/gitMsw";
 import { TASK_LIST_PAGE_SIZE } from "@/tasks/task-paging";
 
@@ -212,7 +211,6 @@ export function taskCreateFlowHandlers(options: {
   const task = defaultTask(options.taskId, options.title);
   const seed = options.seedTasks ?? [];
   return [
-    ...gitApiHandlers(),
     ...globalGitApiHandlers(),
     http.get("/tasks", () => {
       const tasks = created ? [...seed, task] : seed;

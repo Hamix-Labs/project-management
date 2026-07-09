@@ -1,12 +1,5 @@
 export const gitQueryKeys = {
   all: ["git"] as const,
-  /** Legacy project-scoped keys (deprecated; use global keys in new UI). */
-  repositories: (projectId: string) =>
-    [...gitQueryKeys.all, "repositories", projectId] as const,
-  worktrees: (projectId: string, repositoryId: string) =>
-    [...gitQueryKeys.all, "worktrees", projectId, repositoryId] as const,
-  branches: (projectId: string, repositoryId: string) =>
-    [...gitQueryKeys.all, "branches", projectId, repositoryId] as const,
   /** Global git tree (ADR-0037). */
   globalRepositories: () => [...gitQueryKeys.all, "global", "repositories"] as const,
   globalRepository: (repositoryId: string) =>

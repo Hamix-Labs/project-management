@@ -13,10 +13,4 @@ export type ProjectInvalidationScope =
 
 export type GitInvalidationScope =
   | { scope: "repositories" }
-  | { scope: "repository"; repositoryId: string }
-  | { scope: "legacyRepositories"; projectId: string }
-  | {
-      scope: "legacyRepository";
-      projectId: string;
-      repositoryId: string;
-    };
+  | { scope: "repository"; repositoryId: string };
