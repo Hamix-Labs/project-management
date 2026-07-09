@@ -1,6 +1,6 @@
 import { useCallback, useRef, type ReactNode } from "react";
 import type { ChecklistItemDraft, PriorityChoice, Status } from "@/types";
-import type { RichPromptEditorProjectContextProps } from "../rich-prompt";
+import type { RichPromptEditorProjectContextProps } from "@/components/rich-prompt";
 import { TaskCreateModalAdvancedOptions } from "./TaskCreateModalAdvancedOptions";
 import { TaskCreateModalAutonomyToggle } from "./fields/TaskCreateModalAutonomyToggle";
 import { TaskCreateModalCriteriaFields } from "./fields/TaskCreateModalCriteriaFields";

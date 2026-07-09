@@ -205,5 +205,3 @@ export function RepositoriesListPage() {
   );
 }
 
-/** @deprecated Use RepositoriesListPage — kept for lazy import compatibility during migration. */
-export const WorktreesPage = RepositoriesListPage;

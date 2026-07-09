@@ -26,7 +26,7 @@ Ranked by composite ROI considering effort, risk, and lines/clarity impact. Prim
 | 3 | 9 | ~~Create/bulk mutations bypass guarded write + mutation guard~~ **done** | [boundaries](./boundaries-roi.md#2-createbulk-task-mutations-bypass-guarded-write--roi-910-high--status-done-2026-07-08) | 1–2 days |
 | 4 | ~~9~~ | ~~Delete subtask-era CSS with no DOM~~ **done** | [dead-code](./dead-code-roi.md#2-subtask-era-css-with-no-dom--roi-910-high--status-done-2026-07-08) | 1–2 hours |
 | 5 | ~~8~~ | ~~Project/worktree cache invalidation outside `tasks/sync/`~~ **done** | [boundaries](./boundaries-roi.md#3-projectworktree-cache-invalidation-outside-taskssync--roi-810-high--status-done-2026-07-08) | 2–3 days |
-| 6 | 8 | Delete `taskDescendantCount()` stub | [dead-code](./dead-code-roi.md#3-taskdescendantcount-always-returns-0--roi-810-high) | 15 min |
+| 6 | ~~8~~ | ~~Delete `taskDescendantCount()` stub~~ **done** | [dead-code](./dead-code-roi.md#3-taskdescendantcount-always-returns-0--roi-810-high--status-done-2026-07-08) | 15 min |
 | 7 | ~~7~~ | ~~`handler_task_events` hint-only `task_updated` on event append~~ **done** | [boundaries](./boundaries-roi.md#4-handler_task_events-publishes-hint-only-task_updated--roi-710-medium--status-done-2026-07-08) | 4–8 hours |
 | 8 | ~~7~~ | ~~`handler_settings` bypasses `notifyChange` helper~~ **done** | [boundaries](./boundaries-roi.md#5-handler_settings-bypasses-notifychange-helper--roi-710-medium--status-done-2026-07-08) | 1–2 hours |
 | 9 | ~~7~~ | ~~Checklist verify-commands ad-hoc invalidation~~ **done** | [boundaries](./boundaries-roi.md#6-checklist-verify-commands-patch-uses-ad-hoc-invalidation--roi-710-medium--status-done-2026-07-08) | 2–4 hours |

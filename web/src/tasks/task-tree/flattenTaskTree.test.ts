@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { TASK_TEST_DEFAULTS } from "@/test/taskDefaults";
-import { flattenTaskTree, flattenTaskTreeRoots } from "./flattenTaskTree";
+import { flattenTaskTreeRoots } from "./flattenTaskTree";
 
 const task = {
   id: "r1",
@@ -10,34 +10,6 @@ const task = {
   priority: "medium" as const,
   ...TASK_TEST_DEFAULTS,
 };
-
-describe("flattenTaskTree", () => {
-  it("maps each task to depth 0", () => {
-    const flat = flattenTaskTree([task]);
-    expect(flat).toHaveLength(1);
-    expect(flat[0]).toMatchObject({ id: "r1", depth: 0 });
-  });
-
-  it("returns an empty array for an empty list", () => {
-    expect(flattenTaskTree([])).toEqual([]);
-  });
-
-  it("preserves order across multiple roots", () => {
-    const other = {
-      id: "t2",
-      title: "Other",
-      initial_prompt: "",
-      status: "done" as const,
-      priority: "low" as const,
-      ...TASK_TEST_DEFAULTS,
-    };
-    const flat = flattenTaskTree([task, other]);
-    expect(flat.map((t) => ({ id: t.id, depth: t.depth }))).toEqual([
-      { id: "r1", depth: 0 },
-      { id: "t2", depth: 0 },
-    ]);
-  });
-});
 
 describe("flattenTaskTreeRoots", () => {
   it("returns flat rows at depth 0", () => {

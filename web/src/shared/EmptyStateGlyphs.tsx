@@ -103,54 +103,6 @@ export function EmptyStateChecklistGlyph() {
   );
 }
 
-export function EmptyStateSubtasksGlyph() {
-  return (
-    <svg
-      className="empty-state__glyph"
-      width={20}
-      height={20}
-      viewBox="0 0 48 48"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden
-    >
-      <circle
-        cx={24}
-        cy={11}
-        r={3.25}
-        stroke="currentColor"
-        strokeWidth={1.75}
-      />
-      <path
-        d="M24 14.25v5.5M17 23.5h14"
-        stroke="currentColor"
-        strokeWidth={1.75}
-        strokeLinecap="round"
-      />
-      <path
-        d="M17 23.5v3.25M31 23.5v3.25"
-        stroke="currentColor"
-        strokeWidth={1.75}
-        strokeLinecap="round"
-      />
-      <circle
-        cx={17}
-        cy={32}
-        r={3.25}
-        stroke="currentColor"
-        strokeWidth={1.75}
-      />
-      <circle
-        cx={31}
-        cy={32}
-        r={3.25}
-        stroke="currentColor"
-        strokeWidth={1.75}
-      />
-    </svg>
-  );
-}
-
 export function EmptyStateFilterGlyph() {
   return (
     <svg

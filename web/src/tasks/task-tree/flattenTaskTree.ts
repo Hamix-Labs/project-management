@@ -7,8 +7,3 @@ export type TaskWithDepth = Task & { depth: number };
 export function flattenTaskTreeRoots(nodes: Task[]): TaskWithDepth[] {
   return nodes.map((n) => ({ ...n, depth: 0 }));
 }
-
-/** @deprecated Use `flattenTaskTreeRoots` — tasks are no longer nested. */
-export function flattenTaskTree(nodes: Task[], depth = 0): TaskWithDepth[] {
-  return nodes.map((n) => ({ ...n, depth }));
-}

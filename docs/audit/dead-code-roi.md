@@ -8,7 +8,7 @@
 - Top 3 by ROI:
   1. ~~Legacy project-scoped git stack~~ **done** ([#155](https://github.com/AlexsanderHamir/Hamix/pull/155), [#156](https://github.com/AlexsanderHamir/Hamix/pull/156))
   2. Subtask-era CSS with no DOM references (~120–150 lines)
-  3. `taskDescendantCount()` always returns 0 (post-subtask-removal stub)
+  3. ~~`taskDescendantCount()` always returns 0~~ **done**
 
 ## ROI legend
 
@@ -44,61 +44,19 @@
 - **Effort / risk / blast radius:** 1–2 hours; low risk; ~120–150 CSS lines.
 - **Evidence:** Grep `task-detail-add-subtask|task-create-modal-panel|className=.*task-create-subtasks` in `*.tsx` → no matches except heading class.
 
-### 3. `taskDescendantCount()` always returns 0 — ROI 8/10 (High)
+### 3. `taskDescendantCount()` always returns 0 — ROI 8/10 (High) — **Status: done (2026-07-08)**
 
-- **Location:** `web/src/tasks/task-display/taskDescendantCount.ts` (4 lines), `taskDescendantCount.test.ts`, barrel in `task-display/index.ts`
-- **Issue:** Post-subtask-removal stub that always returns 0; no callers need tree depth.
-- **Proposed change:** Delete file, test, and barrel export.
-- **Effort / risk / blast radius:** 15 minutes; low risk; 4 files.
-- **Evidence:** Grep `taskDescendantCount` → definition, test, barrel only.
+### 4. `@deprecated flattenTaskTree` (test-only) — ROI 7/10 (Medium) — **Status: done (2026-07-08)**
 
-### 4. `@deprecated flattenTaskTree` (test-only) — ROI 7/10 (Medium)
+### 5. `@deprecated WorktreesPage` alias — ROI 7/10 (Medium) — **Status: done (2026-07-08)**
 
-- **Location:** `web/src/tasks/task-tree/flattenTaskTree.ts`, `flattenTaskTree.test.ts`
-- **Issue:** Deprecated export; production uses `flattenTaskTreeRoots` via `useTasksApp.ts`.
-- **Proposed change:** Remove deprecated `flattenTaskTree`; migrate tests to `flattenTaskTreeRoots`.
-- **Effort / risk / blast radius:** 30 minutes; low risk; ~30 lines.
-- **Evidence:** Grep `flattenTaskTree\b` → test file + deprecated export only.
+### 6. `SeedWorktreeBranchTemp` — zero callers — ROI 7/10 (Medium) — **Status: done (2026-07-08)**
 
-### 5. `@deprecated WorktreesPage` alias — ROI 7/10 (Medium)
+### 7. `EmptyStateSubtasksGlyph` — unused export — ROI 6/10 (Medium) — **Status: done (2026-07-08)**
 
-- **Location:** `web/src/worktrees/RepositoriesListPage.tsx` (L218–219), export in `worktrees/index.ts`
-- **Issue:** Lazy migration shim; `App.tsx` already lazy-loads `RepositoriesListPage`.
-- **Proposed change:** Delete alias and barrel export.
-- **Effort / risk / blast radius:** 15 minutes; low risk; 2 lines + export.
-- **Evidence:** Grep `WorktreesPage` → definition + barrel only.
+### 8. Dead barrel `tasks/components/rich-prompt/` — ROI 6/10 (Medium) — **Status: done (2026-07-08)**
 
-### 6. `SeedWorktreeBranchTemp` — zero callers — ROI 7/10 (Medium)
-
-- **Location:** `internal/gittest/gittest.go` (L143–149)
-- **Issue:** Deprecated wrapper around `SeedWorktreeTemp` with no callers.
-- **Proposed change:** Delete function.
-- **Effort / risk / blast radius:** 10 minutes; low risk; ~8 lines.
-- **Evidence:** Grep `SeedWorktreeBranchTemp` → definition only.
-
-### 7. `EmptyStateSubtasksGlyph` — unused export — ROI 6/10 (Medium)
-
-- **Location:** `web/src/shared/EmptyStateGlyphs.tsx`, re-export in `EmptyState.tsx`
-- **Issue:** Subtask empty-state glyph never imported.
-- **Proposed change:** Delete glyph and re-export.
-- **Effort / risk / blast radius:** 15 minutes; low risk; ~35 lines.
-- **Evidence:** Grep `EmptyStateSubtasksGlyph` → definition + re-export only.
-
-### 8. Dead barrel `tasks/components/rich-prompt/` — ROI 6/10 (Medium)
-
-- **Location:** `web/src/tasks/components/rich-prompt/index.ts` (1 line)
-- **Issue:** Re-exports `@/components/rich-prompt` with zero consumers.
-- **Proposed change:** Delete directory.
-- **Effort / risk / blast radius:** 5 minutes; low risk; 1 file.
-- **Evidence:** Grep `tasks/components/rich-prompt` → no imports.
-
-### 9. `respondGitApi()` — dead test helper — ROI 6/10 (Medium)
-
-- **Location:** `web/src/test/handlers/git.ts` (L32–46)
-- **Issue:** Legacy fetch mock helper superseded by MSW `gitApiHandlers()`; definition only.
-- **Proposed change:** Delete function (with legacy git stack #1).
-- **Effort / risk / blast radius:** 10 minutes; low risk; ~15 lines.
-- **Evidence:** Grep `respondGitApi` → definition only.
+### 9. `respondGitApi()` — dead test helper — ROI 6/10 (Medium) — **Status: done (2026-07-08)**
 
 ### 10. Pass-through `useTaskDetailChecklist` hook — ROI 5/10 (Medium)
 

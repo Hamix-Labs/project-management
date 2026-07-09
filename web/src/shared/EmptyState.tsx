@@ -5,7 +5,6 @@ export {
   EmptyStateTrayGlyph,
   EmptyStateTimelineGlyph,
   EmptyStateChecklistGlyph,
-  EmptyStateSubtasksGlyph,
   EmptyStateFilterGlyph,
   EmptyStateCommitsGlyph,
 } from "./EmptyStateGlyphs";

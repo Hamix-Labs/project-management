@@ -138,12 +138,3 @@ func SeedWorktreeBranch(t *testing.T, st *store.Store, repoDir string) (worktree
 	wtID, brID := SeedWorktree(t, st, repoDir)
 	return wtID, brID, wtID
 }
-
-// SeedWorktreeBranchTemp is deprecated: use SeedWorktreeTemp.
-//
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func SeedWorktreeBranchTemp(t *testing.T, st *store.Store) (worktreeBranchID, workDir string) {
-	t.Helper()
-	wtID, dir := SeedWorktreeTemp(t, st)
-	return wtID, dir
-}

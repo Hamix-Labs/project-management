@@ -2,7 +2,7 @@ import { FieldLabel } from "@/shared/FieldLabel";
 import {
   RichPromptEditor,
   type RichPromptEditorProjectContextProps,
-} from "../../rich-prompt";
+} from "@/components/rich-prompt";
 
 type Props = {
   idsPrefix: string;

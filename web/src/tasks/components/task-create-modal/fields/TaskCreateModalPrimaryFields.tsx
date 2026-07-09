@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { ChecklistItemDraft } from "@/types";
-import type { RichPromptEditorProjectContextProps } from "../../rich-prompt";
+import type { RichPromptEditorProjectContextProps } from "@/components/rich-prompt";
 import { TaskComposeFields } from "../../task-compose";
 
 type Props = {

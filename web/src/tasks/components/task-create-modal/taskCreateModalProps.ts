@@ -1,6 +1,6 @@
 import type { FormEvent, ReactNode } from "react";
 import type { ChecklistItemDraft, PriorityChoice, Status } from "@/types";
-import type { RichPromptEditorProjectContextProps } from "../rich-prompt";
+import type { RichPromptEditorProjectContextProps } from "@/components/rich-prompt";
 import type { TestScenario } from "@/tasks/test-scenarios";
 
 export type TaskCreateModalProps = {

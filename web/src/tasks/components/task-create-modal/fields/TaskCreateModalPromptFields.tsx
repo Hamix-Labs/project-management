@@ -1,4 +1,4 @@
-import type { RichPromptEditorProjectContextProps } from "../../rich-prompt";
+import type { RichPromptEditorProjectContextProps } from "@/components/rich-prompt";
 import { TaskComposePromptField } from "../../task-compose/fields/TaskComposePromptField";
 
 type Props = {
