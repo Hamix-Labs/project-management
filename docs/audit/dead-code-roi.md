@@ -58,53 +58,17 @@
 
 ### 9. `respondGitApi()` — dead test helper — ROI 6/10 (Medium) — **Status: done (2026-07-08)**
 
-### 10. Pass-through `useTaskDetailChecklist` hook — ROI 5/10 (Medium)
+### 10. Pass-through `useTaskDetailChecklist` hook — ROI 5/10 (Medium) — **Status: done (2026-07-08)**
 
-- **Location:** `web/src/tasks/hooks/useTaskDetailChecklist.ts` (1 line re-export)
-- **Issue:** Duplicates `checklist/hooks/useTaskDetailChecklist.ts` (~586 lines); adds indirection.
-- **Proposed change:** Update imports in `TaskDetailPage.tsx` and test to use `checklist/` path; delete pass-through.
-- **Effort / risk / blast radius:** 15 minutes; low risk; 1 file + 2 import updates.
-- **Evidence:** Real implementation in `checklist/`; pass-through is one line.
+### 11. `@deprecated SeedWorktreeBranch` — ROI 5/10 (Medium) — **Status: done (2026-07-08)**
 
-### 11. `@deprecated SeedWorktreeBranch` — ROI 5/10 (Medium)
+### 12. `task-prompt/index.ts` pass-through — ROI 4/10 (Low) — **Status: done (2026-07-08)**
 
-- **Location:** `internal/gittest/gittest.go`; 1 caller in `internal/handlertest/server.go`
-- **Issue:** Deprecated test helper with single caller.
-- **Proposed change:** Migrate caller to `SeedWorktree`; delete deprecated wrapper.
-- **Effort / risk / blast radius:** 30 minutes; low risk; ~10 lines.
-- **Evidence:** Grep `SeedWorktreeBranch` → gittest + handlertest.
+### 13. `priorityDotClass` — test-only export — ROI 4/10 (Low) — **Status: done (2026-07-08)**
 
-### 12. `task-prompt/index.ts` pass-through — ROI 4/10 (Low)
+### 14. `SweepOrphanRunningCycles` deprecated wrapper — ROI 3/10 (Low) — **Status: done (2026-07-08)**
 
-- **Location:** `web/src/tasks/task-prompt/index.ts` (re-exports `@/lib/promptFormat`)
-- **Issue:** 4 task files import via barrel; projects import `@/lib/promptFormat` directly.
-- **Proposed change:** Retarget 4 imports; delete barrel.
-- **Effort / risk / blast radius:** 20 minutes; low risk; 1 file + 4 imports.
-- **Evidence:** Grep `from.*task-prompt` → 4 task files.
-
-### 13. `priorityDotClass` — test-only export — ROI 4/10 (Low)
-
-- **Location:** `web/src/tasks/task-display/taskPillClasses.ts`
-- **Issue:** Exported but never used in components.
-- **Proposed change:** Remove export or delete if test-only assertion can use internal helper.
-- **Effort / risk / blast radius:** 15 minutes; low risk; ~3 lines.
-- **Evidence:** Grep `priorityDotClass` → definition + test only.
-
-### 14. `SweepOrphanRunningCycles` deprecated wrapper — ROI 3/10 (Low)
-
-- **Location:** `pkgs/agents/worker/sweep.go` (L85–95); callers in `internal/taskapi/agentworker/runner_build.go`, `sweep_test.go`
-- **Issue:** Delegates to `FinalizeInterruptedPhases`; misleading name.
-- **Proposed change:** Rename callers to `FinalizeInterruptedPhases`; delete wrapper.
-- **Effort / risk / blast radius:** 30 minutes; low risk; ~10 lines.
-- **Evidence:** Grep `SweepOrphanRunningCycles` → wrapper + 2 callers.
-
-### 15. Pass-through query-key / settings barrels — ROI 3/10 (Low)
-
-- **Location:** `tasks/task-query/queryKeys.ts`, `worktrees/queryKeys.ts`, `settings/SettingsSections.tsx`, `tasks/components/task-list/table/taskListRowSubtitle.ts` L1
-- **Issue:** Thin re-exports to `@/lib/*` or sibling modules with no extra logic.
-- **Proposed change:** Import canonical sources directly; delete barrels.
-- **Effort / risk / blast radius:** 30 minutes; low risk (import churn); ~15 lines.
-- **Evidence:** Canonical keys in `@/lib/taskQueryKeys`, `@/lib/gitQueryKeys`.
+### 15. Pass-through query-key / settings barrels — ROI 3/10 (Low) — **Status: done (2026-07-08)**
 
 ---
 
@@ -123,6 +87,6 @@
 1. ~~**#1** (legacy git)~~ — done ([#155](https://github.com/AlexsanderHamir/Hamix/pull/155), [#156](https://github.com/AlexsanderHamir/Hamix/pull/156))
 2. **#2** (subtask CSS) — safe, visual-only
 3. **#3–#9** — small, low-risk stubs and orphans
-4. **#10–#15** — cleanup / import-path normalization
+4. **#10–#15** — import-path normalization — **done (2026-07-08)**
 
 **Caution on #1:** Extract shared JSON projection helpers before deleting project handler bodies. Run `.\scripts\check.ps1` after each phase.

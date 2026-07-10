@@ -57,13 +57,13 @@ func (s *Supervisor) runStartupSweep(ctx context.Context) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskapi.agentWorkerSupervisor.runStartupSweep")
 	sweepCtx, cancel := context.WithTimeout(ctx, agentWorkerStartupSweepTimeout)
 	defer cancel()
-	res, err := worker.SweepOrphanRunningCycles(sweepCtx, s.store)
+	fr, err := worker.FinalizeInterruptedPhases(sweepCtx, s.store)
 	if err != nil {
 		return err
 	}
 	slog.Info("agent worker startup finalize ok", "cmd", calltrace.LogCmd,
 		"operation", "taskapi.agent_worker.finalize_ok",
-		"phases_finalized", res.PhasesFailed)
+		"phases_finalized", fr.PhasesFinalized)
 	return nil
 }
 

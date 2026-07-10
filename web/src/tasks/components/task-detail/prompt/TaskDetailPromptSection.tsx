@@ -1,4 +1,4 @@
-import { promptHasVisibleContent } from "../../../task-prompt";
+import { promptHasVisibleContent } from "@/lib/promptFormat";
 
 type TaskDetailPromptSectionProps = {
   initialPrompt: string;

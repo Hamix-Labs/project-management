@@ -1,5 +1,3 @@
-export { statusListLabel } from "../../../task-display/statusListLabel";
-
 /**
  * Secondary line under the task title: a one-line prompt preview.
  */

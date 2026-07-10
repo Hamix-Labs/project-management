@@ -16,7 +16,7 @@ import type {
   TaskListSortDir,
   TaskListSortKey,
 } from "../filters/taskListSort";
-import { previewTextFromPrompt } from "../../../task-prompt";
+import { previewTextFromPrompt } from "@/lib/promptFormat";
 import { formatInAppTimezone, useAppTimezone } from "@/shared/time/appTimezone";
 import { formatRelativeTime } from "@/shared/time/relativeTime";
 import { useNow } from "@/shared/useNow";

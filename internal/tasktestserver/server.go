@@ -49,12 +49,12 @@ func NewWithRepoStore(t *testing.T, repoDir string, buildHandler HandlerBuilder)
 	t.Helper()
 	db := tasktestdb.OpenSQLite(t)
 	st := store.NewStore(db)
-	worktreeID, branchID, worktreeBranchID := gittest.SeedWorktreeBranch(t, st, repoDir)
+	worktreeID, branchID := gittest.SeedWorktree(t, st, repoDir)
 	r, err := repo.OpenRoot(repoDir)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return httptest.NewServer(buildHandler(st, r)), st, worktreeID, branchID, worktreeBranchID
+	return httptest.NewServer(buildHandler(st, r)), st, worktreeID, branchID, worktreeID
 }
 
 // SeedWorktree seeds git rows for tests that need worktree_id without a full repo server.
@@ -62,6 +62,5 @@ func NewWithRepoStore(t *testing.T, repoDir string, buildHandler HandlerBuilder)
 //funclogmeasure:skip category=tool-required-noop reason="Test-only store seed; not part of production trace paths."
 func SeedWorktree(t *testing.T, st *store.Store, repoDir string) (worktreeID, branchID string) {
 	t.Helper()
-	wt, br, _ := gittest.SeedWorktreeBranch(t, st, repoDir)
-	return wt, br
+	return gittest.SeedWorktree(t, st, repoDir)
 }

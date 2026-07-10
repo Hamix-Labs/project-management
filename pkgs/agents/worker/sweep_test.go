@@ -139,15 +139,12 @@ func TestSweep_OrphanPhaseUnderTerminalCycle_isFailed(t *testing.T) {
 		t.Fatalf("synthesize orphan running phase: %v", tx.Error)
 	}
 
-	res, err := worker.SweepOrphanRunningCycles(ctx, h.st)
+	fr, err := worker.FinalizeInterruptedPhases(ctx, h.st)
 	if err != nil {
-		t.Fatalf("sweep: %v", err)
+		t.Fatalf("finalize: %v", err)
 	}
-	if res.PhasesFailed != 1 {
-		t.Fatalf("PhasesFailed = %d, want 1", res.PhasesFailed)
-	}
-	if res.CyclesAborted != 0 {
-		t.Fatalf("CyclesAborted = %d, want 0 (cycle already terminal)", res.CyclesAborted)
+	if fr.PhasesFinalized != 1 {
+		t.Fatalf("PhasesFinalized = %d, want 1", fr.PhasesFinalized)
 	}
 
 	phases, err := h.st.ListPhasesForCycle(ctx, cycle.ID)

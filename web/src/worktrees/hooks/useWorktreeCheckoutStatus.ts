@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { listGlobalGitWorktreeCheckoutStatus } from "@/api/gitGlobal";
-import { gitQueryKeys } from "../queryKeys";
+import { gitQueryKeys } from "@/lib/gitQueryKeys";
 
 /**
  * Cadence for checkout-status polling on the worktrees detail page. Task SSE

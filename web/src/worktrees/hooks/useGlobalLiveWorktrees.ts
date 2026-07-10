@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { listGlobalGitLiveWorktrees } from "@/api/gitGlobal";
-import { gitQueryKeys } from "../queryKeys";
+import { gitQueryKeys } from "@/lib/gitQueryKeys";
 
 export function useGlobalLiveWorktrees(
   repositoryId: string,

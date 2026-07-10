@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { getGlobalGitRepository } from "@/api/gitGlobal";
-import { gitQueryKeys } from "../queryKeys";
+import { gitQueryKeys } from "@/lib/gitQueryKeys";
 
 export function useGlobalRepository(
   repositoryId: string,

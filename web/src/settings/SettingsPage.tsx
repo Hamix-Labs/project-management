@@ -25,7 +25,7 @@ import {
   SettingsHeader,
   SettingsLoadingState,
   SettingsStatusMessage,
-} from "./SettingsSections";
+} from "./sections";
 import { UiTestModeSettingsSection } from "./UiTestModeSettingsSection";
 import { SettingsNav, type SettingsNavItem } from "./SettingsNav";
 import {
@@ -42,7 +42,7 @@ import "./settings.css";
  * (runner config → phases → cosmetic → dev) so
  * the operator's vertical scroll path matches the rail's top-to-bottom
  * reading order. Keep ids in sync with `SECTION_IDS` exported from
- * SettingsSections.tsx.
+ * `sections/sectionIds.ts`.
  */
 const SETTINGS_NAV_ITEMS: SettingsNavItem[] = [
   { id: SECTION_IDS.cursorAgent, label: "Runner" },

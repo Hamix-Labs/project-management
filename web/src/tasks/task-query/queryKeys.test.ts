@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { taskQueryKeys } from "./queryKeys";
+import { taskQueryKeys } from "@/lib/taskQueryKeys";
 
 describe("taskQueryKeys", () => {
   it("builds list root and per-page list keys with limit/offset params", () => {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { statusListLabel, taskListRowSubtitle } from "./taskListRowSubtitle";
+import { statusListLabel } from "../../../task-display/statusListLabel";
+import { taskListRowSubtitle } from "./taskListRowSubtitle";
 
 describe("taskListRowSubtitle", () => {
   it("shows prompt preview when present", () => {

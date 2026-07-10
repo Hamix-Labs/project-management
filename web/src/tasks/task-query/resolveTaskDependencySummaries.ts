@@ -1,6 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query";
 import type { Status, Task, TaskDependencyEdge, TaskListResponse } from "@/types";
-import { taskQueryKeys } from "./queryKeys";
+import { taskQueryKeys } from "@/lib/taskQueryKeys";
 
 export type TaskDependencySummary = {
   id: string;

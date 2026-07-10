@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { getUiTestModeSessionEnabled, setUiTestModeSessionEnabled } from "@/dev/uiTestMode";
-import { SECTION_IDS } from "./SettingsSections";
+import { SECTION_IDS } from "./sections/sectionIds";
 
 /**
  * Developer section. Visually identical to the other settings cards

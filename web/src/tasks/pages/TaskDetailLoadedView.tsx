@@ -16,10 +16,10 @@ import {
 } from "../components/task-detail";
 import { AutonomyConfirmDialog, TaskRetryConfirmDialog } from "../components/dialogs";
 import type { TaskRetryMode } from "../components/dialogs/TaskRetryConfirmDialog";
-import { sanitizePromptHtml } from "../task-prompt";
+import { sanitizePromptHtml } from "@/lib/promptFormat";
 import { canEditTask } from "../task-display/canEditTask";
 import { canMutateTaskCriteria } from "../task-display/canMutateTaskCriteria";
-import { useTaskDetailChecklist } from "../hooks/useTaskDetailChecklist";
+import { useTaskDetailChecklist } from "../checklist/hooks/useTaskDetailChecklist";
 import { useTaskDetailMutations } from "../hooks/useTaskDetailMutations";
 import { useTaskDetailScheduling } from "../hooks/useTaskDetailScheduling";
 import { resolveTaskDependencySummaries } from "../task-query";

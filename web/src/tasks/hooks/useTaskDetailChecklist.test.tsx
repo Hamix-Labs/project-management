@@ -4,7 +4,7 @@ import type { FormEvent } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { shouldSuppressTaskMutationEcho } from "@/tasks/sync/mutationGuard";
 import { taskQueryKeys } from "../task-query";
-import { useTaskDetailChecklist } from "./useTaskDetailChecklist";
+import { useTaskDetailChecklist } from "../checklist/hooks/useTaskDetailChecklist";
 import type { TaskChecklistResponse } from "@/types";
 import {
   ITEM_ID,

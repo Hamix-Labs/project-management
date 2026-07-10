@@ -1,7 +1,7 @@
 import type { CustomSelectOption } from "@/components/custom-select";
 import { PRIORITIES, STATUSES } from "@/types";
 import { priorityPillClass, statusNeedsUserInput, statusPillClass } from "../../../task-display";
-import { statusListLabel } from "../table/taskListRowSubtitle";
+import { statusListLabel } from "../../../task-display/statusListLabel";
 
 const needsUserStatuses = STATUSES.filter((s) => statusNeedsUserInput(s));
 const otherStatuses = STATUSES.filter((s) => !statusNeedsUserInput(s));

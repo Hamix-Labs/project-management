@@ -81,15 +81,3 @@ func FinalizeInterruptedPhases(ctx context.Context, st Store) (FinalizeResult, e
 		"phases_finalized", res.PhasesFinalized)
 	return res, nil
 }
-
-// SweepOrphanRunningCycles is deprecated: it now delegates to
-// FinalizeInterruptedPhases only. Cycles and tasks are no longer aborted
-// or failed on startup.
-func SweepOrphanRunningCycles(ctx context.Context, st Store) (SweepResult, error) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.worker.SweepOrphanRunningCycles")
-	fr, err := FinalizeInterruptedPhases(ctx, st)
-	if err != nil {
-		return SweepResult{}, err
-	}
-	return SweepResult{PhasesFailed: fr.PhasesFinalized}, nil
-}

@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import type { ChecklistItemDraft } from "@/types";
 import { nonEmptyChecklistCount, normalizeVerifyCommands } from "../../task-compose/checklistRequirement";
-import { plainTextToInitialHtml } from "../../task-prompt";
+import { plainTextToInitialHtml } from "@/lib/promptFormat";
 import type { useTaskCreateFormState } from "./useTaskCreateFormState";
 
 export function useTaskCreateChecklistActions(input: {

@@ -1,7 +1,7 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { errorMessage } from "@/lib/errorMessage";
 import { TaskDetailPageSkeleton } from "../components/skeletons";
-import { useTaskDetailChecklist } from "../hooks/useTaskDetailChecklist";
+import { useTaskDetailChecklist } from "../checklist/hooks/useTaskDetailChecklist";
 import { useTaskDetailDeleteNavigate } from "../hooks/useTaskDetailDeleteNavigate";
 import { useTaskDetailMutations } from "../hooks/useTaskDetailMutations";
 import { useTaskDetailPageQueries } from "../hooks/useTaskDetailPageQueries";

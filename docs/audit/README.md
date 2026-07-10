@@ -56,7 +56,7 @@ These recur across reports — batch related PRs:
 | **Web vertical boundaries** | boundaries #1, #3 | Decouple tasks↔projects/worktrees → unify cache invalidation |
 | **Frontend mutation policy** | boundaries #2, ~~#6–#8~~ | Guarded create/bulk → checklist/scheduling gaps |
 | **Handler test consolidation** | duplication (done), lld #9 | Contract harness done; tasktestserver extracted |
-| **Web god-file splits** | lld #5/#8/#11 | Cycle detail page → create modal → task detail page |
+| **Web god-file splits** | lld #5/#8/#11 | Cycle detail page → create modal → task detail page — **in progress** |
 | **Store/handler DIP** | abstractions (done) | Query keys → GitWorktreeResolver → handler store slices → worker Store → fakes |
 | **Select/widget unification** | duplication (done) | Combobox keyboard layer shared; full BaseCombobox deferred |
 

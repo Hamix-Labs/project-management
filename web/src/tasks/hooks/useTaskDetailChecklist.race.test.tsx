@@ -3,7 +3,7 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import type { FormEvent } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { taskQueryKeys } from "../task-query";
-import { useTaskDetailChecklist } from "./useTaskDetailChecklist";
+import { useTaskDetailChecklist } from "../checklist/hooks/useTaskDetailChecklist";
 import {
   ITEM_ID,
   resetChecklistMocks,
