@@ -1,9 +1,5 @@
 package contract
 
-import "context"
+import taskcorecontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
 
-// HealthStore covers readiness and coarse inventory checks for /health routes.
-type HealthStore interface {
-	Ready(ctx context.Context) error
-	CountGitRepositories(ctx context.Context) (int64, error)
-}
+type HealthStore = taskcorecontract.HealthStore

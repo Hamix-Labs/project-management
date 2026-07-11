@@ -35,10 +35,11 @@ Implementations live in **[`pkgs/tasks/middleware`](../middleware/)** (no import
 
 ## Route registration (`handler_routes.go`)
 
-Sibling bounded contexts register via `*.Register(m, Deps)` from this package's `registerRoutes`. **Task-core routes** stay in `registerTaskRoutes`.
+Sibling bounded contexts register via `*.Register(m, Deps)` from this package's `registerRoutes`. **Task-core routes** register via [`pkgs/taskcore/handler`](../../taskcore/handler/) `Register`.
 
 | Package | Routes | Registered from |
 | --- | --- | --- |
+| [`pkgs/taskcore/handler`](../../taskcore/handler/) | `/tasks*` (CRUD, stats, gate, dependencies, retry) | `taskcorehandler.Register` |
 | [`pkgs/projects/handler`](../../projects/handler/) | `/projects*` | `projecthandler.Register` |
 | [`pkgs/gitinventory/handler`](../../gitinventory/handler/) | `/git/*` | `gitinventoryhandler.Register` |
 | [`pkgs/settings/handler`](../../settings/handler/) | `/settings*` | `settingshandler.Register` |
@@ -49,16 +50,17 @@ Sibling bounded contexts register via `*.Register(m, Deps)` from this package's 
 | [`pkgs/repo/handler`](../../repo/handler/) | `/repo/*` | `repohandler.Register` |
 | [`pkgs/runners/handler`](../../runners/handler/) | `/runners*` | `runnershandler.Register` |
 
-## Route handlers — task core (inner mux)
+## Route handlers — tasks shell (inner mux)
 
 | Area | Files |
 |------|--------|
 | Health + SSE | `handler_health.go`, `handler_system_health.go`; `sse_*.go` (`GET /events`) |
-| Tasks CRUD + list + stats | `handler_task_crud.go`, `handler_task_create_compose.go`, `handler_task_json.go` |
-| Dependencies + gate + retry | `handler_task_dependencies.go`, `handler_depends_on_json.go`, `handler_tasks_retry.go` |
+| Taskcore wiring | `handler_taskcore_wire.go`, `handler_taskcore_compat.go`, `handler_taskcore_compose.go` |
 | Bootstrap + RUM | `handler_bootstrap.go`, `handler_rum.go` |
 | Write policy | `handler_writepolicy.go`, `writepolicy/` |
 | Read policy | `readpolicy/` |
+
+Core `/tasks*` handlers live in [`pkgs/taskcore/handler`](../../taskcore/handler/).
 
 ## Request/response helpers
 

@@ -12,6 +12,7 @@ import (
 	settingshandler "github.com/AlexsanderHamir/Hamix/pkgs/settings/handler"
 	checklisthandler "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/handler"
 	composehandler "github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/handler"
+	taskcorehandler "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/handler"
 	taskcycleshandler "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/handler"
 	eventhandler "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/handler"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
@@ -43,6 +44,7 @@ func (h *Handler) registerRoutes(m *http.ServeMux) {
 			h.notifyScopelessChange(TaskChangeType(typ))
 		},
 	})
+	tc := h.taskcoreHandler()
 	composehandler.Register(m, composehandler.Deps{
 		Compose: h.store,
 		NormalizeCompose: func(ctx context.Context, raw json.RawMessage) (composehandler.NormalizeComposeResult, error) {
@@ -53,11 +55,11 @@ func (h *Handler) registerRoutes(m *http.ServeMux) {
 			return composehandler.NormalizeComposeResult{Payload: payloadRaw, Title: compose.Title}, nil
 		},
 		InstantiateFromTemplate: func(ctx context.Context, r *http.Request, op string, payload json.RawMessage, by domain.Actor) (*domain.Task, error) {
-			compose, err := decodeComposePayload(payload)
+			compose, err := taskcorehandler.DecodeComposePayload(payload)
 			if err != nil {
 				return nil, err
 			}
-			return h.createTaskFromComposeJSON(ctx, r, op, compose, createTaskComposeOpts{
+			return tc.CreateTaskFromComposeJSON(ctx, r, op, compose, taskcorehandler.CreateTaskComposeOpts{
 				StripDependsOn:          true,
 				OmitPastPickupNotBefore: true,
 				InstantiateFromTemplate: true,
@@ -89,7 +91,7 @@ func (h *Handler) registerRoutes(m *http.ServeMux) {
 			h.notifyCycleChange(taskID, cycleID)
 		},
 	})
-	h.registerTaskRoutes(m)
+	taskcorehandler.Register(m, h.taskcoreDeps())
 	repohandler.Register(m, repohandler.Deps{Provider: h.repoProv})
 	runnershandler.Register(m, runnershandler.Deps{Settings: h.store})
 	h.registerMiscRoutes(m)
@@ -105,33 +107,7 @@ func (h *Handler) registerHealthRoutes(m *http.ServeMux) {
 }
 
 //funclogmeasure:skip category=hot-path reason="Route table wiring only; operation trace is emitted by registered handlers."
-func (h *Handler) registerTaskRoutes(m *http.ServeMux) {
-	m.Handle("POST /tasks", http.HandlerFunc(h.create))
-	m.Handle("GET /tasks", http.HandlerFunc(h.list))
-	m.Handle("GET /tasks/stats", http.HandlerFunc(h.stats))
-	m.Handle("GET /tasks/{id}/dependencies", http.HandlerFunc(h.listTaskDependencies))
-	m.Handle("POST /tasks/{id}/dependencies", http.HandlerFunc(h.addTaskDependency))
-	m.Handle("DELETE /tasks/{id}/dependencies/{depId}", http.HandlerFunc(h.removeTaskDependency))
-	m.Handle("PATCH /tasks/{id}/gate", http.HandlerFunc(h.patchTaskGate))
-	m.Handle("POST /tasks/{id}/retry", http.HandlerFunc(h.postTaskRetry))
-	m.Handle("GET /tasks/{id}", http.HandlerFunc(h.get))
-	m.Handle("PATCH /tasks/{id}", http.HandlerFunc(h.patch))
-	m.Handle("DELETE /tasks/{id}", http.HandlerFunc(h.delete))
-}
-
-//funclogmeasure:skip category=hot-path reason="Route table wiring only; operation trace is emitted by registered handlers."
 func (h *Handler) registerMiscRoutes(m *http.ServeMux) {
-	// /v1/rum is the SPA-side Real User Monitoring beacon. Documented
-	// in docs/architecture.md; the browser ships batches via
-	// `navigator.sendBeacon` so the server returns 204 with no body.
-	// Rate-limited via the global per-IP middleware (WithRateLimit),
-	// not separately, so a misbehaving SPA cannot amplify a load
-	// incident into a metrics-storage bill.
 	m.Handle("POST /v1/rum", http.HandlerFunc(h.postRUM))
-	// /v1/bootstrap is the cold-start aggregate the SPA uses to seed
-	// its TanStack Query cache from a single round trip — combines
-	// settings, root tasks page, stats, projects, and drafts head.
-	// Documented in docs/api.md; clients must tolerate 5xx and fall
-	// back to per-endpoint fan-out.
 	m.Handle("GET /v1/bootstrap", http.HandlerFunc(h.bootstrap))
 }

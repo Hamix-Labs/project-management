@@ -1,0 +1,33 @@
+package handler
+
+import (
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+)
+
+var (
+	taskapiDomainTasksCreatedTotal = promauto.NewCounter(prometheus.CounterOpts{
+		Namespace: "taskapi",
+		Name:      "domain_tasks_created_total",
+		Help:      "Tasks successfully persisted via POST /tasks (HTTP 201).",
+	})
+	taskapiDomainTasksUpdatedTotal = promauto.NewCounter(prometheus.CounterOpts{
+		Namespace: "taskapi",
+		Name:      "domain_tasks_updated_total",
+		Help:      "Tasks successfully updated via PATCH /tasks/{id} (HTTP 200).",
+	})
+	taskapiDomainTasksDeletedTotal = promauto.NewCounter(prometheus.CounterOpts{
+		Namespace: "taskapi",
+		Name:      "domain_tasks_deleted_total",
+		Help:      "Tasks successfully removed via DELETE /tasks/{id} (HTTP 204).",
+	})
+)
+
+// DomainTasksCreatedTotal counts successful POST /tasks responses.
+var DomainTasksCreatedTotal = taskapiDomainTasksCreatedTotal
+
+// DomainTasksUpdatedTotal counts successful PATCH /tasks/{id} responses.
+var DomainTasksUpdatedTotal = taskapiDomainTasksUpdatedTotal
+
+// DomainTasksDeletedTotal counts successful DELETE /tasks/{id} responses.
+var DomainTasksDeletedTotal = taskapiDomainTasksDeletedTotal
