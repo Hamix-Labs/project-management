@@ -3,12 +3,11 @@ package devsim
 import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 import (
 	"context"
-	"log/slog"
-	"math/rand/v2"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 	"github.com/google/uuid"
+	"log/slog"
+	"math/rand/v2"
 )
 
 const devsimTaskIDPrefix = "hamix-devsim-"
@@ -32,9 +31,9 @@ func tryCreateDevsimTask(ctx context.Context, st *store.Store, publish func(Chan
 		ID:            id,
 		Title:         "Dev sim task",
 		InitialPrompt: "<p>Synthetic task for UI / SSE exercise.</p>",
-		Status:        domain.StatusReady,
-		Priority:      domain.PriorityMedium,
-	}, domain.ActorAgent)
+		Status:        taskcoredomain.StatusReady,
+		Priority:      taskcoredomain.PriorityMedium,
+	}, taskcoredomain.ActorAgent)
 	if err != nil {
 		slog.Debug("sse dev lifecycle create skipped", "cmd", calltrace.LogCmd, "operation", "devsim.lifecycle_create", "err", err)
 		return
@@ -53,7 +52,7 @@ func tryDeleteDevsimTask(ctx context.Context, st *store.Store, publish func(Chan
 	}
 	for _, i := range rand.Perm(len(tasks)) {
 		id := tasks[i].ID
-		deletedIDs, err := st.Delete(ctx, id, domain.ActorAgent)
+		deletedIDs, err := st.Delete(ctx, id, taskcoredomain.ActorAgent)
 		if err != nil {
 			continue
 		}

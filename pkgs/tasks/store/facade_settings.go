@@ -5,8 +5,8 @@ import (
 	"context"
 	"log/slog"
 
+	settingscontract "github.com/AlexsanderHamir/Hamix/pkgs/settings/contract"
 	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 )
 
 // AppSettings is the singleton runtime-settings row returned by
@@ -15,7 +15,7 @@ import (
 type AppSettings = settingsdomain.AppSettings
 
 // SettingsPatch is the partial-update payload for UpdateSettings.
-type SettingsPatch = contract.SettingsPatch
+type SettingsPatch = settingscontract.SettingsPatch
 
 // GetSettings returns the singleton app_settings row, creating it from
 // hard-coded defaults on first read so callers always see a populated

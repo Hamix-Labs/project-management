@@ -14,10 +14,11 @@ import (
 	"strings"
 	"time"
 
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 	taskeventsstore "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/apijson"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/logctx"
 )
 
@@ -43,7 +44,7 @@ func decodeJSON(ctx context.Context, r io.Reader, dst any) error {
 		}
 		return fmt.Errorf("json trailing data: %w", err)
 	}
-	return fmt.Errorf("%w: json trailing data", domain.ErrInvalidInput)
+	return fmt.Errorf("%w: json trailing data", taskcoredomain.ErrInvalidInput)
 }
 
 //funclogmeasure:skip category=delegate-already-logs reason="JSON response helper; HTTP handler chokepoint emits trace."
@@ -86,7 +87,7 @@ func userFacingJSONError(err error) string {
 	if strings.HasPrefix(s, "json decode: ") {
 		return strings.TrimPrefix(s, "json decode: ")
 	}
-	if errors.Is(err, domain.ErrInvalidInput) {
+	if errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		return "request body must contain a single JSON value"
 	}
 	if strings.HasPrefix(s, "json trailing data:") {
@@ -123,11 +124,11 @@ func storeErrHTTP(err error) (code int, msg string) {
 		return http.StatusGatewayTimeout, "request timed out"
 	case errors.Is(err, context.Canceled):
 		return http.StatusRequestTimeout, "request canceled"
-	case errors.Is(err, domain.ErrNotFound):
+	case errors.Is(err, taskcoredomain.ErrNotFound):
 		return http.StatusNotFound, "not found"
-	case errors.Is(err, domain.ErrInvalidInput):
+	case errors.Is(err, taskcoredomain.ErrInvalidInput):
 		return http.StatusBadRequest, invalidInputDetail(err)
-	case errors.Is(err, domain.ErrConflict):
+	case errors.Is(err, taskcoredomain.ErrConflict):
 		return http.StatusConflict, conflictDetail(err)
 	default:
 		return code, msg
@@ -158,24 +159,24 @@ func conflictDetail(err error) string {
 func parseTaskPathID(id string) (string, error) {
 	id = strings.TrimSpace(id)
 	if id == "" {
-		return "", fmt.Errorf("%w: id", domain.ErrInvalidInput)
+		return "", fmt.Errorf("%w: id", taskcoredomain.ErrInvalidInput)
 	}
 	if len(id) > maxPathIDBytes {
-		return "", fmt.Errorf("%w: id too long", domain.ErrInvalidInput)
+		return "", fmt.Errorf("%w: id too long", taskcoredomain.ErrInvalidInput)
 	}
 	return id, nil
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func actorFromRequest(r *http.Request) domain.Actor {
+func actorFromRequest(r *http.Request) taskcoredomain.Actor {
 	if r == nil {
-		return domain.ActorUser
+		return taskcoredomain.ActorUser
 	}
 	switch strings.ToLower(strings.TrimSpace(r.Header.Get("X-Actor"))) {
 	case "agent":
-		return domain.ActorAgent
+		return taskcoredomain.ActorAgent
 	default:
-		return domain.ActorUser
+		return taskcoredomain.ActorUser
 	}
 }
 
@@ -233,14 +234,14 @@ func normalizeJSONObjectForResponse(raw []byte) json.RawMessage {
 }
 
 type taskEventLine struct {
-	Seq            int64                        `json:"seq"`
-	At             time.Time                    `json:"at"`
-	Type           domain.EventType             `json:"type"`
-	By             domain.Actor                 `json:"by"`
-	Data           json.RawMessage              `json:"data"`
-	UserResponse   *string                      `json:"user_response,omitempty"`
-	UserResponseAt *time.Time                   `json:"user_response_at,omitempty"`
-	ResponseThread []domain.ResponseThreadEntry `json:"response_thread,omitempty"`
+	Seq            int64                                  `json:"seq"`
+	At             time.Time                              `json:"at"`
+	Type           taskeventsdomain.EventType             `json:"type"`
+	By             taskcoredomain.Actor                   `json:"by"`
+	Data           json.RawMessage                        `json:"data"`
+	UserResponse   *string                                `json:"user_response,omitempty"`
+	UserResponseAt *time.Time                             `json:"user_response_at,omitempty"`
+	ResponseThread []taskeventsdomain.ResponseThreadEntry `json:"response_thread,omitempty"`
 }
 
 type taskEventsResponse struct {
@@ -256,22 +257,22 @@ type taskEventsResponse struct {
 }
 
 type taskEventDetailResponse struct {
-	TaskID         string                       `json:"task_id"`
-	Seq            int64                        `json:"seq"`
-	At             time.Time                    `json:"at"`
-	Type           domain.EventType             `json:"type"`
-	By             domain.Actor                 `json:"by"`
-	Data           json.RawMessage              `json:"data"`
-	UserResponse   *string                      `json:"user_response,omitempty"`
-	UserResponseAt *time.Time                   `json:"user_response_at,omitempty"`
-	ResponseThread []domain.ResponseThreadEntry `json:"response_thread,omitempty"`
+	TaskID         string                                 `json:"task_id"`
+	Seq            int64                                  `json:"seq"`
+	At             time.Time                              `json:"at"`
+	Type           taskeventsdomain.EventType             `json:"type"`
+	By             taskcoredomain.Actor                   `json:"by"`
+	Data           json.RawMessage                        `json:"data"`
+	UserResponse   *string                                `json:"user_response,omitempty"`
+	UserResponseAt *time.Time                             `json:"user_response_at,omitempty"`
+	ResponseThread []taskeventsdomain.ResponseThreadEntry `json:"response_thread,omitempty"`
 }
 
 type taskEventUserResponseJSON struct {
 	UserResponse string `json:"user_response"`
 }
 
-func taskEventDetailFromDomain(ev *domain.TaskEvent, taskID string) taskEventDetailResponse {
+func taskEventDetailFromDomain(ev *taskeventsdomain.TaskEvent, taskID string) taskEventDetailResponse {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskevents.handler.taskEventDetailFromDomain")
 	data := normalizeJSONObjectForResponse(ev.Data)
 	resp := taskEventDetailResponse{
@@ -290,7 +291,7 @@ func taskEventDetailFromDomain(ev *domain.TaskEvent, taskID string) taskEventDet
 	return resp
 }
 
-func taskEventLines(evs []domain.TaskEvent) []taskEventLine {
+func taskEventLines(evs []taskeventsdomain.TaskEvent) []taskEventLine {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskevents.handler.taskEventLines")
 	out := make([]taskEventLine, 0, len(evs))
 	for _, e := range evs {
@@ -362,7 +363,7 @@ func (h *Handler) taskEvents(w http.ResponseWriter, r *http.Request) {
 	}
 	q := r.URL.Query()
 	if q.Get("offset") != "" {
-		writeStoreError(w, r, op, fmt.Errorf("%w: offset is not supported for task events; use before_seq or after_seq", domain.ErrInvalidInput))
+		writeStoreError(w, r, op, fmt.Errorf("%w: offset is not supported for task events; use before_seq or after_seq", taskcoredomain.ErrInvalidInput))
 		return
 	}
 	if q.Get("limit") == "" && q.Get("before_seq") == "" && q.Get("after_seq") == "" {
@@ -499,11 +500,11 @@ func parseTaskEventsLimit(ctx context.Context, q url.Values) (limit int, err err
 	limit = 50
 	if v := q.Get("limit"); v != "" {
 		if len(v) > maxTaskEventSeqParamBytes {
-			return 0, fmt.Errorf("%w: limit too long", domain.ErrInvalidInput)
+			return 0, fmt.Errorf("%w: limit too long", taskcoredomain.ErrInvalidInput)
 		}
 		n, e := strconv.Atoi(v)
 		if e != nil || n < 0 || n > 200 {
-			return 0, fmt.Errorf("%w: limit must be integer 0..200", domain.ErrInvalidInput)
+			return 0, fmt.Errorf("%w: limit must be integer 0..200", taskcoredomain.ErrInvalidInput)
 		}
 		limit = n
 	}

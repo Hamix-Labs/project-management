@@ -9,11 +9,12 @@ import (
 	checklistmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/store/model"
 	composedomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/domain"
 	composemodel "github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/store/model"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskcoremodel "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/model"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	cyclesmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store/model"
 	eventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 	eventsmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/model"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 // ParityPair binds a domain struct prototype to its model counterpart for
@@ -47,7 +48,7 @@ var ParityPairs = []ParityPair{
 	},
 	{
 		Name:   "Task",
-		Domain: &domain.Task{},
+		Domain: &taskcoredomain.Task{},
 		Model:  &taskcoremodel.Task{},
 		Table:  "tasks",
 		ModelMigrateExtra: []any{
@@ -56,7 +57,7 @@ var ParityPairs = []ParityPair{
 	},
 	{
 		Name:   "TaskDependency",
-		Domain: &domain.TaskDependency{},
+		Domain: &taskcoredomain.TaskDependency{},
 		Model:  &taskcoremodel.TaskDependency{},
 		Table:  "task_dependencies",
 		ModelMigrateExtra: []any{
@@ -92,7 +93,7 @@ var ParityPairs = []ParityPair{
 	},
 	{
 		Name:   "TaskContextSnapshot",
-		Domain: &domain.TaskContextSnapshot{},
+		Domain: &taskcoredomain.TaskContextSnapshot{},
 		Model:  &taskcoremodel.TaskContextSnapshot{},
 		Table:  "task_context_snapshots",
 		ModelMigrateExtra: []any{
@@ -131,7 +132,7 @@ var ParityPairs = []ParityPair{
 	},
 	{
 		Name:   "TaskCycle",
-		Domain: &domain.TaskCycle{},
+		Domain: &cyclesdomain.TaskCycle{},
 		Model:  &cyclesmodel.TaskCycle{},
 		Table:  "task_cycles",
 		ModelMigrateExtra: []any{
@@ -140,7 +141,7 @@ var ParityPairs = []ParityPair{
 	},
 	{
 		Name:   "TaskCyclePhase",
-		Domain: &domain.TaskCyclePhase{},
+		Domain: &cyclesdomain.TaskCyclePhase{},
 		Model:  &cyclesmodel.TaskCyclePhase{},
 		Table:  "task_cycle_phases",
 		ModelMigrateExtra: []any{
@@ -150,7 +151,7 @@ var ParityPairs = []ParityPair{
 	},
 	{
 		Name:   "TaskCycleStreamEvent",
-		Domain: &domain.TaskCycleStreamEvent{},
+		Domain: &cyclesdomain.TaskCycleStreamEvent{},
 		Model:  &cyclesmodel.TaskCycleStreamEvent{},
 		Table:  "task_cycle_stream_events",
 		ModelMigrateExtra: []any{
@@ -160,7 +161,7 @@ var ParityPairs = []ParityPair{
 	},
 	{
 		Name:   "TaskCycleCriteriaReport",
-		Domain: &domain.TaskCycleCriteriaReport{},
+		Domain: &cyclesdomain.TaskCycleCriteriaReport{},
 		Model:  &cyclesmodel.TaskCycleCriteriaReport{},
 		Table:  "task_cycle_criteria_reports",
 		ModelMigrateExtra: []any{
@@ -171,7 +172,7 @@ var ParityPairs = []ParityPair{
 	},
 	{
 		Name:   "TaskCycleVerifyReport",
-		Domain: &domain.TaskCycleVerifyReport{},
+		Domain: &cyclesdomain.TaskCycleVerifyReport{},
 		Model:  &cyclesmodel.TaskCycleVerifyReport{},
 		Table:  "task_cycle_verify_reports",
 		ModelMigrateExtra: []any{
@@ -182,7 +183,7 @@ var ParityPairs = []ParityPair{
 	},
 	{
 		Name:   "TaskCycleCommandRun",
-		Domain: &domain.TaskCycleCommandRun{},
+		Domain: &cyclesdomain.TaskCycleCommandRun{},
 		Model:  &cyclesmodel.TaskCycleCommandRun{},
 		Table:  "task_cycle_command_runs",
 		ModelMigrateExtra: []any{
@@ -193,7 +194,7 @@ var ParityPairs = []ParityPair{
 	},
 	{
 		Name:   "TaskCycleCommit",
-		Domain: &domain.TaskCycleCommit{},
+		Domain: &cyclesdomain.TaskCycleCommit{},
 		Model:  &cyclesmodel.TaskCycleCommit{},
 		Table:  "task_cycle_commits",
 		ModelMigrateExtra: []any{

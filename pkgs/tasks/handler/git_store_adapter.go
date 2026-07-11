@@ -11,7 +11,7 @@ import (
 
 // gitStoreAdapter forwards HandlerAPI git methods to service.GitStore.
 type gitStoreAdapter struct {
-	store.HandlerAPI
+	HandlerStore
 }
 
 var _ service.GitStore = gitStoreAdapter{}
@@ -23,7 +23,7 @@ func (a gitStoreAdapter) ReconcileGitRepository(
 	input store.ReconcileGitInput,
 	gitSvc gitwork.Service,
 ) (store.ReconcileGitOutput, error) {
-	return a.HandlerAPI.ReconcileGitRepository(ctx, projectID, repoID, input, gitSvc)
+	return a.HandlerStore.ReconcileGitRepository(ctx, projectID, repoID, input, gitSvc)
 }
 
 //funclogmeasure:skip category=delegate-already-logs reason="Thin HandlerAPI adapter; traces emit at store boundary."
@@ -32,7 +32,7 @@ func (a gitStoreAdapter) RelocateGitRepository(
 	projectID, repoID, path string,
 	gitSvc gitwork.Service,
 ) (store.ReconcileGitOutput, error) {
-	return a.HandlerAPI.RelocateGitRepository(ctx, projectID, repoID, path, gitSvc)
+	return a.HandlerStore.RelocateGitRepository(ctx, projectID, repoID, path, gitSvc)
 }
 
 //funclogmeasure:skip category=delegate-already-logs reason="Thin HandlerAPI adapter; traces emit at store boundary."
@@ -41,5 +41,5 @@ func (a gitStoreAdapter) RelocateGitWorktree(
 	worktreeID, path string,
 	gitSvc gitwork.Service,
 ) (domain.GitWorktree, error) {
-	return a.HandlerAPI.RelocateGitWorktree(ctx, worktreeID, path, gitSvc)
+	return a.HandlerStore.RelocateGitWorktree(ctx, worktreeID, path, gitSvc)
 }

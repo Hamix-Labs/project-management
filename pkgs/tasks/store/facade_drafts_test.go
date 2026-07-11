@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 )
 
 // newDraftStoreVal is a local helper for the payload-validation tests.
@@ -43,7 +43,7 @@ func TestStore_DraftCRUD_roundtrip(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, err = s.GetDraft(ctx, saved.ID)
-	if !errors.Is(err, domain.ErrNotFound) {
+	if !errors.Is(err, taskcoredomain.ErrNotFound) {
 		t.Fatalf("want not found, got %v", err)
 	}
 }
@@ -87,7 +87,7 @@ func TestStore_SaveDraft_payload_normalizes_null(t *testing.T) {
 
 // TestStore_SaveDraft_payload_rejects_non_object_json asserts that payloads
 // that are syntactically valid JSON but not objects (string, number, array,
-// bool) are rejected with domain.ErrInvalidInput so the handler surfaces a
+// bool) are rejected with taskcoredomain.ErrInvalidInput so the handler surfaces a
 // 400. The documented contract is that `GET /task-drafts/{id}` always returns
 // `payload` as a JSON object; silent coercion (or pass-through) would store
 // shapes that violate that promise.
@@ -106,7 +106,7 @@ func TestStore_SaveDraft_payload_rejects_non_object_json(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			s, ctx := newDraftStoreVal(t)
 			_, err := s.SaveDraft(ctx, "", "n", tc.payload)
-			if !errors.Is(err, domain.ErrInvalidInput) {
+			if !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 				t.Fatalf("err = %v, want ErrInvalidInput for payload=%s", err, string(tc.payload))
 			}
 		})

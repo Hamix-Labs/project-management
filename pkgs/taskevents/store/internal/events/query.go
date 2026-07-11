@@ -9,9 +9,9 @@ import (
 	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 	eventsmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/model"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"gorm.io/gorm"
 )
 
@@ -23,7 +23,7 @@ func List(ctx context.Context, db *gorm.DB, taskID string) ([]taskeventsdomain.T
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskevents.store.events.List")
 	taskID = strings.TrimSpace(taskID)
 	if taskID == "" {
-		return nil, fmt.Errorf("%w: id", domain.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: id", taskcoredomain.ErrInvalidInput)
 	}
 	var rows []eventsmodel.TaskEvent
 	err := db.WithContext(ctx).
@@ -42,7 +42,7 @@ func Count(ctx context.Context, db *gorm.DB, taskID string) (int64, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskevents.store.events.Count")
 	taskID = strings.TrimSpace(taskID)
 	if taskID == "" {
-		return 0, fmt.Errorf("%w: id", domain.ErrInvalidInput)
+		return 0, fmt.Errorf("%w: id", taskcoredomain.ErrInvalidInput)
 	}
 	var n int64
 	err := db.WithContext(ctx).Model(&eventsmodel.TaskEvent{}).Where("task_id = ?", taskID).Count(&n).Error
@@ -59,7 +59,7 @@ func LastSeq(ctx context.Context, db *gorm.DB, taskID string) (int64, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskevents.store.events.LastSeq")
 	taskID = strings.TrimSpace(taskID)
 	if taskID == "" {
-		return 0, fmt.Errorf("%w: id", domain.ErrInvalidInput)
+		return 0, fmt.Errorf("%w: id", taskcoredomain.ErrInvalidInput)
 	}
 	var maxSeq int64
 	err := db.WithContext(ctx).Model(&eventsmodel.TaskEvent{}).
@@ -73,22 +73,22 @@ func LastSeq(ctx context.Context, db *gorm.DB, taskID string) (int64, error) {
 }
 
 // Get returns one task_events row by composite key (task_id, seq), or
-// domain.ErrNotFound when the row does not exist.
+// taskcoredomain.ErrNotFound when the row does not exist.
 func Get(ctx context.Context, db *gorm.DB, taskID string, seq int64) (*taskeventsdomain.TaskEvent, error) {
 	defer storekernel.DeferLatency(storekernel.OpGetTaskEvent)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskevents.store.events.Get")
 	taskID = strings.TrimSpace(taskID)
 	if taskID == "" {
-		return nil, fmt.Errorf("%w: id", domain.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: id", taskcoredomain.ErrInvalidInput)
 	}
 	if seq < 1 {
-		return nil, fmt.Errorf("%w: seq", domain.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: seq", taskcoredomain.ErrInvalidInput)
 	}
 	var ev eventsmodel.TaskEvent
 	err := db.WithContext(ctx).Where("task_id = ? AND seq = ?", taskID, seq).First(&ev).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, domain.ErrNotFound
+			return nil, taskcoredomain.ErrNotFound
 		}
 		return nil, fmt.Errorf("get task event: %w", err)
 	}

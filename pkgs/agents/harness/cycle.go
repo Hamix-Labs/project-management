@@ -13,7 +13,8 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/prompt"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/reports"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
@@ -33,7 +34,7 @@ type cycleLifecycleState struct {
 }
 
 type phaseLifecycleState struct {
-	runningPhase                 domain.Phase
+	runningPhase                 cyclesdomain.Phase
 	runningPhaseSeq              int64
 	runCorrelationID             string
 	executeReachedVerify         bool
@@ -69,7 +70,7 @@ type gitLifecycleState struct {
 type resumeMirrorState struct {
 	continuation         *ContinuationBundle
 	resumeNotice         bool
-	interruptedPhase     domain.Phase
+	interruptedPhase     cyclesdomain.Phase
 	lastCursorResumeMode CursorResumeMode
 }
 
@@ -84,18 +85,18 @@ type processState struct {
 // Run drives the harness cycle body for one task already in StatusRunning.
 // The worker owns queue admission (reload, readiness, ready→running) and
 // ack ordering before calling Run.
-func (h *Harness) Run(parentCtx context.Context, task *domain.Task) {
+func (h *Harness) Run(parentCtx context.Context, task *taskcoredomain.Task) {
 	h.RunWithRetry(parentCtx, task, nil)
 }
 
 // transitionTask flips the task to next; returns false on any store
 // error (including ErrNotFound when the task was deleted mid-cycle).
-func (h *Harness) transitionTask(ctx context.Context, taskID string, next domain.Status, op string) bool {
+func (h *Harness) transitionTask(ctx context.Context, taskID string, next taskcoredomain.Status, op string) bool {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.transitionTask",
 		"task_id", taskID, "next", string(next), "op", op)
-	if _, err := h.store.Update(ctx, taskID, store.UpdateTaskInput{Status: &next}, domain.ActorAgent); err != nil {
+	if _, err := h.store.Update(ctx, taskID, store.UpdateTaskInput{Status: &next}, taskcoredomain.ActorAgent); err != nil {
 		level := slog.LevelWarn
-		if errors.Is(err, domain.ErrNotFound) {
+		if errors.Is(err, taskcoredomain.ErrNotFound) {
 			level = slog.LevelInfo
 		}
 		slog.Log(ctx, level, "agent harness task transition failed",
@@ -121,12 +122,12 @@ func (h *Harness) transitionTask(ctx context.Context, taskID string, next domain
 // the CycleMetaProvider interface; metric model labels from
 // MetricsLabeler. Both may produce "" and that empty string is the
 // truth, not a placeholder.
-func (h *Harness) startCycle(ctx context.Context, task *domain.Task, state *processState, opts startCycleOpts) (*domain.TaskCycle, bool) {
+func (h *Harness) startCycle(ctx context.Context, task *taskcoredomain.Task, state *processState, opts startCycleOpts) (*cyclesdomain.TaskCycle, bool) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.startCycle",
 		"task_id", task.ID)
 	req := runner.Request{
 		TaskID:      task.ID,
-		Phase:       domain.PhaseExecute,
+		Phase:       cyclesdomain.PhaseExecute,
 		Prompt:      task.InitialPrompt,
 		WorkingDir:  h.opts.WorkingDir,
 		CursorModel: task.CursorModel,
@@ -137,7 +138,7 @@ func (h *Harness) startCycle(ctx context.Context, task *domain.Task, state *proc
 	}
 	in := store.StartCycleInput{
 		TaskID:        task.ID,
-		TriggeredBy:   domain.ActorAgent,
+		TriggeredBy:   taskcoredomain.ActorAgent,
 		ParentCycleID: opts.parentCycleID,
 		Meta:          meta,
 	}
@@ -162,19 +163,19 @@ func (h *Harness) startCycle(ctx context.Context, task *domain.Task, state *proc
 // startExecutePhase opens the execute phase row that wraps runner.Run.
 // state is updated so the panic-recovery and shutdown branches can find
 // the phase to close out.
-func (h *Harness) startExecutePhase(ctx context.Context, cycle *domain.TaskCycle, state *processState) (*domain.TaskCyclePhase, bool) {
+func (h *Harness) startExecutePhase(ctx context.Context, cycle *cyclesdomain.TaskCycle, state *processState) (*cyclesdomain.TaskCyclePhase, bool) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.startExecutePhase",
 		"cycle_id", cycle.ID)
-	exec, err := h.store.StartPhase(ctx, cycle.ID, domain.PhaseExecute, domain.ActorAgent)
+	exec, err := h.store.StartPhase(ctx, cycle.ID, cyclesdomain.PhaseExecute, taskcoredomain.ActorAgent)
 	if err != nil {
 		slog.Warn("agent harness StartPhase(execute) failed", "cmd", calltrace.LogCmd,
 			"operation", "agent.harness.Harness.startExecutePhase.err",
 			"cycle_id", cycle.ID, "err", err)
 		return nil, false
 	}
-	state.phase.runningPhase = domain.PhaseExecute
+	state.phase.runningPhase = cyclesdomain.PhaseExecute
 	state.phase.runningPhaseSeq = exec.PhaseSeq
-	state.phase.runCorrelationID = domain.RunCorrelationIDFromDetailsJSON(exec.DetailsJSON)
+	state.phase.runCorrelationID = cyclesdomain.RunCorrelationIDFromDetailsJSON(exec.DetailsJSON)
 	h.setPhaseRunCorrelationID(state.phase.runCorrelationID)
 	h.publish(cycle.TaskID, cycle.ID)
 	return exec, true
@@ -182,25 +183,25 @@ func (h *Harness) startExecutePhase(ctx context.Context, cycle *domain.TaskCycle
 
 func (h *Harness) invokeRunnerWithTask(
 	parentCtx context.Context,
-	task *domain.Task,
-	cycle *domain.TaskCycle,
-	exec *domain.TaskCyclePhase,
+	task *taskcoredomain.Task,
+	cycle *cyclesdomain.TaskCycle,
+	exec *cyclesdomain.TaskCyclePhase,
 	decision CursorResumeDecision,
 ) (runner.Result, error) {
-	return h.invokeRunnerWithDecision(parentCtx, task, cycle, exec, domain.PhaseExecute, task.CursorModel, decision)
+	return h.invokeRunnerWithDecision(parentCtx, task, cycle, exec, cyclesdomain.PhaseExecute, task.CursorModel, decision)
 }
 
 // invokeRunnerWithDecision runs the runner with a pre-built resume decision.
 func (h *Harness) invokeRunnerWithDecision(
 	parentCtx context.Context,
-	task *domain.Task,
-	cycle *domain.TaskCycle,
-	phaseRow *domain.TaskCyclePhase,
-	phase domain.Phase,
+	task *taskcoredomain.Task,
+	cycle *cyclesdomain.TaskCycle,
+	phaseRow *cyclesdomain.TaskCyclePhase,
+	phase cyclesdomain.Phase,
 	cursorModel string,
 	decision CursorResumeDecision,
 ) (runner.Result, error) {
-	runCorrelationID := domain.RunCorrelationIDFromDetailsJSON(phaseRow.DetailsJSON)
+	runCorrelationID := cyclesdomain.RunCorrelationIDFromDetailsJSON(phaseRow.DetailsJSON)
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.invokeRunnerWithDecision",
 		"task_id", task.ID, "cycle_id", cycle.ID, "phase_seq", phaseRow.PhaseSeq,
 		"run_correlation_id", runCorrelationID,
@@ -219,7 +220,7 @@ func (h *Harness) invokeRunnerWithDecision(
 	projectContext, err := h.selectedProjectContext(runCtx, task, cycle)
 	if err != nil {
 		details, _ := json.Marshal(map[string]string{"error": err.Error()})
-		return runner.NewResult(domain.PhaseStatusFailed, "project context selection failed", details, ""), fmt.Errorf("project context: %w: %v", runner.ErrInvalidOutput, err)
+		return runner.NewResult(cyclesdomain.PhaseStatusFailed, "project context selection failed", details, ""), fmt.Errorf("project context: %w: %v", runner.ErrInvalidOutput, err)
 	}
 	h.setCurrentRunCancel(cancel)
 	defer h.setCurrentRunCancel(nil)
@@ -255,9 +256,9 @@ func (h *Harness) invokeRunnerWithDecision(
 // invokeRunner is retained for tests that build task.InitialPrompt directly.
 //
 //funclogmeasure:skip category=hot-path reason="Test shim; invokeRunnerWithDecision emits trace logs."
-func (h *Harness) invokeRunner(parentCtx context.Context, task *domain.Task, cycle *domain.TaskCycle, exec *domain.TaskCyclePhase) (runner.Result, error) {
+func (h *Harness) invokeRunner(parentCtx context.Context, task *taskcoredomain.Task, cycle *cyclesdomain.TaskCycle, exec *cyclesdomain.TaskCyclePhase) (runner.Result, error) {
 	decision := CursorResumeDecision{Mode: CursorResumeFresh, Prompt: task.InitialPrompt}
-	return h.invokeRunnerWithDecision(parentCtx, task, cycle, exec, domain.PhaseExecute, task.CursorModel, decision)
+	return h.invokeRunnerWithDecision(parentCtx, task, cycle, exec, cyclesdomain.PhaseExecute, task.CursorModel, decision)
 }
 
 func (h *Harness) persistProgress(ctx context.Context, taskID, cycleID string, phaseSeq int64, ev runner.ProgressEvent) {
@@ -310,7 +311,7 @@ func withRunTimeout(parent context.Context, d time.Duration) (context.Context, c
 // phase row. Errors from the store are logged and reported back so the
 // caller can stop the pipeline (a missing row usually means the task
 // was deleted mid-cycle).
-func (h *Harness) completeExecutePhase(ctx context.Context, state *processState, cycle *domain.TaskCycle, exec *domain.TaskCyclePhase, status domain.PhaseStatus, result runner.Result, phaseDetails []byte) bool {
+func (h *Harness) completeExecutePhase(ctx context.Context, state *processState, cycle *cyclesdomain.TaskCycle, exec *cyclesdomain.TaskCyclePhase, status cyclesdomain.PhaseStatus, result runner.Result, phaseDetails []byte) bool {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.completeExecutePhase",
 		"cycle_id", cycle.ID, "phase_seq", exec.PhaseSeq, "status", string(status))
 	details := phaseDetails
@@ -322,7 +323,7 @@ func (h *Harness) completeExecutePhase(ctx context.Context, state *processState,
 		PhaseSeq: exec.PhaseSeq,
 		Status:   status,
 		Details:  details,
-		By:       domain.ActorAgent,
+		By:       taskcoredomain.ActorAgent,
 	}
 	if result.Summary != "" {
 		s := result.Summary
@@ -330,7 +331,7 @@ func (h *Harness) completeExecutePhase(ctx context.Context, state *processState,
 	}
 	if _, err := h.store.CompletePhase(ctx, in); err != nil {
 		level := slog.LevelWarn
-		if errors.Is(err, domain.ErrNotFound) {
+		if errors.Is(err, taskcoredomain.ErrNotFound) {
 			level = slog.LevelInfo
 		}
 		slog.Log(ctx, level, "agent harness CompletePhase(execute) failed",
@@ -365,15 +366,15 @@ func (h *Harness) completeExecutePhase(ctx context.Context, state *processState,
 // path is a no-op for already-terminal cycles. Records one metrics
 // observation on success so cmd/taskapi's Prometheus counter +
 // histogram see the happy-path attempt outcome.
-func (h *Harness) terminateCycle(ctx context.Context, state *processState, taskID string, status domain.CycleStatus, reason string) bool {
+func (h *Harness) terminateCycle(ctx context.Context, state *processState, taskID string, status cyclesdomain.CycleStatus, reason string) bool {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.terminateCycle",
 		"cycle_id", state.cycle.cycleID, "status", string(status), "reason", reason)
 	if state.cycle.cycleID == "" {
 		return true
 	}
-	if _, err := h.store.TerminateCycle(ctx, state.cycle.cycleID, status, reason, domain.ActorAgent); err != nil {
+	if _, err := h.store.TerminateCycle(ctx, state.cycle.cycleID, status, reason, taskcoredomain.ActorAgent); err != nil {
 		level := slog.LevelWarn
-		if errors.Is(err, domain.ErrNotFound) {
+		if errors.Is(err, taskcoredomain.ErrNotFound) {
 			level = slog.LevelInfo
 		}
 		slog.Log(ctx, level, "agent harness TerminateCycle failed",

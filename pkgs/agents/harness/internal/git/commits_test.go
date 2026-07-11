@@ -10,7 +10,7 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/internal/gittest"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/storefake"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
@@ -20,12 +20,12 @@ func TestIngestExecuteCommits_fromClaims(t *testing.T) {
 	ctx := context.Background()
 	st := storefake.New(t).Store
 	tsk, err := st.Create(ctx, store.CreateTaskInput{
-		Title: "t", InitialPrompt: "p", Priority: domain.PriorityMedium, Status: domain.StatusReady,
-	}, domain.ActorUser)
+		Title: "t", InitialPrompt: "p", Priority: taskcoredomain.PriorityMedium, Status: taskcoredomain.StatusReady,
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	cycle, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	cycle, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -100,12 +100,12 @@ func TestIngestExecuteCommits_emptyClaimsContinues(t *testing.T) {
 	ctx := context.Background()
 	st := storefake.New(t).Store
 	tsk, err := st.Create(ctx, store.CreateTaskInput{
-		Title: "t", InitialPrompt: "p", Priority: domain.PriorityMedium, Status: domain.StatusReady,
-	}, domain.ActorUser)
+		Title: "t", InitialPrompt: "p", Priority: taskcoredomain.PriorityMedium, Status: taskcoredomain.StatusReady,
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	cycle, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	cycle, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatal(err)
 	}

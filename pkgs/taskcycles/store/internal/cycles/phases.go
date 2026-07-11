@@ -12,8 +12,10 @@ import (
 	"unicode/utf8"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store/model"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 	"github.com/google/uuid"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
@@ -29,14 +31,14 @@ const maxPhaseEventDetailRunes = 8192
 //   - cycle exists and is itself running (terminal cycles are read-only);
 //   - "at most one running phase per cycle" via in-TX guard;
 //   - the requested next phase is allowed by the state machine in
-//     domain.ValidPhaseTransition, where the previous phase is the
+//     cyclesdomain.ValidPhaseTransition, where the previous phase is the
 //     highest-seq phase already on this cycle (empty if none).
 //
 // In the same SQL transaction the call appends an EventPhaseStarted
 // mirror row to task_events and writes the assigned task_events.seq
 // back into the phase row's event_seq column so the audit pointer is
 // one-shot.
-func StartPhase(ctx context.Context, db *gorm.DB, cycleID string, phase domain.Phase, by domain.Actor) (*domain.TaskCyclePhase, error) {
+func StartPhase(ctx context.Context, db *gorm.DB, cycleID string, phase cyclesdomain.Phase, by taskcoredomain.Actor) (*cyclesdomain.TaskCyclePhase, error) {
 	defer storekernel.DeferLatency(storekernel.OpStartCyclePhase)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.cycles.StartPhase")
 	if err := storekernel.ValidateActor(by); err != nil {
@@ -44,19 +46,19 @@ func StartPhase(ctx context.Context, db *gorm.DB, cycleID string, phase domain.P
 	}
 	cycleID = strings.TrimSpace(cycleID)
 	if cycleID == "" {
-		return nil, fmt.Errorf("%w: cycle_id", domain.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: cycle_id", taskcoredomain.ErrInvalidInput)
 	}
 	if !storekernel.ValidPhase(phase) {
-		return nil, fmt.Errorf("%w: phase", domain.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: phase", taskcoredomain.ErrInvalidInput)
 	}
-	var created *domain.TaskCyclePhase
+	var created *cyclesdomain.TaskCyclePhase
 	err := db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		cycle, err := loadByIDInTx(tx, cycleID)
 		if err != nil {
 			return err
 		}
-		if domain.TerminalCycleStatus(cycle.Status) {
-			return fmt.Errorf("%w: cycle is terminal", domain.ErrInvalidInput)
+		if cyclesdomain.TerminalCycleStatus(cycle.Status) {
+			return fmt.Errorf("%w: cycle is terminal", taskcoredomain.ErrInvalidInput)
 		}
 		if err := assertNoRunningPhaseForCycleInTx(tx, cycle.ID); err != nil {
 			return err
@@ -65,12 +67,12 @@ func StartPhase(ctx context.Context, db *gorm.DB, cycleID string, phase domain.P
 		if err != nil {
 			return err
 		}
-		var prev domain.Phase
+		var prev cyclesdomain.Phase
 		if last != nil {
 			prev = last.Phase
 		}
-		if !domain.ValidPhaseTransition(prev, phase) && !domain.ValidInterruptResumeTransition(last, phase) && !domain.ValidVerifyOnlyRetryTransition(last, phase) {
-			return fmt.Errorf("%w: phase transition %q -> %q not allowed", domain.ErrInvalidInput, prev, phase)
+		if !cyclesdomain.ValidPhaseTransition(prev, phase) && !cyclesdomain.ValidInterruptResumeTransition(last, phase) && !cyclesdomain.ValidVerifyOnlyRetryTransition(last, phase) {
+			return fmt.Errorf("%w: phase transition %q -> %q not allowed", taskcoredomain.ErrInvalidInput, prev, phase)
 		}
 		nextSeq, err := nextPhaseSeqInTx(tx, cycle.ID)
 		if err != nil {
@@ -79,17 +81,17 @@ func StartPhase(ctx context.Context, db *gorm.DB, cycleID string, phase domain.P
 		now := time.Now().UTC()
 		runCorrelationID := uuid.NewString()
 		startDetails, err := json.Marshal(map[string]string{
-			domain.PhaseDetailsRunCorrelationID: runCorrelationID,
+			cyclesdomain.PhaseDetailsRunCorrelationID: runCorrelationID,
 		})
 		if err != nil {
 			return fmt.Errorf("marshal phase start details: %w", err)
 		}
-		row := &domain.TaskCyclePhase{
+		row := &cyclesdomain.TaskCyclePhase{
 			ID:          uuid.NewString(),
 			CycleID:     cycle.ID,
 			Phase:       phase,
 			PhaseSeq:    nextSeq,
-			Status:      domain.PhaseStatusRunning,
+			Status:      cyclesdomain.PhaseStatusRunning,
 			StartedAt:   now,
 			DetailsJSON: json.RawMessage(startDetails),
 		}
@@ -104,7 +106,7 @@ func StartPhase(ctx context.Context, db *gorm.DB, cycleID string, phase domain.P
 		if err != nil {
 			return err
 		}
-		if err := storekernel.AppendEvent(tx, cycle.TaskID, evSeq, domain.EventPhaseStarted, by, payload); err != nil {
+		if err := storekernel.AppendEvent(tx, cycle.TaskID, evSeq, taskeventsdomain.EventPhaseStarted, by, payload); err != nil {
 			return err
 		}
 		if err := tx.Model(&model.TaskCyclePhase{}).Where("id = ?", row.ID).Update("event_seq", evSeq).Error; err != nil {
@@ -131,7 +133,7 @@ func StartPhase(ctx context.Context, db *gorm.DB, cycleID string, phase domain.P
 // EventPhaseSkipped depending on the terminal status) and writes the
 // assigned task_events.seq back into the phase row's event_seq column,
 // replacing the EventPhaseStarted pointer set at StartPhase time.
-func CompletePhase(ctx context.Context, db *gorm.DB, in CompletePhaseInput) (*domain.TaskCyclePhase, error) {
+func CompletePhase(ctx context.Context, db *gorm.DB, in CompletePhaseInput) (*cyclesdomain.TaskCyclePhase, error) {
 	defer storekernel.DeferLatency(storekernel.OpCompleteCyclePhase)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.cycles.CompletePhase")
 	if err := storekernel.ValidateActor(in.By); err != nil {
@@ -139,19 +141,19 @@ func CompletePhase(ctx context.Context, db *gorm.DB, in CompletePhaseInput) (*do
 	}
 	cycleID := strings.TrimSpace(in.CycleID)
 	if cycleID == "" {
-		return nil, fmt.Errorf("%w: cycle_id", domain.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: cycle_id", taskcoredomain.ErrInvalidInput)
 	}
 	if in.PhaseSeq <= 0 {
-		return nil, fmt.Errorf("%w: phase_seq", domain.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: phase_seq", taskcoredomain.ErrInvalidInput)
 	}
 	if !storekernel.ValidTerminalPhaseStatus(in.Status) {
-		return nil, fmt.Errorf("%w: status must be a terminal phase status", domain.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: status must be a terminal phase status", taskcoredomain.ErrInvalidInput)
 	}
 	details, err := storekernel.NormalizeJSONObject(in.Details, "details")
 	if err != nil {
 		return nil, err
 	}
-	var out *domain.TaskCyclePhase
+	var out *cyclesdomain.TaskCyclePhase
 	err = db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		cycle, err := loadByIDInTx(tx, cycleID)
 		if err != nil {
@@ -161,8 +163,8 @@ func CompletePhase(ctx context.Context, db *gorm.DB, in CompletePhaseInput) (*do
 		if err != nil {
 			return err
 		}
-		if domain.TerminalPhaseStatus(ph.Status) {
-			return fmt.Errorf("%w: phase already terminal", domain.ErrInvalidInput)
+		if cyclesdomain.TerminalPhaseStatus(ph.Status) {
+			return fmt.Errorf("%w: phase already terminal", taskcoredomain.ErrInvalidInput)
 		}
 		mergedDetails, err := mergePhaseDetailsJSON(ph.DetailsJSON, details)
 		if err != nil {
@@ -215,12 +217,12 @@ func CompletePhase(ctx context.Context, db *gorm.DB, in CompletePhaseInput) (*do
 // ListPhasesForCycle returns phases for cycleID in execution order
 // (phase_seq ASC). The cycle must exist; an empty result for an
 // existing cycle (no phases started yet) is not an error.
-func ListPhasesForCycle(ctx context.Context, db *gorm.DB, cycleID string) ([]domain.TaskCyclePhase, error) {
+func ListPhasesForCycle(ctx context.Context, db *gorm.DB, cycleID string) ([]cyclesdomain.TaskCyclePhase, error) {
 	defer storekernel.DeferLatency(storekernel.OpListCyclePhases)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.cycles.ListPhasesForCycle")
 	cycleID = strings.TrimSpace(cycleID)
 	if cycleID == "" {
-		return nil, fmt.Errorf("%w: cycle_id", domain.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: cycle_id", taskcoredomain.ErrInvalidInput)
 	}
 	var rows []model.TaskCyclePhase
 	err := db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
@@ -240,7 +242,7 @@ func ListPhasesForCycle(ctx context.Context, db *gorm.DB, cycleID string) ([]dom
 
 // LastSessionID returns the session_id from the latest terminal phase row
 // of the given phase type in cycleID. Empty string means no usable id.
-func LastSessionID(ctx context.Context, db *gorm.DB, cycleID string, phase domain.Phase) (string, error) {
+func LastSessionID(ctx context.Context, db *gorm.DB, cycleID string, phase cyclesdomain.Phase) (string, error) {
 	defer storekernel.DeferLatency(storekernel.OpListCyclePhases)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.cycles.LastSessionID",
 		"cycle_id", cycleID, "phase", string(phase))
@@ -253,22 +255,22 @@ func LastSessionID(ctx context.Context, db *gorm.DB, cycleID string, phase domai
 		if p.Phase != phase {
 			continue
 		}
-		if !domain.TerminalPhaseStatus(p.Status) {
+		if !cyclesdomain.TerminalPhaseStatus(p.Status) {
 			continue
 		}
-		if id := domain.SessionIDFromDetailsJSON(p.DetailsJSON); id != "" {
+		if id := cyclesdomain.SessionIDFromDetailsJSON(p.DetailsJSON); id != "" {
 			return id, nil
 		}
 	}
 	return "", nil
 }
 
-func loadPhaseByCycleSeqInTx(tx *gorm.DB, cycleID string, phaseSeq int64) (*domain.TaskCyclePhase, error) {
+func loadPhaseByCycleSeqInTx(tx *gorm.DB, cycleID string, phaseSeq int64) (*cyclesdomain.TaskCyclePhase, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.cycles.loadPhaseByCycleSeqInTx")
 	var p model.TaskCyclePhase
 	if err := tx.Where("cycle_id = ? AND phase_seq = ?", cycleID, phaseSeq).First(&p).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, domain.ErrNotFound
+			return nil, taskcoredomain.ErrNotFound
 		}
 		return nil, fmt.Errorf("load task_cycle_phase: %w", err)
 	}
@@ -287,7 +289,7 @@ func mergePhaseDetailsJSON(existing json.RawMessage, incoming []byte) ([]byte, e
 			return nil, fmt.Errorf("unmarshal existing details: %w", err)
 		}
 	}
-	preservedID := domain.RunCorrelationIDFromDetailsJSON(existing)
+	preservedID := cyclesdomain.RunCorrelationIDFromDetailsJSON(existing)
 
 	patch := map[string]any{}
 	if len(incoming) > 0 {
@@ -299,7 +301,7 @@ func mergePhaseDetailsJSON(existing json.RawMessage, incoming []byte) ([]byte, e
 		base[k] = v
 	}
 	if preservedID != "" {
-		base[domain.PhaseDetailsRunCorrelationID] = preservedID
+		base[cyclesdomain.PhaseDetailsRunCorrelationID] = preservedID
 	}
 	out, err := json.Marshal(base)
 	if err != nil {
@@ -311,11 +313,11 @@ func mergePhaseDetailsJSON(existing json.RawMessage, incoming []byte) ([]byte, e
 func assertNoRunningPhaseForCycleInTx(tx *gorm.DB, cycleID string) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.cycles.assertNoRunningPhaseForCycleInTx")
 	var n int64
-	if err := tx.Model(&model.TaskCyclePhase{}).Where("cycle_id = ? AND status = ?", cycleID, domain.PhaseStatusRunning).Count(&n).Error; err != nil {
+	if err := tx.Model(&model.TaskCyclePhase{}).Where("cycle_id = ? AND status = ?", cycleID, cyclesdomain.PhaseStatusRunning).Count(&n).Error; err != nil {
 		return fmt.Errorf("running phase lookup: %w", err)
 	}
 	if n > 0 {
-		return fmt.Errorf("%w: cycle already has a running phase", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: cycle already has a running phase", taskcoredomain.ErrInvalidInput)
 	}
 	return nil
 }
@@ -331,7 +333,7 @@ func nextPhaseSeqInTx(tx *gorm.DB, cycleID string) (int64, error) {
 
 // lastPhaseForCycleInTx returns the highest-seq phase row in this cycle,
 // or nil when none exist.
-func lastPhaseForCycleInTx(tx *gorm.DB, cycleID string) (*domain.TaskCyclePhase, error) {
+func lastPhaseForCycleInTx(tx *gorm.DB, cycleID string) (*cyclesdomain.TaskCyclePhase, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.cycles.lastPhaseForCycleInTx")
 	var p model.TaskCyclePhase
 	err := tx.Where("cycle_id = ?", cycleID).Order("phase_seq DESC").Limit(1).First(&p).Error
@@ -346,15 +348,15 @@ func lastPhaseForCycleInTx(tx *gorm.DB, cycleID string) (*domain.TaskCyclePhase,
 
 // phaseStartedPayload builds the data_json payload for the
 // EventPhaseStarted audit mirror.
-func phaseStartedPayload(cycleID string, p *domain.TaskCyclePhase) ([]byte, error) {
+func phaseStartedPayload(cycleID string, p *cyclesdomain.TaskCyclePhase) ([]byte, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.cycles.phaseStartedPayload")
 	out := map[string]any{
 		"cycle_id":  cycleID,
 		"phase":     string(p.Phase),
 		"phase_seq": p.PhaseSeq,
 	}
-	if id := domain.RunCorrelationIDFromDetailsJSON(p.DetailsJSON); id != "" {
-		out[domain.PhaseDetailsRunCorrelationID] = id
+	if id := cyclesdomain.RunCorrelationIDFromDetailsJSON(p.DetailsJSON); id != "" {
+		out[cyclesdomain.PhaseDetailsRunCorrelationID] = id
 	}
 	b, err := json.Marshal(out)
 	if err != nil {
@@ -366,7 +368,7 @@ func phaseStartedPayload(cycleID string, p *domain.TaskCyclePhase) ([]byte, erro
 // phaseTerminatedPayload builds the data_json payload for the
 // EventPhaseCompleted / EventPhaseFailed / EventPhaseSkipped audit
 // mirror.
-func phaseTerminatedPayload(cycleID string, p *domain.TaskCyclePhase) ([]byte, error) {
+func phaseTerminatedPayload(cycleID string, p *cyclesdomain.TaskCyclePhase) ([]byte, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.cycles.phaseTerminatedPayload")
 	out := map[string]any{
 		"cycle_id":  cycleID,
@@ -450,16 +452,16 @@ func truncateStringRunes(s string, maxRunes int) string {
 
 // mirrorEventTypeForPhaseStatus picks which audit row type to write
 // when a phase reaches the given terminal status.
-func mirrorEventTypeForPhaseStatus(s domain.PhaseStatus) domain.EventType {
+func mirrorEventTypeForPhaseStatus(s cyclesdomain.PhaseStatus) taskeventsdomain.EventType {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.cycles.mirrorEventTypeForPhaseStatus")
 	switch s {
-	case domain.PhaseStatusSucceeded:
-		return domain.EventPhaseCompleted
-	case domain.PhaseStatusFailed:
-		return domain.EventPhaseFailed
-	case domain.PhaseStatusSkipped:
-		return domain.EventPhaseSkipped
+	case cyclesdomain.PhaseStatusSucceeded:
+		return taskeventsdomain.EventPhaseCompleted
+	case cyclesdomain.PhaseStatusFailed:
+		return taskeventsdomain.EventPhaseFailed
+	case cyclesdomain.PhaseStatusSkipped:
+		return taskeventsdomain.EventPhaseSkipped
 	default:
-		return domain.EventPhaseFailed
+		return taskeventsdomain.EventPhaseFailed
 	}
 }

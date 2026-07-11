@@ -6,10 +6,11 @@ import (
 	"log/slog"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
-func effectiveModelFromCycleMeta(r runner.Runner, task *domain.Task, cycle *domain.TaskCycle) string {
+func effectiveModelFromCycleMeta(r runner.Runner, task *taskcoredomain.Task, cycle *cyclesdomain.TaskCycle) string {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.effectiveModelFromCycleMeta",
 		"task_id", task.ID, "cycle_id", cycleIDOrEmpty(cycle))
 	if cycle != nil && len(cycle.MetaJSON) > 0 {

@@ -12,10 +12,10 @@ import (
 	settingsstore "github.com/AlexsanderHamir/Hamix/pkgs/settings/store"
 	checkliststore "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/store"
 	composestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/store"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 	cyclesstore "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store"
 	taskeventsstore "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/notify"
 	"gorm.io/gorm"
 )
@@ -115,7 +115,7 @@ func (s *Store) cancelPickupWake(taskID string) {
 // notifyReadyTask is the package-internal entrypoint used by CRUD,
 // update, and dev-mirror code paths. It forwards to the holder so the
 // concurrency policy lives in one place.
-func (s *Store) notifyReadyTask(ctx context.Context, task domain.Task) {
+func (s *Store) notifyReadyTask(ctx context.Context, task taskcoredomain.Task) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.notifyReadyTask", "task_id", task.ID)
 	if s == nil {
 		return

@@ -9,8 +9,8 @@ import (
 
 	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"gorm.io/gorm"
 )
 
@@ -19,7 +19,7 @@ func (s *Store) GetGitWorktreeByID(ctx context.Context, worktreeID string) (gitd
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "gitinventory.store.GetGitWorktreeByID")
 	worktreeID = strings.TrimSpace(worktreeID)
 	if worktreeID == "" {
-		return gitdomain.GitWorktree{}, fmt.Errorf("%w: worktree_id required", domain.ErrInvalidInput)
+		return gitdomain.GitWorktree{}, fmt.Errorf("%w: worktree_id required", taskcoredomain.ErrInvalidInput)
 	}
 	var row model.GitWorktree
 	err := s.db.WithContext(ctx).Where("id = ?", worktreeID).First(&row).Error
@@ -37,7 +37,7 @@ func (s *Store) GetGitBranchByID(ctx context.Context, branchID string) (gitdomai
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "gitinventory.store.GetGitBranchByID")
 	branchID = strings.TrimSpace(branchID)
 	if branchID == "" {
-		return gitdomain.GitBranch{}, fmt.Errorf("%w: branch_id required", domain.ErrInvalidInput)
+		return gitdomain.GitBranch{}, fmt.Errorf("%w: branch_id required", taskcoredomain.ErrInvalidInput)
 	}
 	var row model.GitBranch
 	err := s.db.WithContext(ctx).Where("id = ?", branchID).First(&row).Error
@@ -55,7 +55,7 @@ func (s *Store) GetGitRepositoryByID(ctx context.Context, repoID string) (gitdom
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "gitinventory.store.GetGitRepositoryByID")
 	repoID = strings.TrimSpace(repoID)
 	if repoID == "" {
-		return gitdomain.GitRepository{}, fmt.Errorf("%w: repository_id required", domain.ErrInvalidInput)
+		return gitdomain.GitRepository{}, fmt.Errorf("%w: repository_id required", taskcoredomain.ErrInvalidInput)
 	}
 	var row model.GitRepository
 	err := s.db.WithContext(ctx).Where("id = ?", repoID).First(&row).Error

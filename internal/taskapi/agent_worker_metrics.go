@@ -1,6 +1,5 @@
 package taskapi
 
-import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 import (
 	"errors"
 	"fmt"
@@ -9,7 +8,8 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/worker"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -74,7 +74,7 @@ type workerMetricsAdapter struct {
 // counters, and observes both duration histograms. Label values are
 // bounded: runner is the adapter Name() (today "cursor", "fake" in
 // tests), terminalStatus is one of the three terminal
-// domain.CycleStatus values, and model is the runner's resolved
+// cyclesdomain.CycleStatus values, and model is the runner's resolved
 // effective model — empty string is recorded verbatim ("no model
 // configured") rather than substituted with a synthetic default.
 //
@@ -97,7 +97,7 @@ func (a *workerMetricsAdapter) RecordRun(runnerName, model, terminalStatus strin
 // RecordVerifyVerdict increments hamix_verify_verdict_total. Verdict
 // label is a stable two-value enum ("passed"/"failed") so dashboards
 // can sum across without enumerating the label space.
-func (a *workerMetricsAdapter) RecordVerifyVerdict(kind domain.VerifierKind, passed bool) {
+func (a *workerMetricsAdapter) RecordVerifyVerdict(kind checklistdomain.VerifierKind, passed bool) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskapi.workerMetricsAdapter.RecordVerifyVerdict",
 		"verifier_kind", string(kind), "passed", passed)
 	if a == nil {
@@ -185,7 +185,7 @@ func registerAgentWorkerMetricsOn(reg prometheus.Registerer) (*workerMetricsAdap
 	verifyVerdicts := prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "hamix",
 		Name:      "verify_verdict_total",
-		Help:      "Per-criterion verify verdicts. verifier_kind is one of the domain.VerifierKind values; verdict is passed|failed. Disagreements (verifier rejecting an agent self-claim) are the verifier_kind=\"agent_self\",verdict=\"failed\" slice.",
+		Help:      "Per-criterion verify verdicts. verifier_kind is one of the checklistdomain.VerifierKind values; verdict is passed|failed. Disagreements (verifier rejecting an agent self-claim) are the verifier_kind=\"agent_self\",verdict=\"failed\" slice.",
 	}, []string{"verifier_kind", "verdict"})
 	verifyDuration := prometheus.NewHistogram(prometheus.HistogramOpts{
 		Namespace: "hamix",

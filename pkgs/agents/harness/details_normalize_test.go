@@ -11,7 +11,8 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/harnesstest"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/runnerfake"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
 func TestHarness_normalizes_non_object_runner_details(t *testing.T) {
@@ -41,20 +42,20 @@ func TestHarness_normalizes_non_object_runner_details(t *testing.T) {
 			tsk := env.TransitionRunning(ctx, env.CreateReadyTask(ctx, "details:"+tc.name))
 
 			r := runnerfake.New()
-			r.Script(tsk.ID, domain.PhaseExecute, runner.Result{
-				Status:  domain.PhaseStatusSucceeded,
+			r.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.Result{
+				Status:  cyclesdomain.PhaseStatusSucceeded,
 				Summary: "ok",
 				Details: tc.details,
 			})
 
 			done := env.RunHarness(ctx, env.NewHarness(r, harness.Options{}), tsk)
 			<-done
-			final := env.WaitTaskStatus(ctx, tsk.ID, domain.StatusDone)
-			if final.Status != domain.StatusDone {
+			final := env.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusDone)
+			if final.Status != taskcoredomain.StatusDone {
 				t.Fatalf("task status = %q, want done", final.Status)
 			}
 
-			cycle := harnesstest.AssertCycleStatus(t, env.Store, tsk.ID, 1, domain.CycleStatusSucceeded)
+			cycle := harnesstest.AssertCycleStatus(t, env.Store, tsk.ID, 1, cyclesdomain.CycleStatusSucceeded)
 			phases, err := env.Store.ListPhasesForCycle(ctx, cycle.ID)
 			if err != nil {
 				t.Fatalf("list phases: %v", err)
@@ -81,17 +82,17 @@ func TestHarness_object_details_pass_through_unchanged(t *testing.T) {
 
 	original := json.RawMessage(`{"ok":true,"count":3,"nested":{"k":"v"}}`)
 	r := runnerfake.New()
-	r.Script(tsk.ID, domain.PhaseExecute, runner.Result{
-		Status:  domain.PhaseStatusSucceeded,
+	r.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.Result{
+		Status:  cyclesdomain.PhaseStatusSucceeded,
 		Summary: "ok",
 		Details: original,
 	})
 
 	done := env.RunHarness(ctx, env.NewHarness(r, harness.Options{}), tsk)
 	<-done
-	env.WaitTaskStatus(ctx, tsk.ID, domain.StatusDone)
+	env.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusDone)
 
-	cycle := harnesstest.AssertCycleStatus(t, env.Store, tsk.ID, 1, domain.CycleStatusSucceeded)
+	cycle := harnesstest.AssertCycleStatus(t, env.Store, tsk.ID, 1, cyclesdomain.CycleStatusSucceeded)
 	phases, err := env.Store.ListPhasesForCycle(ctx, cycle.ID)
 	if err != nil {
 		t.Fatalf("list phases: %v", err)

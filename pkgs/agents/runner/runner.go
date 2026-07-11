@@ -6,11 +6,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"log/slog"
 	"time"
 	"unicode/utf8"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 // MaxResultRawOutputBytes caps Result.RawOutput at 64 KiB after the adapter
@@ -76,13 +75,13 @@ type ProgressEvent struct {
 // by default; everything else must be explicitly allowlisted by the
 // caller.
 type Request struct {
-	TaskID     string            `json:"task_id"`
-	AttemptSeq int64             `json:"attempt_seq"`
-	Phase      domain.Phase      `json:"phase"`
-	Prompt     string            `json:"prompt"`
-	WorkingDir string            `json:"working_dir"`
-	Timeout    time.Duration     `json:"timeout_ns"`
-	Env        map[string]string `json:"env,omitempty"`
+	TaskID     string             `json:"task_id"`
+	AttemptSeq int64              `json:"attempt_seq"`
+	Phase      cyclesdomain.Phase `json:"phase"`
+	Prompt     string             `json:"prompt"`
+	WorkingDir string             `json:"working_dir"`
+	Timeout    time.Duration      `json:"timeout_ns"`
+	Env        map[string]string  `json:"env,omitempty"`
 	// CursorModel is optional per-run model selection for the Cursor CLI
 	// adapter. Empty means use the adapter default (from app settings at
 	// worker construction).
@@ -119,11 +118,11 @@ const (
 // Always construct Results through NewResult so the byte caps and the
 // Truncated marker are applied consistently.
 type Result struct {
-	Status    domain.PhaseStatus `json:"status"`
-	Summary   string             `json:"summary,omitempty"`
-	Details   json.RawMessage    `json:"details,omitempty"`
-	RawOutput string             `json:"raw_output,omitempty"`
-	Truncated bool               `json:"truncated,omitempty"`
+	Status    cyclesdomain.PhaseStatus `json:"status"`
+	Summary   string                   `json:"summary,omitempty"`
+	Details   json.RawMessage          `json:"details,omitempty"`
+	RawOutput string                   `json:"raw_output,omitempty"`
+	Truncated bool                     `json:"truncated,omitempty"`
 	// ResolvedModel is the concrete model the underlying tool reported
 	// having used for this run, distinct from EffectiveModel which is
 	// the intent-level identifier resolved before the run starts. Set
@@ -183,7 +182,7 @@ var (
 //
 // Adapters MUST redact secrets BEFORE calling NewResult. The runner package
 // only enforces shape and size, not content.
-func NewResult(status domain.PhaseStatus, summary string, details json.RawMessage, rawOutput string) Result {
+func NewResult(status cyclesdomain.PhaseStatus, summary string, details json.RawMessage, rawOutput string) Result {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "runner.NewResult",
 		"status", string(status), "summary_runes", utf8.RuneCountInString(summary),
 		"details_bytes", len(details), "raw_output_bytes", len(rawOutput))

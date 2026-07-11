@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 )
 
 // --- Agent-queue path: ListReadyTaskQueueCandidates ----------------------
@@ -17,10 +17,10 @@ func TestListReadyTaskQueueCandidates_ordersOldestCreatedFirst(t *testing.T) {
 	// Lexicographically smaller id, but created second — should not win over older task.
 	idOlder := "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
 	idNewer := "11111111-1111-4111-8111-111111111111"
-	if _, err := s.Create(ctx, CreateTaskInput{ID: idOlder, Title: "older", Priority: domain.PriorityMedium}, domain.ActorUser); err != nil {
+	if _, err := s.Create(ctx, CreateTaskInput{ID: idOlder, Title: "older", Priority: taskcoredomain.PriorityMedium}, taskcoredomain.ActorUser); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.Create(ctx, CreateTaskInput{ID: idNewer, Title: "newer", Priority: domain.PriorityMedium}, domain.ActorUser); err != nil {
+	if _, err := s.Create(ctx, CreateTaskInput{ID: idNewer, Title: "newer", Priority: taskcoredomain.PriorityMedium}, taskcoredomain.ActorUser); err != nil {
 		t.Fatal(err)
 	}
 	page1, err := s.ListReadyTaskQueueCandidates(ctx, 1, nil)
@@ -50,9 +50,9 @@ func TestListReadyTaskQueueCandidates_excludesFuturePickupNotBefore(t *testing.T
 	future := time.Now().UTC().Add(1 * time.Hour)
 	if _, err := s.Create(ctx, CreateTaskInput{
 		Title:           "deferred pickup",
-		Priority:        domain.PriorityMedium,
+		Priority:        taskcoredomain.PriorityMedium,
 		PickupNotBefore: &future,
-	}, domain.ActorUser); err != nil {
+	}, taskcoredomain.ActorUser); err != nil {
 		t.Fatal(err)
 	}
 	got, err := s.ListReadyTaskQueueCandidates(ctx, 10, nil)
@@ -66,9 +66,9 @@ func TestListReadyTaskQueueCandidates_excludesFuturePickupNotBefore(t *testing.T
 	if _, err := s.Create(ctx, CreateTaskInput{
 		ID:              "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
 		Title:           "eligible",
-		Priority:        domain.PriorityMedium,
+		Priority:        taskcoredomain.PriorityMedium,
 		PickupNotBefore: &past,
-	}, domain.ActorUser); err != nil {
+	}, taskcoredomain.ActorUser); err != nil {
 		t.Fatal(err)
 	}
 	got2, err := s.ListReadyTaskQueueCandidates(ctx, 10, nil)
@@ -95,15 +95,15 @@ func TestListReadyTasksUserCreated_filtersActorAndStatus(t *testing.T) {
 	ctx := context.Background()
 	s := NewStore(tasktestdb.OpenSQLite(t))
 
-	u1, err := s.Create(ctx, CreateTaskInput{Title: "user ready", Priority: domain.PriorityMedium}, domain.ActorUser)
+	u1, err := s.Create(ctx, CreateTaskInput{Title: "user ready", Priority: taskcoredomain.PriorityMedium}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = s.Create(ctx, CreateTaskInput{Title: "agent ready", Priority: domain.PriorityMedium}, domain.ActorAgent)
+	_, err = s.Create(ctx, CreateTaskInput{Title: "agent ready", Priority: taskcoredomain.PriorityMedium}, taskcoredomain.ActorAgent)
 	if err != nil {
 		t.Fatal(err)
 	}
-	u3, err := s.Create(ctx, CreateTaskInput{Title: "user running", Priority: domain.PriorityMedium, Status: domain.StatusRunning}, domain.ActorUser)
+	u3, err := s.Create(ctx, CreateTaskInput{Title: "user running", Priority: taskcoredomain.PriorityMedium, Status: taskcoredomain.StatusRunning}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -115,7 +115,7 @@ func TestListReadyTasksUserCreated_filtersActorAndStatus(t *testing.T) {
 	if len(got) != 1 || got[0].ID != u1.ID {
 		t.Fatalf("got %+v want single user-ready id %s", got, u1.ID)
 	}
-	if got[0].Status != domain.StatusReady {
+	if got[0].Status != taskcoredomain.StatusReady {
 		t.Fatalf("status %s", got[0].Status)
 	}
 	_ = u3
@@ -127,10 +127,10 @@ func TestListReadyTasksUserCreated_paginationAfterID(t *testing.T) {
 
 	const id1 = "11111111-1111-4111-8111-111111111111"
 	const id2 = "22222222-2222-4222-8222-222222222222"
-	if _, err := s.Create(ctx, CreateTaskInput{ID: id1, Title: "a", Priority: domain.PriorityMedium}, domain.ActorUser); err != nil {
+	if _, err := s.Create(ctx, CreateTaskInput{ID: id1, Title: "a", Priority: taskcoredomain.PriorityMedium}, taskcoredomain.ActorUser); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.Create(ctx, CreateTaskInput{ID: id2, Title: "b", Priority: domain.PriorityMedium}, domain.ActorUser); err != nil {
+	if _, err := s.Create(ctx, CreateTaskInput{ID: id2, Title: "b", Priority: taskcoredomain.PriorityMedium}, taskcoredomain.ActorUser); err != nil {
 		t.Fatal(err)
 	}
 	page1, err := s.ListReadyTasksUserCreated(ctx, 1, "")

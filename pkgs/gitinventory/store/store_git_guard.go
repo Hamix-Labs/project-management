@@ -9,8 +9,8 @@ import (
 
 	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"gorm.io/gorm"
 )
 
@@ -19,7 +19,7 @@ func (s *Store) GuardBranchNotBoundToOtherWorktree(ctx context.Context, branchID
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "gitinventory.store.GuardBranchNotBoundToOtherWorktree")
 	branchID = strings.TrimSpace(branchID)
 	if branchID == "" {
-		return fmt.Errorf("%w: branch_id required", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: branch_id required", taskcoredomain.ErrInvalidInput)
 	}
 	var other model.GitWorktree
 	q := s.db.WithContext(ctx).Where("branch_id = ?", branchID)
@@ -53,7 +53,7 @@ WHERE status = ?
      OR worktree_id IN (
           SELECT id FROM git_worktrees WHERE repository_id = ?
         )
-  )`, domain.StatusRunning, targetID, targetID).Scan(&n).Error
+  )`, taskcoredomain.StatusRunning, targetID, targetID).Scan(&n).Error
 	if err != nil {
 		return false, err
 	}

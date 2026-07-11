@@ -8,8 +8,9 @@ import (
 	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/contract"
+	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 type checklistItemCreateJSON struct {
@@ -69,7 +70,7 @@ func (h *Handler) postChecklistItem(w http.ResponseWriter, r *http.Request) {
 		writeStoreError(w, r, op, err)
 		return
 	} else if running {
-		writeStoreError(w, r, op, fmt.Errorf("%w: cycle running; cannot add criteria", domain.ErrConflict))
+		writeStoreError(w, r, op, fmt.Errorf("%w: cycle running; cannot add criteria", taskcoredomain.ErrConflict))
 		return
 	}
 	it, err := h.checklist.AddChecklistItem(r.Context(), id, body.Text, body.VerifyCommands, by)
@@ -115,7 +116,7 @@ func (h *Handler) patchChecklistItem(w http.ResponseWriter, r *http.Request) {
 		setCount++
 	}
 	if setCount != 1 {
-		writeStoreError(w, r, op, fmt.Errorf("%w: send exactly one of text, verify_commands, or done", domain.ErrInvalidInput))
+		writeStoreError(w, r, op, fmt.Errorf("%w: send exactly one of text, verify_commands, or done", taskcoredomain.ErrInvalidInput))
 		return
 	}
 	by := actorFromRequest(r)
@@ -124,7 +125,7 @@ func (h *Handler) patchChecklistItem(w http.ResponseWriter, r *http.Request) {
 			writeStoreError(w, r, op, err)
 			return
 		} else if running {
-			writeStoreError(w, r, op, fmt.Errorf("%w: cycle running; cannot edit criteria", domain.ErrConflict))
+			writeStoreError(w, r, op, fmt.Errorf("%w: cycle running; cannot edit criteria", taskcoredomain.ErrConflict))
 			return
 		}
 	} else if body.VerifyCommands != nil {
@@ -132,7 +133,7 @@ func (h *Handler) patchChecklistItem(w http.ResponseWriter, r *http.Request) {
 			writeStoreError(w, r, op, err)
 			return
 		} else if running {
-			writeStoreError(w, r, op, fmt.Errorf("%w: cycle running; cannot edit criteria", domain.ErrConflict))
+			writeStoreError(w, r, op, fmt.Errorf("%w: cycle running; cannot edit criteria", taskcoredomain.ErrConflict))
 			return
 		}
 	}
@@ -140,7 +141,7 @@ func (h *Handler) patchChecklistItem(w http.ResponseWriter, r *http.Request) {
 		t := strings.TrimSpace(*body.Text)
 		debugHTTPRequest(r, op, "task_id", taskID, "item_id", itemID, "text_len", len(t), "text_preview", truncateRunes(t, maxHTTPLogTextRunes), "actor", string(by))
 		if t == "" {
-			writeStoreError(w, r, op, fmt.Errorf("%w: text required", domain.ErrInvalidInput))
+			writeStoreError(w, r, op, fmt.Errorf("%w: text required", taskcoredomain.ErrInvalidInput))
 			return
 		}
 		if err := h.checklist.UpdateChecklistItemText(r.Context(), taskID, itemID, t, by); err != nil {
@@ -155,8 +156,8 @@ func (h *Handler) patchChecklistItem(w http.ResponseWriter, r *http.Request) {
 	} else {
 		debugHTTPRequest(r, op, "task_id", taskID, "item_id", itemID, "done", *body.Done, "actor", string(by))
 		if *body.Done {
-			if by != domain.ActorAgent {
-				writeStoreError(w, r, op, fmt.Errorf("%w: only the agent may mark checklist items done", domain.ErrInvalidInput))
+			if by != taskcoredomain.ActorAgent {
+				writeStoreError(w, r, op, fmt.Errorf("%w: only the agent may mark checklist items done", taskcoredomain.ErrInvalidInput))
 				return
 			}
 			evidence := ""
@@ -164,15 +165,15 @@ func (h *Handler) patchChecklistItem(w http.ResponseWriter, r *http.Request) {
 				evidence = strings.TrimSpace(*body.Evidence)
 			}
 			if evidence == "" {
-				writeStoreError(w, r, op, fmt.Errorf("%w: evidence required when marking done", domain.ErrInvalidInput))
+				writeStoreError(w, r, op, fmt.Errorf("%w: evidence required when marking done", taskcoredomain.ErrInvalidInput))
 				return
 			}
-			verifier := domain.VerifierAgentSelf
+			verifier := checklistdomain.VerifierAgentSelf
 			if body.VerifiedBy != nil {
-				verifier = domain.VerifierKind(strings.TrimSpace(*body.VerifiedBy))
+				verifier = checklistdomain.VerifierKind(strings.TrimSpace(*body.VerifiedBy))
 			}
-			if !domain.ValidVerifierKind(verifier) || verifier == domain.VerifierLegacy {
-				writeStoreError(w, r, op, fmt.Errorf("%w: invalid verified_by", domain.ErrInvalidInput))
+			if !checklistdomain.ValidVerifierKind(verifier) || verifier == checklistdomain.VerifierLegacy {
+				writeStoreError(w, r, op, fmt.Errorf("%w: invalid verified_by", taskcoredomain.ErrInvalidInput))
 				return
 			}
 			if err := h.checklist.SetChecklistItemDoneWithEvidence(r.Context(), taskID, itemID, evidence, verifier, "", "", by); err != nil {
@@ -215,7 +216,7 @@ func (h *Handler) deleteChecklistItem(w http.ResponseWriter, r *http.Request) {
 		writeStoreError(w, r, op, err)
 		return
 	} else if running {
-		writeStoreError(w, r, op, fmt.Errorf("%w: cycle running; cannot delete criteria", domain.ErrConflict))
+		writeStoreError(w, r, op, fmt.Errorf("%w: cycle running; cannot delete criteria", taskcoredomain.ErrConflict))
 		return
 	}
 	by := actorFromRequest(r)

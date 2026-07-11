@@ -7,7 +7,7 @@ import (
 
 	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -28,13 +28,13 @@ func (legacyGitRepository) TableName() string { return "git_repositories" }
 
 // legacyTask is the pre-C8 shape with worktree_id and branch_id.
 type legacyTask struct {
-	ID               string          `gorm:"primaryKey"`
-	Title            string          `gorm:"not null"`
-	InitialPrompt    string          `gorm:"type:text;not null"`
-	Status           domain.Status   `gorm:"not null"`
-	Priority         domain.Priority `gorm:"not null"`
-	ProjectID        *string         `gorm:"index"`
-	Runner           string          `gorm:"not null;default:'cursor'"`
+	ID               string                  `gorm:"primaryKey"`
+	Title            string                  `gorm:"not null"`
+	InitialPrompt    string                  `gorm:"type:text;not null"`
+	Status           taskcoredomain.Status   `gorm:"not null"`
+	Priority         taskcoredomain.Priority `gorm:"not null"`
+	ProjectID        *string                 `gorm:"index"`
+	Runner           string                  `gorm:"not null;default:'cursor'"`
 	WorktreeID       *string
 	BranchID         *string
 	WorktreeBranchID *string
@@ -95,7 +95,7 @@ func TestMigrateContractGitTree_dropsColumns(t *testing.T) {
 
 	task := legacyTask{
 		ID: "task-1", Title: "t", InitialPrompt: "p",
-		Status: domain.StatusReady, Priority: domain.PriorityMedium,
+		Status: taskcoredomain.StatusReady, Priority: taskcoredomain.PriorityMedium,
 		ProjectID: &proj.ID, WorktreeID: &wt.ID, BranchID: &br.ID,
 		WorktreeBranchID: &wb.ID,
 	}

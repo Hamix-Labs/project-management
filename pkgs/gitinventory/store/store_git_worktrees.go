@@ -11,7 +11,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"gorm.io/gorm"
 )
 
@@ -102,7 +102,7 @@ func (s *Store) RemoveGitWorktreeFromDiskByID(ctx context.Context, worktreeID st
 func (s *Store) removeGitWorktreeFromDisk(ctx context.Context, wt gitdomain.GitWorktree, force bool, gitSvc gitwork.Service) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "gitinventory.store.removeGitWorktreeFromDisk")
 	if wt.IsMain {
-		return fmt.Errorf("%w: cannot remove main worktree from disk", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: cannot remove main worktree from disk", taskcoredomain.ErrInvalidInput)
 	}
 	if err := guardNoRunningTask(ctx, s.db, wt.ID); err != nil {
 		return err

@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
+	taskscontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
-	taskscontract "github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 const cycleFailureSortAtDesc = "at_desc"
@@ -88,21 +88,21 @@ func parseCycleFailuresQuery(q url.Values) (limit, offset int, sort string, err 
 	sort = cycleFailureSortAtDesc
 	if v := q.Get("limit"); v != "" {
 		if len(v) > maxListIntQueryParamBytes {
-			return 0, 0, "", fmt.Errorf("%w: limit value too long", domain.ErrInvalidInput)
+			return 0, 0, "", fmt.Errorf("%w: limit value too long", taskcoredomain.ErrInvalidInput)
 		}
 		n, e := strconv.Atoi(v)
 		if e != nil || n < 1 || n > 200 {
-			return 0, 0, "", fmt.Errorf("%w: limit must be integer 1..200", domain.ErrInvalidInput)
+			return 0, 0, "", fmt.Errorf("%w: limit must be integer 1..200", taskcoredomain.ErrInvalidInput)
 		}
 		limit = n
 	}
 	if v := q.Get("offset"); v != "" {
 		if len(v) > maxListIntQueryParamBytes {
-			return 0, 0, "", fmt.Errorf("%w: offset value too long", domain.ErrInvalidInput)
+			return 0, 0, "", fmt.Errorf("%w: offset value too long", taskcoredomain.ErrInvalidInput)
 		}
 		n, e := strconv.Atoi(v)
 		if e != nil || n < 0 {
-			return 0, 0, "", fmt.Errorf("%w: offset must be non-negative integer", domain.ErrInvalidInput)
+			return 0, 0, "", fmt.Errorf("%w: offset must be non-negative integer", taskcoredomain.ErrInvalidInput)
 		}
 		offset = n
 	}

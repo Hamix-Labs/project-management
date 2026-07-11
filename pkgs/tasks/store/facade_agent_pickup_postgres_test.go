@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
@@ -20,21 +20,21 @@ func TestStore_AgentPickup_freshReadyTask_postgres(t *testing.T) {
 	tsk, err := s.Create(ctx, store.CreateTaskInput{
 		Title:         "template-shaped",
 		InitialPrompt: "split the longest function",
-		Priority:      domain.PriorityMedium,
-		Status:        domain.StatusReady,
-	}, domain.ActorUser)
+		Priority:      taskcoredomain.PriorityMedium,
+		Status:        taskcoredomain.StatusReady,
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		_, _ = s.Delete(ctx, tsk.ID, domain.ActorUser)
+		_, _ = s.Delete(ctx, tsk.ID, taskcoredomain.ActorUser)
 	})
 
-	pickup, err := s.AgentPickup(ctx, tsk.ID, domain.ActorAgent)
+	pickup, err := s.AgentPickup(ctx, tsk.ID, taskcoredomain.ActorAgent)
 	if err != nil {
 		t.Fatalf("AgentPickup: %v", err)
 	}
-	if pickup.Task.Status != domain.StatusRunning {
+	if pickup.Task.Status != taskcoredomain.StatusRunning {
 		t.Fatalf("status %q want running", pickup.Task.Status)
 	}
 	if pickup.Task.PendingRetry != nil {

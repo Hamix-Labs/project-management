@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/orchestration"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
 // Invariant: verify retry decisions never return retry after the budget is exhausted.
@@ -63,16 +63,16 @@ func TestInvariant_executeNeverContinuesAfterTerminalFailure(t *testing.T) {
 // in the domain model — harness termination paths must land on a terminal status.
 func TestInvariant_terminalCycleStatusesAreTerminal(t *testing.T) {
 	t.Parallel()
-	for _, st := range []domain.CycleStatus{
-		domain.CycleStatusSucceeded,
-		domain.CycleStatusFailed,
-		domain.CycleStatusAborted,
+	for _, st := range []cyclesdomain.CycleStatus{
+		cyclesdomain.CycleStatusSucceeded,
+		cyclesdomain.CycleStatusFailed,
+		cyclesdomain.CycleStatusAborted,
 	} {
-		if !domain.TerminalCycleStatus(st) {
+		if !cyclesdomain.TerminalCycleStatus(st) {
 			t.Fatalf("%q should be terminal", st)
 		}
 	}
-	if domain.TerminalCycleStatus(domain.CycleStatusRunning) {
+	if cyclesdomain.TerminalCycleStatus(cyclesdomain.CycleStatusRunning) {
 		t.Fatal("running must not be terminal")
 	}
 }

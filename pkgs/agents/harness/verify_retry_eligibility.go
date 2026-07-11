@@ -8,7 +8,7 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/git"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/orchestration"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
@@ -89,7 +89,7 @@ func (h *Harness) resolveCurrentHeadSHA(ctx context.Context, snap git.PhaseSnaps
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (h *Harness) gatherRetryClassifyInput(
 	ctx context.Context,
-	cycle *domain.TaskCycle,
+	cycle *cyclesdomain.TaskCycle,
 	state *processState,
 	verdicts []criterionVerdict,
 	verifyErr error,

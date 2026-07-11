@@ -10,7 +10,9 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/harnesstest"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/runnerfake"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
+	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 )
 
 func TestHarness_CancelCurrentRun_idleIsNoOp(t *testing.T) {
@@ -46,19 +48,19 @@ func TestHarness_CancelCurrentRun_failsCycleWithOperatorReason(t *testing.T) {
 	}
 
 	<-done
-	final := env.WaitTaskStatus(ctx, tsk.ID, domain.StatusFailed)
-	if final.Status != domain.StatusFailed {
+	final := env.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusFailed)
+	if final.Status != taskcoredomain.StatusFailed {
 		t.Fatalf("task status = %q, want failed", final.Status)
 	}
 
-	cycle := harnesstest.AssertCycleStatus(t, env.Store, tsk.ID, 1, domain.CycleStatusFailed)
+	cycle := harnesstest.AssertCycleStatus(t, env.Store, tsk.ID, 1, cyclesdomain.CycleStatusFailed)
 	events, err := env.Store.ListTaskEvents(context.Background(), tsk.ID)
 	if err != nil {
 		t.Fatalf("list events: %v", err)
 	}
 	var sawOperatorReason bool
 	for _, e := range events {
-		if e.Type != domain.EventCycleFailed {
+		if e.Type != taskeventsdomain.EventCycleFailed {
 			continue
 		}
 		if strings.Contains(string(e.Data), harness.CancelledByOperatorReason) {
@@ -81,7 +83,7 @@ func TestHarness_NoCapRunTimeout_doesNotFireOnLongRun(t *testing.T) {
 	tsk := env.TransitionRunning(ctx, env.CreateReadyTask(ctx, "no-cap"))
 
 	br := harnesstest.NewBlockingRunner()
-	br.Result = runner.NewResult(domain.PhaseStatusSucceeded, "released", nil, "")
+	br.Result = runner.NewResult(cyclesdomain.PhaseStatusSucceeded, "released", nil, "")
 
 	done := env.RunHarness(ctx, env.NewHarness(br, harness.Options{RunTimeout: 0}), tsk)
 
@@ -95,8 +97,8 @@ func TestHarness_NoCapRunTimeout_doesNotFireOnLongRun(t *testing.T) {
 	close(br.Release)
 
 	<-done
-	final := env.WaitTaskStatus(ctx, tsk.ID, domain.StatusDone)
-	if final.Status != domain.StatusDone {
+	final := env.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusDone)
+	if final.Status != taskcoredomain.StatusDone {
 		t.Fatalf("task status = %q, want done (no-cap run should succeed)", final.Status)
 	}
 }
@@ -113,8 +115,8 @@ func TestHarness_PositiveRunTimeout_stillFiresAsTimeout(t *testing.T) {
 	done := env.RunHarness(ctx, env.NewHarness(br, harness.Options{RunTimeout: 50 * time.Millisecond}), tsk)
 
 	<-done
-	final := env.WaitTaskStatus(ctx, tsk.ID, domain.StatusFailed)
-	if final.Status != domain.StatusFailed {
+	final := env.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusFailed)
+	if final.Status != taskcoredomain.StatusFailed {
 		t.Fatalf("task status = %q, want failed", final.Status)
 	}
 
@@ -124,7 +126,7 @@ func TestHarness_PositiveRunTimeout_stillFiresAsTimeout(t *testing.T) {
 	}
 	var sawTimeoutReason, sawOperatorReason bool
 	for _, e := range events {
-		if e.Type != domain.EventCycleFailed {
+		if e.Type != taskeventsdomain.EventCycleFailed {
 			continue
 		}
 		body := string(e.Data)

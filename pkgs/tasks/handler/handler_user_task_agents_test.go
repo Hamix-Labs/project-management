@@ -9,7 +9,7 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
@@ -46,7 +46,7 @@ func TestUserCreatedTaskEnqueuesForAgents(t *testing.T) {
 		if got.Title != "from-user" {
 			t.Fatalf("title %q", got.Title)
 		}
-		if got.Priority != domain.PriorityMedium {
+		if got.Priority != taskcoredomain.PriorityMedium {
 			t.Fatalf("priority %s", got.Priority)
 		}
 	case <-time.After(2 * time.Second):

@@ -12,9 +12,9 @@ import (
 	"strconv"
 	"strings"
 
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/apijson"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/logctx"
 )
 
@@ -39,7 +39,7 @@ func decodeJSON(ctx context.Context, r io.Reader, dst any) error {
 		}
 		return fmt.Errorf("json trailing data: %w", err)
 	}
-	return fmt.Errorf("%w: json trailing data", domain.ErrInvalidInput)
+	return fmt.Errorf("%w: json trailing data", taskcoredomain.ErrInvalidInput)
 }
 
 //funclogmeasure:skip category=delegate-already-logs reason="JSON response helper; HTTP handler chokepoint emits trace."
@@ -140,7 +140,7 @@ func userFacingJSONError(err error) string {
 	if strings.HasPrefix(s, "json decode: ") {
 		return strings.TrimPrefix(s, "json decode: ")
 	}
-	if errors.Is(err, domain.ErrInvalidInput) {
+	if errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		return "request body must contain a single JSON value"
 	}
 	if strings.HasPrefix(s, "json trailing data:") {
@@ -177,11 +177,11 @@ func storeErrHTTP(err error) (code int, msg string) {
 		return http.StatusGatewayTimeout, "request timed out"
 	case errors.Is(err, context.Canceled):
 		return http.StatusRequestTimeout, "request canceled"
-	case errors.Is(err, domain.ErrNotFound):
+	case errors.Is(err, taskcoredomain.ErrNotFound):
 		return http.StatusNotFound, "not found"
-	case errors.Is(err, domain.ErrInvalidInput):
+	case errors.Is(err, taskcoredomain.ErrInvalidInput):
 		return http.StatusBadRequest, invalidInputDetail(err)
-	case errors.Is(err, domain.ErrConflict):
+	case errors.Is(err, taskcoredomain.ErrConflict):
 		return http.StatusConflict, conflictDetail(err)
 	default:
 		return code, msg
@@ -212,10 +212,10 @@ func parseBoundedPathID(op, raw, field string) (string, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", op)
 	id := strings.TrimSpace(raw)
 	if id == "" {
-		return "", fmt.Errorf("%w: %s", domain.ErrInvalidInput, field)
+		return "", fmt.Errorf("%w: %s", taskcoredomain.ErrInvalidInput, field)
 	}
 	if len(id) > maxPathIDBytes {
-		return "", fmt.Errorf("%w: %s too long", domain.ErrInvalidInput, field)
+		return "", fmt.Errorf("%w: %s too long", taskcoredomain.ErrInvalidInput, field)
 	}
 	return id, nil
 }
@@ -235,28 +235,28 @@ func parseTaskPathPhaseSeq(raw string) (int64, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.handler.parseTaskPathPhaseSeq")
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
-		return 0, fmt.Errorf("%w: phase_seq must be a positive integer", domain.ErrInvalidInput)
+		return 0, fmt.Errorf("%w: phase_seq must be a positive integer", taskcoredomain.ErrInvalidInput)
 	}
 	if len(raw) > maxPhaseSeqParamBytes {
-		return 0, fmt.Errorf("%w: phase_seq too long", domain.ErrInvalidInput)
+		return 0, fmt.Errorf("%w: phase_seq too long", taskcoredomain.ErrInvalidInput)
 	}
 	n, err := strconv.ParseInt(raw, 10, 64)
 	if err != nil || n < 1 {
-		return 0, fmt.Errorf("%w: phase_seq must be a positive integer", domain.ErrInvalidInput)
+		return 0, fmt.Errorf("%w: phase_seq must be a positive integer", taskcoredomain.ErrInvalidInput)
 	}
 	return n, nil
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func actorFromRequest(r *http.Request) domain.Actor {
+func actorFromRequest(r *http.Request) taskcoredomain.Actor {
 	if r == nil {
-		return domain.ActorUser
+		return taskcoredomain.ActorUser
 	}
 	switch strings.ToLower(strings.TrimSpace(r.Header.Get("X-Actor"))) {
 	case "agent":
-		return domain.ActorAgent
+		return taskcoredomain.ActorAgent
 	default:
-		return domain.ActorUser
+		return taskcoredomain.ActorUser
 	}
 }
 

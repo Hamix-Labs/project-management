@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
@@ -27,9 +27,9 @@ func TestTaskUpdatedSSEAdapter_publishesEnrichedWireShape(t *testing.T) {
 
 	created, err := st.Create(ctx, store.CreateTaskInput{
 		Title:    "sse-task-updated",
-		Priority: domain.PriorityMedium,
-		Status:   domain.StatusDone,
-	}, domain.ActorUser)
+		Priority: taskcoredomain.PriorityMedium,
+		Status:   taskcoredomain.StatusDone,
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("create task: %v", err)
 	}
@@ -61,7 +61,7 @@ func TestTaskUpdatedSSEAdapter_publishesEnrichedWireShape(t *testing.T) {
 	if err := json.Unmarshal(raw, &wire); err != nil {
 		t.Fatalf("unmarshal task data: %v", err)
 	}
-	if wire.Status != string(domain.StatusDone) {
+	if wire.Status != string(taskcoredomain.StatusDone) {
 		t.Fatalf("data.status = %q, want done", wire.Status)
 	}
 }

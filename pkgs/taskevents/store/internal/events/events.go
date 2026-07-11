@@ -21,8 +21,8 @@ import (
 	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"gorm.io/gorm"
 )
 
@@ -38,7 +38,7 @@ func Append(ctx context.Context, db *gorm.DB, taskID string, typ taskeventsdomai
 	}
 	taskID = strings.TrimSpace(taskID)
 	if taskID == "" {
-		return fmt.Errorf("%w: id", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: id", taskcoredomain.ErrInvalidInput)
 	}
 	err := db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var n int64
@@ -46,7 +46,7 @@ func Append(ctx context.Context, db *gorm.DB, taskID string, typ taskeventsdomai
 			return fmt.Errorf("task lookup: %w", err)
 		}
 		if n == 0 {
-			return domain.ErrNotFound
+			return taskcoredomain.ErrNotFound
 		}
 		seq, err := storekernel.NextEventSeq(tx, taskID)
 		if err != nil {
@@ -55,8 +55,8 @@ func Append(ctx context.Context, db *gorm.DB, taskID string, typ taskeventsdomai
 		return storekernel.AppendEvent(tx, taskID, seq, typ, by, data)
 	})
 	if err != nil {
-		if errors.Is(err, domain.ErrNotFound) {
-			return domain.ErrNotFound
+		if errors.Is(err, taskcoredomain.ErrNotFound) {
+			return taskcoredomain.ErrNotFound
 		}
 		return fmt.Errorf("append task event: %w", err)
 	}

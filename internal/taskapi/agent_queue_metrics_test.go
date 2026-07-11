@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 )
@@ -17,9 +17,9 @@ func TestRegisterAgentQueueMetricsOn_depthAndCapacity(t *testing.T) {
 	}
 
 	ctx := t.Context()
-	t1 := domain.Task{
+	t1 := taskcoredomain.Task{
 		ID: "a1", Title: "t", InitialPrompt: "",
-		Status: domain.StatusReady, Priority: domain.PriorityMedium,
+		Status: taskcoredomain.StatusReady, Priority: taskcoredomain.PriorityMedium,
 	}
 	if err := q.NotifyReadyTask(ctx, t1); err != nil {
 		t.Fatal(err)

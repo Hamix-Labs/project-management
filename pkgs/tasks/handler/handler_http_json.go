@@ -13,16 +13,16 @@ import (
 	"strings"
 
 	gitinventoryhandler "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/handler"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/apijson"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/logctx"
 )
 
-func actorFromRequest(r *http.Request) (a domain.Actor) {
+func actorFromRequest(r *http.Request) (a taskcoredomain.Actor) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.actorFromRequest")
 	if r == nil {
-		return domain.ActorUser
+		return taskcoredomain.ActorUser
 	}
 	ctx := calltrace.Push(r.Context(), "actorFromRequest")
 	raw := strings.TrimSpace(r.Header.Get("X-Actor"))
@@ -32,9 +32,9 @@ func actorFromRequest(r *http.Request) (a domain.Actor) {
 	}()
 	switch strings.ToLower(raw) {
 	case "agent":
-		return domain.ActorAgent
+		return taskcoredomain.ActorAgent
 	default:
-		return domain.ActorUser
+		return taskcoredomain.ActorUser
 	}
 }
 
@@ -57,7 +57,7 @@ func decodeJSON(ctx context.Context, r io.Reader, dst any) (err error) {
 		err = fmt.Errorf("json trailing data: %w", err)
 		return err
 	}
-	err = fmt.Errorf("%w: json trailing data", domain.ErrInvalidInput)
+	err = fmt.Errorf("%w: json trailing data", taskcoredomain.ErrInvalidInput)
 	return err
 }
 
@@ -209,7 +209,7 @@ func userFacingJSONError(err error) string {
 	if strings.HasPrefix(s, "json decode: ") {
 		return strings.TrimPrefix(s, "json decode: ")
 	}
-	if errors.Is(err, domain.ErrInvalidInput) {
+	if errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		return "request body must contain a single JSON value"
 	}
 	if strings.HasPrefix(s, "json trailing data:") {
@@ -221,14 +221,14 @@ func userFacingJSONError(err error) string {
 func storeErrorClientMessage(err error) string {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.storeErrorClientMessage")
 	switch {
-	case errors.Is(err, domain.ErrNotFound):
+	case errors.Is(err, taskcoredomain.ErrNotFound):
 		return "not found"
-	case errors.Is(err, domain.ErrConflict):
+	case errors.Is(err, taskcoredomain.ErrConflict):
 		if d := conflictDetail(err); d != "" {
 			return d
 		}
 		return "task id already exists"
-	case errors.Is(err, domain.ErrInvalidInput):
+	case errors.Is(err, taskcoredomain.ErrInvalidInput):
 		if d := invalidInputDetail(err); d != "" {
 			return d
 		}
@@ -240,7 +240,7 @@ func storeErrorClientMessage(err error) string {
 
 func invalidInputDetail(err error) string {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.invalidInputDetail")
-	// Seam: store layers wrap domain.ErrInvalidInput with fmt.Errorf("%w: %v", ...).
+	// Seam: store layers wrap taskcoredomain.ErrInvalidInput with fmt.Errorf("%w: %v", ...).
 	// Until those errors expose a typed Detail() accessor, parse the stable prefix.
 	s := err.Error()
 	const mark = "tasks: invalid input: "
@@ -252,7 +252,7 @@ func invalidInputDetail(err error) string {
 
 func conflictDetail(err error) string {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.conflictDetail")
-	// Seam: store layers wrap domain.ErrConflict with fmt.Errorf("%w: %s", ...).
+	// Seam: store layers wrap taskcoredomain.ErrConflict with fmt.Errorf("%w: %s", ...).
 	// Until those errors expose a typed Detail() accessor, parse the stable prefix.
 	s := err.Error()
 	const mark = "tasks: conflict: "
@@ -303,11 +303,11 @@ func storeErrHTTPResponse(ctx context.Context, err error) (code int, msg string)
 		code = http.StatusRequestTimeout
 		msg = "request canceled"
 		return code, msg
-	case errors.Is(err, domain.ErrNotFound):
+	case errors.Is(err, taskcoredomain.ErrNotFound):
 		code = http.StatusNotFound
-	case errors.Is(err, domain.ErrInvalidInput):
+	case errors.Is(err, taskcoredomain.ErrInvalidInput):
 		code = http.StatusBadRequest
-	case errors.Is(err, domain.ErrConflict):
+	case errors.Is(err, taskcoredomain.ErrConflict):
 		code = http.StatusConflict
 	}
 	msg = storeErrorClientMessage(err)

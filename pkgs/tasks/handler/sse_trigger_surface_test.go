@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
@@ -160,7 +160,7 @@ func TestHTTP_SSE_triggerSurface(t *testing.T) {
 		srv, st, hub := newSSETriggerServer(t)
 		defer srv.Close()
 		task := postTaskJSON(t, srv, `{"title":"a","priority":"medium"}`, http.StatusCreated)
-		it, err := st.AddChecklistItem(context.Background(), task.ID, "alpha", nil, domain.ActorUser)
+		it, err := st.AddChecklistItem(context.Background(), task.ID, "alpha", nil, taskcoredomain.ActorUser)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -177,7 +177,7 @@ func TestHTTP_SSE_triggerSurface(t *testing.T) {
 		srv, st, hub := newSSETriggerServer(t)
 		defer srv.Close()
 		task := postTaskJSON(t, srv, `{"title":"a","priority":"medium"}`, http.StatusCreated)
-		it, err := st.AddChecklistItem(context.Background(), task.ID, "alpha", nil, domain.ActorUser)
+		it, err := st.AddChecklistItem(context.Background(), task.ID, "alpha", nil, taskcoredomain.ActorUser)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -510,7 +510,7 @@ func postCycleJSON(t *testing.T, srv *httptest.Server, taskID, body string, want
 	return out.ID
 }
 
-func postTaskJSON(t *testing.T, srv *httptest.Server, body string, wantStatus int) domain.Task {
+func postTaskJSON(t *testing.T, srv *httptest.Server, body string, wantStatus int) taskcoredomain.Task {
 	t.Helper()
 	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklistForURL(srv.URL, body)))
 	if err != nil {
@@ -524,7 +524,7 @@ func postTaskJSON(t *testing.T, srv *httptest.Server, body string, wantStatus in
 	if res.StatusCode != wantStatus {
 		t.Fatalf("POST /tasks status=%d want=%d body=%s", res.StatusCode, wantStatus, b)
 	}
-	var out domain.Task
+	var out taskcoredomain.Task
 	if err := json.Unmarshal(b, &out); err != nil {
 		t.Fatalf("decode created task: %v body=%s", err, b)
 	}

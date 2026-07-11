@@ -8,37 +8,38 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 func TestEventCycle_exhaustive(t *testing.T) {
-	want := map[domain.EventType]struct{}{
-		domain.EventTaskCreated:           {},
-		domain.EventStatusChanged:         {},
-		domain.EventPriorityChanged:       {},
-		domain.EventPromptAppended:        {},
-		domain.EventContextAdded:          {},
-		domain.EventConstraintAdded:       {},
-		domain.EventSuccessCriterionAdded: {},
-		domain.EventNonGoalAdded:          {},
-		domain.EventPlanAdded:             {},
-		domain.EventChecklistItemAdded:    {},
-		domain.EventChecklistItemToggled:  {},
-		domain.EventChecklistItemUpdated:  {},
-		domain.EventChecklistItemRemoved:  {},
-		domain.EventMessageAdded:          {},
-		domain.EventArtifactAdded:         {},
-		domain.EventApprovalRequested:     {},
-		domain.EventApprovalGranted:       {},
-		domain.EventTaskCompleted:         {},
-		domain.EventTaskFailed:            {},
-		domain.EventSyncPing:              {},
+	want := map[taskeventsdomain.EventType]struct{}{
+		taskeventsdomain.EventTaskCreated:           {},
+		taskeventsdomain.EventStatusChanged:         {},
+		taskeventsdomain.EventPriorityChanged:       {},
+		taskeventsdomain.EventPromptAppended:        {},
+		taskeventsdomain.EventContextAdded:          {},
+		taskeventsdomain.EventConstraintAdded:       {},
+		taskeventsdomain.EventSuccessCriterionAdded: {},
+		taskeventsdomain.EventNonGoalAdded:          {},
+		taskeventsdomain.EventPlanAdded:             {},
+		taskeventsdomain.EventChecklistItemAdded:    {},
+		taskeventsdomain.EventChecklistItemToggled:  {},
+		taskeventsdomain.EventChecklistItemUpdated:  {},
+		taskeventsdomain.EventChecklistItemRemoved:  {},
+		taskeventsdomain.EventMessageAdded:          {},
+		taskeventsdomain.EventArtifactAdded:         {},
+		taskeventsdomain.EventApprovalRequested:     {},
+		taskeventsdomain.EventApprovalGranted:       {},
+		taskeventsdomain.EventTaskCompleted:         {},
+		taskeventsdomain.EventTaskFailed:            {},
+		taskeventsdomain.EventSyncPing:              {},
 	}
 	if len(EventCycle) != len(want) {
 		t.Fatalf("EventCycle len %d want %d", len(EventCycle), len(want))
 	}
-	seen := make(map[domain.EventType]int)
+	seen := make(map[taskeventsdomain.EventType]int)
 	for _, e := range EventCycle {
 		seen[e]++
 		delete(want, e)
@@ -57,11 +58,11 @@ func TestPersistAllTasks_emitsOnePublishPerTask(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
 	st := store.NewStore(db)
 	ctx := context.Background()
-	a, err := st.Create(ctx, store.CreateTaskInput{Priority: domain.PriorityMedium, Title: "a"}, domain.ActorUser)
+	a, err := st.Create(ctx, store.CreateTaskInput{Priority: taskcoredomain.PriorityMedium, Title: "a"}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	b, err := st.Create(ctx, store.CreateTaskInput{Priority: domain.PriorityMedium, Title: "b"}, domain.ActorUser)
+	b, err := st.Create(ctx, store.CreateTaskInput{Priority: taskcoredomain.PriorityMedium, Title: "b"}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -87,7 +88,7 @@ func TestPersistAllTasks_emitsOnePublishPerTask(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if tsk.Status != domain.StatusReady {
+		if tsk.Status != taskcoredomain.StatusReady {
 			t.Fatalf("task %s status = %q want ready (ticker does not patch task row)", id, tsk.Status)
 		}
 		evs, err := st.ListTaskEvents(ctx, id)
@@ -101,7 +102,7 @@ func TestPersistAllTasks_emitsOnePublishPerTask(t *testing.T) {
 		if last.Type != EventCycle[1] {
 			t.Fatalf("task %s: last event type = %q want %q", id, last.Type, EventCycle[1])
 		}
-		if last.By != domain.ActorAgent {
+		if last.By != taskcoredomain.ActorAgent {
 			t.Fatalf("task %s: last event by = %q want agent", id, last.By)
 		}
 	}
@@ -111,7 +112,7 @@ func TestPersistAllTasks_burst_emitsMultiplePublishes(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
 	st := store.NewStore(db)
 	ctx := context.Background()
-	if _, err := st.Create(ctx, store.CreateTaskInput{Priority: domain.PriorityMedium, Title: "solo"}, domain.ActorUser); err != nil {
+	if _, err := st.Create(ctx, store.CreateTaskInput{Priority: taskcoredomain.PriorityMedium, Title: "solo"}, taskcoredomain.ActorUser); err != nil {
 		t.Fatal(err)
 	}
 	var n int
@@ -125,7 +126,7 @@ func TestPersistAllTasks_syncRow_updatesStatus(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
 	st := store.NewStore(db)
 	ctx := context.Background()
-	tsk, err := st.Create(ctx, store.CreateTaskInput{Priority: domain.PriorityMedium, Title: "x"}, domain.ActorUser)
+	tsk, err := st.Create(ctx, store.CreateTaskInput{Priority: taskcoredomain.PriorityMedium, Title: "x"}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -134,7 +135,7 @@ func TestPersistAllTasks_syncRow_updatesStatus(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Status != domain.StatusRunning {
+	if got.Status != taskcoredomain.StatusRunning {
 		t.Fatalf("status %q want running after mirror", got.Status)
 	}
 }
@@ -143,7 +144,7 @@ func TestPersistAllTasks_userResponse_appendsThread(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
 	st := store.NewStore(db)
 	ctx := context.Background()
-	tsk, err := st.Create(ctx, store.CreateTaskInput{Priority: domain.PriorityMedium, Title: "t"}, domain.ActorUser)
+	tsk, err := st.Create(ctx, store.CreateTaskInput{Priority: taskcoredomain.PriorityMedium, Title: "t"}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -153,7 +154,7 @@ func TestPersistAllTasks_userResponse_appendsThread(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if nextEventTypeFromCount(n) == domain.EventApprovalRequested {
+		if nextEventTypeFromCount(n) == taskeventsdomain.EventApprovalRequested {
 			reached = true
 			break
 		}
@@ -168,14 +169,14 @@ func TestPersistAllTasks_userResponse_appendsThread(t *testing.T) {
 		t.Fatal(err)
 	}
 	last := evs[len(evs)-1]
-	if last.Type != domain.EventApprovalRequested {
+	if last.Type != taskeventsdomain.EventApprovalRequested {
 		t.Fatalf("last type %q want approval_requested", last.Type)
 	}
 	entries := store.ThreadEntriesForDisplay(&last)
 	if len(entries) == 0 {
 		t.Fatal("expected response thread entries")
 	}
-	if entries[len(entries)-1].By != domain.ActorUser {
+	if entries[len(entries)-1].By != taskcoredomain.ActorUser {
 		t.Fatalf("want user message, got %+v", entries[len(entries)-1])
 	}
 }
@@ -183,7 +184,7 @@ func TestPersistAllTasks_userResponse_appendsThread(t *testing.T) {
 func TestRunTicker_StopsOnContextCancel(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
 	st := store.NewStore(db)
-	if _, err := st.Create(context.Background(), store.CreateTaskInput{Priority: domain.PriorityMedium, Title: "pre-cancel"}, domain.ActorUser); err != nil {
+	if _, err := st.Create(context.Background(), store.CreateTaskInput{Priority: taskcoredomain.PriorityMedium, Title: "pre-cancel"}, taskcoredomain.ActorUser); err != nil {
 		t.Fatal(err)
 	}
 
@@ -218,7 +219,7 @@ func TestSamplePayload_JSON(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
 	st := store.NewStore(db)
 	ctx := context.Background()
-	task, err := st.Create(ctx, store.CreateTaskInput{Priority: domain.PriorityMedium, Title: "x"}, domain.ActorUser)
+	task, err := st.Create(ctx, store.CreateTaskInput{Priority: taskcoredomain.PriorityMedium, Title: "x"}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -235,8 +236,8 @@ func TestSamplePayload_JSON(t *testing.T) {
 		t.Fatalf("want 2 events, got %d", len(evs))
 	}
 	last := evs[len(evs)-1]
-	if last.Type != domain.EventStatusChanged {
-		t.Fatalf("last type %q want %q", last.Type, domain.EventStatusChanged)
+	if last.Type != taskeventsdomain.EventStatusChanged {
+		t.Fatalf("last type %q want %q", last.Type, taskeventsdomain.EventStatusChanged)
 	}
 	var m map[string]string
 	if err := json.Unmarshal(last.Data, &m); err != nil {

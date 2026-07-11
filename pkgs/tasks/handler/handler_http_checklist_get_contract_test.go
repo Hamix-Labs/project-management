@@ -3,13 +3,12 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 	"io"
 	"net/http"
 	"sort"
 	"testing"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 // TestHTTP_getChecklist_envelopeShape pins the documented GET 200 envelope:
@@ -19,7 +18,7 @@ func TestHTTP_getChecklist_envelopeShape(t *testing.T) {
 	srv, st := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 	taskID := mustCreateChecklistTask(t, srv, "chk-get-shape")
-	if _, err := st.AddChecklistItem(context.Background(), taskID, "alpha", nil, domain.ActorUser); err != nil {
+	if _, err := st.AddChecklistItem(context.Background(), taskID, "alpha", nil, taskcoredomain.ActorUser); err != nil {
 		t.Fatal(err)
 	}
 
@@ -101,9 +100,9 @@ func TestHTTP_getChecklist_emptyItemsIsArrayNotNull(t *testing.T) {
 	ctx := context.Background()
 	created, err := st.Create(ctx, store.CreateTaskInput{
 		Title:    "chk-empty-get",
-		Priority: domain.PriorityMedium,
-		Status:   domain.StatusReady,
-	}, domain.ActorUser)
+		Priority: taskcoredomain.PriorityMedium,
+		Status:   taskcoredomain.StatusReady,
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -144,7 +143,7 @@ func TestHTTP_getChecklist_orderIsSortOrderAscThenIDAsc(t *testing.T) {
 	wantTexts := []string{"first", "second", "third"}
 	wantIDs := make([]string, 0, len(wantTexts))
 	for _, txt := range wantTexts {
-		it, err := st.AddChecklistItem(ctx, taskID, txt, nil, domain.ActorUser)
+		it, err := st.AddChecklistItem(ctx, taskID, txt, nil, taskcoredomain.ActorUser)
 		if err != nil {
 			t.Fatal(err)
 		}

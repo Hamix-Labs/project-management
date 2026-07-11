@@ -6,7 +6,7 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/harnesstest"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/metricsfake"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 )
 
 func newHarness(t *testing.T) *harnesstest.Env {
@@ -20,7 +20,7 @@ type recordingMetrics struct {
 }
 
 type recordedVerdict struct {
-	Kind   domain.VerifierKind
+	Kind   checklistdomain.VerifierKind
 	Passed bool
 }
 

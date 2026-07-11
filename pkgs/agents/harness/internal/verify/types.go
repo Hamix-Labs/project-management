@@ -2,7 +2,7 @@ package verify
 
 import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
@@ -26,7 +26,7 @@ type Verdict struct {
 	ID        string
 	Passed    bool
 	Evidence  string
-	Verifier  domain.VerifierKind
+	Verifier  checklistdomain.VerifierKind
 	Reasoning string
 }
 

@@ -14,7 +14,8 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel/taskload"
 	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 	checklistmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/store/model"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -23,21 +24,21 @@ const maxEvidenceBytes = 16 * 1024
 const maxReasoningBytes = 16 * 1024
 
 // SetDoneWithEvidenceInTx records completion with proof metadata inside
-// an existing transaction. Only domain.ActorAgent may write.
+// an existing transaction. Only taskcoredomain.ActorAgent may write.
 func SetDoneWithEvidenceInTx(
 	tx *gorm.DB,
 	subjectTaskID, itemID string,
 	evidence string,
 	verifier checklistdomain.VerifierKind,
 	reasoning, cycleID string,
-	by domain.Actor,
+	by taskcoredomain.Actor,
 ) (CriteriaFlagChange, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.checklist.SetDoneWithEvidenceInTx")
 	if err := storekernel.ValidateActor(by); err != nil {
 		return CriteriaFlagChange{}, err
 	}
-	if by != domain.ActorAgent {
-		return CriteriaFlagChange{}, fmt.Errorf("%w: only the agent may mark checklist items done or undone", domain.ErrInvalidInput)
+	if by != taskcoredomain.ActorAgent {
+		return CriteriaFlagChange{}, fmt.Errorf("%w: only the agent may mark checklist items done or undone", taskcoredomain.ErrInvalidInput)
 	}
 	if err := validateEvidencePayload(evidence, verifier, reasoning); err != nil {
 		return CriteriaFlagChange{}, err
@@ -45,7 +46,7 @@ func SetDoneWithEvidenceInTx(
 	subjectTaskID = strings.TrimSpace(subjectTaskID)
 	itemID = strings.TrimSpace(itemID)
 	if subjectTaskID == "" || itemID == "" {
-		return CriteriaFlagChange{}, fmt.Errorf("%w: id", domain.ErrInvalidInput)
+		return CriteriaFlagChange{}, fmt.Errorf("%w: id", taskcoredomain.ErrInvalidInput)
 	}
 	if _, err := taskload.LoadTask(tx, subjectTaskID); err != nil {
 		return CriteriaFlagChange{}, err
@@ -57,7 +58,7 @@ func SetDoneWithEvidenceInTx(
 	var it checklistmodel.TaskChecklistItem
 	if err := tx.Where("id = ? AND task_id = ?", itemID, defOwner).First(&it).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return CriteriaFlagChange{}, domain.ErrNotFound
+			return CriteriaFlagChange{}, taskcoredomain.ErrNotFound
 		}
 		return CriteriaFlagChange{}, fmt.Errorf("load checklist item: %w", err)
 	}
@@ -88,7 +89,7 @@ func SetDoneWithEvidenceInTx(
 		"item_id": itemID, "done": true,
 		"verified_by": string(verifier), "cycle_id": drow.CycleID,
 	})
-	if err := storekernel.AppendEvent(tx, subjectTaskID, seq, domain.EventChecklistItemToggled, by, b); err != nil {
+	if err := storekernel.AppendEvent(tx, subjectTaskID, seq, taskeventsdomain.EventChecklistItemToggled, by, b); err != nil {
 		return CriteriaFlagChange{}, err
 	}
 	return syncCriteriaSatisfiedAtInTx(tx, subjectTaskID, by)
@@ -97,18 +98,18 @@ func SetDoneWithEvidenceInTx(
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func validateEvidencePayload(evidence string, verifier checklistdomain.VerifierKind, reasoning string) error {
 	if !checklistdomain.ValidVerifierKind(verifier) {
-		return fmt.Errorf("%w: invalid verified_by", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: invalid verified_by", taskcoredomain.ErrInvalidInput)
 	}
 	if verifier != checklistdomain.VerifierLegacy {
 		if strings.TrimSpace(evidence) == "" {
-			return fmt.Errorf("%w: evidence required", domain.ErrInvalidInput)
+			return fmt.Errorf("%w: evidence required", taskcoredomain.ErrInvalidInput)
 		}
 	}
 	if len(evidence) > maxEvidenceBytes {
-		return fmt.Errorf("%w: evidence too long", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: evidence too long", taskcoredomain.ErrInvalidInput)
 	}
 	if len(reasoning) > maxReasoningBytes {
-		return fmt.Errorf("%w: verifier_reasoning too long", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: verifier_reasoning too long", taskcoredomain.ErrInvalidInput)
 	}
 	return nil
 }
@@ -121,7 +122,7 @@ func SetDoneWithEvidence(
 	evidence string,
 	verifier checklistdomain.VerifierKind,
 	reasoning, cycleID string,
-	by domain.Actor,
+	by taskcoredomain.Actor,
 ) (CriteriaFlagChange, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.checklist.SetDoneWithEvidence")
 	defer storekernel.DeferLatency(storekernel.OpSetChecklistItemDone)()

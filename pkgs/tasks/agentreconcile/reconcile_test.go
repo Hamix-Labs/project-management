@@ -7,7 +7,7 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
@@ -16,11 +16,11 @@ func TestReconcileReadyTasksNotQueued_enqueuesMissing(t *testing.T) {
 	st := store.NewStore(tasktestdb.OpenSQLite(t))
 	q := agents.NewMemoryQueue(8)
 
-	t1, err := st.Create(ctx, store.CreateTaskInput{Title: "a", Priority: domain.PriorityMedium}, domain.ActorUser)
+	t1, err := st.Create(ctx, store.CreateTaskInput{Title: "a", Priority: taskcoredomain.PriorityMedium}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	t2, err := st.Create(ctx, store.CreateTaskInput{Title: "b", Priority: domain.PriorityMedium}, domain.ActorUser)
+	t2, err := st.Create(ctx, store.CreateTaskInput{Title: "b", Priority: taskcoredomain.PriorityMedium}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,7 +42,7 @@ func TestReconcileReadyTasksNotQueued_enqueuesMissing(t *testing.T) {
 		t.Fatalf("scanned %d", res.Scanned)
 	}
 
-	var got [2]domain.Task
+	var got [2]taskcoredomain.Task
 	for i := range got {
 		select {
 		case got[i] = <-q.Recv():
@@ -68,13 +68,13 @@ func TestReconcileReadyTasksNotQueued_stopsOnFull(t *testing.T) {
 	ctx := context.Background()
 	st := store.NewStore(tasktestdb.OpenSQLite(t))
 	q := agents.NewMemoryQueue(1)
-	if _, err := st.Create(ctx, store.CreateTaskInput{Title: "a", Priority: domain.PriorityMedium}, domain.ActorUser); err != nil {
+	if _, err := st.Create(ctx, store.CreateTaskInput{Title: "a", Priority: taskcoredomain.PriorityMedium}, taskcoredomain.ActorUser); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := st.Create(ctx, store.CreateTaskInput{Title: "b", Priority: domain.PriorityMedium}, domain.ActorUser); err != nil {
+	if _, err := st.Create(ctx, store.CreateTaskInput{Title: "b", Priority: taskcoredomain.PriorityMedium}, taskcoredomain.ActorUser); err != nil {
 		t.Fatal(err)
 	}
-	if err := q.NotifyReadyTask(ctx, domain.Task{ID: "00000000-0000-4000-8000-000000000001", Title: "stub", Priority: domain.PriorityMedium}); err != nil {
+	if err := q.NotifyReadyTask(ctx, taskcoredomain.Task{ID: "00000000-0000-4000-8000-000000000001", Title: "stub", Priority: taskcoredomain.PriorityMedium}); err != nil {
 		t.Fatal(err)
 	}
 

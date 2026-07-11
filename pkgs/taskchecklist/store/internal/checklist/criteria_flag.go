@@ -7,8 +7,8 @@ import (
 	"log/slog"
 	"time"
 
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/model"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"gorm.io/gorm"
 )
 
@@ -32,7 +32,7 @@ func IsChecklistCompleteInTx(tx *gorm.DB, subjectTaskID string) (bool, error) {
 
 // syncCriteriaSatisfiedAtInTx updates tasks.criteria_satisfied_at when
 // checklist completeness transitions. Called inside checklist completion TX.
-func syncCriteriaSatisfiedAtInTx(tx *gorm.DB, subjectTaskID string, by domain.Actor) (CriteriaFlagChange, error) {
+func syncCriteriaSatisfiedAtInTx(tx *gorm.DB, subjectTaskID string, by taskcoredomain.Actor) (CriteriaFlagChange, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.checklist.syncCriteriaSatisfiedAtInTx")
 	var change CriteriaFlagChange
 	var row taskmodel.Task
@@ -73,7 +73,7 @@ func BackfillCriteriaSatisfiedAt(ctx context.Context, db *gorm.DB) error {
 	}
 	for _, id := range ids {
 		if err := db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-			_, err := syncCriteriaSatisfiedAtInTx(tx, id, domain.ActorAgent)
+			_, err := syncCriteriaSatisfiedAtInTx(tx, id, taskcoredomain.ActorAgent)
 			return err
 		}); err != nil {
 			return fmt.Errorf("backfill criteria_satisfied_at for %s: %w", id, err)

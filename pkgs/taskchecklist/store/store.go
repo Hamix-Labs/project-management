@@ -9,7 +9,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/contract"
 	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/store/internal/checklist"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"gorm.io/gorm"
 )
 
@@ -47,7 +47,7 @@ func ValidateCanMarkDoneInTx(tx *gorm.DB, taskID string) error {
 // ValidateCanAddCriterionInTx rejects appending definition rows while status=running.
 //
 //funclogmeasure:skip category=delegate-already-logs reason="Package-level forwarder; checklist.ValidateCanAddCriterionInTx emits trace at the store chokepoint."
-func ValidateCanAddCriterionInTx(tx *gorm.DB, t *domain.Task) error {
+func ValidateCanAddCriterionInTx(tx *gorm.DB, t *taskcoredomain.Task) error {
 	return checklist.ValidateCanAddCriterionInTx(tx, t)
 }
 
@@ -61,7 +61,7 @@ func DeleteOwnedItemsInTx(tx *gorm.DB, taskID string) error {
 // SeedDefinitionItemsAtCreateInTx inserts checklist definition rows during POST /tasks.
 //
 //funclogmeasure:skip category=delegate-already-logs reason="Package-level forwarder; checklist.SeedDefinitionItemsAtCreateInTx emits trace at the store chokepoint."
-func SeedDefinitionItemsAtCreateInTx(tx *gorm.DB, taskID string, items []CreateChecklistItemInput, by domain.Actor) error {
+func SeedDefinitionItemsAtCreateInTx(tx *gorm.DB, taskID string, items []CreateChecklistItemInput, by taskcoredomain.Actor) error {
 	return checklist.SeedDefinitionItemsAtCreateInTx(tx, taskID, items, by)
 }
 
@@ -89,12 +89,12 @@ func (s *Store) ListChecklistForSubject(ctx context.Context, taskID string) ([]C
 	return checklist.List(ctx, s.db, taskID)
 }
 
-func (s *Store) AddChecklistItem(ctx context.Context, taskID, text string, verifyCommands []VerifyCommandInput, by domain.Actor) (*checklistdomain.TaskChecklistItem, error) {
+func (s *Store) AddChecklistItem(ctx context.Context, taskID, text string, verifyCommands []VerifyCommandInput, by taskcoredomain.Actor) (*checklistdomain.TaskChecklistItem, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskchecklist.store.AddChecklistItem")
 	return checklist.Add(ctx, s.db, taskID, text, verifyCommands, by)
 }
 
-func (s *Store) ReplaceChecklistVerifyCommands(ctx context.Context, taskID, itemID string, cmds []VerifyCommandInput, by domain.Actor) error {
+func (s *Store) ReplaceChecklistVerifyCommands(ctx context.Context, taskID, itemID string, cmds []VerifyCommandInput, by taskcoredomain.Actor) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskchecklist.store.ReplaceChecklistVerifyCommands")
 	return checklist.ReplaceVerifyCommands(ctx, s.db, taskID, itemID, cmds, by)
 }
@@ -115,7 +115,7 @@ func (s *Store) SetChecklistItemDoneWithEvidence(
 	evidence string,
 	verifier checklistdomain.VerifierKind,
 	reasoning, cycleID string,
-	by domain.Actor,
+	by taskcoredomain.Actor,
 ) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskchecklist.store.SetChecklistItemDoneWithEvidence")
 	_, err := checklist.SetDoneWithEvidence(ctx, s.db, subjectTaskID, itemID, evidence, verifier, reasoning, cycleID, by)
@@ -130,23 +130,23 @@ func (s *Store) SetDoneWithEvidence(
 	evidence string,
 	verifier checklistdomain.VerifierKind,
 	reasoning, cycleID string,
-	by domain.Actor,
+	by taskcoredomain.Actor,
 ) (CriteriaFlagChange, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskchecklist.store.SetDoneWithEvidence")
 	return checklist.SetDoneWithEvidence(ctx, s.db, subjectTaskID, itemID, evidence, verifier, reasoning, cycleID, by)
 }
 
-func (s *Store) DeleteChecklistItem(ctx context.Context, taskID, itemID string, by domain.Actor) error {
+func (s *Store) DeleteChecklistItem(ctx context.Context, taskID, itemID string, by taskcoredomain.Actor) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskchecklist.store.DeleteChecklistItem")
 	return checklist.Delete(ctx, s.db, taskID, itemID, by)
 }
 
-func (s *Store) UpdateChecklistItemText(ctx context.Context, taskID, itemID, text string, by domain.Actor) error {
+func (s *Store) UpdateChecklistItemText(ctx context.Context, taskID, itemID, text string, by taskcoredomain.Actor) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskchecklist.store.UpdateChecklistItemText")
 	return checklist.UpdateText(ctx, s.db, taskID, itemID, text, by)
 }
 
-func (s *Store) SetChecklistItemDone(ctx context.Context, subjectTaskID, itemID string, done bool, by domain.Actor) error {
+func (s *Store) SetChecklistItemDone(ctx context.Context, subjectTaskID, itemID string, done bool, by taskcoredomain.Actor) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskchecklist.store.SetChecklistItemDone")
 	return checklist.SetDone(ctx, s.db, subjectTaskID, itemID, done, by)
 }

@@ -7,7 +7,10 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/harnesstest"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/runnerfake"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
+	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 	"os"
 	"path/filepath"
@@ -41,13 +44,13 @@ func TestWorker_VerifyPhase_opensWhileExecuteIsTerminal(t *testing.T) {
 		t.Fatalf("set verify max retries: %v", err)
 	}
 
-	if _, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", nil, domain.ActorUser); err != nil {
+	if _, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", nil, taskcoredomain.ActorUser); err != nil {
 		t.Fatalf("add checklist item: %v", err)
 	}
 
 	r := runnerfake.New()
-	r.Script(tsk.ID, domain.PhaseExecute, runner.NewResult(
-		domain.PhaseStatusSucceeded, "ran cleanly",
+	r.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(
+		cyclesdomain.PhaseStatusSucceeded, "ran cleanly",
 		json.RawMessage(`{"ok":true}`), "",
 	))
 
@@ -55,15 +58,15 @@ func TestWorker_VerifyPhase_opensWhileExecuteIsTerminal(t *testing.T) {
 	// somewhere isolated and parseCriteriaReport hits ErrCriteriaReportMissing
 	// deterministically (no stray files from earlier test runs).
 	done := h.StartHarnessRun(ctx, tsk, r, harness.Options{WorkingDir: t.TempDir()})
-	final := h.WaitTaskStatus(ctx, tsk.ID, domain.StatusFailed)
+	final := h.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusFailed)
 	<-done
 	cancel()
-	if final.Status != domain.StatusFailed {
+	if final.Status != taskcoredomain.StatusFailed {
 		t.Fatalf("task status = %q, want failed", final.Status)
 	}
 
 	bg := context.Background()
-	cycle := harnesstest.AssertCycleStatus(t, h.Store, tsk.ID, 1, domain.CycleStatusFailed)
+	cycle := harnesstest.AssertCycleStatus(t, h.Store, tsk.ID, 1, cyclesdomain.CycleStatusFailed)
 
 	phases, err := h.Store.ListPhasesForCycle(bg, cycle.ID)
 	if err != nil {
@@ -73,13 +76,13 @@ func TestWorker_VerifyPhase_opensWhileExecuteIsTerminal(t *testing.T) {
 	// Expected ledger: execute(succeeded) → verify(failed) →
 	// execute(succeeded) → verify(failed).
 	wantSeq := []struct {
-		phase  domain.Phase
-		status domain.PhaseStatus
+		phase  cyclesdomain.Phase
+		status cyclesdomain.PhaseStatus
 	}{
-		{domain.PhaseExecute, domain.PhaseStatusSucceeded},
-		{domain.PhaseVerify, domain.PhaseStatusFailed},
-		{domain.PhaseExecute, domain.PhaseStatusSucceeded},
-		{domain.PhaseVerify, domain.PhaseStatusFailed},
+		{cyclesdomain.PhaseExecute, cyclesdomain.PhaseStatusSucceeded},
+		{cyclesdomain.PhaseVerify, cyclesdomain.PhaseStatusFailed},
+		{cyclesdomain.PhaseExecute, cyclesdomain.PhaseStatusSucceeded},
+		{cyclesdomain.PhaseVerify, cyclesdomain.PhaseStatusFailed},
 	}
 	if len(phases) != len(wantSeq) {
 		t.Fatalf("phase count = %d, want %d (got %+v)", len(phases), len(wantSeq), phases)
@@ -100,7 +103,7 @@ func TestWorker_VerifyPhase_opensWhileExecuteIsTerminal(t *testing.T) {
 	}
 	sawVerificationFailed := false
 	for _, e := range events {
-		if e.Type != domain.EventCycleFailed {
+		if e.Type != taskeventsdomain.EventCycleFailed {
 			continue
 		}
 		body := string(e.Data)
@@ -120,7 +123,7 @@ func TestWorker_VerifyPhase_opensWhileExecuteIsTerminal(t *testing.T) {
 	// would have landed.
 	executeCalls := 0
 	for _, c := range r.Calls() {
-		if c.Phase == domain.PhaseExecute {
+		if c.Phase == cyclesdomain.PhaseExecute {
 			executeCalls++
 		}
 	}
@@ -142,7 +145,7 @@ func TestWorker_VerifyPhase_recordsDisagreementAsAgentSelfFailed(t *testing.T) {
 	defer cancel()
 
 	tsk := h.CreateReadyTask(ctx, "verify-disagreement")
-	c1, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", nil, domain.ActorUser)
+	c1, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("add c1: %v", err)
 	}
@@ -156,7 +159,7 @@ func TestWorker_VerifyPhase_recordsDisagreementAsAgentSelfFailed(t *testing.T) {
 	reportDir := t.TempDir()
 	r := runnerfake.New()
 	hook := &hookRunner{Runner: r, preRun: func(req runner.Request) {
-		if req.Phase != domain.PhaseExecute {
+		if req.Phase != cyclesdomain.PhaseExecute {
 			return
 		}
 		cycles, _ := h.Store.ListCyclesForTask(context.Background(), req.TaskID, 1)
@@ -173,12 +176,12 @@ func TestWorker_VerifyPhase_recordsDisagreementAsAgentSelfFailed(t *testing.T) {
 			t.Fatalf("write criteria: %v", err)
 		}
 	}}
-	r.Script(tsk.ID, domain.PhaseExecute, runner.NewResult(
-		domain.PhaseStatusSucceeded, "exec ok", nil, ""))
+	r.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(
+		cyclesdomain.PhaseStatusSucceeded, "exec ok", nil, ""))
 
 	metrics := newRecordingMetrics()
 	done := h.StartHarnessRun(ctx, tsk, hook, harness.Options{WorkingDir: workDir, ReportDir: reportDir, Metrics: metrics})
-	h.WaitTaskStatus(ctx, tsk.ID, domain.StatusFailed)
+	h.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusFailed)
 	<-done
 	cancel()
 	verdicts := metrics.verdictSnapshot()
@@ -187,7 +190,7 @@ func TestWorker_VerifyPhase_recordsDisagreementAsAgentSelfFailed(t *testing.T) {
 	}
 	disagreements := 0
 	for _, v := range verdicts {
-		if v.Kind == domain.VerifierAgentSelf && !v.Passed {
+		if v.Kind == checklistdomain.VerifierAgentSelf && !v.Passed {
 			disagreements++
 		}
 	}

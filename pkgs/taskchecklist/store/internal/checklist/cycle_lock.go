@@ -7,9 +7,10 @@ import (
 	"fmt"
 	"log/slog"
 
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/model"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	cyclesmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store/model"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"gorm.io/gorm"
 )
 
@@ -23,7 +24,7 @@ func IsTaskCycleRunning(ctx context.Context, db *gorm.DB, taskID string) (bool, 
 func isTaskCycleRunningInTx(tx *gorm.DB, taskID string) (bool, error) {
 	var n int64
 	if err := tx.Model(&cyclesmodel.TaskCycle{}).
-		Where("task_id = ? AND status = ?", taskID, domain.CycleStatusRunning).
+		Where("task_id = ? AND status = ?", taskID, cyclesdomain.CycleStatusRunning).
 		Count(&n).Error; err != nil {
 		return false, fmt.Errorf("running cycle lookup: %w", err)
 	}
@@ -33,7 +34,7 @@ func isTaskCycleRunningInTx(tx *gorm.DB, taskID string) (bool, error) {
 	var row taskmodel.Task
 	if err := tx.Where("id = ?", taskID).First(&row).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return false, domain.ErrNotFound
+			return false, taskcoredomain.ErrNotFound
 		}
 		return false, fmt.Errorf("load task: %w", err)
 	}

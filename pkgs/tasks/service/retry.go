@@ -2,14 +2,13 @@ package service
 
 import (
 	"context"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 // RetryStore persists operator retry intent.
 type RetryStore interface {
-	RequestTaskRetry(ctx context.Context, in store.RequestRetryInput, by domain.Actor) (*domain.Task, error)
+	RequestTaskRetry(ctx context.Context, in store.RequestRetryInput, by taskcoredomain.Actor) (*taskcoredomain.Task, error)
 }
 
 // RequestTaskRetry records operator retry intent for a failed task.
@@ -19,7 +18,7 @@ func RequestTaskRetry(
 	ctx context.Context,
 	st RetryStore,
 	in store.RequestRetryInput,
-	by domain.Actor,
-) (*domain.Task, error) {
+	by taskcoredomain.Actor,
+) (*taskcoredomain.Task, error) {
 	return st.RequestTaskRetry(ctx, in, by)
 }

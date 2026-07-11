@@ -2,11 +2,10 @@ package verify
 
 import (
 	"encoding/json"
+	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 	"strings"
 	"testing"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 func TestFormatPhaseSummary_success(t *testing.T) {
@@ -16,8 +15,8 @@ func TestFormatPhaseSummary_success(t *testing.T) {
 		{ID: "c2", Text: "Update docs"},
 	}
 	verdicts := []Verdict{
-		{ID: "c1", Passed: true, Verifier: domain.VerifierVerifyAgent},
-		{ID: "c2", Passed: true, Verifier: domain.VerifierVerifyAgent},
+		{ID: "c1", Passed: true, Verifier: checklistdomain.VerifierVerifyAgent},
+		{ID: "c2", Passed: true, Verifier: checklistdomain.VerifierVerifyAgent},
 	}
 	got := FormatPhaseSummary(criteria, verdicts, true)
 	if got != "All 2 criteria verified" {
@@ -56,7 +55,7 @@ func TestEncodePhaseDetails_includesStructuredSnapshot(t *testing.T) {
 		{
 			ID:        "c1",
 			Passed:    false,
-			Verifier:  domain.VerifierVerifyAgent,
+			Verifier:  checklistdomain.VerifierVerifyAgent,
 			Reasoning: "Missing coverage",
 		},
 	}
@@ -78,7 +77,7 @@ func TestEncodePhaseDetails_includesStructuredSnapshot(t *testing.T) {
 	if row.CriterionID != "c1" || row.Text != "Criterion A" || row.Verified {
 		t.Fatalf("row: %+v", row)
 	}
-	if row.VerifierKind != string(domain.VerifierVerifyAgent) {
+	if row.VerifierKind != string(checklistdomain.VerifierVerifyAgent) {
 		t.Fatalf("verifier_kind = %q", row.VerifierKind)
 	}
 	if row.Reasoning != "Missing coverage" {

@@ -3,13 +3,22 @@ package storefake
 import (
 	"context"
 	"encoding/json"
-	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 
+	gitcontract "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/contract"
+	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
+	projectscontract "github.com/AlexsanderHamir/Hamix/pkgs/projects/contract"
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
+	settingscontract "github.com/AlexsanderHamir/Hamix/pkgs/settings/contract"
 	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	checklistcontract "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/contract"
+	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
+	composecontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/contract"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclescontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/contract"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
+	taskeventscontract "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/contract"
+	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 )
 
 // HandlerStoreFake composes TaskCRUDFake with stub implementations for the
@@ -37,8 +46,6 @@ func NewHandlerStoreFromTaskCRUD(crud *TaskCRUDFake) *HandlerStoreFake {
 	return &HandlerStoreFake{TaskCRUDFake: crud}
 }
 
-var _ contract.HandlerStore = (*HandlerStoreFake)(nil)
-
 type unimplementedHandlerStore struct{}
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
@@ -57,22 +64,22 @@ func (unimplementedHandlerStore) GetSettings(context.Context) (settingsdomain.Ap
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) UpdateSettings(context.Context, contract.SettingsPatch) (settingsdomain.AppSettings, error) {
+func (unimplementedHandlerStore) UpdateSettings(context.Context, settingscontract.SettingsPatch) (settingsdomain.AppSettings, error) {
 	return settingsdomain.AppSettings{}, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) GetTaskEvent(context.Context, string, int64) (*domain.TaskEvent, error) {
+func (unimplementedHandlerStore) GetTaskEvent(context.Context, string, int64) (*taskeventsdomain.TaskEvent, error) {
 	return nil, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) ListTaskEvents(context.Context, string) ([]domain.TaskEvent, error) {
+func (unimplementedHandlerStore) ListTaskEvents(context.Context, string) ([]taskeventsdomain.TaskEvent, error) {
 	return nil, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) ListTaskEventsPageCursor(context.Context, string, int, *int64, *int64) (*contract.TaskEventsPage, error) {
+func (unimplementedHandlerStore) ListTaskEventsPageCursor(context.Context, string, int, *int64, *int64) (*taskeventscontract.TaskEventsPage, error) {
 	return nil, errNotImplemented
 }
 
@@ -82,12 +89,12 @@ func (unimplementedHandlerStore) ApprovalPending(context.Context, string) (bool,
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) AppendTaskEventResponseMessage(context.Context, string, int64, string, domain.Actor) error {
+func (unimplementedHandlerStore) AppendTaskEventResponseMessage(context.Context, string, int64, string, taskcoredomain.Actor) error {
 	return errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) ListChecklistForSubject(context.Context, string) ([]contract.ChecklistItemView, error) {
+func (unimplementedHandlerStore) ListChecklistForSubject(context.Context, string) ([]checklistcontract.ChecklistItemView, error) {
 	return nil, errNotImplemented
 }
 
@@ -97,102 +104,102 @@ func (unimplementedHandlerStore) IsTaskCycleRunning(context.Context, string) (bo
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) AddChecklistItem(context.Context, string, string, []contract.VerifyCommandInput, domain.Actor) (*domain.TaskChecklistItem, error) {
+func (unimplementedHandlerStore) AddChecklistItem(context.Context, string, string, []checklistcontract.VerifyCommandInput, taskcoredomain.Actor) (*checklistdomain.TaskChecklistItem, error) {
 	return nil, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) UpdateChecklistItemText(context.Context, string, string, string, domain.Actor) error {
+func (unimplementedHandlerStore) UpdateChecklistItemText(context.Context, string, string, string, taskcoredomain.Actor) error {
 	return errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) ReplaceChecklistVerifyCommands(context.Context, string, string, []contract.VerifyCommandInput, domain.Actor) error {
+func (unimplementedHandlerStore) ReplaceChecklistVerifyCommands(context.Context, string, string, []checklistcontract.VerifyCommandInput, taskcoredomain.Actor) error {
 	return errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) SetChecklistItemDoneWithEvidence(context.Context, string, string, string, domain.VerifierKind, string, string, domain.Actor) error {
+func (unimplementedHandlerStore) SetChecklistItemDoneWithEvidence(context.Context, string, string, string, checklistdomain.VerifierKind, string, string, taskcoredomain.Actor) error {
 	return errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) SetChecklistItemDone(context.Context, string, string, bool, domain.Actor) error {
+func (unimplementedHandlerStore) SetChecklistItemDone(context.Context, string, string, bool, taskcoredomain.Actor) error {
 	return errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) DeleteChecklistItem(context.Context, string, string, domain.Actor) error {
+func (unimplementedHandlerStore) DeleteChecklistItem(context.Context, string, string, taskcoredomain.Actor) error {
 	return errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) StartCycle(context.Context, contract.StartCycleInput) (*domain.TaskCycle, error) {
+func (unimplementedHandlerStore) StartCycle(context.Context, cyclescontract.StartCycleInput) (*cyclesdomain.TaskCycle, error) {
 	return nil, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) GetCycle(context.Context, string) (*domain.TaskCycle, error) {
+func (unimplementedHandlerStore) GetCycle(context.Context, string) (*cyclesdomain.TaskCycle, error) {
 	return nil, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) ListCyclesForTaskBefore(context.Context, string, int64, int) ([]domain.TaskCycle, error) {
+func (unimplementedHandlerStore) ListCyclesForTaskBefore(context.Context, string, int64, int) ([]cyclesdomain.TaskCycle, error) {
 	return nil, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) TerminateCycle(context.Context, string, domain.CycleStatus, string, domain.Actor) (*domain.TaskCycle, error) {
+func (unimplementedHandlerStore) TerminateCycle(context.Context, string, cyclesdomain.CycleStatus, string, taskcoredomain.Actor) (*cyclesdomain.TaskCycle, error) {
 	return nil, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) StartPhase(context.Context, string, domain.Phase, domain.Actor) (*domain.TaskCyclePhase, error) {
+func (unimplementedHandlerStore) StartPhase(context.Context, string, cyclesdomain.Phase, taskcoredomain.Actor) (*cyclesdomain.TaskCyclePhase, error) {
 	return nil, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) CompletePhase(context.Context, contract.CompletePhaseInput) (*domain.TaskCyclePhase, error) {
+func (unimplementedHandlerStore) CompletePhase(context.Context, cyclescontract.CompletePhaseInput) (*cyclesdomain.TaskCyclePhase, error) {
 	return nil, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) ListPhasesForCycle(context.Context, string) ([]domain.TaskCyclePhase, error) {
+func (unimplementedHandlerStore) ListPhasesForCycle(context.Context, string) ([]cyclesdomain.TaskCyclePhase, error) {
 	return nil, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) ListCycleStreamEvents(context.Context, string, int64, int) ([]domain.TaskCycleStreamEvent, error) {
+func (unimplementedHandlerStore) ListCycleStreamEvents(context.Context, string, int64, int) ([]cyclesdomain.TaskCycleStreamEvent, error) {
 	return nil, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) ListCriteriaReportsForCycle(context.Context, string) ([]domain.TaskCycleCriteriaReport, error) {
+func (unimplementedHandlerStore) ListCriteriaReportsForCycle(context.Context, string) ([]cyclesdomain.TaskCycleCriteriaReport, error) {
 	return nil, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) ListVerifyReportsForCycle(context.Context, string) ([]domain.TaskCycleVerifyReport, error) {
+func (unimplementedHandlerStore) ListVerifyReportsForCycle(context.Context, string) ([]cyclesdomain.TaskCycleVerifyReport, error) {
 	return nil, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) ListCommandRunsForCycle(context.Context, string) ([]domain.TaskCycleCommandRun, error) {
+func (unimplementedHandlerStore) ListCommandRunsForCycle(context.Context, string) ([]cyclesdomain.TaskCycleCommandRun, error) {
 	return nil, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) ListCommitsForCycle(context.Context, string) ([]domain.TaskCycleCommit, error) {
+func (unimplementedHandlerStore) ListCommitsForCycle(context.Context, string) ([]cyclesdomain.TaskCycleCommit, error) {
 	return nil, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) ListCommitsForTask(context.Context, string) ([]domain.TaskCycleCommit, error) {
+func (unimplementedHandlerStore) ListCommitsForTask(context.Context, string) ([]cyclesdomain.TaskCycleCommit, error) {
 	return nil, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) CreateProject(context.Context, contract.CreateProjectInput) (projectsdomain.Project, error) {
+func (unimplementedHandlerStore) CreateProject(context.Context, projectscontract.CreateProjectInput) (projectsdomain.Project, error) {
 	return projectsdomain.Project{}, errNotImplemented
 }
 
@@ -207,7 +214,7 @@ func (unimplementedHandlerStore) GetProject(context.Context, string) (projectsdo
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) UpdateProject(context.Context, string, contract.UpdateProjectInput) (projectsdomain.Project, error) {
+func (unimplementedHandlerStore) UpdateProject(context.Context, string, projectscontract.UpdateProjectInput) (projectsdomain.Project, error) {
 	return projectsdomain.Project{}, errNotImplemented
 }
 
@@ -217,7 +224,7 @@ func (unimplementedHandlerStore) DeleteProject(context.Context, string) error {
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) CreateProjectContext(context.Context, string, contract.CreateProjectContextInput) (projectsdomain.ProjectContextItem, error) {
+func (unimplementedHandlerStore) CreateProjectContext(context.Context, string, projectscontract.CreateProjectContextInput) (projectsdomain.ProjectContextItem, error) {
 	return projectsdomain.ProjectContextItem{}, errNotImplemented
 }
 
@@ -232,12 +239,12 @@ func (unimplementedHandlerStore) ListProjectContextEdges(context.Context, string
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) CreateProjectContextEdge(context.Context, string, contract.CreateProjectContextEdgeInput) (projectsdomain.ProjectContextEdge, error) {
+func (unimplementedHandlerStore) CreateProjectContextEdge(context.Context, string, projectscontract.CreateProjectContextEdgeInput) (projectsdomain.ProjectContextEdge, error) {
 	return projectsdomain.ProjectContextEdge{}, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) UpdateProjectContextEdge(context.Context, string, string, contract.UpdateProjectContextEdgeInput) (projectsdomain.ProjectContextEdge, error) {
+func (unimplementedHandlerStore) UpdateProjectContextEdge(context.Context, string, string, projectscontract.UpdateProjectContextEdgeInput) (projectsdomain.ProjectContextEdge, error) {
 	return projectsdomain.ProjectContextEdge{}, errNotImplemented
 }
 
@@ -247,7 +254,7 @@ func (unimplementedHandlerStore) DeleteProjectContextEdge(context.Context, strin
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) UpdateProjectContext(context.Context, string, string, contract.UpdateProjectContextInput) (projectsdomain.ProjectContextItem, error) {
+func (unimplementedHandlerStore) UpdateProjectContext(context.Context, string, string, projectscontract.UpdateProjectContextInput) (projectsdomain.ProjectContextItem, error) {
 	return projectsdomain.ProjectContextItem{}, errNotImplemented
 }
 
@@ -262,17 +269,17 @@ func (unimplementedHandlerStore) ListProjectsByRepository(context.Context, strin
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) ListDrafts(context.Context, int) ([]contract.DraftSummary, error) {
+func (unimplementedHandlerStore) ListDrafts(context.Context, int) ([]composecontract.DraftSummary, error) {
 	return nil, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) SaveDraft(context.Context, string, string, json.RawMessage) (*contract.DraftSummary, error) {
+func (unimplementedHandlerStore) SaveDraft(context.Context, string, string, json.RawMessage) (*composecontract.DraftSummary, error) {
 	return nil, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) GetDraft(context.Context, string) (*contract.DraftDetail, error) {
+func (unimplementedHandlerStore) GetDraft(context.Context, string) (*composecontract.DraftDetail, error) {
 	return nil, errNotImplemented
 }
 
@@ -282,22 +289,22 @@ func (unimplementedHandlerStore) DeleteDraft(context.Context, string) error {
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) ListTemplates(context.Context, int, string, string, string, string) ([]contract.TemplateSummary, error) {
+func (unimplementedHandlerStore) ListTemplates(context.Context, int, string, string, string, string) ([]composecontract.TemplateSummary, error) {
 	return nil, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) SaveTemplate(context.Context, string, string, json.RawMessage) (*contract.TemplateSummary, error) {
+func (unimplementedHandlerStore) SaveTemplate(context.Context, string, string, json.RawMessage) (*composecontract.TemplateSummary, error) {
 	return nil, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) GetTemplate(context.Context, string) (*contract.TemplateDetail, error) {
+func (unimplementedHandlerStore) GetTemplate(context.Context, string) (*composecontract.TemplateDetail, error) {
 	return nil, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) PatchTemplate(context.Context, string, *string, json.RawMessage) (*contract.TemplateDetail, error) {
+func (unimplementedHandlerStore) PatchTemplate(context.Context, string, *string, json.RawMessage) (*composecontract.TemplateDetail, error) {
 	return nil, errNotImplemented
 }
 
@@ -317,7 +324,7 @@ func (unimplementedHandlerStore) ListAllGitRepositories(context.Context) ([]gitd
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) ListAllGitRepositoriesWithSummary(context.Context) ([]contract.GitRepositoryListSummary, error) {
+func (unimplementedHandlerStore) ListAllGitRepositoriesWithSummary(context.Context) ([]gitcontract.GitRepositoryListSummary, error) {
 	return nil, errNotImplemented
 }
 
@@ -377,22 +384,22 @@ func (unimplementedHandlerStore) ListGitBranches(context.Context, string, string
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) CreateGlobalGitRepository(context.Context, contract.CreateGitRepositoryInput, gitwork.Service) (gitdomain.GitRepository, error) {
+func (unimplementedHandlerStore) CreateGlobalGitRepository(context.Context, gitcontract.CreateGitRepositoryInput, gitwork.Service) (gitdomain.GitRepository, error) {
 	return gitdomain.GitRepository{}, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) CreateGitRepository(context.Context, string, contract.CreateGitRepositoryInput, gitwork.Service) (gitdomain.GitRepository, error) {
+func (unimplementedHandlerStore) CreateGitRepository(context.Context, string, gitcontract.CreateGitRepositoryInput, gitwork.Service) (gitdomain.GitRepository, error) {
 	return gitdomain.GitRepository{}, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) CreateGitWorktreeForRepo(context.Context, string, contract.CreateGitWorktreeInput, gitwork.Service) (gitdomain.GitWorktree, error) {
+func (unimplementedHandlerStore) CreateGitWorktreeForRepo(context.Context, string, gitcontract.CreateGitWorktreeInput, gitwork.Service) (gitdomain.GitWorktree, error) {
 	return gitdomain.GitWorktree{}, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) CreateGitWorktree(context.Context, string, string, contract.CreateGitWorktreeInput, gitwork.Service) (gitdomain.GitWorktree, error) {
+func (unimplementedHandlerStore) CreateGitWorktree(context.Context, string, string, gitcontract.CreateGitWorktreeInput, gitwork.Service) (gitdomain.GitWorktree, error) {
 	return gitdomain.GitWorktree{}, errNotImplemented
 }
 
@@ -407,7 +414,7 @@ func (unimplementedHandlerStore) RemoveGitWorktreeFromDisk(context.Context, stri
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) CreateGitBranch(context.Context, string, string, contract.CreateGitBranchInput, gitwork.Service) (gitdomain.GitBranch, error) {
+func (unimplementedHandlerStore) CreateGitBranch(context.Context, string, string, gitcontract.CreateGitBranchInput, gitwork.Service) (gitdomain.GitBranch, error) {
 	return gitdomain.GitBranch{}, errNotImplemented
 }
 
@@ -417,33 +424,33 @@ func (unimplementedHandlerStore) DeleteGitBranch(context.Context, string, string
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) RepoWorktreeInventory(context.Context, gitdomain.GitRepository, gitwork.Service) ([]contract.WorktreeInventoryRow, error) {
+func (unimplementedHandlerStore) RepoWorktreeInventory(context.Context, gitdomain.GitRepository, gitwork.Service) ([]gitcontract.WorktreeInventoryRow, error) {
 	return nil, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) RepoWorktreeCheckoutStatus(context.Context, gitdomain.GitRepository, gitwork.Service) ([]contract.WorktreeCheckoutStatusRow, error) {
+func (unimplementedHandlerStore) RepoWorktreeCheckoutStatus(context.Context, gitdomain.GitRepository, gitwork.Service) ([]gitcontract.WorktreeCheckoutStatusRow, error) {
 	return nil, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) ProbeGitWorktree(context.Context, string, string, gitwork.Service) (contract.GitWorktreeProbeResult, error) {
-	return contract.GitWorktreeProbeResult{}, errNotImplemented
+func (unimplementedHandlerStore) ProbeGitWorktree(context.Context, string, string, gitwork.Service) (gitcontract.GitWorktreeProbeResult, error) {
+	return gitcontract.GitWorktreeProbeResult{}, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) RegisterExistingGitWorktree(context.Context, string, string, string, contract.BindBranchInput, gitwork.Service) (gitdomain.GitWorktree, error) {
+func (unimplementedHandlerStore) RegisterExistingGitWorktree(context.Context, string, string, string, gitcontract.BindBranchInput, gitwork.Service) (gitdomain.GitWorktree, error) {
 	return gitdomain.GitWorktree{}, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) ReconcileGitRepository(context.Context, string, string, contract.ReconcileGitInput, gitwork.Service) (contract.ReconcileGitOutput, error) {
-	return contract.ReconcileGitOutput{}, errNotImplemented
+func (unimplementedHandlerStore) ReconcileGitRepository(context.Context, string, string, gitcontract.ReconcileGitInput, gitwork.Service) (gitcontract.ReconcileGitOutput, error) {
+	return gitcontract.ReconcileGitOutput{}, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) RelocateGitRepository(context.Context, string, string, string, gitwork.Service) (contract.ReconcileGitOutput, error) {
-	return contract.ReconcileGitOutput{}, errNotImplemented
+func (unimplementedHandlerStore) RelocateGitRepository(context.Context, string, string, string, gitwork.Service) (gitcontract.ReconcileGitOutput, error) {
+	return gitcontract.ReconcileGitOutput{}, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."

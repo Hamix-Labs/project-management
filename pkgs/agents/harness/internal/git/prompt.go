@@ -2,16 +2,15 @@ package git
 
 import (
 	"fmt"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"strings"
 	"time"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 // FormatGitContextForPrompt renders worker-indexed commit context for verify prompts.
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func FormatGitContextForPrompt(commits []domain.TaskCycleCommit) string {
+func FormatGitContextForPrompt(commits []cyclesdomain.TaskCycleCommit) string {
 	if len(commits) == 0 {
 		return ""
 	}

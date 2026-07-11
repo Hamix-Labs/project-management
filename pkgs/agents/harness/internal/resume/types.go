@@ -1,7 +1,8 @@
 package resume
 
 import (
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
 // Entry selects which cycle-loop branch resumes after interruption or retry.
@@ -29,7 +30,7 @@ type CriterionVerdict struct {
 	ID        string
 	Passed    bool
 	Evidence  string
-	Verifier  domain.VerifierKind
+	Verifier  checklistdomain.VerifierKind
 	Reasoning string
 }
 
@@ -40,10 +41,10 @@ type ContinuationBundle struct {
 	ParentCycleID          string
 	FailureClass           FailureClass
 	FailureReason          string
-	FailurePhase           domain.Phase
+	FailurePhase           cyclesdomain.Phase
 	ScopeFiles             []string
-	Commits                []domain.TaskCycleCommit
-	CriteriaEvidence       []domain.TaskCycleCriteriaReport
+	Commits                []cyclesdomain.TaskCycleCommit
+	CriteriaEvidence       []cyclesdomain.TaskCycleCriteriaReport
 	PreviouslyPassed       map[string]CriterionVerdict
 	VerifyFeedback         string
 	ExecuteFeedback        string
@@ -60,6 +61,6 @@ type Checkpoint struct {
 	PreviouslyPassed map[string]CriterionVerdict
 	VerifyAttempt    int
 	VerifyFeedback   string
-	KnownCommits     []domain.TaskCycleCommit
+	KnownCommits     []cyclesdomain.TaskCycleCommit
 	Continuation     *ContinuationBundle
 }

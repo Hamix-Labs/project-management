@@ -9,7 +9,8 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/harnesstest"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
 type correlationCapturingRunner struct {
@@ -26,7 +27,7 @@ func (r *correlationCapturingRunner) Run(_ context.Context, req runner.Request) 
 	r.mu.Lock()
 	r.req = req
 	r.mu.Unlock()
-	return runner.NewResult(domain.PhaseStatusSucceeded, "ok", json.RawMessage(`{"ok":true}`), ""), nil
+	return runner.NewResult(cyclesdomain.PhaseStatusSucceeded, "ok", json.RawMessage(`{"ok":true}`), ""), nil
 }
 
 func (r *correlationCapturingRunner) lastRequest() runner.Request {
@@ -46,7 +47,7 @@ func TestHarness_execute_propagates_run_correlation_id_to_runner(t *testing.T) {
 
 	done := env.RunHarness(ctx, env.NewHarness(r, harness.Options{}), tsk)
 	<-done
-	env.WaitTaskStatus(ctx, tsk.ID, domain.StatusDone)
+	env.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusDone)
 
 	req := r.lastRequest()
 	if req.RunCorrelationID == "" {
@@ -68,7 +69,7 @@ func TestHarness_execute_propagates_run_correlation_id_to_runner(t *testing.T) {
 	if len(phases) == 0 {
 		t.Fatal("no phases")
 	}
-	got := domain.RunCorrelationIDFromDetailsJSON(phases[0].DetailsJSON)
+	got := cyclesdomain.RunCorrelationIDFromDetailsJSON(phases[0].DetailsJSON)
 	if got != req.RunCorrelationID {
 		t.Fatalf("phase details id = %q, runner req id = %q", got, req.RunCorrelationID)
 	}

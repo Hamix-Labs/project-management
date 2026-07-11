@@ -13,7 +13,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/contract"
 	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 	checklistmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/store/model"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -37,11 +37,11 @@ func NormalizeVerifyCommandInputs(in []VerifyCommandInput) ([]VerifyCommandInput
 			continue
 		}
 		if len(cmd) > checklistdomain.MaxVerifyCommandLen {
-			return nil, fmt.Errorf("%w: verify command exceeds %d characters", domain.ErrInvalidInput, checklistdomain.MaxVerifyCommandLen)
+			return nil, fmt.Errorf("%w: verify command exceeds %d characters", taskcoredomain.ErrInvalidInput, checklistdomain.MaxVerifyCommandLen)
 		}
 		expected := strings.TrimSpace(raw.ExpectedOutcome)
 		if len(expected) > checklistdomain.MaxVerifyExpectedOutcomeLen {
-			return nil, fmt.Errorf("%w: expected_outcome exceeds %d characters", domain.ErrInvalidInput, checklistdomain.MaxVerifyExpectedOutcomeLen)
+			return nil, fmt.Errorf("%w: expected_outcome exceeds %d characters", taskcoredomain.ErrInvalidInput, checklistdomain.MaxVerifyExpectedOutcomeLen)
 		}
 		out = append(out, VerifyCommandInput{
 			Command:         cmd,
@@ -49,7 +49,7 @@ func NormalizeVerifyCommandInputs(in []VerifyCommandInput) ([]VerifyCommandInput
 		})
 	}
 	if len(out) > checklistdomain.MaxVerifyCommandsPerItem {
-		return nil, fmt.Errorf("%w: at most %d verify commands per criterion", domain.ErrInvalidInput, checklistdomain.MaxVerifyCommandsPerItem)
+		return nil, fmt.Errorf("%w: at most %d verify commands per criterion", taskcoredomain.ErrInvalidInput, checklistdomain.MaxVerifyCommandsPerItem)
 	}
 	return out, nil
 }
@@ -106,7 +106,7 @@ func commandsForItemInTx(tx *gorm.DB, itemID string) ([]VerifyCommandView, error
 }
 
 // ReplaceVerifyCommands replaces all verify commands for an item owned by taskID.
-func ReplaceVerifyCommands(ctx context.Context, db *gorm.DB, taskID, itemID string, cmds []VerifyCommandInput, by domain.Actor) error {
+func ReplaceVerifyCommands(ctx context.Context, db *gorm.DB, taskID, itemID string, cmds []VerifyCommandInput, by taskcoredomain.Actor) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.checklist.ReplaceVerifyCommands")
 	if err := storekernel.ValidateActor(by); err != nil {
 		return err
@@ -118,7 +118,7 @@ func ReplaceVerifyCommands(ctx context.Context, db *gorm.DB, taskID, itemID stri
 	taskID = strings.TrimSpace(taskID)
 	itemID = strings.TrimSpace(itemID)
 	if taskID == "" || itemID == "" {
-		return fmt.Errorf("%w: id", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: id", taskcoredomain.ErrInvalidInput)
 	}
 	return db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if _, err := loadItemForCommandEdit(tx, taskID, itemID); err != nil {
@@ -140,7 +140,7 @@ func loadItemForCommandEdit(tx *gorm.DB, taskID, itemID string) (*checklistdomai
 	var it checklistmodel.TaskChecklistItem
 	if err := tx.Where("id = ? AND task_id = ?", itemID, taskID).First(&it).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, domain.ErrNotFound
+			return nil, taskcoredomain.ErrNotFound
 		}
 		return nil, fmt.Errorf("load checklist item: %w", err)
 	}
@@ -151,7 +151,7 @@ func loadItemForCommandEdit(tx *gorm.DB, taskID, itemID string) (*checklistdomai
 		return nil, fmt.Errorf("count completions: %w", err)
 	}
 	if criterionLockedByCompletion(t.Status, doneCount) {
-		return nil, fmt.Errorf("%w: cannot edit verify commands on a criterion that has already been marked done", domain.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: cannot edit verify commands on a criterion that has already been marked done", taskcoredomain.ErrInvalidInput)
 	}
 	dit := checklistmodel.ToDomainTaskChecklistItem(it)
 	return &dit, nil

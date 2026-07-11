@@ -20,8 +20,10 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
+	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store/model"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -45,7 +47,7 @@ type CriteriaEntry struct {
 type VerifyEntry struct {
 	CriterionID  string
 	Verified     bool
-	VerifierKind domain.VerifierKind
+	VerifierKind checklistdomain.VerifierKind
 	Reasoning    string
 }
 
@@ -67,27 +69,27 @@ func UpsertCriteriaReports(ctx context.Context, db *gorm.DB, cycleID string, att
 		"cycle_id", cycleID, "attempt_seq", attemptSeq, "entry_count", len(entries))
 	cycleID = strings.TrimSpace(cycleID)
 	if cycleID == "" {
-		return fmt.Errorf("%w: cycle_id", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: cycle_id", taskcoredomain.ErrInvalidInput)
 	}
 	if attemptSeq <= 0 {
-		return fmt.Errorf("%w: attempt_seq must be positive", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: attempt_seq must be positive", taskcoredomain.ErrInvalidInput)
 	}
 	if len(entries) == 0 {
 		return nil
 	}
 	now := time.Now().UTC()
-	rows := make([]domain.TaskCycleCriteriaReport, 0, len(entries))
+	rows := make([]cyclesdomain.TaskCycleCriteriaReport, 0, len(entries))
 	seen := make(map[string]struct{}, len(entries))
 	for _, e := range entries {
 		id := strings.TrimSpace(e.CriterionID)
 		if id == "" {
-			return fmt.Errorf("%w: criterion_id", domain.ErrInvalidInput)
+			return fmt.Errorf("%w: criterion_id", taskcoredomain.ErrInvalidInput)
 		}
 		if _, dup := seen[id]; dup {
-			return fmt.Errorf("%w: duplicate criterion_id %s", domain.ErrInvalidInput, id)
+			return fmt.Errorf("%w: duplicate criterion_id %s", taskcoredomain.ErrInvalidInput, id)
 		}
 		seen[id] = struct{}{}
-		rows = append(rows, domain.TaskCycleCriteriaReport{
+		rows = append(rows, cyclesdomain.TaskCycleCriteriaReport{
 			ID:          uuid.NewString(),
 			CycleID:     cycleID,
 			AttemptSeq:  attemptSeq,
@@ -119,27 +121,27 @@ func UpsertVerifyReports(ctx context.Context, db *gorm.DB, cycleID string, attem
 		"cycle_id", cycleID, "attempt_seq", attemptSeq, "entry_count", len(entries))
 	cycleID = strings.TrimSpace(cycleID)
 	if cycleID == "" {
-		return fmt.Errorf("%w: cycle_id", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: cycle_id", taskcoredomain.ErrInvalidInput)
 	}
 	if attemptSeq <= 0 {
-		return fmt.Errorf("%w: attempt_seq must be positive", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: attempt_seq must be positive", taskcoredomain.ErrInvalidInput)
 	}
 	if len(entries) == 0 {
 		return nil
 	}
 	now := time.Now().UTC()
-	rows := make([]domain.TaskCycleVerifyReport, 0, len(entries))
+	rows := make([]cyclesdomain.TaskCycleVerifyReport, 0, len(entries))
 	seen := make(map[string]struct{}, len(entries))
 	for _, e := range entries {
 		id := strings.TrimSpace(e.CriterionID)
 		if id == "" {
-			return fmt.Errorf("%w: criterion_id", domain.ErrInvalidInput)
+			return fmt.Errorf("%w: criterion_id", taskcoredomain.ErrInvalidInput)
 		}
 		if _, dup := seen[id]; dup {
-			return fmt.Errorf("%w: duplicate criterion_id %s", domain.ErrInvalidInput, id)
+			return fmt.Errorf("%w: duplicate criterion_id %s", taskcoredomain.ErrInvalidInput, id)
 		}
 		seen[id] = struct{}{}
-		rows = append(rows, domain.TaskCycleVerifyReport{
+		rows = append(rows, cyclesdomain.TaskCycleVerifyReport{
 			ID:           uuid.NewString(),
 			CycleID:      cycleID,
 			AttemptSeq:   attemptSeq,
@@ -169,13 +171,13 @@ func UpsertVerifyReports(ctx context.Context, db *gorm.DB, cycleID string, attem
 // cycles return an empty slice (no rows mirrored); the handler is
 // responsible for treating missing rows as "feature not yet
 // available" rather than 404.
-func ListCriteriaReportsForCycle(ctx context.Context, db *gorm.DB, cycleID string) ([]domain.TaskCycleCriteriaReport, error) {
+func ListCriteriaReportsForCycle(ctx context.Context, db *gorm.DB, cycleID string) ([]cyclesdomain.TaskCycleCriteriaReport, error) {
 	defer storekernel.DeferLatency(storekernel.OpListCriteriaReportsForCycle)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.reports.ListCriteriaReportsForCycle",
 		"cycle_id", cycleID)
 	cycleID = strings.TrimSpace(cycleID)
 	if cycleID == "" {
-		return nil, fmt.Errorf("%w: cycle_id", domain.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: cycle_id", taskcoredomain.ErrInvalidInput)
 	}
 	var rows []model.TaskCycleCriteriaReport
 	if err := db.WithContext(ctx).
@@ -189,13 +191,13 @@ func ListCriteriaReportsForCycle(ctx context.Context, db *gorm.DB, cycleID strin
 
 // ListVerifyReportsForCycle is the verify counterpart of
 // ListCriteriaReportsForCycle.
-func ListVerifyReportsForCycle(ctx context.Context, db *gorm.DB, cycleID string) ([]domain.TaskCycleVerifyReport, error) {
+func ListVerifyReportsForCycle(ctx context.Context, db *gorm.DB, cycleID string) ([]cyclesdomain.TaskCycleVerifyReport, error) {
 	defer storekernel.DeferLatency(storekernel.OpListVerifyReportsForCycle)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.reports.ListVerifyReportsForCycle",
 		"cycle_id", cycleID)
 	cycleID = strings.TrimSpace(cycleID)
 	if cycleID == "" {
-		return nil, fmt.Errorf("%w: cycle_id", domain.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: cycle_id", taskcoredomain.ErrInvalidInput)
 	}
 	var rows []model.TaskCycleVerifyReport
 	if err := db.WithContext(ctx).
@@ -210,20 +212,20 @@ func ListVerifyReportsForCycle(ctx context.Context, db *gorm.DB, cycleID string)
 // GetCriteriaReport returns one row by (cycleID, attemptSeq,
 // criterionID); ErrNotFound when missing. Used by tests and a future
 // per-criterion drill-down endpoint.
-func GetCriteriaReport(ctx context.Context, db *gorm.DB, cycleID string, attemptSeq int64, criterionID string) (*domain.TaskCycleCriteriaReport, error) {
+func GetCriteriaReport(ctx context.Context, db *gorm.DB, cycleID string, attemptSeq int64, criterionID string) (*cyclesdomain.TaskCycleCriteriaReport, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.reports.GetCriteriaReport",
 		"cycle_id", cycleID, "attempt_seq", attemptSeq, "criterion_id", criterionID)
 	cycleID = strings.TrimSpace(cycleID)
 	criterionID = strings.TrimSpace(criterionID)
 	if cycleID == "" || criterionID == "" || attemptSeq <= 0 {
-		return nil, fmt.Errorf("%w: report key", domain.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: report key", taskcoredomain.ErrInvalidInput)
 	}
 	var row model.TaskCycleCriteriaReport
 	err := db.WithContext(ctx).
 		Where("cycle_id = ? AND attempt_seq = ? AND criterion_id = ?", cycleID, attemptSeq, criterionID).
 		First(&row).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, domain.ErrNotFound
+		return nil, taskcoredomain.ErrNotFound
 	}
 	if err != nil {
 		return nil, fmt.Errorf("get criteria report: %w", err)

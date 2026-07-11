@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 )
 
 func TestHTTP_projectsCRUDAndContext(t *testing.T) {
@@ -174,7 +174,7 @@ func TestHTTP_taskProjectIDCreatePatchAndClear(t *testing.T) {
 		b, _ := io.ReadAll(res.Body)
 		t.Fatalf("patch task project status %d body %s", res.StatusCode, b)
 	}
-	var cleared domain.Task
+	var cleared taskcoredomain.Task
 	if err := json.NewDecoder(res.Body).Decode(&cleared); err != nil {
 		t.Fatal(err)
 	}

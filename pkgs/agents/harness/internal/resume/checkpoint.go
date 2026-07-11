@@ -5,10 +5,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"log/slog"
 	"strings"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 const (
@@ -17,7 +16,7 @@ const (
 )
 
 // ReconstructCheckpoint rebuilds resume state for an in-flight running cycle.
-func (s *Service) ReconstructCheckpoint(ctx context.Context, cycle *domain.TaskCycle) (Checkpoint, error) {
+func (s *Service) ReconstructCheckpoint(ctx context.Context, cycle *cyclesdomain.TaskCycle) (Checkpoint, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.resume.ReconstructCheckpoint",
 		"cycle_id", cycle.ID)
 	var cp Checkpoint
@@ -25,7 +24,7 @@ func (s *Service) ReconstructCheckpoint(ctx context.Context, cycle *domain.TaskC
 	if cycle == nil {
 		return cp, errors.New("resume: nil cycle")
 	}
-	if cycle.Status != domain.CycleStatusRunning {
+	if cycle.Status != cyclesdomain.CycleStatusRunning {
 		return cp, fmt.Errorf("resume: cycle status %q is not running", cycle.Status)
 	}
 
@@ -38,7 +37,7 @@ func (s *Service) ReconstructCheckpoint(ctx context.Context, cycle *domain.TaskC
 	}
 	last := phases[len(phases)-1]
 	for _, p := range phases {
-		if p.Status == domain.PhaseStatusRunning {
+		if p.Status == cyclesdomain.PhaseStatusRunning {
 			return cp, fmt.Errorf("resume: phase_seq=%d still running after finalize", p.PhaseSeq)
 		}
 	}
@@ -46,14 +45,14 @@ func (s *Service) ReconstructCheckpoint(ctx context.Context, cycle *domain.TaskC
 	switch {
 	case isInterruptPhase(last):
 		switch last.Phase {
-		case domain.PhaseExecute:
+		case cyclesdomain.PhaseExecute:
 			cp.Entry = EntryExecute
-		case domain.PhaseVerify:
+		case cyclesdomain.PhaseVerify:
 			cp.Entry = EntryVerifyOnly
 		default:
 			return cp, fmt.Errorf("resume: unexpected interrupted phase %q", last.Phase)
 		}
-	case last.Phase == domain.PhaseExecute && last.Status == domain.PhaseStatusSucceeded:
+	case last.Phase == cyclesdomain.PhaseExecute && last.Status == cyclesdomain.PhaseStatusSucceeded:
 		cp.Entry = EntryAfterExecuteSuccess
 	default:
 		return cp, fmt.Errorf("resume: cannot continue from phase %q status %q", last.Phase, last.Status)
@@ -93,7 +92,7 @@ func (s *Service) LoadCheckpointFromParent(ctx context.Context, parentCycleID st
 	return bundleToCheckpoint(bundle), nil
 }
 
-func (s *Service) loadKnownCommitsForTask(ctx context.Context, taskID string) ([]domain.TaskCycleCommit, error) {
+func (s *Service) loadKnownCommitsForTask(ctx context.Context, taskID string) ([]cyclesdomain.TaskCycleCommit, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.resume.loadKnownCommitsForTask",
 		"task_id", taskID)
 	return s.store.ListCommitsForTask(ctx, taskID)
@@ -132,19 +131,19 @@ func (s *Service) loadVerifyCheckpointData(ctx context.Context, cycleID string) 
 	return previouslyPassed, maxAttempt, feedback, nil
 }
 
-func isInterruptPhase(p domain.TaskCyclePhase) bool {
+func isInterruptPhase(p cyclesdomain.TaskCyclePhase) bool {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.resume.isInterruptPhase",
 		"phase_seq", p.PhaseSeq, "phase", string(p.Phase), "status", string(p.Status))
-	if p.Status != domain.PhaseStatusFailed {
+	if p.Status != cyclesdomain.PhaseStatusFailed {
 		return false
 	}
 	if p.Summary == nil {
 		return false
 	}
-	return *p.Summary == domain.PhaseInterruptReason
+	return *p.Summary == cyclesdomain.PhaseInterruptReason
 }
 
-func buildVerifyFeedbackFromRows(rows []domain.TaskCycleVerifyReport, attemptSeq int64) string {
+func buildVerifyFeedbackFromRows(rows []cyclesdomain.TaskCycleVerifyReport, attemptSeq int64) string {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.resume.buildVerifyFeedbackFromRows",
 		"attempt_seq", attemptSeq, "rows", len(rows))
 	var failures []string

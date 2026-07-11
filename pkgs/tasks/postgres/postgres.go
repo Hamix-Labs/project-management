@@ -5,15 +5,14 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log/slog"
-	"strings"
-	"time"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
+	"log/slog"
+	"strings"
+	"time"
 )
 
 const (
@@ -176,7 +175,7 @@ UPDATE task_checklist_completions
    SET verified_by = ?
  WHERE (verified_by IS NULL OR verified_by = '')
    AND (evidence IS NULL OR evidence = '')`,
-		string(domain.VerifierLegacy),
+		string(checklistdomain.VerifierLegacy),
 	)
 	if res.Error != nil {
 		return res.Error

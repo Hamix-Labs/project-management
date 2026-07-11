@@ -7,8 +7,8 @@ import (
 	"log/slog"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store/model"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"gorm.io/gorm"
 )
 
@@ -18,12 +18,12 @@ import (
 // sweep (docs/architecture.md "Process restart and the orphan
 // sweep"); unbounded by design — V1 expects very few orphan rows and
 // an explicit cap would silently drop rows that need cleanup.
-func ListRunning(ctx context.Context, db *gorm.DB) ([]domain.TaskCycle, error) {
+func ListRunning(ctx context.Context, db *gorm.DB) ([]cyclesdomain.TaskCycle, error) {
 	defer storekernel.DeferLatency(storekernel.OpListCyclesForTask)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.cycles.ListRunning")
 	var rows []model.TaskCycle
 	q := db.WithContext(ctx).
-		Where("status = ?", domain.CycleStatusRunning).
+		Where("status = ?", cyclesdomain.CycleStatusRunning).
 		Order("started_at ASC, id ASC")
 	if err := q.Find(&rows).Error; err != nil {
 		return nil, fmt.Errorf("list running task_cycles: %w", err)
@@ -36,12 +36,12 @@ func ListRunning(ctx context.Context, db *gorm.DB) ([]domain.TaskCycle, error) {
 // ASC. Used by the startup orphan sweep to clean up phase rows whose
 // parent cycle has already been closed (race where the cycle was
 // terminated while a phase write was in flight).
-func ListRunningPhases(ctx context.Context, db *gorm.DB) ([]domain.TaskCyclePhase, error) {
+func ListRunningPhases(ctx context.Context, db *gorm.DB) ([]cyclesdomain.TaskCyclePhase, error) {
 	defer storekernel.DeferLatency(storekernel.OpListCyclePhases)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.cycles.ListRunningPhases")
 	var rows []model.TaskCyclePhase
 	q := db.WithContext(ctx).
-		Where("status = ?", domain.PhaseStatusRunning).
+		Where("status = ?", cyclesdomain.PhaseStatusRunning).
 		Order("started_at ASC, id ASC")
 	if err := q.Find(&rows).Error; err != nil {
 		return nil, fmt.Errorf("list running task_cycle_phases: %w", err)

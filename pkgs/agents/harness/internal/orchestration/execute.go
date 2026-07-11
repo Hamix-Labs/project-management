@@ -2,9 +2,8 @@ package orchestration
 
 import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 import (
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"log/slog"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 // DecideExecutePostRun maps execute post-run facts to effects. The harness root
@@ -29,7 +28,7 @@ func DecideExecutePostRun(in ExecutePostRunInput) ExecuteEffects {
 	if in.OperatorCancelled {
 		return ExecuteEffects{
 			TerminateFailed: true,
-			TransitionTask:  domain.StatusFailed,
+			TransitionTask:  taskcoredomain.StatusFailed,
 			Reason:          ReasonCancelledByOperator,
 			ResultSummary:   "cancelled by operator",
 		}
@@ -42,7 +41,7 @@ func DecideExecutePostRun(in ExecutePostRunInput) ExecuteEffects {
 	if in.CommitIngest.IngestErr {
 		return ExecuteEffects{
 			TerminateFailed: true,
-			TransitionTask:  domain.StatusFailed,
+			TransitionTask:  taskcoredomain.StatusFailed,
 			Reason:          ReasonExecuteInvalidCommit,
 			ResultSummary:   string(ReasonExecuteInvalidCommit),
 		}
@@ -50,7 +49,7 @@ func DecideExecutePostRun(in ExecutePostRunInput) ExecuteEffects {
 	if in.CommitIngest.FailReason != "" {
 		return ExecuteEffects{
 			TerminateFailed: true,
-			TransitionTask:  domain.StatusFailed,
+			TransitionTask:  taskcoredomain.StatusFailed,
 			Reason:          TerminationReason(in.CommitIngest.FailReason),
 			ResultSummary:   in.CommitIngest.FailReason,
 		}
@@ -65,7 +64,7 @@ func decideExecuteAfterEvidenceRecovery(in ExecutePostRunInput) ExecuteEffects {
 	if in.OperatorCancelled {
 		return ExecuteEffects{
 			TerminateFailed: true,
-			TransitionTask:  domain.StatusFailed,
+			TransitionTask:  taskcoredomain.StatusFailed,
 			Reason:          ReasonCancelledByOperator,
 			ResultSummary:   "cancelled by operator",
 		}
@@ -77,7 +76,7 @@ func decideExecuteAfterEvidenceRecovery(in ExecutePostRunInput) ExecuteEffects {
 	if in.CommitIngest.IngestErr {
 		return ExecuteEffects{
 			TerminateFailed: true,
-			TransitionTask:  domain.StatusFailed,
+			TransitionTask:  taskcoredomain.StatusFailed,
 			Reason:          ReasonExecuteInvalidCommit,
 			ResultSummary:   string(ReasonExecuteInvalidCommit),
 		}
@@ -89,7 +88,7 @@ func decideExecuteAfterEvidenceRecovery(in ExecutePostRunInput) ExecuteEffects {
 		}
 		return ExecuteEffects{
 			TerminateFailed: true,
-			TransitionTask:  domain.StatusFailed,
+			TransitionTask:  taskcoredomain.StatusFailed,
 			Reason:          reason,
 			ResultSummary:   in.CommitIngest.FailReason,
 		}
@@ -103,18 +102,18 @@ func executeEffectsFromRunner(outcome ExecuteRunnerOutcome) ExecuteEffects {
 	case ExecuteRunnerOutcomeOK:
 		return ExecuteEffects{ContinueToVerify: true}
 	case ExecuteRunnerOutcomeTimeout:
-		return terminalExecute(domain.StatusFailed, ReasonRunnerTimeout)
+		return terminalExecute(taskcoredomain.StatusFailed, ReasonRunnerTimeout)
 	case ExecuteRunnerOutcomeNonZeroExit:
-		return terminalExecute(domain.StatusFailed, ReasonRunnerNonZeroExit)
+		return terminalExecute(taskcoredomain.StatusFailed, ReasonRunnerNonZeroExit)
 	case ExecuteRunnerOutcomeInvalidOutput:
-		return terminalExecute(domain.StatusFailed, ReasonRunnerInvalidOutput)
+		return terminalExecute(taskcoredomain.StatusFailed, ReasonRunnerInvalidOutput)
 	default:
-		return terminalExecute(domain.StatusFailed, ReasonRunnerError)
+		return terminalExecute(taskcoredomain.StatusFailed, ReasonRunnerError)
 	}
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func terminalExecute(taskStatus domain.Status, reason TerminationReason) ExecuteEffects {
+func terminalExecute(taskStatus taskcoredomain.Status, reason TerminationReason) ExecuteEffects {
 	return ExecuteEffects{
 		TerminateFailed: true,
 		TransitionTask:  taskStatus,

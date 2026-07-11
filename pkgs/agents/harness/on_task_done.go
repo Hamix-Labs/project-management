@@ -4,9 +4,9 @@ import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 import (
 	"context"
 	"encoding/json"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 	"log/slog"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 type onTaskDoneCommit struct {
@@ -19,7 +19,7 @@ type onTaskDonePayload struct {
 	Commits    []onTaskDoneCommit `json:"commits"`
 }
 
-func (h *Harness) emitOnTaskDone(ctx context.Context, task *domain.Task, cycleID string) {
+func (h *Harness) emitOnTaskDone(ctx context.Context, task *taskcoredomain.Task, cycleID string) {
 	if h == nil || h.store == nil || task == nil {
 		return
 	}
@@ -47,7 +47,7 @@ func (h *Harness) emitOnTaskDone(ctx context.Context, task *domain.Task, cycleID
 			"task_id", task.ID, "err", err)
 		return
 	}
-	if err := h.store.AppendTaskEvent(ctx, task.ID, domain.EventOnTaskDone, domain.ActorAgent, raw); err != nil {
+	if err := h.store.AppendTaskEvent(ctx, task.ID, taskeventsdomain.EventOnTaskDone, taskcoredomain.ActorAgent, raw); err != nil {
 		slog.Warn("on_task_done: append event failed",
 			"cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.emitOnTaskDone",
 			"task_id", task.ID, "err", err)

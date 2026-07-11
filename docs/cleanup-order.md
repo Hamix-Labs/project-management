@@ -41,10 +41,10 @@ Each phase is a **bucket** — many plans/PRs per number. This doc is the order;
 
 | Phase | Status | Notes |
 | --- | --- | --- |
-| **1. Boundaries** | **Largely done** | 12 findings in [boundaries-roi.md](./audit/boundaries-roi.md); shipped via [#147](https://github.com/AlexsanderHamir/Hamix/pull/147)–[#153](https://github.com/AlexsanderHamir/Hamix/pull/153) |
+| **1. Boundaries** | **Largely done** | Tier 4 compat retirement — [ADR-0060](./adr/ADR-0060-retire-tasks-domain.md)–[ADR-0064](./adr/ADR-0064-web-parser-bc-finish.md) |
 | **2. Simplify / delete** | **Next** | Start [dead-code-roi.md](./audit/dead-code-roi.md) **#1** (legacy project-scoped git stack, ROI 10) |
 | **3–6** | Not started | Defer until Phase 2 high-ROI deletes land |
-| **3 structural (early)** | **Done** | `pkgs/projects/` — ADR-0045; `pkgs/gitinventory/` — ADR-0046; `pkgs/settings/` — ADR-0047; `pkgs/taskcompose/` — ADR-0048; `pkgs/repo/handler/` — ADR-0049; **Tier 2:** `pkgs/storekernel/` — ADR-0050; `pkgs/taskchecklist/` — ADR-0051; `pkgs/runners/handler/` — ADR-0052; `pkgs/taskcycles/` — ADR-0053; `pkgs/taskevents/` — ADR-0054; **Tier 3 B1–B3:** checklist/taskevents/taskcycles domain+model — ADR-0056–0058; **Tier 3 Track C:** `pkgs/taskcore/` — ADR-0059 |
+| **3 structural (early)** | **Done** | … **Tier 3 Track C:** `pkgs/taskcore/` — ADR-0059; **Tier 4:** delete `tasks/domain` + `tasks/contract` hubs, harness contract slices, web parser BC finish |
 | **∞. Docs** | Continuous | ADR-0044, ADR-0039 acceptance, audit status rows — same PR as behavior |
 
 ### Phase 1 PR map (dependency order)

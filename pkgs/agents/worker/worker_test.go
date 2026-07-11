@@ -17,7 +17,9 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/runnerfake"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/worker"
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
+	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
@@ -47,16 +49,16 @@ func newHarness(t *testing.T) *harness {
 	}
 }
 
-func (h *harness) createReadyTask(ctx context.Context, title string) *domain.Task {
+func (h *harness) createReadyTask(ctx context.Context, title string) *taskcoredomain.Task {
 	h.t.Helper()
 	wb := h.gitBinding()
 	tsk, err := h.store.Create(ctx, store.CreateTaskInput{
 		Title:         title,
 		InitialPrompt: "do the thing",
-		Status:        domain.StatusReady,
-		Priority:      domain.PriorityMedium,
+		Status:        taskcoredomain.StatusReady,
+		Priority:      taskcoredomain.PriorityMedium,
 		WorktreeID:    wb,
-	}, domain.ActorUser)
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		h.t.Fatalf("create task: %v", err)
 	}
@@ -66,17 +68,17 @@ func (h *harness) createReadyTask(ctx context.Context, title string) *domain.Tas
 // createReadyTaskWithModel mirrors createReadyTask but pins the
 // operator-intent CursorModel on the task row. Used by Phase 1a-ii
 // tests that exercise the buildCycleMeta wiring.
-func (h *harness) createReadyTaskWithModel(ctx context.Context, title, model string) *domain.Task {
+func (h *harness) createReadyTaskWithModel(ctx context.Context, title, model string) *taskcoredomain.Task {
 	h.t.Helper()
 	wb := h.gitBinding()
 	tsk, err := h.store.Create(ctx, store.CreateTaskInput{
 		Title:         title,
 		InitialPrompt: "do the thing",
-		Status:        domain.StatusReady,
-		Priority:      domain.PriorityMedium,
+		Status:        taskcoredomain.StatusReady,
+		Priority:      taskcoredomain.PriorityMedium,
 		CursorModel:   model,
 		WorktreeID:    wb,
-	}, domain.ActorUser)
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		h.t.Fatalf("create task: %v", err)
 	}
@@ -96,7 +98,7 @@ func (h *harness) startWorker(ctx context.Context, r runner.Runner, opts worker.
 	return w, done
 }
 
-func (h *harness) waitTaskStatus(ctx context.Context, taskID string, want domain.Status) *domain.Task {
+func (h *harness) waitTaskStatus(ctx context.Context, taskID string, want taskcoredomain.Status) *taskcoredomain.Task {
 	h.t.Helper()
 	deadline := time.Now().Add(pollTimeout)
 	for time.Now().Before(deadline) {
@@ -107,7 +109,7 @@ func (h *harness) waitTaskStatus(ctx context.Context, taskID string, want domain
 		time.Sleep(pollInterval)
 	}
 	got, _ := h.store.Get(ctx, taskID)
-	gotStatus := domain.Status("")
+	gotStatus := taskcoredomain.Status("")
 	if got != nil {
 		gotStatus = got.Status
 	}
@@ -228,7 +230,7 @@ func (b *blockingRunner) Run(ctx context.Context, req runner.Request) (runner.Re
 
 // --- helper assertions --------------------------------------------------
 
-func assertCycleStatus(t *testing.T, st *store.Store, taskID string, wantCount int, wantStatus domain.CycleStatus) *domain.TaskCycle {
+func assertCycleStatus(t *testing.T, st *store.Store, taskID string, wantCount int, wantStatus cyclesdomain.CycleStatus) *cyclesdomain.TaskCycle {
 	t.Helper()
 	cycles, err := st.ListCyclesForTask(context.Background(), taskID, 10)
 	if err != nil {
@@ -247,8 +249,8 @@ func assertCycleStatus(t *testing.T, st *store.Store, taskID string, wantCount i
 	return &c
 }
 
-func eventTypeCounts(events []domain.TaskEvent) map[domain.EventType]int {
-	out := map[domain.EventType]int{}
+func eventTypeCounts(events []taskeventsdomain.TaskEvent) map[taskeventsdomain.EventType]int {
+	out := map[taskeventsdomain.EventType]int{}
 	for _, e := range events {
 		out[e.Type]++
 	}
@@ -266,24 +268,24 @@ func TestWorker_HappyPath_writesOnePhaseAndFourMirrors(t *testing.T) {
 	tsk := h.createReadyTask(ctx, "happy")
 
 	r := runnerfake.New()
-	r.Script(tsk.ID, domain.PhaseExecute, runner.NewResult(
-		domain.PhaseStatusSucceeded, "all green",
+	r.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(
+		cyclesdomain.PhaseStatusSucceeded, "all green",
 		json.RawMessage(`{"ok":true}`), "",
 	))
 
 	_, done := h.startWorker(ctx, r, worker.Options{})
-	final := h.waitTaskStatus(ctx, tsk.ID, domain.StatusDone)
+	final := h.waitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusDone)
 	cancel()
 	if err := <-done; err != nil {
 		t.Fatalf("worker exit err: %v", err)
 	}
 
 	bg := context.Background()
-	if final.Status != domain.StatusDone {
+	if final.Status != taskcoredomain.StatusDone {
 		t.Fatalf("task status = %q, want done", final.Status)
 	}
 
-	cycle := assertCycleStatus(t, h.store, tsk.ID, 1, domain.CycleStatusSucceeded)
+	cycle := assertCycleStatus(t, h.store, tsk.ID, 1, cyclesdomain.CycleStatusSucceeded)
 
 	var meta map[string]string
 	if err := json.Unmarshal(cycle.MetaJSON, &meta); err != nil {
@@ -314,7 +316,7 @@ func TestWorker_HappyPath_writesOnePhaseAndFourMirrors(t *testing.T) {
 	if len(phases) != 1 {
 		t.Fatalf("phase count = %d, want 1", len(phases))
 	}
-	if phases[0].Phase != domain.PhaseExecute || phases[0].Status != domain.PhaseStatusSucceeded {
+	if phases[0].Phase != cyclesdomain.PhaseExecute || phases[0].Status != cyclesdomain.PhaseStatusSucceeded {
 		t.Fatalf("phase[0] = %q/%q, want execute/succeeded", phases[0].Phase, phases[0].Status)
 	}
 
@@ -323,17 +325,17 @@ func TestWorker_HappyPath_writesOnePhaseAndFourMirrors(t *testing.T) {
 		t.Fatalf("list events: %v", err)
 	}
 	counts := eventTypeCounts(events)
-	if counts[domain.EventCycleStarted] != 1 {
-		t.Fatalf("cycle_started count = %d, want 1", counts[domain.EventCycleStarted])
+	if counts[taskeventsdomain.EventCycleStarted] != 1 {
+		t.Fatalf("cycle_started count = %d, want 1", counts[taskeventsdomain.EventCycleStarted])
 	}
-	if counts[domain.EventCycleCompleted] != 1 {
-		t.Fatalf("cycle_completed count = %d, want 1", counts[domain.EventCycleCompleted])
+	if counts[taskeventsdomain.EventCycleCompleted] != 1 {
+		t.Fatalf("cycle_completed count = %d, want 1", counts[taskeventsdomain.EventCycleCompleted])
 	}
-	if counts[domain.EventPhaseStarted] != 1 {
-		t.Fatalf("phase_started count = %d, want 1", counts[domain.EventPhaseStarted])
+	if counts[taskeventsdomain.EventPhaseStarted] != 1 {
+		t.Fatalf("phase_started count = %d, want 1", counts[taskeventsdomain.EventPhaseStarted])
 	}
-	if counts[domain.EventPhaseCompleted] != 1 {
-		t.Fatalf("phase_completed count = %d, want 1", counts[domain.EventPhaseCompleted])
+	if counts[taskeventsdomain.EventPhaseCompleted] != 1 {
+		t.Fatalf("phase_completed count = %d, want 1", counts[taskeventsdomain.EventPhaseCompleted])
 	}
 
 	calls := h.notifier.snapshot()
@@ -358,7 +360,7 @@ func TestWorker_HappyPath_writesOnePhaseAndFourMirrors(t *testing.T) {
 	if !strings.Contains(runnerCalls[0].Prompt, "do the thing") {
 		t.Fatalf("runner prompt missing task text: %#v", runnerCalls)
 	}
-	if _, err := h.store.GetTaskContextSnapshotForCycle(bg, cycle.ID); !errors.Is(err, domain.ErrNotFound) {
+	if _, err := h.store.GetTaskContextSnapshotForCycle(bg, cycle.ID); !errors.Is(err, taskcoredomain.ErrNotFound) {
 		t.Fatalf("projectless snapshot err = %v, want ErrNotFound", err)
 	}
 }
@@ -429,24 +431,24 @@ func TestWorker_SelectedProjectContext_injectsAndSnapshotsOnlySelectedItems(t *t
 	tsk, err := h.store.Create(ctx, store.CreateTaskInput{
 		Title:                 "with selected context",
 		InitialPrompt:         "do the selected thing",
-		Status:                domain.StatusReady,
-		Priority:              domain.PriorityMedium,
+		Status:                taskcoredomain.StatusReady,
+		Priority:              taskcoredomain.PriorityMedium,
 		ProjectID:             &project.ID,
 		ProjectContextItemIDs: []string{selected.ID, selectedConstraint.ID},
 		WorktreeID:            wb,
-	}, domain.ActorUser)
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("create task: %v", err)
 	}
 
 	r := runnerfake.New()
-	r.Script(tsk.ID, domain.PhaseExecute, runner.NewResult(
-		domain.PhaseStatusSucceeded, "all green",
+	r.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(
+		cyclesdomain.PhaseStatusSucceeded, "all green",
 		json.RawMessage(`{"ok":true}`), "",
 	))
 
 	_, done := h.startWorker(ctx, r, worker.Options{})
-	h.waitTaskStatus(ctx, tsk.ID, domain.StatusDone)
+	h.waitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusDone)
 	cancel()
 	if err := <-done; err != nil {
 		t.Fatalf("worker exit err: %v", err)
@@ -468,7 +470,7 @@ func TestWorker_SelectedProjectContext_injectsAndSnapshotsOnlySelectedItems(t *t
 	if strings.Contains(calls[0].Prompt, excludedEdge.Note) {
 		t.Fatalf("runner prompt included edge to unselected context:\n%s", calls[0].Prompt)
 	}
-	cycle := assertCycleStatus(t, h.store, tsk.ID, 1, domain.CycleStatusSucceeded)
+	cycle := assertCycleStatus(t, h.store, tsk.ID, 1, cyclesdomain.CycleStatusSucceeded)
 	snapshot, err := h.store.GetTaskContextSnapshotForCycle(context.Background(), cycle.ID)
 	if err != nil {
 		t.Fatalf("get context snapshot: %v", err)
@@ -544,17 +546,17 @@ func TestWorker_StartCycle_recordsRunnerModelAttribution(t *testing.T) {
 			tsk := h.createReadyTaskWithModel(ctx, "model-attr-"+tc.name, tc.taskModel)
 
 			r := runnerfake.New().WithDefaultModel(tc.runnerDefault)
-			r.Script(tsk.ID, domain.PhaseExecute, runner.NewResult(
-				domain.PhaseStatusSucceeded, "ok", nil, ""))
+			r.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(
+				cyclesdomain.PhaseStatusSucceeded, "ok", nil, ""))
 
 			_, done := h.startWorker(ctx, r, worker.Options{})
-			h.waitTaskStatus(ctx, tsk.ID, domain.StatusDone)
+			h.waitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusDone)
 			cancel()
 			if err := <-done; err != nil {
 				t.Fatalf("worker exit err: %v", err)
 			}
 
-			cycle := assertCycleStatus(t, h.store, tsk.ID, 1, domain.CycleStatusSucceeded)
+			cycle := assertCycleStatus(t, h.store, tsk.ID, 1, cyclesdomain.CycleStatusSucceeded)
 			var meta map[string]string
 			if err := json.Unmarshal(cycle.MetaJSON, &meta); err != nil {
 				t.Fatalf("unmarshal meta: %v (raw=%s)", err, cycle.MetaJSON)
@@ -583,34 +585,34 @@ func TestWorker_RunnerFailure_marksCycleAndTaskFailed(t *testing.T) {
 	tsk := h.createReadyTask(ctx, "boom")
 
 	r := runnerfake.New()
-	r.FailWithResult(tsk.ID, domain.PhaseExecute,
-		runner.NewResult(domain.PhaseStatusFailed, "exit 7", json.RawMessage(`{"exit_code":7}`), "stderr tail"),
+	r.FailWithResult(tsk.ID, cyclesdomain.PhaseExecute,
+		runner.NewResult(cyclesdomain.PhaseStatusFailed, "exit 7", json.RawMessage(`{"exit_code":7}`), "stderr tail"),
 		fmt.Errorf("cli exit: %w", runner.ErrNonZeroExit))
 
 	_, done := h.startWorker(ctx, r, worker.Options{})
-	h.waitTaskStatus(ctx, tsk.ID, domain.StatusFailed)
+	h.waitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusFailed)
 	cancel()
 	if err := <-done; err != nil {
 		t.Fatalf("worker exit err: %v", err)
 	}
 
 	bg := context.Background()
-	cycle := assertCycleStatus(t, h.store, tsk.ID, 1, domain.CycleStatusFailed)
+	cycle := assertCycleStatus(t, h.store, tsk.ID, 1, cyclesdomain.CycleStatusFailed)
 	phases, _ := h.store.ListPhasesForCycle(bg, cycle.ID)
 	if len(phases) != 1 {
 		t.Fatalf("phase count = %d, want 1", len(phases))
 	}
-	if phases[0].Phase != domain.PhaseExecute || phases[0].Status != domain.PhaseStatusFailed {
+	if phases[0].Phase != cyclesdomain.PhaseExecute || phases[0].Status != cyclesdomain.PhaseStatusFailed {
 		t.Fatalf("execute phase = %q/%q, want execute/failed", phases[0].Phase, phases[0].Status)
 	}
 
 	events, _ := h.store.ListTaskEvents(bg, tsk.ID)
 	counts := eventTypeCounts(events)
-	if counts[domain.EventCycleFailed] != 1 {
-		t.Fatalf("cycle_failed count = %d, want 1", counts[domain.EventCycleFailed])
+	if counts[taskeventsdomain.EventCycleFailed] != 1 {
+		t.Fatalf("cycle_failed count = %d, want 1", counts[taskeventsdomain.EventCycleFailed])
 	}
-	if counts[domain.EventPhaseFailed] != 1 {
-		t.Fatalf("phase_failed count = %d, want 1", counts[domain.EventPhaseFailed])
+	if counts[taskeventsdomain.EventPhaseFailed] != 1 {
+		t.Fatalf("phase_failed count = %d, want 1", counts[taskeventsdomain.EventPhaseFailed])
 	}
 
 	if got := h.queue.BufferDepth(); got != 0 {
@@ -627,8 +629,8 @@ func TestWorker_StaleTaskAtDequeue_ackAndSkip(t *testing.T) {
 	tsk := h.createReadyTask(ctx, "stale")
 
 	// Move the task off `ready` AFTER it was enqueued by Create.
-	doneStatus := domain.StatusDone
-	if _, err := h.store.Update(ctx, tsk.ID, store.UpdateTaskInput{Status: &doneStatus}, domain.ActorUser); err != nil {
+	doneStatus := taskcoredomain.StatusDone
+	if _, err := h.store.Update(ctx, tsk.ID, store.UpdateTaskInput{Status: &doneStatus}, taskcoredomain.ActorUser); err != nil {
 		t.Fatalf("update to done: %v", err)
 	}
 
@@ -668,12 +670,12 @@ func TestWorker_TaskDeletedMidCycle_logsAndAcks(t *testing.T) {
 	br := newBlockingRunner()
 	br.onStart = func(req runner.Request) {
 		// Cascade-deletes the cycle + phase rows.
-		if _, err := h.store.Delete(context.Background(), tsk.ID, domain.ActorUser); err != nil {
+		if _, err := h.store.Delete(context.Background(), tsk.ID, taskcoredomain.ActorUser); err != nil {
 			t.Logf("delete during run: %v", err)
 		}
 		close(br.release)
 	}
-	br.result = runner.NewResult(domain.PhaseStatusSucceeded, "", nil, "")
+	br.result = runner.NewResult(cyclesdomain.PhaseStatusSucceeded, "", nil, "")
 
 	_, done := h.startWorker(ctx, br, worker.Options{})
 
@@ -682,14 +684,14 @@ func TestWorker_TaskDeletedMidCycle_logsAndAcks(t *testing.T) {
 	var lastErr error
 	for time.Now().Before(deadline) {
 		_, err := h.store.Get(bg, tsk.ID)
-		if errors.Is(err, domain.ErrNotFound) {
+		if errors.Is(err, taskcoredomain.ErrNotFound) {
 			lastErr = err
 			break
 		}
 		lastErr = err
 		time.Sleep(pollInterval)
 	}
-	if !errors.Is(lastErr, domain.ErrNotFound) {
+	if !errors.Is(lastErr, taskcoredomain.ErrNotFound) {
 		t.Fatalf("expected task deleted, last err=%v", lastErr)
 	}
 
@@ -717,8 +719,8 @@ func TestWorker_PanicInRunner_terminatesAndContinues(t *testing.T) {
 	second := h.createReadyTask(ctx, "after-panic")
 
 	r := runnerfake.New()
-	r.Script(second.ID, domain.PhaseExecute, runner.NewResult(
-		domain.PhaseStatusSucceeded, "ok", nil, ""))
+	r.Script(second.ID, cyclesdomain.PhaseExecute, runner.NewResult(
+		cyclesdomain.PhaseStatusSucceeded, "ok", nil, ""))
 
 	// Wrap the fake to panic on the first task and delegate to the
 	// fake on the second so the loop must keep going.
@@ -729,8 +731,8 @@ func TestWorker_PanicInRunner_terminatesAndContinues(t *testing.T) {
 
 	_, done := h.startWorker(ctx, pr, worker.Options{})
 
-	h.waitTaskStatus(ctx, first.ID, domain.StatusFailed)
-	h.waitTaskStatus(ctx, second.ID, domain.StatusDone)
+	h.waitTaskStatus(ctx, first.ID, taskcoredomain.StatusFailed)
+	h.waitTaskStatus(ctx, second.ID, taskcoredomain.StatusDone)
 
 	cancel()
 	if err := <-done; err != nil {
@@ -738,18 +740,18 @@ func TestWorker_PanicInRunner_terminatesAndContinues(t *testing.T) {
 	}
 
 	bg := context.Background()
-	c := assertCycleStatus(t, h.store, first.ID, 1, domain.CycleStatusFailed)
+	c := assertCycleStatus(t, h.store, first.ID, 1, cyclesdomain.CycleStatusFailed)
 	phases, _ := h.store.ListPhasesForCycle(bg, c.ID)
 	if len(phases) != 1 {
 		t.Fatalf("panic cycle phase count = %d, want 1", len(phases))
 	}
-	if phases[0].Phase != domain.PhaseExecute || phases[0].Status != domain.PhaseStatusFailed {
+	if phases[0].Phase != cyclesdomain.PhaseExecute || phases[0].Status != cyclesdomain.PhaseStatusFailed {
 		t.Fatalf("execute phase after panic = %q/%q, want execute/failed", phases[0].Phase, phases[0].Status)
 	}
 
 	events, _ := h.store.ListTaskEvents(bg, first.ID)
 	counts := eventTypeCounts(events)
-	if counts[domain.EventCycleFailed] != 1 || counts[domain.EventPhaseFailed] != 1 {
+	if counts[taskeventsdomain.EventCycleFailed] != 1 || counts[taskeventsdomain.EventPhaseFailed] != 1 {
 		t.Fatalf("panic cycle event counts = %+v", counts)
 	}
 }
@@ -791,13 +793,13 @@ func TestWorker_ShutdownMidRun_writesAbortedCycleAndFailedTask(t *testing.T) {
 	}
 
 	bg := context.Background()
-	cycle := assertCycleStatus(t, h.store, tsk.ID, 1, domain.CycleStatusAborted)
+	cycle := assertCycleStatus(t, h.store, tsk.ID, 1, cyclesdomain.CycleStatusAborted)
 
 	final, err := h.store.Get(bg, tsk.ID)
 	if err != nil {
 		t.Fatalf("get task: %v", err)
 	}
-	if final.Status != domain.StatusFailed {
+	if final.Status != taskcoredomain.StatusFailed {
 		t.Fatalf("task status after shutdown = %q, want failed", final.Status)
 	}
 
@@ -805,7 +807,7 @@ func TestWorker_ShutdownMidRun_writesAbortedCycleAndFailedTask(t *testing.T) {
 	if len(phases) != 1 {
 		t.Fatalf("phase count after shutdown = %d, want 1", len(phases))
 	}
-	if phases[0].Phase != domain.PhaseExecute || phases[0].Status != domain.PhaseStatusFailed {
+	if phases[0].Phase != cyclesdomain.PhaseExecute || phases[0].Status != cyclesdomain.PhaseStatusFailed {
 		t.Fatalf("execute phase after shutdown = %q/%q", phases[0].Phase, phases[0].Status)
 	}
 	if phases[0].Summary == nil || !strings.Contains(*phases[0].Summary, worker.ShutdownReason) {
@@ -814,8 +816,8 @@ func TestWorker_ShutdownMidRun_writesAbortedCycleAndFailedTask(t *testing.T) {
 
 	events, _ := h.store.ListTaskEvents(bg, tsk.ID)
 	counts := eventTypeCounts(events)
-	if counts[domain.EventCycleFailed] != 1 {
-		t.Fatalf("cycle_failed (aborted folds in) count = %d, want 1", counts[domain.EventCycleFailed])
+	if counts[taskeventsdomain.EventCycleFailed] != 1 {
+		t.Fatalf("cycle_failed (aborted folds in) count = %d, want 1", counts[taskeventsdomain.EventCycleFailed])
 	}
 }
 
@@ -828,7 +830,7 @@ func TestWorker_NoDoubleCycleOnRedelivery(t *testing.T) {
 	tsk := h.createReadyTask(ctx, "redeliver")
 
 	br := newBlockingRunner()
-	br.result = runner.NewResult(domain.PhaseStatusSucceeded, "", nil, "")
+	br.result = runner.NewResult(cyclesdomain.PhaseStatusSucceeded, "", nil, "")
 
 	// Direct in-test attempt to write a second cycle while one is
 	// running surfaces ErrInvalidInput from the store guard. This
@@ -846,14 +848,14 @@ func TestWorker_NoDoubleCycleOnRedelivery(t *testing.T) {
 	}
 
 	_, err := h.store.StartCycle(context.Background(), store.StartCycleInput{
-		TaskID: tsk.ID, TriggeredBy: domain.ActorAgent,
+		TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent,
 	})
-	if !errors.Is(err, domain.ErrInvalidInput) {
+	if !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		t.Fatalf("second StartCycle err = %v, want ErrInvalidInput", err)
 	}
 
 	close(br.release)
-	h.waitTaskStatus(ctx, tsk.ID, domain.StatusDone)
+	h.waitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusDone)
 	cancel()
 	if err := <-done; err != nil {
 		t.Fatalf("worker exit err: %v", err)
@@ -874,8 +876,8 @@ func TestWorker_NilNotifierIsNoOp(t *testing.T) {
 	tsk := h.createReadyTask(ctx, "no-notifier")
 
 	r := runnerfake.New()
-	r.Script(tsk.ID, domain.PhaseExecute, runner.NewResult(
-		domain.PhaseStatusSucceeded, "", nil, ""))
+	r.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(
+		cyclesdomain.PhaseStatusSucceeded, "", nil, ""))
 
 	w := worker.NewWorker(h.store, h.queue, r, worker.Options{Notifier: nil})
 	done := make(chan error, 1)
@@ -883,7 +885,7 @@ func TestWorker_NilNotifierIsNoOp(t *testing.T) {
 		done <- w.Run(ctx)
 	}()
 
-	h.waitTaskStatus(ctx, tsk.ID, domain.StatusDone)
+	h.waitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusDone)
 	cancel()
 	if err := <-done; err != nil {
 		t.Fatalf("worker exit err: %v", err)
@@ -913,8 +915,8 @@ func TestWorker_QueueDrainsAfterHappyRun(t *testing.T) {
 
 	tsk := h.createReadyTask(ctx, "drain")
 	r := runnerfake.New()
-	r.Script(tsk.ID, domain.PhaseExecute, runner.NewResult(
-		domain.PhaseStatusSucceeded, "", nil, ""))
+	r.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(
+		cyclesdomain.PhaseStatusSucceeded, "", nil, ""))
 
 	// Use atomic to keep the closure readonly to the linter.
 	var ran atomic.Bool
@@ -928,7 +930,7 @@ func TestWorker_QueueDrainsAfterHappyRun(t *testing.T) {
 	}
 
 	_, done := h.startWorker(ctx, wrappedRunner, worker.Options{})
-	h.waitTaskStatus(ctx, tsk.ID, domain.StatusDone)
+	h.waitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusDone)
 	cancel()
 	if err := <-done; err != nil {
 		t.Fatalf("worker exit err: %v", err)
@@ -967,7 +969,7 @@ func (f *funcRunner) EffectiveModel(req runner.Request) string {
 // before the runner returns its successful Result, it directly calls
 // store.CompletePhase to mark the same phase row terminal. The worker's
 // happy-path CompletePhase call then surfaces "phase already terminal"
-// (domain.ErrInvalidInput). Without the fix this strands the cycle in
+// (taskcoredomain.ErrInvalidInput). Without the fix this strands the cycle in
 // `running` and the task in `running` until the next process restart;
 // with the fix the cycle is `failed` with the dedicated reason and the
 // task is walked to `failed` synchronously.
@@ -983,8 +985,8 @@ func TestWorker_CompletePhaseFailure_terminatesCycleAndFailsTask(t *testing.T) {
 	preemptOnce := sync.Once{}
 	var preempted atomic.Bool
 	r := runnerfake.New()
-	r.Script(tsk.ID, domain.PhaseExecute, runner.NewResult(
-		domain.PhaseStatusSucceeded, "all green",
+	r.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(
+		cyclesdomain.PhaseStatusSucceeded, "all green",
 		json.RawMessage(`{"ok":true}`), ""))
 
 	wrapped := &funcRunner{
@@ -1003,19 +1005,19 @@ func TestWorker_CompletePhaseFailure_terminatesCycleAndFailsTask(t *testing.T) {
 					return
 				}
 				for _, ph := range phases {
-					if ph.Phase != domain.PhaseExecute {
+					if ph.Phase != cyclesdomain.PhaseExecute {
 						continue
 					}
-					if domain.TerminalPhaseStatus(ph.Status) {
+					if cyclesdomain.TerminalPhaseStatus(ph.Status) {
 						continue
 					}
 					summary := "preempted by test"
 					if _, err := h.store.CompletePhase(bg, store.CompletePhaseInput{
 						CycleID:  cycles[0].ID,
 						PhaseSeq: ph.PhaseSeq,
-						Status:   domain.PhaseStatusFailed,
+						Status:   cyclesdomain.PhaseStatusFailed,
 						Summary:  &summary,
-						By:       domain.ActorAgent,
+						By:       taskcoredomain.ActorAgent,
 					}); err != nil {
 						t.Errorf("preempt: CompletePhase: %v", err)
 						return
@@ -1030,7 +1032,7 @@ func TestWorker_CompletePhaseFailure_terminatesCycleAndFailsTask(t *testing.T) {
 	}
 
 	_, done := h.startWorker(ctx, wrapped, worker.Options{})
-	final := h.waitTaskStatus(ctx, tsk.ID, domain.StatusFailed)
+	final := h.waitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusFailed)
 	cancel()
 	if err := <-done; err != nil {
 		t.Fatalf("worker exit err: %v", err)
@@ -1040,8 +1042,8 @@ func TestWorker_CompletePhaseFailure_terminatesCycleAndFailsTask(t *testing.T) {
 		t.Fatal("test setup did not preempt the execute phase; reproducer is a no-op")
 	}
 
-	if final.Status != domain.StatusFailed {
-		t.Fatalf("task final status = %q, want %q", final.Status, domain.StatusFailed)
+	if final.Status != taskcoredomain.StatusFailed {
+		t.Fatalf("task final status = %q, want %q", final.Status, taskcoredomain.StatusFailed)
 	}
 
 	cycles, err := h.store.ListCyclesForTask(bg, tsk.ID, 5)
@@ -1052,10 +1054,10 @@ func TestWorker_CompletePhaseFailure_terminatesCycleAndFailsTask(t *testing.T) {
 		t.Fatalf("cycle count = %d, want 1", len(cycles))
 	}
 	c := cycles[0]
-	if c.Status == domain.CycleStatusRunning || c.Status == "" {
+	if c.Status == cyclesdomain.CycleStatusRunning || c.Status == "" {
 		t.Fatalf("cycle status after CompletePhase failure = %q, want a terminal status (cycle was orphaned)", c.Status)
 	}
-	if c.Status != domain.CycleStatusFailed {
-		t.Fatalf("cycle status = %q, want %q (CompletePhase write failures must mark the cycle failed)", c.Status, domain.CycleStatusFailed)
+	if c.Status != cyclesdomain.CycleStatusFailed {
+		t.Fatalf("cycle status = %q, want %q (CompletePhase write failures must mark the cycle failed)", c.Status, cyclesdomain.CycleStatusFailed)
 	}
 }

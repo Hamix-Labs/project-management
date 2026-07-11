@@ -26,7 +26,9 @@ Repository paths grouped by subsystem. Read only the rows relevant to your task.
 | --- | --- | --- | --- |
 | HTTP API + SSE | `pkgs/tasks/handler/` | SSE hub, bootstrap, writepolicy; delegates core `/tasks*` to taskcore | [handler/README.md](../pkgs/tasks/handler/README.md), [domain/sse-hub.md](./domain/sse-hub.md) |
 | Task core BC | `pkgs/taskcore/` | Task CRUD, dependencies, gate, retry, stats, ready queue; `/tasks*` routes | [ADR-0059](./adr/ADR-0059-taskcore-extraction.md), [taskcore/README.md](../pkgs/taskcore/README.md) |
-| Domain types | `pkgs/tasks/domain/` | Compatibility aliases to taskcore + sibling BC domains | [data-model.md](./data-model.md) |
+| Domain types | `pkgs/<bc>/domain/` | BC-owned entities (`taskcore`, `taskcycles`, `taskchecklist`, `taskevents`, `projects`, `settings`) — **no** `pkgs/tasks/domain` | [data-model.md](./data-model.md), [ADR-0060](./adr/ADR-0060-retire-tasks-domain.md) |
+| Handler store contract | `pkgs/tasks/handler/handler_store.go` | Composes BC `contract` slices for HTTP — **no** `pkgs/tasks/contract` hub | [ADR-0062](./adr/ADR-0062-retire-tasks-contract-hub.md) |
+| Harness store contract | `pkgs/agents/harness/internal/contract/` | BC-sliced persistence surface for worker orchestration | [ADR-0061](./adr/ADR-0061-harness-contract-slices.md), [domain/harness.md](./domain/harness.md) |
 | Projects bounded context | `pkgs/projects/` | Project CRUD, context graph, `/projects*` HTTP | [ADR-0045](./adr/ADR-0045-bounded-context-projects.md), [projects/README.md](../pkgs/projects/README.md) |
 | Git inventory bounded context | `pkgs/gitinventory/` | Registered repos/worktrees/branches, `/git/*` HTTP, reconcile | [ADR-0046](./adr/ADR-0046-bounded-context-gitinventory.md), [gitinventory/README.md](../pkgs/gitinventory/README.md) |
 | Settings bounded context | `pkgs/settings/` | App settings row, `/settings*` HTTP, workspace browse, agent probe/cancel | [ADR-0047](./adr/ADR-0047-bounded-context-settings.md), [settings/README.md](../pkgs/settings/README.md) |

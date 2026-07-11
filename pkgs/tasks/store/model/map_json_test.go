@@ -1,13 +1,12 @@
 package model
 
 import (
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"testing"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 func TestNullableStructJSON_nilIsSQLNull(t *testing.T) {
-	got, err := NullableStructJSON[*domain.PendingRetry](nil)
+	got, err := NullableStructJSON[*taskcoredomain.PendingRetry](nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -17,7 +16,7 @@ func TestNullableStructJSON_nilIsSQLNull(t *testing.T) {
 }
 
 func TestNullableStructJSON_valueMarshals(t *testing.T) {
-	v := &domain.PendingRetry{Mode: domain.RetryFresh, ParentCycleID: "cycle-1"}
+	v := &taskcoredomain.PendingRetry{Mode: taskcoredomain.RetryFresh, ParentCycleID: "cycle-1"}
 	got, err := NullableStructJSON(v)
 	if err != nil {
 		t.Fatal(err)

@@ -8,7 +8,7 @@ import (
 	"log/slog"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/reports"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
@@ -102,7 +102,7 @@ func (s *Service) persistVerifyReports(
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func (s *Service) loadTaskCommits(ctx context.Context, taskID string) []domain.TaskCycleCommit {
+func (s *Service) loadTaskCommits(ctx context.Context, taskID string) []cyclesdomain.TaskCycleCommit {
 	commits, _ := s.store.ListCommitsForTask(ctx, taskID)
 	return commits
 }

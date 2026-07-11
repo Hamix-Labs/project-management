@@ -4,8 +4,8 @@ import (
 	"context"
 	"sync"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcorecontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 )
 
 // GetCall records one TaskCRUDStore.Get invocation.
@@ -13,18 +13,18 @@ type GetCall struct {
 	ID string
 }
 
-// TaskCRUDFake implements contract.TaskCRUDStore with call recording and
+// TaskCRUDFake implements taskcorecontract.TaskCRUDStore with call recording and
 // injectable per-method outcomes for handler error-path tests.
 type TaskCRUDFake struct {
 	mu sync.Mutex
 
 	getErr  error
-	getTask *domain.Task
+	getTask *taskcoredomain.Task
 
 	getCalls []GetCall
 }
 
-// NewTaskCRUD returns an empty TaskCRUDFake. Get returns domain.ErrNotFound
+// NewTaskCRUD returns an empty TaskCRUDFake. Get returns taskcoredomain.ErrNotFound
 // until OnGet or FailGet configures a response.
 //
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
@@ -44,7 +44,7 @@ func (f *TaskCRUDFake) FailGet(err error) {
 // OnGet configures Get to return task (copied by pointer on read).
 //
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (f *TaskCRUDFake) OnGet(task *domain.Task) {
+func (f *TaskCRUDFake) OnGet(task *taskcoredomain.Task) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.getTask = task
@@ -64,7 +64,7 @@ func (f *TaskCRUDFake) GetCalls() []GetCall {
 // Get records the call and returns the configured outcome.
 //
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (f *TaskCRUDFake) Get(ctx context.Context, id string) (*domain.Task, error) {
+func (f *TaskCRUDFake) Get(ctx context.Context, id string) (*taskcoredomain.Task, error) {
 	f.mu.Lock()
 	f.getCalls = append(f.getCalls, GetCall{ID: id})
 	err := f.getErr
@@ -76,46 +76,46 @@ func (f *TaskCRUDFake) Get(ctx context.Context, id string) (*domain.Task, error)
 	if task != nil {
 		return task, nil
 	}
-	return nil, domain.ErrNotFound
+	return nil, taskcoredomain.ErrNotFound
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (f *TaskCRUDFake) Create(ctx context.Context, in contract.CreateTaskInput, by domain.Actor) (*domain.Task, error) {
+func (f *TaskCRUDFake) Create(ctx context.Context, in taskcorecontract.CreateTaskInput, by taskcoredomain.Actor) (*taskcoredomain.Task, error) {
 	return nil, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (f *TaskCRUDFake) Update(ctx context.Context, id string, in contract.UpdateTaskInput, by domain.Actor) (*domain.Task, error) {
+func (f *TaskCRUDFake) Update(ctx context.Context, id string, in taskcorecontract.UpdateTaskInput, by taskcoredomain.Actor) (*taskcoredomain.Task, error) {
 	return nil, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (f *TaskCRUDFake) Delete(ctx context.Context, id string, by domain.Actor) ([]string, error) {
+func (f *TaskCRUDFake) Delete(ctx context.Context, id string, by taskcoredomain.Actor) ([]string, error) {
 	return nil, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (f *TaskCRUDFake) ListFlatPage(ctx context.Context, limit, offset int, filter *contract.ListFilter) ([]domain.Task, bool, error) {
+func (f *TaskCRUDFake) ListFlatPage(ctx context.Context, limit, offset int, filter *taskcorecontract.ListFilter) ([]taskcoredomain.Task, bool, error) {
 	return nil, false, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (f *TaskCRUDFake) ListFlatAfter(ctx context.Context, limit int, afterID string) ([]domain.Task, bool, error) {
+func (f *TaskCRUDFake) ListFlatAfter(ctx context.Context, limit int, afterID string) ([]taskcoredomain.Task, bool, error) {
 	return nil, false, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (f *TaskCRUDFake) TaskStats(ctx context.Context) (contract.TaskStats, error) {
-	return contract.TaskStats{}, errNotImplemented
+func (f *TaskCRUDFake) TaskStats(ctx context.Context) (taskcorecontract.TaskStats, error) {
+	return taskcorecontract.TaskStats{}, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (f *TaskCRUDFake) RequestTaskRetry(ctx context.Context, in contract.RequestRetryInput, by domain.Actor) (*domain.Task, error) {
+func (f *TaskCRUDFake) RequestTaskRetry(ctx context.Context, in taskcorecontract.RequestRetryInput, by taskcoredomain.Actor) (*taskcoredomain.Task, error) {
 	return nil, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (f *TaskCRUDFake) ApplyTaskGateAction(ctx context.Context, taskID, action string, by domain.Actor) (*domain.Task, error) {
+func (f *TaskCRUDFake) ApplyTaskGateAction(ctx context.Context, taskID, action string, by taskcoredomain.Actor) (*taskcoredomain.Task, error) {
 	return nil, errNotImplemented
 }
 
@@ -125,12 +125,12 @@ func (f *TaskCRUDFake) ValidateTaskWorktreeBinding(ctx context.Context, projectI
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (f *TaskCRUDFake) ListTaskDependencies(ctx context.Context, taskID string) ([]domain.DependencyEdge, error) {
+func (f *TaskCRUDFake) ListTaskDependencies(ctx context.Context, taskID string) ([]taskcoredomain.DependencyEdge, error) {
 	return nil, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (f *TaskCRUDFake) AddTaskDependency(ctx context.Context, taskID, dependsOnTaskID string, satisfies domain.DependencySatisfies) error {
+func (f *TaskCRUDFake) AddTaskDependency(ctx context.Context, taskID, dependsOnTaskID string, satisfies taskcoredomain.DependencySatisfies) error {
 	return errNotImplemented
 }
 
@@ -140,8 +140,8 @@ func (f *TaskCRUDFake) RemoveTaskDependency(ctx context.Context, taskID, depends
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (f *TaskCRUDFake) ListCycleFailures(ctx context.Context, in contract.ListCycleFailuresInput) (contract.ListCycleFailuresResult, error) {
-	return contract.ListCycleFailuresResult{}, errNotImplemented
+func (f *TaskCRUDFake) ListCycleFailures(ctx context.Context, in taskcorecontract.ListCycleFailuresInput) (taskcorecontract.ListCycleFailuresResult, error) {
+	return taskcorecontract.ListCycleFailuresResult{}, errNotImplemented
 }
 
-var _ contract.TaskCRUDStore = (*TaskCRUDFake)(nil)
+var _ taskcorecontract.TaskCRUDStore = (*TaskCRUDFake)(nil)

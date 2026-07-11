@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/git"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
 // LoadContinuationBundle rehydrates cross-cycle resume context from a parent attempt.
@@ -26,7 +26,7 @@ func (s *Service) LoadContinuationBundle(ctx context.Context, parentCycleID stri
 	if err != nil {
 		return bundle, err
 	}
-	if !domain.TerminalCycleStatus(cycle.Status) {
+	if !cyclesdomain.TerminalCycleStatus(cycle.Status) {
 		return bundle, fmt.Errorf("continuation: parent cycle %q is not terminal", cycle.Status)
 	}
 	bundle.ParentCycleID = parentCycleID
@@ -56,7 +56,7 @@ func (s *Service) LoadContinuationBundle(ctx context.Context, parentCycleID stri
 			bundle.ScopeFiles = git.ScopeFilesFromPhaseDetails(ctx, s.gitRepo(), s.opts.WorkingDir, lastExecute.DetailsJSON)
 			bundle.RunnerFeedback = runnerFeedbackFromPhase(lastExecute)
 			bundle.CriteriaReportProbeErr = git.CriteriaReportProbeErrFromPhaseDetails(lastExecute.DetailsJSON)
-			if lastExecute.Status == domain.PhaseStatusFailed {
+			if lastExecute.Status == cyclesdomain.PhaseStatusFailed {
 				if summary := phaseSummary(*lastExecute); summary != "" {
 					bundle.ExecuteFeedback = "Prior execute attempt failed: " + summary
 				}
@@ -77,7 +77,7 @@ func (s *Service) LoadContinuationBundle(ctx context.Context, parentCycleID stri
 		return bundle, err
 	}
 	for i := range criteriaRows {
-		if criteriaRows[i].AttemptSeq == domain.ExecuteCriteriaReportAttemptSeq {
+		if criteriaRows[i].AttemptSeq == cyclesdomain.ExecuteCriteriaReportAttemptSeq {
 			bundle.CriteriaEvidence = append(bundle.CriteriaEvidence, criteriaRows[i])
 		}
 	}
@@ -90,7 +90,7 @@ func (s *Service) LoadContinuationBundle(ctx context.Context, parentCycleID stri
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func classifyParentFailure(phases []domain.TaskCyclePhase, cycle *domain.TaskCycle, lastPhase domain.TaskCyclePhase) FailureClass {
+func classifyParentFailure(phases []cyclesdomain.TaskCyclePhase, cycle *cyclesdomain.TaskCycle, lastPhase cyclesdomain.TaskCyclePhase) FailureClass {
 	reason := parentFailureReason(phases, cycle)
 	if reason == "" {
 		reason = phaseSummary(lastPhase)
@@ -98,13 +98,13 @@ func classifyParentFailure(phases []domain.TaskCyclePhase, cycle *domain.TaskCyc
 	if reason == cancelledByOperatorReason {
 		return FailureClassOperator
 	}
-	if strings.HasPrefix(reason, verificationFailedReason) || lastPhase.Phase == domain.PhaseVerify {
+	if strings.HasPrefix(reason, verificationFailedReason) || lastPhase.Phase == cyclesdomain.PhaseVerify {
 		return FailureClassVerify
 	}
 	if strings.HasPrefix(reason, "runner_") || strings.Contains(reason, "runner_") {
 		return FailureClassRunner
 	}
-	if lastPhase.Phase == domain.PhaseExecute && lastPhase.Status == domain.PhaseStatusFailed {
+	if lastPhase.Phase == cyclesdomain.PhaseExecute && lastPhase.Status == cyclesdomain.PhaseStatusFailed {
 		return FailureClassRunner
 	}
 	if reason == "shutdown" || reason == "panic" || strings.HasSuffix(reason, "_failed") {
@@ -114,15 +114,15 @@ func classifyParentFailure(phases []domain.TaskCyclePhase, cycle *domain.TaskCyc
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func routeResumeEntry(phases []domain.TaskCyclePhase, lastExecute *domain.TaskCyclePhase, lastPhase domain.TaskCyclePhase, cycle *domain.TaskCycle, hasCommits bool) Entry {
+func routeResumeEntry(phases []cyclesdomain.TaskCyclePhase, lastExecute *cyclesdomain.TaskCyclePhase, lastPhase cyclesdomain.TaskCyclePhase, cycle *cyclesdomain.TaskCycle, hasCommits bool) Entry {
 	reason := parentFailureReason(phases, cycle)
 	if reason == "" {
 		reason = phaseSummary(lastPhase)
 	}
 	if lastExecute != nil &&
-		lastExecute.Status == domain.PhaseStatusSucceeded &&
-		cycle.Status == domain.CycleStatusFailed &&
-		(lastPhase.Phase == domain.PhaseVerify || strings.HasPrefix(reason, verificationFailedReason)) &&
+		lastExecute.Status == cyclesdomain.PhaseStatusSucceeded &&
+		cycle.Status == cyclesdomain.CycleStatusFailed &&
+		(lastPhase.Phase == cyclesdomain.PhaseVerify || strings.HasPrefix(reason, verificationFailedReason)) &&
 		hasCommits {
 		return EntryVerifyOnly
 	}
@@ -130,16 +130,16 @@ func routeResumeEntry(phases []domain.TaskCyclePhase, lastExecute *domain.TaskCy
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func parentFailureReason(phases []domain.TaskCyclePhase, cycle *domain.TaskCycle) string {
+func parentFailureReason(phases []cyclesdomain.TaskCyclePhase, cycle *cyclesdomain.TaskCycle) string {
 	if len(phases) > 0 {
 		last := phases[len(phases)-1]
-		if last.Status == domain.PhaseStatusFailed {
+		if last.Status == cyclesdomain.PhaseStatusFailed {
 			if s := phaseSummary(last); s != "" {
 				return s
 			}
 		}
 		for i := len(phases) - 1; i >= 0; i-- {
-			if phases[i].Status == domain.PhaseStatusFailed {
+			if phases[i].Status == cyclesdomain.PhaseStatusFailed {
 				if s := phaseSummary(phases[i]); s != "" {
 					return s
 				}
@@ -150,7 +150,7 @@ func parentFailureReason(phases []domain.TaskCyclePhase, cycle *domain.TaskCycle
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func continuationSufficient(bundle ContinuationBundle, cycle *domain.TaskCycle) bool {
+func continuationSufficient(bundle ContinuationBundle, cycle *cyclesdomain.TaskCycle) bool {
 	if cycle == nil || cycle.ID == "" {
 		return false
 	}
@@ -160,15 +160,15 @@ func continuationSufficient(bundle ContinuationBundle, cycle *domain.TaskCycle) 
 	if bundle.FailureReason != "" || bundle.FailurePhase != "" {
 		return true
 	}
-	return domain.TerminalCycleStatus(cycle.Status)
+	return cyclesdomain.TerminalCycleStatus(cycle.Status)
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func lastExecutePhase(phases []domain.TaskCyclePhase) *domain.TaskCyclePhase {
-	var last *domain.TaskCyclePhase
+func lastExecutePhase(phases []cyclesdomain.TaskCyclePhase) *cyclesdomain.TaskCyclePhase {
+	var last *cyclesdomain.TaskCyclePhase
 	for i := range phases {
 		p := &phases[i]
-		if p.Phase != domain.PhaseExecute {
+		if p.Phase != cyclesdomain.PhaseExecute {
 			continue
 		}
 		if last == nil || p.PhaseSeq > last.PhaseSeq {
@@ -179,7 +179,7 @@ func lastExecutePhase(phases []domain.TaskCyclePhase) *domain.TaskCyclePhase {
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func phaseSummary(p domain.TaskCyclePhase) string {
+func phaseSummary(p cyclesdomain.TaskCyclePhase) string {
 	if p.Summary == nil {
 		return ""
 	}
@@ -187,7 +187,7 @@ func phaseSummary(p domain.TaskCyclePhase) string {
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func runnerFeedbackFromPhase(p *domain.TaskCyclePhase) string {
+func runnerFeedbackFromPhase(p *cyclesdomain.TaskCyclePhase) string {
 	if p == nil {
 		return ""
 	}

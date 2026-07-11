@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
@@ -23,7 +23,7 @@ type taskGitBinding struct {
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func taskHasBinding(task *domain.Task) bool {
+func taskHasBinding(task *taskcoredomain.Task) bool {
 	if task == nil {
 		return false
 	}
@@ -38,7 +38,7 @@ func (w *Worker) gitService() gitwork.Service {
 	return gitwork.New()
 }
 
-func (w *Worker) resolveTaskGitBinding(ctx context.Context, task *domain.Task) (*taskGitBinding, error) {
+func (w *Worker) resolveTaskGitBinding(ctx context.Context, task *taskcoredomain.Task) (*taskGitBinding, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.worker.Worker.resolveTaskGitBinding",
 		"task_id", task.ID)
 	if !taskHasBinding(task) {
@@ -100,9 +100,9 @@ func (w *Worker) abortRunningFromGitPrep(ctx context.Context, taskID string, pre
 	slog.Warn("agent worker git prep failed", "cmd", calltrace.LogCmd,
 		"operation", "agent.worker.Worker.abortRunningFromGitPrep",
 		"task_id", taskID, "err", prepErr)
-	failed := domain.StatusFailed
-	if _, err := w.store.Update(ctx, taskID, store.UpdateTaskInput{Status: &failed}, domain.ActorAgent); err != nil {
-		if !errors.Is(err, domain.ErrNotFound) {
+	failed := taskcoredomain.StatusFailed
+	if _, err := w.store.Update(ctx, taskID, store.UpdateTaskInput{Status: &failed}, taskcoredomain.ActorAgent); err != nil {
+		if !errors.Is(err, taskcoredomain.ErrNotFound) {
 			slog.Warn("agent worker git prep task transition failed", "cmd", calltrace.LogCmd,
 				"operation", "agent.worker.Worker.abortRunningFromGitPrep.err",
 				"task_id", taskID, "err", err)
@@ -111,7 +111,7 @@ func (w *Worker) abortRunningFromGitPrep(ctx context.Context, taskID string, pre
 }
 
 //funclogmeasure:skip category=delegate-already-logs reason="Orchestrator; resolveTaskGitBinding and prepareGitRun emit operation traces."
-func (w *Worker) runWithGitPrep(ctx context.Context, task *domain.Task, run func()) {
+func (w *Worker) runWithGitPrep(ctx context.Context, task *taskcoredomain.Task, run func()) {
 	binding, err := w.resolveTaskGitBinding(ctx, task)
 	if err != nil {
 		w.abortRunningFromGitPrep(ctx, task.ID, err)

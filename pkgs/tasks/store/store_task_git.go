@@ -5,11 +5,10 @@ import (
 	"context"
 	"fmt"
 	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"log/slog"
 	"os"
 	"strings"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 // TaskGitContext is the resolved filesystem path and branch name for a task binding.
@@ -26,14 +25,14 @@ func (s *Store) ValidateTaskWorktreeBinding(ctx context.Context, projectID *stri
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ValidateTaskWorktreeBinding")
 	worktreeID = strings.TrimSpace(worktreeID)
 	if worktreeID == "" {
-		return fmt.Errorf("%w: worktree_id required", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: worktree_id required", taskcoredomain.ErrInvalidInput)
 	}
 	wt, err := s.GetGitWorktreeByID(ctx, worktreeID)
 	if err != nil {
 		return err
 	}
 	if strings.TrimSpace(wt.BranchID) == "" {
-		return fmt.Errorf("%w: worktree has no branch assigned", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: worktree has no branch assigned", taskcoredomain.ErrInvalidInput)
 	}
 	if _, err := s.GetGitBranchByID(ctx, wt.BranchID); err != nil {
 		return err

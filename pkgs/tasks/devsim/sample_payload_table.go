@@ -2,75 +2,74 @@ package devsim
 
 import (
 	"encoding/json"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 )
 
 // samplePayloadByType returns deterministic JSON payloads for the dev ticker.
 // default branch in samplePayload handles unknown types.
-var samplePayloadByType = map[domain.EventType]func() ([]byte, error){
-	domain.EventStatusChanged: func() ([]byte, error) {
+var samplePayloadByType = map[taskeventsdomain.EventType]func() ([]byte, error){
+	taskeventsdomain.EventStatusChanged: func() ([]byte, error) {
 		return json.Marshal(map[string]string{"from": "ready", "to": "running"})
 	},
-	domain.EventPriorityChanged: func() ([]byte, error) {
+	taskeventsdomain.EventPriorityChanged: func() ([]byte, error) {
 		return json.Marshal(map[string]string{"from": "medium", "to": "high"})
 	},
-	domain.EventPromptAppended: func() ([]byte, error) {
+	taskeventsdomain.EventPromptAppended: func() ([]byte, error) {
 		return json.Marshal(map[string]string{"from": "<p>a</p>", "to": "<p>a</p><p>b</p>"})
 	},
-	domain.EventMessageAdded: func() ([]byte, error) {
+	taskeventsdomain.EventMessageAdded: func() ([]byte, error) {
 		return json.Marshal(map[string]string{"from": "Title A", "to": "Title B"})
 	},
-	domain.EventContextAdded: func() ([]byte, error) {
+	taskeventsdomain.EventContextAdded: func() ([]byte, error) {
 		return json.Marshal(map[string]string{"summary": "Repo layout", "detail": "Tasks live under pkgs/tasks."})
 	},
-	domain.EventConstraintAdded: func() ([]byte, error) {
+	taskeventsdomain.EventConstraintAdded: func() ([]byte, error) {
 		return json.Marshal(map[string]string{"text": "Must keep default go test ./... green."})
 	},
-	domain.EventSuccessCriterionAdded: func() ([]byte, error) {
+	taskeventsdomain.EventSuccessCriterionAdded: func() ([]byte, error) {
 		return json.Marshal(map[string]string{"text": "UI timeline renders without console errors."})
 	},
-	domain.EventNonGoalAdded: func() ([]byte, error) {
+	taskeventsdomain.EventNonGoalAdded: func() ([]byte, error) {
 		return json.Marshal(map[string]string{"text": "No production deploy in this iteration."})
 	},
-	domain.EventPlanAdded: func() ([]byte, error) {
+	taskeventsdomain.EventPlanAdded: func() ([]byte, error) {
 		return json.Marshal(map[string]any{
 			"title": "Dev sim plan",
 			"steps": []string{"Sketch", "Implement", "Verify"},
 		})
 	},
-	domain.EventChecklistItemAdded: func() ([]byte, error) {
+	taskeventsdomain.EventChecklistItemAdded: func() ([]byte, error) {
 		return json.Marshal(map[string]string{"item_id": "cli-dev-1", "text": "Run go test ./..."})
 	},
-	domain.EventChecklistItemToggled: func() ([]byte, error) {
+	taskeventsdomain.EventChecklistItemToggled: func() ([]byte, error) {
 		return json.Marshal(map[string]string{"item_id": "cli-dev-1", "done": "true"})
 	},
-	domain.EventChecklistItemUpdated: func() ([]byte, error) {
+	taskeventsdomain.EventChecklistItemUpdated: func() ([]byte, error) {
 		return json.Marshal(map[string]string{"item_id": "cli-dev-1", "text": "Run go test ./... (updated)"})
 	},
-	domain.EventChecklistItemRemoved: func() ([]byte, error) {
+	taskeventsdomain.EventChecklistItemRemoved: func() ([]byte, error) {
 		return json.Marshal(map[string]string{"item_id": "cli-dev-1", "text": "Removed criterion (synthetic)"})
 	},
-	domain.EventArtifactAdded: func() ([]byte, error) {
+	taskeventsdomain.EventArtifactAdded: func() ([]byte, error) {
 		return json.Marshal(map[string]string{"name": "notes.md", "uri": "file:///tmp/hamix-devsim"})
 	},
-	domain.EventApprovalRequested: func() ([]byte, error) {
+	taskeventsdomain.EventApprovalRequested: func() ([]byte, error) {
 		return json.Marshal(map[string]string{"reason": "Checkpoint ready", "checkpoint": "plan_review"})
 	},
-	domain.EventApprovalGranted: func() ([]byte, error) {
+	taskeventsdomain.EventApprovalGranted: func() ([]byte, error) {
 		return json.Marshal(map[string]string{"grantor": "lead", "note": "LGTM (synthetic)"})
 	},
-	domain.EventOnTaskDone: func() ([]byte, error) {
+	taskeventsdomain.EventOnTaskDone: func() ([]byte, error) {
 		return json.Marshal(map[string]any{
 			"worktree_id": "wt-devsim",
 			"branch_id":   "br-devsim",
 			"commits":     []map[string]string{{"sha": "abc1234", "message": "Synthetic commit."}},
 		})
 	},
-	domain.EventTaskFailed: func() ([]byte, error) {
+	taskeventsdomain.EventTaskFailed: func() ([]byte, error) {
 		return json.Marshal(map[string]string{"error": "Simulated failure", "retryable": "true"})
 	},
-	domain.EventSyncPing: func() ([]byte, error) {
+	taskeventsdomain.EventSyncPing: func() ([]byte, error) {
 		return json.Marshal(map[string]string{"source": "devsim"})
 	},
 }

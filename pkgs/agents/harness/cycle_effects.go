@@ -8,17 +8,18 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/git"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/orchestration"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
 // applyExecuteEffects persists execute phase outcome and optional terminal
 // cycle/task transitions. Store ordering: CompletePhase before TerminateCycle.
 func (h *Harness) applyExecuteEffects(
 	parentCtx context.Context,
-	task *domain.Task,
-	cycle *domain.TaskCycle,
+	task *taskcoredomain.Task,
+	cycle *cyclesdomain.TaskCycle,
 	state *processState,
-	execPhase *domain.TaskCyclePhase,
+	execPhase *cyclesdomain.TaskCyclePhase,
 	result runner.Result,
 	effects orchestration.ExecuteEffects,
 	commitCount int,
@@ -47,7 +48,7 @@ func (h *Harness) applyExecuteEffects(
 	}
 
 	if !h.completeExecutePhase(parentCtx, state, cycle, execPhase, phaseStatus, result, phaseDetails) {
-		h.bestEffortTerminate(parentCtx, state, task.ID, domain.CycleStatusFailed, completePhaseFailedReason)
+		h.bestEffortTerminate(parentCtx, state, task.ID, cyclesdomain.CycleStatusFailed, completePhaseFailedReason)
 		return false
 	}
 
@@ -59,10 +60,10 @@ func (h *Harness) applyExecuteEffects(
 		return false
 	}
 
-	if !h.terminateCycle(parentCtx, state, cycle.TaskID, domain.CycleStatusFailed, string(effects.Reason)) {
+	if !h.terminateCycle(parentCtx, state, cycle.TaskID, cyclesdomain.CycleStatusFailed, string(effects.Reason)) {
 		return false
 	}
-	if effects.TransitionTask == domain.StatusFailed {
+	if effects.TransitionTask == taskcoredomain.StatusFailed {
 		if !h.transitionTask(parentCtx, task.ID, effects.TransitionTask, "final_task_transition") {
 			return false
 		}
@@ -72,8 +73,8 @@ func (h *Harness) applyExecuteEffects(
 
 func (h *Harness) applyVerifyEffects(
 	parentCtx context.Context,
-	task *domain.Task,
-	cycle *domain.TaskCycle,
+	task *taskcoredomain.Task,
+	cycle *cyclesdomain.TaskCycle,
 	state *processState,
 	effects orchestration.VerifyEffects,
 	terminalReason string,
@@ -81,10 +82,10 @@ func (h *Harness) applyVerifyEffects(
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.applyVerifyEffects",
 		"task_id", task.ID, "cycle_id", cycle.ID)
 	if effects.Tampered {
-		if !h.terminateCycle(parentCtx, state, cycle.TaskID, domain.CycleStatusFailed, verifyTamperedReason) {
+		if !h.terminateCycle(parentCtx, state, cycle.TaskID, cyclesdomain.CycleStatusFailed, verifyTamperedReason) {
 			return false, true
 		}
-		if !h.transitionTask(parentCtx, task.ID, domain.StatusFailed, "final_task_transition") {
+		if !h.transitionTask(parentCtx, task.ID, taskcoredomain.StatusFailed, "final_task_transition") {
 			return false, true
 		}
 		return false, true
@@ -94,10 +95,10 @@ func (h *Harness) applyVerifyEffects(
 		return true, false
 	}
 	if effects.TerminalFailure {
-		if !h.terminateCycle(parentCtx, state, cycle.TaskID, domain.CycleStatusFailed, terminalReason) {
+		if !h.terminateCycle(parentCtx, state, cycle.TaskID, cyclesdomain.CycleStatusFailed, terminalReason) {
 			return false, true
 		}
-		if !h.transitionTask(parentCtx, task.ID, domain.StatusFailed, "final_task_transition") {
+		if !h.transitionTask(parentCtx, task.ID, taskcoredomain.StatusFailed, "final_task_transition") {
 			return false, true
 		}
 		return false, true
@@ -107,8 +108,8 @@ func (h *Harness) applyVerifyEffects(
 
 func (h *Harness) applyVerifyDisabledLegacyEffects(
 	parentCtx context.Context,
-	task *domain.Task,
-	cycle *domain.TaskCycle,
+	task *taskcoredomain.Task,
+	cycle *cyclesdomain.TaskCycle,
 	state *processState,
 	effects orchestration.VerifyEffects,
 ) (retryLoop, terminalFailure bool) {
@@ -122,8 +123,8 @@ func (h *Harness) applyVerifyDisabledLegacyEffects(
 
 func (h *Harness) applyFinalizeEffects(
 	parentCtx context.Context,
-	task *domain.Task,
-	cycle *domain.TaskCycle,
+	task *taskcoredomain.Task,
+	cycle *cyclesdomain.TaskCycle,
 	state *processState,
 	effects orchestration.FinalizeEffects,
 ) bool {
@@ -133,10 +134,10 @@ func (h *Harness) applyFinalizeEffects(
 	if !h.transitionTask(parentCtx, task.ID, effects.TaskStatus, "final_task_transition") {
 		return false
 	}
-	if effects.TaskStatus == domain.StatusDone {
+	if effects.TaskStatus == taskcoredomain.StatusDone {
 		h.emitOnTaskDone(parentCtx, task, cycle.ID)
 	}
-	if effects.CycleStatus != domain.CycleStatusSucceeded {
+	if effects.CycleStatus != cyclesdomain.CycleStatusSucceeded {
 		return true
 	}
 	h.publish(task.ID, cycle.ID)

@@ -3,12 +3,11 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"io"
 	"net/http"
 	"strings"
 	"testing"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 func TestHTTP_patch_checklist_item_text_updates_and_returns_items(t *testing.T) {
@@ -30,11 +29,11 @@ func TestHTTP_patch_checklist_item_text_updates_and_returns_items(t *testing.T) 
 	if res.StatusCode != http.StatusCreated {
 		t.Fatalf("create %d %s", res.StatusCode, b)
 	}
-	var created domain.Task
+	var created taskcoredomain.Task
 	if err := json.Unmarshal(b, &created); err != nil {
 		t.Fatal(err)
 	}
-	it, err := st.AddChecklistItem(ctx, created.ID, "alpha", nil, domain.ActorUser)
+	it, err := st.AddChecklistItem(ctx, created.ID, "alpha", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -93,11 +92,11 @@ func TestHTTP_patch_checklist_item_done_rejects_default_user_actor(t *testing.T)
 	if res.StatusCode != http.StatusCreated {
 		t.Fatalf("create %d %s", res.StatusCode, b)
 	}
-	var created domain.Task
+	var created taskcoredomain.Task
 	if err := json.Unmarshal(b, &created); err != nil {
 		t.Fatal(err)
 	}
-	it, err := st.AddChecklistItem(ctx, created.ID, "c", nil, domain.ActorUser)
+	it, err := st.AddChecklistItem(ctx, created.ID, "c", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -149,11 +148,11 @@ func TestHTTP_patch_checklist_item_rejects_text_and_done_together(t *testing.T) 
 	if res.StatusCode != http.StatusCreated {
 		t.Fatalf("create %d %s", res.StatusCode, b)
 	}
-	var created domain.Task
+	var created taskcoredomain.Task
 	if err := json.Unmarshal(b, &created); err != nil {
 		t.Fatal(err)
 	}
-	it, err := st.AddChecklistItem(ctx, created.ID, "c", nil, domain.ActorUser)
+	it, err := st.AddChecklistItem(ctx, created.ID, "c", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -205,11 +204,11 @@ func TestHTTP_patch_checklist_item_rejects_empty_trimmed_text(t *testing.T) {
 	if res.StatusCode != http.StatusCreated {
 		t.Fatalf("create %d %s", res.StatusCode, b)
 	}
-	var created domain.Task
+	var created taskcoredomain.Task
 	if err := json.Unmarshal(b, &created); err != nil {
 		t.Fatal(err)
 	}
-	it, err := st.AddChecklistItem(ctx, created.ID, "c", nil, domain.ActorUser)
+	it, err := st.AddChecklistItem(ctx, created.ID, "c", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}

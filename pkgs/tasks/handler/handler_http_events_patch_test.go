@@ -3,13 +3,13 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 	"io"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 func TestHTTP_patch_task_event_user_response(t *testing.T) {
@@ -31,7 +31,7 @@ func TestHTTP_patch_task_event_user_response(t *testing.T) {
 	if res.StatusCode != http.StatusCreated {
 		t.Fatalf("create %d %s", res.StatusCode, b)
 	}
-	var created domain.Task
+	var created taskcoredomain.Task
 	if err := json.Unmarshal(b, &created); err != nil {
 		t.Fatal(err)
 	}
@@ -170,7 +170,7 @@ func TestHTTP_get_task_event(t *testing.T) {
 	if res.StatusCode != http.StatusCreated {
 		t.Fatalf("create %d %s", res.StatusCode, b)
 	}
-	var created domain.Task
+	var created taskcoredomain.Task
 	if err := json.Unmarshal(b, &created); err != nil {
 		t.Fatal(err)
 	}
@@ -192,7 +192,7 @@ func TestHTTP_get_task_event(t *testing.T) {
 	if err := json.NewDecoder(resOK.Body).Decode(&one); err != nil {
 		t.Fatal(err)
 	}
-	if one.TaskID != created.ID || one.Seq != 1 || one.Type != string(domain.EventTaskCreated) {
+	if one.TaskID != created.ID || one.Seq != 1 || one.Type != string(taskeventsdomain.EventTaskCreated) {
 		t.Fatalf("payload %#v", one)
 	}
 
@@ -253,7 +253,7 @@ func TestHTTP_task_events_query_validation_error_messages(t *testing.T) {
 	if res.StatusCode != http.StatusCreated {
 		t.Fatalf("create %d %s", res.StatusCode, b)
 	}
-	var created domain.Task
+	var created taskcoredomain.Task
 	if err := json.Unmarshal(b, &created); err != nil {
 		t.Fatal(err)
 	}
@@ -338,11 +338,11 @@ func TestHTTP_patch_task_event_rejects_overlong_seq(t *testing.T) {
 	if res.StatusCode != http.StatusCreated {
 		t.Fatalf("create %d %s", res.StatusCode, b)
 	}
-	var created domain.Task
+	var created taskcoredomain.Task
 	if err := json.Unmarshal(b, &created); err != nil {
 		t.Fatal(err)
 	}
-	if err := st.AppendTaskEvent(ctx, created.ID, domain.EventApprovalRequested, domain.ActorAgent, []byte(`{}`)); err != nil {
+	if err := st.AppendTaskEvent(ctx, created.ID, taskeventsdomain.EventApprovalRequested, taskcoredomain.ActorAgent, []byte(`{}`)); err != nil {
 		t.Fatal(err)
 	}
 

@@ -5,9 +5,9 @@ import (
 	"context"
 	"net/http"
 
+	taskscontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/contract"
-	taskscontract "github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 // NotifyCycleChangedFunc publishes a cycle_changed SSE frame after cycle mutations.
@@ -16,7 +16,7 @@ type NotifyCycleChangedFunc func(ctx context.Context, taskID, cycleID string, da
 
 // TaskReader is the narrow task lookup surface commits handlers use to preflight task existence.
 type TaskReader interface {
-	Get(ctx context.Context, id string) (*domain.Task, error)
+	Get(ctx context.Context, id string) (*taskcoredomain.Task, error)
 }
 
 // CycleFailuresStore lists paginated cycle failure mirror rows for GET /tasks/cycle-failures.

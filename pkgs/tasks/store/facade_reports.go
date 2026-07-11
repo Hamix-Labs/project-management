@@ -5,8 +5,8 @@ import (
 	"context"
 	"log/slog"
 
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	cyclesstore "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 type (
@@ -31,19 +31,19 @@ func (s *Store) UpsertVerifyReports(ctx context.Context, cycleID string, attempt
 }
 
 // ListCriteriaReportsForCycle returns every persisted criteria-report row for cycleID.
-func (s *Store) ListCriteriaReportsForCycle(ctx context.Context, cycleID string) ([]domain.TaskCycleCriteriaReport, error) {
+func (s *Store) ListCriteriaReportsForCycle(ctx context.Context, cycleID string) ([]cyclesdomain.TaskCycleCriteriaReport, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ListCriteriaReportsForCycle")
 	return s.cycles.ListCriteriaReportsForCycle(ctx, cycleID)
 }
 
 // ListVerifyReportsForCycle is the verify counterpart of ListCriteriaReportsForCycle.
-func (s *Store) ListVerifyReportsForCycle(ctx context.Context, cycleID string) ([]domain.TaskCycleVerifyReport, error) {
+func (s *Store) ListVerifyReportsForCycle(ctx context.Context, cycleID string) ([]cyclesdomain.TaskCycleVerifyReport, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ListVerifyReportsForCycle")
 	return s.cycles.ListVerifyReportsForCycle(ctx, cycleID)
 }
 
 // GetCriteriaReport returns the criteria-report row for (cycleID, attemptSeq, criterionID).
-func (s *Store) GetCriteriaReport(ctx context.Context, cycleID string, attemptSeq int64, criterionID string) (*domain.TaskCycleCriteriaReport, error) {
+func (s *Store) GetCriteriaReport(ctx context.Context, cycleID string, attemptSeq int64, criterionID string) (*cyclesdomain.TaskCycleCriteriaReport, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.GetCriteriaReport")
 	return s.cycles.GetCriteriaReport(ctx, cycleID, attemptSeq, criterionID)
 }
@@ -55,7 +55,7 @@ func (s *Store) UpsertCommandRuns(ctx context.Context, cycleID string, attemptSe
 }
 
 // ListCommandRunsForCycle returns command run rows for cycleID.
-func (s *Store) ListCommandRunsForCycle(ctx context.Context, cycleID string) ([]domain.TaskCycleCommandRun, error) {
+func (s *Store) ListCommandRunsForCycle(ctx context.Context, cycleID string) ([]cyclesdomain.TaskCycleCommandRun, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ListCommandRunsForCycle")
 	return s.cycles.ListCommandRunsForCycle(ctx, cycleID)
 }

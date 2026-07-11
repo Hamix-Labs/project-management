@@ -14,7 +14,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -117,7 +117,7 @@ func (s *Store) DeleteGlobalGitRepository(ctx context.Context, repoID string) er
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "gitinventory.store.DeleteGlobalGitRepository")
 	repoID = strings.TrimSpace(repoID)
 	if repoID == "" {
-		return fmt.Errorf("%w: repository_id required", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: repository_id required", taskcoredomain.ErrInvalidInput)
 	}
 	if _, err := s.GetGitRepositoryByID(ctx, repoID); err != nil {
 		return err
@@ -140,7 +140,7 @@ func (s *Store) ListGitWorktreesByRepo(ctx context.Context, repoID string) ([]gi
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "gitinventory.store.ListGitWorktreesByRepo")
 	repoID = strings.TrimSpace(repoID)
 	if repoID == "" {
-		return nil, fmt.Errorf("%w: repository_id required", domain.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: repository_id required", taskcoredomain.ErrInvalidInput)
 	}
 	if _, err := s.GetGitRepositoryByID(ctx, repoID); err != nil {
 		return nil, err
@@ -182,7 +182,7 @@ func (s *Store) RegisterExistingGitWorktree(
 	}
 	path = strings.TrimSpace(path)
 	if path == "" {
-		return gitdomain.GitWorktree{}, fmt.Errorf("%w: path required", domain.ErrInvalidInput)
+		return gitdomain.GitWorktree{}, fmt.Errorf("%w: path required", taskcoredomain.ErrInvalidInput)
 	}
 	if gitSvc == nil {
 		gitSvc = gitwork.New()
@@ -193,7 +193,7 @@ func (s *Store) RegisterExistingGitWorktree(
 	}
 	invRow, ok := FindWorktreeInInventory(inventory, path)
 	if !ok {
-		return gitdomain.GitWorktree{}, fmt.Errorf("%w: path is not a linked worktree of this repository", domain.ErrInvalidInput)
+		return gitdomain.GitWorktree{}, fmt.Errorf("%w: path is not a linked worktree of this repository", taskcoredomain.ErrInvalidInput)
 	}
 	if invRow.Registered {
 		return gitdomain.GitWorktree{}, gitdomain.NewGitErr(gitdomain.GitCodePathExists, "worktree path already registered")
@@ -207,7 +207,7 @@ func (s *Store) RegisterExistingGitWorktree(
 		bindName = strings.TrimSpace(invRow.Branch)
 	}
 	if bindName == "" {
-		return gitdomain.GitWorktree{}, fmt.Errorf("%w: branch required", domain.ErrInvalidInput)
+		return gitdomain.GitWorktree{}, fmt.Errorf("%w: branch required", taskcoredomain.ErrInvalidInput)
 	}
 	br, err := s.resolveBranchForWorktree(ctx, repo, "", BindBranchInput{
 		Name:         bindName,
@@ -274,7 +274,7 @@ func (s *Store) ListGitBranchesByRepo(ctx context.Context, repoID string) ([]git
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "gitinventory.store.ListGitBranchesByRepo")
 	repoID = strings.TrimSpace(repoID)
 	if repoID == "" {
-		return nil, fmt.Errorf("%w: repository_id required", domain.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: repository_id required", taskcoredomain.ErrInvalidInput)
 	}
 	if _, err := s.GetGitRepositoryByID(ctx, repoID); err != nil {
 		return nil, err
@@ -299,7 +299,7 @@ func (s *Store) CreateGitBranchForRepo(ctx context.Context, repoID string, input
 	}
 	name := strings.TrimSpace(input.Name)
 	if name == "" {
-		return gitdomain.GitBranch{}, fmt.Errorf("%w: name required", domain.ErrInvalidInput)
+		return gitdomain.GitBranch{}, fmt.Errorf("%w: name required", taskcoredomain.ErrInvalidInput)
 	}
 	if gitSvc == nil {
 		gitSvc = gitwork.New()
@@ -337,7 +337,7 @@ func (s *Store) createGitWorktreeOnRepo(ctx context.Context, repo gitdomain.GitR
 	path := strings.TrimSpace(input.Path)
 	branch := strings.TrimSpace(input.Branch)
 	if path == "" || branch == "" {
-		return gitdomain.GitWorktree{}, fmt.Errorf("%w: path and branch required", domain.ErrInvalidInput)
+		return gitdomain.GitWorktree{}, fmt.Errorf("%w: path and branch required", taskcoredomain.ErrInvalidInput)
 	}
 	if gitSvc == nil {
 		gitSvc = gitwork.New()

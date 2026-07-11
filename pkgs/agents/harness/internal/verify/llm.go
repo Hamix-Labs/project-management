@@ -12,13 +12,15 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/prompt"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/reports"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
 func (s *Service) runLLMVerifyAgent(
 	ctx context.Context,
-	task *domain.Task,
-	cycle *domain.TaskCycle,
+	task *taskcoredomain.Task,
+	cycle *cyclesdomain.TaskCycle,
 	phaseSeq int64,
 	runCorrelationID string,
 	snap Snapshot,
@@ -122,8 +124,8 @@ func buildVerifyPrompt(
 
 func (s *Service) runVerifyCursor(
 	ctx context.Context,
-	task *domain.Task,
-	cycle *domain.TaskCycle,
+	task *taskcoredomain.Task,
+	cycle *cyclesdomain.TaskCycle,
 	phaseSeq int64,
 	runCorrelationID string,
 	snap Snapshot,
@@ -155,7 +157,7 @@ func (s *Service) runVerifyCursor(
 	return snap.VerifyRunner.Run(runCtx, runner.Request{
 		TaskID:           task.ID,
 		AttemptSeq:       cycle.AttemptSeq,
-		Phase:            domain.PhaseVerify,
+		Phase:            cyclesdomain.PhaseVerify,
 		Prompt:           promptText,
 		WorkingDir:       s.workingDir,
 		CursorModel:      snap.VerifyModel,
@@ -186,7 +188,7 @@ func (s *Service) assembleVerdictsFromVerifyReport(
 			next = append(next, v)
 			continue
 		}
-		if v.Verifier == domain.VerifierAgentSelf {
+		if v.Verifier == checklistdomain.VerifierAgentSelf {
 			next = append(next, v)
 			continue
 		}
@@ -195,15 +197,15 @@ func (s *Service) assembleVerdictsFromVerifyReport(
 		nv := Verdict{ID: v.ID, Evidence: entry.Evidence}
 		if vr.Verified {
 			nv.Passed = true
-			nv.Verifier = domain.VerifierVerifyAgent
+			nv.Verifier = checklistdomain.VerifierVerifyAgent
 			nv.Reasoning = vr.Reasoning
 		} else {
 			nv.Passed = false
-			nv.Verifier = domain.VerifierVerifyAgent
+			nv.Verifier = checklistdomain.VerifierVerifyAgent
 			nv.Reasoning = vr.Reasoning
 		}
 		next = append(next, nv)
-		s.recordVerdict(domain.VerifierVerifyAgent, nv.Passed)
+		s.recordVerdict(checklistdomain.VerifierVerifyAgent, nv.Passed)
 	}
 	return next, nil
 }

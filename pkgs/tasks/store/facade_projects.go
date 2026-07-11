@@ -7,7 +7,7 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	projectsstore "github.com/AlexsanderHamir/Hamix/pkgs/projects/store"
-	taskdomain "github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 )
 
 // Project store input aliases — re-exported for handlers and harness callers.
@@ -121,13 +121,13 @@ func (s *Store) DeleteProjectContext(ctx context.Context, projectID, itemID stri
 }
 
 // CreateTaskContextSnapshot inserts an immutable project-context snapshot for a cycle.
-func (s *Store) CreateTaskContextSnapshot(ctx context.Context, input CreateTaskContextSnapshotInput) (taskdomain.TaskContextSnapshot, error) {
+func (s *Store) CreateTaskContextSnapshot(ctx context.Context, input CreateTaskContextSnapshotInput) (taskcoredomain.TaskContextSnapshot, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.CreateTaskContextSnapshot")
 	return s.projects.CreateTaskContextSnapshot(ctx, input)
 }
 
 // GetTaskContextSnapshotForCycle returns the context snapshot recorded for a cycle.
-func (s *Store) GetTaskContextSnapshotForCycle(ctx context.Context, cycleID string) (taskdomain.TaskContextSnapshot, error) {
+func (s *Store) GetTaskContextSnapshotForCycle(ctx context.Context, cycleID string) (taskcoredomain.TaskContextSnapshot, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.GetTaskContextSnapshotForCycle")
 	return s.projects.GetTaskContextSnapshotForCycle(ctx, cycleID)
 }

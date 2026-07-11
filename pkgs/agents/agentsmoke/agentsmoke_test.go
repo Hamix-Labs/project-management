@@ -10,7 +10,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/agentsmoke"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/runnerfake"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
 func TestFixture_Prompt_referencesAbsoluteTargetPath(t *testing.T) {
@@ -60,21 +60,21 @@ func TestFixture_HappyPath_withFakeRunner(t *testing.T) {
 
 	r := runnerfake.New()
 	const taskID = "task-smoke-happy"
-	r.Script(taskID, domain.PhaseExecute, runner.Result{
-		Status:  domain.PhaseStatusSucceeded,
+	r.Script(taskID, cyclesdomain.PhaseExecute, runner.Result{
+		Status:  cyclesdomain.PhaseStatusSucceeded,
 		Summary: "smoke ok",
 	})
 
 	res, err := r.Run(context.Background(), runner.Request{
 		TaskID:     taskID,
-		Phase:      domain.PhaseExecute,
+		Phase:      cyclesdomain.PhaseExecute,
 		Prompt:     f.Prompt(),
 		WorkingDir: f.WorkingDir(),
 	})
 	if err != nil {
 		t.Fatalf("fake run: %v", err)
 	}
-	if res.Status != domain.PhaseStatusSucceeded {
+	if res.Status != cyclesdomain.PhaseStatusSucceeded {
 		t.Fatalf("fake status = %v, want succeeded", res.Status)
 	}
 

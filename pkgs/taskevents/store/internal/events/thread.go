@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 	eventsmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/model"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -69,7 +69,7 @@ func ThreadEntriesForDisplay(ev *taskeventsdomain.TaskEvent) []taskeventsdomain.
 
 // AppendResponseMessage appends one message to the event thread (user
 // or agent). The event type must accept responses (see
-// domain.EventTypeAcceptsUserResponse). user_response /
+// taskeventsdomain.EventTypeAcceptsUserResponse). user_response /
 // user_response_at are synced to the latest user message in the thread
 // so legacy clients that only read those columns still observe the
 // most recent ack. Postgres takes a row-level lock on the event row to
@@ -79,21 +79,21 @@ func AppendResponseMessage(ctx context.Context, db *gorm.DB, taskID string, seq 
 	defer storekernel.DeferLatency(storekernel.OpAppendTaskEventResponse)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskevents.store.events.AppendResponseMessage")
 	if by != taskeventsdomain.ActorUser && by != taskeventsdomain.ActorAgent {
-		return fmt.Errorf("%w: by must be user or agent", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: by must be user or agent", taskcoredomain.ErrInvalidInput)
 	}
 	text = strings.TrimSpace(text)
 	if text == "" {
-		return fmt.Errorf("%w: message cannot be empty", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: message cannot be empty", taskcoredomain.ErrInvalidInput)
 	}
 	if len(text) > maxTaskEventMessageBytes {
-		return fmt.Errorf("%w: message too long (max %d bytes)", domain.ErrInvalidInput, maxTaskEventMessageBytes)
+		return fmt.Errorf("%w: message too long (max %d bytes)", taskcoredomain.ErrInvalidInput, maxTaskEventMessageBytes)
 	}
 	tid := strings.TrimSpace(taskID)
 	if tid == "" {
-		return fmt.Errorf("%w: id", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: id", taskcoredomain.ErrInvalidInput)
 	}
 	if seq < 1 {
-		return fmt.Errorf("%w: seq", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: seq", taskcoredomain.ErrInvalidInput)
 	}
 
 	return db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
@@ -110,12 +110,12 @@ func appendResponseMessageInTx(tx *gorm.DB, tid string, seq int64, text string, 
 	}
 	if err := q.First(&ev).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return domain.ErrNotFound
+			return taskcoredomain.ErrNotFound
 		}
 		return fmt.Errorf("load task event: %w", err)
 	}
 	if !taskeventsdomain.EventTypeAcceptsUserResponse(ev.Type) {
-		return fmt.Errorf("%w: this event type does not accept thread messages", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: this event type does not accept thread messages", taskcoredomain.ErrInvalidInput)
 	}
 	thread, err := parseResponseThreadJSON(ev.ResponseThread)
 	if err != nil {
@@ -132,7 +132,7 @@ func appendResponseMessageInTx(tx *gorm.DB, tid string, seq int64, text string, 
 		}
 	}
 	if len(thread) >= maxResponseThreadEntries {
-		return fmt.Errorf("%w: thread is full (max %d messages)", domain.ErrInvalidInput, maxResponseThreadEntries)
+		return fmt.Errorf("%w: thread is full (max %d messages)", taskcoredomain.ErrInvalidInput, maxResponseThreadEntries)
 	}
 	now := time.Now().UTC()
 	thread = append(thread, taskeventsdomain.ResponseThreadEntry{At: now, By: by, Body: text})

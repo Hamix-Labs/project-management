@@ -2,13 +2,12 @@ package repo
 
 import (
 	"fmt"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"log/slog"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 const maxBrowseDirEntries = 200
@@ -46,7 +45,7 @@ func ListBrowseDirsUnrestricted(absPath string) (BrowseDirListing, error) {
 	}
 	clean, err := filepath.Abs(absPath)
 	if err != nil {
-		return BrowseDirListing{}, fmt.Errorf("%w: invalid path", domain.ErrInvalidInput)
+		return BrowseDirListing{}, fmt.Errorf("%w: invalid path", taskcoredomain.ErrInvalidInput)
 	}
 	clean = filepath.Clean(clean)
 	if err := ensureDirExists(clean); err != nil {
@@ -116,7 +115,7 @@ func listBrowseRootEntries(roots []BrowseRoot) (BrowseDirListing, error) {
 func resolvePathUnderBrowseRoots(roots []BrowseRoot, absPath string) (string, *BrowseRoot, error) {
 	abs, err := filepath.Abs(absPath)
 	if err != nil {
-		return "", nil, fmt.Errorf("%w: invalid path", domain.ErrInvalidInput)
+		return "", nil, fmt.Errorf("%w: invalid path", taskcoredomain.ErrInvalidInput)
 	}
 	clean := filepath.Clean(abs)
 	for i := range roots {
@@ -137,7 +136,7 @@ func resolvePathUnderBrowseRoots(roots []BrowseRoot, absPath string) (string, *B
 		}
 		return clean, r, nil
 	}
-	return "", nil, fmt.Errorf("%w: path is outside allowed browse roots", domain.ErrInvalidInput)
+	return "", nil, fmt.Errorf("%w: path is outside allowed browse roots", taskcoredomain.ErrInvalidInput)
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
@@ -145,12 +144,12 @@ func ensureDirExists(path string) error {
 	fi, err := os.Stat(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return fmt.Errorf("%w: directory does not exist", domain.ErrInvalidInput)
+			return fmt.Errorf("%w: directory does not exist", taskcoredomain.ErrInvalidInput)
 		}
 		return err
 	}
 	if !fi.IsDir() {
-		return fmt.Errorf("%w: path is not a directory", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: path is not a directory", taskcoredomain.ErrInvalidInput)
 	}
 	return nil
 }
@@ -159,15 +158,15 @@ func ensureDirExists(path string) error {
 func ensureUnderRootCanon(rootClean, target string) error {
 	targetCanon, err := canonicalizePathForContainment(target)
 	if err != nil {
-		return fmt.Errorf("%w: path canonicalization failed: %v", domain.ErrInvalidInput, err)
+		return fmt.Errorf("%w: path canonicalization failed: %v", taskcoredomain.ErrInvalidInput, err)
 	}
 	rootCanon, err := canonicalizePathForContainment(rootClean)
 	if err != nil {
-		return fmt.Errorf("%w: root canonicalization failed: %v", domain.ErrInvalidInput, err)
+		return fmt.Errorf("%w: root canonicalization failed: %v", taskcoredomain.ErrInvalidInput, err)
 	}
 	rel, err := filepath.Rel(rootCanon, targetCanon)
 	if err != nil || pathEscapesRoot(rel) {
-		return fmt.Errorf("%w: path escapes browse root via symlink", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: path escapes browse root via symlink", taskcoredomain.ErrInvalidInput)
 	}
 	return nil
 }

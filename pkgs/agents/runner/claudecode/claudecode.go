@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
 const adapterLogCmd = "claudecode"
@@ -67,7 +67,7 @@ func (a *Adapter) Run(_ context.Context, req runner.Request) (runner.Result, err
 	slog.Warn("claude-code adapter is a scaffold; Run always fails",
 		"cmd", adapterLogCmd, "task_id", req.TaskID)
 	return runner.NewResult(
-		domain.PhaseStatusFailed,
+		cyclesdomain.PhaseStatusFailed,
 		"claude-code adapter is not yet implemented",
 		nil,
 		"",

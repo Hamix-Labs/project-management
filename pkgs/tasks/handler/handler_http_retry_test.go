@@ -3,12 +3,11 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"io"
 	"net/http"
 	"strings"
 	"testing"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 var retryTestHTTPClient = &http.Client{
@@ -35,7 +34,7 @@ func postTaskRetry(t *testing.T, baseURL, taskID, body string) (*http.Response, 
 	return res, raw
 }
 
-func retryBody(t *testing.T, mode domain.RetryMode, parentCycleID string) string {
+func retryBody(t *testing.T, mode taskcoredomain.RetryMode, parentCycleID string) string {
 	t.Helper()
 	payload := map[string]string{"mode": string(mode)}
 	if parentCycleID != "" {
@@ -65,11 +64,11 @@ func mustFailedTaskWithTerminalCycle(t *testing.T, baseURL string) (taskID, cycl
 	if res2.StatusCode != http.StatusOK {
 		t.Fatalf("patch task failed status %d body=%s", res2.StatusCode, raw2)
 	}
-	var got domain.Task
+	var got taskcoredomain.Task
 	if err := json.Unmarshal(raw2, &got); err != nil {
 		t.Fatal(err)
 	}
-	if got.Status != domain.StatusFailed {
+	if got.Status != taskcoredomain.StatusFailed {
 		t.Fatalf("task status=%q want failed", got.Status)
 	}
 	return taskID, cycle.ID
@@ -80,23 +79,23 @@ func TestHTTP_postTaskRetry_fresh(t *testing.T) {
 	defer srv.Close()
 	taskID, cycleID := mustFailedTaskWithTerminalCycle(t, srv.URL)
 
-	body := retryBody(t, domain.RetryFresh, cycleID)
+	body := retryBody(t, taskcoredomain.RetryFresh, cycleID)
 	res, raw := postTaskRetry(t, srv.URL, taskID, body)
 	if res.StatusCode != http.StatusOK {
 		t.Fatalf("status %d body=%s", res.StatusCode, raw)
 	}
-	var got domain.Task
+	var got taskcoredomain.Task
 	if err := json.Unmarshal(raw, &got); err != nil {
 		t.Fatal(err)
 	}
-	if got.Status != domain.StatusReady {
+	if got.Status != taskcoredomain.StatusReady {
 		t.Fatalf("status=%q want ready", got.Status)
 	}
 	stored, err := st.Get(context.Background(), taskID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if stored.PendingRetry == nil || stored.PendingRetry.Mode != domain.RetryFresh || stored.PendingRetry.ParentCycleID != cycleID {
+	if stored.PendingRetry == nil || stored.PendingRetry.Mode != taskcoredomain.RetryFresh || stored.PendingRetry.ParentCycleID != cycleID {
 		t.Fatalf("pending_retry=%+v", stored.PendingRetry)
 	}
 	res2, _ := postTaskRetry(t, srv.URL, taskID, body)
@@ -110,22 +109,22 @@ func TestHTTP_postTaskRetry_resume(t *testing.T) {
 	defer srv.Close()
 	taskID, cycleID := mustFailedTaskWithTerminalCycle(t, srv.URL)
 
-	res, raw := postTaskRetry(t, srv.URL, taskID, retryBody(t, domain.RetryResume, cycleID))
+	res, raw := postTaskRetry(t, srv.URL, taskID, retryBody(t, taskcoredomain.RetryResume, cycleID))
 	if res.StatusCode != http.StatusOK {
 		t.Fatalf("status %d body=%s", res.StatusCode, raw)
 	}
-	var got domain.Task
+	var got taskcoredomain.Task
 	if err := json.Unmarshal(raw, &got); err != nil {
 		t.Fatal(err)
 	}
-	if got.Status != domain.StatusReady {
+	if got.Status != taskcoredomain.StatusReady {
 		t.Fatalf("status=%q want ready", got.Status)
 	}
 	stored, err := st.Get(context.Background(), taskID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if stored.PendingRetry == nil || stored.PendingRetry.Mode != domain.RetryResume {
+	if stored.PendingRetry == nil || stored.PendingRetry.Mode != taskcoredomain.RetryResume {
 		t.Fatalf("pending_retry=%+v", stored.PendingRetry)
 	}
 }
@@ -135,7 +134,7 @@ func TestHTTP_postTaskRetry_defaultParentCycle(t *testing.T) {
 	defer srv.Close()
 	taskID, cycleID := mustFailedTaskWithTerminalCycle(t, srv.URL)
 
-	res, raw := postTaskRetry(t, srv.URL, taskID, retryBody(t, domain.RetryFresh, ""))
+	res, raw := postTaskRetry(t, srv.URL, taskID, retryBody(t, taskcoredomain.RetryFresh, ""))
 	if res.StatusCode != http.StatusOK {
 		t.Fatalf("status %d body=%s", res.StatusCode, raw)
 	}
@@ -153,7 +152,7 @@ func TestHTTP_postTaskRetry_rejectsWrongStatus(t *testing.T) {
 	defer srv.Close()
 	taskID := mustCreateTask(t, srv.URL, `{"title":"ready","priority":"medium","status":"ready"}`)
 
-	res, raw := postTaskRetry(t, srv.URL, taskID, retryBody(t, domain.RetryFresh, ""))
+	res, raw := postTaskRetry(t, srv.URL, taskID, retryBody(t, taskcoredomain.RetryFresh, ""))
 	if res.StatusCode != http.StatusBadRequest {
 		t.Fatalf("status %d (want 400) body=%s", res.StatusCode, raw)
 	}
@@ -164,7 +163,7 @@ func TestHTTP_postTaskRetry_rejectsBadParent(t *testing.T) {
 	defer srv.Close()
 	taskID, _ := mustFailedTaskWithTerminalCycle(t, srv.URL)
 
-	res, raw := postTaskRetry(t, srv.URL, taskID, retryBody(t, domain.RetryFresh, "not-a-cycle"))
+	res, raw := postTaskRetry(t, srv.URL, taskID, retryBody(t, taskcoredomain.RetryFresh, "not-a-cycle"))
 	if res.StatusCode != http.StatusNotFound {
 		t.Fatalf("status %d (want 404) body=%s", res.StatusCode, raw)
 	}
@@ -175,12 +174,12 @@ func TestHTTP_postTaskRetry_conflictDifferentIntent(t *testing.T) {
 	defer srv.Close()
 	taskID, cycleID := mustFailedTaskWithTerminalCycle(t, srv.URL)
 
-	freshBody := retryBody(t, domain.RetryFresh, cycleID)
+	freshBody := retryBody(t, taskcoredomain.RetryFresh, cycleID)
 	res, _ := postTaskRetry(t, srv.URL, taskID, freshBody)
 	if res.StatusCode != http.StatusOK {
 		t.Fatalf("first retry status %d", res.StatusCode)
 	}
-	res2, raw2 := postTaskRetry(t, srv.URL, taskID, retryBody(t, domain.RetryResume, cycleID))
+	res2, raw2 := postTaskRetry(t, srv.URL, taskID, retryBody(t, taskcoredomain.RetryResume, cycleID))
 	if res2.StatusCode != http.StatusConflict {
 		t.Fatalf("status %d (want 409) body=%s", res2.StatusCode, raw2)
 	}

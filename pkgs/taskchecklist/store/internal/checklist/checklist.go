@@ -15,8 +15,9 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/contract"
 	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 	checklistmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/store/model"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/model"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -46,14 +47,14 @@ func DefinitionSourceTaskIDInTx(tx *gorm.DB, taskID string) (string, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.checklist.DefinitionSourceTaskIDInTx")
 	taskID = strings.TrimSpace(taskID)
 	if taskID == "" {
-		return "", fmt.Errorf("%w: id", domain.ErrInvalidInput)
+		return "", fmt.Errorf("%w: id", taskcoredomain.ErrInvalidInput)
 	}
 	var n int64
 	if err := tx.Model(&taskmodel.Task{}).Where("id = ?", taskID).Count(&n).Error; err != nil {
 		return "", fmt.Errorf("load task: %w", err)
 	}
 	if n == 0 {
-		return "", domain.ErrNotFound
+		return "", taskcoredomain.ErrNotFound
 	}
 	return taskID, nil
 }
@@ -65,7 +66,7 @@ func List(ctx context.Context, db *gorm.DB, taskID string) ([]ItemView, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.checklist.List")
 	taskID = strings.TrimSpace(taskID)
 	if taskID == "" {
-		return nil, fmt.Errorf("%w: id", domain.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: id", taskcoredomain.ErrInvalidInput)
 	}
 	var out []ItemView
 	err := db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
@@ -128,7 +129,7 @@ func List(ctx context.Context, db *gorm.DB, taskID string) ([]ItemView, error) {
 
 // Add appends a definition row; rejected while status=running. Appends
 // EventChecklistItemAdded in the same TX.
-func Add(ctx context.Context, db *gorm.DB, taskID, text string, verifyCommands []VerifyCommandInput, by domain.Actor) (*checklistdomain.TaskChecklistItem, error) {
+func Add(ctx context.Context, db *gorm.DB, taskID, text string, verifyCommands []VerifyCommandInput, by taskcoredomain.Actor) (*checklistdomain.TaskChecklistItem, error) {
 	defer storekernel.DeferLatency(storekernel.OpAddChecklistItem)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.checklist.Add")
 	if err := storekernel.ValidateActor(by); err != nil {
@@ -136,7 +137,7 @@ func Add(ctx context.Context, db *gorm.DB, taskID, text string, verifyCommands [
 	}
 	text = strings.TrimSpace(text)
 	if text == "" {
-		return nil, fmt.Errorf("%w: checklist text required", domain.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: checklist text required", taskcoredomain.ErrInvalidInput)
 	}
 	cmds, err := NormalizeVerifyCommandInputs(verifyCommands)
 	if err != nil {
@@ -144,7 +145,7 @@ func Add(ctx context.Context, db *gorm.DB, taskID, text string, verifyCommands [
 	}
 	taskID = strings.TrimSpace(taskID)
 	if taskID == "" {
-		return nil, fmt.Errorf("%w: id", domain.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: id", taskcoredomain.ErrInvalidInput)
 	}
 	var created *checklistdomain.TaskChecklistItem
 	err = db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
@@ -177,7 +178,7 @@ func Add(ctx context.Context, db *gorm.DB, taskID, text string, verifyCommands [
 			return err
 		}
 		b, _ := json.Marshal(map[string]string{"item_id": dit.ID, "text": dit.Text})
-		if err := storekernel.AppendEvent(tx, taskID, seq, domain.EventChecklistItemAdded, by, b); err != nil {
+		if err := storekernel.AppendEvent(tx, taskID, seq, taskeventsdomain.EventChecklistItemAdded, by, b); err != nil {
 			return err
 		}
 		created = &dit
@@ -192,7 +193,7 @@ func Add(ctx context.Context, db *gorm.DB, taskID, text string, verifyCommands [
 // Delete removes a definition row owned by taskID. Cascades to the
 // per-subject completion rows for that item. Appends
 // EventChecklistItemRemoved in the same TX.
-func Delete(ctx context.Context, db *gorm.DB, taskID, itemID string, by domain.Actor) error {
+func Delete(ctx context.Context, db *gorm.DB, taskID, itemID string, by taskcoredomain.Actor) error {
 	defer storekernel.DeferLatency(storekernel.OpDeleteChecklistItem)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.checklist.Delete")
 	if err := storekernel.ValidateActor(by); err != nil {
@@ -201,7 +202,7 @@ func Delete(ctx context.Context, db *gorm.DB, taskID, itemID string, by domain.A
 	taskID = strings.TrimSpace(taskID)
 	itemID = strings.TrimSpace(itemID)
 	if taskID == "" || itemID == "" {
-		return fmt.Errorf("%w: id", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: id", taskcoredomain.ErrInvalidInput)
 	}
 	return db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		t, err := taskload.LoadTask(tx, taskID)
@@ -214,7 +215,7 @@ func Delete(ctx context.Context, db *gorm.DB, taskID, itemID string, by domain.A
 		var it checklistmodel.TaskChecklistItem
 		if err := tx.Where("id = ? AND task_id = ?", itemID, taskID).First(&it).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return domain.ErrNotFound
+				return taskcoredomain.ErrNotFound
 			}
 			return fmt.Errorf("load checklist item: %w", err)
 		}
@@ -245,7 +246,7 @@ func Delete(ctx context.Context, db *gorm.DB, taskID, itemID string, by domain.A
 			return fmt.Errorf("count completions: %w", err)
 		}
 		if criterionLockedByCompletion(t.Status, doneCount) {
-			return fmt.Errorf("%w: cannot remove a criterion that has already been marked done", domain.ErrInvalidInput)
+			return fmt.Errorf("%w: cannot remove a criterion that has already been marked done", taskcoredomain.ErrInvalidInput)
 		}
 		if doneCount > 0 {
 			if err := tx.Where("item_id = ?", itemID).Delete(&checklistmodel.TaskChecklistCompletion{}).Error; err != nil {
@@ -257,7 +258,7 @@ func Delete(ctx context.Context, db *gorm.DB, taskID, itemID string, by domain.A
 			return err
 		}
 		b, _ := json.Marshal(map[string]string{"item_id": itemID, "text": dit.Text})
-		if err := storekernel.AppendEvent(tx, taskID, seq, domain.EventChecklistItemRemoved, by, b); err != nil {
+		if err := storekernel.AppendEvent(tx, taskID, seq, taskeventsdomain.EventChecklistItemRemoved, by, b); err != nil {
 			return err
 		}
 		if err := tx.Delete(&it).Error; err != nil {
@@ -271,7 +272,7 @@ func Delete(ctx context.Context, db *gorm.DB, taskID, itemID string, by domain.A
 // No-op (no event emitted) when the new text matches the existing
 // row, so idempotent UI saves do not pollute the audit log. Appends
 // EventChecklistItemUpdated in the same TX otherwise.
-func UpdateText(ctx context.Context, db *gorm.DB, taskID, itemID, text string, by domain.Actor) error {
+func UpdateText(ctx context.Context, db *gorm.DB, taskID, itemID, text string, by taskcoredomain.Actor) error {
 	defer storekernel.DeferLatency(storekernel.OpUpdateChecklistItemText)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.checklist.UpdateText")
 	if err := storekernel.ValidateActor(by); err != nil {
@@ -281,7 +282,7 @@ func UpdateText(ctx context.Context, db *gorm.DB, taskID, itemID, text string, b
 	itemID = strings.TrimSpace(itemID)
 	text = strings.TrimSpace(text)
 	if taskID == "" || itemID == "" || text == "" {
-		return fmt.Errorf("%w: text", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: text", taskcoredomain.ErrInvalidInput)
 	}
 	return db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		t, err := taskload.LoadTask(tx, taskID)
@@ -294,7 +295,7 @@ func UpdateText(ctx context.Context, db *gorm.DB, taskID, itemID, text string, b
 		var it checklistmodel.TaskChecklistItem
 		if err := tx.Where("id = ? AND task_id = ?", itemID, taskID).First(&it).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return domain.ErrNotFound
+				return taskcoredomain.ErrNotFound
 			}
 			return fmt.Errorf("load checklist item: %w", err)
 		}
@@ -324,7 +325,7 @@ func UpdateText(ctx context.Context, db *gorm.DB, taskID, itemID, text string, b
 			return fmt.Errorf("count completions: %w", err)
 		}
 		if criterionLockedByCompletion(t.Status, doneCount) {
-			return fmt.Errorf("%w: cannot edit a criterion that has already been marked done", domain.ErrInvalidInput)
+			return fmt.Errorf("%w: cannot edit a criterion that has already been marked done", taskcoredomain.ErrInvalidInput)
 		}
 		if dit.Text == text {
 			return nil
@@ -337,28 +338,28 @@ func UpdateText(ctx context.Context, db *gorm.DB, taskID, itemID, text string, b
 			return err
 		}
 		b, _ := json.Marshal(map[string]any{"item_id": itemID, "text": text})
-		return storekernel.AppendEvent(tx, taskID, seq, domain.EventChecklistItemUpdated, by, b)
+		return storekernel.AppendEvent(tx, taskID, seq, taskeventsdomain.EventChecklistItemUpdated, by, b)
 	})
 }
 
 // SetDone sets or clears completion for subjectTaskID on an item
-// resolved through DefinitionSourceTaskIDInTx. Only domain.ActorAgent
+// resolved through DefinitionSourceTaskIDInTx. Only taskcoredomain.ActorAgent
 // may change completion; the human user records criteria via Add but
 // does not toggle done. Appends EventChecklistItemToggled in the same
 // TX.
-func SetDone(ctx context.Context, db *gorm.DB, subjectTaskID, itemID string, done bool, by domain.Actor) error {
+func SetDone(ctx context.Context, db *gorm.DB, subjectTaskID, itemID string, done bool, by taskcoredomain.Actor) error {
 	defer storekernel.DeferLatency(storekernel.OpSetChecklistItemDone)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.checklist.SetDone")
 	if err := storekernel.ValidateActor(by); err != nil {
 		return err
 	}
-	if by != domain.ActorAgent {
-		return fmt.Errorf("%w: only the agent may mark checklist items done or undone", domain.ErrInvalidInput)
+	if by != taskcoredomain.ActorAgent {
+		return fmt.Errorf("%w: only the agent may mark checklist items done or undone", taskcoredomain.ErrInvalidInput)
 	}
 	subjectTaskID = strings.TrimSpace(subjectTaskID)
 	itemID = strings.TrimSpace(itemID)
 	if subjectTaskID == "" || itemID == "" {
-		return fmt.Errorf("%w: id", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: id", taskcoredomain.ErrInvalidInput)
 	}
 	return db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if _, err := taskload.LoadTask(tx, subjectTaskID); err != nil {
@@ -371,7 +372,7 @@ func SetDone(ctx context.Context, db *gorm.DB, subjectTaskID, itemID string, don
 		var it checklistmodel.TaskChecklistItem
 		if err := tx.Where("id = ? AND task_id = ?", itemID, defOwner).First(&it).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return domain.ErrNotFound
+				return taskcoredomain.ErrNotFound
 			}
 			return fmt.Errorf("load checklist item: %w", err)
 		}
@@ -415,7 +416,7 @@ func SetDone(ctx context.Context, db *gorm.DB, subjectTaskID, itemID string, don
 			return err
 		}
 		b, _ := json.Marshal(map[string]any{"item_id": itemID, "done": done})
-		if err := storekernel.AppendEvent(tx, subjectTaskID, seq, domain.EventChecklistItemToggled, by, b); err != nil {
+		if err := storekernel.AppendEvent(tx, subjectTaskID, seq, taskeventsdomain.EventChecklistItemToggled, by, b); err != nil {
 			return err
 		}
 		_, err = syncCriteriaSatisfiedAtInTx(tx, subjectTaskID, by)

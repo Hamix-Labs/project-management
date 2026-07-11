@@ -3,18 +3,18 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 	"io"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 // TestHTTP_postChecklistItem_201ResponseShape pins the documented POST 201
-// envelope: the bare `domain.TaskChecklistItem` JSON `{id, task_id, sort_order, text}`.
+// envelope: the bare `checklistdomain.TaskChecklistItem` JSON `{id, task_id, sort_order, text}`.
 // This is intentionally **not** the same shape as items in `GET /tasks/{id}/checklist`
 // (no `done`, includes `task_id`); the doc table calls this asymmetry out so
 // future struct changes that drift either way fail loudly.
@@ -122,8 +122,8 @@ func TestHTTP_postChecklistItem_rejectsRunningTask(t *testing.T) {
 	defer srv.Close()
 	ctx := context.Background()
 	tsk, err := st.Create(ctx, store.CreateTaskInput{
-		Title: "running", Priority: domain.PriorityMedium, Status: domain.StatusRunning,
-	}, domain.ActorUser)
+		Title: "running", Priority: taskcoredomain.PriorityMedium, Status: taskcoredomain.StatusRunning,
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -151,8 +151,8 @@ func TestHTTP_postChecklistItem_allowsDoneTask(t *testing.T) {
 	defer srv.Close()
 	ctx := context.Background()
 	tsk, err := st.Create(ctx, store.CreateTaskInput{
-		Title: "done", Priority: domain.PriorityMedium, Status: domain.StatusDone,
-	}, domain.ActorUser)
+		Title: "done", Priority: taskcoredomain.PriorityMedium, Status: taskcoredomain.StatusDone,
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -176,7 +176,7 @@ func TestHTTP_patchChecklistItem_doneAgentReturnsItemsView(t *testing.T) {
 	srv, st := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 	taskID := mustCreateChecklistTask(t, srv, "chk-done")
-	it, err := st.AddChecklistItem(context.Background(), taskID, "review", nil, domain.ActorUser)
+	it, err := st.AddChecklistItem(context.Background(), taskID, "review", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -250,7 +250,7 @@ func TestHTTP_deleteChecklistItem_204ThenGone(t *testing.T) {
 	srv, st := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 	taskID := mustCreateChecklistTask(t, srv, "chk-del")
-	it, err := st.AddChecklistItem(context.Background(), taskID, "remove me", nil, domain.ActorUser)
+	it, err := st.AddChecklistItem(context.Background(), taskID, "remove me", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -445,7 +445,7 @@ func TestHTTP_patchChecklistItem_textBranch400Strings(t *testing.T) {
 	if defRes.StatusCode != http.StatusCreated {
 		t.Fatalf("seed item status %d body=%s", defRes.StatusCode, defBody)
 	}
-	var def domain.TaskChecklistItem
+	var def checklistdomain.TaskChecklistItem
 	if err := json.Unmarshal(defBody, &def); err != nil {
 		t.Fatal(err)
 	}
@@ -525,7 +525,7 @@ func TestHTTP_patchChecklistItem_publishesTaskUpdated(t *testing.T) {
 	srv, st, hub := newSSETriggerServer(t)
 	defer srv.Close()
 	taskID := mustCreateChecklistTask(t, srv, "chk-sse-patch")
-	it, err := st.AddChecklistItem(context.Background(), taskID, "review", nil, domain.ActorUser)
+	it, err := st.AddChecklistItem(context.Background(), taskID, "review", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -564,7 +564,7 @@ func TestHTTP_patchChecklistItem_errorPathsNeverPublish(t *testing.T) {
 	srv, st, hub := newSSETriggerServer(t)
 	defer srv.Close()
 	taskID := mustCreateChecklistTask(t, srv, "chk-sse-patch-neg")
-	it, err := st.AddChecklistItem(context.Background(), taskID, "neg", nil, domain.ActorUser)
+	it, err := st.AddChecklistItem(context.Background(), taskID, "neg", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -613,7 +613,7 @@ func TestHTTP_deleteChecklistItem_publishesTaskUpdated(t *testing.T) {
 	srv, st, hub := newSSETriggerServer(t)
 	defer srv.Close()
 	taskID := mustCreateChecklistTask(t, srv, "chk-sse-del")
-	it, err := st.AddChecklistItem(context.Background(), taskID, "remove", nil, domain.ActorUser)
+	it, err := st.AddChecklistItem(context.Background(), taskID, "remove", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -649,7 +649,7 @@ func TestHTTP_deleteChecklistItem_errorPathsNeverPublish(t *testing.T) {
 	srv, st, hub := newSSETriggerServer(t)
 	defer srv.Close()
 	parentID := mustCreateChecklistTask(t, srv, "chk-sse-del-par")
-	it, err := st.AddChecklistItem(context.Background(), parentID, "owned", nil, domain.ActorUser)
+	it, err := st.AddChecklistItem(context.Background(), parentID, "owned", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}

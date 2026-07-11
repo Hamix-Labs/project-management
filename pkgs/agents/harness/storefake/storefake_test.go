@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/storefake"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
@@ -16,9 +16,9 @@ func TestFake_satisfiesHarnessStore_createAndGet(t *testing.T) {
 	tsk, err := f.Create(ctx, store.CreateTaskInput{
 		Title:         "x",
 		InitialPrompt: "p",
-		Status:        domain.StatusReady,
-		Priority:      domain.PriorityMedium,
-	}, domain.ActorUser)
+		Status:        taskcoredomain.StatusReady,
+		Priority:      taskcoredomain.PriorityMedium,
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}

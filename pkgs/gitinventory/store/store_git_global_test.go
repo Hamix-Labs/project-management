@@ -3,11 +3,10 @@ package store
 import (
 	"errors"
 	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"os"
 	"path/filepath"
 	"testing"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 func TestStore_UnregisterGitWorktreeByID_preservesDiskCheckout(t *testing.T) {
@@ -108,7 +107,7 @@ func TestStore_RemoveGitWorktreeFromDiskByID_rejectsMain(t *testing.T) {
 		t.Fatal("main worktree not found")
 	}
 	err = s.RemoveGitWorktreeFromDiskByID(ctx, mainWt.ID, false, gitSvc)
-	if !errors.Is(err, domain.ErrInvalidInput) {
+	if !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		t.Fatalf("got %v want ErrInvalidInput", err)
 	}
 }

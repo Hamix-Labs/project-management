@@ -12,18 +12,19 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/reports"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/verify"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
 type cycleLoopOpts struct {
 	resumeNotice     bool
-	interruptedPhase domain.Phase
+	interruptedPhase cyclesdomain.Phase
 	skipFirstExecute bool
-	knownCommits     []domain.TaskCycleCommit
+	knownCommits     []cyclesdomain.TaskCycleCommit
 	continuation     *ContinuationBundle
 }
 
-func (h *Harness) composeExecutePrompt(ctx context.Context, task *domain.Task, cycle *domain.TaskCycle, state *processState, opts cycleLoopOpts) string {
+func (h *Harness) composeExecutePrompt(ctx context.Context, task *taskcoredomain.Task, cycle *cyclesdomain.TaskCycle, state *processState, opts cycleLoopOpts) string {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.composeExecutePrompt",
 		"task_id", task.ID, "cycle_id", cycle.ID, "resume_notice", opts.resumeNotice)
 	promptText := task.InitialPrompt
@@ -41,14 +42,14 @@ func (h *Harness) composeExecutePrompt(ctx context.Context, task *domain.Task, c
 			promptText = prompt.AppendExecuteHarnessFeedback(promptText, bundle.ExecuteFeedback)
 		}
 	} else if opts.resumeNotice {
-		if retryMode == domain.RetryResume {
+		if retryMode == taskcoredomain.RetryResume {
 			promptText = prompt.AppendOperatorRetryResumeNotice(promptText, cycle, opts.knownCommits)
 		} else {
 			promptText = prompt.AppendResumeNotice(promptText, cycle, opts.interruptedPhase, opts.knownCommits)
 		}
 	}
 	if !state.git.gitSnap.Skipped {
-		promptText = prompt.AppendGitCommitPolicy(promptText, retryMode == domain.RetryResume)
+		promptText = prompt.AppendGitCommitPolicy(promptText, retryMode == taskcoredomain.RetryResume)
 	}
 	return promptText
 }
@@ -78,14 +79,14 @@ func unionPreviouslyPassedVerdicts(state *processState) []criterionVerdict {
 // runCycleLoop should return immediately.
 func (h *Harness) runCycleLoopExecute(
 	parentCtx context.Context,
-	task *domain.Task,
-	cycle *domain.TaskCycle,
+	task *taskcoredomain.Task,
+	cycle *cyclesdomain.TaskCycle,
 	state *processState,
 	opts cycleLoopOpts,
 ) bool {
 	execPhase, ok := h.startExecutePhase(parentCtx, cycle, state)
 	if !ok {
-		h.bestEffortTerminate(parentCtx, state, task.ID, domain.CycleStatusFailed, "execute_phase_start_failed")
+		h.bestEffortTerminate(parentCtx, state, task.ID, cyclesdomain.CycleStatusFailed, "execute_phase_start_failed")
 		return false
 	}
 	priorBase, err := h.priorCycleBaseSHA(parentCtx, cycle.ID, execPhase.PhaseSeq)
@@ -99,14 +100,14 @@ func (h *Harness) runCycleLoopExecute(
 		slog.Warn("agent harness git snapshot failed", "cmd", calltrace.LogCmd,
 			"operation", "agent.harness.Harness.runCycleLoop.git_snapshot",
 			"cycle_id", cycle.ID, "err", err)
-		h.bestEffortTerminate(parentCtx, state, task.ID, domain.CycleStatusFailed, "execute_git_snapshot_failed")
+		h.bestEffortTerminate(parentCtx, state, task.ID, cyclesdomain.CycleStatusFailed, "execute_git_snapshot_failed")
 		return false
 	}
 	state.git.gitSnap = snap
 
 	decision, err := h.planExecuteRun(parentCtx, task, cycle, state, opts)
 	if err != nil {
-		h.bestEffortTerminate(parentCtx, state, task.ID, domain.CycleStatusFailed, "cursor_resume_plan_failed")
+		h.bestEffortTerminate(parentCtx, state, task.ID, cyclesdomain.CycleStatusFailed, "cursor_resume_plan_failed")
 		return false
 	}
 	if decision.Mode == CursorResumeFresh || decision.Mode == CursorResumeFallback {
@@ -170,8 +171,8 @@ func (h *Harness) runCycleLoopExecute(
 // terminalFailure is true when verification failed terminally (caller should return).
 func (h *Harness) runCycleLoopVerify(
 	parentCtx context.Context,
-	task *domain.Task,
-	cycle *domain.TaskCycle,
+	task *taskcoredomain.Task,
+	cycle *cyclesdomain.TaskCycle,
 	state *processState,
 ) (retryLoop bool, terminalFailure bool, skipNextExecute bool) {
 	if orchestration.VerifyDisabled(state.verify.verifySnap.Enabled) {
@@ -229,8 +230,8 @@ func (h *Harness) runCycleLoopVerify(
 
 func (h *Harness) runCycleLoopFinalizeSuccess(
 	parentCtx context.Context,
-	task *domain.Task,
-	cycle *domain.TaskCycle,
+	task *taskcoredomain.Task,
+	cycle *cyclesdomain.TaskCycle,
 	state *processState,
 ) {
 	unionVerdicts := unionPreviouslyPassedVerdicts(state)
@@ -246,7 +247,7 @@ func (h *Harness) runCycleLoopFinalizeSuccess(
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func (h *Harness) runCycleLoop(parentCtx context.Context, task *domain.Task, cycle *domain.TaskCycle, state *processState, opts cycleLoopOpts) {
+func (h *Harness) runCycleLoop(parentCtx context.Context, task *taskcoredomain.Task, cycle *cyclesdomain.TaskCycle, state *processState, opts cycleLoopOpts) {
 	state.resume.continuation = opts.continuation
 	state.resume.resumeNotice = opts.resumeNotice
 	state.resume.interruptedPhase = opts.interruptedPhase

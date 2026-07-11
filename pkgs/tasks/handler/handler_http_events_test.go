@@ -2,13 +2,13 @@ package handler
 
 import (
 	"encoding/json"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 	"io"
 	"net/http"
 	"strconv"
 	"strings"
 	"testing"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 func TestHTTP_get_task_events(t *testing.T) {
@@ -29,7 +29,7 @@ func TestHTTP_get_task_events(t *testing.T) {
 	if res.StatusCode != http.StatusCreated {
 		t.Fatalf("create %d %s", res.StatusCode, b)
 	}
-	var created domain.Task
+	var created taskcoredomain.Task
 	if err := json.Unmarshal(b, &created); err != nil {
 		t.Fatal(err)
 	}
@@ -52,7 +52,7 @@ func TestHTTP_get_task_events(t *testing.T) {
 	if err := json.NewDecoder(res2.Body).Decode(&payload); err != nil {
 		t.Fatal(err)
 	}
-	if payload.TaskID != created.ID || len(payload.Events) < 1 || payload.Events[0].Type != string(domain.EventTaskCreated) {
+	if payload.TaskID != created.ID || len(payload.Events) < 1 || payload.Events[0].Type != string(taskeventsdomain.EventTaskCreated) {
 		t.Fatalf("payload %#v", payload)
 	}
 }
@@ -75,7 +75,7 @@ func TestHTTP_get_task_events_paged_cursor(t *testing.T) {
 	if res.StatusCode != http.StatusCreated {
 		t.Fatalf("create %d %s", res.StatusCode, b)
 	}
-	var created domain.Task
+	var created taskcoredomain.Task
 	if err := json.Unmarshal(b, &created); err != nil {
 		t.Fatal(err)
 	}

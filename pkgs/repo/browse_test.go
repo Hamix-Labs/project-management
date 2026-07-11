@@ -2,11 +2,10 @@ package repo
 
 import (
 	"errors"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"os"
 	"path/filepath"
 	"testing"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 func TestFindInstallRoot_findsGoMod(t *testing.T) {
@@ -69,7 +68,7 @@ func TestListBrowseDirs_rejectsPathOutsideRoots(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error")
 	}
-	if !errors.Is(err, domain.ErrInvalidInput) {
+	if !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		t.Fatalf("got %v", err)
 	}
 }

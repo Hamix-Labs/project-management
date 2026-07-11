@@ -1,9 +1,9 @@
 package orchestration
 
 import (
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"testing"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 func TestDecideExecutePostRun_runnerOK(t *testing.T) {
@@ -39,7 +39,7 @@ func TestDecideExecutePostRun_runnerErrors(t *testing.T) {
 		t.Run(string(tt.reason), func(t *testing.T) {
 			t.Parallel()
 			e := DecideExecutePostRun(ExecutePostRunInput{RunnerOutcome: tt.outcome})
-			if !e.TerminateFailed || e.TransitionTask != domain.StatusFailed || e.Reason != tt.reason {
+			if !e.TerminateFailed || e.TransitionTask != taskcoredomain.StatusFailed || e.Reason != tt.reason {
 				t.Fatalf("got %+v", e)
 			}
 		})
@@ -161,11 +161,11 @@ func TestDecideVerifyDisabledLegacy(t *testing.T) {
 func TestDecideFinalizeSuccess(t *testing.T) {
 	t.Parallel()
 	ok := DecideFinalizeSuccess(nil)
-	if ok.CycleStatus != domain.CycleStatusSucceeded || ok.TaskStatus != domain.StatusDone {
+	if ok.CycleStatus != cyclesdomain.CycleStatusSucceeded || ok.TaskStatus != taskcoredomain.StatusDone {
 		t.Fatalf("got %+v", ok)
 	}
 	fail := DecideFinalizeSuccess(errSentinel{})
-	if fail.CycleStatus != domain.CycleStatusFailed || fail.Reason != ReasonChecklistCompletionFailed {
+	if fail.CycleStatus != cyclesdomain.CycleStatusFailed || fail.Reason != ReasonChecklistCompletionFailed {
 		t.Fatalf("got %+v", fail)
 	}
 }

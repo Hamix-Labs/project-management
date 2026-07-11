@@ -6,7 +6,7 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
@@ -17,16 +17,16 @@ func TestReconcileRunningTasksNotQueued_enqueuesOpenCycle(t *testing.T) {
 	q := agents.NewMemoryQueue(8)
 
 	tsk, err := st.Create(ctx, store.CreateTaskInput{
-		Title: "resume-me", InitialPrompt: "work", Status: domain.StatusReady, Priority: domain.PriorityMedium,
-	}, domain.ActorUser)
+		Title: "resume-me", InitialPrompt: "work", Status: taskcoredomain.StatusReady, Priority: taskcoredomain.PriorityMedium,
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("create: %v", err)
 	}
-	running := domain.StatusRunning
-	if _, err := st.Update(ctx, tsk.ID, store.UpdateTaskInput{Status: &running}, domain.ActorAgent); err != nil {
+	running := taskcoredomain.StatusRunning
+	if _, err := st.Update(ctx, tsk.ID, store.UpdateTaskInput{Status: &running}, taskcoredomain.ActorAgent); err != nil {
 		t.Fatalf("update running: %v", err)
 	}
-	if _, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent}); err != nil {
+	if _, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent}); err != nil {
 		t.Fatalf("start cycle: %v", err)
 	}
 

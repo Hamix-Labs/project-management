@@ -3,10 +3,10 @@ package store
 import (
 	"context"
 	"errors"
+	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"strings"
 	"testing"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 // seedCycleWithCriterion creates a task + one checklist criterion + one
@@ -15,11 +15,11 @@ import (
 func seedCycleWithCriterion(t *testing.T, s *Store, ctx context.Context) (cycleID, criterionID string) {
 	t.Helper()
 	tsk := mustCreateTask(t, s, ctx)
-	it, err := s.AddChecklistItem(ctx, tsk.ID, "criterion", nil, domain.ActorUser)
+	it, err := s.AddChecklistItem(ctx, tsk.ID, "criterion", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("add checklist item: %v", err)
 	}
-	cycle, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	cycle, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatalf("start cycle: %v", err)
 	}
@@ -81,7 +81,7 @@ func TestStore_UpsertVerifyReports_round_trip(t *testing.T) {
 		{
 			CriterionID:  criterionID,
 			Verified:     true,
-			VerifierKind: domain.VerifierVerifyAgent,
+			VerifierKind: checklistdomain.VerifierVerifyAgent,
 			Reasoning:    "tests pass",
 		},
 	}); err != nil {
@@ -95,7 +95,7 @@ func TestStore_UpsertVerifyReports_round_trip(t *testing.T) {
 	if len(rows) != 1 {
 		t.Fatalf("rows = %d, want 1", len(rows))
 	}
-	if !rows[0].Verified || rows[0].VerifierKind != domain.VerifierVerifyAgent || rows[0].Reasoning != "tests pass" {
+	if !rows[0].Verified || rows[0].VerifierKind != checklistdomain.VerifierVerifyAgent || rows[0].Reasoning != "tests pass" {
 		t.Fatalf("row mismatch: %+v", rows[0])
 	}
 
@@ -103,7 +103,7 @@ func TestStore_UpsertVerifyReports_round_trip(t *testing.T) {
 		{
 			CriterionID:  criterionID,
 			Verified:     false,
-			VerifierKind: domain.VerifierDeterministicCheck,
+			VerifierKind: checklistdomain.VerifierDeterministicCheck,
 			Reasoning:    "still failing",
 		},
 	}); err != nil {
@@ -113,7 +113,7 @@ func TestStore_UpsertVerifyReports_round_trip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("list verify after re-upsert: %v", err)
 	}
-	if len(rows) != 1 || rows[0].Verified || rows[0].VerifierKind != domain.VerifierDeterministicCheck {
+	if len(rows) != 1 || rows[0].Verified || rows[0].VerifierKind != checklistdomain.VerifierDeterministicCheck {
 		t.Fatalf("re-upsert did not update: %+v (len=%d)", rows[0], len(rows))
 	}
 }
@@ -134,7 +134,7 @@ func TestStore_UpsertReports_per_attempt_rows(t *testing.T) {
 			t.Fatalf("upsert criteria seq %d: %v", seq, err)
 		}
 		if err := s.UpsertVerifyReports(ctx, cycleID, seq, []VerifyReportEntry{
-			{CriterionID: criterionID, Verified: seq == 3, VerifierKind: domain.VerifierVerifyAgent},
+			{CriterionID: criterionID, Verified: seq == 3, VerifierKind: checklistdomain.VerifierVerifyAgent},
 		}); err != nil {
 			t.Fatalf("upsert verify seq %d: %v", seq, err)
 		}
@@ -174,7 +174,7 @@ func TestStore_DeleteCycle_cascades_verdict_rows(t *testing.T) {
 		t.Fatalf("upsert criteria: %v", err)
 	}
 	if err := s.UpsertVerifyReports(ctx, cycleID, 1, []VerifyReportEntry{
-		{CriterionID: criterionID, Verified: true, VerifierKind: domain.VerifierVerifyAgent},
+		{CriterionID: criterionID, Verified: true, VerifierKind: checklistdomain.VerifierVerifyAgent},
 	}); err != nil {
 		t.Fatalf("upsert verify: %v", err)
 	}
@@ -200,13 +200,13 @@ func TestStore_DeleteCycle_cascades_verdict_rows(t *testing.T) {
 }
 
 // TestStore_GetCriteriaReport_returns_not_found pins the sentinel-error
-// translation: callers compare against domain.ErrNotFound, never the
+// translation: callers compare against taskcoredomain.ErrNotFound, never the
 // driver-specific gorm.ErrRecordNotFound.
 func TestStore_GetCriteriaReport_returns_not_found(t *testing.T) {
 	s, ctx := newCycleStore(t)
 	cycleID, _ := seedCycleWithCriterion(t, s, ctx)
 
-	if _, err := s.GetCriteriaReport(ctx, cycleID, 1, "missing"); !errors.Is(err, domain.ErrNotFound) {
+	if _, err := s.GetCriteriaReport(ctx, cycleID, 1, "missing"); !errors.Is(err, taskcoredomain.ErrNotFound) {
 		t.Fatalf("err = %v, want ErrNotFound", err)
 	}
 }
@@ -241,7 +241,7 @@ func TestStore_UpsertReports_rejects_bad_input(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			err := s.UpsertCriteriaReports(ctx, tc.cycleID, tc.attempt, tc.criteria)
-			if !errors.Is(err, domain.ErrInvalidInput) {
+			if !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 				t.Fatalf("err = %v, want ErrInvalidInput", err)
 			}
 			if !strings.Contains(err.Error(), tc.mustMatch) {

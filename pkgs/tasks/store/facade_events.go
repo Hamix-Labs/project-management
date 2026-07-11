@@ -5,9 +5,10 @@ import (
 	"context"
 	"log/slog"
 
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskeventscontract "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/contract"
+	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 	taskeventsstore "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 // TaskEventsPage is one window of audit events (newest first) plus stable paging metadata.
@@ -16,19 +17,19 @@ type TaskEventsPage = taskeventscontract.TaskEventsPage
 // ThreadEntriesForDisplay returns the conversation for API/list UI. Re-exported from
 // pkgs/taskevents/store so the devsim test harness keeps saying
 // store.ThreadEntriesForDisplay unchanged.
-func ThreadEntriesForDisplay(ev *domain.TaskEvent) []domain.ResponseThreadEntry {
+func ThreadEntriesForDisplay(ev *taskeventsdomain.TaskEvent) []taskeventsdomain.ResponseThreadEntry {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ThreadEntriesForDisplay")
 	return taskeventsstore.ThreadEntriesForDisplay(ev)
 }
 
 // AppendTaskEvent appends one task_events row if the task exists.
-func (s *Store) AppendTaskEvent(ctx context.Context, taskID string, typ domain.EventType, by domain.Actor, data []byte) error {
+func (s *Store) AppendTaskEvent(ctx context.Context, taskID string, typ taskeventsdomain.EventType, by taskcoredomain.Actor, data []byte) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.AppendTaskEvent")
 	return s.events.AppendTaskEvent(ctx, taskID, typ, by, data)
 }
 
 // ListTaskEvents returns audit events for a task in ascending sequence order.
-func (s *Store) ListTaskEvents(ctx context.Context, taskID string) ([]domain.TaskEvent, error) {
+func (s *Store) ListTaskEvents(ctx context.Context, taskID string) ([]taskeventsdomain.TaskEvent, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ListTaskEvents")
 	return s.events.ListTaskEvents(ctx, taskID)
 }
@@ -46,7 +47,7 @@ func (s *Store) LastEventSeq(ctx context.Context, taskID string) (int64, error) 
 }
 
 // GetTaskEvent returns one task_events row by composite key, or ErrNotFound.
-func (s *Store) GetTaskEvent(ctx context.Context, taskID string, seq int64) (*domain.TaskEvent, error) {
+func (s *Store) GetTaskEvent(ctx context.Context, taskID string, seq int64) (*taskeventsdomain.TaskEvent, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.GetTaskEvent")
 	return s.events.GetTaskEvent(ctx, taskID, seq)
 }
@@ -64,7 +65,7 @@ func (s *Store) ApprovalPending(ctx context.Context, taskID string) (bool, error
 }
 
 // AppendTaskEventResponseMessage appends one message to the event thread.
-func (s *Store) AppendTaskEventResponseMessage(ctx context.Context, taskID string, seq int64, text string, by domain.Actor) error {
+func (s *Store) AppendTaskEventResponseMessage(ctx context.Context, taskID string, seq int64, text string, by taskcoredomain.Actor) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.AppendTaskEventResponseMessage")
 	return s.events.AppendTaskEventResponseMessage(ctx, taskID, seq, text, by)
 }

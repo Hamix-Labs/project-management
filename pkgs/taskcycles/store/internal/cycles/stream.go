@@ -10,8 +10,9 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store/model"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -20,7 +21,7 @@ const defaultStreamEventLimit = 100
 const maxStreamEventLimit = 500
 
 // AppendStreamEvent appends one normalized runner progress event to a cycle.
-func AppendStreamEvent(ctx context.Context, db *gorm.DB, in AppendStreamEventInput) (*domain.TaskCycleStreamEvent, error) {
+func AppendStreamEvent(ctx context.Context, db *gorm.DB, in AppendStreamEventInput) (*cyclesdomain.TaskCycleStreamEvent, error) {
 	defer storekernel.DeferLatency(storekernel.OpAppendCycleStreamEvent)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.cycles.AppendStreamEvent")
 	taskID := strings.TrimSpace(in.TaskID)
@@ -28,7 +29,7 @@ func AppendStreamEvent(ctx context.Context, db *gorm.DB, in AppendStreamEventInp
 	source := strings.TrimSpace(in.Source)
 	kind := strings.TrimSpace(in.Kind)
 	if taskID == "" || cycleID == "" || in.PhaseSeq <= 0 || source == "" || kind == "" {
-		return nil, fmt.Errorf("%w: stream event", domain.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: stream event", taskcoredomain.ErrInvalidInput)
 	}
 	payload, err := storekernel.NormalizeJSONObject(in.Payload, "payload")
 	if err != nil {
@@ -38,14 +39,14 @@ func AppendStreamEvent(ctx context.Context, db *gorm.DB, in AppendStreamEventInp
 	if at.IsZero() {
 		at = time.Now().UTC()
 	}
-	var out *domain.TaskCycleStreamEvent
+	var out *cyclesdomain.TaskCycleStreamEvent
 	err = db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		cycle, err := loadByIDInTx(tx, cycleID)
 		if err != nil {
 			return err
 		}
 		if cycle.TaskID != taskID {
-			return domain.ErrNotFound
+			return taskcoredomain.ErrNotFound
 		}
 		if _, err := loadPhaseByCycleSeqInTx(tx, cycleID, in.PhaseSeq); err != nil {
 			return err
@@ -54,7 +55,7 @@ func AppendStreamEvent(ctx context.Context, db *gorm.DB, in AppendStreamEventInp
 		if err != nil {
 			return err
 		}
-		row := &domain.TaskCycleStreamEvent{
+		row := &cyclesdomain.TaskCycleStreamEvent{
 			ID:          uuid.NewString(),
 			TaskID:      taskID,
 			CycleID:     cycleID,
@@ -81,12 +82,12 @@ func AppendStreamEvent(ctx context.Context, db *gorm.DB, in AppendStreamEventInp
 }
 
 // ListStreamEvents returns stream events for cycleID ordered by stream_seq ASC.
-func ListStreamEvents(ctx context.Context, db *gorm.DB, cycleID string, afterSeq int64, limit int) ([]domain.TaskCycleStreamEvent, error) {
+func ListStreamEvents(ctx context.Context, db *gorm.DB, cycleID string, afterSeq int64, limit int) ([]cyclesdomain.TaskCycleStreamEvent, error) {
 	defer storekernel.DeferLatency(storekernel.OpListCycleStreamEvents)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.cycles.ListStreamEvents")
 	cycleID = strings.TrimSpace(cycleID)
 	if cycleID == "" {
-		return nil, fmt.Errorf("%w: cycle_id", domain.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: cycle_id", taskcoredomain.ErrInvalidInput)
 	}
 	if limit <= 0 {
 		limit = defaultStreamEventLimit

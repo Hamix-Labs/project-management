@@ -8,7 +8,8 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/runnerfake"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/worker"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
@@ -16,7 +17,7 @@ type agentPickupFailStore struct {
 	*store.Store
 }
 
-func (s *agentPickupFailStore) AgentPickup(ctx context.Context, taskID string, by domain.Actor) (*store.AgentPickupResult, error) {
+func (s *agentPickupFailStore) AgentPickup(ctx context.Context, taskID string, by taskcoredomain.Actor) (*store.AgentPickupResult, error) {
 	return nil, fmt.Errorf("save task: simulated persistence failure")
 }
 
@@ -40,7 +41,7 @@ func TestWorker_pickupPersistenceFailure_defersAndRecordsEvent(t *testing.T) {
 		events, err := h.store.ListTaskEvents(context.Background(), tsk.ID)
 		if err == nil {
 			for _, ev := range events {
-				if ev.Type == domain.EventTaskPickupFailed {
+				if ev.Type == taskeventsdomain.EventTaskPickupFailed {
 					goto verified
 				}
 			}
@@ -57,7 +58,7 @@ verified:
 	if err != nil {
 		t.Fatalf("get: %v", err)
 	}
-	if got.Status != domain.StatusReady {
+	if got.Status != taskcoredomain.StatusReady {
 		t.Fatalf("status=%q want ready", got.Status)
 	}
 	if got.PickupNotBefore == nil {

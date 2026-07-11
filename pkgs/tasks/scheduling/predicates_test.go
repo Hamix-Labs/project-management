@@ -1,10 +1,9 @@
 package scheduling
 
 import (
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"testing"
 	"time"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 func TestEvaluateWorkerReadiness_predicateOrder(t *testing.T) {
@@ -12,22 +11,22 @@ func TestEvaluateWorkerReadiness_predicateOrder(t *testing.T) {
 	now := time.Date(2026, 6, 1, 12, 0, 0, 0, time.UTC)
 	future := now.Add(time.Hour)
 	past := now.Add(-time.Hour)
-	gateHeld := &domain.TaskGate{Kind: domain.GateKindManualApproval, Status: domain.GateStatusActive}
+	gateHeld := &taskcoredomain.TaskGate{Kind: taskcoredomain.GateKindManualApproval, Status: taskcoredomain.GateStatusActive}
 
 	cases := []struct {
 		name      string
-		task      *domain.Task
+		task      *taskcoredomain.Task
 		depsMet   bool
 		wantReady bool
 		wantPred  FailedPredicate
 	}{
 		{"nil task", nil, true, false, FailedPredicateStatus},
-		{"not ready", &domain.Task{Status: domain.StatusBlocked}, true, false, FailedPredicateStatus},
-		{"future pickup", &domain.Task{Status: domain.StatusReady, PickupNotBefore: &future}, true, false, FailedPredicatePickup},
-		{"held gate", &domain.Task{Status: domain.StatusReady, Gate: gateHeld}, true, false, FailedPredicateGate},
-		{"open dependency", &domain.Task{Status: domain.StatusReady}, false, false, FailedPredicateDependencies},
-		{"all clear", &domain.Task{Status: domain.StatusReady, PickupNotBefore: &past}, true, true, FailedPredicateNone},
-		{"nil pickup", &domain.Task{Status: domain.StatusReady}, true, true, FailedPredicateNone},
+		{"not ready", &taskcoredomain.Task{Status: taskcoredomain.StatusBlocked}, true, false, FailedPredicateStatus},
+		{"future pickup", &taskcoredomain.Task{Status: taskcoredomain.StatusReady, PickupNotBefore: &future}, true, false, FailedPredicatePickup},
+		{"held gate", &taskcoredomain.Task{Status: taskcoredomain.StatusReady, Gate: gateHeld}, true, false, FailedPredicateGate},
+		{"open dependency", &taskcoredomain.Task{Status: taskcoredomain.StatusReady}, false, false, FailedPredicateDependencies},
+		{"all clear", &taskcoredomain.Task{Status: taskcoredomain.StatusReady, PickupNotBefore: &past}, true, true, FailedPredicateNone},
+		{"nil pickup", &taskcoredomain.Task{Status: taskcoredomain.StatusReady}, true, true, FailedPredicateNone},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

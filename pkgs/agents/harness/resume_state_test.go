@@ -7,20 +7,20 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/prompt"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/resume"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
 func TestComposeContinuationPrompt_scopeLockAndAntiDiscovery(t *testing.T) {
 	t.Parallel()
 	started := time.Date(2026, 6, 1, 12, 0, 0, 0, time.UTC)
-	cycle := &domain.TaskCycle{ID: "child-1", AttemptSeq: 2, StartedAt: started}
+	cycle := &cyclesdomain.TaskCycle{ID: "child-1", AttemptSeq: 2, StartedAt: started}
 	bundle := &ContinuationBundle{
 		LineageAttempt: 1,
 		FailureClass:   resume.FailureClassVerify,
 		FailureReason:  verificationFailedReason,
-		FailurePhase:   domain.PhaseVerify,
+		FailurePhase:   cyclesdomain.PhaseVerify,
 		ScopeFiles:     []string{"pkgs/foo/bar.go"},
-		Commits: []domain.TaskCycleCommit{
+		Commits: []cyclesdomain.TaskCycleCommit{
 			{SHA: "abc1234567890abcdef1234567890abcdef1234", Message: "prior work"},
 		},
 	}
@@ -37,11 +37,11 @@ func TestComposeContinuationPrompt_scopeLockAndAntiDiscovery(t *testing.T) {
 func TestAppendResumeNotice_andCommitPolicy(t *testing.T) {
 	t.Parallel()
 	started := time.Date(2026, 6, 1, 12, 0, 0, 0, time.UTC)
-	cycle := &domain.TaskCycle{ID: "cycle-1", StartedAt: started}
-	known := []domain.TaskCycleCommit{
+	cycle := &cyclesdomain.TaskCycle{ID: "cycle-1", StartedAt: started}
+	known := []cyclesdomain.TaskCycleCommit{
 		{Seq: 1, SHA: "abc123def456", Message: "feat: add health check"},
 	}
-	promptText := prompt.AppendResumeNotice("base", cycle, domain.PhaseExecute, known)
+	promptText := prompt.AppendResumeNotice("base", cycle, cyclesdomain.PhaseExecute, known)
 	for _, frag := range []string{"Worker resume notice", "cycle-1", "abc123def456", "base"} {
 		if !containsSubstr(promptText, frag) {
 			t.Fatalf("resume notice missing %q in %q", frag, promptText)

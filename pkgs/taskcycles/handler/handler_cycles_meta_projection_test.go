@@ -2,10 +2,9 @@ package handler
 
 import (
 	"encoding/json"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"strings"
 	"testing"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 // TestProjectCycleMeta_extractsTypedFields pins the Phase 1b contract
@@ -101,18 +100,18 @@ func TestProjectCycleMeta_emptyInputReturnsZero(t *testing.T) {
 }
 
 // TestTaskCycleResponseFromDomain_includesCycleMeta verifies the
-// projection survives the full domain.TaskCycle -> JSON response
+// projection survives the full cyclesdomain.TaskCycle -> JSON response
 // hop. The Phase 1b SPA contract requires `cycle_meta` to be
 // present on every cycle row even when MetaJSON is missing the
 // V2 keys.
 func TestTaskCycleResponseFromDomain_includesCycleMeta(t *testing.T) {
 	t.Parallel()
 
-	cycle := &domain.TaskCycle{
+	cycle := &cyclesdomain.TaskCycle{
 		ID:         "11111111-1111-4111-8111-111111111111",
 		TaskID:     "22222222-2222-4222-8222-222222222222",
 		AttemptSeq: 1,
-		Status:     domain.CycleStatusSucceeded,
+		Status:     cyclesdomain.CycleStatusSucceeded,
 		MetaJSON: json.RawMessage(
 			`{"runner":"cursor-cli","runner_version":"0.42.0",` +
 				`"cursor_model":"","cursor_model_effective":"opus",` +

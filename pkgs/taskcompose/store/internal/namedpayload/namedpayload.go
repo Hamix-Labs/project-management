@@ -13,8 +13,8 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/store/model"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
@@ -56,7 +56,7 @@ func saveRow(
 	id = storekernel.ResolveID(id)
 	name = strings.TrimSpace(name)
 	if name == "" {
-		return nil, fmt.Errorf("%w: %s", domain.ErrInvalidInput, nameRequiredMsg)
+		return nil, fmt.Errorf("%w: %s", taskcoredomain.ErrInvalidInput, nameRequiredMsg)
 	}
 	normalized, err := storekernel.NormalizeJSONObject(payload, "payload")
 	if err != nil {
@@ -95,7 +95,7 @@ func saveTemplateRow(
 	id = storekernel.ResolveID(id)
 	name = strings.TrimSpace(name)
 	if name == "" {
-		return nil, fmt.Errorf("%w: %s", domain.ErrInvalidInput, nameRequiredMsg)
+		return nil, fmt.Errorf("%w: %s", taskcoredomain.ErrInvalidInput, nameRequiredMsg)
 	}
 	normalized, err := storekernel.NormalizeJSONObject(payload, "payload")
 	if err != nil {
@@ -198,7 +198,7 @@ func getDraftByID(ctx context.Context, db *gorm.DB, id string) (*Detail, error) 
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.drafts.Get")
 	id = strings.TrimSpace(id)
 	if id == "" {
-		return nil, fmt.Errorf("%w: id", domain.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: id", taskcoredomain.ErrInvalidInput)
 	}
 	var row model.TaskDraft
 	if err := db.WithContext(ctx).Where("id = ?", id).First(&row).Error; err != nil {
@@ -212,7 +212,7 @@ func getTemplateByID(ctx context.Context, db *gorm.DB, id string) (*Detail, erro
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.templates.Get")
 	id = strings.TrimSpace(id)
 	if id == "" {
-		return nil, fmt.Errorf("%w: id", domain.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: id", taskcoredomain.ErrInvalidInput)
 	}
 	var row model.TaskTemplate
 	if err := db.WithContext(ctx).Where("id = ?", id).First(&row).Error; err != nil {
@@ -234,14 +234,14 @@ func deleteByID(ctx context.Context, db *gorm.DB, id string, op string, logOp, d
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", logOp)
 	id = strings.TrimSpace(id)
 	if id == "" {
-		return fmt.Errorf("%w: id", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: id", taskcoredomain.ErrInvalidInput)
 	}
 	res := db.WithContext(ctx).Where("id = ?", id).Delete(row)
 	if res.Error != nil {
 		return fmt.Errorf("%s: %w", deleteErr, res.Error)
 	}
 	if res.RowsAffected == 0 {
-		return domain.ErrNotFound
+		return taskcoredomain.ErrNotFound
 	}
 	return nil
 }

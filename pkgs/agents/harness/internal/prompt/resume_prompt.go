@@ -2,9 +2,8 @@ package prompt
 
 import (
 	"fmt"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"strings"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 // AppendOperatorRetryResumeNotice is for cross-cycle "Resume from failure" attempts.
@@ -12,7 +11,7 @@ import (
 // git work and indexed commits may carry over from the parent attempt.
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func AppendOperatorRetryResumeNotice(prompt string, cycle *domain.TaskCycle, parentCommits []domain.TaskCycleCommit) string {
+func AppendOperatorRetryResumeNotice(prompt string, cycle *cyclesdomain.TaskCycle, parentCommits []cyclesdomain.TaskCycleCommit) string {
 	if cycle == nil {
 		return prompt
 	}
@@ -38,7 +37,7 @@ func AppendOperatorRetryResumeNotice(prompt string, cycle *domain.TaskCycle, par
 // AppendResumeNotice prepends an in-process worker resume notice.
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func AppendResumeNotice(prompt string, cycle *domain.TaskCycle, interruptedPhase domain.Phase, knownCommits []domain.TaskCycleCommit) string {
+func AppendResumeNotice(prompt string, cycle *cyclesdomain.TaskCycle, interruptedPhase cyclesdomain.Phase, knownCommits []cyclesdomain.TaskCycleCommit) string {
 	if cycle == nil {
 		return prompt
 	}
@@ -81,7 +80,7 @@ func AppendGitCommitPolicy(prompt string, operatorResume bool) string {
 // FormatKnownCommitsForResume lists commits already indexed for the task.
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func FormatKnownCommitsForResume(commits []domain.TaskCycleCommit) string {
+func FormatKnownCommitsForResume(commits []cyclesdomain.TaskCycleCommit) string {
 	if len(commits) == 0 {
 		return ""
 	}

@@ -3,11 +3,10 @@ package repo
 import (
 	"bytes"
 	"fmt"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"io"
 	"log/slog"
 	"os"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 // FilePreview is UTF-8 text for the @ file line-range UI, or Binary when the file should not be shown.
@@ -31,7 +30,7 @@ func ReadFilePreview(absPath string) (*FilePreview, error) {
 		return nil, err
 	}
 	if fi.IsDir() {
-		return nil, fmt.Errorf("%w: path is a directory", domain.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: path is a directory", taskcoredomain.ErrInvalidInput)
 	}
 	size := fi.Size()
 	out := &FilePreview{SizeBytes: size, Truncated: size > maxFileReadBytes}

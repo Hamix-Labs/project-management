@@ -6,7 +6,8 @@ import (
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
 // emptyRunnerStats is the Phase 2 invariant: every map in the
@@ -33,7 +34,7 @@ func assertEmptyRunnerStats(t *testing.T, got TaskStats) {
 }
 
 // TestStore_TaskStats_emptyDatabase pins the store-side invariant that
-// every map in TaskStats is non-nil and every domain.Phase enum key is
+// every map in TaskStats is non-nil and every cyclesdomain.Phase enum key is
 // present in Phases.ByPhaseStatus on a fresh database. The handler's
 // HTTP contract test relies on this guarantee.
 func TestStore_TaskStats_emptyDatabase(t *testing.T) {
@@ -51,8 +52,8 @@ func TestStore_TaskStats_emptyDatabase(t *testing.T) {
 	if got.Phases.ByPhaseStatus == nil {
 		t.Fatalf("phases.by_phase_status must be non-nil on empty DB")
 	}
-	wantPhases := []domain.Phase{
-		domain.PhaseExecute, domain.PhaseVerify,
+	wantPhases := []cyclesdomain.Phase{
+		cyclesdomain.PhaseExecute, cyclesdomain.PhaseVerify,
 	}
 	for _, p := range wantPhases {
 		inner, ok := got.Phases.ByPhaseStatus[p]
@@ -89,23 +90,23 @@ func TestStore_TaskStats_runnerBreakdown_aggregatesByRunnerModelAndPair(t *testi
 
 	type seed struct {
 		meta   string
-		status domain.CycleStatus
+		status cyclesdomain.CycleStatus
 	}
 	seeds := []seed{
-		{meta: `{"runner":"cursor-cli","cursor_model_effective":"sonnet-4.5"}`, status: domain.CycleStatusSucceeded},
-		{meta: `{"runner":"cursor-cli","cursor_model_effective":"sonnet-4.5"}`, status: domain.CycleStatusFailed},
-		{meta: `{"runner":"cursor-cli","cursor_model_effective":"opus-4"}`, status: domain.CycleStatusSucceeded},
+		{meta: `{"runner":"cursor-cli","cursor_model_effective":"sonnet-4.5"}`, status: cyclesdomain.CycleStatusSucceeded},
+		{meta: `{"runner":"cursor-cli","cursor_model_effective":"sonnet-4.5"}`, status: cyclesdomain.CycleStatusFailed},
+		{meta: `{"runner":"cursor-cli","cursor_model_effective":"opus-4"}`, status: cyclesdomain.CycleStatusSucceeded},
 	}
 	for i, sd := range seeds {
 		cyc, err := s.StartCycle(ctx, StartCycleInput{
 			TaskID:      tsk.ID,
-			TriggeredBy: domain.ActorAgent,
+			TriggeredBy: taskcoredomain.ActorAgent,
 			Meta:        []byte(sd.meta),
 		})
 		if err != nil {
 			t.Fatalf("seed %d StartCycle: %v", i, err)
 		}
-		if _, err := s.TerminateCycle(ctx, cyc.ID, sd.status, "seed", domain.ActorAgent); err != nil {
+		if _, err := s.TerminateCycle(ctx, cyc.ID, sd.status, "seed", taskcoredomain.ActorAgent); err != nil {
 			t.Fatalf("seed %d TerminateCycle: %v", i, err)
 		}
 	}
@@ -119,13 +120,13 @@ func TestStore_TaskStats_runnerBreakdown_aggregatesByRunnerModelAndPair(t *testi
 	if !ok {
 		t.Fatalf("Runner.ByRunner missing cursor-cli; got keys=%v", mapKeys(got.Runner.ByRunner))
 	}
-	if cursorBucket.ByStatus[domain.CycleStatusSucceeded] != 2 {
+	if cursorBucket.ByStatus[cyclesdomain.CycleStatusSucceeded] != 2 {
 		t.Errorf("ByRunner[cursor-cli].succeeded=%d want 2",
-			cursorBucket.ByStatus[domain.CycleStatusSucceeded])
+			cursorBucket.ByStatus[cyclesdomain.CycleStatusSucceeded])
 	}
-	if cursorBucket.ByStatus[domain.CycleStatusFailed] != 1 {
+	if cursorBucket.ByStatus[cyclesdomain.CycleStatusFailed] != 1 {
 		t.Errorf("ByRunner[cursor-cli].failed=%d want 1",
-			cursorBucket.ByStatus[domain.CycleStatusFailed])
+			cursorBucket.ByStatus[cyclesdomain.CycleStatusFailed])
 	}
 	if cursorBucket.Succeeded != 2 {
 		t.Errorf("ByRunner[cursor-cli].Succeeded=%d want 2", cursorBucket.Succeeded)
@@ -135,15 +136,15 @@ func TestStore_TaskStats_runnerBreakdown_aggregatesByRunnerModelAndPair(t *testi
 	if !ok {
 		t.Fatalf("Runner.ByModel missing sonnet-4.5; got keys=%v", mapKeys(got.Runner.ByModel))
 	}
-	if sonnet.ByStatus[domain.CycleStatusSucceeded] != 1 || sonnet.ByStatus[domain.CycleStatusFailed] != 1 {
+	if sonnet.ByStatus[cyclesdomain.CycleStatusSucceeded] != 1 || sonnet.ByStatus[cyclesdomain.CycleStatusFailed] != 1 {
 		t.Errorf("ByModel[sonnet-4.5]=%+v want succeeded=1, failed=1", sonnet.ByStatus)
 	}
 	opus, ok := got.Runner.ByModel["opus-4"]
 	if !ok {
 		t.Fatalf("Runner.ByModel missing opus-4; got keys=%v", mapKeys(got.Runner.ByModel))
 	}
-	if opus.ByStatus[domain.CycleStatusSucceeded] != 1 {
-		t.Errorf("ByModel[opus-4].succeeded=%d want 1", opus.ByStatus[domain.CycleStatusSucceeded])
+	if opus.ByStatus[cyclesdomain.CycleStatusSucceeded] != 1 {
+		t.Errorf("ByModel[opus-4].succeeded=%d want 1", opus.ByStatus[cyclesdomain.CycleStatusSucceeded])
 	}
 
 	pairKey := "cursor-cli|sonnet-4.5"
@@ -152,7 +153,7 @@ func TestStore_TaskStats_runnerBreakdown_aggregatesByRunnerModelAndPair(t *testi
 		t.Fatalf("Runner.ByRunnerModel missing %q; got keys=%v",
 			pairKey, mapKeys(got.Runner.ByRunnerModel))
 	}
-	if pair.ByStatus[domain.CycleStatusSucceeded] != 1 || pair.ByStatus[domain.CycleStatusFailed] != 1 {
+	if pair.ByStatus[cyclesdomain.CycleStatusSucceeded] != 1 || pair.ByStatus[cyclesdomain.CycleStatusFailed] != 1 {
 		t.Errorf("ByRunnerModel[%q]=%+v want succeeded=1, failed=1", pairKey, pair.ByStatus)
 	}
 }
@@ -181,49 +182,49 @@ func TestStore_TaskStats_runnerBreakdown_resolvedModelFromExecDetails(t *testing
 	seeds := []struct {
 		meta        string
 		execDetails string // "" = no execute phase seeded
-		status      domain.CycleStatus
+		status      cyclesdomain.CycleStatus
 	}{
 		{
 			meta:        `{"runner":"cursor-cli","cursor_model_effective":"auto"}`,
 			execDetails: `{"resolved_model":"Claude 4 Sonnet","session_id":"s1"}`,
-			status:      domain.CycleStatusSucceeded,
+			status:      cyclesdomain.CycleStatusSucceeded,
 		},
 		{
 			meta:        `{"runner":"cursor-cli","cursor_model_effective":"auto"}`,
 			execDetails: `{"resolved_model":"Composer 1","session_id":"s2"}`,
-			status:      domain.CycleStatusSucceeded,
+			status:      cyclesdomain.CycleStatusSucceeded,
 		},
 		{
 			meta:        `{"runner":"cursor-cli","cursor_model_effective":"auto"}`,
 			execDetails: "", // no execute phase — pre-feature path
-			status:      domain.CycleStatusSucceeded,
+			status:      cyclesdomain.CycleStatusSucceeded,
 		},
 	}
 	for i, sd := range seeds {
 		cyc, err := s.StartCycle(ctx, StartCycleInput{
 			TaskID:      tsk.ID,
-			TriggeredBy: domain.ActorAgent,
+			TriggeredBy: taskcoredomain.ActorAgent,
 			Meta:        []byte(sd.meta),
 		})
 		if err != nil {
 			t.Fatalf("seed %d StartCycle: %v", i, err)
 		}
 		if sd.execDetails != "" {
-			ph, err := s.StartPhase(ctx, cyc.ID, domain.PhaseExecute, domain.ActorAgent)
+			ph, err := s.StartPhase(ctx, cyc.ID, cyclesdomain.PhaseExecute, taskcoredomain.ActorAgent)
 			if err != nil {
 				t.Fatalf("seed %d StartPhase(execute): %v", i, err)
 			}
 			if _, err := s.CompletePhase(ctx, CompletePhaseInput{
 				CycleID:  cyc.ID,
 				PhaseSeq: ph.PhaseSeq,
-				Status:   domain.PhaseStatusSucceeded,
+				Status:   cyclesdomain.PhaseStatusSucceeded,
 				Details:  []byte(sd.execDetails),
-				By:       domain.ActorAgent,
+				By:       taskcoredomain.ActorAgent,
 			}); err != nil {
 				t.Fatalf("seed %d CompletePhase(execute): %v", i, err)
 			}
 		}
-		if _, err := s.TerminateCycle(ctx, cyc.ID, sd.status, "seed", domain.ActorAgent); err != nil {
+		if _, err := s.TerminateCycle(ctx, cyc.ID, sd.status, "seed", taskcoredomain.ActorAgent); err != nil {
 			t.Fatalf("seed %d TerminateCycle: %v", i, err)
 		}
 	}
@@ -239,9 +240,9 @@ func TestStore_TaskStats_runnerBreakdown_resolvedModelFromExecDetails(t *testing
 		t.Fatalf("ByRunnerModelResolved missing %q; got keys=%v",
 			wantSonnet, mapKeys(got.Runner.ByRunnerModelResolved))
 	}
-	if sonnetBucket.ByStatus[domain.CycleStatusSucceeded] != 1 {
+	if sonnetBucket.ByStatus[cyclesdomain.CycleStatusSucceeded] != 1 {
 		t.Errorf("ByRunnerModelResolved[%q].succeeded=%d want 1",
-			wantSonnet, sonnetBucket.ByStatus[domain.CycleStatusSucceeded])
+			wantSonnet, sonnetBucket.ByStatus[cyclesdomain.CycleStatusSucceeded])
 	}
 	wantComposer := "cursor-cli|auto|Composer 1"
 	composerBucket, ok := got.Runner.ByRunnerModelResolved[wantComposer]
@@ -249,9 +250,9 @@ func TestStore_TaskStats_runnerBreakdown_resolvedModelFromExecDetails(t *testing
 		t.Fatalf("ByRunnerModelResolved missing %q; got keys=%v",
 			wantComposer, mapKeys(got.Runner.ByRunnerModelResolved))
 	}
-	if composerBucket.ByStatus[domain.CycleStatusSucceeded] != 1 {
+	if composerBucket.ByStatus[cyclesdomain.CycleStatusSucceeded] != 1 {
 		t.Errorf("ByRunnerModelResolved[%q].succeeded=%d want 1",
-			wantComposer, composerBucket.ByStatus[domain.CycleStatusSucceeded])
+			wantComposer, composerBucket.ByStatus[cyclesdomain.CycleStatusSucceeded])
 	}
 
 	// Exactly two resolved-model entries; the third cycle (no exec
@@ -269,9 +270,9 @@ func TestStore_TaskStats_runnerBreakdown_resolvedModelFromExecDetails(t *testing
 	if !ok {
 		t.Fatalf("ByRunnerModel missing %q", pairKey)
 	}
-	if pair.ByStatus[domain.CycleStatusSucceeded] != 3 {
+	if pair.ByStatus[cyclesdomain.CycleStatusSucceeded] != 3 {
 		t.Errorf("ByRunnerModel[%q].succeeded=%d want 3 (all three cycles)",
-			pairKey, pair.ByStatus[domain.CycleStatusSucceeded])
+			pairKey, pair.ByStatus[cyclesdomain.CycleStatusSucceeded])
 	}
 }
 
@@ -303,20 +304,20 @@ func TestStore_CountPreFeatureCycles_bucketsByMissingVsEmptyEffectiveModel(t *te
 	for i, sd := range seeds {
 		cyc, err := s.StartCycle(ctx, StartCycleInput{
 			TaskID:      tsk.ID,
-			TriggeredBy: domain.ActorAgent,
+			TriggeredBy: taskcoredomain.ActorAgent,
 			Meta:        []byte(sd.meta),
 		})
 		if err != nil {
 			t.Fatalf("seed %d StartCycle: %v", i, err)
 		}
 		if _, err := s.TerminateCycle(ctx, cyc.ID,
-			domain.CycleStatusSucceeded, "seed", domain.ActorAgent); err != nil {
+			cyclesdomain.CycleStatusSucceeded, "seed", taskcoredomain.ActorAgent); err != nil {
 			t.Fatalf("seed %d TerminateCycle: %v", i, err)
 		}
 	}
 	// One running cycle to prove the ended_at filter excludes it.
 	if _, err := s.StartCycle(ctx, StartCycleInput{
-		TaskID: tsk.ID, TriggeredBy: domain.ActorAgent,
+		TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent,
 		Meta: []byte(`{}`),
 	}); err != nil {
 		t.Fatalf("running-cycle seed StartCycle: %v", err)
@@ -369,23 +370,23 @@ func TestStore_TaskStats_populatesCyclesPhasesAndFailures(t *testing.T) {
 	ctx := context.Background()
 	tsk := mustCreateTask(t, s, ctx)
 
-	cyc, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	cyc, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatalf("StartCycle: %v", err)
 	}
-	ex, err := s.StartPhase(ctx, cyc.ID, domain.PhaseExecute, domain.ActorAgent)
+	ex, err := s.StartPhase(ctx, cyc.ID, cyclesdomain.PhaseExecute, taskcoredomain.ActorAgent)
 	if err != nil {
 		t.Fatalf("StartPhase execute: %v", err)
 	}
 	if _, err := s.CompletePhase(ctx, CompletePhaseInput{
 		CycleID: cyc.ID, PhaseSeq: ex.PhaseSeq,
-		Status: domain.PhaseStatusFailed, Summary: ptrString("execute blew up"),
-		By: domain.ActorAgent,
+		Status: cyclesdomain.PhaseStatusFailed, Summary: ptrString("execute blew up"),
+		By: taskcoredomain.ActorAgent,
 	}); err != nil {
 		t.Fatalf("CompletePhase execute (failed): %v", err)
 	}
 	if _, err := s.TerminateCycle(ctx, cyc.ID,
-		domain.CycleStatusFailed, "execute blew up", domain.ActorAgent); err != nil {
+		cyclesdomain.CycleStatusFailed, "execute blew up", taskcoredomain.ActorAgent); err != nil {
 		t.Fatalf("TerminateCycle: %v", err)
 	}
 
@@ -394,17 +395,17 @@ func TestStore_TaskStats_populatesCyclesPhasesAndFailures(t *testing.T) {
 		t.Fatalf("TaskStats: %v", err)
 	}
 
-	if got.Cycles.ByStatus[domain.CycleStatusFailed] != 1 {
+	if got.Cycles.ByStatus[cyclesdomain.CycleStatusFailed] != 1 {
 		t.Fatalf("cycles.by_status[failed]=%d want 1: %+v",
-			got.Cycles.ByStatus[domain.CycleStatusFailed], got.Cycles.ByStatus)
+			got.Cycles.ByStatus[cyclesdomain.CycleStatusFailed], got.Cycles.ByStatus)
 	}
-	if got.Cycles.ByTriggeredBy[domain.ActorAgent] != 1 {
+	if got.Cycles.ByTriggeredBy[taskcoredomain.ActorAgent] != 1 {
 		t.Fatalf("cycles.by_triggered_by[agent]=%d want 1: %+v",
-			got.Cycles.ByTriggeredBy[domain.ActorAgent], got.Cycles.ByTriggeredBy)
+			got.Cycles.ByTriggeredBy[taskcoredomain.ActorAgent], got.Cycles.ByTriggeredBy)
 	}
-	if got.Phases.ByPhaseStatus[domain.PhaseExecute][domain.PhaseStatusFailed] != 1 {
+	if got.Phases.ByPhaseStatus[cyclesdomain.PhaseExecute][cyclesdomain.PhaseStatusFailed] != 1 {
 		t.Fatalf("phases.execute.failed=%d want 1",
-			got.Phases.ByPhaseStatus[domain.PhaseExecute][domain.PhaseStatusFailed])
+			got.Phases.ByPhaseStatus[cyclesdomain.PhaseExecute][cyclesdomain.PhaseStatusFailed])
 	}
 	if len(got.RecentFailures) != 1 {
 		t.Fatalf("len(RecentFailures)=%d want 1: %+v", len(got.RecentFailures), got.RecentFailures)
@@ -419,8 +420,8 @@ func TestStore_TaskStats_populatesCyclesPhasesAndFailures(t *testing.T) {
 	if rf.AttemptSeq != cyc.AttemptSeq {
 		t.Errorf("RecentFailures[0].AttemptSeq=%d want %d", rf.AttemptSeq, cyc.AttemptSeq)
 	}
-	if rf.Status != string(domain.CycleStatusFailed) {
-		t.Errorf("RecentFailures[0].Status=%q want %q", rf.Status, domain.CycleStatusFailed)
+	if rf.Status != string(cyclesdomain.CycleStatusFailed) {
+		t.Errorf("RecentFailures[0].Status=%q want %q", rf.Status, cyclesdomain.CycleStatusFailed)
 	}
 	if rf.Reason != "execute blew up" {
 		t.Errorf("RecentFailures[0].Reason=%q want %q", rf.Reason, "execute blew up")
@@ -439,11 +440,11 @@ func TestStore_TaskStats_recentFailures_prefersPhaseStandardizedMessage(t *testi
 	ctx := context.Background()
 	tsk := mustCreateTask(t, s, ctx)
 
-	cyc, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	cyc, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatalf("StartCycle: %v", err)
 	}
-	ex, err := s.StartPhase(ctx, cyc.ID, domain.PhaseExecute, domain.ActorAgent)
+	ex, err := s.StartPhase(ctx, cyc.ID, cyclesdomain.PhaseExecute, taskcoredomain.ActorAgent)
 	if err != nil {
 		t.Fatalf("StartPhase execute: %v", err)
 	}
@@ -456,14 +457,14 @@ func TestStore_TaskStats_recentFailures_prefersPhaseStandardizedMessage(t *testi
 	}
 	if _, err := s.CompletePhase(ctx, CompletePhaseInput{
 		CycleID: cyc.ID, PhaseSeq: ex.PhaseSeq,
-		Status:  domain.PhaseStatusFailed,
+		Status:  cyclesdomain.PhaseStatusFailed,
 		Details: details,
-		By:      domain.ActorAgent,
+		By:      taskcoredomain.ActorAgent,
 	}); err != nil {
 		t.Fatalf("CompletePhase execute: %v", err)
 	}
 	if _, err := s.TerminateCycle(ctx, cyc.ID,
-		domain.CycleStatusFailed, "runner_non_zero_exit", domain.ActorAgent); err != nil {
+		cyclesdomain.CycleStatusFailed, "runner_non_zero_exit", taskcoredomain.ActorAgent); err != nil {
 		t.Fatalf("TerminateCycle: %v", err)
 	}
 

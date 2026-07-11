@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 // maxTaskPathIDBytes caps path segments for task UUIDs, draft ids, checklist item ids, etc.
@@ -22,10 +22,10 @@ func parseBoundedPathID(op, raw, field string) (string, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", op)
 	id := strings.TrimSpace(raw)
 	if id == "" {
-		return "", fmt.Errorf("%w: %s", domain.ErrInvalidInput, field)
+		return "", fmt.Errorf("%w: %s", taskcoredomain.ErrInvalidInput, field)
 	}
 	if len(id) > maxTaskPathIDBytes {
-		return "", fmt.Errorf("%w: %s too long", domain.ErrInvalidInput, field)
+		return "", fmt.Errorf("%w: %s too long", taskcoredomain.ErrInvalidInput, field)
 	}
 	return id, nil
 }
@@ -52,14 +52,14 @@ func parseTaskPathPhaseSeq(raw string) (int64, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.parseTaskPathPhaseSeq")
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
-		return 0, fmt.Errorf("%w: phase_seq must be a positive integer", domain.ErrInvalidInput)
+		return 0, fmt.Errorf("%w: phase_seq must be a positive integer", taskcoredomain.ErrInvalidInput)
 	}
 	if len(raw) > maxPhaseSeqParamBytes {
-		return 0, fmt.Errorf("%w: phase_seq too long", domain.ErrInvalidInput)
+		return 0, fmt.Errorf("%w: phase_seq too long", taskcoredomain.ErrInvalidInput)
 	}
 	n, err := strconv.ParseInt(raw, 10, 64)
 	if err != nil || n < 1 {
-		return 0, fmt.Errorf("%w: phase_seq must be a positive integer", domain.ErrInvalidInput)
+		return 0, fmt.Errorf("%w: phase_seq must be a positive integer", taskcoredomain.ErrInvalidInput)
 	}
 	return n, nil
 }

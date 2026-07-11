@@ -6,7 +6,8 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/reports"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/verify"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
@@ -66,8 +67,8 @@ func (h *Harness) applyVerifiedCompletions(ctx context.Context, taskID, cycleID 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (h *Harness) runVerificationPipeline(
 	parentCtx context.Context,
-	task *domain.Task,
-	cycle *domain.TaskCycle,
+	task *taskcoredomain.Task,
+	cycle *cyclesdomain.TaskCycle,
 	state *processState,
 	snap verificationSnapshot,
 	feedback string,
@@ -77,10 +78,10 @@ func (h *Harness) runVerificationPipeline(
 		return h.planVerifyRun(ctx, in.Task, in.Cycle, state, in.Snap, in.VerifyAttempt, in.Feedback, in.CmdEvidence, in.SelfReport)
 	})
 	return svc.RunPipeline(parentCtx, task, cycle, snap, state.verify.verifyAttempt, state.verify.previouslyPassed, feedback, verify.PhaseCallbacks{
-		OnStarted: func(phase *domain.TaskCyclePhase) {
-			state.phase.runningPhase = domain.PhaseVerify
+		OnStarted: func(phase *cyclesdomain.TaskCyclePhase) {
+			state.phase.runningPhase = cyclesdomain.PhaseVerify
 			state.phase.runningPhaseSeq = phase.PhaseSeq
-			id := domain.RunCorrelationIDFromDetailsJSON(phase.DetailsJSON)
+			id := cyclesdomain.RunCorrelationIDFromDetailsJSON(phase.DetailsJSON)
 			state.phase.runCorrelationID = id
 			h.setPhaseRunCorrelationID(id)
 		},

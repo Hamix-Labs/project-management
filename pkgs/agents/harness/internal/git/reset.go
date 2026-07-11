@@ -4,10 +4,9 @@ import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 import (
 	"context"
 	"fmt"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"log/slog"
 	"strings"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 // ResetForFreshRetry resets the working tree to the parent cycle anchor before fresh retry.
@@ -54,10 +53,10 @@ func (s *Service) resolveFreshRetryAnchor(ctx context.Context, workdir, parentCy
 	if err != nil {
 		return "", err
 	}
-	var firstExecute *domain.TaskCyclePhase
+	var firstExecute *cyclesdomain.TaskCyclePhase
 	for i := range phases {
 		p := &phases[i]
-		if p.Phase != domain.PhaseExecute {
+		if p.Phase != cyclesdomain.PhaseExecute {
 			continue
 		}
 		if firstExecute == nil || p.PhaseSeq < firstExecute.PhaseSeq {

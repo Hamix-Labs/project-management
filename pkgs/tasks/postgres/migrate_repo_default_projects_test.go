@@ -9,8 +9,8 @@ import (
 	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskcoremodel "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/model"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
@@ -59,8 +59,8 @@ func TestMigrateRepoDefaultProjects_removesGlobalDefault(t *testing.T) {
 		t.Fatal(err)
 	}
 	legacyID := projectsdomain.LegacyGlobalDefaultProjectID
-	task := taskcoremodel.FromDomainTask(domain.Task{
-		ID: "task-1", Title: "t", InitialPrompt: "p", Status: domain.StatusReady, Priority: domain.PriorityMedium,
+	task := taskcoremodel.FromDomainTask(taskcoredomain.Task{
+		ID: "task-1", Title: "t", InitialPrompt: "p", Status: taskcoredomain.StatusReady, Priority: taskcoredomain.PriorityMedium,
 		Runner: "cursor", ProjectID: &legacyID, WorktreeID: &wtID,
 	})
 	if err := db.WithContext(ctx).Create(&task).Error; err != nil {

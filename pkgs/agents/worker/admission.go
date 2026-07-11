@@ -5,26 +5,27 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
+	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 	"log/slog"
 	"strings"
 	"time"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 const pickupPersistenceDefer = 2 * time.Minute
 
 // reloadTask fetches the freshest task row from the store. ok==false
 // means the caller should bail (and AckAfterRecv via the deferred path).
-func (w *Worker) reloadTask(ctx context.Context, taskID string) (*domain.Task, bool) {
+func (w *Worker) reloadTask(ctx context.Context, taskID string) (*taskcoredomain.Task, bool) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.worker.Worker.reloadTask",
 		"task_id", taskID)
 	fresh, err := w.store.Get(ctx, taskID)
 	if err == nil {
 		return fresh, true
 	}
-	if errors.Is(err, domain.ErrNotFound) {
+	if errors.Is(err, taskcoredomain.ErrNotFound) {
 		slog.Info("task vanished before dequeue processing", "cmd", calltrace.LogCmd,
 			"operation", "agent.worker.Worker.reloadTask.not_found", "task_id", taskID)
 		return nil, false
@@ -39,7 +40,7 @@ func (w *Worker) deferTaskPickup(ctx context.Context, taskID string, delay time.
 		"task_id", taskID, "delay", delay.String())
 	at := w.clock().Add(delay).UTC()
 	patch := store.PickupNotBeforePatch{At: at}
-	if _, err := w.store.Update(ctx, taskID, store.UpdateTaskInput{PickupNotBefore: &patch}, domain.ActorAgent); err != nil {
+	if _, err := w.store.Update(ctx, taskID, store.UpdateTaskInput{PickupNotBefore: &patch}, taskcoredomain.ActorAgent); err != nil {
 		slog.Warn("agent worker defer pickup failed", "cmd", calltrace.LogCmd,
 			"operation", "agent.worker.Worker.deferTaskPickup.err", "task_id", taskID, "err", err)
 	}
@@ -47,13 +48,13 @@ func (w *Worker) deferTaskPickup(ctx context.Context, taskID string, delay time.
 
 // transitionTaskToRunning flips the task to running before the harness runs.
 // Returns the post-pickup task row and any consumed retry intent.
-func (w *Worker) transitionTaskToRunning(ctx context.Context, taskID string) (*domain.Task, *domain.PendingRetry, error) {
+func (w *Worker) transitionTaskToRunning(ctx context.Context, taskID string) (*taskcoredomain.Task, *taskcoredomain.PendingRetry, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.worker.Worker.transitionTaskToRunning",
 		"task_id", taskID)
-	res, err := w.store.AgentPickup(ctx, taskID, domain.ActorAgent)
+	res, err := w.store.AgentPickup(ctx, taskID, taskcoredomain.ActorAgent)
 	if err != nil {
 		level := slog.LevelWarn
-		if errors.Is(err, domain.ErrNotFound) {
+		if errors.Is(err, taskcoredomain.ErrNotFound) {
 			level = slog.LevelInfo
 		}
 		slog.Log(ctx, level, "agent worker task pickup failed",
@@ -69,7 +70,7 @@ func pickupPersistenceFailure(err error) bool {
 	if err == nil {
 		return false
 	}
-	if errors.Is(err, domain.ErrNotFound) || errors.Is(err, domain.ErrInvalidInput) {
+	if errors.Is(err, taskcoredomain.ErrNotFound) || errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		return false
 	}
 	return true
@@ -86,16 +87,16 @@ func (w *Worker) recordPickupPersistenceFailure(ctx context.Context, taskID stri
 			"operation", "agent.worker.Worker.recordPickupPersistenceFailure.marshal", "task_id", taskID, "err", err)
 		return
 	}
-	if err := w.store.AppendTaskEvent(ctx, taskID, domain.EventTaskPickupFailed, domain.ActorAgent, payload); err != nil {
+	if err := w.store.AppendTaskEvent(ctx, taskID, taskeventsdomain.EventTaskPickupFailed, taskcoredomain.ActorAgent, payload); err != nil {
 		slog.Warn("agent worker pickup failure event append failed", "cmd", calltrace.LogCmd,
 			"operation", "agent.worker.Worker.recordPickupPersistenceFailure.append", "task_id", taskID, "err", err)
 	}
 }
 
-func (w *Worker) openRunningCycle(ctx context.Context, taskID string) (*domain.TaskCycle, bool) {
+func (w *Worker) openRunningCycle(ctx context.Context, taskID string) (*cyclesdomain.TaskCycle, bool) {
 	cycles, err := w.store.ListCyclesForTask(ctx, taskID, 0)
 	if err != nil {
-		if errors.Is(err, domain.ErrNotFound) {
+		if errors.Is(err, taskcoredomain.ErrNotFound) {
 			return nil, false
 		}
 		slog.Warn("agent worker list cycles failed", "cmd", calltrace.LogCmd,
@@ -103,7 +104,7 @@ func (w *Worker) openRunningCycle(ctx context.Context, taskID string) (*domain.T
 		return nil, false
 	}
 	for i := len(cycles) - 1; i >= 0; i-- {
-		if cycles[i].Status == domain.CycleStatusRunning {
+		if cycles[i].Status == cyclesdomain.CycleStatusRunning {
 			cycle := cycles[i]
 			return &cycle, true
 		}
@@ -112,7 +113,7 @@ func (w *Worker) openRunningCycle(ctx context.Context, taskID string) (*domain.T
 }
 
 // processOne runs queue admission then delegates the cycle body to the harness.
-func (w *Worker) processOne(parentCtx context.Context, task domain.Task) {
+func (w *Worker) processOne(parentCtx context.Context, task taskcoredomain.Task) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.worker.Worker.processOne",
 		"task_id", task.ID)
 	defer w.queue.AckAfterRecv(task.ID)
@@ -124,7 +125,7 @@ func (w *Worker) processOne(parentCtx context.Context, task domain.Task) {
 	}
 
 	switch fresh.Status {
-	case domain.StatusRunning:
+	case taskcoredomain.StatusRunning:
 		cycle, ok := w.openRunningCycle(parentCtx, fresh.ID)
 		if !ok {
 			slog.Warn("running task without open cycle at dequeue", "cmd", calltrace.LogCmd,
@@ -142,7 +143,7 @@ func (w *Worker) processOne(parentCtx context.Context, task domain.Task) {
 			w.harness.Resume(parentCtx, fresh, cycle)
 		})
 		return
-	case domain.StatusReady:
+	case taskcoredomain.StatusReady:
 		// continue below
 	default:
 		slog.Warn("stale task at dequeue", "cmd", calltrace.LogCmd,
@@ -201,9 +202,9 @@ func (w *Worker) recoverAdmissionPanic(taskID string) {
 		"operation", "agent.worker.Worker.recoverAdmissionPanic", "task_id", taskID)
 	bg, cancel := context.WithTimeout(context.Background(), DefaultShutdownAbortTimeout)
 	defer cancel()
-	failed := domain.StatusFailed
-	if _, err := w.store.Update(bg, taskID, store.UpdateTaskInput{Status: &failed}, domain.ActorAgent); err != nil {
-		if !errors.Is(err, domain.ErrNotFound) {
+	failed := taskcoredomain.StatusFailed
+	if _, err := w.store.Update(bg, taskID, store.UpdateTaskInput{Status: &failed}, taskcoredomain.ActorAgent); err != nil {
+		if !errors.Is(err, taskcoredomain.ErrNotFound) {
 			slog.Warn("agent worker admission panic task transition failed", "cmd", calltrace.LogCmd,
 				"operation", "agent.worker.Worker.recoverAdmissionPanic.err",
 				"task_id", taskID, "err", err)

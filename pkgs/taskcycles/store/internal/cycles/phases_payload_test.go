@@ -2,19 +2,18 @@ package cycles
 
 import (
 	"encoding/json"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"strings"
 	"testing"
 	"unicode/utf8"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 func TestTerminatedPayload_includesFailureSummaryWhenSet(t *testing.T) {
 	t.Parallel()
-	c := &domain.TaskCycle{
+	c := &cyclesdomain.TaskCycle{
 		ID:         "c1",
 		AttemptSeq: 1,
-		Status:     domain.CycleStatusFailed,
+		Status:     cyclesdomain.CycleStatusFailed,
 	}
 	raw, err := terminatedPayload(c, "runner_non_zero_exit", "Operator-facing text")
 	if err != nil {
@@ -34,10 +33,10 @@ func TestTerminatedPayload_includesFailureSummaryWhenSet(t *testing.T) {
 
 func TestTerminatedPayload_omitsEmptyFailureSummary(t *testing.T) {
 	t.Parallel()
-	c := &domain.TaskCycle{
+	c := &cyclesdomain.TaskCycle{
 		ID:         "c1",
 		AttemptSeq: 1,
-		Status:     domain.CycleStatusFailed,
+		Status:     cyclesdomain.CycleStatusFailed,
 	}
 	raw, err := terminatedPayload(c, "runner_timeout", "")
 	if err != nil {
@@ -55,10 +54,10 @@ func TestTerminatedPayload_omitsEmptyFailureSummary(t *testing.T) {
 func TestPhaseTerminatedPayload_includesDetails(t *testing.T) {
 	t.Parallel()
 
-	ph := domain.TaskCyclePhase{
-		Phase:       domain.PhaseExecute,
+	ph := cyclesdomain.TaskCyclePhase{
+		Phase:       cyclesdomain.PhaseExecute,
 		PhaseSeq:    2,
-		Status:      domain.PhaseStatusFailed,
+		Status:      cyclesdomain.PhaseStatusFailed,
 		DetailsJSON: []byte(`{"stderr_tail":"boom","usage":{"x":1}}`),
 	}
 	s := "cursor: exit 1"

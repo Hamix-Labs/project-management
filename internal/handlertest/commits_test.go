@@ -4,12 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 	"net/http"
 	"testing"
 	"time"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 type taskCommitsResponse struct {
@@ -29,12 +28,12 @@ func TestHandler_GetTaskCommits_returnsRows(t *testing.T) {
 
 	ctx := context.Background()
 	tsk, err := st.Create(ctx, store.CreateTaskInput{
-		Priority: domain.PriorityMedium, Title: "commits-api",
-	}, domain.ActorUser)
+		Priority: taskcoredomain.PriorityMedium, Title: "commits-api",
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("create task: %v", err)
 	}
-	cycle, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	cycle, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatalf("start cycle: %v", err)
 	}
@@ -71,8 +70,8 @@ func TestHandler_GetTaskCommits_emptyForNewTask(t *testing.T) {
 
 	ctx := context.Background()
 	tsk, err := st.Create(ctx, store.CreateTaskInput{
-		Priority: domain.PriorityMedium, Title: "no-commits",
-	}, domain.ActorUser)
+		Priority: taskcoredomain.PriorityMedium, Title: "no-commits",
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("create task: %v", err)
 	}

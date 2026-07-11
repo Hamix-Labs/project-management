@@ -11,7 +11,7 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/adapterkit"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
 // Options configures an Adapter at construction time.
@@ -228,21 +228,21 @@ func (a *Adapter) resultForProcessError(
 	rawOutput string,
 ) (runner.Result, error) {
 	if errors.Is(context.Cause(runCtx), adapterkit.ErrStreamIdle) {
-		return runner.NewResult(domain.PhaseStatusFailed, staleSummary(req.StreamIdleStuck),
+		return runner.NewResult(cyclesdomain.PhaseStatusFailed, staleSummary(req.StreamIdleStuck),
 				failureDetails("stream_idle", out.execErr, out.stdout, out.stderr, a.homePaths, map[string]any{
 					"stream_idle_stuck_ns": int64(req.StreamIdleStuck),
 				}), rawOutput),
 			fmt.Errorf("cursor: %w: %v", runner.ErrStale, out.execErr)
 	}
 	if isCtxErr(runCtx) {
-		return runner.NewResult(domain.PhaseStatusFailed, timeoutSummary(req.Timeout),
+		return runner.NewResult(cyclesdomain.PhaseStatusFailed, timeoutSummary(req.Timeout),
 				failureDetails("timeout", out.execErr, out.stdout, out.stderr, a.homePaths, map[string]any{
 					"timeout_ns":         int64(req.Timeout),
 					"timeout_configured": req.Timeout > 0,
 				}), rawOutput),
 			fmt.Errorf("cursor: %w: %v", runner.ErrTimeout, out.execErr)
 	}
-	return runner.NewResult(domain.PhaseStatusFailed, execFailedSummary(out.execErr, a.homePaths),
+	return runner.NewResult(cyclesdomain.PhaseStatusFailed, execFailedSummary(out.execErr, a.homePaths),
 			failureDetails("exec", out.execErr, out.stdout, out.stderr, a.homePaths, map[string]any{
 				"binary":      redact(a.binaryPath, a.homePaths),
 				"argv":        argv,
@@ -276,7 +276,7 @@ func (a *Adapter) resultForNonZeroExit(
 			summary = stdMsg
 		}
 		if req.ResumeSessionID != "" {
-			return runner.NewResult(domain.PhaseStatusFailed, summary, details, rawOutput),
+			return runner.NewResult(cyclesdomain.PhaseStatusFailed, summary, details, rawOutput),
 				fmt.Errorf("cursor: %w: exit %d", runner.ErrResumeSession, exitCode)
 		}
 	default:
@@ -284,7 +284,7 @@ func (a *Adapter) resultForNonZeroExit(
 			summary = summary + ": " + hint
 		}
 	}
-	return runner.NewResult(domain.PhaseStatusFailed, summary, details, rawOutput),
+	return runner.NewResult(cyclesdomain.PhaseStatusFailed, summary, details, rawOutput),
 		fmt.Errorf("cursor: %w: exit %d", runner.ErrNonZeroExit, exitCode)
 }
 
@@ -292,7 +292,7 @@ func (a *Adapter) resultForNonZeroExit(
 func (a *Adapter) resultFromParsedStdout(stdout, stderr []byte, rawOutput string) (runner.Result, error) {
 	parsed, parseErr := parseStdout(stdout)
 	if parseErr != nil {
-		return runner.NewResult(domain.PhaseStatusFailed, invalidOutputSummary(parseErr, a.homePaths),
+		return runner.NewResult(cyclesdomain.PhaseStatusFailed, invalidOutputSummary(parseErr, a.homePaths),
 				failureDetails("parse_stdout", parseErr, stdout, stderr, a.homePaths, nil), rawOutput),
 			fmt.Errorf("cursor: %w: %v", runner.ErrInvalidOutput, parseErr)
 	}
@@ -304,12 +304,12 @@ func (a *Adapter) resultFromParsedStdout(stdout, stderr []byte, rawOutput string
 		if summary == "" {
 			summary = "cursor: agent reported is_error=true"
 		}
-		res := runner.NewResult(domain.PhaseStatusFailed, summary, details, rawOutput)
+		res := runner.NewResult(cyclesdomain.PhaseStatusFailed, summary, details, rawOutput)
 		res.ResolvedModel = parsed.ResolvedModel
 		return res, fmt.Errorf("cursor: %w: agent reported is_error=true", runner.ErrNonZeroExit)
 	}
 
-	res := runner.NewResult(domain.PhaseStatusSucceeded, summary, details, rawOutput)
+	res := runner.NewResult(cyclesdomain.PhaseStatusSucceeded, summary, details, rawOutput)
 	res.ResolvedModel = parsed.ResolvedModel
 	return res, nil
 }

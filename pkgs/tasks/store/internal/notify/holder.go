@@ -8,10 +8,9 @@ package notify
 import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 import (
 	"context"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"log/slog"
 	"sync"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 // Notifier is invoked after a task row is committed in the ready state
@@ -19,7 +18,7 @@ import (
 // block the calling store goroutine for long; the recommended pattern
 // is to publish onto a buffered channel and return.
 type Notifier interface {
-	NotifyReadyTask(ctx context.Context, task domain.Task) error
+	NotifyReadyTask(ctx context.Context, task taskcoredomain.Task) error
 }
 
 // Holder owns the optional notifier registration with sync.RWMutex
@@ -49,7 +48,7 @@ func (h *Holder) Set(n Notifier) {
 // from ctx via context.WithoutCancel so committed work is not bound to
 // request cancellation. Errors are logged with slog.Warn and otherwise
 // swallowed so the store caller never fails because of a notifier.
-func (h *Holder) Notify(ctx context.Context, task domain.Task) {
+func (h *Holder) Notify(ctx context.Context, task taskcoredomain.Task) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.notify.Holder.Notify", "task_id", task.ID)
 	if h == nil || task.ID == "" {
 		return

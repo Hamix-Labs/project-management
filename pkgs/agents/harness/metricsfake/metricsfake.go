@@ -2,10 +2,9 @@
 package metricsfake
 
 import (
+	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 	"sync"
 	"time"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 // RecordedRun is one RecordRun observation.
@@ -18,7 +17,7 @@ type RecordedRun struct {
 
 // RecordedVerdict is one RecordVerifyVerdict observation.
 type RecordedVerdict struct {
-	Kind   domain.VerifierKind
+	Kind   checklistdomain.VerifierKind
 	Passed bool
 }
 
@@ -55,7 +54,7 @@ func (m *RecordingMetrics) RecordRun(runnerName, model, terminalStatus string, d
 // RecordVerifyVerdict records a per-criterion verify outcome.
 //
 //funclogmeasure:skip category=hot-path reason="Test-only in-memory recorder; operation trace is emitted by harness.Run in production."
-func (m *RecordingMetrics) RecordVerifyVerdict(kind domain.VerifierKind, passed bool) {
+func (m *RecordingMetrics) RecordVerifyVerdict(kind checklistdomain.VerifierKind, passed bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.verdicts = append(m.verdicts, RecordedVerdict{Kind: kind, Passed: passed})

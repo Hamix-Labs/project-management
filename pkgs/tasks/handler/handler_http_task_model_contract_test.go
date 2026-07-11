@@ -2,12 +2,11 @@ package handler
 
 import (
 	"encoding/json"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"io"
 	"net/http"
 	"strings"
 	"testing"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 func TestHTTP_createTask_tagsMilestoneDependsOn(t *testing.T) {
@@ -28,7 +27,7 @@ func TestHTTP_createTask_tagsMilestoneDependsOn(t *testing.T) {
 		t.Fatalf("status %d body=%s", res.StatusCode, raw)
 	}
 	var node struct {
-		domain.Task
+		taskcoredomain.Task
 		Children []any `json:"children,omitempty"`
 	}
 	if err := json.Unmarshal(raw, &node); err != nil {
@@ -40,7 +39,7 @@ func TestHTTP_createTask_tagsMilestoneDependsOn(t *testing.T) {
 	if len(node.DependsOn) != 1 || node.DependsOn[0].TaskID != dep {
 		t.Fatalf("depends_on=%v", node.DependsOn)
 	}
-	if node.Gate == nil || node.Gate.Status != domain.GateStatusActive {
+	if node.Gate == nil || node.Gate.Status != taskcoredomain.GateStatusActive {
 		t.Fatalf("gate=%+v", node.Gate)
 	}
 }
@@ -119,12 +118,12 @@ func TestHTTP_patchTaskGate_release(t *testing.T) {
 		t.Fatalf("release: %d %s", res.StatusCode, raw)
 	}
 	var node struct {
-		domain.Task
+		taskcoredomain.Task
 	}
 	if err := json.Unmarshal(raw, &node); err != nil {
 		t.Fatal(err)
 	}
-	if node.Gate == nil || node.Gate.Status != domain.GateStatusReleased {
+	if node.Gate == nil || node.Gate.Status != taskcoredomain.GateStatusReleased {
 		t.Fatalf("gate=%+v", node.Gate)
 	}
 }

@@ -479,6 +479,33 @@ step_taskcore_boundary() {
   print_ok_line "$label" "$elapsed"
 }
 
+step_tasks_domain_retired() {
+  local label="tasks/domain retired"
+  local start=$SECONDS
+  step_prefix
+  printf '%s ' "$label"
+
+  local hits=""
+  if [[ -d pkgs/tasks/domain ]]; then
+    hits="pkgs/tasks/domain directory must not exist (Tier 4 ADR-0060)"
+  fi
+  if rg -q 'github.com/.*/pkgs/tasks/domain' --glob '*.go' 2>/dev/null; then
+    hits+=$'\n'"$(rg -n 'github.com/.*/pkgs/tasks/domain' --glob '*.go' 2>/dev/null || true)"
+  fi
+  local elapsed=$((SECONDS - start))
+  add_section_time "$elapsed"
+
+  if [[ -n "$(echo "$hits" | sed '/^$/d')" ]]; then
+    echo "${C_RED}FAILED${C_RESET}"
+    echo "pkgs/tasks/domain compat shim must be fully retired:"
+    echo "$hits" | sed '/^$/d'
+    fail_step "$label" 1
+  fi
+
+  PASSED=$((PASSED + 1))
+  print_ok_line "$label" "$elapsed"
+}
+
 step_storekernel_boundary() {
   local label="storekernel boundary"
   local start=$SECONDS
@@ -651,6 +678,7 @@ step_taskcore_boundary
 step_repo_handler_boundary
 step_runners_handler_boundary
 step_storekernel_boundary
+step_tasks_domain_retired
 
 if [[ "$LINT_ONLY" -eq 1 ]]; then
   step_test_group_coverage

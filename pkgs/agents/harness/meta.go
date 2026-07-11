@@ -10,7 +10,8 @@ import (
 	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
 // meta.go owns the payload helpers that produce JSON bytes for the
@@ -54,7 +55,7 @@ func buildCycleMeta(r runner.Runner, prompt string, req runner.Request) []byte {
 // retryModeFromCycleMeta reads operator retry mode stamped on cycle MetaJSON.
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func retryModeFromCycleMeta(cycle *domain.TaskCycle) domain.RetryMode {
+func retryModeFromCycleMeta(cycle *cyclesdomain.TaskCycle) taskcoredomain.RetryMode {
 	if cycle == nil || len(cycle.MetaJSON) == 0 {
 		return ""
 	}
@@ -64,7 +65,7 @@ func retryModeFromCycleMeta(cycle *domain.TaskCycle) domain.RetryMode {
 	if err := json.Unmarshal(cycle.MetaJSON, &meta); err != nil {
 		return ""
 	}
-	return domain.RetryMode(strings.TrimSpace(meta.RetryMode))
+	return taskcoredomain.RetryMode(strings.TrimSpace(meta.RetryMode))
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
@@ -100,7 +101,7 @@ func sha256Hex(s string) string {
 // JSON object the store expects. The store's kernel.NormalizeJSONObject
 // chokepoint requires details_json to be a JSON object on every write
 // (sessions 1+2 of .agent/bug-hunting-agent.log) — non-object payloads
-// surface as domain.ErrInvalidInput. runner.Result.Details is typed
+// surface as taskcoredomain.ErrInvalidInput. runner.Result.Details is typed
 // json.RawMessage and adapters like cursor forward whatever the CLI
 // emitted, so the worker is the chokepoint that has to coerce. (When
 // CompletePhase fails for any other reason, processOne now falls

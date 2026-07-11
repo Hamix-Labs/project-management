@@ -6,7 +6,8 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/worker"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 	"gorm.io/gorm"
 )
@@ -23,24 +24,24 @@ func newSweepHarness(t *testing.T) *sweepHarness {
 	return &sweepHarness{t: t, st: store.NewStore(db), db: db}
 }
 
-func (h *sweepHarness) makeRunningTaskWithRunningCycleAndPhase(t *testing.T, ctx context.Context, title string, phase domain.Phase) (*domain.Task, *domain.TaskCycle, *domain.TaskCyclePhase) {
+func (h *sweepHarness) makeRunningTaskWithRunningCycleAndPhase(t *testing.T, ctx context.Context, title string, phase cyclesdomain.Phase) (*taskcoredomain.Task, *cyclesdomain.TaskCycle, *cyclesdomain.TaskCyclePhase) {
 	t.Helper()
 	tsk, err := h.st.Create(ctx, store.CreateTaskInput{
 		Title:         title,
 		InitialPrompt: "do work",
-		Status:        domain.StatusReady,
-		Priority:      domain.PriorityMedium,
-	}, domain.ActorUser)
+		Status:        taskcoredomain.StatusReady,
+		Priority:      taskcoredomain.PriorityMedium,
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("create task: %v", err)
 	}
-	running := domain.StatusRunning
-	if _, err := h.st.Update(ctx, tsk.ID, store.UpdateTaskInput{Status: &running}, domain.ActorAgent); err != nil {
+	running := taskcoredomain.StatusRunning
+	if _, err := h.st.Update(ctx, tsk.ID, store.UpdateTaskInput{Status: &running}, taskcoredomain.ActorAgent); err != nil {
 		t.Fatalf("transition task to running: %v", err)
 	}
 	cycle, err := h.st.StartCycle(ctx, store.StartCycleInput{
 		TaskID:      tsk.ID,
-		TriggeredBy: domain.ActorAgent,
+		TriggeredBy: taskcoredomain.ActorAgent,
 	})
 	if err != nil {
 		t.Fatalf("start cycle: %v", err)
@@ -48,7 +49,7 @@ func (h *sweepHarness) makeRunningTaskWithRunningCycleAndPhase(t *testing.T, ctx
 	if phase == "" {
 		return tsk, cycle, nil
 	}
-	ph, err := h.st.StartPhase(ctx, cycle.ID, phase, domain.ActorAgent)
+	ph, err := h.st.StartPhase(ctx, cycle.ID, phase, taskcoredomain.ActorAgent)
 	if err != nil {
 		t.Fatalf("start phase: %v", err)
 	}
@@ -74,7 +75,7 @@ func TestFinalize_InterruptedRunningPhase_keepsCycleAndTaskRunning(t *testing.T)
 	h := newSweepHarness(t)
 	ctx := context.Background()
 
-	tsk, cycle, ph := h.makeRunningTaskWithRunningCycleAndPhase(t, ctx, "interrupt", domain.PhaseExecute)
+	tsk, cycle, ph := h.makeRunningTaskWithRunningCycleAndPhase(t, ctx, "interrupt", cyclesdomain.PhaseExecute)
 
 	res, err := worker.FinalizeInterruptedPhases(ctx, h.st)
 	if err != nil {
@@ -88,7 +89,7 @@ func TestFinalize_InterruptedRunningPhase_keepsCycleAndTaskRunning(t *testing.T)
 	if err != nil {
 		t.Fatalf("get cycle: %v", err)
 	}
-	if gotCycle.Status != domain.CycleStatusRunning {
+	if gotCycle.Status != cyclesdomain.CycleStatusRunning {
 		t.Fatalf("cycle status = %q, want running", gotCycle.Status)
 	}
 
@@ -96,18 +97,18 @@ func TestFinalize_InterruptedRunningPhase_keepsCycleAndTaskRunning(t *testing.T)
 	if err != nil {
 		t.Fatalf("list phases: %v", err)
 	}
-	if len(phases) != 1 || phases[0].ID != ph.ID || phases[0].Status != domain.PhaseStatusFailed {
+	if len(phases) != 1 || phases[0].ID != ph.ID || phases[0].Status != cyclesdomain.PhaseStatusFailed {
 		t.Fatalf("phases = %+v, want one failed phase id=%s", phases, ph.ID)
 	}
-	if phases[0].Summary == nil || *phases[0].Summary != domain.PhaseInterruptReason {
-		t.Fatalf("phase summary = %v, want %q", phases[0].Summary, domain.PhaseInterruptReason)
+	if phases[0].Summary == nil || *phases[0].Summary != cyclesdomain.PhaseInterruptReason {
+		t.Fatalf("phase summary = %v, want %q", phases[0].Summary, cyclesdomain.PhaseInterruptReason)
 	}
 
 	gotTask, err := h.st.Get(ctx, tsk.ID)
 	if err != nil {
 		t.Fatalf("get task: %v", err)
 	}
-	if gotTask.Status != domain.StatusRunning {
+	if gotTask.Status != taskcoredomain.StatusRunning {
 		t.Fatalf("task status = %q, want running", gotTask.Status)
 	}
 }
@@ -117,23 +118,23 @@ func TestSweep_OrphanPhaseUnderTerminalCycle_isFailed(t *testing.T) {
 	h := newSweepHarness(t)
 	ctx := context.Background()
 
-	tsk, cycle, ph := h.makeRunningTaskWithRunningCycleAndPhase(t, ctx, "orphan-phase", domain.PhaseExecute)
+	tsk, cycle, ph := h.makeRunningTaskWithRunningCycleAndPhase(t, ctx, "orphan-phase", cyclesdomain.PhaseExecute)
 
 	if _, err := h.st.CompletePhase(ctx, store.CompletePhaseInput{
 		CycleID:  cycle.ID,
 		PhaseSeq: ph.PhaseSeq,
-		Status:   domain.PhaseStatusSucceeded,
-		By:       domain.ActorAgent,
+		Status:   cyclesdomain.PhaseStatusSucceeded,
+		By:       taskcoredomain.ActorAgent,
 	}); err != nil {
 		t.Fatalf("complete execute: %v", err)
 	}
-	if _, err := h.st.TerminateCycle(ctx, cycle.ID, domain.CycleStatusSucceeded, "", domain.ActorAgent); err != nil {
+	if _, err := h.st.TerminateCycle(ctx, cycle.ID, cyclesdomain.CycleStatusSucceeded, "", taskcoredomain.ActorAgent); err != nil {
 		t.Fatalf("terminate cycle: %v", err)
 	}
 
 	tx := h.db.Exec(
 		"UPDATE task_cycle_phases SET status = ?, ended_at = NULL WHERE phase_seq = ? AND cycle_id = ?",
-		domain.PhaseStatusRunning, ph.PhaseSeq, cycle.ID,
+		cyclesdomain.PhaseStatusRunning, ph.PhaseSeq, cycle.ID,
 	)
 	if tx.Error != nil {
 		t.Fatalf("synthesize orphan running phase: %v", tx.Error)
@@ -152,7 +153,7 @@ func TestSweep_OrphanPhaseUnderTerminalCycle_isFailed(t *testing.T) {
 		t.Fatalf("list phases: %v", err)
 	}
 	for _, p := range phases {
-		if p.Status == domain.PhaseStatusRunning {
+		if p.Status == cyclesdomain.PhaseStatusRunning {
 			t.Fatalf("phase %d still running", p.PhaseSeq)
 		}
 	}
@@ -167,7 +168,7 @@ func TestFinalize_Idempotent(t *testing.T) {
 	h := newSweepHarness(t)
 	ctx := context.Background()
 
-	_, _, _ = h.makeRunningTaskWithRunningCycleAndPhase(t, ctx, "idemp", domain.PhaseExecute)
+	_, _, _ = h.makeRunningTaskWithRunningCycleAndPhase(t, ctx, "idemp", cyclesdomain.PhaseExecute)
 
 	first, err := worker.FinalizeInterruptedPhases(ctx, h.st)
 	if err != nil {

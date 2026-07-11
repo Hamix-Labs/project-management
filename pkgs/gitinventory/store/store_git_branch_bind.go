@@ -14,7 +14,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -32,7 +32,7 @@ func (s *Store) ResolveOrCreateBranchForRepo(
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "gitinventory.store.ResolveOrCreateBranchForRepo")
 	name := strings.TrimSpace(input.Name)
 	if name == "" {
-		return gitdomain.GitBranch{}, fmt.Errorf("%w: branch name required", domain.ErrInvalidInput)
+		return gitdomain.GitBranch{}, fmt.Errorf("%w: branch name required", taskcoredomain.ErrInvalidInput)
 	}
 	if input.CreateBranch {
 		return s.CreateGitBranchForRepo(ctx, repo.ID, CreateGitBranchInput{
@@ -69,7 +69,7 @@ func (s *Store) ResolveOrCreateBranchForRepo(
 		}
 	}
 	if headSHA == "" {
-		return gitdomain.GitBranch{}, fmt.Errorf("%w: branch %q not found in repository", domain.ErrInvalidInput, name)
+		return gitdomain.GitBranch{}, fmt.Errorf("%w: branch %q not found in repository", taskcoredomain.ErrInvalidInput, name)
 	}
 	now := time.Now().UTC()
 	row := gitdomain.GitBranch{

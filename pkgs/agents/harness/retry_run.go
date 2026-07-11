@@ -7,16 +7,17 @@ import (
 	"log/slog"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/git"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
 type startCycleOpts struct {
 	parentCycleID *string
-	retryMode     domain.RetryMode
+	retryMode     taskcoredomain.RetryMode
 }
 
 // RunWithRetry starts a new cycle. intent==nil is the existing first-run path.
-func (h *Harness) RunWithRetry(parentCtx context.Context, task *domain.Task, intent *domain.PendingRetry) {
+func (h *Harness) RunWithRetry(parentCtx context.Context, task *taskcoredomain.Task, intent *taskcoredomain.PendingRetry) {
 	if intent == nil {
 		h.runFreshCycle(parentCtx, task, startCycleOpts{})
 		return
@@ -29,16 +30,16 @@ func (h *Harness) RunWithRetry(parentCtx context.Context, task *domain.Task, int
 		return
 	}
 	switch intent.Mode {
-	case domain.RetryFresh:
+	case taskcoredomain.RetryFresh:
 		h.runFreshRetry(parentCtx, task, intent)
-	case domain.RetryResume:
+	case taskcoredomain.RetryResume:
 		h.runResumeRetry(parentCtx, task, intent)
 	default:
 		h.resumeSvc().FailTaskAfterRetryPrep(parentCtx, task.ID, "retry_invalid_intent")
 	}
 }
 
-func (h *Harness) runFreshRetry(parentCtx context.Context, task *domain.Task, intent *domain.PendingRetry) {
+func (h *Harness) runFreshRetry(parentCtx context.Context, task *taskcoredomain.Task, intent *taskcoredomain.PendingRetry) {
 	if _, err := h.gitResetForFreshRetry(parentCtx, intent.ParentCycleID); err != nil {
 		reason := retryGitResetFailed
 		if errors.Is(err, git.ErrRetryResetAnchorMissing) {
@@ -53,11 +54,11 @@ func (h *Harness) runFreshRetry(parentCtx context.Context, task *domain.Task, in
 	parentID := intent.ParentCycleID
 	h.runFreshCycle(parentCtx, task, startCycleOpts{
 		parentCycleID: &parentID,
-		retryMode:     domain.RetryFresh,
+		retryMode:     taskcoredomain.RetryFresh,
 	})
 }
 
-func (h *Harness) runResumeRetry(parentCtx context.Context, task *domain.Task, intent *domain.PendingRetry) {
+func (h *Harness) runResumeRetry(parentCtx context.Context, task *taskcoredomain.Task, intent *taskcoredomain.PendingRetry) {
 	cp, err := h.loadCheckpointFromParent(parentCtx, intent.ParentCycleID)
 	if err != nil {
 		slog.Warn("agent harness resume retry checkpoint failed", "cmd", calltrace.LogCmd,
@@ -80,7 +81,7 @@ func (h *Harness) runResumeRetry(parentCtx context.Context, task *domain.Task, i
 	parentID := intent.ParentCycleID
 	cycle, ok := h.startCycle(parentCtx, task, &state, startCycleOpts{
 		parentCycleID: &parentID,
-		retryMode:     domain.RetryResume,
+		retryMode:     taskcoredomain.RetryResume,
 	})
 	if !ok {
 		h.bestEffortFailTask(parentCtx, task.ID)
@@ -105,7 +106,7 @@ func (h *Harness) runResumeRetry(parentCtx context.Context, task *domain.Task, i
 	state.verify.verifySnap, _ = h.loadVerificationSnapshot(parentCtx, task.ID)
 	h.runCycleLoop(parentCtx, task, cycle, &state, cycleLoopOpts{
 		resumeNotice:     true,
-		interruptedPhase: domain.PhaseExecute,
+		interruptedPhase: cyclesdomain.PhaseExecute,
 		skipFirstExecute: cp.Entry == resumeEntryVerifyOnly,
 		knownCommits:     cp.KnownCommits,
 		continuation:     cp.Continuation,
@@ -113,7 +114,7 @@ func (h *Harness) runResumeRetry(parentCtx context.Context, task *domain.Task, i
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func (h *Harness) runFreshCycle(parentCtx context.Context, task *domain.Task, opts startCycleOpts) {
+func (h *Harness) runFreshCycle(parentCtx context.Context, task *taskcoredomain.Task, opts startCycleOpts) {
 	startedAt := h.opts.Clock()
 	state := processState{
 		cycle:  cycleLifecycleState{startedAt: startedAt},
@@ -131,7 +132,7 @@ func (h *Harness) runFreshCycle(parentCtx context.Context, task *domain.Task, op
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func (h *Harness) reconstructCheckpoint(ctx context.Context, cycle *domain.TaskCycle) (resumeCheckpoint, error) {
+func (h *Harness) reconstructCheckpoint(ctx context.Context, cycle *cyclesdomain.TaskCycle) (resumeCheckpoint, error) {
 	return h.resumeSvc().ReconstructCheckpoint(ctx, cycle)
 }
 
@@ -146,7 +147,7 @@ func (h *Harness) loadContinuationBundle(ctx context.Context, parentCycleID stri
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func (h *Harness) seedCrossCycleExecuteFromParent(ctx context.Context, cycle *domain.TaskCycle, parentCycleID string) error {
+func (h *Harness) seedCrossCycleExecuteFromParent(ctx context.Context, cycle *cyclesdomain.TaskCycle, parentCycleID string) error {
 	return h.resumeSvc().SeedCrossCycleExecuteFromParent(ctx, cycle, parentCycleID)
 }
 

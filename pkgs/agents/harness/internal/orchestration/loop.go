@@ -1,6 +1,9 @@
 package orchestration
 
-import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+import (
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
+)
 
 // DecideVerifyDisabledLegacy maps legacy checklist completion outcome to effects.
 //
@@ -18,13 +21,13 @@ func DecideVerifyDisabledLegacy(checklistErr error) VerifyEffects {
 func DecideFinalizeSuccess(completionErr error) FinalizeEffects {
 	if completionErr != nil {
 		return FinalizeEffects{
-			CycleStatus: domain.CycleStatusFailed,
-			TaskStatus:  domain.StatusFailed,
+			CycleStatus: cyclesdomain.CycleStatusFailed,
+			TaskStatus:  taskcoredomain.StatusFailed,
 			Reason:      ReasonChecklistCompletionFailed,
 		}
 	}
 	return FinalizeEffects{
-		CycleStatus: domain.CycleStatusSucceeded,
-		TaskStatus:  domain.StatusDone,
+		CycleStatus: cyclesdomain.CycleStatusSucceeded,
+		TaskStatus:  taskcoredomain.StatusDone,
 	}
 }

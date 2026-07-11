@@ -10,7 +10,8 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/notifierfake"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/runnerfake"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
 func TestHarness_HappyPath_emitsTrailingPublishAfterTerminalStatus(t *testing.T) {
@@ -25,8 +26,8 @@ func TestHarness_HappyPath_emitsTrailingPublishAfterTerminalStatus(t *testing.T)
 	taskUpdated := notifierfake.NewRecordingTaskUpdatedNotifier()
 
 	r := runnerfake.New()
-	r.Script(tsk.ID, domain.PhaseExecute, runner.NewResult(
-		domain.PhaseStatusSucceeded, "all green",
+	r.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(
+		cyclesdomain.PhaseStatusSucceeded, "all green",
 		json.RawMessage(`{"ok":true}`), "",
 	))
 
@@ -35,8 +36,8 @@ func TestHarness_HappyPath_emitsTrailingPublishAfterTerminalStatus(t *testing.T)
 		TaskUpdatedNotifier: taskUpdated,
 	}), tsk)
 	<-done
-	final := env.WaitTaskStatus(ctx, tsk.ID, domain.StatusDone)
-	if final.Status != domain.StatusDone {
+	final := env.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusDone)
+	if final.Status != taskcoredomain.StatusDone {
 		t.Fatalf("task status = %q, want done", final.Status)
 	}
 
@@ -44,7 +45,7 @@ func TestHarness_HappyPath_emitsTrailingPublishAfterTerminalStatus(t *testing.T)
 	if len(statuses) == 0 {
 		t.Fatal("notifier received zero publishes")
 	}
-	if got := statuses[len(statuses)-1]; got != domain.StatusDone {
+	if got := statuses[len(statuses)-1]; got != taskcoredomain.StatusDone {
 		t.Fatalf("last publish observed task status = %q, want done; full snapshot=%+v", got, statuses)
 	}
 	if cycles[len(cycles)-1] == "" {
@@ -69,7 +70,7 @@ func TestHarness_PublishesRunnerProgressWithCycleAndPhaseContext(t *testing.T) {
 	tsk := env.TransitionRunning(ctx, env.CreateReadyTask(ctx, "live-progress"))
 	progress := notifierfake.NewRecordingProgressNotifier()
 	r := harnesstest.NewBlockingRunner()
-	r.Result = runner.NewResult(domain.PhaseStatusSucceeded, "all green", nil, "")
+	r.Result = runner.NewResult(cyclesdomain.PhaseStatusSucceeded, "all green", nil, "")
 	r.OnStart = func(req runner.Request) {
 		if req.OnProgress != nil {
 			req.OnProgress(runner.ProgressEvent{
@@ -85,7 +86,7 @@ func TestHarness_PublishesRunnerProgressWithCycleAndPhaseContext(t *testing.T) {
 
 	done := env.RunHarness(ctx, env.NewHarness(r, harness.Options{ProgressNotifier: progress}), tsk)
 	<-done
-	env.WaitTaskStatus(ctx, tsk.ID, domain.StatusDone)
+	env.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusDone)
 
 	calls := progress.Snapshot()
 	if len(calls) != 1 {

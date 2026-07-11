@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler/writepolicy"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
@@ -66,9 +66,9 @@ func TestHandler_notifyTaskUpdatedEnriched_publishesData(t *testing.T) {
 	task, err := st.Create(context.Background(), store.CreateTaskInput{
 		Title:         "enriched notify",
 		InitialPrompt: "p",
-		Status:        domain.StatusReady,
-		Priority:      domain.PriorityMedium,
-	}, domain.ActorUser)
+		Status:        taskcoredomain.StatusReady,
+		Priority:      taskcoredomain.PriorityMedium,
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}

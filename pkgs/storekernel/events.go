@@ -7,8 +7,9 @@ import (
 	"log/slog"
 	"time"
 
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 	eventsmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/model"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -69,10 +70,10 @@ func NextEventSeq(tx *gorm.DB, taskID string) (int64, error) {
 // consumers (handler readers, SSE fan-out, /events keyset paging) never
 // observe SQL NULL or a JSON null literal even if a future caller forgets
 // the chokepoint at its own boundary. Non-object payloads (string / number
-// / array / bool / malformed) surface as domain.ErrInvalidInput so the bug
+// / array / bool / malformed) surface as taskcoredomain.ErrInvalidInput so the bug
 // is caught at the writing call site instead of leaking past the read-side
 // normalizeJSONObjectForResponse defense.
-func AppendEvent(tx *gorm.DB, taskID string, seq int64, typ domain.EventType, by domain.Actor, data []byte) error {
+func AppendEvent(tx *gorm.DB, taskID string, seq int64, typ taskeventsdomain.EventType, by taskcoredomain.Actor, data []byte) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.kernel.AppendEvent")
 	normalized, err := NormalizeJSONObject(data, "data")
 	if err != nil {

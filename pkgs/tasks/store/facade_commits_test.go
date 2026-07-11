@@ -6,7 +6,8 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
@@ -15,12 +16,12 @@ func TestStore_UpsertAndListCycleCommits(t *testing.T) {
 	ctx := context.Background()
 	st := store.NewStore(tasktestdb.OpenSQLite(t))
 	tsk, err := st.Create(ctx, store.CreateTaskInput{
-		Title: "commits", InitialPrompt: "work", Status: domain.StatusReady, Priority: domain.PriorityMedium,
-	}, domain.ActorUser)
+		Title: "commits", InitialPrompt: "work", Status: taskcoredomain.StatusReady, Priority: taskcoredomain.PriorityMedium,
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("create: %v", err)
 	}
-	cycle, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	cycle, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatalf("start cycle: %v", err)
 	}
@@ -78,13 +79,13 @@ func TestStore_ListCommitsForTask_dedupesAcrossCycles(t *testing.T) {
 	ctx := context.Background()
 	st := store.NewStore(tasktestdb.OpenSQLite(t))
 	tsk, err := st.Create(ctx, store.CreateTaskInput{
-		Title: "task commits", InitialPrompt: "work", Status: domain.StatusReady, Priority: domain.PriorityMedium,
-	}, domain.ActorUser)
+		Title: "task commits", InitialPrompt: "work", Status: taskcoredomain.StatusReady, Priority: taskcoredomain.PriorityMedium,
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("create: %v", err)
 	}
 	when := time.Date(2026, 6, 18, 12, 0, 0, 0, time.UTC)
-	cycle1, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	cycle1, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatalf("start cycle1: %v", err)
 	}
@@ -95,10 +96,10 @@ func TestStore_ListCommitsForTask_dedupesAcrossCycles(t *testing.T) {
 	}}); err != nil {
 		t.Fatalf("upsert cycle1: %v", err)
 	}
-	if _, err := st.TerminateCycle(ctx, cycle1.ID, domain.CycleStatusFailed, "test", domain.ActorAgent); err != nil {
+	if _, err := st.TerminateCycle(ctx, cycle1.ID, cyclesdomain.CycleStatusFailed, "test", taskcoredomain.ActorAgent); err != nil {
 		t.Fatalf("terminate cycle1: %v", err)
 	}
-	cycle2, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	cycle2, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatalf("start cycle2: %v", err)
 	}

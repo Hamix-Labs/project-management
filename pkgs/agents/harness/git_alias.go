@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/git"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
 const (
@@ -35,7 +35,7 @@ func (h *Harness) priorCycleBaseSHA(ctx context.Context, cycleID string, current
 func (h *Harness) ingestExecuteCommits(
 	ctx context.Context,
 	taskID string,
-	cycle *domain.TaskCycle,
+	cycle *cyclesdomain.TaskCycle,
 	execPhaseSeq int64,
 	snap git.PhaseSnapshot,
 ) (executeCommitIngestOutcome, error) {

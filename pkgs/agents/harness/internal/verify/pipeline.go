@@ -7,21 +7,22 @@ import (
 	"log/slog"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/reports"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 // PhaseCallbacks notify harness when verify phase rows open and close.
 type PhaseCallbacks struct {
-	OnStarted func(phase *domain.TaskCyclePhase)
+	OnStarted func(phase *cyclesdomain.TaskCyclePhase)
 	OnEnded   func()
 }
 
 // RunPipeline opens a verify phase, runs checks, closes the phase, and returns verdicts.
 func (s *Service) RunPipeline(
 	parentCtx context.Context,
-	task *domain.Task,
-	cycle *domain.TaskCycle,
+	task *taskcoredomain.Task,
+	cycle *cyclesdomain.TaskCycle,
 	snap Snapshot,
 	verifyAttempt int,
 	previouslyPassed map[string]Verdict,
@@ -44,7 +45,7 @@ func (s *Service) RunPipeline(
 		s.observeDuration(s.clock().Sub(verifyStarted))
 	}()
 
-	phase, err := s.store.StartPhase(parentCtx, cycle.ID, domain.PhaseVerify, domain.ActorAgent)
+	phase, err := s.store.StartPhase(parentCtx, cycle.ID, cyclesdomain.PhaseVerify, taskcoredomain.ActorAgent)
 	if err != nil {
 		slog.Warn("agent harness StartPhase(verify) failed",
 			"cmd", calltrace.LogCmd, "operation", "agent.harness.verify.RunPipeline.start_err",
@@ -56,7 +57,7 @@ func (s *Service) RunPipeline(
 	}
 	s.publish(cycle.TaskID, cycle.ID)
 
-	runCorrelationID := domain.RunCorrelationIDFromDetailsJSON(phase.DetailsJSON)
+	runCorrelationID := cyclesdomain.RunCorrelationIDFromDetailsJSON(phase.DetailsJSON)
 
 	pre, preErr := s.captureIntegritySnapshot(parentCtx)
 	if preErr != nil {
@@ -70,15 +71,15 @@ func (s *Service) RunPipeline(
 
 	tampered, tamperReason := s.checkIntegrity(parentCtx, cycle.ID, pre, preErr)
 
-	phaseStatus := domain.PhaseStatusSucceeded
+	phaseStatus := cyclesdomain.PhaseStatusSucceeded
 	summary := FormatPhaseSummary(snap.Criteria, verdicts, true)
 	var details []byte
 	if tampered {
-		phaseStatus = domain.PhaseStatusFailed
+		phaseStatus = cyclesdomain.PhaseStatusFailed
 		summary = tamperReason
 		verifyErr = &TamperedError{Reason: tamperReason}
 	} else if verifyErr != nil {
-		phaseStatus = domain.PhaseStatusFailed
+		phaseStatus = cyclesdomain.PhaseStatusFailed
 		summary = FormatPhaseSummary(snap.Criteria, verdicts, false)
 		details = EncodePhaseDetails(attemptSeq, snap.Criteria, verdicts)
 	} else {
@@ -90,7 +91,7 @@ func (s *Service) RunPipeline(
 		Status:   phaseStatus,
 		Summary:  &summary,
 		Details:  details,
-		By:       domain.ActorAgent,
+		By:       taskcoredomain.ActorAgent,
 	}); err != nil {
 		slog.Warn("agent harness CompletePhase(verify) failed",
 			"cmd", calltrace.LogCmd, "operation", "agent.harness.verify.RunPipeline.complete_err",

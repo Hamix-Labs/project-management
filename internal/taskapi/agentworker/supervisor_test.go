@@ -12,7 +12,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi/agentworker/policy"
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
@@ -339,10 +339,10 @@ func TestSupervisor_probeSchedulingHint_emitsAwaitingScheduledTask(t *testing.T)
 	future := time.Now().UTC().Add(time.Hour)
 	if _, err := rig.store.Create(ctx, store.CreateTaskInput{
 		Title:           "deferred",
-		Priority:        domain.PriorityMedium,
-		Status:          domain.StatusReady,
+		Priority:        taskcoredomain.PriorityMedium,
+		Status:          taskcoredomain.StatusReady,
 		PickupNotBefore: ptrTime(future),
-	}, domain.ActorUser); err != nil {
+	}, taskcoredomain.ActorUser); err != nil {
 		t.Fatalf("create deferred task: %v", err)
 	}
 
@@ -360,18 +360,18 @@ func TestSupervisor_probeSchedulingHint_silentWhenQueueHasReadyNow(t *testing.T)
 	rig := newSupervisorTestRig(t, ctx, nil)
 	if _, err := rig.store.Create(ctx, store.CreateTaskInput{
 		Title:    "ready-now",
-		Priority: domain.PriorityMedium,
-		Status:   domain.StatusReady,
-	}, domain.ActorUser); err != nil {
+		Priority: taskcoredomain.PriorityMedium,
+		Status:   taskcoredomain.StatusReady,
+	}, taskcoredomain.ActorUser); err != nil {
 		t.Fatalf("create ready-now task: %v", err)
 	}
 	future := time.Now().UTC().Add(time.Hour)
 	if _, err := rig.store.Create(ctx, store.CreateTaskInput{
 		Title:           "deferred",
-		Priority:        domain.PriorityMedium,
-		Status:          domain.StatusReady,
+		Priority:        taskcoredomain.PriorityMedium,
+		Status:          taskcoredomain.StatusReady,
 		PickupNotBefore: ptrTime(future),
-	}, domain.ActorUser); err != nil {
+	}, taskcoredomain.ActorUser); err != nil {
 		t.Fatalf("create deferred task: %v", err)
 	}
 

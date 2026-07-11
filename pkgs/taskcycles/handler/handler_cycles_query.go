@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"strings"
 
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 // maxCycleListLimitParamBytes mirrors maxTaskEventSeqParamBytes — keep
@@ -52,7 +52,7 @@ func assertCycleBelongsToTask(ctx context.Context, s contract.CycleStore, taskID
 		return err
 	}
 	if c.TaskID != taskID {
-		return domain.ErrNotFound
+		return taskcoredomain.ErrNotFound
 	}
 	return nil
 }
@@ -74,11 +74,11 @@ func parseCycleListBeforeAttemptSeq(ctx context.Context, q url.Values) (before i
 		return 0, nil
 	}
 	if len(v) > maxCycleListLimitParamBytes {
-		return 0, fmt.Errorf("%w: before_attempt_seq too long", domain.ErrInvalidInput)
+		return 0, fmt.Errorf("%w: before_attempt_seq too long", taskcoredomain.ErrInvalidInput)
 	}
 	n, e := strconv.ParseInt(v, 10, 64)
 	if e != nil || n < 1 {
-		return 0, fmt.Errorf("%w: before_attempt_seq must be a positive integer", domain.ErrInvalidInput)
+		return 0, fmt.Errorf("%w: before_attempt_seq must be a positive integer", taskcoredomain.ErrInvalidInput)
 	}
 	return n, nil
 }
@@ -99,12 +99,12 @@ func parseCycleListLimit(ctx context.Context, q url.Values) (int, error) {
 		return limit, nil
 	}
 	if len(v) > maxCycleListLimitParamBytes {
-		err = fmt.Errorf("%w: limit too long", domain.ErrInvalidInput)
+		err = fmt.Errorf("%w: limit too long", taskcoredomain.ErrInvalidInput)
 		return 0, err
 	}
 	n, e := strconv.Atoi(v)
 	if e != nil || n < 0 || n > maxCycleListLimit {
-		err = fmt.Errorf("%w: limit must be integer 0..200", domain.ErrInvalidInput)
+		err = fmt.Errorf("%w: limit must be integer 0..200", taskcoredomain.ErrInvalidInput)
 		return 0, err
 	}
 	if n == 0 {
@@ -124,11 +124,11 @@ func parseCycleStreamAfterSeq(ctx context.Context, q url.Values) (after int64, e
 		return 0, nil
 	}
 	if len(v) > maxCycleListLimitParamBytes {
-		return 0, fmt.Errorf("%w: after_seq too long", domain.ErrInvalidInput)
+		return 0, fmt.Errorf("%w: after_seq too long", taskcoredomain.ErrInvalidInput)
 	}
 	n, e := strconv.ParseInt(v, 10, 64)
 	if e != nil || n < 1 {
-		return 0, fmt.Errorf("%w: after_seq must be a positive integer", domain.ErrInvalidInput)
+		return 0, fmt.Errorf("%w: after_seq must be a positive integer", taskcoredomain.ErrInvalidInput)
 	}
 	return n, nil
 }
@@ -147,12 +147,12 @@ func parseCycleStreamLimit(ctx context.Context, q url.Values) (int, error) {
 		return limit, nil
 	}
 	if len(v) > maxCycleListLimitParamBytes {
-		err = fmt.Errorf("%w: limit too long", domain.ErrInvalidInput)
+		err = fmt.Errorf("%w: limit too long", taskcoredomain.ErrInvalidInput)
 		return 0, err
 	}
 	n, e := strconv.Atoi(v)
 	if e != nil || n < 0 || n > maxCycleStreamLimit {
-		err = fmt.Errorf("%w: limit must be integer 0..500", domain.ErrInvalidInput)
+		err = fmt.Errorf("%w: limit must be integer 0..500", taskcoredomain.ErrInvalidInput)
 		return 0, err
 	}
 	if n == 0 {

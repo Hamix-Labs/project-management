@@ -2,13 +2,12 @@ package handler
 
 import (
 	"encoding/json"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"io"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 // TestHTTP_createTask_400ErrorStrings pins every documented POST /tasks 400
@@ -98,12 +97,12 @@ func TestHTTP_createTask_defaults(t *testing.T) {
 		if res.StatusCode != http.StatusCreated {
 			t.Fatalf("status %d body=%s", res.StatusCode, raw)
 		}
-		var got domain.Task
+		var got taskcoredomain.Task
 		if err := json.Unmarshal(raw, &got); err != nil {
 			t.Fatal(err)
 		}
-		if got.Status != domain.StatusReady {
-			t.Fatalf("status=%q want %q (docs/api.md default)", got.Status, domain.StatusReady)
+		if got.Status != taskcoredomain.StatusReady {
+			t.Fatalf("status=%q want %q (docs/api.md default)", got.Status, taskcoredomain.StatusReady)
 		}
 	})
 }
@@ -127,7 +126,7 @@ func TestHTTP_createTask_doneStatusWithCriteriaRejected(t *testing.T) {
 	}
 }
 
-// TestHTTP_createTask_201ResponseShape pins the flat domain.Task 201 envelope.
+// TestHTTP_createTask_201ResponseShape pins the flat taskcoredomain.Task 201 envelope.
 func TestHTTP_createTask_201ResponseShape(t *testing.T) {
 	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
@@ -167,7 +166,7 @@ func TestHTTP_createTask_acceptsPickupNotBefore_overrideGlobalDelay(t *testing.T
 	if res.StatusCode != http.StatusCreated {
 		t.Fatalf("status %d (want 201) body=%s", res.StatusCode, raw)
 	}
-	var got domain.Task
+	var got taskcoredomain.Task
 	if err := json.Unmarshal(raw, &got); err != nil {
 		t.Fatalf("decode: %v", err)
 	}
@@ -241,7 +240,7 @@ func TestHTTP_createTask_pickupNotBefore_pastIsAllowed(t *testing.T) {
 	if res.StatusCode != http.StatusCreated {
 		t.Fatalf("status %d (want 201; past pickup is no-op deferral) body=%s", res.StatusCode, raw)
 	}
-	var got domain.Task
+	var got taskcoredomain.Task
 	if err := json.Unmarshal(raw, &got); err != nil {
 		t.Fatalf("decode: %v", err)
 	}
@@ -262,7 +261,7 @@ func TestHTTP_createTask_publishesTaskCreated(t *testing.T) {
 	if res.StatusCode != http.StatusCreated {
 		t.Fatalf("status %d body=%s", res.StatusCode, raw)
 	}
-	var task domain.Task
+	var task taskcoredomain.Task
 	if err := json.Unmarshal(raw, &task); err != nil {
 		t.Fatal(err)
 	}
@@ -279,7 +278,7 @@ func TestHTTP_createTask_checklistItemsPersisted(t *testing.T) {
 	if res.StatusCode != http.StatusCreated {
 		t.Fatalf("status %d body=%s", res.StatusCode, raw)
 	}
-	var task domain.Task
+	var task taskcoredomain.Task
 	if err := json.Unmarshal(raw, &task); err != nil {
 		t.Fatal(err)
 	}
@@ -319,7 +318,7 @@ func TestHTTP_createTask_checklistVerifyCommandsPersisted(t *testing.T) {
 	if res.StatusCode != http.StatusCreated {
 		t.Fatalf("status %d body=%s", res.StatusCode, raw)
 	}
-	var task domain.Task
+	var task taskcoredomain.Task
 	if err := json.Unmarshal(raw, &task); err != nil {
 		t.Fatal(err)
 	}

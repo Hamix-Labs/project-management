@@ -28,7 +28,7 @@ import (
 // Rev 7: backfill worktree_id in task_templates / task_drafts compose payloads.
 //
 // Rev 8 (Tier 3 BC blueprint): domain types colocated to taskchecklist,
-// taskevents, taskcycles, and taskcore; pkgs/tasks/domain keeps compat aliases.
+// taskevents, taskcycles, and taskcore; BC domain packages are canonical.
 // No SQL or post-AutoMigrate behavior change.
 const SchemaRevision = 8
 

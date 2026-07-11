@@ -2,22 +2,21 @@ package handler
 
 import (
 	"errors"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"strings"
 	"testing"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 func TestParseTaskPathID(t *testing.T) {
 	t.Run("empty", func(t *testing.T) {
 		_, err := parseTaskPathID("   ")
-		if err == nil || !errors.Is(err, domain.ErrInvalidInput) {
+		if err == nil || !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 			t.Fatalf("got %v", err)
 		}
 	})
 	t.Run("too_long", func(t *testing.T) {
 		_, err := parseTaskPathID(strings.Repeat("a", maxTaskPathIDBytes+1))
-		if err == nil || !errors.Is(err, domain.ErrInvalidInput) {
+		if err == nil || !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 			t.Fatalf("got %v", err)
 		}
 	})
@@ -31,7 +30,7 @@ func TestParseTaskPathID(t *testing.T) {
 
 func TestParseTaskPathItemID(t *testing.T) {
 	_, err := parseTaskPathItemID(strings.Repeat("x", maxTaskPathIDBytes+1))
-	if err == nil || !errors.Is(err, domain.ErrInvalidInput) {
+	if err == nil || !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		t.Fatalf("got %v", err)
 	}
 }

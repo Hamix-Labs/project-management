@@ -12,7 +12,8 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/storefake"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/runnerfake"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
@@ -35,10 +36,10 @@ type infraFailVerifyRunner struct {
 }
 
 func (r *infraFailVerifyRunner) Run(ctx context.Context, req runner.Request) (runner.Result, error) {
-	if req.Phase == domain.PhaseVerify {
+	if req.Phase == cyclesdomain.PhaseVerify {
 		n := r.attempt.Add(1)
 		if n == 1 {
-			return runner.NewResult(domain.PhaseStatusFailed, "verify timeout", nil, ""), runner.ErrTimeout
+			return runner.NewResult(cyclesdomain.PhaseStatusFailed, "verify timeout", nil, ""), runner.ErrTimeout
 		}
 	}
 	return r.Runner.Run(ctx, req)
@@ -94,24 +95,24 @@ func writePartialVerifyReportCycleTest(t *testing.T, reportDir, cycleID string, 
 	}
 }
 
-func startVerifyOnlyTask(t *testing.T, maxRetries int, extraItems ...string) (*store.Store, *domain.Task, []string) {
+func startVerifyOnlyTask(t *testing.T, maxRetries int, extraItems ...string) (*store.Store, *taskcoredomain.Task, []string) {
 	t.Helper()
 	ctx := context.Background()
 	st := storefake.New(t).Store
 	tsk, err := st.Create(ctx, store.CreateTaskInput{
-		Title: "verify-only", InitialPrompt: "work", Priority: domain.PriorityMedium, Status: domain.StatusReady,
-	}, domain.ActorUser)
+		Title: "verify-only", InitialPrompt: "work", Priority: taskcoredomain.PriorityMedium, Status: taskcoredomain.StatusReady,
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
 	var ids []string
-	item, err := st.AddChecklistItem(ctx, tsk.ID, "criterion", nil, domain.ActorUser)
+	item, err := st.AddChecklistItem(ctx, tsk.ID, "criterion", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
 	ids = append(ids, item.ID)
 	for i, title := range extraItems {
-		it, err := st.AddChecklistItem(ctx, tsk.ID, title, nil, domain.ActorUser)
+		it, err := st.AddChecklistItem(ctx, tsk.ID, title, nil, taskcoredomain.ActorUser)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -121,8 +122,8 @@ func startVerifyOnlyTask(t *testing.T, maxRetries int, extraItems ...string) (*s
 	if _, err := st.UpdateSettings(ctx, store.SettingsPatch{VerifyMaxRetries: &maxRetries}); err != nil {
 		t.Fatal(err)
 	}
-	running := domain.StatusRunning
-	if _, err := st.Update(ctx, tsk.ID, store.UpdateTaskInput{Status: &running}, domain.ActorAgent); err != nil {
+	running := taskcoredomain.StatusRunning
+	if _, err := st.Update(ctx, tsk.ID, store.UpdateTaskInput{Status: &running}, taskcoredomain.ActorAgent); err != nil {
 		t.Fatal(err)
 	}
 	return st, tsk, ids
@@ -138,7 +139,7 @@ func TestEdgeCase_EC01_verifyInfra_skipsExecute(t *testing.T) {
 	reportDir := t.TempDir()
 	execRunner := runnerfake.New()
 	execHook := &cycleVerifyHookRunner{Runner: execRunner, preRun: func(req runner.Request) {
-		if req.Phase != domain.PhaseExecute {
+		if req.Phase != cyclesdomain.PhaseExecute {
 			return
 		}
 		cycles, _ := st.ListCyclesForTask(context.Background(), req.TaskID, 1)
@@ -147,12 +148,12 @@ func TestEdgeCase_EC01_verifyInfra_skipsExecute(t *testing.T) {
 		}
 		writeCriteriaReportCycleTest(t, reportDir, cycles[0].ID, []string{itemID})
 	}}
-	execRunner.Script(tsk.ID, domain.PhaseExecute, runner.NewResult(domain.PhaseStatusSucceeded, "ok", nil, ""))
+	execRunner.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(cyclesdomain.PhaseStatusSucceeded, "ok", nil, ""))
 
 	verifyBase := runnerfake.New()
 	verifyRunner := &infraFailVerifyRunner{Runner: verifyBase, inner: verifyBase}
 	verifyHook := &cycleVerifyHookRunner{Runner: verifyRunner, preRun: func(req runner.Request) {
-		if req.Phase != domain.PhaseVerify {
+		if req.Phase != cyclesdomain.PhaseVerify {
 			return
 		}
 		// attempt is 1 after the first infra failure; preRun runs before the second Run.
@@ -165,7 +166,7 @@ func TestEdgeCase_EC01_verifyInfra_skipsExecute(t *testing.T) {
 		}
 		writePartialVerifyReportCycleTest(t, reportDir, cycles[0].ID, map[string]bool{itemID: true})
 	}}
-	verifyBase.Script(tsk.ID, domain.PhaseVerify, runner.NewResult(domain.PhaseStatusSucceeded, "ok", nil, ""))
+	verifyBase.Script(tsk.ID, cyclesdomain.PhaseVerify, runner.NewResult(cyclesdomain.PhaseStatusSucceeded, "ok", nil, ""))
 
 	h := New(st, execHook, Options{
 		WorkingDir: workDir, ReportDir: reportDir,
@@ -185,7 +186,7 @@ func TestEdgeCase_EC01_verifyInfra_skipsExecute(t *testing.T) {
 		default:
 		}
 		got, err := st.Get(ctx, tsk.ID)
-		if err == nil && got.Status == domain.StatusDone {
+		if err == nil && got.Status == taskcoredomain.StatusDone {
 			break
 		}
 		time.Sleep(10 * time.Millisecond)
@@ -195,7 +196,7 @@ func TestEdgeCase_EC01_verifyInfra_skipsExecute(t *testing.T) {
 
 	execCalls := 0
 	for _, c := range execRunner.Calls() {
-		if c.Phase == domain.PhaseExecute {
+		if c.Phase == cyclesdomain.PhaseExecute {
 			execCalls++
 		}
 	}
@@ -218,7 +219,7 @@ func TestEdgeCase_EC02_verifyAgentReject_fullReexecute(t *testing.T) {
 	var execAttempt atomic.Int32
 	execRunner := runnerfake.New()
 	execHook := &cycleVerifyHookRunner{Runner: execRunner, preRun: func(req runner.Request) {
-		if req.Phase != domain.PhaseExecute {
+		if req.Phase != cyclesdomain.PhaseExecute {
 			return
 		}
 		cycles, _ := st.ListCyclesForTask(context.Background(), req.TaskID, 1)
@@ -228,11 +229,11 @@ func TestEdgeCase_EC02_verifyAgentReject_fullReexecute(t *testing.T) {
 		writeCriteriaReportCycleTest(t, reportDir, cycles[0].ID, []string{itemID})
 		execAttempt.Add(1)
 	}}
-	execRunner.Script(tsk.ID, domain.PhaseExecute, runner.NewResult(domain.PhaseStatusSucceeded, "ok", nil, ""))
+	execRunner.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(cyclesdomain.PhaseStatusSucceeded, "ok", nil, ""))
 
 	verifyRunner := runnerfake.New()
 	verifyHook := &cycleVerifyHookRunner{Runner: verifyRunner, preRun: func(req runner.Request) {
-		if req.Phase != domain.PhaseVerify {
+		if req.Phase != cyclesdomain.PhaseVerify {
 			return
 		}
 		cycles, _ := st.ListCyclesForTask(context.Background(), req.TaskID, 1)
@@ -246,7 +247,7 @@ func TestEdgeCase_EC02_verifyAgentReject_fullReexecute(t *testing.T) {
 			writePartialVerifyReportCycleTest(t, reportDir, cycles[0].ID, map[string]bool{itemID: true})
 		}
 	}}
-	verifyRunner.Script(tsk.ID, domain.PhaseVerify, runner.NewResult(domain.PhaseStatusSucceeded, "ok", nil, ""))
+	verifyRunner.Script(tsk.ID, cyclesdomain.PhaseVerify, runner.NewResult(cyclesdomain.PhaseStatusSucceeded, "ok", nil, ""))
 
 	h := New(st, execHook, Options{
 		WorkingDir: workDir, ReportDir: reportDir,
@@ -266,7 +267,7 @@ func TestEdgeCase_EC02_verifyAgentReject_fullReexecute(t *testing.T) {
 		default:
 		}
 		got, err := st.Get(ctx, tsk.ID)
-		if err == nil && got.Status == domain.StatusDone {
+		if err == nil && got.Status == taskcoredomain.StatusDone {
 			break
 		}
 		time.Sleep(10 * time.Millisecond)
@@ -290,7 +291,7 @@ func TestEdgeCase_EC03_claimedNotDone_fullReexecute(t *testing.T) {
 	var execAttempt atomic.Int32
 	execRunner := runnerfake.New()
 	execHook := &cycleVerifyHookRunner{Runner: execRunner, preRun: func(req runner.Request) {
-		if req.Phase != domain.PhaseExecute {
+		if req.Phase != cyclesdomain.PhaseExecute {
 			return
 		}
 		cycles, _ := st.ListCyclesForTask(context.Background(), req.TaskID, 1)
@@ -303,9 +304,9 @@ func TestEdgeCase_EC03_claimedNotDone_fullReexecute(t *testing.T) {
 		body := `{"criteria":[{"id":"` + itemID + `","claimed_done":false,"evidence":"not done"}]}`
 		_ = os.WriteFile(filepath.Join(cdir, "criteria-report.json"), []byte(body), 0o644)
 	}}
-	execRunner.Script(tsk.ID, domain.PhaseExecute, runner.NewResult(domain.PhaseStatusSucceeded, "ok", nil, ""))
+	execRunner.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(cyclesdomain.PhaseStatusSucceeded, "ok", nil, ""))
 	verifyRunner := runnerfake.New()
-	verifyRunner.Script(tsk.ID, domain.PhaseVerify, runner.NewResult(domain.PhaseStatusSucceeded, "ok", nil, ""))
+	verifyRunner.Script(tsk.ID, cyclesdomain.PhaseVerify, runner.NewResult(cyclesdomain.PhaseStatusSucceeded, "ok", nil, ""))
 
 	h := New(st, execHook, Options{
 		WorkingDir: workDir, ReportDir: reportDir,
@@ -343,7 +344,7 @@ func TestEdgeCase_EC04_reportMissing_fullReexecute(t *testing.T) {
 	defer cancel()
 
 	r := runnerfake.New()
-	r.Script(tsk.ID, domain.PhaseExecute, runner.NewResult(domain.PhaseStatusSucceeded, "ok", nil, ""))
+	r.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(cyclesdomain.PhaseStatusSucceeded, "ok", nil, ""))
 	h := New(st, r, Options{WorkingDir: t.TempDir(), Clock: func() time.Time { return time.Unix(0, 0).UTC() }})
 	done := make(chan struct{})
 	go func() {
@@ -359,7 +360,7 @@ func TestEdgeCase_EC04_reportMissing_fullReexecute(t *testing.T) {
 		}
 		execCalls := 0
 		for _, c := range r.Calls() {
-			if c.Phase == domain.PhaseExecute {
+			if c.Phase == cyclesdomain.PhaseExecute {
 				execCalls++
 			}
 		}
@@ -373,7 +374,7 @@ func TestEdgeCase_EC04_reportMissing_fullReexecute(t *testing.T) {
 
 	execCalls := 0
 	for _, c := range r.Calls() {
-		if c.Phase == domain.PhaseExecute {
+		if c.Phase == cyclesdomain.PhaseExecute {
 			execCalls++
 		}
 	}
@@ -382,7 +383,7 @@ func TestEdgeCase_EC04_reportMissing_fullReexecute(t *testing.T) {
 	}
 }
 
-func countPhaseCalls(r *runnerfake.Runner, phase domain.Phase) int {
+func countPhaseCalls(r *runnerfake.Runner, phase cyclesdomain.Phase) int {
 	n := 0
 	for _, c := range r.Calls() {
 		if c.Phase == phase {
@@ -399,7 +400,7 @@ func TestEdgeCase_EC09_partialPass_infraVerifyOnly(t *testing.T) {
 	reportDir := t.TempDir()
 	execRunner := runnerfake.New()
 	execHook := &cycleVerifyHookRunner{Runner: execRunner, preRun: func(req runner.Request) {
-		if req.Phase != domain.PhaseExecute {
+		if req.Phase != cyclesdomain.PhaseExecute {
 			return
 		}
 		cycles, _ := st.ListCyclesForTask(context.Background(), req.TaskID, 1)
@@ -408,12 +409,12 @@ func TestEdgeCase_EC09_partialPass_infraVerifyOnly(t *testing.T) {
 		}
 		writeCriteriaReportCycleTest(t, reportDir, cycles[0].ID, []string{c1ID, c2ID})
 	}}
-	execRunner.Script(tsk.ID, domain.PhaseExecute, runner.NewResult(domain.PhaseStatusSucceeded, "ok", nil, ""))
+	execRunner.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(cyclesdomain.PhaseStatusSucceeded, "ok", nil, ""))
 
 	verifyBase := runnerfake.New()
 	verifyRunner := &infraFailVerifyRunner{Runner: verifyBase, inner: verifyBase}
 	verifyHook := &cycleVerifyHookRunner{Runner: verifyRunner, preRun: func(req runner.Request) {
-		if req.Phase != domain.PhaseVerify {
+		if req.Phase != cyclesdomain.PhaseVerify {
 			return
 		}
 		cycles, _ := st.ListCyclesForTask(context.Background(), req.TaskID, 1)
@@ -426,7 +427,7 @@ func TestEdgeCase_EC09_partialPass_infraVerifyOnly(t *testing.T) {
 		}
 		writePartialVerifyReportCycleTest(t, reportDir, cycles[0].ID, map[string]bool{c1ID: true, c2ID: true})
 	}}
-	verifyBase.Script(tsk.ID, domain.PhaseVerify, runner.NewResult(domain.PhaseStatusSucceeded, "ok", nil, ""))
+	verifyBase.Script(tsk.ID, cyclesdomain.PhaseVerify, runner.NewResult(cyclesdomain.PhaseStatusSucceeded, "ok", nil, ""))
 
 	h := New(st, execHook, Options{
 		WorkingDir: workDir, ReportDir: reportDir,
@@ -448,7 +449,7 @@ func TestEdgeCase_EC09_partialPass_infraVerifyOnly(t *testing.T) {
 		default:
 		}
 		got, err := st.Get(runCtx, tsk.ID)
-		if err == nil && got.Status == domain.StatusDone {
+		if err == nil && got.Status == taskcoredomain.StatusDone {
 			break
 		}
 		time.Sleep(10 * time.Millisecond)
@@ -456,7 +457,7 @@ func TestEdgeCase_EC09_partialPass_infraVerifyOnly(t *testing.T) {
 	<-done
 	cancel()
 
-	if n := countPhaseCalls(execRunner, domain.PhaseExecute); n != 1 {
+	if n := countPhaseCalls(execRunner, cyclesdomain.PhaseExecute); n != 1 {
 		t.Fatalf("execute calls = %d, want 1", n)
 	}
 }

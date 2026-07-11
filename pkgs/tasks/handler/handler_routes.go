@@ -12,10 +12,10 @@ import (
 	settingshandler "github.com/AlexsanderHamir/Hamix/pkgs/settings/handler"
 	checklisthandler "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/handler"
 	composehandler "github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/handler"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskcorehandler "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/handler"
 	taskcycleshandler "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/handler"
 	eventhandler "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/handler"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 )
 
@@ -54,7 +54,7 @@ func (h *Handler) registerRoutes(m *http.ServeMux) {
 			}
 			return composehandler.NormalizeComposeResult{Payload: payloadRaw, Title: compose.Title}, nil
 		},
-		InstantiateFromTemplate: func(ctx context.Context, r *http.Request, op string, payload json.RawMessage, by domain.Actor) (*domain.Task, error) {
+		InstantiateFromTemplate: func(ctx context.Context, r *http.Request, op string, payload json.RawMessage, by taskcoredomain.Actor) (*taskcoredomain.Task, error) {
 			compose, err := taskcorehandler.DecodeComposePayload(payload)
 			if err != nil {
 				return nil, err

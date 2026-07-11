@@ -8,7 +8,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/git"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/orchestration"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
@@ -62,11 +62,11 @@ func buildExecutePostRunInput(
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func executePhaseStatusFromEffects(effects orchestration.ExecuteEffects) domain.PhaseStatus {
+func executePhaseStatusFromEffects(effects orchestration.ExecuteEffects) cyclesdomain.PhaseStatus {
 	if effects.ContinueToVerify {
-		return domain.PhaseStatusSucceeded
+		return cyclesdomain.PhaseStatusSucceeded
 	}
-	return domain.PhaseStatusFailed
+	return cyclesdomain.PhaseStatusFailed
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."

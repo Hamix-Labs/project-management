@@ -8,9 +8,11 @@ import (
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	cyclesmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store/model"
+	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 	eventsmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/model"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"gorm.io/gorm"
 )
 
@@ -21,9 +23,9 @@ func newCycleStore(t *testing.T) (*Store, context.Context) {
 	return NewStore(tasktestdb.OpenSQLite(t)), context.Background()
 }
 
-func mustCreateTask(t *testing.T, s *Store, ctx context.Context) *domain.Task {
+func mustCreateTask(t *testing.T, s *Store, ctx context.Context) *taskcoredomain.Task {
 	t.Helper()
-	tsk, err := s.Create(ctx, CreateTaskInput{Priority: domain.PriorityMedium, Title: "t"}, domain.ActorUser)
+	tsk, err := s.Create(ctx, CreateTaskInput{Priority: taskcoredomain.PriorityMedium, Title: "t"}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("create task: %v", err)
 	}
@@ -36,25 +38,25 @@ func TestStore_StartCycle_assigns_attempt_seq_monotonically(t *testing.T) {
 	s, ctx := newCycleStore(t)
 	tsk := mustCreateTask(t, s, ctx)
 
-	first, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	first, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatalf("start cycle 1: %v", err)
 	}
 	if first.AttemptSeq != 1 {
 		t.Fatalf("first attempt_seq = %d, want 1", first.AttemptSeq)
 	}
-	if first.Status != domain.CycleStatusRunning {
+	if first.Status != cyclesdomain.CycleStatusRunning {
 		t.Fatalf("first status = %q, want running", first.Status)
 	}
 	if string(first.MetaJSON) != "{}" {
 		t.Fatalf("first meta_json = %q, want {}", string(first.MetaJSON))
 	}
 
-	if _, err := s.TerminateCycle(ctx, first.ID, domain.CycleStatusSucceeded, "ok", domain.ActorAgent); err != nil {
+	if _, err := s.TerminateCycle(ctx, first.ID, cyclesdomain.CycleStatusSucceeded, "ok", taskcoredomain.ActorAgent); err != nil {
 		t.Fatalf("terminate first: %v", err)
 	}
 
-	second, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	second, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatalf("start cycle 2: %v", err)
 	}
@@ -67,19 +69,19 @@ func TestStore_StartCycle_rejects_concurrent_running(t *testing.T) {
 	s, ctx := newCycleStore(t)
 	tsk := mustCreateTask(t, s, ctx)
 
-	if _, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent}); err != nil {
+	if _, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent}); err != nil {
 		t.Fatalf("first start: %v", err)
 	}
-	_, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
-	if !errors.Is(err, domain.ErrInvalidInput) {
+	_, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
+	if !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		t.Fatalf("second start err = %v, want ErrInvalidInput", err)
 	}
 }
 
 func TestStore_StartCycle_rejects_unknown_task(t *testing.T) {
 	s, ctx := newCycleStore(t)
-	_, err := s.StartCycle(ctx, StartCycleInput{TaskID: "does-not-exist", TriggeredBy: domain.ActorAgent})
-	if !errors.Is(err, domain.ErrNotFound) {
+	_, err := s.StartCycle(ctx, StartCycleInput{TaskID: "does-not-exist", TriggeredBy: taskcoredomain.ActorAgent})
+	if !errors.Is(err, taskcoredomain.ErrNotFound) {
 		t.Fatalf("err = %v, want ErrNotFound", err)
 	}
 }
@@ -87,8 +89,8 @@ func TestStore_StartCycle_rejects_unknown_task(t *testing.T) {
 func TestStore_StartCycle_rejects_invalid_actor(t *testing.T) {
 	s, ctx := newCycleStore(t)
 	tsk := mustCreateTask(t, s, ctx)
-	_, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.Actor("bot")})
-	if !errors.Is(err, domain.ErrInvalidInput) {
+	_, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.Actor("bot")})
+	if !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		t.Fatalf("err = %v, want ErrInvalidInput", err)
 	}
 }
@@ -98,17 +100,17 @@ func TestStore_StartCycle_parent_must_belong_to_same_task(t *testing.T) {
 	taskA := mustCreateTask(t, s, ctx)
 	taskB := mustCreateTask(t, s, ctx)
 
-	parent, err := s.StartCycle(ctx, StartCycleInput{TaskID: taskA.ID, TriggeredBy: domain.ActorAgent})
+	parent, err := s.StartCycle(ctx, StartCycleInput{TaskID: taskA.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatalf("seed parent on taskA: %v", err)
 	}
-	if _, err := s.TerminateCycle(ctx, parent.ID, domain.CycleStatusFailed, "x", domain.ActorAgent); err != nil {
+	if _, err := s.TerminateCycle(ctx, parent.ID, cyclesdomain.CycleStatusFailed, "x", taskcoredomain.ActorAgent); err != nil {
 		t.Fatalf("terminate parent: %v", err)
 	}
 
 	pid := parent.ID
-	_, err = s.StartCycle(ctx, StartCycleInput{TaskID: taskB.ID, TriggeredBy: domain.ActorAgent, ParentCycleID: &pid})
-	if !errors.Is(err, domain.ErrInvalidInput) {
+	_, err = s.StartCycle(ctx, StartCycleInput{TaskID: taskB.ID, TriggeredBy: taskcoredomain.ActorAgent, ParentCycleID: &pid})
+	if !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		t.Fatalf("cross-task parent err = %v, want ErrInvalidInput", err)
 	}
 }
@@ -116,12 +118,12 @@ func TestStore_StartCycle_parent_must_belong_to_same_task(t *testing.T) {
 func TestStore_TerminateCycle_rejects_non_terminal_status(t *testing.T) {
 	s, ctx := newCycleStore(t)
 	tsk := mustCreateTask(t, s, ctx)
-	c, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	c, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = s.TerminateCycle(ctx, c.ID, domain.CycleStatusRunning, "", domain.ActorAgent)
-	if !errors.Is(err, domain.ErrInvalidInput) {
+	_, err = s.TerminateCycle(ctx, c.ID, cyclesdomain.CycleStatusRunning, "", taskcoredomain.ActorAgent)
+	if !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		t.Fatalf("err = %v, want ErrInvalidInput", err)
 	}
 }
@@ -129,15 +131,15 @@ func TestStore_TerminateCycle_rejects_non_terminal_status(t *testing.T) {
 func TestStore_TerminateCycle_rejects_already_terminal(t *testing.T) {
 	s, ctx := newCycleStore(t)
 	tsk := mustCreateTask(t, s, ctx)
-	c, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	c, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.TerminateCycle(ctx, c.ID, domain.CycleStatusSucceeded, "", domain.ActorAgent); err != nil {
+	if _, err := s.TerminateCycle(ctx, c.ID, cyclesdomain.CycleStatusSucceeded, "", taskcoredomain.ActorAgent); err != nil {
 		t.Fatal(err)
 	}
-	_, err = s.TerminateCycle(ctx, c.ID, domain.CycleStatusFailed, "", domain.ActorAgent)
-	if !errors.Is(err, domain.ErrInvalidInput) {
+	_, err = s.TerminateCycle(ctx, c.ID, cyclesdomain.CycleStatusFailed, "", taskcoredomain.ActorAgent)
+	if !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		t.Fatalf("re-terminate err = %v, want ErrInvalidInput", err)
 	}
 }
@@ -145,15 +147,15 @@ func TestStore_TerminateCycle_rejects_already_terminal(t *testing.T) {
 func TestStore_TerminateCycle_rejects_when_phase_running(t *testing.T) {
 	s, ctx := newCycleStore(t)
 	tsk := mustCreateTask(t, s, ctx)
-	c, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	c, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.StartPhase(ctx, c.ID, domain.PhaseExecute, domain.ActorAgent); err != nil {
+	if _, err := s.StartPhase(ctx, c.ID, cyclesdomain.PhaseExecute, taskcoredomain.ActorAgent); err != nil {
 		t.Fatal(err)
 	}
-	_, err = s.TerminateCycle(ctx, c.ID, domain.CycleStatusSucceeded, "", domain.ActorAgent)
-	if !errors.Is(err, domain.ErrInvalidInput) {
+	_, err = s.TerminateCycle(ctx, c.ID, cyclesdomain.CycleStatusSucceeded, "", taskcoredomain.ActorAgent)
+	if !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		t.Fatalf("terminate with running phase err = %v, want ErrInvalidInput", err)
 	}
 }
@@ -161,12 +163,12 @@ func TestStore_TerminateCycle_rejects_when_phase_running(t *testing.T) {
 func TestStore_TerminateCycle_rejects_invalid_actor(t *testing.T) {
 	s, ctx := newCycleStore(t)
 	tsk := mustCreateTask(t, s, ctx)
-	c, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	c, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = s.TerminateCycle(ctx, c.ID, domain.CycleStatusSucceeded, "", domain.Actor("bot"))
-	if !errors.Is(err, domain.ErrInvalidInput) {
+	_, err = s.TerminateCycle(ctx, c.ID, cyclesdomain.CycleStatusSucceeded, "", taskcoredomain.Actor("bot"))
+	if !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		t.Fatalf("err = %v, want ErrInvalidInput", err)
 	}
 }
@@ -175,14 +177,14 @@ func TestStore_GetCycle_and_ListCyclesForTask(t *testing.T) {
 	s, ctx := newCycleStore(t)
 	tsk := mustCreateTask(t, s, ctx)
 
-	c1, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	c1, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.TerminateCycle(ctx, c1.ID, domain.CycleStatusFailed, "", domain.ActorAgent); err != nil {
+	if _, err := s.TerminateCycle(ctx, c1.ID, cyclesdomain.CycleStatusFailed, "", taskcoredomain.ActorAgent); err != nil {
 		t.Fatal(err)
 	}
-	c2, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	c2, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -206,10 +208,10 @@ func TestStore_GetCycle_and_ListCyclesForTask(t *testing.T) {
 		t.Fatalf("list order = [%d, %d], want [2, 1]", list[0].AttemptSeq, list[1].AttemptSeq)
 	}
 
-	if _, err := s.GetCycle(ctx, "missing"); !errors.Is(err, domain.ErrNotFound) {
+	if _, err := s.GetCycle(ctx, "missing"); !errors.Is(err, taskcoredomain.ErrNotFound) {
 		t.Fatalf("missing get err = %v, want ErrNotFound", err)
 	}
-	if _, err := s.ListCyclesForTask(ctx, "missing", 0); !errors.Is(err, domain.ErrNotFound) {
+	if _, err := s.ListCyclesForTask(ctx, "missing", 0); !errors.Is(err, taskcoredomain.ErrNotFound) {
 		t.Fatalf("missing list err = %v, want ErrNotFound", err)
 	}
 }
@@ -228,11 +230,11 @@ func TestStore_ListCyclesForTaskBefore_keysetCursor(t *testing.T) {
 	tsk := mustCreateTask(t, s, ctx)
 
 	for i := 0; i < 3; i++ {
-		c, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+		c, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 		if err != nil {
 			t.Fatalf("start cycle #%d: %v", i+1, err)
 		}
-		if _, err := s.TerminateCycle(ctx, c.ID, domain.CycleStatusSucceeded, "", domain.ActorAgent); err != nil {
+		if _, err := s.TerminateCycle(ctx, c.ID, cyclesdomain.CycleStatusSucceeded, "", taskcoredomain.ActorAgent); err != nil {
 			t.Fatalf("terminate cycle #%d: %v", i+1, err)
 		}
 	}
@@ -291,7 +293,7 @@ func TestStore_ListCyclesForTaskBefore_keysetCursor(t *testing.T) {
 	})
 
 	t.Run("missingTaskMapsToNotFound", func(t *testing.T) {
-		if _, err := s.ListCyclesForTaskBefore(ctx, "missing", 1, 1); !errors.Is(err, domain.ErrNotFound) {
+		if _, err := s.ListCyclesForTaskBefore(ctx, "missing", 1, 1); !errors.Is(err, taskcoredomain.ErrNotFound) {
 			t.Fatalf("err = %v, want ErrNotFound", err)
 		}
 	})
@@ -349,21 +351,21 @@ func TestStore_CycleStreamEventsCascadeWhenTaskDeleted(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("append stream event: %v", err)
 	}
-	if _, err := s.Delete(ctx, tsk.ID, domain.ActorUser); err != nil {
+	if _, err := s.Delete(ctx, tsk.ID, taskcoredomain.ActorUser); err != nil {
 		t.Fatalf("delete task: %v", err)
 	}
-	if _, err := s.ListCycleStreamEvents(ctx, cycle.ID, 0, 10); !errors.Is(err, domain.ErrNotFound) {
+	if _, err := s.ListCycleStreamEvents(ctx, cycle.ID, 0, 10); !errors.Is(err, taskcoredomain.ErrNotFound) {
 		t.Fatalf("list after delete err=%v want ErrNotFound", err)
 	}
 }
 
-func mustCreateCycleWithExecutePhase(t *testing.T, s *Store, ctx context.Context, taskID string) (*domain.TaskCycle, *domain.TaskCyclePhase) {
+func mustCreateCycleWithExecutePhase(t *testing.T, s *Store, ctx context.Context, taskID string) (*cyclesdomain.TaskCycle, *cyclesdomain.TaskCyclePhase) {
 	t.Helper()
-	cycle, err := s.StartCycle(ctx, StartCycleInput{TaskID: taskID, TriggeredBy: domain.ActorAgent})
+	cycle, err := s.StartCycle(ctx, StartCycleInput{TaskID: taskID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatalf("start cycle: %v", err)
 	}
-	phase, err := s.StartPhase(ctx, cycle.ID, domain.PhaseExecute, domain.ActorAgent)
+	phase, err := s.StartPhase(ctx, cycle.ID, cyclesdomain.PhaseExecute, taskcoredomain.ActorAgent)
 	if err != nil {
 		t.Fatalf("start execute: %v", err)
 	}
@@ -375,16 +377,16 @@ func mustCreateCycleWithExecutePhase(t *testing.T, s *Store, ctx context.Context
 func TestStore_StartPhase_enforces_state_machine(t *testing.T) {
 	s, ctx := newCycleStore(t)
 	tsk := mustCreateTask(t, s, ctx)
-	c, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	c, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := s.StartPhase(ctx, c.ID, domain.PhaseVerify, domain.ActorAgent); !errors.Is(err, domain.ErrInvalidInput) {
+	if _, err := s.StartPhase(ctx, c.ID, cyclesdomain.PhaseVerify, taskcoredomain.ActorAgent); !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		t.Fatalf("first phase Verify err = %v, want ErrInvalidInput", err)
 	}
 
-	e, err := s.StartPhase(ctx, c.ID, domain.PhaseExecute, domain.ActorAgent)
+	e, err := s.StartPhase(ctx, c.ID, cyclesdomain.PhaseExecute, taskcoredomain.ActorAgent)
 	if err != nil {
 		t.Fatalf("start execute: %v", err)
 	}
@@ -392,23 +394,23 @@ func TestStore_StartPhase_enforces_state_machine(t *testing.T) {
 		t.Fatalf("execute phase_seq = %d, want 1", e.PhaseSeq)
 	}
 
-	if _, err := s.StartPhase(ctx, c.ID, domain.PhaseVerify, domain.ActorAgent); !errors.Is(err, domain.ErrInvalidInput) {
+	if _, err := s.StartPhase(ctx, c.ID, cyclesdomain.PhaseVerify, taskcoredomain.ActorAgent); !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		t.Fatalf("start verify while execute running err = %v, want ErrInvalidInput", err)
 	}
 
-	if _, err := s.CompletePhase(ctx, CompletePhaseInput{CycleID: c.ID, PhaseSeq: e.PhaseSeq, Status: domain.PhaseStatusSucceeded, By: domain.ActorAgent}); err != nil {
+	if _, err := s.CompletePhase(ctx, CompletePhaseInput{CycleID: c.ID, PhaseSeq: e.PhaseSeq, Status: cyclesdomain.PhaseStatusSucceeded, By: taskcoredomain.ActorAgent}); err != nil {
 		t.Fatal(err)
 	}
 
-	v, err := s.StartPhase(ctx, c.ID, domain.PhaseVerify, domain.ActorAgent)
+	v, err := s.StartPhase(ctx, c.ID, cyclesdomain.PhaseVerify, taskcoredomain.ActorAgent)
 	if err != nil {
 		t.Fatalf("start verify: %v", err)
 	}
-	if _, err := s.CompletePhase(ctx, CompletePhaseInput{CycleID: c.ID, PhaseSeq: v.PhaseSeq, Status: domain.PhaseStatusFailed, By: domain.ActorAgent}); err != nil {
+	if _, err := s.CompletePhase(ctx, CompletePhaseInput{CycleID: c.ID, PhaseSeq: v.PhaseSeq, Status: cyclesdomain.PhaseStatusFailed, By: taskcoredomain.ActorAgent}); err != nil {
 		t.Fatal(err)
 	}
 
-	e2, err := s.StartPhase(ctx, c.ID, domain.PhaseExecute, domain.ActorAgent)
+	e2, err := s.StartPhase(ctx, c.ID, cyclesdomain.PhaseExecute, taskcoredomain.ActorAgent)
 	if err != nil {
 		t.Fatalf("corrective execute after failing verify: %v", err)
 	}
@@ -420,23 +422,23 @@ func TestStore_StartPhase_enforces_state_machine(t *testing.T) {
 func TestStore_StartPhase_interruptResumeTransition(t *testing.T) {
 	s, ctx := newCycleStore(t)
 	tsk := mustCreateTask(t, s, ctx)
-	c, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	c, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	e, err := s.StartPhase(ctx, c.ID, domain.PhaseExecute, domain.ActorAgent)
+	e, err := s.StartPhase(ctx, c.ID, cyclesdomain.PhaseExecute, taskcoredomain.ActorAgent)
 	if err != nil {
 		t.Fatalf("start execute: %v", err)
 	}
-	restart := domain.PhaseInterruptReason
+	restart := cyclesdomain.PhaseInterruptReason
 	if _, err := s.CompletePhase(ctx, CompletePhaseInput{
 		CycleID: c.ID, PhaseSeq: e.PhaseSeq,
-		Status: domain.PhaseStatusFailed, Summary: &restart, By: domain.ActorAgent,
+		Status: cyclesdomain.PhaseStatusFailed, Summary: &restart, By: taskcoredomain.ActorAgent,
 	}); err != nil {
 		t.Fatal(err)
 	}
-	e2, err := s.StartPhase(ctx, c.ID, domain.PhaseExecute, domain.ActorAgent)
+	e2, err := s.StartPhase(ctx, c.ID, cyclesdomain.PhaseExecute, taskcoredomain.ActorAgent)
 	if err != nil {
 		t.Fatalf("execute after process_restart: %v", err)
 	}
@@ -445,11 +447,11 @@ func TestStore_StartPhase_interruptResumeTransition(t *testing.T) {
 	}
 	if _, err := s.CompletePhase(ctx, CompletePhaseInput{
 		CycleID: c.ID, PhaseSeq: e2.PhaseSeq,
-		Status: domain.PhaseStatusFailed, Summary: strPtr("runner_timeout"), By: domain.ActorAgent,
+		Status: cyclesdomain.PhaseStatusFailed, Summary: strPtr("runner_timeout"), By: taskcoredomain.ActorAgent,
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.StartPhase(ctx, c.ID, domain.PhaseExecute, domain.ActorAgent); !errors.Is(err, domain.ErrInvalidInput) {
+	if _, err := s.StartPhase(ctx, c.ID, cyclesdomain.PhaseExecute, taskcoredomain.ActorAgent); !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		t.Fatalf("execute after non-restart failure err = %v, want ErrInvalidInput", err)
 	}
 }
@@ -457,28 +459,28 @@ func TestStore_StartPhase_interruptResumeTransition(t *testing.T) {
 func TestStore_StartPhase_rejects_on_terminal_cycle(t *testing.T) {
 	s, ctx := newCycleStore(t)
 	tsk := mustCreateTask(t, s, ctx)
-	c, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	c, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.TerminateCycle(ctx, c.ID, domain.CycleStatusAborted, "", domain.ActorAgent); err != nil {
+	if _, err := s.TerminateCycle(ctx, c.ID, cyclesdomain.CycleStatusAborted, "", taskcoredomain.ActorAgent); err != nil {
 		t.Fatal(err)
 	}
-	_, err = s.StartPhase(ctx, c.ID, domain.PhaseExecute, domain.ActorAgent)
-	if !errors.Is(err, domain.ErrInvalidInput) {
+	_, err = s.StartPhase(ctx, c.ID, cyclesdomain.PhaseExecute, taskcoredomain.ActorAgent)
+	if !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		t.Fatalf("err = %v, want ErrInvalidInput", err)
 	}
 }
 
 func TestStore_StartPhase_rejects_invalid_inputs(t *testing.T) {
 	s, ctx := newCycleStore(t)
-	if _, err := s.StartPhase(ctx, "", domain.PhaseExecute, domain.ActorAgent); !errors.Is(err, domain.ErrInvalidInput) {
+	if _, err := s.StartPhase(ctx, "", cyclesdomain.PhaseExecute, taskcoredomain.ActorAgent); !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		t.Fatalf("empty cycle err = %v, want ErrInvalidInput", err)
 	}
-	if _, err := s.StartPhase(ctx, "x", domain.Phase("nope"), domain.ActorAgent); !errors.Is(err, domain.ErrInvalidInput) {
+	if _, err := s.StartPhase(ctx, "x", cyclesdomain.Phase("nope"), taskcoredomain.ActorAgent); !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		t.Fatalf("bad phase err = %v, want ErrInvalidInput", err)
 	}
-	if _, err := s.StartPhase(ctx, "missing", domain.PhaseExecute, domain.ActorAgent); !errors.Is(err, domain.ErrNotFound) {
+	if _, err := s.StartPhase(ctx, "missing", cyclesdomain.PhaseExecute, taskcoredomain.ActorAgent); !errors.Is(err, taskcoredomain.ErrNotFound) {
 		t.Fatalf("missing cycle err = %v, want ErrNotFound", err)
 	}
 }
@@ -486,11 +488,11 @@ func TestStore_StartPhase_rejects_invalid_inputs(t *testing.T) {
 func TestStore_CompletePhase_updates_summary_and_details(t *testing.T) {
 	s, ctx := newCycleStore(t)
 	tsk := mustCreateTask(t, s, ctx)
-	c, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	c, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatal(err)
 	}
-	d, err := s.StartPhase(ctx, c.ID, domain.PhaseExecute, domain.ActorAgent)
+	d, err := s.StartPhase(ctx, c.ID, cyclesdomain.PhaseExecute, taskcoredomain.ActorAgent)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -498,15 +500,15 @@ func TestStore_CompletePhase_updates_summary_and_details(t *testing.T) {
 	out, err := s.CompletePhase(ctx, CompletePhaseInput{
 		CycleID:  c.ID,
 		PhaseSeq: d.PhaseSeq,
-		Status:   domain.PhaseStatusSucceeded,
+		Status:   cyclesdomain.PhaseStatusSucceeded,
 		Summary:  &summary,
 		Details:  []byte(`{"files":3}`),
-		By:       domain.ActorAgent,
+		By:       taskcoredomain.ActorAgent,
 	})
 	if err != nil {
 		t.Fatalf("complete: %v", err)
 	}
-	if out.Status != domain.PhaseStatusSucceeded {
+	if out.Status != cyclesdomain.PhaseStatusSucceeded {
 		t.Fatalf("status = %q", out.Status)
 	}
 	if out.EndedAt == nil {
@@ -515,11 +517,11 @@ func TestStore_CompletePhase_updates_summary_and_details(t *testing.T) {
 	if out.Summary == nil || *out.Summary != summary {
 		t.Fatalf("summary = %v", out.Summary)
 	}
-	startID := domain.RunCorrelationIDFromDetailsJSON(d.DetailsJSON)
+	startID := cyclesdomain.RunCorrelationIDFromDetailsJSON(d.DetailsJSON)
 	if startID == "" {
 		t.Fatal("StartPhase did not mint run_correlation_id")
 	}
-	gotID := domain.RunCorrelationIDFromDetailsJSON(out.DetailsJSON)
+	gotID := cyclesdomain.RunCorrelationIDFromDetailsJSON(out.DetailsJSON)
 	if gotID != startID {
 		t.Fatalf("run_correlation_id after complete = %q, want %q", gotID, startID)
 	}
@@ -535,15 +537,15 @@ func TestStore_CompletePhase_updates_summary_and_details(t *testing.T) {
 func TestStore_StartPhase_mints_run_correlation_id(t *testing.T) {
 	s, ctx := newCycleStore(t)
 	tsk := mustCreateTask(t, s, ctx)
-	c, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	c, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatal(err)
 	}
-	ph, err := s.StartPhase(ctx, c.ID, domain.PhaseExecute, domain.ActorAgent)
+	ph, err := s.StartPhase(ctx, c.ID, cyclesdomain.PhaseExecute, taskcoredomain.ActorAgent)
 	if err != nil {
 		t.Fatal(err)
 	}
-	id := domain.RunCorrelationIDFromDetailsJSON(ph.DetailsJSON)
+	id := cyclesdomain.RunCorrelationIDFromDetailsJSON(ph.DetailsJSON)
 	if id == "" {
 		t.Fatal("expected run_correlation_id on new phase")
 	}
@@ -552,26 +554,26 @@ func TestStore_StartPhase_mints_run_correlation_id(t *testing.T) {
 func TestStore_CompletePhase_preserves_run_correlation_id(t *testing.T) {
 	s, ctx := newCycleStore(t)
 	tsk := mustCreateTask(t, s, ctx)
-	c, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	c, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatal(err)
 	}
-	ph, err := s.StartPhase(ctx, c.ID, domain.PhaseExecute, domain.ActorAgent)
+	ph, err := s.StartPhase(ctx, c.ID, cyclesdomain.PhaseExecute, taskcoredomain.ActorAgent)
 	if err != nil {
 		t.Fatal(err)
 	}
-	startID := domain.RunCorrelationIDFromDetailsJSON(ph.DetailsJSON)
+	startID := cyclesdomain.RunCorrelationIDFromDetailsJSON(ph.DetailsJSON)
 	out, err := s.CompletePhase(ctx, CompletePhaseInput{
 		CycleID:  c.ID,
 		PhaseSeq: ph.PhaseSeq,
-		Status:   domain.PhaseStatusSucceeded,
+		Status:   cyclesdomain.PhaseStatusSucceeded,
 		Details:  []byte(`{"exit_code":0,"run_correlation_id":"attacker"}`),
-		By:       domain.ActorAgent,
+		By:       taskcoredomain.ActorAgent,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := domain.RunCorrelationIDFromDetailsJSON(out.DetailsJSON); got != startID {
+	if got := cyclesdomain.RunCorrelationIDFromDetailsJSON(out.DetailsJSON); got != startID {
 		t.Fatalf("run_correlation_id = %q, want preserved %q", got, startID)
 	}
 }
@@ -579,35 +581,35 @@ func TestStore_CompletePhase_preserves_run_correlation_id(t *testing.T) {
 func TestStore_CompletePhase_rejects_double_complete(t *testing.T) {
 	s, ctx := newCycleStore(t)
 	tsk := mustCreateTask(t, s, ctx)
-	c, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	c, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatal(err)
 	}
-	d, err := s.StartPhase(ctx, c.ID, domain.PhaseExecute, domain.ActorAgent)
+	d, err := s.StartPhase(ctx, c.ID, cyclesdomain.PhaseExecute, taskcoredomain.ActorAgent)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.CompletePhase(ctx, CompletePhaseInput{CycleID: c.ID, PhaseSeq: d.PhaseSeq, Status: domain.PhaseStatusSucceeded, By: domain.ActorAgent}); err != nil {
+	if _, err := s.CompletePhase(ctx, CompletePhaseInput{CycleID: c.ID, PhaseSeq: d.PhaseSeq, Status: cyclesdomain.PhaseStatusSucceeded, By: taskcoredomain.ActorAgent}); err != nil {
 		t.Fatal(err)
 	}
-	_, err = s.CompletePhase(ctx, CompletePhaseInput{CycleID: c.ID, PhaseSeq: d.PhaseSeq, Status: domain.PhaseStatusFailed, By: domain.ActorAgent})
-	if !errors.Is(err, domain.ErrInvalidInput) {
+	_, err = s.CompletePhase(ctx, CompletePhaseInput{CycleID: c.ID, PhaseSeq: d.PhaseSeq, Status: cyclesdomain.PhaseStatusFailed, By: taskcoredomain.ActorAgent})
+	if !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		t.Fatalf("double complete err = %v, want ErrInvalidInput", err)
 	}
 }
 
 func TestStore_CompletePhase_rejects_invalid_inputs(t *testing.T) {
 	s, ctx := newCycleStore(t)
-	if _, err := s.CompletePhase(ctx, CompletePhaseInput{CycleID: "", PhaseSeq: 1, Status: domain.PhaseStatusSucceeded, By: domain.ActorAgent}); !errors.Is(err, domain.ErrInvalidInput) {
+	if _, err := s.CompletePhase(ctx, CompletePhaseInput{CycleID: "", PhaseSeq: 1, Status: cyclesdomain.PhaseStatusSucceeded, By: taskcoredomain.ActorAgent}); !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		t.Fatalf("empty cycle err = %v, want ErrInvalidInput", err)
 	}
-	if _, err := s.CompletePhase(ctx, CompletePhaseInput{CycleID: "x", PhaseSeq: 0, Status: domain.PhaseStatusSucceeded, By: domain.ActorAgent}); !errors.Is(err, domain.ErrInvalidInput) {
+	if _, err := s.CompletePhase(ctx, CompletePhaseInput{CycleID: "x", PhaseSeq: 0, Status: cyclesdomain.PhaseStatusSucceeded, By: taskcoredomain.ActorAgent}); !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		t.Fatalf("zero seq err = %v, want ErrInvalidInput", err)
 	}
-	if _, err := s.CompletePhase(ctx, CompletePhaseInput{CycleID: "x", PhaseSeq: 1, Status: domain.PhaseStatusRunning, By: domain.ActorAgent}); !errors.Is(err, domain.ErrInvalidInput) {
+	if _, err := s.CompletePhase(ctx, CompletePhaseInput{CycleID: "x", PhaseSeq: 1, Status: cyclesdomain.PhaseStatusRunning, By: taskcoredomain.ActorAgent}); !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		t.Fatalf("non-terminal status err = %v, want ErrInvalidInput", err)
 	}
-	if _, err := s.CompletePhase(ctx, CompletePhaseInput{CycleID: "missing", PhaseSeq: 1, Status: domain.PhaseStatusSucceeded, By: domain.ActorAgent}); !errors.Is(err, domain.ErrNotFound) {
+	if _, err := s.CompletePhase(ctx, CompletePhaseInput{CycleID: "missing", PhaseSeq: 1, Status: cyclesdomain.PhaseStatusSucceeded, By: taskcoredomain.ActorAgent}); !errors.Is(err, taskcoredomain.ErrNotFound) {
 		t.Fatalf("missing cycle err = %v, want ErrNotFound", err)
 	}
 }
@@ -615,7 +617,7 @@ func TestStore_CompletePhase_rejects_invalid_inputs(t *testing.T) {
 func TestStore_ListPhasesForCycle_returns_in_seq_order(t *testing.T) {
 	s, ctx := newCycleStore(t)
 	tsk := mustCreateTask(t, s, ctx)
-	c, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	c, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -628,14 +630,14 @@ func TestStore_ListPhasesForCycle_returns_in_seq_order(t *testing.T) {
 		t.Fatalf("empty list len = %d", len(empty))
 	}
 
-	e, err := s.StartPhase(ctx, c.ID, domain.PhaseExecute, domain.ActorAgent)
+	e, err := s.StartPhase(ctx, c.ID, cyclesdomain.PhaseExecute, taskcoredomain.ActorAgent)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.CompletePhase(ctx, CompletePhaseInput{CycleID: c.ID, PhaseSeq: e.PhaseSeq, Status: domain.PhaseStatusSucceeded, By: domain.ActorAgent}); err != nil {
+	if _, err := s.CompletePhase(ctx, CompletePhaseInput{CycleID: c.ID, PhaseSeq: e.PhaseSeq, Status: cyclesdomain.PhaseStatusSucceeded, By: taskcoredomain.ActorAgent}); err != nil {
 		t.Fatal(err)
 	}
-	v, err := s.StartPhase(ctx, c.ID, domain.PhaseVerify, domain.ActorAgent)
+	v, err := s.StartPhase(ctx, c.ID, cyclesdomain.PhaseVerify, taskcoredomain.ActorAgent)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -658,40 +660,40 @@ func TestStore_ListPhasesForCycle_returns_in_seq_order(t *testing.T) {
 func TestStore_LastSessionID_returns_latest_completed(t *testing.T) {
 	s, ctx := newCycleStore(t)
 	tsk := mustCreateTask(t, s, ctx)
-	c, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	c, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatal(err)
 	}
-	e1, err := s.StartPhase(ctx, c.ID, domain.PhaseExecute, domain.ActorAgent)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := s.CompletePhase(ctx, CompletePhaseInput{
-		CycleID: c.ID, PhaseSeq: e1.PhaseSeq, Status: domain.PhaseStatusSucceeded,
-		Details: []byte(`{"session_id":"sess-old"}`), By: domain.ActorAgent,
-	}); err != nil {
-		t.Fatal(err)
-	}
-	v1, err := s.StartPhase(ctx, c.ID, domain.PhaseVerify, domain.ActorAgent)
+	e1, err := s.StartPhase(ctx, c.ID, cyclesdomain.PhaseExecute, taskcoredomain.ActorAgent)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, err := s.CompletePhase(ctx, CompletePhaseInput{
-		CycleID: c.ID, PhaseSeq: v1.PhaseSeq, Status: domain.PhaseStatusSucceeded, By: domain.ActorAgent,
+		CycleID: c.ID, PhaseSeq: e1.PhaseSeq, Status: cyclesdomain.PhaseStatusSucceeded,
+		Details: []byte(`{"session_id":"sess-old"}`), By: taskcoredomain.ActorAgent,
 	}); err != nil {
 		t.Fatal(err)
 	}
-	e2, err := s.StartPhase(ctx, c.ID, domain.PhaseExecute, domain.ActorAgent)
+	v1, err := s.StartPhase(ctx, c.ID, cyclesdomain.PhaseVerify, taskcoredomain.ActorAgent)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, err := s.CompletePhase(ctx, CompletePhaseInput{
-		CycleID: c.ID, PhaseSeq: e2.PhaseSeq, Status: domain.PhaseStatusSucceeded,
-		Details: []byte(`{"session_id":"sess-new"}`), By: domain.ActorAgent,
+		CycleID: c.ID, PhaseSeq: v1.PhaseSeq, Status: cyclesdomain.PhaseStatusSucceeded, By: taskcoredomain.ActorAgent,
 	}); err != nil {
 		t.Fatal(err)
 	}
-	got, err := s.LastSessionID(ctx, c.ID, domain.PhaseExecute)
+	e2, err := s.StartPhase(ctx, c.ID, cyclesdomain.PhaseExecute, taskcoredomain.ActorAgent)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.CompletePhase(ctx, CompletePhaseInput{
+		CycleID: c.ID, PhaseSeq: e2.PhaseSeq, Status: cyclesdomain.PhaseStatusSucceeded,
+		Details: []byte(`{"session_id":"sess-new"}`), By: taskcoredomain.ActorAgent,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	got, err := s.LastSessionID(ctx, c.ID, cyclesdomain.PhaseExecute)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -703,19 +705,19 @@ func TestStore_LastSessionID_returns_latest_completed(t *testing.T) {
 func TestStore_TaskDelete_cascades_to_cycles_and_phases(t *testing.T) {
 	s, ctx := newCycleStore(t)
 	tsk := mustCreateTask(t, s, ctx)
-	c, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	c, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.StartPhase(ctx, c.ID, domain.PhaseExecute, domain.ActorAgent); err != nil {
+	if _, err := s.StartPhase(ctx, c.ID, cyclesdomain.PhaseExecute, taskcoredomain.ActorAgent); err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := s.Delete(ctx, tsk.ID, domain.ActorUser); err != nil {
+	if _, err := s.Delete(ctx, tsk.ID, taskcoredomain.ActorUser); err != nil {
 		t.Fatalf("delete task: %v", err)
 	}
 
-	if _, err := s.GetCycle(ctx, c.ID); !errors.Is(err, domain.ErrNotFound) {
+	if _, err := s.GetCycle(ctx, c.ID); !errors.Is(err, taskcoredomain.ErrNotFound) {
 		t.Fatalf("cycle after task delete err = %v, want ErrNotFound", err)
 	}
 }
@@ -734,7 +736,7 @@ func TestStore_StartCycle_meta_normalizes_null(t *testing.T) {
 	tsk := mustCreateTask(t, s, ctx)
 	c, err := s.StartCycle(ctx, StartCycleInput{
 		TaskID:      tsk.ID,
-		TriggeredBy: domain.ActorAgent,
+		TriggeredBy: taskcoredomain.ActorAgent,
 		Meta:        []byte("null"),
 	})
 	if err != nil {
@@ -767,10 +769,10 @@ func TestStore_StartCycle_meta_rejects_non_object_json(t *testing.T) {
 			tsk := mustCreateTask(t, s, ctx)
 			_, err := s.StartCycle(ctx, StartCycleInput{
 				TaskID:      tsk.ID,
-				TriggeredBy: domain.ActorAgent,
+				TriggeredBy: taskcoredomain.ActorAgent,
 				Meta:        tc.body,
 			})
-			if !errors.Is(err, domain.ErrInvalidInput) {
+			if !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 				t.Fatalf("err = %v, want ErrInvalidInput for meta=%s", err, string(tc.body))
 			}
 		})
@@ -786,7 +788,7 @@ func TestStore_StartCycle_meta_passes_through_object(t *testing.T) {
 	tsk := mustCreateTask(t, s, ctx)
 	c, err := s.StartCycle(ctx, StartCycleInput{
 		TaskID:      tsk.ID,
-		TriggeredBy: domain.ActorAgent,
+		TriggeredBy: taskcoredomain.ActorAgent,
 		Meta:        []byte(`{"runner":"cursor-cli"}`),
 	})
 	if err != nil {
@@ -803,11 +805,11 @@ func TestStore_StartCycle_meta_passes_through_object(t *testing.T) {
 func TestStore_CompletePhase_details_normalizes_and_validates(t *testing.T) {
 	s, ctx := newCycleStore(t)
 	tsk := mustCreateTask(t, s, ctx)
-	cycle, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	cycle, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatalf("start cycle: %v", err)
 	}
-	phase, err := s.StartPhase(ctx, cycle.ID, domain.PhaseExecute, domain.ActorAgent)
+	phase, err := s.StartPhase(ctx, cycle.ID, cyclesdomain.PhaseExecute, taskcoredomain.ActorAgent)
 	if err != nil {
 		t.Fatalf("start phase: %v", err)
 	}
@@ -816,15 +818,15 @@ func TestStore_CompletePhase_details_normalizes_and_validates(t *testing.T) {
 	out, err := s.CompletePhase(ctx, CompletePhaseInput{
 		CycleID:  cycle.ID,
 		PhaseSeq: phase.PhaseSeq,
-		Status:   domain.PhaseStatusSucceeded,
+		Status:   cyclesdomain.PhaseStatusSucceeded,
 		Details:  []byte("null"),
-		By:       domain.ActorAgent,
+		By:       taskcoredomain.ActorAgent,
 	})
 	if err != nil {
 		t.Fatalf("complete phase with null details: %v", err)
 	}
-	startID := domain.RunCorrelationIDFromDetailsJSON(phase.DetailsJSON)
-	if got := domain.RunCorrelationIDFromDetailsJSON(out.DetailsJSON); got != startID {
+	startID := cyclesdomain.RunCorrelationIDFromDetailsJSON(phase.DetailsJSON)
+	if got := cyclesdomain.RunCorrelationIDFromDetailsJSON(out.DetailsJSON); got != startID {
 		t.Fatalf("run_correlation_id after null complete = %q, want %q", got, startID)
 	}
 	var nullComplete map[string]any
@@ -836,25 +838,25 @@ func TestStore_CompletePhase_details_normalizes_and_validates(t *testing.T) {
 	}
 
 	// Start a fresh cycle so we can run another phase end-to-end.
-	if _, err := s.TerminateCycle(ctx, cycle.ID, domain.CycleStatusSucceeded, "", domain.ActorAgent); err != nil {
+	if _, err := s.TerminateCycle(ctx, cycle.ID, cyclesdomain.CycleStatusSucceeded, "", taskcoredomain.ActorAgent); err != nil {
 		t.Fatalf("terminate cycle: %v", err)
 	}
-	cycle2, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	cycle2, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatalf("start cycle 2: %v", err)
 	}
-	phase2, err := s.StartPhase(ctx, cycle2.ID, domain.PhaseExecute, domain.ActorAgent)
+	phase2, err := s.StartPhase(ctx, cycle2.ID, cyclesdomain.PhaseExecute, taskcoredomain.ActorAgent)
 	if err != nil {
 		t.Fatalf("start phase 2: %v", err)
 	}
 	_, err = s.CompletePhase(ctx, CompletePhaseInput{
 		CycleID:  cycle2.ID,
 		PhaseSeq: phase2.PhaseSeq,
-		Status:   domain.PhaseStatusSucceeded,
+		Status:   cyclesdomain.PhaseStatusSucceeded,
 		Details:  []byte(`[1,2]`),
-		By:       domain.ActorAgent,
+		By:       taskcoredomain.ActorAgent,
 	})
-	if !errors.Is(err, domain.ErrInvalidInput) {
+	if !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		t.Fatalf("complete phase with array details err = %v, want ErrInvalidInput", err)
 	}
 }
@@ -871,8 +873,8 @@ func TestStore_CompletePhase_details_normalizes_and_validates(t *testing.T) {
 // row assertions force you to wire the mirror at the same time.
 
 type cycleEventCheck struct {
-	wantType    domain.EventType
-	wantBy      domain.Actor
+	wantType    taskeventsdomain.EventType
+	wantBy      taskcoredomain.Actor
 	wantPayload map[string]any
 }
 
@@ -909,7 +911,7 @@ func assertSubset(t *testing.T, got, want map[string]any, label string) {
 	}
 }
 
-func loadEventBySeq(t *testing.T, db *gorm.DB, taskID string, seq int64) domain.TaskEvent {
+func loadEventBySeq(t *testing.T, db *gorm.DB, taskID string, seq int64) taskeventsdomain.TaskEvent {
 	t.Helper()
 	var row eventsmodel.TaskEvent
 	if err := db.Where("task_id = ? AND seq = ?", taskID, seq).First(&row).Error; err != nil {
@@ -918,7 +920,7 @@ func loadEventBySeq(t *testing.T, db *gorm.DB, taskID string, seq int64) domain.
 	return eventsmodel.ToDomainTaskEvent(row)
 }
 
-func assertEvent(t *testing.T, db *gorm.DB, taskID string, seq int64, want cycleEventCheck) domain.TaskEvent {
+func assertEvent(t *testing.T, db *gorm.DB, taskID string, seq int64, want cycleEventCheck) taskeventsdomain.TaskEvent {
 	t.Helper()
 	ev := loadEventBySeq(t, db, taskID, seq)
 	if ev.Type != want.wantType {
@@ -939,14 +941,14 @@ func TestStore_DualWrite_StartCycle_emits_cycle_started(t *testing.T) {
 	tsk := mustCreateTask(t, s, ctx)
 
 	beforeSeq, _ := lastEventSeqRaw(t, db, tsk.ID)
-	cyc, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	cyc, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatalf("start cycle: %v", err)
 	}
 
 	assertEvent(t, db, tsk.ID, beforeSeq+1, cycleEventCheck{
-		wantType: domain.EventCycleStarted,
-		wantBy:   domain.ActorAgent,
+		wantType: taskeventsdomain.EventCycleStarted,
+		wantBy:   taskcoredomain.ActorAgent,
 		wantPayload: map[string]any{
 			"cycle_id":     cyc.ID,
 			"attempt_seq":  int(cyc.AttemptSeq),
@@ -961,16 +963,16 @@ func TestStore_DualWrite_StartCycle_includes_parent_when_set(t *testing.T) {
 	ctx := context.Background()
 	tsk := mustCreateTask(t, s, ctx)
 
-	parent, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	parent, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.TerminateCycle(ctx, parent.ID, domain.CycleStatusFailed, "first attempt", domain.ActorAgent); err != nil {
+	if _, err := s.TerminateCycle(ctx, parent.ID, cyclesdomain.CycleStatusFailed, "first attempt", taskcoredomain.ActorAgent); err != nil {
 		t.Fatal(err)
 	}
 
 	pid := parent.ID
-	child, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent, ParentCycleID: &pid})
+	child, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent, ParentCycleID: &pid})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -988,15 +990,15 @@ func TestStore_DualWrite_StartCycle_includes_parent_when_set(t *testing.T) {
 func TestStore_DualWrite_TerminateCycle_emits_completed_or_failed(t *testing.T) {
 	cases := []struct {
 		name       string
-		status     domain.CycleStatus
+		status     cyclesdomain.CycleStatus
 		reason     string
-		wantType   domain.EventType
+		wantType   taskeventsdomain.EventType
 		wantStatus string
 		wantReason string
 	}{
-		{"succeeded", domain.CycleStatusSucceeded, "", domain.EventCycleCompleted, "succeeded", ""},
-		{"failed", domain.CycleStatusFailed, "checks didn't pass", domain.EventCycleFailed, "failed", "checks didn't pass"},
-		{"aborted", domain.CycleStatusAborted, "user cancelled", domain.EventCycleFailed, "aborted", "user cancelled"},
+		{"succeeded", cyclesdomain.CycleStatusSucceeded, "", taskeventsdomain.EventCycleCompleted, "succeeded", ""},
+		{"failed", cyclesdomain.CycleStatusFailed, "checks didn't pass", taskeventsdomain.EventCycleFailed, "failed", "checks didn't pass"},
+		{"aborted", cyclesdomain.CycleStatusAborted, "user cancelled", taskeventsdomain.EventCycleFailed, "aborted", "user cancelled"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -1004,12 +1006,12 @@ func TestStore_DualWrite_TerminateCycle_emits_completed_or_failed(t *testing.T) 
 			s := NewStore(db)
 			ctx := context.Background()
 			tsk := mustCreateTask(t, s, ctx)
-			cyc, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+			cyc, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if _, err := s.TerminateCycle(ctx, cyc.ID, tc.status, tc.reason, domain.ActorUser); err != nil {
+			if _, err := s.TerminateCycle(ctx, cyc.ID, tc.status, tc.reason, taskcoredomain.ActorUser); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1024,7 +1026,7 @@ func TestStore_DualWrite_TerminateCycle_emits_completed_or_failed(t *testing.T) 
 			}
 			assertEvent(t, db, tsk.ID, seq, cycleEventCheck{
 				wantType:    tc.wantType,
-				wantBy:      domain.ActorUser,
+				wantBy:      taskcoredomain.ActorUser,
 				wantPayload: payload,
 			})
 		})
@@ -1036,26 +1038,26 @@ func TestStore_DualWrite_StartPhase_backfills_event_seq(t *testing.T) {
 	s := NewStore(db)
 	ctx := context.Background()
 	tsk := mustCreateTask(t, s, ctx)
-	cyc, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	cyc, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	ph, err := s.StartPhase(ctx, cyc.ID, domain.PhaseExecute, domain.ActorAgent)
+	ph, err := s.StartPhase(ctx, cyc.ID, cyclesdomain.PhaseExecute, taskcoredomain.ActorAgent)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if ph.EventSeq == nil {
 		t.Fatal("phase.EventSeq nil after StartPhase")
 	}
-	runID := domain.RunCorrelationIDFromDetailsJSON(ph.DetailsJSON)
+	runID := cyclesdomain.RunCorrelationIDFromDetailsJSON(ph.DetailsJSON)
 	if runID == "" {
 		t.Fatal("expected run_correlation_id on phase")
 	}
 
 	ev := assertEvent(t, db, tsk.ID, *ph.EventSeq, cycleEventCheck{
-		wantType: domain.EventPhaseStarted,
-		wantBy:   domain.ActorAgent,
+		wantType: taskeventsdomain.EventPhaseStarted,
+		wantBy:   taskcoredomain.ActorAgent,
 		wantPayload: map[string]any{
 			"cycle_id":           cyc.ID,
 			"phase":              "execute",
@@ -1071,13 +1073,13 @@ func TestStore_DualWrite_StartPhase_backfills_event_seq(t *testing.T) {
 func TestStore_DualWrite_CompletePhase_emits_terminal_mirror_and_updates_event_seq(t *testing.T) {
 	cases := []struct {
 		name     string
-		status   domain.PhaseStatus
+		status   cyclesdomain.PhaseStatus
 		summary  string
-		wantType domain.EventType
+		wantType taskeventsdomain.EventType
 	}{
-		{"succeeded", domain.PhaseStatusSucceeded, "diagnosed scope", domain.EventPhaseCompleted},
-		{"failed", domain.PhaseStatusFailed, "verify failed", domain.EventPhaseFailed},
-		{"skipped", domain.PhaseStatusSkipped, "no checks needed", domain.EventPhaseSkipped},
+		{"succeeded", cyclesdomain.PhaseStatusSucceeded, "diagnosed scope", taskeventsdomain.EventPhaseCompleted},
+		{"failed", cyclesdomain.PhaseStatusFailed, "verify failed", taskeventsdomain.EventPhaseFailed},
+		{"skipped", cyclesdomain.PhaseStatusSkipped, "no checks needed", taskeventsdomain.EventPhaseSkipped},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -1085,11 +1087,11 @@ func TestStore_DualWrite_CompletePhase_emits_terminal_mirror_and_updates_event_s
 			s := NewStore(db)
 			ctx := context.Background()
 			tsk := mustCreateTask(t, s, ctx)
-			cyc, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+			cyc, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 			if err != nil {
 				t.Fatal(err)
 			}
-			ph, err := s.StartPhase(ctx, cyc.ID, domain.PhaseExecute, domain.ActorAgent)
+			ph, err := s.StartPhase(ctx, cyc.ID, cyclesdomain.PhaseExecute, taskcoredomain.ActorAgent)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1101,7 +1103,7 @@ func TestStore_DualWrite_CompletePhase_emits_terminal_mirror_and_updates_event_s
 				PhaseSeq: ph.PhaseSeq,
 				Status:   tc.status,
 				Summary:  &summary,
-				By:       domain.ActorAgent,
+				By:       taskcoredomain.ActorAgent,
 			})
 			if err != nil {
 				t.Fatal(err)
@@ -1115,7 +1117,7 @@ func TestStore_DualWrite_CompletePhase_emits_terminal_mirror_and_updates_event_s
 
 			assertEvent(t, db, tsk.ID, *done.EventSeq, cycleEventCheck{
 				wantType: tc.wantType,
-				wantBy:   domain.ActorAgent,
+				wantBy:   taskcoredomain.ActorAgent,
 				wantPayload: map[string]any{
 					"cycle_id":  cyc.ID,
 					"phase":     "execute",
@@ -1135,18 +1137,18 @@ func TestStore_DualWrite_seq_is_monotonic_across_entrypoints(t *testing.T) {
 	tsk := mustCreateTask(t, s, ctx)
 
 	// task_created (seq 1) is the only baseline event seeded by Create.
-	cyc, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	cyc, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatal(err)
 	}
-	ph, err := s.StartPhase(ctx, cyc.ID, domain.PhaseExecute, domain.ActorAgent)
+	ph, err := s.StartPhase(ctx, cyc.ID, cyclesdomain.PhaseExecute, taskcoredomain.ActorAgent)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.CompletePhase(ctx, CompletePhaseInput{CycleID: cyc.ID, PhaseSeq: ph.PhaseSeq, Status: domain.PhaseStatusSucceeded, By: domain.ActorAgent}); err != nil {
+	if _, err := s.CompletePhase(ctx, CompletePhaseInput{CycleID: cyc.ID, PhaseSeq: ph.PhaseSeq, Status: cyclesdomain.PhaseStatusSucceeded, By: taskcoredomain.ActorAgent}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.TerminateCycle(ctx, cyc.ID, domain.CycleStatusSucceeded, "", domain.ActorAgent); err != nil {
+	if _, err := s.TerminateCycle(ctx, cyc.ID, cyclesdomain.CycleStatusSucceeded, "", taskcoredomain.ActorAgent); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1154,12 +1156,12 @@ func TestStore_DualWrite_seq_is_monotonic_across_entrypoints(t *testing.T) {
 	if err := db.Where("task_id = ?", tsk.ID).Order("seq ASC").Find(&rows).Error; err != nil {
 		t.Fatal(err)
 	}
-	wantTypes := []domain.EventType{
-		domain.EventTaskCreated,
-		domain.EventCycleStarted,
-		domain.EventPhaseStarted,
-		domain.EventPhaseCompleted,
-		domain.EventCycleCompleted,
+	wantTypes := []taskeventsdomain.EventType{
+		taskeventsdomain.EventTaskCreated,
+		taskeventsdomain.EventCycleStarted,
+		taskeventsdomain.EventPhaseStarted,
+		taskeventsdomain.EventPhaseCompleted,
+		taskeventsdomain.EventCycleCompleted,
 	}
 	if len(rows) != len(wantTypes) {
 		t.Fatalf("event count = %d, want %d (%+v)", len(rows), len(wantTypes), rows)
@@ -1202,7 +1204,7 @@ func TestStore_DualWrite_StartCycle_rolls_back_when_mirror_insert_fails(t *testi
 	beforeCycles := countRows(t, db, &cyclesmodel.TaskCycle{})
 	beforeEvents := countRows(t, db, &eventsmodel.TaskEvent{})
 
-	_, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	_, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err == nil {
 		t.Fatal("StartCycle: want error from mirror failure, got nil")
 	}
@@ -1216,17 +1218,17 @@ func TestStore_DualWrite_StartCycle_rolls_back_when_mirror_insert_fails(t *testi
 }
 
 func TestStore_DualWrite_mirror_event_types_reject_user_response(t *testing.T) {
-	mirrorTypes := []domain.EventType{
-		domain.EventCycleStarted,
-		domain.EventCycleCompleted,
-		domain.EventCycleFailed,
-		domain.EventPhaseStarted,
-		domain.EventPhaseCompleted,
-		domain.EventPhaseFailed,
-		domain.EventPhaseSkipped,
+	mirrorTypes := []taskeventsdomain.EventType{
+		taskeventsdomain.EventCycleStarted,
+		taskeventsdomain.EventCycleCompleted,
+		taskeventsdomain.EventCycleFailed,
+		taskeventsdomain.EventPhaseStarted,
+		taskeventsdomain.EventPhaseCompleted,
+		taskeventsdomain.EventPhaseFailed,
+		taskeventsdomain.EventPhaseSkipped,
 	}
 	for _, et := range mirrorTypes {
-		if domain.EventTypeAcceptsUserResponse(et) {
+		if taskeventsdomain.EventTypeAcceptsUserResponse(et) {
 			t.Fatalf("EventTypeAcceptsUserResponse(%q) = true; mirror events are observational and must reject user_response writes", et)
 		}
 	}

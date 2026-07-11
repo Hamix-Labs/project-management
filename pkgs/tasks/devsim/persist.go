@@ -5,41 +5,41 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"log/slog"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
+	"log/slog"
 )
 
 const listPage = 200 // store.ListFlat maximum page size
 
-// EventCycle is the full set of domain.EventType values used by the dev ticker, in display order.
-// Keep in sync with pkgs/tasks/domain/enums.go (every EventType exactly once).
+// EventCycle is the full set of taskeventsdomain.EventType values used by the dev ticker, in display order.
+// Keep in sync with taskevents/domain event types (every EventType exactly once).
 // Index 0 is chosen when len(events)%len(cycle)==0; index 1 is the first tick after task_created.
-var EventCycle = []domain.EventType{
-	domain.EventTaskCreated,
-	domain.EventStatusChanged,
-	domain.EventPriorityChanged,
-	domain.EventPromptAppended,
-	domain.EventMessageAdded,
-	domain.EventContextAdded,
-	domain.EventConstraintAdded,
-	domain.EventSuccessCriterionAdded,
-	domain.EventNonGoalAdded,
-	domain.EventPlanAdded,
-	domain.EventChecklistItemAdded,
-	domain.EventChecklistItemToggled,
-	domain.EventChecklistItemUpdated,
-	domain.EventChecklistItemRemoved,
-	domain.EventArtifactAdded,
-	domain.EventApprovalRequested,
-	domain.EventApprovalGranted,
-	domain.EventTaskCompleted,
-	domain.EventTaskFailed,
-	domain.EventSyncPing,
+var EventCycle = []taskeventsdomain.EventType{
+	taskeventsdomain.EventTaskCreated,
+	taskeventsdomain.EventStatusChanged,
+	taskeventsdomain.EventPriorityChanged,
+	taskeventsdomain.EventPromptAppended,
+	taskeventsdomain.EventMessageAdded,
+	taskeventsdomain.EventContextAdded,
+	taskeventsdomain.EventConstraintAdded,
+	taskeventsdomain.EventSuccessCriterionAdded,
+	taskeventsdomain.EventNonGoalAdded,
+	taskeventsdomain.EventPlanAdded,
+	taskeventsdomain.EventChecklistItemAdded,
+	taskeventsdomain.EventChecklistItemToggled,
+	taskeventsdomain.EventChecklistItemUpdated,
+	taskeventsdomain.EventChecklistItemRemoved,
+	taskeventsdomain.EventArtifactAdded,
+	taskeventsdomain.EventApprovalRequested,
+	taskeventsdomain.EventApprovalGranted,
+	taskeventsdomain.EventTaskCompleted,
+	taskeventsdomain.EventTaskFailed,
+	taskeventsdomain.EventSyncPing,
 }
 
-func samplePayloadForType(typ domain.EventType) ([]byte, error) {
+func samplePayloadForType(typ taskeventsdomain.EventType) ([]byte, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "devsim.samplePayloadForType", "type", typ)
 	if f, ok := samplePayloadByType[typ]; ok {
 		return f()
@@ -47,16 +47,16 @@ func samplePayloadForType(typ domain.EventType) ([]byte, error) {
 	return json.Marshal(map[string]string{"dev_sample": string(typ)})
 }
 
-func nextEventTypeFromCount(n int64) domain.EventType {
+func nextEventTypeFromCount(n int64) taskeventsdomain.EventType {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "devsim.nextEventTypeFromCount")
 	if len(EventCycle) == 0 {
-		return domain.EventSyncPing
+		return taskeventsdomain.EventSyncPing
 	}
 	idx := int(n % int64(len(EventCycle)))
 	return EventCycle[idx]
 }
 
-func persistSampleEvent(ctx context.Context, st *store.Store, t *domain.Task, opts Options, publish func(ChangeKind, string)) error {
+func persistSampleEvent(ctx context.Context, st *store.Store, t *taskcoredomain.Task, opts Options, publish func(ChangeKind, string)) error {
 	if st == nil || t == nil {
 		return errors.New("store or task nil")
 	}
@@ -72,7 +72,7 @@ func persistSampleEvent(ctx context.Context, st *store.Store, t *domain.Task, op
 	if err != nil {
 		return err
 	}
-	if err := st.AppendTaskEvent(ctx, t.ID, typ, domain.ActorAgent, payload); err != nil {
+	if err := st.AppendTaskEvent(ctx, t.ID, typ, taskcoredomain.ActorAgent, payload); err != nil {
 		return err
 	}
 	if opts.SyncTaskRow {
@@ -81,7 +81,7 @@ func persistSampleEvent(ctx context.Context, st *store.Store, t *domain.Task, op
 				"task_id", t.ID, "type", typ, "err", err)
 		}
 	}
-	if opts.UserResponse && domain.EventTypeAcceptsUserResponse(typ) {
+	if opts.UserResponse && taskeventsdomain.EventTypeAcceptsUserResponse(typ) {
 		seq, err := st.LastEventSeq(ctx, t.ID)
 		if err != nil {
 			return err
@@ -90,10 +90,10 @@ func persistSampleEvent(ctx context.Context, st *store.Store, t *domain.Task, op
 			return errors.New("no events after append")
 		}
 		msg := "Synthetic user reply (devsim)."
-		if typ == domain.EventTaskFailed {
+		if typ == taskeventsdomain.EventTaskFailed {
 			msg = "Synthetic triage note (devsim)."
 		}
-		if err := st.AppendTaskEventResponseMessage(ctx, t.ID, seq, msg, domain.ActorUser); err != nil {
+		if err := st.AppendTaskEventResponseMessage(ctx, t.ID, seq, msg, taskcoredomain.ActorUser); err != nil {
 			slog.Debug("sse dev user_response skipped", "cmd", calltrace.LogCmd, "operation", "devsim.user_response",
 				"task_id", t.ID, "seq", seq, "err", err)
 		}

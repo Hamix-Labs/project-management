@@ -3,14 +3,15 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
+	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 	"io"
 	"net/http"
 	"strconv"
 	"strings"
 	"testing"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 // doCyclesRequest issues a request with X-Actor: agent (cycle/phase mutations
@@ -65,10 +66,10 @@ func TestHTTP_postTaskCycle_creates_running_cycle(t *testing.T) {
 	if got.AttemptSeq != 1 {
 		t.Fatalf("attempt_seq=%d want 1", got.AttemptSeq)
 	}
-	if got.Status != domain.CycleStatusRunning {
+	if got.Status != cyclesdomain.CycleStatusRunning {
 		t.Fatalf("status=%s want running", got.Status)
 	}
-	if got.TriggeredBy != domain.ActorAgent {
+	if got.TriggeredBy != taskcoredomain.ActorAgent {
 		t.Fatalf("triggered_by=%s want agent (X-Actor header)", got.TriggeredBy)
 	}
 	if got.EndedAt != nil {
@@ -180,13 +181,13 @@ func TestHTTP_getTaskCycleStream_crossTaskCycleIsNotFound(t *testing.T) {
 	}
 }
 
-func mustCreateCycleWithExecutePhase(t *testing.T, st *store.Store, ctx context.Context, taskID string) (*domain.TaskCycle, *domain.TaskCyclePhase) {
+func mustCreateCycleWithExecutePhase(t *testing.T, st *store.Store, ctx context.Context, taskID string) (*cyclesdomain.TaskCycle, *cyclesdomain.TaskCyclePhase) {
 	t.Helper()
-	cycle, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: taskID, TriggeredBy: domain.ActorAgent})
+	cycle, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: taskID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatalf("start cycle: %v", err)
 	}
-	phase, err := st.StartPhase(ctx, cycle.ID, domain.PhaseExecute, domain.ActorAgent)
+	phase, err := st.StartPhase(ctx, cycle.ID, cyclesdomain.PhaseExecute, taskcoredomain.ActorAgent)
 	if err != nil {
 		t.Fatalf("start execute: %v", err)
 	}
@@ -265,13 +266,13 @@ func TestHTTP_getTaskCycle_embeds_phases(t *testing.T) {
 	if len(got.Phases) != 2 {
 		t.Fatalf("phases=%d want 2 body=%s", len(got.Phases), raw)
 	}
-	if got.Phases[0].Phase != domain.PhaseExecute || got.Phases[0].PhaseSeq != 1 {
+	if got.Phases[0].Phase != cyclesdomain.PhaseExecute || got.Phases[0].PhaseSeq != 1 {
 		t.Fatalf("phases[0] %#v want execute seq 1", got.Phases[0])
 	}
-	if got.Phases[1].Phase != domain.PhaseVerify || got.Phases[1].PhaseSeq != 2 {
+	if got.Phases[1].Phase != cyclesdomain.PhaseVerify || got.Phases[1].PhaseSeq != 2 {
 		t.Fatalf("phases[1] %#v want verify seq 2", got.Phases[1])
 	}
-	if got.Phases[0].Status != domain.PhaseStatusSucceeded || got.Phases[0].Summary == nil || *got.Phases[0].Summary != "ok" {
+	if got.Phases[0].Status != cyclesdomain.PhaseStatusSucceeded || got.Phases[0].Summary == nil || *got.Phases[0].Summary != "ok" {
 		t.Fatalf("phases[0] terminal state %#v", got.Phases[0])
 	}
 	if got.Phases[0].EventSeq == nil || got.Phases[1].EventSeq == nil {
@@ -298,7 +299,7 @@ func TestHTTP_patchTaskCycle_terminates_and_returns_terminal_state(t *testing.T)
 	if err := json.Unmarshal(raw, &got); err != nil {
 		t.Fatal(err)
 	}
-	if got.Status != domain.CycleStatusFailed {
+	if got.Status != cyclesdomain.CycleStatusFailed {
 		t.Fatalf("status=%s want failed", got.Status)
 	}
 	if got.EndedAt == nil {
@@ -324,7 +325,7 @@ func TestHTTP_postTaskCyclePhase_starts_running_phase(t *testing.T) {
 	if err := json.Unmarshal(raw, &got); err != nil {
 		t.Fatal(err)
 	}
-	if got.Phase != domain.PhaseExecute || got.PhaseSeq != 1 || got.Status != domain.PhaseStatusRunning {
+	if got.Phase != cyclesdomain.PhaseExecute || got.PhaseSeq != 1 || got.Status != cyclesdomain.PhaseStatusRunning {
 		t.Fatalf("phase create %#v", got)
 	}
 	if got.EndedAt != nil {
@@ -362,7 +363,7 @@ func TestHTTP_patchTaskCyclePhase_completes_with_summary_and_details(t *testing.
 	if err := json.Unmarshal(raw, &got); err != nil {
 		t.Fatal(err)
 	}
-	if got.Status != domain.PhaseStatusSucceeded {
+	if got.Status != cyclesdomain.PhaseStatusSucceeded {
 		t.Fatalf("status=%s want succeeded", got.Status)
 	}
 	if got.Summary == nil || *got.Summary != "applied the change" {
@@ -411,27 +412,27 @@ func TestHTTP_cycle_routes_appendMirrorEvents_into_audit_log(t *testing.T) {
 	}
 	type httpTaskEventsResponse struct {
 		Events []struct {
-			Type domain.EventType `json:"type"`
+			Type taskeventsdomain.EventType `json:"type"`
 		} `json:"events"`
 	}
 	var got httpTaskEventsResponse
 	if err := json.Unmarshal(raw, &got); err != nil {
 		t.Fatalf("decode events: %v body=%s", err, raw)
 	}
-	wantTypes := []domain.EventType{
-		domain.EventTaskCreated,
-		domain.EventChecklistItemAdded,
-		domain.EventCycleStarted,
-		domain.EventPhaseStarted,
-		domain.EventPhaseCompleted,
-		domain.EventCycleCompleted,
+	wantTypes := []taskeventsdomain.EventType{
+		taskeventsdomain.EventTaskCreated,
+		taskeventsdomain.EventChecklistItemAdded,
+		taskeventsdomain.EventCycleStarted,
+		taskeventsdomain.EventPhaseStarted,
+		taskeventsdomain.EventPhaseCompleted,
+		taskeventsdomain.EventCycleCompleted,
 	}
 	if len(got.Events) != len(wantTypes) {
 		t.Fatalf("events=%d want %d body=%s", len(got.Events), len(wantTypes), raw)
 	}
 	for i, want := range wantTypes {
 		if got.Events[i].Type != want {
-			gotTypes := make([]domain.EventType, len(got.Events))
+			gotTypes := make([]taskeventsdomain.EventType, len(got.Events))
 			for j, e := range got.Events {
 				gotTypes[j] = e.Type
 			}

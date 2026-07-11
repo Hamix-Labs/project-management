@@ -4,10 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"strings"
 	"testing"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 // TestNormalizeJSONObject_trimsLeadingAndTrailingWhitespace pins the
@@ -99,8 +98,8 @@ func TestNormalizeJSONObject_rejectsNonObjects(t *testing.T) {
 			if err == nil {
 				t.Fatalf("NormalizeJSONObject(%q) must reject non-object input", tc.in)
 			}
-			if !errors.Is(err, domain.ErrInvalidInput) {
-				t.Errorf("error must wrap domain.ErrInvalidInput so handlers map to 400; got %v", err)
+			if !errors.Is(err, taskcoredomain.ErrInvalidInput) {
+				t.Errorf("error must wrap taskcoredomain.ErrInvalidInput so handlers map to 400; got %v", err)
 			}
 			if !strings.Contains(err.Error(), "field") {
 				t.Errorf("error must include the field name to aid debugging; got %v", err)

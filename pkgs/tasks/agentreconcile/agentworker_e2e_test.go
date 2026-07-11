@@ -12,7 +12,9 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/runnerfake"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/worker"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
+	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
@@ -44,10 +46,10 @@ func TestAgentWorkerE2E_readyTaskRunsThroughReconcileAndWorker(t *testing.T) {
 	tsk, err := st.Create(rootCtx, store.CreateTaskInput{
 		Title:         "e2e",
 		InitialPrompt: "do the thing",
-		Status:        domain.StatusReady,
-		Priority:      domain.PriorityMedium,
+		Status:        taskcoredomain.StatusReady,
+		Priority:      taskcoredomain.PriorityMedium,
 		WorktreeID:    &wtID,
-	}, domain.ActorUser)
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("create ready task: %v", err)
 	}
@@ -57,8 +59,8 @@ func TestAgentWorkerE2E_readyTaskRunsThroughReconcileAndWorker(t *testing.T) {
 	}
 
 	r := runnerfake.New().WithName("fake")
-	r.Script(tsk.ID, domain.PhaseExecute, runner.NewResult(
-		domain.PhaseStatusSucceeded, "all green",
+	r.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(
+		cyclesdomain.PhaseStatusSucceeded, "all green",
 		json.RawMessage(`{"ok":true}`), "",
 	))
 
@@ -81,7 +83,7 @@ func TestAgentWorkerE2E_readyTaskRunsThroughReconcileAndWorker(t *testing.T) {
 		workerDone <- w.Run(workerCtx)
 	}()
 
-	waitTaskStatusE2E(t, rootCtx, st, tsk.ID, domain.StatusDone)
+	waitTaskStatusE2E(t, rootCtx, st, tsk.ID, taskcoredomain.StatusDone)
 
 	// Let the worker complete its post-TerminateCycle writes
 	// (transitionTask + AckAfterRecv) before snapshotting queue state.
@@ -98,8 +100,8 @@ func TestAgentWorkerE2E_readyTaskRunsThroughReconcileAndWorker(t *testing.T) {
 	if len(cycles) != 1 {
 		t.Fatalf("cycle count = %d, want 1", len(cycles))
 	}
-	if cycles[0].Status != domain.CycleStatusSucceeded {
-		t.Fatalf("cycle status = %q, want %q", cycles[0].Status, domain.CycleStatusSucceeded)
+	if cycles[0].Status != cyclesdomain.CycleStatusSucceeded {
+		t.Fatalf("cycle status = %q, want %q", cycles[0].Status, cyclesdomain.CycleStatusSucceeded)
 	}
 
 	phases, err := st.ListPhasesForCycle(rootCtx, cycles[0].ID)
@@ -109,7 +111,7 @@ func TestAgentWorkerE2E_readyTaskRunsThroughReconcileAndWorker(t *testing.T) {
 	if len(phases) != 1 {
 		t.Fatalf("phase count = %d, want 1 (execute)", len(phases))
 	}
-	if phases[0].Phase != domain.PhaseExecute || phases[0].Status != domain.PhaseStatusSucceeded {
+	if phases[0].Phase != cyclesdomain.PhaseExecute || phases[0].Status != cyclesdomain.PhaseStatusSucceeded {
 		t.Fatalf("phase[0] = %q/%q, want execute/succeeded", phases[0].Phase, phases[0].Status)
 	}
 
@@ -117,11 +119,11 @@ func TestAgentWorkerE2E_readyTaskRunsThroughReconcileAndWorker(t *testing.T) {
 	if err != nil {
 		t.Fatalf("list events: %v", err)
 	}
-	wantTypes := []domain.EventType{
-		domain.EventCycleStarted,
-		domain.EventPhaseStarted,
-		domain.EventPhaseCompleted,
-		domain.EventCycleCompleted,
+	wantTypes := []taskeventsdomain.EventType{
+		taskeventsdomain.EventCycleStarted,
+		taskeventsdomain.EventPhaseStarted,
+		taskeventsdomain.EventPhaseCompleted,
+		taskeventsdomain.EventCycleCompleted,
 	}
 	gotSubset := filterEventTypes(events, wantTypes)
 	if !sameOrderedTypes(gotSubset, wantTypes) {
@@ -155,17 +157,17 @@ func TestAgentWorkerE2E_worktreeBinding(t *testing.T) {
 	tsk, err := st.Create(rootCtx, store.CreateTaskInput{
 		Title:         "e2e-wb",
 		InitialPrompt: "via association",
-		Status:        domain.StatusReady,
-		Priority:      domain.PriorityMedium,
+		Status:        taskcoredomain.StatusReady,
+		Priority:      taskcoredomain.PriorityMedium,
 		WorktreeID:    &wtID,
-	}, domain.ActorUser)
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("create ready task: %v", err)
 	}
 
 	r := runnerfake.New().WithName("fake")
-	r.Script(tsk.ID, domain.PhaseExecute, runner.NewResult(
-		domain.PhaseStatusSucceeded, "all green",
+	r.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(
+		cyclesdomain.PhaseStatusSucceeded, "all green",
 		json.RawMessage(`{"ok":true}`), "",
 	))
 
@@ -188,7 +190,7 @@ func TestAgentWorkerE2E_worktreeBinding(t *testing.T) {
 		workerDone <- w.Run(workerCtx)
 	}()
 
-	waitTaskStatusE2E(t, rootCtx, st, tsk.ID, domain.StatusDone)
+	waitTaskStatusE2E(t, rootCtx, st, tsk.ID, taskcoredomain.StatusDone)
 	time.Sleep(e2eIdleSettleWindow)
 
 	workerCancel()
@@ -214,31 +216,31 @@ func TestAgentWorkerE2E_sameWorktreeSequential(t *testing.T) {
 	taskA, err := st.Create(rootCtx, store.CreateTaskInput{
 		Title:         "task-a",
 		InitialPrompt: "first",
-		Status:        domain.StatusReady,
-		Priority:      domain.PriorityMedium,
+		Status:        taskcoredomain.StatusReady,
+		Priority:      taskcoredomain.PriorityMedium,
 		WorktreeID:    &wtID,
-	}, domain.ActorUser)
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("create task A: %v", err)
 	}
 	taskB, err := st.Create(rootCtx, store.CreateTaskInput{
 		Title:         "task-b",
 		InitialPrompt: "second",
-		Status:        domain.StatusReady,
-		Priority:      domain.PriorityMedium,
+		Status:        taskcoredomain.StatusReady,
+		Priority:      taskcoredomain.PriorityMedium,
 		WorktreeID:    &wtID,
-	}, domain.ActorUser)
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("create task B: %v", err)
 	}
 
 	r := runnerfake.New().WithName("fake")
-	r.Script(taskA.ID, domain.PhaseExecute, runner.NewResult(
-		domain.PhaseStatusSucceeded, "a ok",
+	r.Script(taskA.ID, cyclesdomain.PhaseExecute, runner.NewResult(
+		cyclesdomain.PhaseStatusSucceeded, "a ok",
 		json.RawMessage(`{"ok":true}`), "",
 	))
-	r.Script(taskB.ID, domain.PhaseExecute, runner.NewResult(
-		domain.PhaseStatusSucceeded, "b ok",
+	r.Script(taskB.ID, cyclesdomain.PhaseExecute, runner.NewResult(
+		cyclesdomain.PhaseStatusSucceeded, "b ok",
 		json.RawMessage(`{"ok":true}`), "",
 	))
 
@@ -259,8 +261,8 @@ func TestAgentWorkerE2E_sameWorktreeSequential(t *testing.T) {
 		workerDone <- w.Run(workerCtx)
 	}()
 
-	waitTaskStatusE2E(t, rootCtx, st, taskA.ID, domain.StatusDone)
-	waitTaskStatusE2E(t, rootCtx, st, taskB.ID, domain.StatusDone)
+	waitTaskStatusE2E(t, rootCtx, st, taskA.ID, taskcoredomain.StatusDone)
+	waitTaskStatusE2E(t, rootCtx, st, taskB.ID, taskcoredomain.StatusDone)
 
 	calls := r.Calls()
 	if len(calls) != 2 {
@@ -291,31 +293,31 @@ func TestAgentWorkerE2E_differentWorktreesParallel(t *testing.T) {
 	taskA, err := st.Create(rootCtx, store.CreateTaskInput{
 		Title:         "parallel-a",
 		InitialPrompt: "on wt a",
-		Status:        domain.StatusReady,
-		Priority:      domain.PriorityMedium,
+		Status:        taskcoredomain.StatusReady,
+		Priority:      taskcoredomain.PriorityMedium,
 		WorktreeID:    &wtA,
-	}, domain.ActorUser)
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("create task A: %v", err)
 	}
 	taskB, err := st.Create(rootCtx, store.CreateTaskInput{
 		Title:         "parallel-b",
 		InitialPrompt: "on wt b",
-		Status:        domain.StatusReady,
-		Priority:      domain.PriorityMedium,
+		Status:        taskcoredomain.StatusReady,
+		Priority:      taskcoredomain.PriorityMedium,
 		WorktreeID:    &wtB,
-	}, domain.ActorUser)
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("create task B: %v", err)
 	}
 
 	r := runnerfake.New().WithName("fake")
-	r.Script(taskA.ID, domain.PhaseExecute, runner.NewResult(
-		domain.PhaseStatusSucceeded, "a ok",
+	r.Script(taskA.ID, cyclesdomain.PhaseExecute, runner.NewResult(
+		cyclesdomain.PhaseStatusSucceeded, "a ok",
 		json.RawMessage(`{"ok":true}`), "",
 	))
-	r.Script(taskB.ID, domain.PhaseExecute, runner.NewResult(
-		domain.PhaseStatusSucceeded, "b ok",
+	r.Script(taskB.ID, cyclesdomain.PhaseExecute, runner.NewResult(
+		cyclesdomain.PhaseStatusSucceeded, "b ok",
 		json.RawMessage(`{"ok":true}`), "",
 	))
 
@@ -336,8 +338,8 @@ func TestAgentWorkerE2E_differentWorktreesParallel(t *testing.T) {
 		workerDone <- pool.Run(workerCtx)
 	}()
 
-	waitTaskStatusE2E(t, rootCtx, st, taskA.ID, domain.StatusDone)
-	waitTaskStatusE2E(t, rootCtx, st, taskB.ID, domain.StatusDone)
+	waitTaskStatusE2E(t, rootCtx, st, taskA.ID, taskcoredomain.StatusDone)
+	waitTaskStatusE2E(t, rootCtx, st, taskB.ID, taskcoredomain.StatusDone)
 
 	calls := r.Calls()
 	if len(calls) != 2 {
@@ -365,34 +367,34 @@ func TestAgentWorkerE2E_dependencyBlocksUntilUpstreamDone(t *testing.T) {
 	upstream, err := st.Create(rootCtx, store.CreateTaskInput{
 		Title:         "upstream",
 		InitialPrompt: "first",
-		Status:        domain.StatusReady,
-		Priority:      domain.PriorityMedium,
+		Status:        taskcoredomain.StatusReady,
+		Priority:      taskcoredomain.PriorityMedium,
 		WorktreeID:    &wtID,
-	}, domain.ActorUser)
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("create upstream: %v", err)
 	}
 	dependent, err := st.Create(rootCtx, store.CreateTaskInput{
 		Title:         "dependent",
 		InitialPrompt: "after upstream",
-		Status:        domain.StatusReady,
-		Priority:      domain.PriorityMedium,
+		Status:        taskcoredomain.StatusReady,
+		Priority:      taskcoredomain.PriorityMedium,
 		WorktreeID:    &wtID,
-	}, domain.ActorUser)
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("create dependent: %v", err)
 	}
-	if err := st.AddTaskDependency(rootCtx, dependent.ID, upstream.ID, domain.DependencySatisfiesDone); err != nil {
+	if err := st.AddTaskDependency(rootCtx, dependent.ID, upstream.ID, taskcoredomain.DependencySatisfiesDone); err != nil {
 		t.Fatalf("add dependency: %v", err)
 	}
 
 	r := runnerfake.New().WithName("fake")
-	r.Script(upstream.ID, domain.PhaseExecute, runner.NewResult(
-		domain.PhaseStatusSucceeded, "upstream ok",
+	r.Script(upstream.ID, cyclesdomain.PhaseExecute, runner.NewResult(
+		cyclesdomain.PhaseStatusSucceeded, "upstream ok",
 		json.RawMessage(`{"ok":true}`), "",
 	))
-	r.Script(dependent.ID, domain.PhaseExecute, runner.NewResult(
-		domain.PhaseStatusSucceeded, "dependent ok",
+	r.Script(dependent.ID, cyclesdomain.PhaseExecute, runner.NewResult(
+		cyclesdomain.PhaseStatusSucceeded, "dependent ok",
 		json.RawMessage(`{"ok":true}`), "",
 	))
 
@@ -413,8 +415,8 @@ func TestAgentWorkerE2E_dependencyBlocksUntilUpstreamDone(t *testing.T) {
 		workerDone <- w.Run(workerCtx)
 	}()
 
-	waitTaskStatusE2E(t, rootCtx, st, upstream.ID, domain.StatusDone)
-	waitTaskStatusE2E(t, rootCtx, st, dependent.ID, domain.StatusDone)
+	waitTaskStatusE2E(t, rootCtx, st, upstream.ID, taskcoredomain.StatusDone)
+	waitTaskStatusE2E(t, rootCtx, st, dependent.ID, taskcoredomain.StatusDone)
 
 	calls := r.Calls()
 	if len(calls) != 2 {
@@ -435,7 +437,7 @@ func TestAgentWorkerE2E_dependencyBlocksUntilUpstreamDone(t *testing.T) {
 	<-reconcileDone
 }
 
-func waitTaskStatusE2E(t *testing.T, ctx context.Context, st *store.Store, taskID string, want domain.Status) {
+func waitTaskStatusE2E(t *testing.T, ctx context.Context, st *store.Store, taskID string, want taskcoredomain.Status) {
 	t.Helper()
 	deadline := time.Now().Add(e2ePollTimeout)
 	for time.Now().Before(deadline) {
@@ -446,7 +448,7 @@ func waitTaskStatusE2E(t *testing.T, ctx context.Context, st *store.Store, taskI
 		time.Sleep(e2ePollInterval)
 	}
 	got, _ := st.Get(ctx, taskID)
-	gotStatus := domain.Status("")
+	gotStatus := taskcoredomain.Status("")
 	if got != nil {
 		gotStatus = got.Status
 	}
@@ -455,12 +457,12 @@ func waitTaskStatusE2E(t *testing.T, ctx context.Context, st *store.Store, taskI
 
 // filterEventTypes returns the subsequence of evs whose types appear in
 // the want set, preserving event order.
-func filterEventTypes(evs []domain.TaskEvent, want []domain.EventType) []domain.EventType {
-	wantSet := make(map[domain.EventType]bool, len(want))
+func filterEventTypes(evs []taskeventsdomain.TaskEvent, want []taskeventsdomain.EventType) []taskeventsdomain.EventType {
+	wantSet := make(map[taskeventsdomain.EventType]bool, len(want))
 	for _, w := range want {
 		wantSet[w] = true
 	}
-	out := make([]domain.EventType, 0, len(evs))
+	out := make([]taskeventsdomain.EventType, 0, len(evs))
 	for _, e := range evs {
 		if wantSet[e.Type] {
 			out = append(out, e.Type)
@@ -469,7 +471,7 @@ func filterEventTypes(evs []domain.TaskEvent, want []domain.EventType) []domain.
 	return out
 }
 
-func sameOrderedTypes(got, want []domain.EventType) bool {
+func sameOrderedTypes(got, want []taskeventsdomain.EventType) bool {
 	if len(got) != len(want) {
 		return false
 	}
@@ -481,8 +483,8 @@ func sameOrderedTypes(got, want []domain.EventType) bool {
 	return true
 }
 
-func eventTypes(evs []domain.TaskEvent) []domain.EventType {
-	out := make([]domain.EventType, len(evs))
+func eventTypes(evs []taskeventsdomain.TaskEvent) []taskeventsdomain.EventType {
+	out := make([]taskeventsdomain.EventType, len(evs))
 	for i, e := range evs {
 		out[i] = e.Type
 	}

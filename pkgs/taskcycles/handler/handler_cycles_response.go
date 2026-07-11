@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"log/slog"
 
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 // jsonObjectMessageEmpty is the canonical "{}" RawMessage emitted by the
@@ -41,7 +42,7 @@ func normalizeJSONObjectForResponse(raw []byte) json.RawMessage {
 // response shape. Meta is normalized to "{}" if the column came back as
 // nil / empty / whitespace / null / a scalar / an array / malformed JSON,
 // matching the docs/api.md "always a JSON object" invariant.
-func taskCycleResponseFromDomain(c *domain.TaskCycle) taskCycleResponse {
+func taskCycleResponseFromDomain(c *cyclesdomain.TaskCycle) taskCycleResponse {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.taskCycleResponseFromDomain")
 	meta := normalizeJSONObjectForResponse(c.MetaJSON)
 	return taskCycleResponse{
@@ -51,7 +52,7 @@ func taskCycleResponseFromDomain(c *domain.TaskCycle) taskCycleResponse {
 		Status:        c.Status,
 		StartedAt:     c.StartedAt,
 		EndedAt:       c.EndedAt,
-		TriggeredBy:   domain.Actor(c.TriggeredBy),
+		TriggeredBy:   taskcoredomain.Actor(c.TriggeredBy),
 		ParentCycleID: c.ParentCycleID,
 		Meta:          meta,
 		CycleMeta:     projectCycleMeta(meta),
@@ -85,7 +86,7 @@ func projectCycleMeta(meta json.RawMessage) cycleMetaProjection {
 // taskCyclePhaseResponseFromDomain copies a TaskCyclePhase row into the
 // JSON response shape. Details is normalized via the same chokepoint as
 // Meta — see taskCycleResponseFromDomain.
-func taskCyclePhaseResponseFromDomain(p *domain.TaskCyclePhase) taskCyclePhaseResponse {
+func taskCyclePhaseResponseFromDomain(p *cyclesdomain.TaskCyclePhase) taskCyclePhaseResponse {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.taskCyclePhaseResponseFromDomain")
 	details := normalizeJSONObjectForResponse(p.DetailsJSON)
 	return taskCyclePhaseResponse{
@@ -104,7 +105,7 @@ func taskCyclePhaseResponseFromDomain(p *domain.TaskCyclePhase) taskCyclePhaseRe
 
 // taskCycleDetailFromDomain assembles the GET /tasks/{id}/cycles/{cycleId}
 // envelope: cycle fields inlined plus phases in execution order.
-func taskCycleDetailFromDomain(c *domain.TaskCycle, phases []domain.TaskCyclePhase) taskCycleDetailResponse {
+func taskCycleDetailFromDomain(c *cyclesdomain.TaskCycle, phases []cyclesdomain.TaskCyclePhase) taskCycleDetailResponse {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.taskCycleDetailFromDomain")
 	meta := normalizeJSONObjectForResponse(c.MetaJSON)
 	out := taskCycleDetailResponse{
@@ -114,7 +115,7 @@ func taskCycleDetailFromDomain(c *domain.TaskCycle, phases []domain.TaskCyclePha
 		Status:        c.Status,
 		StartedAt:     c.StartedAt,
 		EndedAt:       c.EndedAt,
-		TriggeredBy:   domain.Actor(c.TriggeredBy),
+		TriggeredBy:   taskcoredomain.Actor(c.TriggeredBy),
 		ParentCycleID: c.ParentCycleID,
 		Meta:          meta,
 		CycleMeta:     projectCycleMeta(meta),
@@ -126,7 +127,7 @@ func taskCycleDetailFromDomain(c *domain.TaskCycle, phases []domain.TaskCyclePha
 	return out
 }
 
-func cycleCriteriaReportFromDomain(r *domain.TaskCycleCriteriaReport) cycleCriteriaReportEntry {
+func cycleCriteriaReportFromDomain(r *cyclesdomain.TaskCycleCriteriaReport) cycleCriteriaReportEntry {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.cycleCriteriaReportFromDomain")
 	return cycleCriteriaReportEntry{
 		ID:          r.ID,
@@ -139,7 +140,7 @@ func cycleCriteriaReportFromDomain(r *domain.TaskCycleCriteriaReport) cycleCrite
 	}
 }
 
-func cycleVerifyReportFromDomain(r *domain.TaskCycleVerifyReport) cycleVerifyReportEntry {
+func cycleVerifyReportFromDomain(r *cyclesdomain.TaskCycleVerifyReport) cycleVerifyReportEntry {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.cycleVerifyReportFromDomain")
 	return cycleVerifyReportEntry{
 		ID:           r.ID,
@@ -153,7 +154,7 @@ func cycleVerifyReportFromDomain(r *domain.TaskCycleVerifyReport) cycleVerifyRep
 	}
 }
 
-func cycleCommandRunFromDomain(r *domain.TaskCycleCommandRun) cycleCommandRunEntry {
+func cycleCommandRunFromDomain(r *cyclesdomain.TaskCycleCommandRun) cycleCommandRunEntry {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.cycleCommandRunFromDomain")
 	return cycleCommandRunEntry{
 		ID:          r.ID,
@@ -167,7 +168,7 @@ func cycleCommandRunFromDomain(r *domain.TaskCycleCommandRun) cycleCommandRunEnt
 	}
 }
 
-func cycleCommitFromDomain(r *domain.TaskCycleCommit) cycleCommitEntry {
+func cycleCommitFromDomain(r *cyclesdomain.TaskCycleCommit) cycleCommitEntry {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.cycleCommitFromDomain")
 	return cycleCommitEntry{
 		Seq:         r.Seq,
@@ -181,7 +182,7 @@ func cycleCommitFromDomain(r *domain.TaskCycleCommit) cycleCommitEntry {
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func cycleGitContextFromCommits(rows []domain.TaskCycleCommit) *cycleGitContextResponse {
+func cycleGitContextFromCommits(rows []cyclesdomain.TaskCycleCommit) *cycleGitContextResponse {
 	if len(rows) == 0 {
 		return nil
 	}
@@ -197,7 +198,7 @@ func cycleGitContextFromCommits(rows []domain.TaskCycleCommit) *cycleGitContextR
 	}
 }
 
-func taskCycleStreamEventResponseFromDomain(ev *domain.TaskCycleStreamEvent) taskCycleStreamEventResponse {
+func taskCycleStreamEventResponseFromDomain(ev *cyclesdomain.TaskCycleStreamEvent) taskCycleStreamEventResponse {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.taskCycleStreamEventResponseFromDomain")
 	return taskCycleStreamEventResponse{
 		ID:        ev.ID,

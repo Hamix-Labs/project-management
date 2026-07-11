@@ -3,13 +3,12 @@ package repo
 import (
 	"errors"
 	"fmt"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"io/fs"
 	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 const (
@@ -30,22 +29,22 @@ func OpenRoot(dir string) (*Root, error) {
 	slog.Debug("trace", "operation", "repo.OpenRoot")
 	dir = strings.TrimSpace(dir)
 	if dir == "" {
-		return nil, fmt.Errorf("%w: repo root is empty", domain.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: repo root is empty", taskcoredomain.ErrInvalidInput)
 	}
 	abs, err := filepath.Abs(dir)
 	if err != nil {
-		return nil, fmt.Errorf("%w: repo root: %v", domain.ErrInvalidInput, err)
+		return nil, fmt.Errorf("%w: repo root: %v", taskcoredomain.ErrInvalidInput, err)
 	}
 	fi, err := os.Stat(abs)
 	if err != nil {
-		return nil, fmt.Errorf("%w: repo root: %v", domain.ErrInvalidInput, err)
+		return nil, fmt.Errorf("%w: repo root: %v", taskcoredomain.ErrInvalidInput, err)
 	}
 	if !fi.IsDir() {
-		return nil, fmt.Errorf("%w: repo root is not a directory", domain.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: repo root is not a directory", taskcoredomain.ErrInvalidInput)
 	}
 	canon, err := filepath.EvalSymlinks(abs)
 	if err != nil {
-		return nil, fmt.Errorf("%w: repo root symlink resolution: %v", domain.ErrInvalidInput, err)
+		return nil, fmt.Errorf("%w: repo root symlink resolution: %v", taskcoredomain.ErrInvalidInput, err)
 	}
 	return &Root{abs: abs, canon: filepath.Clean(canon)}, nil
 }
@@ -79,7 +78,7 @@ func (r *Root) Resolve(rel string) (string, error) {
 	rel = filepath.ToSlash(rel)
 	rel = strings.TrimPrefix(rel, "/")
 	if rel == "" {
-		return "", fmt.Errorf("%w: invalid path", domain.ErrInvalidInput)
+		return "", fmt.Errorf("%w: invalid path", taskcoredomain.ErrInvalidInput)
 	}
 	// Reject only when ".." appears as its own path component
 	// (a parent-directory traversal). The previous broad
@@ -90,7 +89,7 @@ func (r *Root) Resolve(rel string) (string, error) {
 	// survives Clean (e.g. "../outside" → "..", "a/../../b" → "../b").
 	for _, seg := range strings.Split(rel, "/") {
 		if seg == ".." {
-			return "", fmt.Errorf("%w: invalid path", domain.ErrInvalidInput)
+			return "", fmt.Errorf("%w: invalid path", taskcoredomain.ErrInvalidInput)
 		}
 	}
 	joined := filepath.Join(r.abs, filepath.FromSlash(rel))
@@ -98,15 +97,15 @@ func (r *Root) Resolve(rel string) (string, error) {
 	rootClean := filepath.Clean(r.abs)
 	relOut, err := filepath.Rel(rootClean, clean)
 	if err != nil || pathEscapesRoot(relOut) {
-		return "", fmt.Errorf("%w: path escapes repo root", domain.ErrInvalidInput)
+		return "", fmt.Errorf("%w: path escapes repo root", taskcoredomain.ErrInvalidInput)
 	}
 	targetCanonical, err := canonicalizePathForContainment(clean)
 	if err != nil {
-		return "", fmt.Errorf("%w: path canonicalization failed: %v", domain.ErrInvalidInput, err)
+		return "", fmt.Errorf("%w: path canonicalization failed: %v", taskcoredomain.ErrInvalidInput, err)
 	}
 	canonicalRel, err := filepath.Rel(r.canon, targetCanonical)
 	if err != nil || pathEscapesRoot(canonicalRel) {
-		return "", fmt.Errorf("%w: path escapes repo root via symlink", domain.ErrInvalidInput)
+		return "", fmt.Errorf("%w: path escapes repo root via symlink", taskcoredomain.ErrInvalidInput)
 	}
 	return clean, nil
 }
@@ -206,11 +205,11 @@ func (r *Root) ValidatePromptMentions(prompt string) error {
 	return nil
 }
 
-// invalidInputPrefix is the text form of domain.ErrInvalidInput as it
-// appears when stringified via fmt.Errorf("%w: ...", domain.ErrInvalidInput).
+// invalidInputPrefix is the text form of taskcoredomain.ErrInvalidInput as it
+// appears when stringified via fmt.Errorf("%w: ...", taskcoredomain.ErrInvalidInput).
 // Kept as a package var initialized once (rather than recomputed on every
 // wrap) since hot prompts can carry many mentions.
-var invalidInputPrefix = domain.ErrInvalidInput.Error() + ": "
+var invalidInputPrefix = taskcoredomain.ErrInvalidInput.Error() + ": "
 
 // wrapMention wraps cause with a single "tasks: invalid input: <label>: <reason>"
 // prefix. If cause already carries the "tasks: invalid input: " prefix (it
@@ -218,8 +217,8 @@ var invalidInputPrefix = domain.ErrInvalidInput.Error() + ": "
 // any other ErrInvalidInput-wrapped sink in this package), the duplicated
 // prefix is stripped from cause's message so clients see exactly one prefix
 // on the wire instead of the historical doubled "tasks: invalid input: mention
-// @<path>: tasks: invalid input: <reason>". errors.Is(err, domain.ErrInvalidInput)
-// remains true via the %w on domain.ErrInvalidInput, so all existing 400
+// @<path>: tasks: invalid input: <reason>". errors.Is(err, taskcoredomain.ErrInvalidInput)
+// remains true via the %w on taskcoredomain.ErrInvalidInput, so all existing 400
 // mappings in pkgs/tasks/handler/handler_http_json.go::storeErrorClientMessage
 // continue to fire unchanged.
 func wrapMention(label string, cause error) error {
@@ -233,7 +232,7 @@ func wrapMention(label string, cause error) error {
 // single shared format keeps the wire phrase identical across both code paths.
 func wrapMentionMsg(label, reason string) error {
 	slog.Debug("trace", "operation", "repo.wrapMentionMsg")
-	return fmt.Errorf("%w: %s: %s", domain.ErrInvalidInput, label, reason)
+	return fmt.Errorf("%w: %s: %s", taskcoredomain.ErrInvalidInput, label, reason)
 }
 
 // mentionLabel formats the human-readable "mention @<path>" or

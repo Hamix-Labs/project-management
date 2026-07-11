@@ -3,13 +3,13 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 	"io"
 	"net/http"
 	"strconv"
 	"strings"
 	"testing"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 // TestHTTP_taskEvents_fullListShape pins the documented full-list response
@@ -346,7 +346,7 @@ func TestHTTP_taskEvents_patchValidation(t *testing.T) {
 	}
 
 	// Append approval_requested at seq=2 so the next checks have a real target.
-	if err := st.AppendTaskEvent(context.Background(), task.ID, domain.EventApprovalRequested, domain.ActorAgent, []byte(`{}`)); err != nil {
+	if err := st.AppendTaskEvent(context.Background(), task.ID, taskeventsdomain.EventApprovalRequested, taskcoredomain.ActorAgent, []byte(`{}`)); err != nil {
 		t.Fatal(err)
 	}
 

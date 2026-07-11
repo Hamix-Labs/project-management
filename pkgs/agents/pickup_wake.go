@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/worker"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
@@ -213,7 +213,7 @@ func (w *PickupWakeScheduler) tryNotify(taskID string, now time.Time) {
 	}
 	ctx := context.Background()
 	t, err := w.st.Get(ctx, taskID)
-	if err != nil || t == nil || t.Status != domain.StatusReady {
+	if err != nil || t == nil || t.Status != taskcoredomain.StatusReady {
 		return
 	}
 	if !store.ShouldNotifyReadyNow(t.PickupNotBefore, now) {

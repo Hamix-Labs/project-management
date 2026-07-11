@@ -3,15 +3,15 @@ package harness
 import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 import (
 	"context"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"log/slog"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 // Resume continues an in-flight cycle after process interruption. The task
 // must already be StatusRunning and cycle must be StatusRunning. The worker
 // calls this after FinalizeInterruptedPhases and queue admission.
-func (h *Harness) Resume(parentCtx context.Context, task *domain.Task, cycle *domain.TaskCycle) {
+func (h *Harness) Resume(parentCtx context.Context, task *taskcoredomain.Task, cycle *cyclesdomain.TaskCycle) {
 	slog.Info("agent harness resume", "cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.Resume",
 		"task_id", task.ID, "cycle_id", cycle.ID, "attempt_seq", cycle.AttemptSeq)
 	startedAt := h.opts.Clock()
@@ -45,11 +45,11 @@ func (h *Harness) Resume(parentCtx context.Context, task *domain.Task, cycle *do
 	switch cp.Entry {
 	case resumeEntryExecute:
 		opts.resumeNotice = true
-		opts.interruptedPhase = domain.PhaseExecute
+		opts.interruptedPhase = cyclesdomain.PhaseExecute
 	case resumeEntryVerifyOnly:
 		opts.resumeNotice = false
 		opts.skipFirstExecute = true
-		opts.interruptedPhase = domain.PhaseVerify
+		opts.interruptedPhase = cyclesdomain.PhaseVerify
 	case resumeEntryAfterExecuteSuccess:
 		opts.skipFirstExecute = true
 	}

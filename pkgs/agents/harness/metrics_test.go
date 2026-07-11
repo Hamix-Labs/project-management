@@ -11,7 +11,8 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/metricsfake"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/runnerfake"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
 func TestHarness_RunMetrics_observesHappyPathOnce(t *testing.T) {
@@ -23,15 +24,15 @@ func TestHarness_RunMetrics_observesHappyPathOnce(t *testing.T) {
 	tsk := env.TransitionRunning(ctx, env.CreateReadyTask(ctx, "metrics-happy"))
 
 	r := runnerfake.New().WithName("fake")
-	r.Script(tsk.ID, domain.PhaseExecute, runner.NewResult(
-		domain.PhaseStatusSucceeded, "ok",
+	r.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(
+		cyclesdomain.PhaseStatusSucceeded, "ok",
 		json.RawMessage(`{"ok":true}`), "",
 	))
 
 	metrics := metricsfake.New()
 	done := env.RunHarness(ctx, env.NewHarness(r, harness.Options{Metrics: metrics}), tsk)
 	<-done
-	env.WaitTaskStatus(ctx, tsk.ID, domain.StatusDone)
+	env.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusDone)
 
 	calls := metrics.SnapshotRuns()
 	if len(calls) != 1 {
@@ -40,9 +41,9 @@ func TestHarness_RunMetrics_observesHappyPathOnce(t *testing.T) {
 	if calls[0].Runner != "fake" {
 		t.Fatalf("runner label = %q, want %q", calls[0].Runner, "fake")
 	}
-	if calls[0].TerminalStatus != string(domain.CycleStatusSucceeded) {
+	if calls[0].TerminalStatus != string(cyclesdomain.CycleStatusSucceeded) {
 		t.Fatalf("terminal_status = %q, want %q",
-			calls[0].TerminalStatus, domain.CycleStatusSucceeded)
+			calls[0].TerminalStatus, cyclesdomain.CycleStatusSucceeded)
 	}
 }
 
@@ -55,23 +56,23 @@ func TestHarness_RunMetrics_observesRunnerFailure(t *testing.T) {
 	tsk := env.TransitionRunning(ctx, env.CreateReadyTask(ctx, "metrics-fail"))
 
 	r := runnerfake.New().WithName("fake")
-	r.FailWithResult(tsk.ID, domain.PhaseExecute,
-		runner.NewResult(domain.PhaseStatusFailed, "exit 7",
+	r.FailWithResult(tsk.ID, cyclesdomain.PhaseExecute,
+		runner.NewResult(cyclesdomain.PhaseStatusFailed, "exit 7",
 			json.RawMessage(`{"exit_code":7}`), "stderr tail"),
 		fmt.Errorf("cli exit: %w", runner.ErrNonZeroExit))
 
 	metrics := metricsfake.New()
 	done := env.RunHarness(ctx, env.NewHarness(r, harness.Options{Metrics: metrics}), tsk)
 	<-done
-	env.WaitTaskStatus(ctx, tsk.ID, domain.StatusFailed)
+	env.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusFailed)
 
 	calls := metrics.SnapshotRuns()
 	if len(calls) != 1 {
 		t.Fatalf("RecordRun calls = %d, want 1", len(calls))
 	}
-	if calls[0].TerminalStatus != string(domain.CycleStatusFailed) {
+	if calls[0].TerminalStatus != string(cyclesdomain.CycleStatusFailed) {
 		t.Fatalf("terminal_status = %q, want %q",
-			calls[0].TerminalStatus, domain.CycleStatusFailed)
+			calls[0].TerminalStatus, cyclesdomain.CycleStatusFailed)
 	}
 }
 
@@ -86,7 +87,7 @@ func TestHarness_RunMetrics_observesShutdownAbort(t *testing.T) {
 	br.OnStart = func(req runner.Request) {
 		cancel()
 	}
-	br.Result = runner.NewResult(domain.PhaseStatusSucceeded, "", nil, "")
+	br.Result = runner.NewResult(cyclesdomain.PhaseStatusSucceeded, "", nil, "")
 
 	metrics := metricsfake.New()
 	done := env.RunHarness(ctx, env.NewHarness(br, harness.Options{Metrics: metrics}), tsk)
@@ -96,9 +97,9 @@ func TestHarness_RunMetrics_observesShutdownAbort(t *testing.T) {
 	if len(calls) != 1 {
 		t.Fatalf("RecordRun calls = %d, want 1 (calls=%+v)", len(calls), calls)
 	}
-	if calls[0].TerminalStatus != string(domain.CycleStatusAborted) {
+	if calls[0].TerminalStatus != string(cyclesdomain.CycleStatusAborted) {
 		t.Fatalf("terminal_status = %q, want %q",
-			calls[0].TerminalStatus, domain.CycleStatusAborted)
+			calls[0].TerminalStatus, cyclesdomain.CycleStatusAborted)
 	}
 }
 
@@ -126,14 +127,14 @@ func TestHarness_RunMetrics_recordsEffectiveModelLabel(t *testing.T) {
 			tsk := env.TransitionRunning(ctx, env.CreateReadyTaskWithModel(ctx, "metrics-model-"+tc.name, tc.taskModel))
 
 			r := runnerfake.New().WithName("fake").WithDefaultModel(tc.runnerDefault)
-			r.Script(tsk.ID, domain.PhaseExecute, runner.NewResult(
-				domain.PhaseStatusSucceeded, "ok",
+			r.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(
+				cyclesdomain.PhaseStatusSucceeded, "ok",
 				json.RawMessage(`{"ok":true}`), ""))
 
 			metrics := metricsfake.New()
 			done := env.RunHarness(ctx, env.NewHarness(r, harness.Options{Metrics: metrics}), tsk)
 			<-done
-			env.WaitTaskStatus(ctx, tsk.ID, domain.StatusDone)
+			env.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusDone)
 
 			calls := metrics.SnapshotRuns()
 			if len(calls) != 1 {
@@ -155,10 +156,10 @@ func TestHarness_RunMetrics_nilMetricsIsNoop(t *testing.T) {
 	tsk := env.TransitionRunning(ctx, env.CreateReadyTask(ctx, "metrics-nil"))
 
 	r := runnerfake.New()
-	r.Script(tsk.ID, domain.PhaseExecute, runner.NewResult(
-		domain.PhaseStatusSucceeded, "ok", json.RawMessage(`{"ok":true}`), ""))
+	r.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(
+		cyclesdomain.PhaseStatusSucceeded, "ok", json.RawMessage(`{"ok":true}`), ""))
 
 	done := env.RunHarness(ctx, env.NewHarness(r, harness.Options{}), tsk)
 	<-done
-	env.WaitTaskStatus(ctx, tsk.ID, domain.StatusDone)
+	env.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusDone)
 }

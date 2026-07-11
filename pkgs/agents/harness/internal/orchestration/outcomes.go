@@ -1,6 +1,9 @@
 package orchestration
 
-import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+import (
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
+)
 
 // TerminationReason is a stable cycle terminate_reason string persisted to the store.
 type TerminationReason string
@@ -30,14 +33,14 @@ type ExecuteEffects struct {
 	ContinueToVerify bool
 	StopLoop         bool
 	TerminateFailed  bool
-	TransitionTask   domain.Status
+	TransitionTask   taskcoredomain.Status
 	Reason           TerminationReason
 	ResultSummary    string
 }
 
 // FinalizeEffects lists side effects after DecideFinalizeSuccess.
 type FinalizeEffects struct {
-	CycleStatus domain.CycleStatus
-	TaskStatus  domain.Status
+	CycleStatus cyclesdomain.CycleStatus
+	TaskStatus  taskcoredomain.Status
 	Reason      TerminationReason
 }

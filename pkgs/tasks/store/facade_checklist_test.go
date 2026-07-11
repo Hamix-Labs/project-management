@@ -6,7 +6,8 @@ import (
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 )
 
 func TestStore_CreateWithChecklistItems_consecutiveEventSeqs(t *testing.T) {
@@ -14,13 +15,13 @@ func TestStore_CreateWithChecklistItems_consecutiveEventSeqs(t *testing.T) {
 	ctx := context.Background()
 	tsk, err := s.Create(ctx, CreateTaskInput{
 		Title:    "seeded checklist",
-		Priority: domain.PriorityMedium,
+		Priority: taskcoredomain.PriorityMedium,
 		ChecklistItems: []CreateChecklistItemInput{
 			{Text: "one"},
 			{Text: "two"},
 			{Text: "three"},
 		},
-	}, domain.ActorUser)
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -39,9 +40,9 @@ func TestStore_CreateWithChecklistItems_consecutiveEventSeqs(t *testing.T) {
 	var addedSeqs []int64
 	for _, e := range evs {
 		switch e.Type {
-		case domain.EventTaskCreated:
+		case taskeventsdomain.EventTaskCreated:
 			createdSeq = e.Seq
-		case domain.EventChecklistItemAdded:
+		case taskeventsdomain.EventChecklistItemAdded:
 			addedSeqs = append(addedSeqs, e.Seq)
 		}
 	}
@@ -63,13 +64,13 @@ func TestStore_AddChecklistItem_rejects_running(t *testing.T) {
 	s := NewStore(tasktestdb.OpenSQLite(t))
 	ctx := context.Background()
 	tsk, err := s.Create(ctx, CreateTaskInput{
-		Title: "t", Priority: domain.PriorityMedium, Status: domain.StatusRunning,
-	}, domain.ActorUser)
+		Title: "t", Priority: taskcoredomain.PriorityMedium, Status: taskcoredomain.StatusRunning,
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = s.AddChecklistItem(ctx, tsk.ID, "criterion", nil, domain.ActorUser)
-	if !errors.Is(err, domain.ErrConflict) {
+	_, err = s.AddChecklistItem(ctx, tsk.ID, "criterion", nil, taskcoredomain.ActorUser)
+	if !errors.Is(err, taskcoredomain.ErrConflict) {
 		t.Fatalf("got %v want ErrConflict", err)
 	}
 }
@@ -78,12 +79,12 @@ func TestStore_AddChecklistItem_allows_done_task(t *testing.T) {
 	s := NewStore(tasktestdb.OpenSQLite(t))
 	ctx := context.Background()
 	tsk, err := s.Create(ctx, CreateTaskInput{
-		Title: "t", Priority: domain.PriorityMedium, Status: domain.StatusDone,
-	}, domain.ActorUser)
+		Title: "t", Priority: taskcoredomain.PriorityMedium, Status: taskcoredomain.StatusDone,
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	it, err := s.AddChecklistItem(ctx, tsk.ID, "criterion", nil, domain.ActorUser)
+	it, err := s.AddChecklistItem(ctx, tsk.ID, "criterion", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("Add on done task: %v", err)
 	}
@@ -95,16 +96,16 @@ func TestStore_AddChecklistItem_allows_done_task(t *testing.T) {
 func TestStore_SetChecklistItemDone_rejects_user_actor(t *testing.T) {
 	s := NewStore(tasktestdb.OpenSQLite(t))
 	ctx := context.Background()
-	tsk, err := s.Create(ctx, CreateTaskInput{Priority: domain.PriorityMedium, Title: "t"}, domain.ActorUser)
+	tsk, err := s.Create(ctx, CreateTaskInput{Priority: taskcoredomain.PriorityMedium, Title: "t"}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	it, err := s.AddChecklistItem(ctx, tsk.ID, "criterion", nil, domain.ActorUser)
+	it, err := s.AddChecklistItem(ctx, tsk.ID, "criterion", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = s.SetChecklistItemDone(ctx, tsk.ID, it.ID, true, domain.ActorUser)
-	if !errors.Is(err, domain.ErrInvalidInput) {
+	err = s.SetChecklistItemDone(ctx, tsk.ID, it.ID, true, taskcoredomain.ActorUser)
+	if !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		t.Fatalf("got %v want ErrInvalidInput", err)
 	}
 }
@@ -112,15 +113,15 @@ func TestStore_SetChecklistItemDone_rejects_user_actor(t *testing.T) {
 func TestStore_SetChecklistItemDone_allows_agent(t *testing.T) {
 	s := NewStore(tasktestdb.OpenSQLite(t))
 	ctx := context.Background()
-	tsk, err := s.Create(ctx, CreateTaskInput{Priority: domain.PriorityMedium, Title: "t"}, domain.ActorUser)
+	tsk, err := s.Create(ctx, CreateTaskInput{Priority: taskcoredomain.PriorityMedium, Title: "t"}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	it, err := s.AddChecklistItem(ctx, tsk.ID, "criterion", nil, domain.ActorUser)
+	it, err := s.AddChecklistItem(ctx, tsk.ID, "criterion", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := s.SetChecklistItemDone(ctx, tsk.ID, it.ID, true, domain.ActorAgent); err != nil {
+	if err := s.SetChecklistItemDone(ctx, tsk.ID, it.ID, true, taskcoredomain.ActorAgent); err != nil {
 		t.Fatal(err)
 	}
 	items, err := s.ListChecklistForSubject(ctx, tsk.ID)
@@ -147,15 +148,15 @@ func TestStore_SetChecklistItemDone_allows_agent(t *testing.T) {
 func TestStore_SetChecklistItemDone_idempotent_skips_event(t *testing.T) {
 	s := NewStore(tasktestdb.OpenSQLite(t))
 	ctx := context.Background()
-	tsk, err := s.Create(ctx, CreateTaskInput{Priority: domain.PriorityMedium, Title: "t"}, domain.ActorUser)
+	tsk, err := s.Create(ctx, CreateTaskInput{Priority: taskcoredomain.PriorityMedium, Title: "t"}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	it, err := s.AddChecklistItem(ctx, tsk.ID, "criterion", nil, domain.ActorUser)
+	it, err := s.AddChecklistItem(ctx, tsk.ID, "criterion", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := s.SetChecklistItemDone(ctx, tsk.ID, it.ID, true, domain.ActorAgent); err != nil {
+	if err := s.SetChecklistItemDone(ctx, tsk.ID, it.ID, true, taskcoredomain.ActorAgent); err != nil {
 		t.Fatal(err)
 	}
 	evs1, err := s.ListTaskEvents(ctx, tsk.ID)
@@ -165,7 +166,7 @@ func TestStore_SetChecklistItemDone_idempotent_skips_event(t *testing.T) {
 	var firstToggleSeq int64
 	var firstToggleCount int
 	for _, e := range evs1 {
-		if e.Type == domain.EventChecklistItemToggled {
+		if e.Type == taskeventsdomain.EventChecklistItemToggled {
 			firstToggleCount++
 			firstToggleSeq = e.Seq
 		}
@@ -174,7 +175,7 @@ func TestStore_SetChecklistItemDone_idempotent_skips_event(t *testing.T) {
 		t.Fatalf("first SetDone(true) must emit exactly 1 toggle event, got %d; events=%+v", firstToggleCount, evs1)
 	}
 	// Re-mark done=true; should be a no-op (no second toggle event, no seq bump).
-	if err := s.SetChecklistItemDone(ctx, tsk.ID, it.ID, true, domain.ActorAgent); err != nil {
+	if err := s.SetChecklistItemDone(ctx, tsk.ID, it.ID, true, taskcoredomain.ActorAgent); err != nil {
 		t.Fatal(err)
 	}
 	evs2, err := s.ListTaskEvents(ctx, tsk.ID)
@@ -183,7 +184,7 @@ func TestStore_SetChecklistItemDone_idempotent_skips_event(t *testing.T) {
 	}
 	var secondToggleCount int
 	for _, e := range evs2 {
-		if e.Type == domain.EventChecklistItemToggled {
+		if e.Type == taskeventsdomain.EventChecklistItemToggled {
 			secondToggleCount++
 		}
 	}
@@ -194,7 +195,7 @@ func TestStore_SetChecklistItemDone_idempotent_skips_event(t *testing.T) {
 		t.Fatalf("idempotent SetDone(true) must not append any event; before=%d after=%d", len(evs1), len(evs2))
 	}
 	// Now flip to done=false.
-	if err := s.SetChecklistItemDone(ctx, tsk.ID, it.ID, false, domain.ActorAgent); err != nil {
+	if err := s.SetChecklistItemDone(ctx, tsk.ID, it.ID, false, taskcoredomain.ActorAgent); err != nil {
 		t.Fatal(err)
 	}
 	evs3, err := s.ListTaskEvents(ctx, tsk.ID)
@@ -204,7 +205,7 @@ func TestStore_SetChecklistItemDone_idempotent_skips_event(t *testing.T) {
 	var falseToggleCount int
 	var lastFalseSeq int64
 	for _, e := range evs3 {
-		if e.Type == domain.EventChecklistItemToggled {
+		if e.Type == taskeventsdomain.EventChecklistItemToggled {
 			falseToggleCount++
 			lastFalseSeq = e.Seq
 		}
@@ -216,7 +217,7 @@ func TestStore_SetChecklistItemDone_idempotent_skips_event(t *testing.T) {
 		t.Fatalf("flip false event seq %d must be strictly greater than first toggle seq %d", lastFalseSeq, firstToggleSeq)
 	}
 	// Re-mark done=false; should also be a no-op.
-	if err := s.SetChecklistItemDone(ctx, tsk.ID, it.ID, false, domain.ActorAgent); err != nil {
+	if err := s.SetChecklistItemDone(ctx, tsk.ID, it.ID, false, taskcoredomain.ActorAgent); err != nil {
 		t.Fatal(err)
 	}
 	evs4, err := s.ListTaskEvents(ctx, tsk.ID)
@@ -231,15 +232,15 @@ func TestStore_SetChecklistItemDone_idempotent_skips_event(t *testing.T) {
 func TestStore_UpdateChecklistItemText_updates_row(t *testing.T) {
 	s := NewStore(tasktestdb.OpenSQLite(t))
 	ctx := context.Background()
-	tsk, err := s.Create(ctx, CreateTaskInput{Priority: domain.PriorityMedium, Title: "t"}, domain.ActorUser)
+	tsk, err := s.Create(ctx, CreateTaskInput{Priority: taskcoredomain.PriorityMedium, Title: "t"}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	it, err := s.AddChecklistItem(ctx, tsk.ID, "before", nil, domain.ActorUser)
+	it, err := s.AddChecklistItem(ctx, tsk.ID, "before", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := s.UpdateChecklistItemText(ctx, tsk.ID, it.ID, "after", domain.ActorAgent); err != nil {
+	if err := s.UpdateChecklistItemText(ctx, tsk.ID, it.ID, "after", taskcoredomain.ActorAgent); err != nil {
 		t.Fatal(err)
 	}
 	items, err := s.ListChecklistForSubject(ctx, tsk.ID)
@@ -255,7 +256,7 @@ func TestStore_UpdateChecklistItemText_updates_row(t *testing.T) {
 	}
 	var saw bool
 	for _, e := range evs {
-		if e.Type == domain.EventChecklistItemUpdated {
+		if e.Type == taskeventsdomain.EventChecklistItemUpdated {
 			saw = true
 			break
 		}
@@ -271,19 +272,19 @@ func TestStore_UpdateChecklistItemText_updates_row(t *testing.T) {
 func TestStore_UpdateChecklistItemText_rejects_done_item_while_active(t *testing.T) {
 	s := NewStore(tasktestdb.OpenSQLite(t))
 	ctx := context.Background()
-	tsk, err := s.Create(ctx, CreateTaskInput{Priority: domain.PriorityMedium, Title: "t"}, domain.ActorUser)
+	tsk, err := s.Create(ctx, CreateTaskInput{Priority: taskcoredomain.PriorityMedium, Title: "t"}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	it, err := s.AddChecklistItem(ctx, tsk.ID, "before", nil, domain.ActorUser)
+	it, err := s.AddChecklistItem(ctx, tsk.ID, "before", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := s.SetChecklistItemDone(ctx, tsk.ID, it.ID, true, domain.ActorAgent); err != nil {
+	if err := s.SetChecklistItemDone(ctx, tsk.ID, it.ID, true, taskcoredomain.ActorAgent); err != nil {
 		t.Fatalf("mark done: %v", err)
 	}
-	err = s.UpdateChecklistItemText(ctx, tsk.ID, it.ID, "after", domain.ActorAgent)
-	if !errors.Is(err, domain.ErrInvalidInput) {
+	err = s.UpdateChecklistItemText(ctx, tsk.ID, it.ID, "after", taskcoredomain.ActorAgent)
+	if !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		t.Fatalf("got %v want ErrInvalidInput", err)
 	}
 	// The persisted row must still hold the original definition text:
@@ -302,7 +303,7 @@ func TestStore_UpdateChecklistItemText_rejects_done_item_while_active(t *testing
 		t.Fatal(err)
 	}
 	for _, e := range evs {
-		if e.Type == domain.EventChecklistItemUpdated {
+		if e.Type == taskeventsdomain.EventChecklistItemUpdated {
 			t.Fatalf("unexpected checklist_item_updated event after rejected edit: %+v", e)
 		}
 	}
@@ -311,21 +312,21 @@ func TestStore_UpdateChecklistItemText_rejects_done_item_while_active(t *testing
 func TestStore_UpdateChecklistItemText_allows_done_item_when_task_done(t *testing.T) {
 	s := NewStore(tasktestdb.OpenSQLite(t))
 	ctx := context.Background()
-	done := domain.StatusDone
+	done := taskcoredomain.StatusDone
 	tsk, err := s.Create(ctx, CreateTaskInput{
-		Title: "t", Priority: domain.PriorityMedium, Status: done,
-	}, domain.ActorUser)
+		Title: "t", Priority: taskcoredomain.PriorityMedium, Status: done,
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	it, err := s.AddChecklistItem(ctx, tsk.ID, "before", nil, domain.ActorUser)
+	it, err := s.AddChecklistItem(ctx, tsk.ID, "before", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := s.SetChecklistItemDone(ctx, tsk.ID, it.ID, true, domain.ActorAgent); err != nil {
+	if err := s.SetChecklistItemDone(ctx, tsk.ID, it.ID, true, taskcoredomain.ActorAgent); err != nil {
 		t.Fatalf("mark done: %v", err)
 	}
-	if err := s.UpdateChecklistItemText(ctx, tsk.ID, it.ID, "after", domain.ActorUser); err != nil {
+	if err := s.UpdateChecklistItemText(ctx, tsk.ID, it.ID, "after", taskcoredomain.ActorUser); err != nil {
 		t.Fatalf("edit done criterion on done task: %v", err)
 	}
 	items, err := s.ListChecklistForSubject(ctx, tsk.ID)
@@ -343,19 +344,19 @@ func TestStore_UpdateChecklistItemText_allows_done_item_when_task_done(t *testin
 func TestStore_DeleteChecklistItem_rejects_done_item_while_active(t *testing.T) {
 	s := NewStore(tasktestdb.OpenSQLite(t))
 	ctx := context.Background()
-	tsk, err := s.Create(ctx, CreateTaskInput{Priority: domain.PriorityMedium, Title: "t"}, domain.ActorUser)
+	tsk, err := s.Create(ctx, CreateTaskInput{Priority: taskcoredomain.PriorityMedium, Title: "t"}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	it, err := s.AddChecklistItem(ctx, tsk.ID, "keep", nil, domain.ActorUser)
+	it, err := s.AddChecklistItem(ctx, tsk.ID, "keep", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := s.SetChecklistItemDone(ctx, tsk.ID, it.ID, true, domain.ActorAgent); err != nil {
+	if err := s.SetChecklistItemDone(ctx, tsk.ID, it.ID, true, taskcoredomain.ActorAgent); err != nil {
 		t.Fatalf("mark done: %v", err)
 	}
-	err = s.DeleteChecklistItem(ctx, tsk.ID, it.ID, domain.ActorUser)
-	if !errors.Is(err, domain.ErrInvalidInput) {
+	err = s.DeleteChecklistItem(ctx, tsk.ID, it.ID, taskcoredomain.ActorUser)
+	if !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		t.Fatalf("got %v want ErrInvalidInput", err)
 	}
 	// The persisted row must still exist: rejection has to be a
@@ -375,7 +376,7 @@ func TestStore_DeleteChecklistItem_rejects_done_item_while_active(t *testing.T) 
 		t.Fatal(err)
 	}
 	for _, e := range evs {
-		if e.Type == domain.EventChecklistItemRemoved {
+		if e.Type == taskeventsdomain.EventChecklistItemRemoved {
 			t.Fatalf("unexpected checklist_item_removed event after rejected delete: %+v", e)
 		}
 	}
@@ -385,19 +386,19 @@ func TestStore_DeleteChecklistItem_allows_done_item_when_task_done(t *testing.T)
 	s := NewStore(tasktestdb.OpenSQLite(t))
 	ctx := context.Background()
 	tsk, err := s.Create(ctx, CreateTaskInput{
-		Title: "t", Priority: domain.PriorityMedium, Status: domain.StatusDone,
-	}, domain.ActorUser)
+		Title: "t", Priority: taskcoredomain.PriorityMedium, Status: taskcoredomain.StatusDone,
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	it, err := s.AddChecklistItem(ctx, tsk.ID, "keep", nil, domain.ActorUser)
+	it, err := s.AddChecklistItem(ctx, tsk.ID, "keep", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := s.SetChecklistItemDone(ctx, tsk.ID, it.ID, true, domain.ActorAgent); err != nil {
+	if err := s.SetChecklistItemDone(ctx, tsk.ID, it.ID, true, taskcoredomain.ActorAgent); err != nil {
 		t.Fatalf("mark done: %v", err)
 	}
-	if err := s.DeleteChecklistItem(ctx, tsk.ID, it.ID, domain.ActorUser); err != nil {
+	if err := s.DeleteChecklistItem(ctx, tsk.ID, it.ID, taskcoredomain.ActorUser); err != nil {
 		t.Fatalf("delete done criterion on done task: %v", err)
 	}
 	items, err := s.ListChecklistForSubject(ctx, tsk.ID)
@@ -412,15 +413,15 @@ func TestStore_DeleteChecklistItem_allows_done_item_when_task_done(t *testing.T)
 func TestStore_DeleteChecklistItem_appends_removed_event(t *testing.T) {
 	s := NewStore(tasktestdb.OpenSQLite(t))
 	ctx := context.Background()
-	tsk, err := s.Create(ctx, CreateTaskInput{Priority: domain.PriorityMedium, Title: "t"}, domain.ActorUser)
+	tsk, err := s.Create(ctx, CreateTaskInput{Priority: taskcoredomain.PriorityMedium, Title: "t"}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	it, err := s.AddChecklistItem(ctx, tsk.ID, "gone", nil, domain.ActorUser)
+	it, err := s.AddChecklistItem(ctx, tsk.ID, "gone", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := s.DeleteChecklistItem(ctx, tsk.ID, it.ID, domain.ActorUser); err != nil {
+	if err := s.DeleteChecklistItem(ctx, tsk.ID, it.ID, taskcoredomain.ActorUser); err != nil {
 		t.Fatal(err)
 	}
 	items, err := s.ListChecklistForSubject(ctx, tsk.ID)
@@ -436,7 +437,7 @@ func TestStore_DeleteChecklistItem_appends_removed_event(t *testing.T) {
 	}
 	var saw bool
 	for _, e := range evs {
-		if e.Type == domain.EventChecklistItemRemoved {
+		if e.Type == taskeventsdomain.EventChecklistItemRemoved {
 			saw = true
 			break
 		}

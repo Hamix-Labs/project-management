@@ -1,11 +1,11 @@
 package harness
 
-import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 import (
+	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 	"log/slog"
 	"time"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 )
 
 // RunMetrics is the optional Prometheus seam for the agent harness.
@@ -18,7 +18,7 @@ import (
 // shutdown abort, and best-effort intermediate failures), so a slow
 // metrics sink would back-pressure the run loop.
 //
-// terminalStatus is the string form of the terminal domain.CycleStatus
+// terminalStatus is the string form of the terminal cyclesdomain.CycleStatus
 // (one of "succeeded", "failed", "aborted"). runner is whatever the
 // adapter returned from runner.Runner.Name(). model is whatever
 // runner.EffectiveModel(req) returned for this cycle's request — may
@@ -31,7 +31,7 @@ type RunMetrics interface {
 	RecordRun(runner string, model string, terminalStatus string, duration time.Duration)
 	// RecordVerifyVerdict is fired once per criterion verdict produced
 	// by the verify pass. verifierKind is one of the
-	// domain.VerifierKind values (deterministic_check, verify_agent,
+	// checklistdomain.VerifierKind values (deterministic_check, verify_agent,
 	// agent_self) — see docs/data-model.md "verified_by" column.
 	// passed is the verdict.
 	//
@@ -40,7 +40,7 @@ type RunMetrics interface {
 	// criterion the execute agent claimed done, derivable as the
 	// {verifier_kind="agent_self",verdict="failed"} slice. There is no
 	// separate disagreement counter — one fact, one metric.
-	RecordVerifyVerdict(verifierKind domain.VerifierKind, passed bool)
+	RecordVerifyVerdict(verifierKind checklistdomain.VerifierKind, passed bool)
 	// ObserveVerifyDuration receives one observation per cycle that
 	// actually ran a verify phase (StartPhase(verify) → CompletePhase),
 	// regardless of pass/fail/tampered outcome. Wall-clock duration
@@ -82,7 +82,7 @@ func (h *Harness) recordRun(terminalStatus, runnerName, model string, started ti
 
 // recordVerifyVerdict fans the per-criterion verdict out to the
 // configured RunMetrics. No-op when Metrics is nil.
-func (h *Harness) recordVerifyVerdict(kind domain.VerifierKind, passed bool) {
+func (h *Harness) recordVerifyVerdict(kind checklistdomain.VerifierKind, passed bool) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.recordVerifyVerdict",
 		"verifier_kind", string(kind), "passed", passed)
 	if h == nil || h.opts.Metrics == nil {

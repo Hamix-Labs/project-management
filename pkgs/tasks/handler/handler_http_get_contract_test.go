@@ -2,6 +2,8 @@ package handler
 
 import (
 	"encoding/json"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler/storefake"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -9,9 +11,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler/storefake"
 )
 
 func getTask(t *testing.T, baseURL, id string) (*http.Response, []byte) {
@@ -87,7 +86,7 @@ func TestHTTP_getTask_pathSegmentGuard(t *testing.T) {
 
 func TestHTTP_getTask_unknownIDIs404(t *testing.T) {
 	st := storefake.NewHandlerStore()
-	st.FailGet(domain.ErrNotFound)
+	st.FailGet(taskcoredomain.ErrNotFound)
 	srv := httptest.NewServer(NewHandler(st, NewSSEHub(), nil))
 	t.Cleanup(srv.Close)
 

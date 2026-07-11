@@ -12,9 +12,9 @@ import (
 	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/apijson"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
-	taskdomain "github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/logctx"
 )
 
@@ -107,11 +107,11 @@ func writeError(w http.ResponseWriter, r *http.Request, op string, err error, co
 func writeStoreError(w http.ResponseWriter, r *http.Request, op string, err error) {
 	code := http.StatusInternalServerError
 	switch {
-	case errors.Is(err, domain.ErrNotFound), errors.Is(err, taskdomain.ErrNotFound):
+	case errors.Is(err, domain.ErrNotFound):
 		code = http.StatusNotFound
-	case errors.Is(err, domain.ErrInvalidInput), errors.Is(err, taskdomain.ErrInvalidInput):
+	case errors.Is(err, domain.ErrInvalidInput):
 		code = http.StatusBadRequest
-	case errors.Is(err, domain.ErrConflict), errors.Is(err, taskdomain.ErrConflict):
+	case errors.Is(err, domain.ErrConflict):
 		code = http.StatusConflict
 	}
 	msg := "internal server error"
@@ -132,10 +132,10 @@ func writeStoreError(w http.ResponseWriter, r *http.Request, op string, err erro
 func parsePathID(id string) (string, error) {
 	id = strings.TrimSpace(id)
 	if id == "" {
-		return "", fmt.Errorf("%w: id", domain.ErrInvalidInput)
+		return "", fmt.Errorf("%w: id", taskcoredomain.ErrInvalidInput)
 	}
 	if len(id) > maxPathIDBytes {
-		return "", fmt.Errorf("%w: id too long", domain.ErrInvalidInput)
+		return "", fmt.Errorf("%w: id too long", taskcoredomain.ErrInvalidInput)
 	}
 	return id, nil
 }

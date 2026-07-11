@@ -5,19 +5,18 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"log/slog"
 	"sync"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
-// MemoryQueue is a bounded FIFO of full domain.Task snapshots for in-process agent consumers.
+// MemoryQueue is a bounded FIFO of full taskcoredomain.Task snapshots for in-process agent consumers.
 // It tracks task ids currently buffered so reconciliation can skip ids already present.
 type MemoryQueue struct {
 	mu      sync.Mutex
 	bufCap  int
 	pending map[string]struct{}
-	ch      chan domain.Task
+	ch      chan taskcoredomain.Task
 }
 
 // NewMemoryQueue returns a queue that holds at most cap tasks without blocking producers.
@@ -29,7 +28,7 @@ func NewMemoryQueue(cap int) *MemoryQueue {
 	}
 	return &MemoryQueue{
 		bufCap:  cap,
-		ch:      make(chan domain.Task, cap),
+		ch:      make(chan taskcoredomain.Task, cap),
 		pending: make(map[string]struct{}),
 	}
 }
@@ -57,7 +56,7 @@ func (q *MemoryQueue) BufferDepth() int {
 // Recv exposes the receive side for a single consumer (or fan out in your own goroutines).
 // After reading each task, call AckAfterRecv with the task id so reconciliation
 // can treat the buffer as drained for that id.
-func (q *MemoryQueue) Recv() <-chan domain.Task {
+func (q *MemoryQueue) Recv() <-chan taskcoredomain.Task {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agents.MemoryQueue.Recv")
 	if q == nil {
 		return nil
@@ -77,10 +76,10 @@ func (q *MemoryQueue) AckAfterRecv(id string) {
 }
 
 // Receive waits for the next task, removes it from the pending set, and returns it.
-func (q *MemoryQueue) Receive(ctx context.Context) (domain.Task, error) {
+func (q *MemoryQueue) Receive(ctx context.Context) (taskcoredomain.Task, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agents.MemoryQueue.Receive")
 	if q == nil {
-		return domain.Task{}, errors.New("agents: nil MemoryQueue")
+		return taskcoredomain.Task{}, errors.New("agents: nil MemoryQueue")
 	}
 	select {
 	case t := <-q.ch:
@@ -89,12 +88,12 @@ func (q *MemoryQueue) Receive(ctx context.Context) (domain.Task, error) {
 		q.mu.Unlock()
 		return t, nil
 	case <-ctx.Done():
-		return domain.Task{}, ctx.Err()
+		return taskcoredomain.Task{}, ctx.Err()
 	}
 }
 
 // tryEnqueue adds task to the buffer when there is capacity and the id is not already pending.
-func (q *MemoryQueue) tryEnqueue(task domain.Task) error {
+func (q *MemoryQueue) tryEnqueue(task taskcoredomain.Task) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agents.MemoryQueue.tryEnqueue", "task_id", task.ID)
 	if q == nil {
 		return nil
@@ -119,7 +118,7 @@ func (q *MemoryQueue) tryEnqueue(task domain.Task) error {
 // NotifyReadyTask is the hook used by pkgs/tasks/store.ReadyTaskNotifier wiring.
 // It never blocks: if the buffer is full it returns ErrQueueFull. If the task id
 // is already pending it returns ErrAlreadyQueued.
-func (q *MemoryQueue) NotifyReadyTask(ctx context.Context, task domain.Task) error {
+func (q *MemoryQueue) NotifyReadyTask(ctx context.Context, task taskcoredomain.Task) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agents.MemoryQueue.NotifyReadyTask", "task_id", task.ID)
 	if err := notifyContextErr(ctx); err != nil {
 		return err

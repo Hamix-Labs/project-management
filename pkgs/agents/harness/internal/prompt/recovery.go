@@ -3,11 +3,10 @@ package prompt
 import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 import (
 	"fmt"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"log/slog"
 	"sort"
 	"strings"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 // RecoveryKind selects the structured delta template for a resumed Cursor session.
@@ -41,7 +40,7 @@ type CommandEvidenceLine struct {
 // RecoveryContext carries harness state into delta-only stdin prompts (ADR-0031).
 type RecoveryContext struct {
 	Kind          RecoveryKind
-	Phase         domain.Phase
+	Phase         cyclesdomain.Phase
 	CycleID       string
 	AttemptSeq    int64
 	VerifyAttempt int
@@ -55,7 +54,7 @@ type RecoveryContext struct {
 	ScopeFiles           []string
 	FailureClass         string
 	FailureReason        string
-	InterruptedPhase     domain.Phase
+	InterruptedPhase     cyclesdomain.Phase
 	GitPorcelain         string
 	PriorVerifyFeedback  string
 }
@@ -73,7 +72,7 @@ func ComposeRecoveryDelta(ctx RecoveryContext) string {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "prompt.ComposeRecoveryDelta",
 		"kind", string(ctx.Kind), "phase", string(ctx.Phase))
 	var b strings.Builder
-	if ctx.Phase == domain.PhaseVerify {
+	if ctx.Phase == cyclesdomain.PhaseVerify {
 		composeVerifyRecoveryDelta(&b, ctx)
 	} else {
 		composeExecuteRecoveryDelta(&b, ctx)

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
@@ -21,9 +21,9 @@ func TestPickupWakeScheduler_WakeEnqueuesNearFutureTask(t *testing.T) {
 
 	future := time.Now().UTC().Add(40 * time.Millisecond)
 	tk, err := st.Create(ctx, store.CreateTaskInput{
-		Title: "wake-test", Priority: domain.PriorityMedium,
+		Title: "wake-test", Priority: taskcoredomain.PriorityMedium,
 		PickupNotBefore: &future,
-	}, domain.ActorUser)
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,9 +60,9 @@ func TestPickupWakeScheduler_CancelPreventsWake(t *testing.T) {
 
 	future := time.Now().UTC().Add(200 * time.Millisecond)
 	tk, err := st.Create(ctx, store.CreateTaskInput{
-		Title: "cancel-test", Priority: domain.PriorityMedium,
+		Title: "cancel-test", Priority: taskcoredomain.PriorityMedium,
 		PickupNotBefore: &future,
-	}, domain.ActorUser)
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}

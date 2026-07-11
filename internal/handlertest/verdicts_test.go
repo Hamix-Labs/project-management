@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 	"net/http"
 	"testing"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 // TestHandler_GetCycleVerdicts_returnsBothReports pins the
@@ -27,19 +27,19 @@ func TestHandler_GetCycleVerdicts_returnsBothReports(t *testing.T) {
 
 	ctx := context.Background()
 
-	tsk, err := st.Create(ctx, store.CreateTaskInput{Priority: domain.PriorityMedium, Title: "verdict-test"}, domain.ActorUser)
+	tsk, err := st.Create(ctx, store.CreateTaskInput{Priority: taskcoredomain.PriorityMedium, Title: "verdict-test"}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("create task: %v", err)
 	}
-	c1, err := st.AddChecklistItem(ctx, tsk.ID, "criterion one", nil, domain.ActorUser)
+	c1, err := st.AddChecklistItem(ctx, tsk.ID, "criterion one", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("add c1: %v", err)
 	}
-	c2, err := st.AddChecklistItem(ctx, tsk.ID, "criterion two", nil, domain.ActorUser)
+	c2, err := st.AddChecklistItem(ctx, tsk.ID, "criterion two", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("add c2: %v", err)
 	}
-	cycle, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	cycle, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatalf("start cycle: %v", err)
 	}
@@ -66,13 +66,13 @@ func TestHandler_GetCycleVerdicts_returnsBothReports(t *testing.T) {
 		{
 			CriterionID:  c1.ID,
 			Verified:     true,
-			VerifierKind: domain.VerifierVerifyAgent,
+			VerifierKind: checklistdomain.VerifierVerifyAgent,
 			Reasoning:    "criterion one passes",
 		},
 		{
 			CriterionID:  c2.ID,
 			Verified:     false,
-			VerifierKind: domain.VerifierVerifyAgent,
+			VerifierKind: checklistdomain.VerifierVerifyAgent,
 			Reasoning:    "criterion two failed",
 		},
 	}); err != nil {
@@ -87,8 +87,8 @@ func TestHandler_GetCycleVerdicts_returnsBothReports(t *testing.T) {
 		t.Fatalf("verify_reports len = %d, want 2", len(resp.VerifyReports))
 	}
 	for i, row := range resp.VerifyReports {
-		if row.VerifierKind != string(domain.VerifierVerifyAgent) {
-			t.Errorf("verify_reports[%d].verifier_kind = %q, want %q", i, row.VerifierKind, domain.VerifierVerifyAgent)
+		if row.VerifierKind != string(checklistdomain.VerifierVerifyAgent) {
+			t.Errorf("verify_reports[%d].verifier_kind = %q, want %q", i, row.VerifierKind, checklistdomain.VerifierVerifyAgent)
 		}
 	}
 	if resp.VerifyReports[0].Verified == resp.VerifyReports[1].Verified {

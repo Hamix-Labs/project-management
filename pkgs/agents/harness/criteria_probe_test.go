@@ -4,7 +4,8 @@ import (
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/prompt"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
 func TestSelectRecoveryKind_criteriaReportInvalidFromState(t *testing.T) {
@@ -13,7 +14,7 @@ func TestSelectRecoveryKind_criteriaReportInvalidFromState(t *testing.T) {
 	state := &processState{
 		verify: verifyLifecycleState{reportParseErr: "criteria report invalid: unknown field function"},
 	}
-	kind := h.selectRecoveryKind(domain.PhaseExecute, state, cycleLoopOpts{}, domain.RetryFresh)
+	kind := h.selectRecoveryKind(cyclesdomain.PhaseExecute, state, cycleLoopOpts{}, taskcoredomain.RetryFresh)
 	if kind != prompt.RecoveryCriteriaReportInvalid {
 		t.Fatalf("kind=%q want %q", kind, prompt.RecoveryCriteriaReportInvalid)
 	}
@@ -26,7 +27,7 @@ func TestSelectRecoveryKind_operatorRetryDefersToCriteriaProbeErr(t *testing.T) 
 		verify: verifyLifecycleState{reportParseErr: "criteria report missing"},
 	}
 	opts := cycleLoopOpts{continuation: &ContinuationBundle{ParentCycleID: "parent-1"}}
-	kind := h.selectRecoveryKind(domain.PhaseExecute, state, opts, domain.RetryResume)
+	kind := h.selectRecoveryKind(cyclesdomain.PhaseExecute, state, opts, taskcoredomain.RetryResume)
 	if kind != prompt.RecoveryCriteriaReportMissing {
 		t.Fatalf("kind=%q want criteria_report_missing", kind)
 	}

@@ -10,7 +10,8 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/prompt"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/reports"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/verify"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
 // CursorResumeMode is logged on every runner.Run for ADR-0031 observability.
@@ -33,12 +34,12 @@ type CursorResumeDecision struct {
 
 func (h *Harness) planExecuteRun(
 	ctx context.Context,
-	task *domain.Task,
-	cycle *domain.TaskCycle,
+	task *taskcoredomain.Task,
+	cycle *cyclesdomain.TaskCycle,
 	state *processState,
 	opts cycleLoopOpts,
 ) (CursorResumeDecision, error) {
-	decision, err := h.resolveCursorResume(ctx, domain.PhaseExecute, task, cycle, state, opts, false)
+	decision, err := h.resolveCursorResume(ctx, cyclesdomain.PhaseExecute, task, cycle, state, opts, false)
 	if err != nil {
 		slog.Warn("agent harness cursor resume policy failed; using fresh prompt", "cmd", calltrace.LogCmd,
 			"operation", "agent.harness.Harness.planExecuteRun.fallback",
@@ -54,8 +55,8 @@ func (h *Harness) planExecuteRun(
 //funclogmeasure:skip category=hot-path reason="Delegates to freshExecuteDecision; resume_fallback logged at invoke site."
 func (h *Harness) planExecuteResumeFallback(
 	ctx context.Context,
-	task *domain.Task,
-	cycle *domain.TaskCycle,
+	task *taskcoredomain.Task,
+	cycle *cyclesdomain.TaskCycle,
 	state *processState,
 	opts cycleLoopOpts,
 ) CursorResumeDecision {
@@ -67,8 +68,8 @@ func (h *Harness) planExecuteResumeFallback(
 //funclogmeasure:skip category=hot-path reason="Pure decision struct; composeExecutePrompt logs at invoke site."
 func (h *Harness) freshExecuteDecision(
 	ctx context.Context,
-	task *domain.Task,
-	cycle *domain.TaskCycle,
+	task *taskcoredomain.Task,
+	cycle *cyclesdomain.TaskCycle,
 	state *processState,
 	opts cycleLoopOpts,
 	denyReason string,
@@ -82,8 +83,8 @@ func (h *Harness) freshExecuteDecision(
 
 func (h *Harness) planVerifyRun(
 	ctx context.Context,
-	task *domain.Task,
-	cycle *domain.TaskCycle,
+	task *taskcoredomain.Task,
+	cycle *cyclesdomain.TaskCycle,
 	state *processState,
 	snap verificationSnapshot,
 	verifyAttempt int,
@@ -96,7 +97,7 @@ func (h *Harness) planVerifyRun(
 		interruptedPhase: state.resume.interruptedPhase,
 		continuation:     state.resume.continuation,
 	}
-	decision, err := h.resolveCursorResume(ctx, domain.PhaseVerify, task, cycle, state, opts, false)
+	decision, err := h.resolveCursorResume(ctx, cyclesdomain.PhaseVerify, task, cycle, state, opts, false)
 	if err != nil {
 		slog.Warn("agent harness verify cursor resume policy failed; using fresh prompt", "cmd", calltrace.LogCmd,
 			"operation", "agent.harness.Harness.planVerifyRun.fallback",
@@ -109,7 +110,7 @@ func (h *Harness) planVerifyRun(
 	} else if decision.Mode == CursorResumeFresh || decision.Mode == CursorResumeFallback {
 		decision.Prompt = h.verifySvc().BuildVerifyPrompt(ctx, task.ID, snap, cycle.ID, state.verify.previouslyPassed, selfReport, feedback, cmdEvidence)
 	} else {
-		rc := h.buildRecoveryContext(domain.PhaseVerify, task, cycle, state, opts, retryModeFromCycleMeta(cycle))
+		rc := h.buildRecoveryContext(cyclesdomain.PhaseVerify, task, cycle, state, opts, retryModeFromCycleMeta(cycle))
 		rc.CommandEvidenceDelta = commandEvidenceLines(cmdEvidence)
 		decision.Prompt = prompt.ComposeRecoveryDelta(rc)
 	}
@@ -139,9 +140,9 @@ func commandEvidenceLines(evidence []verify.CommandEvidence) []prompt.CommandEvi
 
 func (h *Harness) resolveCursorResume(
 	ctx context.Context,
-	phase domain.Phase,
-	task *domain.Task,
-	cycle *domain.TaskCycle,
+	phase cyclesdomain.Phase,
+	task *taskcoredomain.Task,
+	cycle *cyclesdomain.TaskCycle,
 	state *processState,
 	opts cycleLoopOpts,
 	forceFresh bool,
@@ -159,15 +160,15 @@ func (h *Harness) resolveCursorResume(
 		return CursorResumeDecision{Mode: CursorResumeFresh, DenyReason: "settings_disabled"}, nil
 	}
 	retryMode := retryModeFromCycleMeta(cycle)
-	if retryMode == domain.RetryFresh {
+	if retryMode == taskcoredomain.RetryFresh {
 		return CursorResumeDecision{Mode: CursorResumeFresh, DenyReason: "retry_fresh"}, nil
 	}
-	if opts.resumeNotice && retryMode != domain.RetryResume && phase == domain.PhaseExecute {
+	if opts.resumeNotice && retryMode != taskcoredomain.RetryResume && phase == cyclesdomain.PhaseExecute {
 		if state.verify.reportTampered {
 			return CursorResumeDecision{Mode: CursorResumeFresh, DenyReason: "tamper"}, nil
 		}
 	}
-	if phase == domain.PhaseVerify && h.firstVerifyAfterNewExecute(state) {
+	if phase == cyclesdomain.PhaseVerify && h.firstVerifyAfterNewExecute(state) {
 		return CursorResumeDecision{Mode: CursorResumeFresh, DenyReason: "verify_fresh_after_execute"}, nil
 	}
 	if !state.git.gitSnap.Skipped && state.git.postExecuteHeadSHA != "" {
@@ -214,20 +215,20 @@ func (h *Harness) resolveCursorResume(
 //funclogmeasure:skip category=hot-path reason="Pure cycle id routing; resolveCursorResume logs policy outcome."
 func (h *Harness) sessionLookupCycleID(
 	ctx context.Context,
-	cycle *domain.TaskCycle,
-	phase domain.Phase,
-	retryMode domain.RetryMode,
+	cycle *cyclesdomain.TaskCycle,
+	phase cyclesdomain.Phase,
+	retryMode taskcoredomain.RetryMode,
 	opts cycleLoopOpts,
 ) string {
-	if retryMode == domain.RetryResume && cycle.ParentCycleID != nil {
+	if retryMode == taskcoredomain.RetryResume && cycle.ParentCycleID != nil {
 		parentID := strings.TrimSpace(*cycle.ParentCycleID)
 		if parentID != "" {
 			childID, err := h.store.LastSessionID(ctx, cycle.ID, phase)
 			if err == nil && strings.TrimSpace(childID) == "" {
 				switch {
-				case phase == domain.PhaseExecute:
+				case phase == cyclesdomain.PhaseExecute:
 					return parentID
-				case phase == domain.PhaseVerify && opts.continuation != nil && opts.continuation.Entry == resumeEntryVerifyOnly:
+				case phase == cyclesdomain.PhaseVerify && opts.continuation != nil && opts.continuation.Entry == resumeEntryVerifyOnly:
 					return parentID
 				}
 			}
@@ -243,12 +244,12 @@ func (h *Harness) firstVerifyAfterNewExecute(state *processState) bool {
 
 //funclogmeasure:skip category=hot-path reason="Pure DTO assembly; ComposeRecoveryDelta logs hint metrics."
 func (h *Harness) buildRecoveryContext(
-	phase domain.Phase,
-	task *domain.Task,
-	cycle *domain.TaskCycle,
+	phase cyclesdomain.Phase,
+	task *taskcoredomain.Task,
+	cycle *cyclesdomain.TaskCycle,
 	state *processState,
 	opts cycleLoopOpts,
-	retryMode domain.RetryMode,
+	retryMode taskcoredomain.RetryMode,
 ) prompt.RecoveryContext {
 	reportPath := reports.CriteriaReportPath(h.opts.ReportDir, cycle.ID)
 	locked := lockedCriterionIDs(state.verify.previouslyPassed)
@@ -281,12 +282,12 @@ func (h *Harness) buildRecoveryContext(
 
 //funclogmeasure:skip category=hot-path reason="Pure kind selection from in-memory state."
 func (h *Harness) selectRecoveryKind(
-	phase domain.Phase,
+	phase cyclesdomain.Phase,
 	state *processState,
 	opts cycleLoopOpts,
-	retryMode domain.RetryMode,
+	retryMode taskcoredomain.RetryMode,
 ) prompt.RecoveryKind {
-	if phase == domain.PhaseVerify {
+	if phase == cyclesdomain.PhaseVerify {
 		if state.verify.verifyAttempt > 0 {
 			return prompt.RecoveryVerifyFeedback
 		}
@@ -298,7 +299,7 @@ func (h *Harness) selectRecoveryKind(
 		}
 		return prompt.RecoveryCriteriaReportInvalid
 	}
-	if retryMode == domain.RetryResume && opts.continuation != nil {
+	if retryMode == taskcoredomain.RetryResume && opts.continuation != nil {
 		return prompt.RecoveryOperatorRetryResume
 	}
 	if opts.resumeNotice {

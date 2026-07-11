@@ -3,8 +3,8 @@ package contract
 import (
 	"context"
 
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 // TaskEventStore covers task audit/event timeline reads and response append.
@@ -18,5 +18,5 @@ type TaskEventStore interface {
 
 // TaskGetter loads a task row for route guards (404 when missing).
 type TaskGetter interface {
-	Get(ctx context.Context, id string) (*domain.Task, error)
+	Get(ctx context.Context, id string) (*taskcoredomain.Task, error)
 }

@@ -14,7 +14,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	projectsstore "github.com/AlexsanderHamir/Hamix/pkgs/projects/store"
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -25,7 +25,7 @@ func (s *Store) registerGitRepository(ctx context.Context, input CreateGitReposi
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "gitinventory.store.registerGitRepository")
 	path := strings.TrimSpace(input.Path)
 	if path == "" {
-		return gitdomain.GitRepository{}, fmt.Errorf("%w: path required", domain.ErrInvalidInput)
+		return gitdomain.GitRepository{}, fmt.Errorf("%w: path required", taskcoredomain.ErrInvalidInput)
 	}
 	if gitSvc == nil {
 		gitSvc = gitwork.New()

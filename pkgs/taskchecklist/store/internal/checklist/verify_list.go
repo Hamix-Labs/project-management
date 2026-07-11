@@ -9,7 +9,7 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel/taskload"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"gorm.io/gorm"
 )
 
@@ -29,7 +29,7 @@ func ListForVerify(ctx context.Context, db *gorm.DB, taskID string) ([]VerifyIte
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.checklist.ListForVerify")
 	taskID = strings.TrimSpace(taskID)
 	if taskID == "" {
-		return nil, fmt.Errorf("%w: id", domain.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: id", taskcoredomain.ErrInvalidInput)
 	}
 	var out []VerifyItem
 	err := db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {

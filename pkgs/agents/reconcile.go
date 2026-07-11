@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/worker"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
@@ -105,12 +105,12 @@ func ReconcileRunningTasksNotQueued(ctx context.Context, st worker.Store, q *Mem
 		res.Scanned++
 		task, err := st.Get(ctx, cycle.TaskID)
 		if err != nil {
-			if errors.Is(err, domain.ErrNotFound) {
+			if errors.Is(err, taskcoredomain.ErrNotFound) {
 				continue
 			}
 			return res, fmt.Errorf("agents running reconcile get task %q: %w", cycle.TaskID, err)
 		}
-		if task.Status != domain.StatusRunning {
+		if task.Status != taskcoredomain.StatusRunning {
 			continue
 		}
 		err = q.NotifyReadyTask(ctx, *task)

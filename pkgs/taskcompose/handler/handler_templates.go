@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strings"
 
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 func (h *Handler) listTaskTemplates(w http.ResponseWriter, r *http.Request) {
@@ -100,7 +100,7 @@ func (h *Handler) patchTaskTemplate(w http.ResponseWriter, r *http.Request) {
 	}
 	name := body.Name
 	if name == nil && payloadRaw == nil {
-		writeStoreError(w, r, op, fmt.Errorf("%w: no fields to update", domain.ErrInvalidInput))
+		writeStoreError(w, r, op, fmt.Errorf("%w: no fields to update", taskcoredomain.ErrInvalidInput))
 		return
 	}
 	updated, err := h.compose.PatchTemplate(r.Context(), id, name, payloadRaw)
@@ -138,7 +138,7 @@ func (h *Handler) instantiateTaskTemplates(w http.ResponseWriter, r *http.Reques
 	}
 	by := actorFromRequest(r)
 	resp := taskTemplateInstantiateResponseJSON{
-		Tasks:  make([]domain.Task, 0),
+		Tasks:  make([]taskcoredomain.Task, 0),
 		Errors: make([]taskTemplateInstantiateErrorJSON, 0),
 	}
 	successCounts := make(map[string]int)

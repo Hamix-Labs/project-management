@@ -14,7 +14,8 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/notifierfake"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/storefake"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
@@ -68,14 +69,14 @@ func NewEnv(t *testing.T, opts ...EnvOption) *Env {
 // CreateReadyTask seeds a task in ready status.
 //
 //funclogmeasure:skip category=tool-required-noop reason="Test-only harness helper; not part of production trace paths."
-func (h *Env) CreateReadyTask(ctx context.Context, title string) *domain.Task {
+func (h *Env) CreateReadyTask(ctx context.Context, title string) *taskcoredomain.Task {
 	h.T.Helper()
 	tsk, err := h.Store.Create(ctx, store.CreateTaskInput{
 		Title:         title,
 		InitialPrompt: "do the thing",
-		Status:        domain.StatusReady,
-		Priority:      domain.PriorityMedium,
-	}, domain.ActorUser)
+		Status:        taskcoredomain.StatusReady,
+		Priority:      taskcoredomain.PriorityMedium,
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		h.T.Fatalf("create task: %v", err)
 	}
@@ -85,15 +86,15 @@ func (h *Env) CreateReadyTask(ctx context.Context, title string) *domain.Task {
 // CreateReadyTaskWithModel seeds a ready task with a cursor model set.
 //
 //funclogmeasure:skip category=tool-required-noop reason="Test-only harness helper; not part of production trace paths."
-func (h *Env) CreateReadyTaskWithModel(ctx context.Context, title, model string) *domain.Task {
+func (h *Env) CreateReadyTaskWithModel(ctx context.Context, title, model string) *taskcoredomain.Task {
 	h.T.Helper()
 	tsk, err := h.Store.Create(ctx, store.CreateTaskInput{
 		Title:         title,
 		InitialPrompt: "do the thing",
-		Status:        domain.StatusReady,
-		Priority:      domain.PriorityMedium,
+		Status:        taskcoredomain.StatusReady,
+		Priority:      taskcoredomain.PriorityMedium,
 		CursorModel:   model,
-	}, domain.ActorUser)
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		h.T.Fatalf("create task: %v", err)
 	}
@@ -103,10 +104,10 @@ func (h *Env) CreateReadyTaskWithModel(ctx context.Context, title, model string)
 // TransitionRunning moves the task to running status.
 //
 //funclogmeasure:skip category=tool-required-noop reason="Test-only harness helper; not part of production trace paths."
-func (h *Env) TransitionRunning(ctx context.Context, tsk *domain.Task) *domain.Task {
+func (h *Env) TransitionRunning(ctx context.Context, tsk *taskcoredomain.Task) *taskcoredomain.Task {
 	h.T.Helper()
-	running := domain.StatusRunning
-	updated, err := h.Store.Update(ctx, tsk.ID, store.UpdateTaskInput{Status: &running}, domain.ActorAgent)
+	running := taskcoredomain.StatusRunning
+	updated, err := h.Store.Update(ctx, tsk.ID, store.UpdateTaskInput{Status: &running}, taskcoredomain.ActorAgent)
 	if err != nil {
 		h.T.Fatalf("transition running: %v", err)
 	}
@@ -127,7 +128,7 @@ func (h *Env) NewHarness(r runner.Runner, opts harness.Options) *harness.Harness
 // RunHarness invokes harness.Run asynchronously.
 //
 //funclogmeasure:skip category=tool-required-noop reason="Test-only harness helper; not part of production trace paths."
-func (h *Env) RunHarness(ctx context.Context, hh *harness.Harness, tsk *domain.Task) <-chan struct{} {
+func (h *Env) RunHarness(ctx context.Context, hh *harness.Harness, tsk *taskcoredomain.Task) <-chan struct{} {
 	h.T.Helper()
 	done := make(chan struct{})
 	go func() {
@@ -140,7 +141,7 @@ func (h *Env) RunHarness(ctx context.Context, hh *harness.Harness, tsk *domain.T
 // StartHarnessRun transitions the task to running then runs the harness.
 //
 //funclogmeasure:skip category=tool-required-noop reason="Test-only harness helper; not part of production trace paths."
-func (h *Env) StartHarnessRun(ctx context.Context, tsk *domain.Task, r runner.Runner, opts harness.Options) <-chan struct{} {
+func (h *Env) StartHarnessRun(ctx context.Context, tsk *taskcoredomain.Task, r runner.Runner, opts harness.Options) <-chan struct{} {
 	h.T.Helper()
 	tsk = h.TransitionRunning(ctx, tsk)
 	return h.RunHarness(ctx, h.NewHarness(r, opts), tsk)
@@ -149,7 +150,7 @@ func (h *Env) StartHarnessRun(ctx context.Context, tsk *domain.Task, r runner.Ru
 // WaitTaskStatus polls until the task reaches want or times out.
 //
 //funclogmeasure:skip category=tool-required-noop reason="Test-only harness helper; not part of production trace paths."
-func (h *Env) WaitTaskStatus(ctx context.Context, taskID string, want domain.Status) *domain.Task {
+func (h *Env) WaitTaskStatus(ctx context.Context, taskID string, want taskcoredomain.Status) *taskcoredomain.Task {
 	h.T.Helper()
 	deadline := time.Now().Add(h.pollTimeout)
 	for time.Now().Before(deadline) {
@@ -160,7 +161,7 @@ func (h *Env) WaitTaskStatus(ctx context.Context, taskID string, want domain.Sta
 		time.Sleep(PollInterval)
 	}
 	got, _ := h.Store.Get(ctx, taskID)
-	gotStatus := domain.Status("")
+	gotStatus := taskcoredomain.Status("")
 	if got != nil {
 		gotStatus = got.Status
 	}
@@ -231,7 +232,7 @@ func (b *BlockingRunner) Run(ctx context.Context, req runner.Request) (runner.Re
 // AssertCycleStatus checks cycle count and status for a task.
 //
 //funclogmeasure:skip category=tool-required-noop reason="Test-only harness helper; not part of production trace paths."
-func AssertCycleStatus(t *testing.T, st harness.Store, taskID string, wantCount int, wantStatus domain.CycleStatus) *domain.TaskCycle {
+func AssertCycleStatus(t *testing.T, st harness.Store, taskID string, wantCount int, wantStatus cyclesdomain.CycleStatus) *cyclesdomain.TaskCycle {
 	t.Helper()
 	cycles, err := st.ListCyclesForTask(context.Background(), taskID, 10)
 	if err != nil {
@@ -255,7 +256,7 @@ type StatusSnappingNotifier struct {
 	Store harness.Store
 
 	mu       sync.Mutex
-	statuses []domain.Status
+	statuses []taskcoredomain.Status
 	cycles   []string
 }
 
@@ -264,7 +265,7 @@ type StatusSnappingNotifier struct {
 //funclogmeasure:skip category=tool-required-noop reason="Test-only harness helper; not part of production trace paths."
 func (n *StatusSnappingNotifier) PublishCycleChange(taskID, cycleID string) {
 	tsk, _ := n.Store.Get(context.Background(), taskID)
-	var s domain.Status
+	var s taskcoredomain.Status
 	if tsk != nil {
 		s = tsk.Status
 	}
@@ -277,10 +278,10 @@ func (n *StatusSnappingNotifier) PublishCycleChange(taskID, cycleID string) {
 // Snapshot returns copies of recorded statuses and cycle IDs.
 //
 //funclogmeasure:skip category=tool-required-noop reason="Test-only harness helper; not part of production trace paths."
-func (n *StatusSnappingNotifier) Snapshot() ([]domain.Status, []string) {
+func (n *StatusSnappingNotifier) Snapshot() ([]taskcoredomain.Status, []string) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
-	st := make([]domain.Status, len(n.statuses))
+	st := make([]taskcoredomain.Status, len(n.statuses))
 	cy := make([]string, len(n.cycles))
 	copy(st, n.statuses)
 	copy(cy, n.cycles)

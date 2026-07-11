@@ -1,9 +1,8 @@
 package scheduling
 
 import (
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"time"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 // DecideNotifyAfterReadyTransition chooses post-commit queue notify and pickup wake
@@ -12,13 +11,13 @@ import (
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func DecideNotifyAfterReadyTransition(
-	prevStatus domain.Status,
-	task *domain.Task,
+	prevStatus taskcoredomain.Status,
+	task *taskcoredomain.Task,
 	pickupTouched bool,
 	now time.Time,
 ) NotifyDecision {
-	if task == nil || task.Status != domain.StatusReady {
-		if task != nil && task.Status != domain.StatusReady {
+	if task == nil || task.Status != taskcoredomain.StatusReady {
+		if task != nil && task.Status != taskcoredomain.StatusReady {
 			return NotifyDecision{CancelWake: true}
 		}
 		return NotifyDecision{}
@@ -27,7 +26,7 @@ func DecideNotifyAfterReadyTransition(
 		at := task.PickupNotBefore.UTC()
 		return NotifyDecision{ScheduleWake: &at}
 	}
-	transitionedToReady := prevStatus != domain.StatusReady
+	transitionedToReady := prevStatus != taskcoredomain.StatusReady
 	notify := transitionedToReady || pickupTouched
 	if notify && !ShouldNotifyReadyNow(task.PickupNotBefore, now) {
 		notify = false

@@ -4,7 +4,7 @@ package handler
 import (
 	"net/http"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
+	"github.com/AlexsanderHamir/Hamix/pkgs/settings/contract"
 )
 
 // Deps wires runner registry HTTP handlers into the taskapi mux.

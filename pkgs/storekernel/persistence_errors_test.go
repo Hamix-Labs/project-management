@@ -3,10 +3,9 @@ package storekernel
 import (
 	"errors"
 	"fmt"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"strings"
 	"testing"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 func TestMapPayloadPersistenceError(t *testing.T) {
@@ -20,13 +19,13 @@ func TestMapPayloadPersistenceError(t *testing.T) {
 			name:    "postgres invalid json",
 			err:     fmt.Errorf("patch template: ERROR: invalid input syntax for type json (SQLSTATE 22P02)"),
 			wantMsg: "payload could not be saved",
-			wantIn:  domain.ErrInvalidInput,
+			wantIn:  taskcoredomain.ErrInvalidInput,
 		},
 		{
 			name:    "sqlite malformed json",
 			err:     errors.New("malformed JSON"),
 			wantMsg: "payload could not be saved",
-			wantIn:  domain.ErrInvalidInput,
+			wantIn:  taskcoredomain.ErrInvalidInput,
 		},
 		{
 			name:    "passthrough",

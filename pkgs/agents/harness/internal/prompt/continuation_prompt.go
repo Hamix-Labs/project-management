@@ -2,20 +2,19 @@ package prompt
 
 import (
 	"fmt"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"strings"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 // ContinuationInput carries cross-cycle resume context for prompt assembly.
 type ContinuationInput struct {
 	LineageAttempt  int64
-	Cycle           *domain.TaskCycle
+	Cycle           *cyclesdomain.TaskCycle
 	FailureClass    string
 	FailureReason   string
-	FailurePhase    domain.Phase
+	FailurePhase    cyclesdomain.Phase
 	ScopeFiles      []string
-	Commits         []domain.TaskCycleCommit
+	Commits         []cyclesdomain.TaskCycleCommit
 	ExecuteFeedback string
 	RunnerFeedback  string
 	GitDiagnostics  string

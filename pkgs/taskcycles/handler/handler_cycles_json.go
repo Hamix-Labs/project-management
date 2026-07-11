@@ -2,9 +2,10 @@ package handler
 
 import (
 	"encoding/json"
+	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"time"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 // cycleStartJSON is the request body for POST /tasks/{id}/cycles.
@@ -20,22 +21,22 @@ type cycleStartJSON struct {
 
 // cycleTerminateJSON is the request body for PATCH /tasks/{id}/cycles/{cycleId}.
 type cycleTerminateJSON struct {
-	Status domain.CycleStatus `json:"status"`
-	Reason string             `json:"reason,omitempty"`
+	Status cyclesdomain.CycleStatus `json:"status"`
+	Reason string                   `json:"reason,omitempty"`
 }
 
 // phaseStartJSON is the request body for POST /tasks/{id}/cycles/{cycleId}/phases.
 type phaseStartJSON struct {
-	Phase domain.Phase `json:"phase"`
+	Phase cyclesdomain.Phase `json:"phase"`
 }
 
 // phasePatchJSON is the request body for
 // PATCH /tasks/{id}/cycles/{cycleId}/phases/{phaseSeq}. status is required;
 // summary and details are optional. A nil summary leaves the column unchanged.
 type phasePatchJSON struct {
-	Status  domain.PhaseStatus `json:"status"`
-	Summary *string            `json:"summary,omitempty"`
-	Details json.RawMessage    `json:"details,omitempty"`
+	Status  cyclesdomain.PhaseStatus `json:"status"`
+	Summary *string                  `json:"summary,omitempty"`
+	Details json.RawMessage          `json:"details,omitempty"`
 }
 
 // cycleMetaProjection is the typed view of TaskCycle.MetaJSON the SPA
@@ -63,7 +64,7 @@ type cycleMetaProjection struct {
 }
 
 // taskCycleResponse is the JSON shape for a single cycle row. Mirrors
-// domain.TaskCycle but uses snake_case keys consistent with the rest of
+// cyclesdomain.TaskCycle but uses snake_case keys consistent with the rest of
 // taskapi and exposes meta as raw JSON so the client never sees a quoted
 // string. meta is always present (defaulted to "{}" by the store).
 //
@@ -72,31 +73,31 @@ type cycleMetaProjection struct {
 // be "") so the SPA can read it unconditionally without a presence
 // check.
 type taskCycleResponse struct {
-	ID            string              `json:"id"`
-	TaskID        string              `json:"task_id"`
-	AttemptSeq    int64               `json:"attempt_seq"`
-	Status        domain.CycleStatus  `json:"status"`
-	StartedAt     time.Time           `json:"started_at"`
-	EndedAt       *time.Time          `json:"ended_at,omitempty"`
-	TriggeredBy   domain.Actor        `json:"triggered_by"`
-	ParentCycleID *string             `json:"parent_cycle_id,omitempty"`
-	Meta          json.RawMessage     `json:"meta"`
-	CycleMeta     cycleMetaProjection `json:"cycle_meta"`
+	ID            string                   `json:"id"`
+	TaskID        string                   `json:"task_id"`
+	AttemptSeq    int64                    `json:"attempt_seq"`
+	Status        cyclesdomain.CycleStatus `json:"status"`
+	StartedAt     time.Time                `json:"started_at"`
+	EndedAt       *time.Time               `json:"ended_at,omitempty"`
+	TriggeredBy   taskcoredomain.Actor     `json:"triggered_by"`
+	ParentCycleID *string                  `json:"parent_cycle_id,omitempty"`
+	Meta          json.RawMessage          `json:"meta"`
+	CycleMeta     cycleMetaProjection      `json:"cycle_meta"`
 }
 
 // taskCyclePhaseResponse is the JSON shape for a single phase row.
 // details is always present (defaulted to "{}" by the store).
 type taskCyclePhaseResponse struct {
-	ID        string             `json:"id"`
-	CycleID   string             `json:"cycle_id"`
-	Phase     domain.Phase       `json:"phase"`
-	PhaseSeq  int64              `json:"phase_seq"`
-	Status    domain.PhaseStatus `json:"status"`
-	StartedAt time.Time          `json:"started_at"`
-	EndedAt   *time.Time         `json:"ended_at,omitempty"`
-	Summary   *string            `json:"summary,omitempty"`
-	Details   json.RawMessage    `json:"details"`
-	EventSeq  *int64             `json:"event_seq,omitempty"`
+	ID        string                   `json:"id"`
+	CycleID   string                   `json:"cycle_id"`
+	Phase     cyclesdomain.Phase       `json:"phase"`
+	PhaseSeq  int64                    `json:"phase_seq"`
+	Status    cyclesdomain.PhaseStatus `json:"status"`
+	StartedAt time.Time                `json:"started_at"`
+	EndedAt   *time.Time               `json:"ended_at,omitempty"`
+	Summary   *string                  `json:"summary,omitempty"`
+	Details   json.RawMessage          `json:"details"`
+	EventSeq  *int64                   `json:"event_seq,omitempty"`
 }
 
 // taskCyclesListResponse is the JSON envelope for GET /tasks/{id}/cycles.
@@ -124,10 +125,10 @@ type taskCycleDetailResponse struct {
 	ID            string                   `json:"id"`
 	TaskID        string                   `json:"task_id"`
 	AttemptSeq    int64                    `json:"attempt_seq"`
-	Status        domain.CycleStatus       `json:"status"`
+	Status        cyclesdomain.CycleStatus `json:"status"`
 	StartedAt     time.Time                `json:"started_at"`
 	EndedAt       *time.Time               `json:"ended_at,omitempty"`
-	TriggeredBy   domain.Actor             `json:"triggered_by"`
+	TriggeredBy   taskcoredomain.Actor     `json:"triggered_by"`
 	ParentCycleID *string                  `json:"parent_cycle_id,omitempty"`
 	Meta          json.RawMessage          `json:"meta"`
 	CycleMeta     cycleMetaProjection      `json:"cycle_meta"`
@@ -171,14 +172,14 @@ type cycleCriteriaReportEntry struct {
 // as task_checklist_completions.verified_by so the SPA can render
 // the same chip in both surfaces.
 type cycleVerifyReportEntry struct {
-	ID           string              `json:"id"`
-	CycleID      string              `json:"cycle_id"`
-	AttemptSeq   int64               `json:"attempt_seq"`
-	CriterionID  string              `json:"criterion_id"`
-	Verified     bool                `json:"verified"`
-	VerifierKind domain.VerifierKind `json:"verifier_kind"`
-	Reasoning    string              `json:"reasoning"`
-	WrittenAt    time.Time           `json:"written_at"`
+	ID           string                       `json:"id"`
+	CycleID      string                       `json:"cycle_id"`
+	AttemptSeq   int64                        `json:"attempt_seq"`
+	CriterionID  string                       `json:"criterion_id"`
+	Verified     bool                         `json:"verified"`
+	VerifierKind checklistdomain.VerifierKind `json:"verifier_kind"`
+	Reasoning    string                       `json:"reasoning"`
+	WrittenAt    time.Time                    `json:"written_at"`
 }
 
 // cycleVerdictsResponse is the JSON envelope for

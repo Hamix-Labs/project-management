@@ -18,7 +18,7 @@ import (
 	"sync"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
 // Runner is a deterministic fake implementation of runner.Runner.
@@ -39,7 +39,7 @@ type Runner struct {
 
 type scriptKey struct {
 	taskID string
-	phase  domain.Phase
+	phase  cyclesdomain.Phase
 }
 
 type scripted struct {
@@ -93,7 +93,7 @@ func (r *Runner) WithDefaultModel(model string) *Runner {
 // Script registers result as the value Run will return for (taskID, phase).
 // Last write wins. Result is stored as-is; tests should typically build it
 // via runner.NewResult so caps are applied.
-func (r *Runner) Script(taskID string, phase domain.Phase, result runner.Result) {
+func (r *Runner) Script(taskID string, phase cyclesdomain.Phase, result runner.Result) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "runnerfake.Runner.Script",
 		"task_id", taskID, "phase", string(phase))
 	r.mu.Lock()
@@ -104,7 +104,7 @@ func (r *Runner) Script(taskID string, phase domain.Phase, result runner.Result)
 // Fail registers err as the error Run will return for (taskID, phase). The
 // accompanying result is the zero Result (mirroring the contract of
 // runner.ErrInvalidOutput).
-func (r *Runner) Fail(taskID string, phase domain.Phase, err error) {
+func (r *Runner) Fail(taskID string, phase cyclesdomain.Phase, err error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "runnerfake.Runner.Fail",
 		"task_id", taskID, "phase", string(phase), "err", err)
 	r.mu.Lock()
@@ -115,7 +115,7 @@ func (r *Runner) Fail(taskID string, phase domain.Phase, err error) {
 // FailWithResult registers (result, err) as the pair Run will return. Used
 // when the adapter contract requires both a partial Result and a typed
 // error (e.g. ErrNonZeroExit with the captured RawOutput).
-func (r *Runner) FailWithResult(taskID string, phase domain.Phase, result runner.Result, err error) {
+func (r *Runner) FailWithResult(taskID string, phase cyclesdomain.Phase, result runner.Result, err error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "runnerfake.Runner.FailWithResult",
 		"task_id", taskID, "phase", string(phase), "err", err)
 	r.mu.Lock()

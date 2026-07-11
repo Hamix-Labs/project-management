@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -11,8 +12,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 func createGlobalGitRepo(t *testing.T, h http.Handler, main string) string {
@@ -230,9 +229,9 @@ func TestHandler_gitErrHTTP_domainSentinels(t *testing.T) {
 		err    error
 		status int
 	}{
-		{"not found", domain.ErrNotFound, http.StatusNotFound},
-		{"invalid input", domain.ErrInvalidInput, http.StatusBadRequest},
-		{"conflict", domain.ErrConflict, http.StatusConflict},
+		{"not found", taskcoredomain.ErrNotFound, http.StatusNotFound},
+		{"invalid input", taskcoredomain.ErrInvalidInput, http.StatusBadRequest},
+		{"conflict", taskcoredomain.ErrConflict, http.StatusConflict},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

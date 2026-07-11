@@ -2,10 +2,9 @@ package handler
 
 import (
 	"encoding/json"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"net/http"
 	"testing"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 // TestHTTP_createTask_onHoldStatusAllowed pins the contract that
@@ -24,12 +23,12 @@ func TestHTTP_createTask_onHoldStatusAllowed(t *testing.T) {
 	if res.StatusCode != http.StatusCreated {
 		t.Fatalf("status %d (want 201; on_hold is a valid create-time status) body=%s", res.StatusCode, raw)
 	}
-	var got domain.Task
+	var got taskcoredomain.Task
 	if err := json.Unmarshal(raw, &got); err != nil {
 		t.Fatal(err)
 	}
-	if got.Status != domain.StatusOnHold {
-		t.Fatalf("status=%q want %q (server must echo the on_hold the client asked for)", got.Status, domain.StatusOnHold)
+	if got.Status != taskcoredomain.StatusOnHold {
+		t.Fatalf("status=%q want %q (server must echo the on_hold the client asked for)", got.Status, taskcoredomain.StatusOnHold)
 	}
 }
 
@@ -50,11 +49,11 @@ func TestHTTP_patchTask_onHoldRoundTrip(t *testing.T) {
 	if res.StatusCode != http.StatusOK {
 		t.Fatalf("ready→on_hold: status %d body=%s", res.StatusCode, raw)
 	}
-	var afterHold domain.Task
+	var afterHold taskcoredomain.Task
 	if err := json.Unmarshal(raw, &afterHold); err != nil {
 		t.Fatal(err)
 	}
-	if afterHold.Status != domain.StatusOnHold {
+	if afterHold.Status != taskcoredomain.StatusOnHold {
 		t.Fatalf("status=%q want on_hold", afterHold.Status)
 	}
 
@@ -63,11 +62,11 @@ func TestHTTP_patchTask_onHoldRoundTrip(t *testing.T) {
 	if res.StatusCode != http.StatusOK {
 		t.Fatalf("on_hold→ready: status %d body=%s", res.StatusCode, raw)
 	}
-	var afterResume domain.Task
+	var afterResume taskcoredomain.Task
 	if err := json.Unmarshal(raw, &afterResume); err != nil {
 		t.Fatal(err)
 	}
-	if afterResume.Status != domain.StatusReady {
+	if afterResume.Status != taskcoredomain.StatusReady {
 		t.Fatalf("status=%q want ready", afterResume.Status)
 	}
 }

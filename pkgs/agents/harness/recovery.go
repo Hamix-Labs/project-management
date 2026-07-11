@@ -9,7 +9,8 @@ import (
 	"runtime/debug"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/reports"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
@@ -41,9 +42,9 @@ func (h *Harness) handleShutdownAfterRun(state *processState, taskID string) {
 		if _, err := h.store.CompletePhase(bg, store.CompletePhaseInput{
 			CycleID:  state.cycle.cycleID,
 			PhaseSeq: state.phase.runningPhaseSeq,
-			Status:   domain.PhaseStatusFailed,
+			Status:   cyclesdomain.PhaseStatusFailed,
 			Summary:  &summary,
-			By:       domain.ActorAgent,
+			By:       taskcoredomain.ActorAgent,
 		}); err != nil {
 			slog.Warn("agent harness shutdown CompletePhase failed", "cmd", calltrace.LogCmd,
 				"operation", "agent.harness.Harness.handleShutdownAfterRun.complete_err",
@@ -55,19 +56,19 @@ func (h *Harness) handleShutdownAfterRun(state *processState, taskID string) {
 		state.phase.runningPhaseSeq = 0
 	}
 	if state.cycle.cycleStarted {
-		if _, err := h.store.TerminateCycle(bg, state.cycle.cycleID, domain.CycleStatusAborted, ShutdownReason, domain.ActorAgent); err != nil {
+		if _, err := h.store.TerminateCycle(bg, state.cycle.cycleID, cyclesdomain.CycleStatusAborted, ShutdownReason, taskcoredomain.ActorAgent); err != nil {
 			slog.Warn("agent harness shutdown TerminateCycle failed", "cmd", calltrace.LogCmd,
 				"operation", "agent.harness.Harness.handleShutdownAfterRun.terminate_err",
 				"cycle_id", state.cycle.cycleID, "err", err)
 		} else {
 			h.publish(taskID, state.cycle.cycleID)
-			h.recordRun(string(domain.CycleStatusAborted), h.runner.Name(), state.cycle.effectiveModel, state.cycle.startedAt)
+			h.recordRun(string(cyclesdomain.CycleStatusAborted), h.runner.Name(), state.cycle.effectiveModel, state.cycle.startedAt)
 		}
 		state.cycle.cycleStarted = false
 	}
-	failed := domain.StatusFailed
-	if _, err := h.store.Update(bg, taskID, store.UpdateTaskInput{Status: &failed}, domain.ActorAgent); err != nil {
-		if !errors.Is(err, domain.ErrNotFound) {
+	failed := taskcoredomain.StatusFailed
+	if _, err := h.store.Update(bg, taskID, store.UpdateTaskInput{Status: &failed}, taskcoredomain.ActorAgent); err != nil {
+		if !errors.Is(err, taskcoredomain.ErrNotFound) {
 			slog.Warn("agent harness shutdown task transition failed", "cmd", calltrace.LogCmd,
 				"operation", "agent.harness.Harness.handleShutdownAfterRun.task_err",
 				"task_id", taskID, "err", err)
@@ -99,7 +100,7 @@ func (h *Harness) cleanupCycleReports(cycleID, reason string) {
 // branch's "background context + bounded deadline" pattern so even a
 // catastrophic failure leaves the audit trail honest. The Run loop
 // keeps going on the next Receive.
-func (h *Harness) recoverFromPanic(state *processState, task domain.Task) {
+func (h *Harness) recoverFromPanic(state *processState, task taskcoredomain.Task) {
 	r := recover()
 	if r == nil {
 		slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.recoverFromPanic.no_panic")
@@ -115,9 +116,9 @@ func (h *Harness) recoverFromPanic(state *processState, task domain.Task) {
 		if _, err := h.store.CompletePhase(bg, store.CompletePhaseInput{
 			CycleID:  state.cycle.cycleID,
 			PhaseSeq: state.phase.runningPhaseSeq,
-			Status:   domain.PhaseStatusFailed,
+			Status:   cyclesdomain.PhaseStatusFailed,
 			Summary:  &summary,
-			By:       domain.ActorAgent,
+			By:       taskcoredomain.ActorAgent,
 		}); err != nil {
 			slog.Warn("agent harness panic CompletePhase failed", "cmd", calltrace.LogCmd,
 				"operation", "agent.harness.Harness.recoverFromPanic.complete_err",
@@ -129,19 +130,19 @@ func (h *Harness) recoverFromPanic(state *processState, task domain.Task) {
 		state.phase.runningPhaseSeq = 0
 	}
 	if state.cycle.cycleStarted {
-		if _, err := h.store.TerminateCycle(bg, state.cycle.cycleID, domain.CycleStatusFailed, PanicReason, domain.ActorAgent); err != nil {
+		if _, err := h.store.TerminateCycle(bg, state.cycle.cycleID, cyclesdomain.CycleStatusFailed, PanicReason, taskcoredomain.ActorAgent); err != nil {
 			slog.Warn("agent harness panic TerminateCycle failed", "cmd", calltrace.LogCmd,
 				"operation", "agent.harness.Harness.recoverFromPanic.terminate_err",
 				"cycle_id", state.cycle.cycleID, "err", err)
 		} else {
 			h.publish(task.ID, state.cycle.cycleID)
-			h.recordRun(string(domain.CycleStatusFailed), h.runner.Name(), state.cycle.effectiveModel, state.cycle.startedAt)
+			h.recordRun(string(cyclesdomain.CycleStatusFailed), h.runner.Name(), state.cycle.effectiveModel, state.cycle.startedAt)
 		}
 		state.cycle.cycleStarted = false
 	}
-	failed := domain.StatusFailed
-	if _, err := h.store.Update(bg, task.ID, store.UpdateTaskInput{Status: &failed}, domain.ActorAgent); err != nil {
-		if !errors.Is(err, domain.ErrNotFound) {
+	failed := taskcoredomain.StatusFailed
+	if _, err := h.store.Update(bg, task.ID, store.UpdateTaskInput{Status: &failed}, taskcoredomain.ActorAgent); err != nil {
+		if !errors.Is(err, taskcoredomain.ErrNotFound) {
 			slog.Warn("agent harness panic task transition failed", "cmd", calltrace.LogCmd,
 				"operation", "agent.harness.Harness.recoverFromPanic.task_err",
 				"task_id", task.ID, "err", err)
@@ -157,9 +158,9 @@ func (h *Harness) recoverFromPanic(state *processState, task domain.Task) {
 func (h *Harness) bestEffortFailTask(ctx context.Context, taskID string) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.bestEffortFailTask",
 		"task_id", taskID)
-	failed := domain.StatusFailed
-	if _, err := h.store.Update(ctx, taskID, store.UpdateTaskInput{Status: &failed}, domain.ActorAgent); err != nil {
-		if !errors.Is(err, domain.ErrNotFound) {
+	failed := taskcoredomain.StatusFailed
+	if _, err := h.store.Update(ctx, taskID, store.UpdateTaskInput{Status: &failed}, taskcoredomain.ActorAgent); err != nil {
+		if !errors.Is(err, taskcoredomain.ErrNotFound) {
 			slog.Warn("agent harness bestEffortFailTask failed", "cmd", calltrace.LogCmd,
 				"operation", "agent.harness.Harness.bestEffortFailTask.err",
 				"task_id", taskID, "err", err)
@@ -171,7 +172,7 @@ func (h *Harness) bestEffortFailTask(ctx context.Context, taskID string) {
 // pipeline tripped before runner.Run; used when StartPhase or its
 // follow-up writes failed. Best-effort: store errors are logged and
 // swallowed, the startup sweep is the safety net.
-func (h *Harness) bestEffortTerminate(ctx context.Context, state *processState, taskID string, status domain.CycleStatus, reason string) {
+func (h *Harness) bestEffortTerminate(ctx context.Context, state *processState, taskID string, status cyclesdomain.CycleStatus, reason string) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.bestEffortTerminate",
 		"cycle_id", state.cycle.cycleID, "status", string(status), "reason", reason)
 	if state.phase.runningPhaseSeq > 0 {
@@ -179,11 +180,11 @@ func (h *Harness) bestEffortTerminate(ctx context.Context, state *processState, 
 		if _, err := h.store.CompletePhase(ctx, store.CompletePhaseInput{
 			CycleID:  state.cycle.cycleID,
 			PhaseSeq: state.phase.runningPhaseSeq,
-			Status:   domain.PhaseStatusFailed,
+			Status:   cyclesdomain.PhaseStatusFailed,
 			Summary:  &summary,
-			By:       domain.ActorAgent,
+			By:       taskcoredomain.ActorAgent,
 		}); err != nil {
-			if !errors.Is(err, domain.ErrNotFound) {
+			if !errors.Is(err, taskcoredomain.ErrNotFound) {
 				slog.Warn("agent harness bestEffortTerminate CompletePhase failed",
 					"cmd", calltrace.LogCmd,
 					"operation", "agent.harness.Harness.bestEffortTerminate.complete_err",
@@ -196,8 +197,8 @@ func (h *Harness) bestEffortTerminate(ctx context.Context, state *processState, 
 		state.phase.runningPhaseSeq = 0
 	}
 	if state.cycle.cycleStarted {
-		if _, err := h.store.TerminateCycle(ctx, state.cycle.cycleID, status, reason, domain.ActorAgent); err != nil {
-			if !errors.Is(err, domain.ErrNotFound) {
+		if _, err := h.store.TerminateCycle(ctx, state.cycle.cycleID, status, reason, taskcoredomain.ActorAgent); err != nil {
+			if !errors.Is(err, taskcoredomain.ErrNotFound) {
 				slog.Warn("agent harness bestEffortTerminate TerminateCycle failed",
 					"cmd", calltrace.LogCmd,
 					"operation", "agent.harness.Harness.bestEffortTerminate.terminate_err",

@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 	"net/url"
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 func nonObjectJSONFixtures() map[string][]byte {
@@ -42,12 +42,12 @@ func assertObjectMessage(t *testing.T, label string, raw json.RawMessage) {
 func TestTaskEventDetailFromDomain_normalizes_non_object_data(t *testing.T) {
 	for name, raw := range nonObjectJSONFixtures() {
 		t.Run(name, func(t *testing.T) {
-			ev := &domain.TaskEvent{
+			ev := &taskeventsdomain.TaskEvent{
 				TaskID: "tsk_3",
 				Seq:    1,
 				At:     time.Now().UTC(),
-				Type:   domain.EventStatusChanged,
-				By:     domain.ActorUser,
+				Type:   taskeventsdomain.EventStatusChanged,
+				By:     taskcoredomain.ActorUser,
 				Data:   raw,
 			}
 			resp := taskEventDetailFromDomain(ev, "tsk_3")
@@ -59,12 +59,12 @@ func TestTaskEventDetailFromDomain_normalizes_non_object_data(t *testing.T) {
 func TestTaskEventLines_normalizes_non_object_data(t *testing.T) {
 	for name, raw := range nonObjectJSONFixtures() {
 		t.Run(name, func(t *testing.T) {
-			evs := []domain.TaskEvent{{
+			evs := []taskeventsdomain.TaskEvent{{
 				TaskID: "tsk_4",
 				Seq:    1,
 				At:     time.Now().UTC(),
-				Type:   domain.EventStatusChanged,
-				By:     domain.ActorUser,
+				Type:   taskeventsdomain.EventStatusChanged,
+				By:     taskcoredomain.ActorUser,
 				Data:   raw,
 			}}
 			lines := taskEventLines(evs)
@@ -82,7 +82,7 @@ func TestParseTaskEventsLimit_reject_overlong_limit(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error")
 	}
-	if !errors.Is(err, domain.ErrInvalidInput) {
+	if !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		t.Fatalf("got %v", err)
 	}
 }

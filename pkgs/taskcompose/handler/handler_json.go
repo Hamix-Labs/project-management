@@ -3,10 +3,9 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"net/url"
 	"strings"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 type taskDraftSaveJSON struct {
@@ -48,7 +47,7 @@ type taskTemplateInstantiateErrorJSON struct {
 }
 
 type taskTemplateInstantiateResponseJSON struct {
-	Tasks  []domain.Task                      `json:"tasks"`
+	Tasks  []taskcoredomain.Task              `json:"tasks"`
 	Errors []taskTemplateInstantiateErrorJSON `json:"errors"`
 }
 
@@ -61,7 +60,7 @@ func parseTemplateListQuery(q url.Values) (sort, order, tag string, err error) {
 		switch sort {
 		case "updated_at", "name", "instantiate_count":
 		default:
-			return "", "", "", fmt.Errorf("%w: invalid sort %q", domain.ErrInvalidInput, sort)
+			return "", "", "", fmt.Errorf("%w: invalid sort %q", taskcoredomain.ErrInvalidInput, sort)
 		}
 	}
 	order = strings.ToLower(strings.TrimSpace(q.Get("order")))
@@ -71,7 +70,7 @@ func parseTemplateListQuery(q url.Values) (sort, order, tag string, err error) {
 		switch order {
 		case "asc", "desc":
 		default:
-			return "", "", "", fmt.Errorf("%w: invalid order %q", domain.ErrInvalidInput, order)
+			return "", "", "", fmt.Errorf("%w: invalid order %q", taskcoredomain.ErrInvalidInput, order)
 		}
 	}
 	tag = strings.TrimSpace(q.Get("tag"))
@@ -84,7 +83,7 @@ func resolveInstantiateCount(raw *int) (int, error) {
 		return 1, nil
 	}
 	if *raw < 1 || *raw > maxTemplateInstantiateCountPerItem {
-		return 0, fmt.Errorf("%w: count must be integer 1..%d", domain.ErrInvalidInput, maxTemplateInstantiateCountPerItem)
+		return 0, fmt.Errorf("%w: count must be integer 1..%d", taskcoredomain.ErrInvalidInput, maxTemplateInstantiateCountPerItem)
 	}
 	return *raw, nil
 }
@@ -98,10 +97,10 @@ func normalizeInstantiateItems(body taskTemplateInstantiateJSON) ([]taskTemplate
 		for _, row := range body.Items {
 			templateID := strings.TrimSpace(row.TemplateID)
 			if templateID == "" {
-				return nil, fmt.Errorf("%w: template id required", domain.ErrInvalidInput)
+				return nil, fmt.Errorf("%w: template id required", taskcoredomain.ErrInvalidInput)
 			}
 			if _, dup := seen[templateID]; dup {
-				return nil, fmt.Errorf("%w: duplicate template_id %q in items", domain.ErrInvalidInput, templateID)
+				return nil, fmt.Errorf("%w: duplicate template_id %q in items", taskcoredomain.ErrInvalidInput, templateID)
 			}
 			seen[templateID] = struct{}{}
 			count, err := resolveInstantiateCount(row.Count)
@@ -110,7 +109,7 @@ func normalizeInstantiateItems(body taskTemplateInstantiateJSON) ([]taskTemplate
 			}
 			total += count
 			if total > maxTemplateInstantiateTotalCreates {
-				return nil, fmt.Errorf("%w: total creates must not exceed %d", domain.ErrInvalidInput, maxTemplateInstantiateTotalCreates)
+				return nil, fmt.Errorf("%w: total creates must not exceed %d", taskcoredomain.ErrInvalidInput, maxTemplateInstantiateTotalCreates)
 			}
 			items = append(items, taskTemplateInstantiateItem{
 				TemplateID: templateID,
@@ -118,13 +117,13 @@ func normalizeInstantiateItems(body taskTemplateInstantiateJSON) ([]taskTemplate
 			})
 		}
 		if len(items) == 0 {
-			return nil, fmt.Errorf("%w: items required", domain.ErrInvalidInput)
+			return nil, fmt.Errorf("%w: items required", taskcoredomain.ErrInvalidInput)
 		}
 		return items, nil
 	}
 
 	if len(body.TemplateIDs) == 0 {
-		return nil, fmt.Errorf("%w: template_ids or items required", domain.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: template_ids or items required", taskcoredomain.ErrInvalidInput)
 	}
 	defaultCount, err := resolveInstantiateCount(body.Count)
 	if err != nil {
@@ -132,13 +131,13 @@ func normalizeInstantiateItems(body taskTemplateInstantiateJSON) ([]taskTemplate
 	}
 	total := defaultCount * len(body.TemplateIDs)
 	if total > maxTemplateInstantiateTotalCreates {
-		return nil, fmt.Errorf("%w: total creates must not exceed %d", domain.ErrInvalidInput, maxTemplateInstantiateTotalCreates)
+		return nil, fmt.Errorf("%w: total creates must not exceed %d", taskcoredomain.ErrInvalidInput, maxTemplateInstantiateTotalCreates)
 	}
 	items := make([]taskTemplateInstantiateItem, 0, len(body.TemplateIDs))
 	for _, templateID := range body.TemplateIDs {
 		templateID = strings.TrimSpace(templateID)
 		if templateID == "" {
-			return nil, fmt.Errorf("%w: template id required", domain.ErrInvalidInput)
+			return nil, fmt.Errorf("%w: template id required", taskcoredomain.ErrInvalidInput)
 		}
 		items = append(items, taskTemplateInstantiateItem{
 			TemplateID: templateID,

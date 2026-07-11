@@ -6,7 +6,9 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/runnerfake"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
+	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 	"os"
 	"path/filepath"
@@ -28,7 +30,7 @@ func TestWorker_VerifyPhase_failsCycleWhenVerifyTampers(t *testing.T) {
 	defer cancel()
 
 	tsk := h.CreateReadyTask(ctx, "verify-tampers")
-	item, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", nil, domain.ActorUser)
+	item, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("add checklist item: %v", err)
 	}
@@ -44,7 +46,7 @@ func TestWorker_VerifyPhase_failsCycleWhenVerifyTampers(t *testing.T) {
 
 	execRunner := runnerfake.New()
 	execHook := &hookRunner{Runner: execRunner, preRun: func(req runner.Request) {
-		if req.Phase != domain.PhaseExecute {
+		if req.Phase != cyclesdomain.PhaseExecute {
 			return
 		}
 		cycles, _ := h.Store.ListCyclesForTask(context.Background(), req.TaskID, 1)
@@ -52,12 +54,12 @@ func TestWorker_VerifyPhase_failsCycleWhenVerifyTampers(t *testing.T) {
 			writeCriteriaReportWithGitWork(t, reportDir, cycles[0].ID, workDir, []string{item.ID})
 		}
 	}}
-	execRunner.Script(tsk.ID, domain.PhaseExecute, runner.NewResult(
-		domain.PhaseStatusSucceeded, "exec ok", nil, ""))
+	execRunner.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(
+		cyclesdomain.PhaseStatusSucceeded, "exec ok", nil, ""))
 
 	verifyRunner := runnerfake.New().WithName("naughty-verify")
 	verifyHook := &hookRunner{Runner: verifyRunner, preRun: func(req runner.Request) {
-		if req.Phase != domain.PhaseVerify {
+		if req.Phase != cyclesdomain.PhaseVerify {
 			return
 		}
 		cycles, _ := h.Store.ListCyclesForTask(context.Background(), req.TaskID, 1)
@@ -71,18 +73,18 @@ func TestWorker_VerifyPhase_failsCycleWhenVerifyTampers(t *testing.T) {
 			t.Logf("tamper write: %v", err)
 		}
 	}}
-	verifyRunner.Script(tsk.ID, domain.PhaseVerify, runner.NewResult(
-		domain.PhaseStatusSucceeded, "verify ok", nil, ""))
+	verifyRunner.Script(tsk.ID, cyclesdomain.PhaseVerify, runner.NewResult(
+		cyclesdomain.PhaseStatusSucceeded, "verify ok", nil, ""))
 
 	done := h.StartHarnessRun(ctx, tsk, execHook, harness.Options{
 		WorkingDir:   workDir,
 		ReportDir:    reportDir,
 		VerifyRunner: verifyHook,
 	})
-	final := h.WaitTaskStatus(ctx, tsk.ID, domain.StatusFailed)
+	final := h.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusFailed)
 	<-done
 	cancel()
-	if final.Status != domain.StatusFailed {
+	if final.Status != taskcoredomain.StatusFailed {
 		t.Fatalf("task status = %q, want failed", final.Status)
 	}
 
@@ -91,14 +93,14 @@ func TestWorker_VerifyPhase_failsCycleWhenVerifyTampers(t *testing.T) {
 	if len(cycles) != 1 {
 		t.Fatalf("cycle count = %d, want 1 (no retries on tamper)", len(cycles))
 	}
-	if cycles[0].Status != domain.CycleStatusFailed {
+	if cycles[0].Status != cyclesdomain.CycleStatusFailed {
 		t.Fatalf("cycle status = %q, want failed", cycles[0].Status)
 	}
 
 	events, _ := h.Store.ListTaskEvents(bg, tsk.ID)
 	sawTampered := false
 	for _, e := range events {
-		if e.Type != domain.EventCycleFailed {
+		if e.Type != taskeventsdomain.EventCycleFailed {
 			continue
 		}
 		if strings.Contains(string(e.Data), "verify_tampered") {
@@ -113,7 +115,7 @@ func TestWorker_VerifyPhase_failsCycleWhenVerifyTampers(t *testing.T) {
 	// terminal, retries do not run.
 	verifyCallCount := 0
 	for _, c := range verifyRunner.Calls() {
-		if c.Phase == domain.PhaseVerify {
+		if c.Phase == cyclesdomain.PhaseVerify {
 			verifyCallCount++
 		}
 	}
@@ -134,11 +136,11 @@ func TestWorker_VerifyPhase_finalFailureWritesNoCompletions(t *testing.T) {
 	defer cancel()
 
 	tsk := h.CreateReadyTask(ctx, "verify-no-completion")
-	c1, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", nil, domain.ActorUser)
+	c1, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("add c1: %v", err)
 	}
-	c2, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion two", nil, domain.ActorUser)
+	c2, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion two", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("add c2: %v", err)
 	}
@@ -153,7 +155,7 @@ func TestWorker_VerifyPhase_finalFailureWritesNoCompletions(t *testing.T) {
 	var execAttempt atomic.Int32
 	execRunner := runnerfake.New()
 	execHook := &hookRunner{Runner: execRunner, preRun: func(req runner.Request) {
-		if req.Phase != domain.PhaseExecute {
+		if req.Phase != cyclesdomain.PhaseExecute {
 			return
 		}
 		cycles, _ := h.Store.ListCyclesForTask(context.Background(), req.TaskID, 1)
@@ -167,12 +169,12 @@ func TestWorker_VerifyPhase_finalFailureWritesNoCompletions(t *testing.T) {
 		}
 		writeCriteriaReportFor(t, reportDir, cycles[0].ID, ids)
 	}}
-	execRunner.Script(tsk.ID, domain.PhaseExecute, runner.NewResult(
-		domain.PhaseStatusSucceeded, "exec ok", nil, ""))
+	execRunner.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(
+		cyclesdomain.PhaseStatusSucceeded, "exec ok", nil, ""))
 
 	verifyRunner := runnerfake.New()
 	verifyHook := &hookRunner{Runner: verifyRunner, preRun: func(req runner.Request) {
-		if req.Phase != domain.PhaseVerify {
+		if req.Phase != cyclesdomain.PhaseVerify {
 			return
 		}
 		cycles, _ := h.Store.ListCyclesForTask(context.Background(), req.TaskID, 1)
@@ -183,15 +185,15 @@ func TestWorker_VerifyPhase_finalFailureWritesNoCompletions(t *testing.T) {
 		ids := map[string]bool{c1.ID: true, c2.ID: false}
 		writePartialVerifyReport(t, reportDir, cycles[0].ID, ids)
 	}}
-	verifyRunner.Script(tsk.ID, domain.PhaseVerify, runner.NewResult(
-		domain.PhaseStatusSucceeded, "verify ok", nil, ""))
+	verifyRunner.Script(tsk.ID, cyclesdomain.PhaseVerify, runner.NewResult(
+		cyclesdomain.PhaseStatusSucceeded, "verify ok", nil, ""))
 
 	done := h.StartHarnessRun(ctx, tsk, execHook, harness.Options{
 		WorkingDir:   workDir,
 		ReportDir:    reportDir,
 		VerifyRunner: verifyHook,
 	})
-	h.WaitTaskStatus(ctx, tsk.ID, domain.StatusFailed)
+	h.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusFailed)
 	<-done
 	cancel()
 	bg := context.Background()
@@ -217,11 +219,11 @@ func TestWorker_VerifyPhase_terminateReasonIncludesFailingIDs(t *testing.T) {
 	defer cancel()
 
 	tsk := h.CreateReadyTask(ctx, "verify-reason-ids")
-	c1, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", nil, domain.ActorUser)
+	c1, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("add c1: %v", err)
 	}
-	c2, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion two", nil, domain.ActorUser)
+	c2, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion two", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("add c2: %v", err)
 	}
@@ -235,7 +237,7 @@ func TestWorker_VerifyPhase_terminateReasonIncludesFailingIDs(t *testing.T) {
 	reportDir := t.TempDir()
 	execRunner := runnerfake.New()
 	execHook := &hookRunner{Runner: execRunner, preRun: func(req runner.Request) {
-		if req.Phase != domain.PhaseExecute {
+		if req.Phase != cyclesdomain.PhaseExecute {
 			return
 		}
 		cycles, _ := h.Store.ListCyclesForTask(context.Background(), req.TaskID, 1)
@@ -244,12 +246,12 @@ func TestWorker_VerifyPhase_terminateReasonIncludesFailingIDs(t *testing.T) {
 		}
 		writeCriteriaReport(t, reportDir, cycles[0].ID, []string{c1.ID, c2.ID})
 	}}
-	execRunner.Script(tsk.ID, domain.PhaseExecute, runner.NewResult(
-		domain.PhaseStatusSucceeded, "exec ok", nil, ""))
+	execRunner.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(
+		cyclesdomain.PhaseStatusSucceeded, "exec ok", nil, ""))
 
 	verifyRunner := runnerfake.New()
 	verifyHook := &hookRunner{Runner: verifyRunner, preRun: func(req runner.Request) {
-		if req.Phase != domain.PhaseVerify {
+		if req.Phase != cyclesdomain.PhaseVerify {
 			return
 		}
 		cycles, _ := h.Store.ListCyclesForTask(context.Background(), req.TaskID, 1)
@@ -260,15 +262,15 @@ func TestWorker_VerifyPhase_terminateReasonIncludesFailingIDs(t *testing.T) {
 			c1.ID: false, c2.ID: false,
 		})
 	}}
-	verifyRunner.Script(tsk.ID, domain.PhaseVerify, runner.NewResult(
-		domain.PhaseStatusSucceeded, "verify ok", nil, ""))
+	verifyRunner.Script(tsk.ID, cyclesdomain.PhaseVerify, runner.NewResult(
+		cyclesdomain.PhaseStatusSucceeded, "verify ok", nil, ""))
 
 	done := h.StartHarnessRun(ctx, tsk, execHook, harness.Options{
 		WorkingDir:   workDir,
 		ReportDir:    reportDir,
 		VerifyRunner: verifyHook,
 	})
-	h.WaitTaskStatus(ctx, tsk.ID, domain.StatusFailed)
+	h.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusFailed)
 	<-done
 	cancel()
 	bg := context.Background()
@@ -278,7 +280,7 @@ func TestWorker_VerifyPhase_terminateReasonIncludesFailingIDs(t *testing.T) {
 	}
 	var reason string
 	for _, e := range events {
-		if e.Type != domain.EventCycleFailed {
+		if e.Type != taskeventsdomain.EventCycleFailed {
 			continue
 		}
 		var payload struct {
@@ -317,7 +319,7 @@ func TestWorker_VerifyPhase_repoRootMutationStillTampered(t *testing.T) {
 	defer cancel()
 
 	tsk := h.CreateReadyTask(ctx, "verify-no-allowlist")
-	item, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", nil, domain.ActorUser)
+	item, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("add checklist item: %v", err)
 	}
@@ -328,7 +330,7 @@ func TestWorker_VerifyPhase_repoRootMutationStillTampered(t *testing.T) {
 
 	execRunner := runnerfake.New()
 	execHook := &hookRunner{Runner: execRunner, preRun: func(req runner.Request) {
-		if req.Phase != domain.PhaseExecute {
+		if req.Phase != cyclesdomain.PhaseExecute {
 			return
 		}
 		cycles, _ := h.Store.ListCyclesForTask(context.Background(), req.TaskID, 1)
@@ -336,12 +338,12 @@ func TestWorker_VerifyPhase_repoRootMutationStillTampered(t *testing.T) {
 			writeCriteriaReportWithGitWork(t, reportDir, cycles[0].ID, workDir, []string{item.ID})
 		}
 	}}
-	execRunner.Script(tsk.ID, domain.PhaseExecute, runner.NewResult(
-		domain.PhaseStatusSucceeded, "exec ok", nil, ""))
+	execRunner.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(
+		cyclesdomain.PhaseStatusSucceeded, "exec ok", nil, ""))
 
 	verifyRunner := runnerfake.New()
 	verifyHook := &hookRunner{Runner: verifyRunner, preRun: func(req runner.Request) {
-		if req.Phase != domain.PhaseVerify {
+		if req.Phase != cyclesdomain.PhaseVerify {
 			return
 		}
 		cycles, _ := h.Store.ListCyclesForTask(context.Background(), req.TaskID, 1)
@@ -355,21 +357,21 @@ func TestWorker_VerifyPhase_repoRootMutationStillTampered(t *testing.T) {
 			_ = os.WriteFile(filepath.Join(legacyDir, "verify-report.json"), []byte("{}"), 0o644)
 		}
 	}}
-	verifyRunner.Script(tsk.ID, domain.PhaseVerify, runner.NewResult(
-		domain.PhaseStatusSucceeded, "verify ok", nil, ""))
+	verifyRunner.Script(tsk.ID, cyclesdomain.PhaseVerify, runner.NewResult(
+		cyclesdomain.PhaseStatusSucceeded, "verify ok", nil, ""))
 
 	done := h.StartHarnessRun(ctx, tsk, execHook, harness.Options{
 		WorkingDir:   workDir,
 		ReportDir:    reportDir,
 		VerifyRunner: verifyHook,
 	})
-	h.WaitTaskStatus(ctx, tsk.ID, domain.StatusFailed)
+	h.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusFailed)
 	<-done
 	cancel()
 	events, _ := h.Store.ListTaskEvents(context.Background(), tsk.ID)
 	sawTampered := false
 	for _, e := range events {
-		if e.Type == domain.EventCycleFailed && strings.Contains(string(e.Data), "verify_tampered") {
+		if e.Type == taskeventsdomain.EventCycleFailed && strings.Contains(string(e.Data), "verify_tampered") {
 			sawTampered = true
 		}
 	}

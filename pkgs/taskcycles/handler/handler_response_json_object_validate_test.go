@@ -2,10 +2,10 @@ package handler
 
 import (
 	"encoding/json"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"testing"
 	"time"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 // docs/api.md pins the response invariant for cycle / phase / event
@@ -61,13 +61,13 @@ func assertObjectMessage(t *testing.T, label string, raw json.RawMessage) {
 func TestTaskCycleResponseFromDomain_normalizes_non_object_meta(t *testing.T) {
 	for name, raw := range nonObjectJSONFixtures() {
 		t.Run(name, func(t *testing.T) {
-			c := &domain.TaskCycle{
+			c := &cyclesdomain.TaskCycle{
 				ID:          "cyc_1",
 				TaskID:      "tsk_1",
 				AttemptSeq:  1,
-				Status:      domain.CycleStatusRunning,
+				Status:      cyclesdomain.CycleStatusRunning,
 				StartedAt:   time.Now().UTC(),
-				TriggeredBy: string(domain.ActorUser),
+				TriggeredBy: string(taskcoredomain.ActorUser),
 				MetaJSON:    raw,
 			}
 			resp := taskCycleResponseFromDomain(c)
@@ -79,12 +79,12 @@ func TestTaskCycleResponseFromDomain_normalizes_non_object_meta(t *testing.T) {
 func TestTaskCyclePhaseResponseFromDomain_normalizes_non_object_details(t *testing.T) {
 	for name, raw := range nonObjectJSONFixtures() {
 		t.Run(name, func(t *testing.T) {
-			p := &domain.TaskCyclePhase{
+			p := &cyclesdomain.TaskCyclePhase{
 				ID:          "phs_1",
 				CycleID:     "cyc_1",
-				Phase:       domain.PhaseExecute,
+				Phase:       cyclesdomain.PhaseExecute,
 				PhaseSeq:    1,
-				Status:      domain.PhaseStatusRunning,
+				Status:      cyclesdomain.PhaseStatusRunning,
 				StartedAt:   time.Now().UTC(),
 				DetailsJSON: raw,
 			}
@@ -97,21 +97,21 @@ func TestTaskCyclePhaseResponseFromDomain_normalizes_non_object_details(t *testi
 func TestTaskCycleDetailFromDomain_normalizes_non_object_meta_and_phase_details(t *testing.T) {
 	for name, raw := range nonObjectJSONFixtures() {
 		t.Run(name, func(t *testing.T) {
-			c := &domain.TaskCycle{
+			c := &cyclesdomain.TaskCycle{
 				ID:          "cyc_2",
 				TaskID:      "tsk_2",
 				AttemptSeq:  1,
-				Status:      domain.CycleStatusRunning,
+				Status:      cyclesdomain.CycleStatusRunning,
 				StartedAt:   time.Now().UTC(),
-				TriggeredBy: string(domain.ActorUser),
+				TriggeredBy: string(taskcoredomain.ActorUser),
 				MetaJSON:    raw,
 			}
-			phases := []domain.TaskCyclePhase{{
+			phases := []cyclesdomain.TaskCyclePhase{{
 				ID:          "phs_2",
 				CycleID:     "cyc_2",
-				Phase:       domain.PhaseExecute,
+				Phase:       cyclesdomain.PhaseExecute,
 				PhaseSeq:    1,
-				Status:      domain.PhaseStatusRunning,
+				Status:      cyclesdomain.PhaseStatusRunning,
 				StartedAt:   time.Now().UTC(),
 				DetailsJSON: raw,
 			}}
@@ -126,13 +126,13 @@ func TestTaskCycleDetailFromDomain_normalizes_non_object_meta_and_phase_details(
 }
 
 func TestTaskCycleResponseFromDomain_object_passes_through(t *testing.T) {
-	c := &domain.TaskCycle{
+	c := &cyclesdomain.TaskCycle{
 		ID:          "cyc_ok",
 		TaskID:      "tsk_ok",
 		AttemptSeq:  1,
-		Status:      domain.CycleStatusRunning,
+		Status:      cyclesdomain.CycleStatusRunning,
 		StartedAt:   time.Now().UTC(),
-		TriggeredBy: string(domain.ActorUser),
+		TriggeredBy: string(taskcoredomain.ActorUser),
 		MetaJSON:    []byte(`{"runner":"cursor-cli","prompt_hash":"abc"}`),
 	}
 	resp := taskCycleResponseFromDomain(c)

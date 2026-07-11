@@ -11,8 +11,9 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store/model"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -39,30 +40,30 @@ func UpsertCycleCommits(ctx context.Context, db *gorm.DB, taskID, cycleID string
 	taskID = strings.TrimSpace(taskID)
 	cycleID = strings.TrimSpace(cycleID)
 	if cycleID == "" {
-		return fmt.Errorf("%w: cycle_id", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: cycle_id", taskcoredomain.ErrInvalidInput)
 	}
 	if taskID == "" {
-		return fmt.Errorf("%w: task_id", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: task_id", taskcoredomain.ErrInvalidInput)
 	}
 	if len(entries) == 0 {
 		return nil
 	}
 	now := time.Now().UTC()
-	rows := make([]domain.TaskCycleCommit, 0, len(entries))
+	rows := make([]cyclesdomain.TaskCycleCommit, 0, len(entries))
 	seen := make(map[string]struct{}, len(entries))
 	for _, e := range entries {
 		sha := strings.TrimSpace(e.SHA)
 		if sha == "" {
-			return fmt.Errorf("%w: sha", domain.ErrInvalidInput)
+			return fmt.Errorf("%w: sha", taskcoredomain.ErrInvalidInput)
 		}
 		if e.PhaseSeq <= 0 || e.Seq <= 0 {
-			return fmt.Errorf("%w: phase_seq and seq must be positive", domain.ErrInvalidInput)
+			return fmt.Errorf("%w: phase_seq and seq must be positive", taskcoredomain.ErrInvalidInput)
 		}
 		if _, dup := seen[sha]; dup {
-			return fmt.Errorf("%w: duplicate sha %s", domain.ErrInvalidInput, sha)
+			return fmt.Errorf("%w: duplicate sha %s", taskcoredomain.ErrInvalidInput, sha)
 		}
 		seen[sha] = struct{}{}
-		rows = append(rows, domain.TaskCycleCommit{
+		rows = append(rows, cyclesdomain.TaskCycleCommit{
 			ID:          uuid.NewString(),
 			TaskID:      taskID,
 			CycleID:     cycleID,
@@ -92,13 +93,13 @@ func UpsertCycleCommits(ctx context.Context, db *gorm.DB, taskID, cycleID string
 }
 
 // ListCommitsForCycle returns commits for cycleID ordered by seq ASC.
-func ListCommitsForCycle(ctx context.Context, db *gorm.DB, cycleID string) ([]domain.TaskCycleCommit, error) {
+func ListCommitsForCycle(ctx context.Context, db *gorm.DB, cycleID string) ([]cyclesdomain.TaskCycleCommit, error) {
 	defer storekernel.DeferLatency(storekernel.OpListCommitsForCycle)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.commits.ListCommitsForCycle",
 		"cycle_id", cycleID)
 	cycleID = strings.TrimSpace(cycleID)
 	if cycleID == "" {
-		return nil, fmt.Errorf("%w: cycle_id", domain.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: cycle_id", taskcoredomain.ErrInvalidInput)
 	}
 	var rows []model.TaskCycleCommit
 	if err := db.WithContext(ctx).
@@ -113,13 +114,13 @@ func ListCommitsForCycle(ctx context.Context, db *gorm.DB, cycleID string) ([]do
 // ListCommitsForTask returns distinct commits indexed for taskID across every
 // execution attempt. When the same SHA appears on multiple cycles, the earliest
 // committed_at row wins.
-func ListCommitsForTask(ctx context.Context, db *gorm.DB, taskID string) ([]domain.TaskCycleCommit, error) {
+func ListCommitsForTask(ctx context.Context, db *gorm.DB, taskID string) ([]cyclesdomain.TaskCycleCommit, error) {
 	defer storekernel.DeferLatency(storekernel.OpListCommitsForTask)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.commits.ListCommitsForTask",
 		"task_id", taskID)
 	taskID = strings.TrimSpace(taskID)
 	if taskID == "" {
-		return nil, fmt.Errorf("%w: task_id", domain.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: task_id", taskcoredomain.ErrInvalidInput)
 	}
 	var rows []model.TaskCycleCommit
 	if err := db.WithContext(ctx).
@@ -132,11 +133,11 @@ func ListCommitsForTask(ctx context.Context, db *gorm.DB, taskID string) ([]doma
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func dedupeCommitsBySHA(rows []domain.TaskCycleCommit) []domain.TaskCycleCommit {
+func dedupeCommitsBySHA(rows []cyclesdomain.TaskCycleCommit) []cyclesdomain.TaskCycleCommit {
 	if len(rows) == 0 {
 		return nil
 	}
-	best := make(map[string]domain.TaskCycleCommit, len(rows))
+	best := make(map[string]cyclesdomain.TaskCycleCommit, len(rows))
 	order := make([]string, 0, len(rows))
 	for i := range rows {
 		sha := strings.TrimSpace(rows[i].SHA)
@@ -148,7 +149,7 @@ func dedupeCommitsBySHA(rows []domain.TaskCycleCommit) []domain.TaskCycleCommit 
 			best[sha] = rows[i]
 		}
 	}
-	out := make([]domain.TaskCycleCommit, 0, len(order))
+	out := make([]cyclesdomain.TaskCycleCommit, 0, len(order))
 	for _, sha := range order {
 		out = append(out, best[sha])
 	}

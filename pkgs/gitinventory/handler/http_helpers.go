@@ -12,9 +12,9 @@ import (
 	"strings"
 
 	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/apijson"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/logctx"
 )
 
@@ -37,7 +37,7 @@ func decodeJSON(ctx context.Context, r io.Reader, dst any) error {
 		}
 		return fmt.Errorf("json trailing data: %w", err)
 	}
-	return fmt.Errorf("%w: json trailing data", domain.ErrInvalidInput)
+	return fmt.Errorf("%w: json trailing data", taskcoredomain.ErrInvalidInput)
 }
 
 //funclogmeasure:skip category=delegate-already-logs reason="JSON response helper; HTTP handler chokepoint emits trace."
@@ -117,11 +117,11 @@ func GitErrHTTP(err error) (status int, code, msg string) {
 		return status, code, msg
 	}
 	switch {
-	case errors.Is(err, domain.ErrNotFound):
+	case errors.Is(err, taskcoredomain.ErrNotFound):
 		return http.StatusNotFound, "", "not found"
-	case errors.Is(err, domain.ErrInvalidInput):
+	case errors.Is(err, taskcoredomain.ErrInvalidInput):
 		return http.StatusBadRequest, "", invalidInputDetail(err)
-	case errors.Is(err, domain.ErrConflict):
+	case errors.Is(err, taskcoredomain.ErrConflict):
 		return http.StatusConflict, "", conflictDetail(err)
 	default:
 		return status, code, msg

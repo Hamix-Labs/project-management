@@ -9,14 +9,14 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 )
 
 const taskUpdatedPublishTimeout = 5 * time.Second
 
 type taskGetter interface {
-	Get(ctx context.Context, id string) (*domain.Task, error)
+	Get(ctx context.Context, id string) (*taskcoredomain.Task, error)
 }
 
 type cycleChangeSSEAdapter struct {

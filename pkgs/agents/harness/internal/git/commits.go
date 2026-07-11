@@ -10,7 +10,8 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/reports"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
@@ -126,7 +127,7 @@ func (s *Service) resolveClaimedCommits(
 	for i, claim := range claims {
 		sha := strings.TrimSpace(claim.SHA)
 		if !s.commitExists(ctx, g.Worktree, sha) {
-			return nil, fmt.Errorf("%w: commit %s not found in repository", domain.ErrInvalidInput, sha)
+			return nil, fmt.Errorf("%w: commit %s not found in repository", taskcoredomain.ErrInvalidInput, sha)
 		}
 		if g.CycleBaseSHA != "" && !s.commitInRange(ctx, g.Worktree, g.CycleBaseSHA, sha) {
 			slog.Warn("claimed commit outside cycle_base_sha..HEAD; indexing anyway",
@@ -196,7 +197,7 @@ func phaseContextFromSnapshot(snap PhaseSnapshot) phaseContext {
 func (s *Service) IngestExecuteCommits(
 	ctx context.Context,
 	taskID string,
-	cycle *domain.TaskCycle,
+	cycle *cyclesdomain.TaskCycle,
 	execPhaseSeq int64,
 	snap PhaseSnapshot,
 	publish func(taskID, cycleID string),
@@ -240,10 +241,10 @@ func (s *Service) PriorCycleBaseSHA(ctx context.Context, cycleID string, current
 	if err != nil {
 		return "", err
 	}
-	var first *domain.TaskCyclePhase
+	var first *cyclesdomain.TaskCyclePhase
 	for i := range phases {
 		p := &phases[i]
-		if p.Phase != domain.PhaseExecute || p.PhaseSeq >= currentPhaseSeq {
+		if p.Phase != cyclesdomain.PhaseExecute || p.PhaseSeq >= currentPhaseSeq {
 			continue
 		}
 		if first == nil || p.PhaseSeq < first.PhaseSeq {

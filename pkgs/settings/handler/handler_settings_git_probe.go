@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
-	taskdomain "github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 func (h *Handler) gitRepositoryProbe(w http.ResponseWriter, r *http.Request) {
@@ -41,7 +41,7 @@ func (h *Handler) gitRepositoryProbe(w http.ResponseWriter, r *http.Request) {
 			})
 			return
 		}
-		if errors.Is(err, taskdomain.ErrInvalidInput) {
+		if errors.Is(err, taskcoredomain.ErrInvalidInput) {
 			writeJSONError(w, r, op, http.StatusBadRequest, repoErrUserMessage(err))
 			return
 		}

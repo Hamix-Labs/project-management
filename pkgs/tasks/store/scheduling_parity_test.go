@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 )
 
 // I3 contract gate: scheduling.EvaluateWorkerReadiness must match ListQueueCandidates.
@@ -18,40 +18,40 @@ func TestSchedulingParity_GoReadinessMatchesListQueueCandidates(t *testing.T) {
 	now := time.Now().UTC()
 
 	dep, err := s.Create(ctx, CreateTaskInput{
-		Title: "dep", Status: domain.StatusReady, Priority: domain.PriorityMedium,
-	}, domain.ActorUser)
+		Title: "dep", Status: taskcoredomain.StatusReady, Priority: taskcoredomain.PriorityMedium,
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
 	blocked, err := s.Create(ctx, CreateTaskInput{
-		Title: "blocked", Status: domain.StatusReady, Priority: domain.PriorityMedium,
-	}, domain.ActorUser)
+		Title: "blocked", Status: taskcoredomain.StatusReady, Priority: taskcoredomain.PriorityMedium,
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := s.AddTaskDependency(ctx, blocked.ID, dep.ID, domain.DependencySatisfiesDone); err != nil {
+	if err := s.AddTaskDependency(ctx, blocked.ID, dep.ID, taskcoredomain.DependencySatisfiesDone); err != nil {
 		t.Fatal(err)
 	}
 
-	heldGate := &domain.TaskGate{Kind: domain.GateKindManualApproval, Status: domain.GateStatusActive}
+	heldGate := &taskcoredomain.TaskGate{Kind: taskcoredomain.GateKindManualApproval, Status: taskcoredomain.GateStatusActive}
 	held, err := s.Create(ctx, CreateTaskInput{
-		Title: "held", Status: domain.StatusReady, Priority: domain.PriorityMedium, Gate: heldGate,
-	}, domain.ActorUser)
+		Title: "held", Status: taskcoredomain.StatusReady, Priority: taskcoredomain.PriorityMedium, Gate: heldGate,
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	future := now.Add(2 * time.Hour)
 	if _, err := s.Create(ctx, CreateTaskInput{
-		Title: "deferred", Status: domain.StatusReady, Priority: domain.PriorityMedium,
+		Title: "deferred", Status: taskcoredomain.StatusReady, Priority: taskcoredomain.PriorityMedium,
 		PickupNotBefore: &future,
-	}, domain.ActorUser); err != nil {
+	}, taskcoredomain.ActorUser); err != nil {
 		t.Fatal(err)
 	}
 
 	eligible, err := s.Create(ctx, CreateTaskInput{
-		Title: "eligible", Status: domain.StatusReady, Priority: domain.PriorityMedium,
-	}, domain.ActorUser)
+		Title: "eligible", Status: taskcoredomain.StatusReady, Priority: taskcoredomain.PriorityMedium,
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,7 +70,7 @@ func TestSchedulingParity_GoReadinessMatchesListQueueCandidates(t *testing.T) {
 		t.Fatal(err)
 	}
 	for i := range allTasks {
-		if allTasks[i].Status != domain.StatusReady {
+		if allTasks[i].Status != taskcoredomain.StatusReady {
 			continue
 		}
 		task := &allTasks[i]

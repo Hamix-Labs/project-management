@@ -1,9 +1,8 @@
 package orchestration
 
 import (
+	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 	"testing"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 func TestClassify_EC01_verifyInfra_verifyOnly(t *testing.T) {
@@ -22,7 +21,7 @@ func TestClassify_EC01_verifyInfra_verifyOnly(t *testing.T) {
 
 func TestClassify_EC02_verifyAgentReject_fullReexecute(t *testing.T) {
 	t.Parallel()
-	cls := ClassifyFailureClass([]ClassifyVerdict{{Passed: false, Verifier: domain.VerifierVerifyAgent}}, false)
+	cls := ClassifyFailureClass([]ClassifyVerdict{{Passed: false, Verifier: checklistdomain.VerifierVerifyAgent}}, false)
 	if cls != FailureClassImplementation {
 		t.Fatalf("class=%v", cls)
 	}
@@ -40,7 +39,7 @@ func TestClassify_EC02_verifyAgentReject_fullReexecute(t *testing.T) {
 
 func TestClassify_EC03_claimedNotDone_fullReexecute(t *testing.T) {
 	t.Parallel()
-	cls := ClassifyFailureClass([]ClassifyVerdict{{Passed: false, Verifier: domain.VerifierAgentSelf}}, false)
+	cls := ClassifyFailureClass([]ClassifyVerdict{{Passed: false, Verifier: checklistdomain.VerifierAgentSelf}}, false)
 	mode, _ := ClassifyVerifyRetryMode(ClassifyInput{
 		FailureClass:         cls,
 		CriteriaReportValid:  true,

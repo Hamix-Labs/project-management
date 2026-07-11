@@ -37,12 +37,14 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/agentsmoke"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/cursor"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/worker"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
+	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 	"net/http/httptest"
 )
 
@@ -201,9 +203,9 @@ func TestAgentE2E_RealCursor_taskFromHTTPReachesDoneWithFileWritten(t *testing.T
 		taskID, e2eRealCursorPollTimeout)
 
 	finalStatus := waitTaskTerminalE2E(t, rootCtx, st, taskID, e2eRealCursorPollTimeout, e2eRealCursorPollInterval)
-	if finalStatus != domain.StatusDone {
+	if finalStatus != taskcoredomain.StatusDone {
 		dumpFailedTaskContext(t, rootCtx, st, taskID)
-		t.Fatalf("task %s final status = %q, want %q", taskID, finalStatus, domain.StatusDone)
+		t.Fatalf("task %s final status = %q, want %q", taskID, finalStatus, taskcoredomain.StatusDone)
 	}
 
 	time.Sleep(e2eRealCursorPostDoneSettle)
@@ -216,8 +218,8 @@ func TestAgentE2E_RealCursor_taskFromHTTPReachesDoneWithFileWritten(t *testing.T
 		t.Fatalf("cycle count = %d, want 1 (cycles=%+v)", len(cycles), cycles)
 	}
 	cyc := cycles[0]
-	if cyc.Status != domain.CycleStatusSucceeded {
-		t.Fatalf("cycle status = %q, want %q (meta=%s)", cyc.Status, domain.CycleStatusSucceeded, cyc.MetaJSON)
+	if cyc.Status != cyclesdomain.CycleStatusSucceeded {
+		t.Fatalf("cycle status = %q, want %q (meta=%s)", cyc.Status, cyclesdomain.CycleStatusSucceeded, cyc.MetaJSON)
 	}
 	var meta map[string]string
 	if err := json.Unmarshal(cyc.MetaJSON, &meta); err != nil {
@@ -237,7 +239,7 @@ func TestAgentE2E_RealCursor_taskFromHTTPReachesDoneWithFileWritten(t *testing.T
 	if len(phases) != 1 {
 		t.Fatalf("phase count = %d, want 1 (execute); phases=%+v", len(phases), phases)
 	}
-	if phases[0].Phase != domain.PhaseExecute || phases[0].Status != domain.PhaseStatusSucceeded {
+	if phases[0].Phase != cyclesdomain.PhaseExecute || phases[0].Status != cyclesdomain.PhaseStatusSucceeded {
 		t.Fatalf("phase[0] = %q/%q, want execute/succeeded (summary=%q)",
 			phases[0].Phase, phases[0].Status, derefString(phases[0].Summary))
 	}
@@ -410,10 +412,10 @@ func TestAgentE2E_RealCursor_cancelMidRunMarksCycleCancelledByOperator(t *testin
 
 	finalStatus := waitTaskTerminalE2E(t, rootCtx, st, taskID,
 		e2eRealCursorCancelTerminalTimeout, e2eRealCursorPollInterval)
-	if finalStatus != domain.StatusFailed {
+	if finalStatus != taskcoredomain.StatusFailed {
 		dumpFailedTaskContext(t, rootCtx, st, taskID)
 		t.Fatalf("task %s final status = %q, want %q after cancel",
-			taskID, finalStatus, domain.StatusFailed)
+			taskID, finalStatus, taskcoredomain.StatusFailed)
 	}
 
 	time.Sleep(e2eRealCursorPostDoneSettle)
@@ -426,9 +428,9 @@ func TestAgentE2E_RealCursor_cancelMidRunMarksCycleCancelledByOperator(t *testin
 		t.Fatalf("cycle count = %d, want 1 (cycles=%+v)", len(cycles), cycles)
 	}
 	cyc := cycles[0]
-	if cyc.Status != domain.CycleStatusFailed {
+	if cyc.Status != cyclesdomain.CycleStatusFailed {
 		t.Fatalf("cycle status = %q, want %q (meta=%s)",
-			cyc.Status, domain.CycleStatusFailed, cyc.MetaJSON)
+			cyc.Status, cyclesdomain.CycleStatusFailed, cyc.MetaJSON)
 	}
 
 	// The worker stamps the terminal reason on cycle_failed events
@@ -443,7 +445,7 @@ func TestAgentE2E_RealCursor_cancelMidRunMarksCycleCancelledByOperator(t *testin
 	}
 	var sawOperatorReason, sawTimeoutReason bool
 	for _, e := range events {
-		if e.Type != domain.EventCycleFailed {
+		if e.Type != taskeventsdomain.EventCycleFailed {
 			continue
 		}
 		body := string(e.Data)
@@ -498,7 +500,7 @@ func waitExecutePhaseRunning(t *testing.T, ctx context.Context, st *store.Store,
 					continue
 				}
 				for _, p := range phases {
-					if p.Phase == domain.PhaseExecute && p.Status == domain.PhaseStatusRunning {
+					if p.Phase == cyclesdomain.PhaseExecute && p.Status == cyclesdomain.PhaseStatusRunning {
 						return c.ID
 					}
 				}
@@ -541,10 +543,10 @@ func postTaskAndReturnID(t *testing.T, baseURL, body string) string {
 // Returns the last observed status (which may be a non-terminal value
 // on timeout — the caller should treat anything != Done as a failure
 // and dump context).
-func waitTaskTerminalE2E(t *testing.T, ctx context.Context, st *store.Store, taskID string, timeout, interval time.Duration) domain.Status {
+func waitTaskTerminalE2E(t *testing.T, ctx context.Context, st *store.Store, taskID string, timeout, interval time.Duration) taskcoredomain.Status {
 	t.Helper()
 	deadline := time.Now().Add(timeout)
-	var last domain.Status
+	var last taskcoredomain.Status
 	for time.Now().Before(deadline) {
 		got, err := st.Get(ctx, taskID)
 		if err == nil && got != nil {
@@ -562,9 +564,9 @@ func waitTaskTerminalE2E(t *testing.T, ctx context.Context, st *store.Store, tas
 // the purposes of the e2e poll loop. The agent worker only ever
 // transitions to done or failed; either is sufficient to stop polling
 // because the test then asserts on the specific terminal value.
-func isTerminalTaskStatus(s domain.Status) bool {
+func isTerminalTaskStatus(s taskcoredomain.Status) bool {
 	switch s {
-	case domain.StatusDone, domain.StatusFailed:
+	case taskcoredomain.StatusDone, taskcoredomain.StatusFailed:
 		return true
 	default:
 		return false

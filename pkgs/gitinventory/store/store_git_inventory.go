@@ -13,7 +13,7 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 )
 
 // gitWorktreeIsFullyRegistered reports whether Hamix has a branch-bound worktree row.
@@ -191,7 +191,7 @@ func (s *Store) ProbeGitWorktree(
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "gitinventory.store.ProbeGitWorktree")
 	path = strings.TrimSpace(path)
 	if path == "" {
-		return GitWorktreeProbeResult{}, fmt.Errorf("%w: path required", domain.ErrInvalidInput)
+		return GitWorktreeProbeResult{}, fmt.Errorf("%w: path required", taskcoredomain.ErrInvalidInput)
 	}
 	repo, err := s.GetGitRepositoryByID(ctx, repoID)
 	if err != nil {

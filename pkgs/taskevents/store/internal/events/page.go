@@ -9,10 +9,10 @@ import (
 	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskevents/contract"
 	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 	eventsmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/model"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"gorm.io/gorm"
 )
 
@@ -70,7 +70,7 @@ func ApprovalPending(ctx context.Context, db *gorm.DB, taskID string) (bool, err
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskevents.store.events.ApprovalPending")
 	taskID = strings.TrimSpace(taskID)
 	if taskID == "" {
-		return false, fmt.Errorf("%w: id", domain.ErrInvalidInput)
+		return false, fmt.Errorf("%w: id", taskcoredomain.ErrInvalidInput)
 	}
 	types := []taskeventsdomain.EventType{taskeventsdomain.EventApprovalRequested, taskeventsdomain.EventApprovalGranted}
 	var row eventsmodel.TaskEvent
@@ -127,10 +127,10 @@ func validatePageInputs(taskID string, limit int, beforeSeq, afterSeq *int64) (s
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskevents.store.events.validatePageInputs")
 	taskID = strings.TrimSpace(taskID)
 	if taskID == "" {
-		return "", 0, fmt.Errorf("%w: id", domain.ErrInvalidInput)
+		return "", 0, fmt.Errorf("%w: id", taskcoredomain.ErrInvalidInput)
 	}
 	if beforeSeq != nil && afterSeq != nil {
-		return "", 0, fmt.Errorf("%w: before_seq and after_seq are mutually exclusive", domain.ErrInvalidInput)
+		return "", 0, fmt.Errorf("%w: before_seq and after_seq are mutually exclusive", taskcoredomain.ErrInvalidInput)
 	}
 	if limit <= 0 {
 		limit = 50
@@ -139,10 +139,10 @@ func validatePageInputs(taskID string, limit int, beforeSeq, afterSeq *int64) (s
 		limit = 200
 	}
 	if beforeSeq != nil && *beforeSeq < 1 {
-		return "", 0, fmt.Errorf("%w: before_seq must be a positive integer", domain.ErrInvalidInput)
+		return "", 0, fmt.Errorf("%w: before_seq must be a positive integer", taskcoredomain.ErrInvalidInput)
 	}
 	if afterSeq != nil && *afterSeq < 1 {
-		return "", 0, fmt.Errorf("%w: after_seq must be a positive integer", domain.ErrInvalidInput)
+		return "", 0, fmt.Errorf("%w: after_seq must be a positive integer", taskcoredomain.ErrInvalidInput)
 	}
 	return taskID, limit, nil
 }

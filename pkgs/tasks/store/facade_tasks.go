@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"time"
 
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/scheduling"
 )
 
@@ -30,17 +30,17 @@ func ShouldNotifyReadyNow(pickupNotBefore *time.Time, now time.Time) bool {
 	return taskcorestore.ShouldNotifyReadyNow(pickupNotBefore, now)
 }
 
-func (s *Store) Get(ctx context.Context, id string) (*domain.Task, error) {
+func (s *Store) Get(ctx context.Context, id string) (*taskcoredomain.Task, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.Get")
 	return s.taskcore.Get(ctx, id)
 }
 
-func (s *Store) AgentPickup(ctx context.Context, taskID string, by domain.Actor) (*AgentPickupResult, error) {
+func (s *Store) AgentPickup(ctx context.Context, taskID string, by taskcoredomain.Actor) (*AgentPickupResult, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.AgentPickup", "task_id", taskID)
 	return s.taskcore.AgentPickup(ctx, taskID, by)
 }
 
-func (s *Store) RequestTaskRetry(ctx context.Context, in RequestRetryInput, by domain.Actor) (*domain.Task, error) {
+func (s *Store) RequestTaskRetry(ctx context.Context, in RequestRetryInput, by taskcoredomain.Actor) (*taskcoredomain.Task, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.RequestTaskRetry", "task_id", in.TaskID)
 	updated, prev, err := s.taskcore.RequestTaskRetry(ctx, in, by)
 	if err != nil {
@@ -54,7 +54,7 @@ func (s *Store) RequestTaskRetry(ctx context.Context, in RequestRetryInput, by d
 	return updated, nil
 }
 
-func (s *Store) Create(ctx context.Context, in CreateTaskInput, by domain.Actor) (*domain.Task, error) {
+func (s *Store) Create(ctx context.Context, in CreateTaskInput, by taskcoredomain.Actor) (*taskcoredomain.Task, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.Create")
 	t, err := s.taskcore.Create(ctx, in, by)
 	if err != nil {
@@ -65,7 +65,7 @@ func (s *Store) Create(ctx context.Context, in CreateTaskInput, by domain.Actor)
 	return t, nil
 }
 
-func (s *Store) Update(ctx context.Context, id string, in UpdateTaskInput, by domain.Actor) (*domain.Task, error) {
+func (s *Store) Update(ctx context.Context, id string, in UpdateTaskInput, by taskcoredomain.Actor) (*taskcoredomain.Task, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.Update")
 	updated, prev, err := s.taskcore.Update(ctx, id, in, by)
 	if err != nil {
@@ -74,7 +74,7 @@ func (s *Store) Update(ctx context.Context, id string, in UpdateTaskInput, by do
 	if updated == nil {
 		return nil, nil
 	}
-	if updated.Status == domain.StatusDone && prev != domain.StatusDone {
+	if updated.Status == taskcoredomain.StatusDone && prev != taskcoredomain.StatusDone {
 		s.notifyUnblockedDependents(ctx, updated.ID)
 	}
 	now := time.Now().UTC()
@@ -108,7 +108,7 @@ func (s *Store) NotifyUnblockedDependents(ctx context.Context, predecessorID str
 	s.notifyUnblockedDependents(ctx, predecessorID)
 }
 
-func (s *Store) Delete(ctx context.Context, id string, by domain.Actor) ([]string, error) {
+func (s *Store) Delete(ctx context.Context, id string, by taskcoredomain.Actor) ([]string, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.Delete")
 	deletedIDs, err := s.taskcore.Delete(ctx, id, by)
 	if err != nil {
@@ -120,22 +120,22 @@ func (s *Store) Delete(ctx context.Context, id string, by domain.Actor) ([]strin
 	return deletedIDs, nil
 }
 
-func (s *Store) ListFlat(ctx context.Context, limit, offset int, filter *ListFilter) ([]domain.Task, error) {
+func (s *Store) ListFlat(ctx context.Context, limit, offset int, filter *ListFilter) ([]taskcoredomain.Task, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ListFlat")
 	return s.taskcore.ListFlat(ctx, limit, offset, filter)
 }
 
-func (s *Store) ListFlatPage(ctx context.Context, limit, offset int, filter *ListFilter) ([]domain.Task, bool, error) {
+func (s *Store) ListFlatPage(ctx context.Context, limit, offset int, filter *ListFilter) ([]taskcoredomain.Task, bool, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ListFlatPage")
 	return s.taskcore.ListFlatPage(ctx, limit, offset, filter)
 }
 
-func (s *Store) ListFlatAfter(ctx context.Context, limit int, afterID string) ([]domain.Task, bool, error) {
+func (s *Store) ListFlatAfter(ctx context.Context, limit int, afterID string) ([]taskcoredomain.Task, bool, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ListFlatAfter")
 	return s.taskcore.ListFlatAfter(ctx, limit, afterID)
 }
 
-func (s *Store) AddTaskDependency(ctx context.Context, taskID, dependsOnTaskID string, satisfies domain.DependencySatisfies) error {
+func (s *Store) AddTaskDependency(ctx context.Context, taskID, dependsOnTaskID string, satisfies taskcoredomain.DependencySatisfies) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.AddTaskDependency")
 	return s.taskcore.AddTaskDependency(ctx, taskID, dependsOnTaskID, satisfies)
 }
@@ -145,23 +145,23 @@ func (s *Store) RemoveTaskDependency(ctx context.Context, taskID, dependsOnTaskI
 	return s.taskcore.RemoveTaskDependency(ctx, taskID, dependsOnTaskID)
 }
 
-func (s *Store) ListTaskDependencies(ctx context.Context, taskID string) ([]domain.DependencyEdge, error) {
+func (s *Store) ListTaskDependencies(ctx context.Context, taskID string) ([]taskcoredomain.DependencyEdge, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ListTaskDependencies")
 	return s.taskcore.ListTaskDependencies(ctx, taskID)
 }
 
-func (s *Store) SetTaskDependencies(ctx context.Context, taskID string, dependsOn []domain.DependencyEdge) error {
+func (s *Store) SetTaskDependencies(ctx context.Context, taskID string, dependsOn []taskcoredomain.DependencyEdge) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.SetTaskDependencies")
 	return s.taskcore.SetTaskDependencies(ctx, taskID, dependsOn)
 }
 
-func (s *Store) ReadyForAgentPickup(ctx context.Context, t *domain.Task, now time.Time) (bool, FailedPredicate, error) {
+func (s *Store) ReadyForAgentPickup(ctx context.Context, t *taskcoredomain.Task, now time.Time) (bool, FailedPredicate, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ReadyForAgentPickup")
 	return s.taskcore.ReadyForAgentPickup(ctx, t, now)
 }
 
 //funclogmeasure:skip category=delegate-already-logs reason="Notify side-effect helper; parent store method emits trace at the chokepoint."
-func (s *Store) applyNotifyDecision(ctx context.Context, task domain.Task, d scheduling.NotifyDecision) {
+func (s *Store) applyNotifyDecision(ctx context.Context, task taskcoredomain.Task, d scheduling.NotifyDecision) {
 	if d.ScheduleWake != nil {
 		s.schedulePickupWake(ctx, task.ID, *d.ScheduleWake)
 		return
@@ -174,7 +174,7 @@ func (s *Store) applyNotifyDecision(ctx context.Context, task domain.Task, d sch
 	}
 }
 
-func (s *Store) ApplyTaskGateAction(ctx context.Context, taskID, action string, by domain.Actor) (*domain.Task, error) {
+func (s *Store) ApplyTaskGateAction(ctx context.Context, taskID, action string, by taskcoredomain.Actor) (*taskcoredomain.Task, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ApplyTaskGateAction")
 	return s.taskcore.ApplyTaskGateAction(ctx, taskID, action, by)
 }

@@ -3,11 +3,10 @@ package repo
 import (
 	"bytes"
 	"fmt"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"io"
 	"log/slog"
 	"os"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 // LineCount returns the number of lines in a file (newline-separated).
@@ -21,7 +20,7 @@ func LineCount(absPath string) (int, error) {
 		return 0, fmt.Errorf("is a directory")
 	}
 	if fi.Size() > maxFileReadBytes {
-		return 0, fmt.Errorf("%w: file too large", domain.ErrInvalidInput)
+		return 0, fmt.Errorf("%w: file too large", taskcoredomain.ErrInvalidInput)
 	}
 	f, err := os.Open(absPath)
 	if err != nil {
@@ -51,7 +50,7 @@ func LineCount(absPath string) (int, error) {
 		}
 	}
 	if total > maxFileReadBytes {
-		return 0, fmt.Errorf("%w: file too large", domain.ErrInvalidInput)
+		return 0, fmt.Errorf("%w: file too large", taskcoredomain.ErrInvalidInput)
 	}
 	if !hasData {
 		return 0, nil
@@ -70,7 +69,7 @@ func ValidateRange(absPath string, start, end int) error {
 	}
 	n, err := LineCount(absPath)
 	if err != nil {
-		return fmt.Errorf("%w: %v", domain.ErrInvalidInput, err)
+		return fmt.Errorf("%w: %v", taskcoredomain.ErrInvalidInput, err)
 	}
 	return validateRangeWithLineCount(start, end, n)
 }
@@ -78,10 +77,10 @@ func ValidateRange(absPath string, start, end int) error {
 func validateRangeBounds(start, end int) error {
 	slog.Debug("trace", "operation", "repo.validateRangeBounds")
 	if start < 1 || end < 1 {
-		return fmt.Errorf("%w: line numbers must be >= 1", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: line numbers must be >= 1", taskcoredomain.ErrInvalidInput)
 	}
 	if start > end {
-		return fmt.Errorf("%w: start line must be <= end line", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: start line must be <= end line", taskcoredomain.ErrInvalidInput)
 	}
 	return nil
 }
@@ -92,7 +91,7 @@ func validateRangeWithLineCount(start, end, n int) error {
 		return err
 	}
 	if end > n {
-		return fmt.Errorf("%w: line range 1-%d is past end of file (%d lines)", domain.ErrInvalidInput, end, n)
+		return fmt.Errorf("%w: line range 1-%d is past end of file (%d lines)", taskcoredomain.ErrInvalidInput, end, n)
 	}
 	return nil
 }

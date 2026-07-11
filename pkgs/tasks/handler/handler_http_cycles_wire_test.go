@@ -2,9 +2,9 @@ package handler
 
 import (
 	"encoding/json"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"time"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 // Wire shapes for full-mux cycle contract tests. Mirrors pkgs/taskcycles/handler
@@ -13,16 +13,16 @@ import (
 const defaultCycleListLimit = 50
 
 type taskCycleResponse struct {
-	ID            string              `json:"id"`
-	TaskID        string              `json:"task_id"`
-	AttemptSeq    int64               `json:"attempt_seq"`
-	Status        domain.CycleStatus  `json:"status"`
-	StartedAt     time.Time           `json:"started_at"`
-	EndedAt       *time.Time          `json:"ended_at,omitempty"`
-	TriggeredBy   domain.Actor        `json:"triggered_by"`
-	ParentCycleID *string             `json:"parent_cycle_id,omitempty"`
-	Meta          json.RawMessage     `json:"meta"`
-	CycleMeta     cycleMetaProjection `json:"cycle_meta"`
+	ID            string                   `json:"id"`
+	TaskID        string                   `json:"task_id"`
+	AttemptSeq    int64                    `json:"attempt_seq"`
+	Status        cyclesdomain.CycleStatus `json:"status"`
+	StartedAt     time.Time                `json:"started_at"`
+	EndedAt       *time.Time               `json:"ended_at,omitempty"`
+	TriggeredBy   taskcoredomain.Actor     `json:"triggered_by"`
+	ParentCycleID *string                  `json:"parent_cycle_id,omitempty"`
+	Meta          json.RawMessage          `json:"meta"`
+	CycleMeta     cycleMetaProjection      `json:"cycle_meta"`
 }
 
 type cycleMetaProjection struct {
@@ -34,16 +34,16 @@ type cycleMetaProjection struct {
 }
 
 type taskCyclePhaseResponse struct {
-	ID        string             `json:"id"`
-	CycleID   string             `json:"cycle_id"`
-	Phase     domain.Phase       `json:"phase"`
-	PhaseSeq  int64              `json:"phase_seq"`
-	Status    domain.PhaseStatus `json:"status"`
-	StartedAt time.Time          `json:"started_at"`
-	EndedAt   *time.Time         `json:"ended_at,omitempty"`
-	Summary   *string            `json:"summary,omitempty"`
-	Details   json.RawMessage    `json:"details"`
-	EventSeq  *int64             `json:"event_seq,omitempty"`
+	ID        string                   `json:"id"`
+	CycleID   string                   `json:"cycle_id"`
+	Phase     cyclesdomain.Phase       `json:"phase"`
+	PhaseSeq  int64                    `json:"phase_seq"`
+	Status    cyclesdomain.PhaseStatus `json:"status"`
+	StartedAt time.Time                `json:"started_at"`
+	EndedAt   *time.Time               `json:"ended_at,omitempty"`
+	Summary   *string                  `json:"summary,omitempty"`
+	Details   json.RawMessage          `json:"details"`
+	EventSeq  *int64                   `json:"event_seq,omitempty"`
 }
 
 type taskCyclesListResponse struct {
@@ -58,10 +58,10 @@ type taskCycleDetailResponse struct {
 	ID            string                   `json:"id"`
 	TaskID        string                   `json:"task_id"`
 	AttemptSeq    int64                    `json:"attempt_seq"`
-	Status        domain.CycleStatus       `json:"status"`
+	Status        cyclesdomain.CycleStatus `json:"status"`
 	StartedAt     time.Time                `json:"started_at"`
 	EndedAt       *time.Time               `json:"ended_at,omitempty"`
-	TriggeredBy   domain.Actor             `json:"triggered_by"`
+	TriggeredBy   taskcoredomain.Actor     `json:"triggered_by"`
 	ParentCycleID *string                  `json:"parent_cycle_id,omitempty"`
 	Meta          json.RawMessage          `json:"meta"`
 	CycleMeta     cycleMetaProjection      `json:"cycle_meta"`

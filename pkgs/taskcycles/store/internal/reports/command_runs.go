@@ -9,8 +9,9 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store/model"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -31,18 +32,18 @@ func UpsertCommandRuns(ctx context.Context, db *gorm.DB, cycleID string, attempt
 		"cycle_id", cycleID, "attempt_seq", attemptSeq, "entry_count", len(entries))
 	cycleID = strings.TrimSpace(cycleID)
 	if cycleID == "" {
-		return fmt.Errorf("%w: cycle_id", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: cycle_id", taskcoredomain.ErrInvalidInput)
 	}
 	if attemptSeq <= 0 {
-		return fmt.Errorf("%w: attempt_seq must be positive", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: attempt_seq must be positive", taskcoredomain.ErrInvalidInput)
 	}
 	if len(entries) == 0 {
 		return nil
 	}
 	now := time.Now().UTC()
-	rows := make([]domain.TaskCycleCommandRun, 0, len(entries))
+	rows := make([]cyclesdomain.TaskCycleCommandRun, 0, len(entries))
 	for _, e := range entries {
-		rows = append(rows, domain.TaskCycleCommandRun{
+		rows = append(rows, cyclesdomain.TaskCycleCommandRun{
 			ID:          uuid.NewString(),
 			CycleID:     cycleID,
 			AttemptSeq:  attemptSeq,
@@ -67,12 +68,12 @@ func UpsertCommandRuns(ctx context.Context, db *gorm.DB, cycleID string, attempt
 
 // ListCommandRunsForCycle returns command run rows for cycleID ordered by
 // (attempt_seq ASC, criterion_id ASC, command_seq ASC).
-func ListCommandRunsForCycle(ctx context.Context, db *gorm.DB, cycleID string) ([]domain.TaskCycleCommandRun, error) {
+func ListCommandRunsForCycle(ctx context.Context, db *gorm.DB, cycleID string) ([]cyclesdomain.TaskCycleCommandRun, error) {
 	defer storekernel.DeferLatency(storekernel.OpListCommandRunsForCycle)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.reports.ListCommandRunsForCycle", "cycle_id", cycleID)
 	cycleID = strings.TrimSpace(cycleID)
 	if cycleID == "" {
-		return nil, fmt.Errorf("%w: cycle_id", domain.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: cycle_id", taskcoredomain.ErrInvalidInput)
 	}
 	var rows []model.TaskCycleCommandRun
 	err := db.WithContext(ctx).

@@ -13,7 +13,7 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/cursor"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
 // captured records every (env, stdin, dir, name, args) tuple a fake ExecFn
@@ -79,7 +79,7 @@ func defaultRequest() runner.Request {
 	return runner.Request{
 		TaskID:     "11111111-1111-4111-8111-111111111111",
 		AttemptSeq: 1,
-		Phase:      domain.PhaseExecute,
+		Phase:      cyclesdomain.PhaseExecute,
 		Prompt:     "do the thing",
 		WorkingDir: "/repo/work",
 		Timeout:    2 * time.Second,
@@ -130,8 +130,8 @@ func TestRun_successPath(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Run: %v", err)
 	}
-	if res.Status != domain.PhaseStatusSucceeded {
-		t.Errorf("Status: got %q want %q", res.Status, domain.PhaseStatusSucceeded)
+	if res.Status != cyclesdomain.PhaseStatusSucceeded {
+		t.Errorf("Status: got %q want %q", res.Status, cyclesdomain.PhaseStatusSucceeded)
 	}
 	if res.Summary != "all good" {
 		t.Errorf("Summary: got %q", res.Summary)
@@ -209,8 +209,8 @@ func TestRun_streamJSONCapturesResolvedModel(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Run: %v", err)
 	}
-	if res.Status != domain.PhaseStatusSucceeded {
-		t.Errorf("Status: got %q want %q", res.Status, domain.PhaseStatusSucceeded)
+	if res.Status != cyclesdomain.PhaseStatusSucceeded {
+		t.Errorf("Status: got %q want %q", res.Status, cyclesdomain.PhaseStatusSucceeded)
 	}
 	if res.Summary != "all good" {
 		t.Errorf("Summary: got %q want %q", res.Summary, "all good")
@@ -397,7 +397,7 @@ func TestRun_streamJSONIgnoresClosedPipeAfterResult(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Run: got err %v, want success", err)
 	}
-	if res.Status != domain.PhaseStatusSucceeded || res.Summary != "all done" {
+	if res.Status != cyclesdomain.PhaseStatusSucceeded || res.Summary != "all done" {
 		t.Fatalf("Result = %+v, want succeeded/all done", res)
 	}
 }
@@ -414,7 +414,7 @@ func TestRun_streamJSONClosedPipeWithoutResultUsesAssistantFallback(t *testing.T
 	if err != nil {
 		t.Fatalf("Run: %v", err)
 	}
-	if res.Status != domain.PhaseStatusSucceeded || res.Summary != "finished but no result" {
+	if res.Status != cyclesdomain.PhaseStatusSucceeded || res.Summary != "finished but no result" {
 		t.Fatalf("Result = %+v, want degraded success from assistant text", res)
 	}
 	var details struct {
@@ -490,7 +490,7 @@ func TestRun_streamJSONMissingSystemEventLeavesResolvedModelEmpty(t *testing.T) 
 	if err != nil {
 		t.Fatalf("Run: %v", err)
 	}
-	if res.Status != domain.PhaseStatusSucceeded {
+	if res.Status != cyclesdomain.PhaseStatusSucceeded {
 		t.Errorf("Status: got %q", res.Status)
 	}
 	if res.ResolvedModel != "" {
@@ -516,8 +516,8 @@ func TestRun_isErrorTrueMapsToFailure(t *testing.T) {
 	if !errors.Is(err, runner.ErrNonZeroExit) {
 		t.Fatalf("err: got %v want errors.Is(_, ErrNonZeroExit)", err)
 	}
-	if res.Status != domain.PhaseStatusFailed {
-		t.Errorf("Status: got %q want %q", res.Status, domain.PhaseStatusFailed)
+	if res.Status != cyclesdomain.PhaseStatusFailed {
+		t.Errorf("Status: got %q want %q", res.Status, cyclesdomain.PhaseStatusFailed)
 	}
 	if res.Summary != "could not authenticate" {
 		t.Errorf("Summary: got %q want the agent's result text", res.Summary)
@@ -570,8 +570,8 @@ func TestRun_nonZeroExit(t *testing.T) {
 	if !errors.Is(err, runner.ErrNonZeroExit) {
 		t.Fatalf("err: got %v want errors.Is(_, ErrNonZeroExit)", err)
 	}
-	if res.Status != domain.PhaseStatusFailed {
-		t.Errorf("Status: got %q want %q", res.Status, domain.PhaseStatusFailed)
+	if res.Status != cyclesdomain.PhaseStatusFailed {
+		t.Errorf("Status: got %q want %q", res.Status, cyclesdomain.PhaseStatusFailed)
 	}
 	if !strings.Contains(res.Summary, "exit 7") {
 		t.Errorf("Summary should mention exit code: got %q", res.Summary)
@@ -641,7 +641,7 @@ func TestRun_invalidJSON(t *testing.T) {
 	if !errors.Is(err, runner.ErrInvalidOutput) {
 		t.Fatalf("err: got %v want errors.Is(_, ErrInvalidOutput)", err)
 	}
-	if res.Status != domain.PhaseStatusFailed {
+	if res.Status != cyclesdomain.PhaseStatusFailed {
 		t.Errorf("Status: got %q", res.Status)
 	}
 	if !strings.Contains(res.Summary, "invalid output") {
@@ -686,8 +686,8 @@ func TestRun_timeout(t *testing.T) {
 	if !errors.Is(err, runner.ErrTimeout) {
 		t.Fatalf("err: got %v want errors.Is(_, ErrTimeout)", err)
 	}
-	if res.Status != domain.PhaseStatusFailed {
-		t.Errorf("Status on timeout: got %q want %q", res.Status, domain.PhaseStatusFailed)
+	if res.Status != cyclesdomain.PhaseStatusFailed {
+		t.Errorf("Status on timeout: got %q want %q", res.Status, cyclesdomain.PhaseStatusFailed)
 	}
 	var details struct {
 		FailureStage      string `json:"failure_stage"`

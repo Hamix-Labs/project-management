@@ -3,16 +3,16 @@ package storekernel
 import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 import (
 	"fmt"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"log/slog"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
-// ValidStatus reports whether s is a writable domain.Status enum.
-func ValidStatus(s domain.Status) bool {
+// ValidStatus reports whether s is a writable taskcoredomain.Status enum.
+func ValidStatus(s taskcoredomain.Status) bool {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.kernel.ValidStatus")
 	switch s {
-	case domain.StatusReady, domain.StatusRunning, domain.StatusBlocked, domain.StatusReview, domain.StatusDone, domain.StatusFailed, domain.StatusOnHold:
+	case taskcoredomain.StatusReady, taskcoredomain.StatusRunning, taskcoredomain.StatusBlocked, taskcoredomain.StatusReview, taskcoredomain.StatusDone, taskcoredomain.StatusFailed, taskcoredomain.StatusOnHold:
 		return true
 	default:
 		return false
@@ -20,38 +20,38 @@ func ValidStatus(s domain.Status) bool {
 }
 
 // ValidClientWritableStatus reports whether a client may set s on create or PATCH.
-func ValidClientWritableStatus(s domain.Status) bool {
+func ValidClientWritableStatus(s taskcoredomain.Status) bool {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.kernel.ValidClientWritableStatus")
 	return ValidStatus(s)
 }
 
-// ValidPriority reports whether p is a writable domain.Priority enum.
-func ValidPriority(p domain.Priority) bool {
+// ValidPriority reports whether p is a writable taskcoredomain.Priority enum.
+func ValidPriority(p taskcoredomain.Priority) bool {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.kernel.ValidPriority")
 	switch p {
-	case domain.PriorityLow, domain.PriorityMedium, domain.PriorityHigh, domain.PriorityCritical:
+	case taskcoredomain.PriorityLow, taskcoredomain.PriorityMedium, taskcoredomain.PriorityHigh, taskcoredomain.PriorityCritical:
 		return true
 	default:
 		return false
 	}
 }
 
-// ValidateActor returns domain.ErrInvalidInput when a is not a known actor enum.
-func ValidateActor(a domain.Actor) error {
+// ValidateActor returns taskcoredomain.ErrInvalidInput when a is not a known actor enum.
+func ValidateActor(a taskcoredomain.Actor) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.kernel.ValidateActor")
 	switch a {
-	case domain.ActorUser, domain.ActorAgent:
+	case taskcoredomain.ActorUser, taskcoredomain.ActorAgent:
 		return nil
 	default:
-		return fmt.Errorf("%w: actor", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: actor", taskcoredomain.ErrInvalidInput)
 	}
 }
 
-// ValidPhase reports whether p is a known domain.Phase enum.
-func ValidPhase(p domain.Phase) bool {
+// ValidPhase reports whether p is a known cyclesdomain.Phase enum.
+func ValidPhase(p cyclesdomain.Phase) bool {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.kernel.ValidPhase")
 	switch p {
-	case domain.PhaseExecute, domain.PhaseVerify:
+	case cyclesdomain.PhaseExecute, cyclesdomain.PhaseVerify:
 		return true
 	default:
 		return false
@@ -59,13 +59,13 @@ func ValidPhase(p domain.Phase) bool {
 }
 
 // ValidTerminalCycleStatus reports whether s is a terminal CycleStatus.
-func ValidTerminalCycleStatus(s domain.CycleStatus) bool {
+func ValidTerminalCycleStatus(s cyclesdomain.CycleStatus) bool {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.kernel.ValidTerminalCycleStatus")
-	return domain.TerminalCycleStatus(s)
+	return cyclesdomain.TerminalCycleStatus(s)
 }
 
 // ValidTerminalPhaseStatus reports whether s is a terminal PhaseStatus.
-func ValidTerminalPhaseStatus(s domain.PhaseStatus) bool {
+func ValidTerminalPhaseStatus(s cyclesdomain.PhaseStatus) bool {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.kernel.ValidTerminalPhaseStatus")
-	return domain.TerminalPhaseStatus(s)
+	return cyclesdomain.TerminalPhaseStatus(s)
 }

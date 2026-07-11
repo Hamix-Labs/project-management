@@ -11,7 +11,8 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel/taskload"
 	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 	checklistmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/store/model"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -19,14 +20,14 @@ import (
 // SeedDefinitionItemsAtCreateInTx inserts definition rows during POST /tasks
 // inside the create transaction. Unlike Add, it does not re-check
 // ValidateCanAddCriterionInTx because the row was just inserted.
-func SeedDefinitionItemsAtCreateInTx(tx *gorm.DB, taskID string, items []CreateChecklistItemInput, by domain.Actor) error {
+func SeedDefinitionItemsAtCreateInTx(tx *gorm.DB, taskID string, items []CreateChecklistItemInput, by taskcoredomain.Actor) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.checklist.SeedDefinitionItemsAtCreateInTx")
 	if err := storekernel.ValidateActor(by); err != nil {
 		return err
 	}
 	taskID = strings.TrimSpace(taskID)
 	if taskID == "" {
-		return fmt.Errorf("%w: id", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: id", taskcoredomain.ErrInvalidInput)
 	}
 	if len(items) == 0 {
 		return nil
@@ -68,7 +69,7 @@ func SeedDefinitionItemsAtCreateInTx(tx *gorm.DB, taskID string, items []CreateC
 			}
 		}
 		b, _ := json.Marshal(map[string]string{"item_id": it.ID, "text": it.Text})
-		if err := storekernel.AppendEvent(tx, taskID, seq, domain.EventChecklistItemAdded, by, b); err != nil {
+		if err := storekernel.AppendEvent(tx, taskID, seq, taskeventsdomain.EventChecklistItemAdded, by, b); err != nil {
 			return err
 		}
 		seq++

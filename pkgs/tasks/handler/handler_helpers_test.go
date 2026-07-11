@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"io"
 	"log/slog"
 	"net/http"
@@ -12,8 +13,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 func TestDecodeJSON_taskCreate_fixture(t *testing.T) {
@@ -28,7 +27,7 @@ func TestDecodeJSON_taskCreate_fixture(t *testing.T) {
 	if got.Title != "Example from testdata" {
 		t.Fatalf("title: %q", got.Title)
 	}
-	if got.Status != domain.StatusReady {
+	if got.Status != taskcoredomain.StatusReady {
 		t.Fatalf("status: %s", got.Status)
 	}
 }
@@ -42,7 +41,7 @@ func TestDecodeJSON_taskPatch_fixture(t *testing.T) {
 	if err := decodeJSON(context.Background(), strings.NewReader(string(b)), &got); err != nil {
 		t.Fatal(err)
 	}
-	if got.Status == nil || *got.Status != domain.StatusRunning {
+	if got.Status == nil || *got.Status != taskcoredomain.StatusRunning {
 		t.Fatalf("status: %v", got.Status)
 	}
 }
@@ -65,7 +64,7 @@ func TestDecodeJSON_rejectsTrailingJSON(t *testing.T) {
 	}
 	// decodeJSON uses the literal "json trailing data" for both the ErrInvalidInput
 	// wrap (extra value after first object) and the decode-failure wrap — see handler_http_json.go.
-	if !errors.Is(err, domain.ErrInvalidInput) && !strings.Contains(err.Error(), "json trailing data") {
+	if !errors.Is(err, taskcoredomain.ErrInvalidInput) && !strings.Contains(err.Error(), "json trailing data") {
 		t.Fatalf("unexpected err: %v", err)
 	}
 }
@@ -77,20 +76,20 @@ func TestStoreErrHTTPResponse(t *testing.T) {
 		wantCode int
 		wantMsg  string
 	}{
-		{name: "not_found", err: domain.ErrNotFound, wantCode: http.StatusNotFound, wantMsg: "not found"},
-		{name: "invalid_input_plain", err: domain.ErrInvalidInput, wantCode: http.StatusBadRequest, wantMsg: "bad request"},
+		{name: "not_found", err: taskcoredomain.ErrNotFound, wantCode: http.StatusNotFound, wantMsg: "not found"},
+		{name: "invalid_input_plain", err: taskcoredomain.ErrInvalidInput, wantCode: http.StatusBadRequest, wantMsg: "bad request"},
 		{
 			name:     "invalid_input_detail",
-			err:      fmt.Errorf("%w: empty id", domain.ErrInvalidInput),
+			err:      fmt.Errorf("%w: empty id", taskcoredomain.ErrInvalidInput),
 			wantCode: http.StatusBadRequest,
 			wantMsg:  "empty id",
 		},
 		{name: "deadline_exceeded", err: context.DeadlineExceeded, wantCode: http.StatusGatewayTimeout, wantMsg: "request timed out"},
 		{name: "context_canceled", err: context.Canceled, wantCode: http.StatusRequestTimeout, wantMsg: "request canceled"},
-		{name: "conflict", err: domain.ErrConflict, wantCode: http.StatusConflict, wantMsg: "task id already exists"},
+		{name: "conflict", err: taskcoredomain.ErrConflict, wantCode: http.StatusConflict, wantMsg: "task id already exists"},
 		{
 			name:     "payload persistence",
-			err:      fmt.Errorf("%w: payload could not be saved", domain.ErrInvalidInput),
+			err:      fmt.Errorf("%w: payload could not be saved", taskcoredomain.ErrInvalidInput),
 			wantCode: http.StatusBadRequest,
 			wantMsg:  "payload could not be saved",
 		},
@@ -168,11 +167,11 @@ func TestLogRequestFailure_warnAndError(t *testing.T) {
 
 func TestActorFromRequest(t *testing.T) {
 	r := &http.Request{Header: http.Header{}}
-	if actorFromRequest(r) != domain.ActorUser {
+	if actorFromRequest(r) != taskcoredomain.ActorUser {
 		t.Fatal("default actor")
 	}
 	r.Header.Set("X-Actor", "agent")
-	if actorFromRequest(r) != domain.ActorAgent {
+	if actorFromRequest(r) != taskcoredomain.ActorAgent {
 		t.Fatal("agent")
 	}
 }

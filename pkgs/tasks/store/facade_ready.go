@@ -3,9 +3,8 @@ package store
 import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 import (
 	"context"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"log/slog"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 func (s *Store) ListDeferredReadyPickupTasks(ctx context.Context, limit int) ([]DeferredPickup, error) {
@@ -18,7 +17,7 @@ func (s *Store) ListReadyTaskQueueCandidates(ctx context.Context, limit int, cur
 	return s.taskcore.ListReadyTaskQueueCandidates(ctx, limit, cursor)
 }
 
-func (s *Store) ListReadyTasksUserCreated(ctx context.Context, limit int, afterID string) ([]domain.Task, error) {
+func (s *Store) ListReadyTasksUserCreated(ctx context.Context, limit int, afterID string) ([]taskcoredomain.Task, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ListReadyTasksUserCreated")
 	return s.taskcore.ListReadyTasksUserCreated(ctx, limit, afterID)
 }

@@ -7,7 +7,7 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/runnerfake"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/worker"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
@@ -20,9 +20,9 @@ func TestWorker_missingGitBinding_defersPickup(t *testing.T) {
 	tsk, err := h.store.Create(ctx, store.CreateTaskInput{
 		Title:         "unbound",
 		InitialPrompt: "do the thing",
-		Status:        domain.StatusReady,
-		Priority:      domain.PriorityMedium,
-	}, domain.ActorUser)
+		Status:        taskcoredomain.StatusReady,
+		Priority:      taskcoredomain.PriorityMedium,
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("create: %v", err)
 	}
@@ -36,7 +36,7 @@ func TestWorker_missingGitBinding_defersPickup(t *testing.T) {
 	if err != nil {
 		t.Fatalf("get: %v", err)
 	}
-	if got.Status != domain.StatusReady {
+	if got.Status != taskcoredomain.StatusReady {
 		t.Fatalf("status=%q want ready (missing binding should defer, not run)", got.Status)
 	}
 	if got.PickupNotBefore == nil {

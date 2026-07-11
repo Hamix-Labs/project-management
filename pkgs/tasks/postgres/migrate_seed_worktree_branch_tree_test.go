@@ -8,7 +8,7 @@ import (
 	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -100,8 +100,8 @@ func seedLegacyGitTree(ctx context.Context, t *testing.T, db *gorm.DB) (wtID, br
 		ID:            "task-1",
 		Title:         "t",
 		InitialPrompt: "p",
-		Status:        string(domain.StatusReady),
-		Priority:      string(domain.PriorityMedium),
+		Status:        string(taskcoredomain.StatusReady),
+		Priority:      string(taskcoredomain.PriorityMedium),
 		ProjectID:     &proj.ID,
 		WorktreeID:    &wt.ID,
 		BranchID:      &br.ID,
@@ -177,8 +177,8 @@ func TestMigrateSeedWorktreeBranchTree_skipsOrphanPairs(t *testing.T) {
 		ID:            "task-orphan",
 		Title:         "t",
 		InitialPrompt: "p",
-		Status:        string(domain.StatusReady),
-		Priority:      string(domain.PriorityMedium),
+		Status:        string(taskcoredomain.StatusReady),
+		Priority:      string(taskcoredomain.PriorityMedium),
 		ProjectID:     &proj.ID,
 		WorktreeID:    &ghostWT,
 		BranchID:      &ghostBR,

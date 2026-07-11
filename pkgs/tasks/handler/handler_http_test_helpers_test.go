@@ -2,13 +2,12 @@ package handler
 
 import (
 	"encoding/json"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 // postTask POSTs jsonBody to /tasks with checklist and git binding applied.
@@ -30,7 +29,7 @@ func mustCreateTask(t *testing.T, baseURL, jsonBody string) string {
 	if res.StatusCode != http.StatusCreated {
 		t.Fatalf("create task status %d body=%s", res.StatusCode, raw)
 	}
-	var task domain.Task
+	var task taskcoredomain.Task
 	if err := json.Unmarshal(raw, &task); err != nil {
 		t.Fatalf("decode created task: %v body=%s", err, raw)
 	}

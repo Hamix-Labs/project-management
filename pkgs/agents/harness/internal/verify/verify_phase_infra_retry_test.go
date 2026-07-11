@@ -5,7 +5,8 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/runnerfake"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 	"sync/atomic"
 	"testing"
@@ -27,11 +28,11 @@ func TestWorker_VerifyPhase_carriesPassesAcrossRetries(t *testing.T) {
 	defer cancel()
 
 	tsk := h.CreateReadyTask(ctx, "verify-carry")
-	c1, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", nil, domain.ActorUser)
+	c1, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("add c1: %v", err)
 	}
-	c2, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion two", nil, domain.ActorUser)
+	c2, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion two", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("add c2: %v", err)
 	}
@@ -46,7 +47,7 @@ func TestWorker_VerifyPhase_carriesPassesAcrossRetries(t *testing.T) {
 	var execAttempt atomic.Int32
 	execRunner := runnerfake.New()
 	execHook := &hookRunner{Runner: execRunner, preRun: func(req runner.Request) {
-		if req.Phase != domain.PhaseExecute {
+		if req.Phase != cyclesdomain.PhaseExecute {
 			return
 		}
 		cycles, _ := h.Store.ListCyclesForTask(context.Background(), req.TaskID, 1)
@@ -64,13 +65,13 @@ func TestWorker_VerifyPhase_carriesPassesAcrossRetries(t *testing.T) {
 		}
 		writeCriteriaReportFor(t, reportDir, cycles[0].ID, ids)
 	}}
-	execRunner.Script(tsk.ID, domain.PhaseExecute, runner.NewResult(
-		domain.PhaseStatusSucceeded, "exec ok", nil, ""))
+	execRunner.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(
+		cyclesdomain.PhaseStatusSucceeded, "exec ok", nil, ""))
 
 	var verifyAttempt atomic.Int32
 	verifyRunner := runnerfake.New()
 	verifyHook := &hookRunner{Runner: verifyRunner, preRun: func(req runner.Request) {
-		if req.Phase != domain.PhaseVerify {
+		if req.Phase != cyclesdomain.PhaseVerify {
 			return
 		}
 		cycles, _ := h.Store.ListCyclesForTask(context.Background(), req.TaskID, 1)
@@ -91,15 +92,15 @@ func TestWorker_VerifyPhase_carriesPassesAcrossRetries(t *testing.T) {
 			})
 		}
 	}}
-	verifyRunner.Script(tsk.ID, domain.PhaseVerify, runner.NewResult(
-		domain.PhaseStatusSucceeded, "verify ok", nil, ""))
+	verifyRunner.Script(tsk.ID, cyclesdomain.PhaseVerify, runner.NewResult(
+		cyclesdomain.PhaseStatusSucceeded, "verify ok", nil, ""))
 
 	done := h.StartHarnessRun(ctx, tsk, execHook, harness.Options{
 		WorkingDir:   workDir,
 		ReportDir:    reportDir,
 		VerifyRunner: verifyHook,
 	})
-	h.WaitTaskStatus(ctx, tsk.ID, domain.StatusDone)
+	h.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusDone)
 	<-done
 	cancel()
 	bg := context.Background()

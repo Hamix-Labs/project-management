@@ -9,7 +9,8 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/internal/gittest"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/storefake"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
@@ -39,16 +40,16 @@ func TestResolveFreshRetryAnchor_fromExecutePhaseDetails(t *testing.T) {
 	ctx := context.Background()
 	st := storefake.New(t).Store
 	tsk, err := st.Create(ctx, store.CreateTaskInput{
-		Title: "t", InitialPrompt: "p", Priority: domain.PriorityMedium, Status: domain.StatusFailed,
-	}, domain.ActorUser)
+		Title: "t", InitialPrompt: "p", Priority: taskcoredomain.PriorityMedium, Status: taskcoredomain.StatusFailed,
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	cycle, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	cycle, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatal(err)
 	}
-	exec, err := st.StartPhase(ctx, cycle.ID, domain.PhaseExecute, domain.ActorAgent)
+	exec, err := st.StartPhase(ctx, cycle.ID, cyclesdomain.PhaseExecute, taskcoredomain.ActorAgent)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,11 +58,11 @@ func TestResolveFreshRetryAnchor_fromExecutePhaseDetails(t *testing.T) {
 	})
 	if _, err := st.CompletePhase(ctx, store.CompletePhaseInput{
 		CycleID: cycle.ID, PhaseSeq: exec.PhaseSeq,
-		Status: domain.PhaseStatusSucceeded, Details: details, By: domain.ActorAgent,
+		Status: cyclesdomain.PhaseStatusSucceeded, Details: details, By: taskcoredomain.ActorAgent,
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := st.TerminateCycle(ctx, cycle.ID, domain.CycleStatusFailed, "x", domain.ActorAgent); err != nil {
+	if _, err := st.TerminateCycle(ctx, cycle.ID, cyclesdomain.CycleStatusFailed, "x", taskcoredomain.ActorAgent); err != nil {
 		t.Fatal(err)
 	}
 	svc := NewService(st, NewExecRepo(), "")

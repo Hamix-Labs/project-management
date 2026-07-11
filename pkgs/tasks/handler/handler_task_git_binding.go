@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/repo"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
@@ -27,18 +27,18 @@ func (h *Handler) validateTaskGitBindingV2(
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.validateTaskGitBindingV2")
 	pid := trimmedOptionalID(projectID)
 	if pid == "" {
-		return fmt.Errorf("%w: project_id required", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: project_id required", taskcoredomain.ErrInvalidInput)
 	}
 	wtID := trimmedOptionalID(worktreeID)
 	if wtID == "" {
-		return fmt.Errorf("%w: worktree_id required", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: worktree_id required", taskcoredomain.ErrInvalidInput)
 	}
 	proj, err := h.store.GetProject(ctx, pid)
 	if err != nil {
 		return err
 	}
 	if proj.RepositoryID == nil || strings.TrimSpace(*proj.RepositoryID) == "" {
-		return fmt.Errorf("%w: project not bound to repository", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: project not bound to repository", taskcoredomain.ErrInvalidInput)
 	}
 	return h.store.ValidateTaskWorktreeBinding(ctx, projectID, wtID)
 }
@@ -52,25 +52,25 @@ func (h *Handler) validateComposeGitBinding(
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.validateComposeGitBinding")
 	repoID := trimmedOptionalID(repositoryID)
 	if repoID == "" {
-		return fmt.Errorf("%w: repository_id required", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: repository_id required", taskcoredomain.ErrInvalidInput)
 	}
 	pid := trimmedOptionalID(projectID)
 	if pid == "" {
-		return fmt.Errorf("%w: project_id required", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: project_id required", taskcoredomain.ErrInvalidInput)
 	}
 	wtID := trimmedOptionalID(worktreeID)
 	if wtID == "" {
-		return fmt.Errorf("%w: worktree_id required", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: worktree_id required", taskcoredomain.ErrInvalidInput)
 	}
 	proj, err := h.store.GetProject(ctx, pid)
 	if err != nil {
 		return err
 	}
 	if proj.RepositoryID == nil || strings.TrimSpace(*proj.RepositoryID) == "" {
-		return fmt.Errorf("%w: project not bound to repository", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: project not bound to repository", taskcoredomain.ErrInvalidInput)
 	}
 	if strings.TrimSpace(*proj.RepositoryID) != repoID {
-		return fmt.Errorf("%w: repository_id does not match project", domain.ErrInvalidInput)
+		return fmt.Errorf("%w: repository_id does not match project", taskcoredomain.ErrInvalidInput)
 	}
 	return h.store.ValidateTaskWorktreeBinding(ctx, projectID, wtID)
 }
@@ -80,7 +80,7 @@ func (h *Handler) validatePromptMentionsForWorktree(ctx context.Context, worktre
 	wtID := trimmedOptionalID(worktreeID)
 	if wtID == "" {
 		if len(repo.ParseFileMentions(prompt)) > 0 {
-			return fmt.Errorf("%w: worktree_id required for @-mentions", domain.ErrInvalidInput)
+			return fmt.Errorf("%w: worktree_id required for @-mentions", taskcoredomain.ErrInvalidInput)
 		}
 		return nil
 	}
@@ -95,7 +95,7 @@ func (h *Handler) validatePromptMentionsForWorktreeID(ctx context.Context, workt
 	worktreeID = strings.TrimSpace(worktreeID)
 	if worktreeID == "" {
 		if len(repo.ParseFileMentions(prompt)) > 0 {
-			return fmt.Errorf("%w: worktree_id required for @-mentions", domain.ErrInvalidInput)
+			return fmt.Errorf("%w: worktree_id required for @-mentions", taskcoredomain.ErrInvalidInput)
 		}
 		return nil
 	}
@@ -105,9 +105,9 @@ func (h *Handler) validatePromptMentionsForWorktreeID(ctx context.Context, workt
 	}
 	if root == nil {
 		if reason == RepoReasonWorktreeNotFound {
-			return fmt.Errorf("%w: worktree not found", domain.ErrNotFound)
+			return fmt.Errorf("%w: worktree not found", taskcoredomain.ErrNotFound)
 		}
-		return fmt.Errorf("%w: %s", domain.ErrInvalidInput, reason)
+		return fmt.Errorf("%w: %s", taskcoredomain.ErrInvalidInput, reason)
 	}
 	return root.ValidatePromptMentions(prompt)
 }

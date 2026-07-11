@@ -12,7 +12,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/storefake"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/runnerfake"
 	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
@@ -24,8 +24,8 @@ func TestRunCriterionCommands_writesEvidenceAndPromptSection(t *testing.T) {
 	task, err := st.Create(ctx, store.CreateTaskInput{
 		Title:         "verify-cmd",
 		InitialPrompt: "do work",
-		Status:        domain.StatusReady,
-		Priority:      domain.PriorityMedium,
+		Status:        taskcoredomain.StatusReady,
+		Priority:      taskcoredomain.PriorityMedium,
 		ChecklistItems: []store.CreateChecklistItemInput{{
 			Text: "tests pass",
 			VerifyCommands: []store.VerifyCommandInput{{
@@ -33,7 +33,7 @@ func TestRunCriterionCommands_writesEvidenceAndPromptSection(t *testing.T) {
 				ExpectedOutcome: "prints hello",
 			}},
 		}},
-	}, domain.ActorUser)
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}

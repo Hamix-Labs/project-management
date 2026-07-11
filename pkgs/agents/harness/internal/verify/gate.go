@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 )
 
 // LoadSnapshot reads app settings and checklist criteria for verify gating.
@@ -48,7 +48,7 @@ func (s *Service) CompleteChecklistLegacy(ctx context.Context, taskID string) er
 		if it.Done {
 			continue
 		}
-		if err := s.store.SetChecklistItemDone(ctx, taskID, it.ID, true, domain.ActorAgent); err != nil {
+		if err := s.store.SetChecklistItemDone(ctx, taskID, it.ID, true, taskcoredomain.ActorAgent); err != nil {
 			return err
 		}
 	}
@@ -63,8 +63,8 @@ func (s *Service) ApplyVerifiedCompletions(ctx context.Context, taskID, cycleID 
 		if !v.Passed {
 			continue
 		}
-		err := s.store.SetChecklistItemDoneWithEvidence(ctx, taskID, v.ID, v.Evidence, v.Verifier, v.Reasoning, cycleID, domain.ActorAgent)
-		if err != nil && !errors.Is(err, domain.ErrNotFound) {
+		err := s.store.SetChecklistItemDoneWithEvidence(ctx, taskID, v.ID, v.Evidence, v.Verifier, v.Reasoning, cycleID, taskcoredomain.ActorAgent)
+		if err != nil && !errors.Is(err, taskcoredomain.ErrNotFound) {
 			return err
 		}
 	}

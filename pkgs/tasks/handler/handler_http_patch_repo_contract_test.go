@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -10,8 +11,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 // patchRepoTestSetup wires a workspace-repo-aware test server, a single seed file
@@ -41,7 +40,7 @@ func patchRepoTestSetup(t *testing.T) (srv *httptest.Server, dir, taskID, worktr
 	if res.StatusCode != http.StatusCreated {
 		t.Fatalf("create seed status %d body=%s", res.StatusCode, body)
 	}
-	var created domain.Task
+	var created taskcoredomain.Task
 	if err := json.Unmarshal(body, &created); err != nil {
 		t.Fatal(err)
 	}
@@ -151,7 +150,7 @@ func TestHTTP_patchTask_mentionRequiresWorktreeOnTask(t *testing.T) {
 // repo-mention subtests above to pin the structural shape (message includes
 // the offending mention path/range) without locking the doubled error-wrap
 // prefix that comes from repo.ValidatePromptMentions wrapping a Resolve()
-// error that itself wraps domain.ErrInvalidInput.
+// error that itself wraps taskcoredomain.ErrInvalidInput.
 func assertMentionErrorContains(t *testing.T, raw []byte, substr string) {
 	t.Helper()
 	var errBody jsonErrorBody

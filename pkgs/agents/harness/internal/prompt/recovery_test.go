@@ -1,19 +1,18 @@
 package prompt
 
 import (
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 func TestComposeRecoveryDelta_verifyImplementation(t *testing.T) {
 	t.Parallel()
 	delta := ComposeRecoveryDelta(RecoveryContext{
 		Kind:       RecoveryVerifyImplementation,
-		Phase:      domain.PhaseExecute,
+		Phase:      cyclesdomain.PhaseExecute,
 		AttemptSeq: 2,
 		ReportPath: "/tmp/hamix/cycle-1/criteria-report.json",
 		FailedCriteria: []CriterionFailure{{
@@ -38,7 +37,7 @@ func TestComposeRecoveryDelta_criteriaReportInvalid(t *testing.T) {
 	t.Parallel()
 	delta := ComposeRecoveryDelta(RecoveryContext{
 		Kind:           RecoveryCriteriaReportInvalid,
-		Phase:          domain.PhaseExecute,
+		Phase:          cyclesdomain.PhaseExecute,
 		AttemptSeq:     3,
 		ReportPath:     "/tmp/report.json",
 		ReportParseErr: "criteria report invalid: duplicate criterion id a",
@@ -57,7 +56,7 @@ func TestComposeRecoveryDelta_verifyInfra(t *testing.T) {
 	t.Parallel()
 	delta := ComposeRecoveryDelta(RecoveryContext{
 		Kind:          RecoveryVerifyInfra,
-		Phase:         domain.PhaseVerify,
+		Phase:         cyclesdomain.PhaseVerify,
 		AttemptSeq:    1,
 		VerifyAttempt: 1,
 		CommandEvidenceDelta: []CommandEvidenceLine{{
@@ -79,7 +78,7 @@ func TestComposeRecoveryDelta_goldenFiles(t *testing.T) {
 	cases := map[string]RecoveryContext{
 		"verify_implementation_fail": {
 			Kind:       RecoveryVerifyImplementation,
-			Phase:      domain.PhaseExecute,
+			Phase:      cyclesdomain.PhaseExecute,
 			AttemptSeq: 2,
 			ReportPath: "/tmp/hamix/cycle-1/criteria-report.json",
 			FailedCriteria: []CriterionFailure{{
@@ -89,7 +88,7 @@ func TestComposeRecoveryDelta_goldenFiles(t *testing.T) {
 		},
 		"criteria_report_invalid": {
 			Kind:           RecoveryCriteriaReportInvalid,
-			Phase:          domain.PhaseExecute,
+			Phase:          cyclesdomain.PhaseExecute,
 			AttemptSeq:     3,
 			ReportPath:     "/tmp/report.json",
 			ReportParseErr: "criteria report invalid: duplicate criterion id a",
@@ -98,21 +97,21 @@ func TestComposeRecoveryDelta_goldenFiles(t *testing.T) {
 		},
 		"criteria_report_missing": {
 			Kind:        RecoveryCriteriaReportMissing,
-			Phase:       domain.PhaseExecute,
+			Phase:       cyclesdomain.PhaseExecute,
 			AttemptSeq:  2,
 			ReportPath:  "/tmp/report.json",
 			ExpectedIDs: []string{"a"},
 		},
 		"process_restart": {
 			Kind:             RecoveryProcessRestart,
-			Phase:            domain.PhaseExecute,
+			Phase:            cyclesdomain.PhaseExecute,
 			AttemptSeq:       1,
-			InterruptedPhase: domain.PhaseExecute,
+			InterruptedPhase: cyclesdomain.PhaseExecute,
 			FailureReason:    "shutdown",
 		},
 		"operator_retry_resume": {
 			Kind:           RecoveryOperatorRetryResume,
-			Phase:          domain.PhaseExecute,
+			Phase:          cyclesdomain.PhaseExecute,
 			AttemptSeq:     2,
 			FailureClass:   "verify",
 			FailureReason:  "verification_failed",
@@ -122,7 +121,7 @@ func TestComposeRecoveryDelta_goldenFiles(t *testing.T) {
 		},
 		"verify_infra_retry": {
 			Kind:          RecoveryVerifyInfra,
-			Phase:         domain.PhaseVerify,
+			Phase:         cyclesdomain.PhaseVerify,
 			AttemptSeq:    1,
 			VerifyAttempt: 1,
 			CommandEvidenceDelta: []CommandEvidenceLine{{
@@ -131,7 +130,7 @@ func TestComposeRecoveryDelta_goldenFiles(t *testing.T) {
 		},
 		"verify_feedback_carry": {
 			Kind:                RecoveryVerifyFeedback,
-			Phase:               domain.PhaseVerify,
+			Phase:               cyclesdomain.PhaseVerify,
 			AttemptSeq:          1,
 			VerifyAttempt:       2,
 			PriorVerifyFeedback: "criterion-a: still failing",

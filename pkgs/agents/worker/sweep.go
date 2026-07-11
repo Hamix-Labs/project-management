@@ -4,17 +4,17 @@ import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 import (
 	"context"
 	"errors"
-	"log/slog"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
+	"log/slog"
 )
 
 // InterruptPhaseReason is the phase summary recorded when a running phase
 // is closed by startup finalization after process interruption. Pinned so
 // audit consumers and resume logic can distinguish restart cleanup from
 // in-band failures.
-const InterruptPhaseReason = domain.PhaseInterruptReason
+const InterruptPhaseReason = cyclesdomain.PhaseInterruptReason
 
 // SweepReason is kept as an alias for callers and tests that referenced
 // the historical orphan-sweep constant.
@@ -60,12 +60,12 @@ func FinalizeInterruptedPhases(ctx context.Context, st Store) (FinalizeResult, e
 		if _, err := st.CompletePhase(ctx, store.CompletePhaseInput{
 			CycleID:  p.CycleID,
 			PhaseSeq: p.PhaseSeq,
-			Status:   domain.PhaseStatusFailed,
+			Status:   cyclesdomain.PhaseStatusFailed,
 			Summary:  &summary,
-			By:       domain.ActorAgent,
+			By:       taskcoredomain.ActorAgent,
 		}); err != nil {
 			level := slog.LevelWarn
-			if errors.Is(err, domain.ErrNotFound) {
+			if errors.Is(err, taskcoredomain.ErrNotFound) {
 				level = slog.LevelInfo
 			}
 			slog.Log(ctx, level, "agent worker finalize CompletePhase failed",

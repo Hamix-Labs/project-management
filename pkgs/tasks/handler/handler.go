@@ -10,7 +10,6 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	"github.com/AlexsanderHamir/Hamix/pkgs/repo"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/postgres"
 )
 
@@ -43,7 +42,7 @@ type AgentWorkerControl interface {
 // helpers, and optional agent worker control. Use NewHandler; the zero value
 // is not usable.
 type Handler struct {
-	store          contract.HandlerStore
+	store          HandlerStore
 	hub            *SSEHub
 	repoProv       RepoProvider
 	agent          AgentWorkerControl
@@ -65,7 +64,7 @@ type Handler struct {
 // agent is optional: when nil, settings-control endpoints (PATCH /settings,
 // POST /settings/probe-cursor, POST /settings/cancel-current-run) respond 503.
 // GET /settings still works without it (read-only).
-func NewHandler(s contract.HandlerStore, hub *SSEHub, rep *repo.Root, opts ...HandlerOption) http.Handler {
+func NewHandler(s HandlerStore, hub *SSEHub, rep *repo.Root, opts ...HandlerOption) http.Handler {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.NewHandler")
 	_, gitErr := exec.LookPath("git")
 	h := &Handler{

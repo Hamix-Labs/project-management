@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/contract"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 )
 
 const (
@@ -25,7 +25,7 @@ type NormalizeComposeResult struct {
 type NormalizeComposeFunc func(ctx context.Context, raw json.RawMessage) (NormalizeComposeResult, error)
 
 // InstantiateFromTemplateFunc creates one task from a template payload (task create stays in tasks handler).
-type InstantiateFromTemplateFunc func(ctx context.Context, r *http.Request, op string, payload json.RawMessage, by domain.Actor) (*domain.Task, error)
+type InstantiateFromTemplateFunc func(ctx context.Context, r *http.Request, op string, payload json.RawMessage, by taskcoredomain.Actor) (*taskcoredomain.Task, error)
 
 // Deps wires compose HTTP handlers into the taskapi mux.
 type Deps struct {

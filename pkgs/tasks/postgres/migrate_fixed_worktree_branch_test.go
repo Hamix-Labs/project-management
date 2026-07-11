@@ -6,8 +6,8 @@ import (
 	"time"
 
 	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskcoremodel "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/model"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -86,7 +86,7 @@ func TestMigrateExpandFixedWorktreeBranch_backfillsBeforeAutoMigrate(t *testing.
 	}
 	task := legacyRev3Task{
 		ID: "task-1", Title: "t", InitialPrompt: "p",
-		Status: string(domain.StatusReady), Priority: string(domain.PriorityMedium),
+		Status: string(taskcoredomain.StatusReady), Priority: string(taskcoredomain.PriorityMedium),
 		WorktreeBranchID: &wb.ID,
 	}
 	if err := db.WithContext(ctx).Create(&task).Error; err != nil {

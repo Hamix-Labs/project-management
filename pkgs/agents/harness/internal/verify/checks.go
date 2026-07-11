@@ -4,16 +4,17 @@ import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 import (
 	"context"
 	"fmt"
+	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"log/slog"
 	"strings"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 func (s *Service) runVerifyChecks(
 	parentCtx context.Context,
-	task *domain.Task,
-	cycle *domain.TaskCycle,
+	task *taskcoredomain.Task,
+	cycle *cyclesdomain.TaskCycle,
 	phaseSeq int64,
 	runCorrelationID string,
 	attemptSeq int64,
@@ -59,10 +60,10 @@ func (s *Service) runVerifyChecks(
 		}
 		if !entry.ClaimedDone {
 			v.Passed = false
-			v.Verifier = domain.VerifierAgentSelf
+			v.Verifier = checklistdomain.VerifierAgentSelf
 			v.Reasoning = "execute agent did not claim criterion done"
 			verdicts = append(verdicts, v)
-			s.recordVerdict(domain.VerifierAgentSelf, false)
+			s.recordVerdict(checklistdomain.VerifierAgentSelf, false)
 			continue
 		}
 		needLLMVerify = true

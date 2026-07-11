@@ -8,7 +8,8 @@ import (
 	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/prompt"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
@@ -19,7 +20,7 @@ type renderedProjectContext struct {
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func (h *Harness) selectedProjectContext(ctx context.Context, task *domain.Task, cycle *domain.TaskCycle) (renderedProjectContext, error) {
+func (h *Harness) selectedProjectContext(ctx context.Context, task *taskcoredomain.Task, cycle *cyclesdomain.TaskCycle) (renderedProjectContext, error) {
 	if task.ProjectID == nil || strings.TrimSpace(*task.ProjectID) == "" || len(task.ProjectContextItemIDs) == 0 {
 		return renderedProjectContext{}, nil
 	}
@@ -60,7 +61,7 @@ func (h *Harness) selectedProjectContext(ctx context.Context, task *domain.Task,
 			TokenEstimate: existing.TokenEstimate,
 			SnapshotJSON:  json.RawMessage(existing.ContextJSON),
 		}, nil
-	} else if !errors.Is(err, domain.ErrNotFound) {
+	} else if !errors.Is(err, taskcoredomain.ErrNotFound) {
 		return renderedProjectContext{}, fmt.Errorf("get context snapshot: %w", err)
 	}
 	_, err = h.store.CreateTaskContextSnapshot(ctx, store.CreateTaskContextSnapshotInput{
@@ -106,7 +107,7 @@ func verifiedCriterionIDs(previouslyPassed map[string]criterionVerdict) map[stri
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func continuationInputFromBundle(cycle *domain.TaskCycle, bundle *ContinuationBundle) prompt.ContinuationInput {
+func continuationInputFromBundle(cycle *cyclesdomain.TaskCycle, bundle *ContinuationBundle) prompt.ContinuationInput {
 	if bundle == nil {
 		return prompt.ContinuationInput{Cycle: cycle}
 	}
@@ -126,7 +127,7 @@ func continuationInputFromBundle(cycle *domain.TaskCycle, bundle *ContinuationBu
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func cycleIDOrEmpty(cycle *domain.TaskCycle) string {
+func cycleIDOrEmpty(cycle *cyclesdomain.TaskCycle) string {
 	if cycle == nil {
 		return ""
 	}

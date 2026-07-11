@@ -15,7 +15,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/internal/git"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -76,7 +76,7 @@ func resolveLiveWorktree(
 		}, nil
 	}
 	if git.CountBranchOwners(dbRows, br.Name, branchByID) > 1 {
-		return liveWorktreeMatchResult{}, fmt.Errorf("%w: duplicate worktree rows for branch %q", domain.ErrInvalidInput, br.Name)
+		return liveWorktreeMatchResult{}, fmt.Errorf("%w: duplicate worktree rows for branch %q", taskcoredomain.ErrInvalidInput, br.Name)
 	}
 	return liveWorktreeMatchResult{worktree: &wt}, nil
 }
@@ -377,7 +377,7 @@ func (s *Store) RelocateGitWorktree(
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "gitinventory.store.RelocateGitWorktree")
 	path = strings.TrimSpace(path)
 	if path == "" {
-		return gitdomain.GitWorktree{}, fmt.Errorf("%w: path required", domain.ErrInvalidInput)
+		return gitdomain.GitWorktree{}, fmt.Errorf("%w: path required", taskcoredomain.ErrInvalidInput)
 	}
 	if gitSvc == nil {
 		gitSvc = gitwork.New()
@@ -412,7 +412,7 @@ func (s *Store) RelocateGitWorktree(
 		return gitdomain.GitWorktree{}, fmt.Errorf("belongs to repository: %w", err)
 	}
 	if !belongs {
-		return gitdomain.GitWorktree{}, fmt.Errorf("%w: path is not a linked worktree of this repository", domain.ErrInvalidInput)
+		return gitdomain.GitWorktree{}, fmt.Errorf("%w: path is not a linked worktree of this repository", taskcoredomain.ErrInvalidInput)
 	}
 	live, err := gitSvc.ListWorktrees(ctx, opened)
 	if err != nil {
@@ -426,7 +426,7 @@ func (s *Store) RelocateGitWorktree(
 		}
 	}
 	if found == nil {
-		return gitdomain.GitWorktree{}, fmt.Errorf("%w: path is not a linked worktree of this repository", domain.ErrInvalidInput)
+		return gitdomain.GitWorktree{}, fmt.Errorf("%w: path is not a linked worktree of this repository", taskcoredomain.ErrInvalidInput)
 	}
 	if strings.TrimSpace(wt.BranchID) != "" {
 		br, err := s.GetGitBranchByID(ctx, wt.BranchID)
@@ -435,7 +435,7 @@ func (s *Store) RelocateGitWorktree(
 		}
 		if strings.TrimSpace(found.Branch) != "" && found.Branch != br.Name {
 			return gitdomain.GitWorktree{}, fmt.Errorf("%w: worktree checkout branch %q does not match bound branch %q",
-				domain.ErrInvalidInput, found.Branch, br.Name)
+				taskcoredomain.ErrInvalidInput, found.Branch, br.Name)
 		}
 	}
 	if err := s.db.WithContext(ctx).Model(&model.GitWorktree{}).Where("id = ?", worktreeID).

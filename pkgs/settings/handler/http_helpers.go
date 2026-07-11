@@ -12,9 +12,9 @@ import (
 	"strings"
 
 	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/apijson"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
-	taskdomain "github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/logctx"
 )
 
@@ -33,7 +33,7 @@ func decodeJSON(ctx context.Context, r io.Reader, dst any) error {
 		}
 		return fmt.Errorf("json trailing data: %w", err)
 	}
-	return fmt.Errorf("%w: json trailing data", taskdomain.ErrInvalidInput)
+	return fmt.Errorf("%w: json trailing data", taskcoredomain.ErrInvalidInput)
 }
 
 //funclogmeasure:skip category=delegate-already-logs reason="JSON response helper; HTTP handler chokepoint emits trace."
@@ -93,7 +93,7 @@ func writeError(w http.ResponseWriter, r *http.Request, op string, err error, co
 func writeStoreError(w http.ResponseWriter, r *http.Request, op string, err error) {
 	code := http.StatusInternalServerError
 	switch {
-	case errors.Is(err, settingsdomain.ErrInvalidInput), errors.Is(err, taskdomain.ErrInvalidInput):
+	case errors.Is(err, settingsdomain.ErrInvalidInput), errors.Is(err, taskcoredomain.ErrInvalidInput):
 		code = http.StatusBadRequest
 	}
 	msg := "internal server error"

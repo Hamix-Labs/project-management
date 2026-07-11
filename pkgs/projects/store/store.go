@@ -8,7 +8,7 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/projects/store/internal"
-	taskdomain "github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"gorm.io/gorm"
 )
 
@@ -148,13 +148,13 @@ func (s *Store) DeleteProjectContext(ctx context.Context, projectID, itemID stri
 }
 
 // CreateTaskContextSnapshot inserts an immutable project-context snapshot for a cycle.
-func (s *Store) CreateTaskContextSnapshot(ctx context.Context, input CreateTaskContextSnapshotInput) (taskdomain.TaskContextSnapshot, error) {
+func (s *Store) CreateTaskContextSnapshot(ctx context.Context, input CreateTaskContextSnapshotInput) (taskcoredomain.TaskContextSnapshot, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.CreateTaskContextSnapshot")
 	return internal.CreateSnapshot(ctx, s.db, input)
 }
 
 // GetTaskContextSnapshotForCycle returns the context snapshot recorded for a cycle.
-func (s *Store) GetTaskContextSnapshotForCycle(ctx context.Context, cycleID string) (taskdomain.TaskContextSnapshot, error) {
+func (s *Store) GetTaskContextSnapshotForCycle(ctx context.Context, cycleID string) (taskcoredomain.TaskContextSnapshot, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.GetTaskContextSnapshotForCycle")
 	return internal.GetSnapshotForCycle(ctx, s.db, cycleID)
 }

@@ -6,8 +6,9 @@ import (
 	"log/slog"
 
 	checklistcontract "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/contract"
+	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 	checkliststore "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/store"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"gorm.io/gorm"
 )
 
@@ -43,13 +44,13 @@ func (s *Store) ListChecklistForSubject(ctx context.Context, taskID string) ([]C
 }
 
 // AddChecklistItem appends a definition row when the task is not running or done.
-func (s *Store) AddChecklistItem(ctx context.Context, taskID, text string, verifyCommands []VerifyCommandInput, by domain.Actor) (*domain.TaskChecklistItem, error) {
+func (s *Store) AddChecklistItem(ctx context.Context, taskID, text string, verifyCommands []VerifyCommandInput, by taskcoredomain.Actor) (*checklistdomain.TaskChecklistItem, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.AddChecklistItem")
 	return s.checklist.AddChecklistItem(ctx, taskID, text, verifyCommands, by)
 }
 
 // ReplaceChecklistVerifyCommands replaces optional verify commands on a criterion.
-func (s *Store) ReplaceChecklistVerifyCommands(ctx context.Context, taskID, itemID string, cmds []VerifyCommandInput, by domain.Actor) error {
+func (s *Store) ReplaceChecklistVerifyCommands(ctx context.Context, taskID, itemID string, cmds []VerifyCommandInput, by taskcoredomain.Actor) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ReplaceChecklistVerifyCommands")
 	return s.checklist.ReplaceChecklistVerifyCommands(ctx, taskID, itemID, cmds, by)
 }
@@ -78,9 +79,9 @@ func (s *Store) SetChecklistItemDoneWithEvidence(
 	ctx context.Context,
 	subjectTaskID, itemID string,
 	evidence string,
-	verifier domain.VerifierKind,
+	verifier checklistdomain.VerifierKind,
 	reasoning, cycleID string,
-	by domain.Actor,
+	by taskcoredomain.Actor,
 ) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.SetChecklistItemDoneWithEvidence")
 	flag, err := s.checklist.SetDoneWithEvidence(ctx, subjectTaskID, itemID, evidence, verifier, reasoning, cycleID, by)
@@ -94,19 +95,19 @@ func (s *Store) SetChecklistItemDoneWithEvidence(
 }
 
 // DeleteChecklistItem removes a definition row owned by taskID.
-func (s *Store) DeleteChecklistItem(ctx context.Context, taskID, itemID string, by domain.Actor) error {
+func (s *Store) DeleteChecklistItem(ctx context.Context, taskID, itemID string, by taskcoredomain.Actor) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.DeleteChecklistItem")
 	return s.checklist.DeleteChecklistItem(ctx, taskID, itemID, by)
 }
 
 // UpdateChecklistItemText updates the definition text for an item owned by taskID.
-func (s *Store) UpdateChecklistItemText(ctx context.Context, taskID, itemID, text string, by domain.Actor) error {
+func (s *Store) UpdateChecklistItemText(ctx context.Context, taskID, itemID, text string, by taskcoredomain.Actor) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.UpdateChecklistItemText")
 	return s.checklist.UpdateChecklistItemText(ctx, taskID, itemID, text, by)
 }
 
 // SetChecklistItemDone sets or clears completion for subjectTaskID on an item from its definition source.
-func (s *Store) SetChecklistItemDone(ctx context.Context, subjectTaskID, itemID string, done bool, by domain.Actor) error {
+func (s *Store) SetChecklistItemDone(ctx context.Context, subjectTaskID, itemID string, done bool, by taskcoredomain.Actor) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.SetChecklistItemDone")
 	before, _ := s.Get(ctx, subjectTaskID)
 	if err := s.checklist.SetChecklistItemDone(ctx, subjectTaskID, itemID, done, by); err != nil {

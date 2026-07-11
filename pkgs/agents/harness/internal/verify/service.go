@@ -9,7 +9,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/git"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 )
 
 // Service runs the verify pipeline stages against explicit dependencies.
@@ -100,7 +100,7 @@ func (s *Service) publish(taskID, cycleID string) {
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func (s *Service) recordVerdict(kind domain.VerifierKind, passed bool) {
+func (s *Service) recordVerdict(kind checklistdomain.VerifierKind, passed bool) {
 	if s.hooks.RecordVerdict != nil {
 		s.hooks.RecordVerdict(kind, passed)
 	}

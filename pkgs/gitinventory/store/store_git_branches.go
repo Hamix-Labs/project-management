@@ -14,7 +14,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -65,7 +65,7 @@ func (s *Store) CreateGitBranch(ctx context.Context, projectID, repoID string, i
 	}
 	name := strings.TrimSpace(input.Name)
 	if name == "" {
-		return gitdomain.GitBranch{}, fmt.Errorf("%w: name required", domain.ErrInvalidInput)
+		return gitdomain.GitBranch{}, fmt.Errorf("%w: name required", taskcoredomain.ErrInvalidInput)
 	}
 	if gitSvc == nil {
 		gitSvc = gitwork.New()

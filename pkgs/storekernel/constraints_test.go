@@ -9,9 +9,10 @@ import (
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskcoremodel "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/model"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	cyclesmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store/model"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"gorm.io/gorm"
 )
 
@@ -111,10 +112,10 @@ func TestMapWriteError(t *testing.T) {
 		wantNil bool
 	}{
 		{"nil", nil, nil, true},
-		{"gorm duplicate", gorm.ErrDuplicatedKey, domain.ErrConflict, false},
-		{"unique", errors.New("UNIQUE constraint failed: projects.id"), domain.ErrConflict, false},
-		{"foreign key", errors.New("foreign key constraint failed"), domain.ErrInvalidInput, false},
-		{"check", gorm.ErrCheckConstraintViolated, domain.ErrInvalidInput, false},
+		{"gorm duplicate", gorm.ErrDuplicatedKey, taskcoredomain.ErrConflict, false},
+		{"unique", errors.New("UNIQUE constraint failed: projects.id"), taskcoredomain.ErrConflict, false},
+		{"foreign key", errors.New("foreign key constraint failed"), taskcoredomain.ErrInvalidInput, false},
+		{"check", gorm.ErrCheckConstraintViolated, taskcoredomain.ErrInvalidInput, false},
 		{"other", errors.New("connection refused"), nil, false},
 	}
 	for _, tt := range tests {
@@ -164,9 +165,9 @@ func TestConstraintClassifiers_sqlite(t *testing.T) {
 		phase := cyclesmodel.TaskCyclePhase{
 			ID:        "kernel-fk-phase",
 			CycleID:   badCycle,
-			Phase:     domain.PhaseExecute,
+			Phase:     cyclesdomain.PhaseExecute,
 			PhaseSeq:  1,
-			Status:    domain.PhaseStatusRunning,
+			Status:    cyclesdomain.PhaseStatusRunning,
 			StartedAt: now,
 		}
 		err := db.WithContext(ctx).Create(&phase).Error
@@ -183,8 +184,8 @@ func TestConstraintClassifiers_sqlite(t *testing.T) {
 			ID:            "kernel-check-task",
 			Title:         "check",
 			InitialPrompt: "x",
-			Status:        domain.Status("not-a-status"),
-			Priority:      domain.PriorityMedium,
+			Status:        taskcoredomain.Status("not-a-status"),
+			Priority:      taskcoredomain.PriorityMedium,
 			Runner:        "cursor",
 		}
 		err := db.WithContext(ctx).Create(&task).Error

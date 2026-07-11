@@ -13,7 +13,9 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/storefake"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/runnerfake"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
@@ -21,38 +23,38 @@ func TestRunWithRetry_freshStartsNewCycleWithParent(t *testing.T) {
 	ctx := context.Background()
 	st := storefake.New(t).Store
 	tsk, err := st.Create(ctx, store.CreateTaskInput{
-		Title: "fresh-retry", InitialPrompt: "work", Priority: domain.PriorityMedium,
-	}, domain.ActorUser)
+		Title: "fresh-retry", InitialPrompt: "work", Priority: taskcoredomain.PriorityMedium,
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := st.AddChecklistItem(ctx, tsk.ID, "criterion", nil, domain.ActorUser); err != nil {
+	if _, err := st.AddChecklistItem(ctx, tsk.ID, "criterion", nil, taskcoredomain.ActorUser); err != nil {
 		t.Fatal(err)
 	}
-	running := domain.StatusRunning
-	if _, err := st.Update(ctx, tsk.ID, store.UpdateTaskInput{Status: &running}, domain.ActorAgent); err != nil {
+	running := taskcoredomain.StatusRunning
+	if _, err := st.Update(ctx, tsk.ID, store.UpdateTaskInput{Status: &running}, taskcoredomain.ActorAgent); err != nil {
 		t.Fatal(err)
 	}
-	parent, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	parent, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := st.TerminateCycle(ctx, parent.ID, domain.CycleStatusFailed, "fail", domain.ActorAgent); err != nil {
+	if _, err := st.TerminateCycle(ctx, parent.ID, cyclesdomain.CycleStatusFailed, "fail", taskcoredomain.ActorAgent); err != nil {
 		t.Fatal(err)
 	}
-	failed := domain.StatusFailed
-	if _, err := st.Update(ctx, tsk.ID, store.UpdateTaskInput{Status: &failed}, domain.ActorAgent); err != nil {
+	failed := taskcoredomain.StatusFailed
+	if _, err := st.Update(ctx, tsk.ID, store.UpdateTaskInput{Status: &failed}, taskcoredomain.ActorAgent); err != nil {
 		t.Fatal(err)
 	}
-	running = domain.StatusRunning
-	if _, err := st.Update(ctx, tsk.ID, store.UpdateTaskInput{Status: &running}, domain.ActorAgent); err != nil {
+	running = taskcoredomain.StatusRunning
+	if _, err := st.Update(ctx, tsk.ID, store.UpdateTaskInput{Status: &running}, taskcoredomain.ActorAgent); err != nil {
 		t.Fatal(err)
 	}
 
 	r := runnerfake.New()
-	r.Script(tsk.ID, domain.PhaseExecute, runner.NewResult(domain.PhaseStatusSucceeded, "ok", nil, ""))
+	r.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(cyclesdomain.PhaseStatusSucceeded, "ok", nil, ""))
 	h := New(st, r, Options{WorkingDir: t.TempDir(), Clock: func() time.Time { return time.Unix(0, 0).UTC() }})
-	h.RunWithRetry(ctx, tsk, &domain.PendingRetry{Mode: domain.RetryFresh, ParentCycleID: parent.ID})
+	h.RunWithRetry(ctx, tsk, &taskcoredomain.PendingRetry{Mode: taskcoredomain.RetryFresh, ParentCycleID: parent.ID})
 
 	cycles, err := st.ListCyclesForTask(ctx, tsk.ID, 10)
 	if err != nil {
@@ -75,42 +77,42 @@ func TestRunWithRetry_resumeCarriesPassedCriteria(t *testing.T) {
 
 	st := storefake.New(t).Store
 	tsk, err := st.Create(ctx, store.CreateTaskInput{
-		Title: "resume-retry", InitialPrompt: "work", Priority: domain.PriorityMedium,
-	}, domain.ActorUser)
+		Title: "resume-retry", InitialPrompt: "work", Priority: taskcoredomain.PriorityMedium,
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	item, err := st.AddChecklistItem(ctx, tsk.ID, "criterion", nil, domain.ActorUser)
+	item, err := st.AddChecklistItem(ctx, tsk.ID, "criterion", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	running := domain.StatusRunning
-	if _, err := st.Update(ctx, tsk.ID, store.UpdateTaskInput{Status: &running}, domain.ActorAgent); err != nil {
+	running := taskcoredomain.StatusRunning
+	if _, err := st.Update(ctx, tsk.ID, store.UpdateTaskInput{Status: &running}, taskcoredomain.ActorAgent); err != nil {
 		t.Fatal(err)
 	}
-	parent, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	parent, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if err := st.UpsertVerifyReports(ctx, parent.ID, 1, []store.VerifyReportEntry{
-		{CriterionID: item.ID, Verified: true, VerifierKind: domain.VerifierAgentSelf, Reasoning: "ok"},
+		{CriterionID: item.ID, Verified: true, VerifierKind: checklistdomain.VerifierAgentSelf, Reasoning: "ok"},
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := st.TerminateCycle(ctx, parent.ID, domain.CycleStatusFailed, "verify fail", domain.ActorAgent); err != nil {
+	if _, err := st.TerminateCycle(ctx, parent.ID, cyclesdomain.CycleStatusFailed, "verify fail", taskcoredomain.ActorAgent); err != nil {
 		t.Fatal(err)
 	}
-	failed := domain.StatusFailed
-	if _, err := st.Update(ctx, tsk.ID, store.UpdateTaskInput{Status: &failed}, domain.ActorAgent); err != nil {
+	failed := taskcoredomain.StatusFailed
+	if _, err := st.Update(ctx, tsk.ID, store.UpdateTaskInput{Status: &failed}, taskcoredomain.ActorAgent); err != nil {
 		t.Fatal(err)
 	}
-	running = domain.StatusRunning
-	if _, err := st.Update(ctx, tsk.ID, store.UpdateTaskInput{Status: &running}, domain.ActorAgent); err != nil {
+	running = taskcoredomain.StatusRunning
+	if _, err := st.Update(ctx, tsk.ID, store.UpdateTaskInput{Status: &running}, taskcoredomain.ActorAgent); err != nil {
 		t.Fatal(err)
 	}
 
 	r := runnerfake.New()
-	r.Script(tsk.ID, domain.PhaseExecute, runner.NewResult(domain.PhaseStatusSucceeded, "ok", nil, ""))
+	r.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(cyclesdomain.PhaseStatusSucceeded, "ok", nil, ""))
 	h := New(st, r, Options{
 		WorkingDir: t.TempDir(),
 		Clock:      func() time.Time { return time.Unix(0, 0).UTC() },
@@ -118,7 +120,7 @@ func TestRunWithRetry_resumeCarriesPassedCriteria(t *testing.T) {
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
-		h.RunWithRetry(ctx, tsk, &domain.PendingRetry{Mode: domain.RetryResume, ParentCycleID: parent.ID})
+		h.RunWithRetry(ctx, tsk, &taskcoredomain.PendingRetry{Mode: taskcoredomain.RetryResume, ParentCycleID: parent.ID})
 	}()
 
 	deadline := time.Now().Add(5 * time.Second)
@@ -161,29 +163,29 @@ func TestSeedCrossCycleExecuteFromParent_recordsSucceededExecute(t *testing.T) {
 	ctx := context.Background()
 	st := storefake.New(t).Store
 	tsk, err := st.Create(ctx, store.CreateTaskInput{
-		Title: "seed execute", InitialPrompt: "work", Priority: domain.PriorityMedium,
-	}, domain.ActorUser)
+		Title: "seed execute", InitialPrompt: "work", Priority: taskcoredomain.PriorityMedium,
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	parent, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	parent, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatal(err)
 	}
-	exec, err := st.StartPhase(ctx, parent.ID, domain.PhaseExecute, domain.ActorAgent)
+	exec, err := st.StartPhase(ctx, parent.ID, cyclesdomain.PhaseExecute, taskcoredomain.ActorAgent)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, err := st.CompletePhase(ctx, store.CompletePhaseInput{
 		CycleID: parent.ID, PhaseSeq: exec.PhaseSeq,
-		Status: domain.PhaseStatusSucceeded, By: domain.ActorAgent,
+		Status: cyclesdomain.PhaseStatusSucceeded, By: taskcoredomain.ActorAgent,
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := st.TerminateCycle(ctx, parent.ID, domain.CycleStatusFailed, verificationFailedReason, domain.ActorAgent); err != nil {
+	if _, err := st.TerminateCycle(ctx, parent.ID, cyclesdomain.CycleStatusFailed, verificationFailedReason, taskcoredomain.ActorAgent); err != nil {
 		t.Fatal(err)
 	}
-	child, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	child, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -194,7 +196,7 @@ func TestSeedCrossCycleExecuteFromParent_recordsSucceededExecute(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(phases) != 1 || phases[0].Phase != domain.PhaseExecute || phases[0].Status != domain.PhaseStatusSucceeded {
+	if len(phases) != 1 || phases[0].Phase != cyclesdomain.PhaseExecute || phases[0].Status != cyclesdomain.PhaseStatusSucceeded {
 		t.Fatalf("phases=%+v", phases)
 	}
 }
@@ -208,45 +210,45 @@ func TestVerifyOnlyCrossCycleResume_runCycleLoopSkipsRunnerExecute(t *testing.T)
 	ctx := context.Background()
 	st := storefake.New(t).Store
 	tsk, err := st.Create(ctx, store.CreateTaskInput{
-		Title: "verify-only resume", InitialPrompt: "work", Priority: domain.PriorityMedium,
-	}, domain.ActorUser)
+		Title: "verify-only resume", InitialPrompt: "work", Priority: taskcoredomain.PriorityMedium,
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	item, err := st.AddChecklistItem(ctx, tsk.ID, "criterion", nil, domain.ActorUser)
+	item, err := st.AddChecklistItem(ctx, tsk.ID, "criterion", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	running := domain.StatusRunning
-	if _, err := st.Update(ctx, tsk.ID, store.UpdateTaskInput{Status: &running}, domain.ActorAgent); err != nil {
+	running := taskcoredomain.StatusRunning
+	if _, err := st.Update(ctx, tsk.ID, store.UpdateTaskInput{Status: &running}, taskcoredomain.ActorAgent); err != nil {
 		t.Fatal(err)
 	}
-	parent, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	parent, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatal(err)
 	}
-	exec, err := st.StartPhase(ctx, parent.ID, domain.PhaseExecute, domain.ActorAgent)
+	exec, err := st.StartPhase(ctx, parent.ID, cyclesdomain.PhaseExecute, taskcoredomain.ActorAgent)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, err := st.CompletePhase(ctx, store.CompletePhaseInput{
 		CycleID: parent.ID, PhaseSeq: exec.PhaseSeq,
-		Status: domain.PhaseStatusSucceeded, By: domain.ActorAgent,
+		Status: cyclesdomain.PhaseStatusSucceeded, By: taskcoredomain.ActorAgent,
 	}); err != nil {
 		t.Fatal(err)
 	}
-	verify, err := st.StartPhase(ctx, parent.ID, domain.PhaseVerify, domain.ActorAgent)
+	verify, err := st.StartPhase(ctx, parent.ID, cyclesdomain.PhaseVerify, taskcoredomain.ActorAgent)
 	if err != nil {
 		t.Fatal(err)
 	}
 	summary := verificationFailedReason + ": failed"
 	if _, err := st.CompletePhase(ctx, store.CompletePhaseInput{
 		CycleID: parent.ID, PhaseSeq: verify.PhaseSeq,
-		Status: domain.PhaseStatusFailed, Summary: &summary, By: domain.ActorAgent,
+		Status: cyclesdomain.PhaseStatusFailed, Summary: &summary, By: taskcoredomain.ActorAgent,
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := st.TerminateCycle(ctx, parent.ID, domain.CycleStatusFailed, verificationFailedReason, domain.ActorAgent); err != nil {
+	if _, err := st.TerminateCycle(ctx, parent.ID, cyclesdomain.CycleStatusFailed, verificationFailedReason, taskcoredomain.ActorAgent); err != nil {
 		t.Fatal(err)
 	}
 	when := time.Date(2026, 6, 18, 12, 0, 0, 0, time.UTC)
@@ -271,7 +273,7 @@ func TestVerifyOnlyCrossCycleResume_runCycleLoopSkipsRunnerExecute(t *testing.T)
 	}
 
 	r := runnerfake.New()
-	r.Script(tsk.ID, domain.PhaseVerify, runner.NewResult(domain.PhaseStatusSucceeded, "ok", nil, ""))
+	r.Script(tsk.ID, cyclesdomain.PhaseVerify, runner.NewResult(cyclesdomain.PhaseStatusSucceeded, "ok", nil, ""))
 	h := New(st, r, Options{
 		WorkingDir: workDir,
 		ReportDir:  reportDir,
@@ -285,7 +287,7 @@ func TestVerifyOnlyCrossCycleResume_runCycleLoopSkipsRunnerExecute(t *testing.T)
 		},
 	}
 	parentID := parent.ID
-	child, ok := h.startCycle(ctx, tsk, &state, startCycleOpts{parentCycleID: &parentID, retryMode: domain.RetryResume})
+	child, ok := h.startCycle(ctx, tsk, &state, startCycleOpts{parentCycleID: &parentID, retryMode: taskcoredomain.RetryResume})
 	if !ok {
 		t.Fatal("start child cycle failed")
 	}
@@ -303,7 +305,7 @@ func TestVerifyOnlyCrossCycleResume_runCycleLoopSkipsRunnerExecute(t *testing.T)
 	})
 
 	for _, call := range r.Calls() {
-		if call.Phase == domain.PhaseExecute {
+		if call.Phase == cyclesdomain.PhaseExecute {
 			t.Fatalf("verify-only resume must skip execute runner; got %+v", call)
 		}
 	}
@@ -316,12 +318,12 @@ func TestLoadCheckpointFromParent_requiresTerminal(t *testing.T) {
 	ctx := context.Background()
 	st := storefake.New(t).Store
 	tsk, err := st.Create(ctx, store.CreateTaskInput{
-		Title: "t", InitialPrompt: "p", Priority: domain.PriorityMedium,
-	}, domain.ActorUser)
+		Title: "t", InitialPrompt: "p", Priority: taskcoredomain.PriorityMedium,
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	cycle, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	cycle, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatal(err)
 	}

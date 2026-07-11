@@ -5,9 +5,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"log/slog"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 // NormalizeJSONObject pins the on-disk shape for JSON object payloads
@@ -17,7 +16,7 @@ import (
 // collapses to "{}" so downstream readers never observe SQL NULL or
 // the JSON literal null. Anything else must be a syntactically valid
 // JSON object; a string / number / array / bool / malformed input
-// returns domain.ErrInvalidInput so handlers surface a 400.
+// returns taskcoredomain.ErrInvalidInput so handlers surface a 400.
 //
 // The returned bytes are always whitespace-trimmed at the document
 // boundaries: the empty/null branch returns the canonical "{}", and
@@ -46,10 +45,10 @@ func NormalizeJSONObject(b []byte, field string) ([]byte, error) {
 	}
 	var probe any
 	if err := json.Unmarshal(trimmed, &probe); err != nil {
-		return nil, fmt.Errorf("%w: %s must be a JSON object", domain.ErrInvalidInput, field)
+		return nil, fmt.Errorf("%w: %s must be a JSON object", taskcoredomain.ErrInvalidInput, field)
 	}
 	if _, ok := probe.(map[string]any); !ok {
-		return nil, fmt.Errorf("%w: %s must be a JSON object", domain.ErrInvalidInput, field)
+		return nil, fmt.Errorf("%w: %s must be a JSON object", taskcoredomain.ErrInvalidInput, field)
 	}
 	return trimmed, nil
 }

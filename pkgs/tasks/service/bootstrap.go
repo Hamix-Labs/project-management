@@ -6,7 +6,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
@@ -20,7 +20,7 @@ type BootstrapLimits struct {
 // BootstrapData is the HTTP-agnostic cold-start bundle for GET /v1/bootstrap.
 type BootstrapData struct {
 	Settings store.AppSettings
-	Tasks    []domain.Task
+	Tasks    []taskcoredomain.Task
 	HasMore  bool
 	Stats    store.TaskStats
 	Projects []projectsdomain.Project
@@ -30,7 +30,7 @@ type BootstrapData struct {
 // BootstrapStore is the persistence surface required for cold-start aggregation.
 type BootstrapStore interface {
 	GetSettings(ctx context.Context) (store.AppSettings, error)
-	ListFlatPage(ctx context.Context, limit, offset int, filter *store.ListFilter) ([]domain.Task, bool, error)
+	ListFlatPage(ctx context.Context, limit, offset int, filter *store.ListFilter) ([]taskcoredomain.Task, bool, error)
 	TaskStats(ctx context.Context) (store.TaskStats, error)
 	ListProjects(ctx context.Context, includeArchived bool, limit int) ([]projectsdomain.Project, error)
 	ListDrafts(ctx context.Context, limit int) ([]store.DraftSummary, error)

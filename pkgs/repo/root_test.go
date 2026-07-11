@@ -2,12 +2,11 @@ package repo
 
 import (
 	"errors"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 func TestOpenRoot_and_Resolve(t *testing.T) {
@@ -38,7 +37,7 @@ func TestOpenRoot_and_Resolve(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for path escape")
 	}
-	if !errors.Is(err, domain.ErrInvalidInput) {
+	if !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		t.Fatalf("expected ErrInvalidInput, got %v", err)
 	}
 }
@@ -113,7 +112,7 @@ func TestRoot_Resolve_rejectsTraversal(t *testing.T) {
 			t.Errorf("Resolve(%q) expected error, got nil", rel)
 			continue
 		}
-		if !errors.Is(err, domain.ErrInvalidInput) {
+		if !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 			t.Errorf("Resolve(%q) expected ErrInvalidInput, got %v", rel, err)
 		}
 	}
@@ -247,7 +246,7 @@ func TestValidateRange_invalidBounds_checked_before_file_size(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected invalid input error")
 	}
-	if !errors.Is(err, domain.ErrInvalidInput) {
+	if !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		t.Fatalf("expected ErrInvalidInput, got %v", err)
 	}
 	if !strings.Contains(err.Error(), "line numbers must be >= 1") {
@@ -267,7 +266,7 @@ func TestLineCount_rejects_files_larger_than_limit(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected file too large error")
 	}
-	if !errors.Is(err, domain.ErrInvalidInput) {
+	if !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		t.Fatalf("expected ErrInvalidInput, got %v", err)
 	}
 }
@@ -289,7 +288,7 @@ func TestValidatePromptMentions(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for bad range")
 	}
-	if !errors.Is(err, domain.ErrInvalidInput) {
+	if !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		t.Fatalf("expected ErrInvalidInput, got %v", err)
 	}
 }
@@ -297,14 +296,14 @@ func TestValidatePromptMentions(t *testing.T) {
 // TestValidatePromptMentions_singlePrefix pins the "single tasks: invalid input
 // prefix on the wire" invariant for every error path inside
 // repo.Root.ValidatePromptMentions. Before this fix every mention failure
-// whose underlying cause itself wrapped domain.ErrInvalidInput (i.e. r.Resolve
+// whose underlying cause itself wrapped taskcoredomain.ErrInvalidInput (i.e. r.Resolve
 // rejections, validateRangeBounds rejections, LineCount rejections,
 // validateRangeWithLineCount rejections) produced
 // "tasks: invalid input: mention @<path>: tasks: invalid input: <reason>"
 // — a doubled prefix the docs explicitly called out as an "implementation
 // detail" caveat (docs/api.md POST /tasks repo-mention validation
 // section). The wrapMention helper strips the inner prefix so the wire phrase
-// always carries it exactly once. errors.Is(err, domain.ErrInvalidInput)
+// always carries it exactly once. errors.Is(err, taskcoredomain.ErrInvalidInput)
 // must still hold for the 400 mapping in
 // pkgs/tasks/handler/handler_http_json.go::storeErrorClientMessage.
 //
@@ -351,12 +350,12 @@ func TestValidatePromptMentions_singlePrefix(t *testing.T) {
 				t.Fatalf("expected error for %q", tc.prompt)
 			}
 			msg := err.Error()
-			n := strings.Count(msg, domain.ErrInvalidInput.Error())
+			n := strings.Count(msg, taskcoredomain.ErrInvalidInput.Error())
 			if n != 1 {
-				t.Fatalf("error=%q has %d occurrences of %q want exactly 1 (wire prefix must not double-wrap)", msg, n, domain.ErrInvalidInput.Error())
+				t.Fatalf("error=%q has %d occurrences of %q want exactly 1 (wire prefix must not double-wrap)", msg, n, taskcoredomain.ErrInvalidInput.Error())
 			}
-			if !errors.Is(err, domain.ErrInvalidInput) {
-				t.Fatalf("error=%q must still satisfy errors.Is(domain.ErrInvalidInput) so handler 400 mapping fires", msg)
+			if !errors.Is(err, taskcoredomain.ErrInvalidInput) {
+				t.Fatalf("error=%q must still satisfy errors.Is(taskcoredomain.ErrInvalidInput) so handler 400 mapping fires", msg)
 			}
 			if !strings.Contains(msg, "@") {
 				t.Fatalf("error=%q must include the offending @<path> mention substring (docs/api.md contract)", msg)
@@ -399,14 +398,14 @@ func TestValidatePromptMentions_singlePrefix_synthesized(t *testing.T) {
 				t.Fatalf("expected error for %q", tc.prompt)
 			}
 			msg := err.Error()
-			if n := strings.Count(msg, domain.ErrInvalidInput.Error()); n != 1 {
+			if n := strings.Count(msg, taskcoredomain.ErrInvalidInput.Error()); n != 1 {
 				t.Fatalf("error=%q has %d prefix occurrences want 1", msg, n)
 			}
 			if !strings.Contains(msg, tc.want) {
 				t.Fatalf("error=%q missing reason %q", msg, tc.want)
 			}
-			if !errors.Is(err, domain.ErrInvalidInput) {
-				t.Fatalf("error=%q must satisfy errors.Is(domain.ErrInvalidInput)", msg)
+			if !errors.Is(err, taskcoredomain.ErrInvalidInput) {
+				t.Fatalf("error=%q must satisfy errors.Is(taskcoredomain.ErrInvalidInput)", msg)
 			}
 		})
 	}
@@ -432,7 +431,7 @@ func TestRootResolve_rejects_symlink_escape(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected symlink escape error")
 	}
-	if !errors.Is(err, domain.ErrInvalidInput) {
+	if !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		t.Fatalf("expected ErrInvalidInput, got %v", err)
 	}
 }

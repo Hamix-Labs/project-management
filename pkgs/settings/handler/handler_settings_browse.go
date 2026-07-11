@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/repo"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
-	taskdomain "github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 func (h *Handler) workspaceRoots(w http.ResponseWriter, r *http.Request) {
@@ -85,7 +85,7 @@ func (h *Handler) browseDirs(w http.ResponseWriter, r *http.Request) {
 		listing, listErr = repo.ListBrowseDirsUnrestricted(path)
 	}
 	if listErr != nil {
-		if errors.Is(listErr, taskdomain.ErrInvalidInput) {
+		if errors.Is(listErr, taskcoredomain.ErrInvalidInput) {
 			writeJSONError(w, r, op, http.StatusBadRequest, repoErrUserMessage(listErr))
 			return
 		}

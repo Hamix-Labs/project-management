@@ -17,8 +17,8 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/model"
-	taskdomain "github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -206,7 +206,7 @@ func CreateContext(ctx context.Context, db *gorm.DB, projectID string, input Cre
 	if actor == "" {
 		actor = domain.ActorUser
 	}
-	if err := storekernel.ValidateActor(taskdomain.Actor(actor)); err != nil {
+	if err := storekernel.ValidateActor(taskcoredomain.Actor(actor)); err != nil {
 		return domain.ProjectContextItem{}, err
 	}
 	now := time.Now().UTC()
@@ -345,21 +345,21 @@ func DeleteContext(ctx context.Context, db *gorm.DB, projectID, itemID string) e
 }
 
 // CreateSnapshot inserts an immutable task context snapshot.
-func CreateSnapshot(ctx context.Context, db *gorm.DB, input CreateSnapshotInput) (taskdomain.TaskContextSnapshot, error) {
+func CreateSnapshot(ctx context.Context, db *gorm.DB, input CreateSnapshotInput) (taskcoredomain.TaskContextSnapshot, error) {
 	defer storekernel.DeferLatency(storekernel.OpCreateContextSnapshot)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.projects.CreateSnapshot")
 	id := storekernel.ResolveID(input.ID)
 	if strings.TrimSpace(input.TaskID) == "" || strings.TrimSpace(input.CycleID) == "" || strings.TrimSpace(input.ProjectID) == "" {
-		return taskdomain.TaskContextSnapshot{}, fmt.Errorf("%w: task_id, cycle_id, and project_id required", domain.ErrInvalidInput)
+		return taskcoredomain.TaskContextSnapshot{}, fmt.Errorf("%w: task_id, cycle_id, and project_id required", domain.ErrInvalidInput)
 	}
 	if input.TokenEstimate < 0 {
-		return taskdomain.TaskContextSnapshot{}, fmt.Errorf("%w: token_estimate must be >= 0", domain.ErrInvalidInput)
+		return taskcoredomain.TaskContextSnapshot{}, fmt.Errorf("%w: token_estimate must be >= 0", domain.ErrInvalidInput)
 	}
 	contextJSON, err := storekernel.NormalizeJSONObject(input.ContextJSON, "context_json")
 	if err != nil {
-		return taskdomain.TaskContextSnapshot{}, err
+		return taskcoredomain.TaskContextSnapshot{}, err
 	}
-	drow := taskdomain.TaskContextSnapshot{
+	drow := taskcoredomain.TaskContextSnapshot{
 		ID:              id,
 		TaskID:          strings.TrimSpace(input.TaskID),
 		CycleID:         strings.TrimSpace(input.CycleID),
@@ -371,22 +371,22 @@ func CreateSnapshot(ctx context.Context, db *gorm.DB, input CreateSnapshotInput)
 	}
 	row := taskmodel.FromDomainTaskContextSnapshot(drow)
 	if err := db.WithContext(ctx).Create(&row).Error; err != nil {
-		return taskdomain.TaskContextSnapshot{}, storekernel.MapWriteError(err, "duplicate project row")
+		return taskcoredomain.TaskContextSnapshot{}, storekernel.MapWriteError(err, "duplicate project row")
 	}
 	return drow, nil
 }
 
 // GetSnapshotForCycle returns the context snapshot recorded for a cycle.
-func GetSnapshotForCycle(ctx context.Context, db *gorm.DB, cycleID string) (taskdomain.TaskContextSnapshot, error) {
+func GetSnapshotForCycle(ctx context.Context, db *gorm.DB, cycleID string) (taskcoredomain.TaskContextSnapshot, error) {
 	defer storekernel.DeferLatency(storekernel.OpGetContextSnapshot)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.projects.GetSnapshotForCycle")
 	cycleID = strings.TrimSpace(cycleID)
 	if cycleID == "" {
-		return taskdomain.TaskContextSnapshot{}, fmt.Errorf("%w: cycle id required", domain.ErrInvalidInput)
+		return taskcoredomain.TaskContextSnapshot{}, fmt.Errorf("%w: cycle id required", domain.ErrInvalidInput)
 	}
 	var row taskmodel.TaskContextSnapshot
 	if err := db.WithContext(ctx).First(&row, "cycle_id = ?", cycleID).Error; err != nil {
-		return taskdomain.TaskContextSnapshot{}, storekernel.MapNotFound(err)
+		return taskcoredomain.TaskContextSnapshot{}, storekernel.MapNotFound(err)
 	}
 	return taskmodel.ToDomainTaskContextSnapshot(row), nil
 }

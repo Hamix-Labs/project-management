@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -11,9 +14,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 // patchEventUserResponse is a focused PATCH /tasks/{id}/events/{seq} helper.
@@ -92,8 +92,8 @@ func TestHTTP_patchEvent_successEnvelope(t *testing.T) {
 		t.Errorf("data must default to {} on PATCH response, got %q", top["data"])
 	}
 	var typ string
-	if err := json.Unmarshal(top["type"], &typ); err != nil || typ != string(domain.EventApprovalRequested) {
-		t.Errorf("type=%q want %q", typ, domain.EventApprovalRequested)
+	if err := json.Unmarshal(top["type"], &typ); err != nil || typ != string(taskeventsdomain.EventApprovalRequested) {
+		t.Errorf("type=%q want %q", typ, taskeventsdomain.EventApprovalRequested)
 	}
 	var ur string
 	if err := json.Unmarshal(top["user_response"], &ur); err != nil || ur != "approved" {
@@ -193,7 +193,7 @@ func TestHTTP_patchEvent_bodyValidation400Strings(t *testing.T) {
 // TestHTTP_patchEvent_unknownTaskIs404 pins the documented 404 for a
 // well-formed UUID that does not match any task. The store loads
 // (task_id, seq) in one WHERE so this collapses to the same gorm
-// `ErrRecordNotFound` → `domain.ErrNotFound` → handler "not found" path as
+// `ErrRecordNotFound` → `taskcoredomain.ErrNotFound` → handler "not found" path as
 // the missing-seq case below.
 func TestHTTP_patchEvent_unknownTaskIs404(t *testing.T) {
 	srv, _, _ := newSSETriggerServer(t)
@@ -249,9 +249,9 @@ func TestHTTP_patchEvent_threadFullIs400(t *testing.T) {
 	ctx := context.Background()
 	// 200 = maxResponseThreadEntries (private const in store package).
 	for i := 0; i < 200; i++ {
-		actor := domain.ActorUser
+		actor := taskcoredomain.ActorUser
 		if i%2 == 1 {
-			actor = domain.ActorAgent
+			actor = taskcoredomain.ActorAgent
 		}
 		if err := st.AppendTaskEventResponseMessage(ctx, id, approvalSeq, "msg", actor); err != nil {
 			t.Fatalf("seed thread entry %d: %v", i, err)

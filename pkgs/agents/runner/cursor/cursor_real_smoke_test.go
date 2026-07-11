@@ -31,7 +31,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/agentsmoke"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/cursor"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
 // realCursorRunGateEnv is the on/off switch for the real-binary
@@ -83,7 +83,7 @@ func TestCursorAdapter_RealBinary_writesExpectedFile(t *testing.T) {
 	res, runErr := adapter.Run(runCtx, runner.Request{
 		TaskID:     "task-real-cursor-smoke",
 		AttemptSeq: 1,
-		Phase:      domain.PhaseExecute,
+		Phase:      cyclesdomain.PhaseExecute,
 		Prompt:     fixture.Prompt(),
 		WorkingDir: fixture.WorkingDir(),
 		Timeout:    realCursorRunBudget,
@@ -92,7 +92,7 @@ func TestCursorAdapter_RealBinary_writesExpectedFile(t *testing.T) {
 		t.Fatalf("cursor.Adapter.Run failed: %v\nSummary: %s\nRawOutput tail:\n%s",
 			runErr, res.Summary, tailLines(res.RawOutput, 40))
 	}
-	if res.Status != domain.PhaseStatusSucceeded {
+	if res.Status != cyclesdomain.PhaseStatusSucceeded {
 		t.Fatalf("Status = %q, want succeeded\nSummary: %s\nRawOutput tail:\n%s",
 			res.Status, res.Summary, tailLines(res.RawOutput, 40))
 	}

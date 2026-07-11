@@ -3,14 +3,13 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 	"io"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 func TestHTTP_patchTask_cursorModel(t *testing.T) {
@@ -23,7 +22,7 @@ func TestHTTP_patchTask_cursorModel(t *testing.T) {
 	if res.StatusCode != http.StatusOK {
 		t.Fatalf("status %d body=%s", res.StatusCode, raw)
 	}
-	var got domain.Task
+	var got taskcoredomain.Task
 	if err := json.Unmarshal(raw, &got); err != nil {
 		t.Fatal(err)
 	}
@@ -35,7 +34,7 @@ func TestHTTP_patchTask_cursorModel(t *testing.T) {
 	if res2.StatusCode != http.StatusOK {
 		t.Fatalf("clear status %d body=%s", res2.StatusCode, raw2)
 	}
-	var got2 domain.Task
+	var got2 taskcoredomain.Task
 	if err := json.Unmarshal(raw2, &got2); err != nil {
 		t.Fatal(err)
 	}
@@ -133,7 +132,7 @@ func TestHTTP_patchTask_doneBlockedByIncompleteChecklist(t *testing.T) {
 	defer srv.Close()
 
 	id := mustCreateTask(t, srv.URL, `{"title":"t","priority":"medium"}`)
-	if _, err := st.AddChecklistItem(context.Background(), id, "not done yet", nil, domain.ActorUser); err != nil {
+	if _, err := st.AddChecklistItem(context.Background(), id, "not done yet", nil, taskcoredomain.ActorUser); err != nil {
 		t.Fatal(err)
 	}
 
@@ -164,7 +163,7 @@ func TestHTTP_patchTask_setsPickupNotBefore(t *testing.T) {
 	if res.StatusCode != http.StatusOK {
 		t.Fatalf("status %d body=%s", res.StatusCode, raw)
 	}
-	var got domain.Task
+	var got taskcoredomain.Task
 	if err := json.Unmarshal(raw, &got); err != nil {
 		t.Fatalf("decode: %v body=%s", err, raw)
 	}
@@ -196,14 +195,14 @@ func TestHTTP_patchTask_clearsPickupNotBefore(t *testing.T) {
 			seed := time.Now().UTC().Add(3 * time.Hour).Truncate(time.Second)
 			if _, err := st.Update(context.Background(), id,
 				store.UpdateTaskInput{PickupNotBefore: &store.PickupNotBeforePatch{At: seed}},
-				domain.ActorUser); err != nil {
+				taskcoredomain.ActorUser); err != nil {
 				t.Fatalf("seed pickup: %v", err)
 			}
 			res, raw := patchTask(t, srv.URL, id, tc.body)
 			if res.StatusCode != http.StatusOK {
 				t.Fatalf("status %d body=%s", res.StatusCode, raw)
 			}
-			var got domain.Task
+			var got taskcoredomain.Task
 			if err := json.Unmarshal(raw, &got); err != nil {
 				t.Fatalf("decode: %v body=%s", err, raw)
 			}

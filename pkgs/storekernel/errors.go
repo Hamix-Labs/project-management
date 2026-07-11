@@ -3,12 +3,11 @@ package storekernel
 import (
 	"errors"
 	"fmt"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"gorm.io/gorm"
 )
 
-// MapNotFound translates gorm.ErrRecordNotFound into domain.ErrNotFound so
+// MapNotFound translates gorm.ErrRecordNotFound into taskcoredomain.ErrNotFound so
 // handlers can use errors.Is without importing gorm.
 //
 //funclogmeasure:skip category=hot-path reason="Pure error mapper without I/O; callers emit operation trace."
@@ -17,13 +16,13 @@ func MapNotFound(err error) error {
 		return nil
 	}
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return domain.ErrNotFound
+		return taskcoredomain.ErrNotFound
 	}
 	return fmt.Errorf("db: %w", err)
 }
 
 // MapWriteError maps driver write failures to domain errors. duplicateDetail
-// is appended after domain.ErrConflict for unique/duplicate violations.
+// is appended after taskcoredomain.ErrConflict for unique/duplicate violations.
 //
 //funclogmeasure:skip category=hot-path reason="Pure error mapper without I/O; callers emit operation trace."
 func MapWriteError(err error, duplicateDetail string) error {
@@ -31,10 +30,10 @@ func MapWriteError(err error, duplicateDetail string) error {
 		return nil
 	}
 	if IsDuplicateKey(err) {
-		return fmt.Errorf("%w: %s", domain.ErrConflict, duplicateDetail)
+		return fmt.Errorf("%w: %s", taskcoredomain.ErrConflict, duplicateDetail)
 	}
 	if IsCheckConstraintViolation(err) || IsForeignKeyViolation(err) {
-		return fmt.Errorf("%w: %v", domain.ErrInvalidInput, err)
+		return fmt.Errorf("%w: %v", taskcoredomain.ErrInvalidInput, err)
 	}
 	return fmt.Errorf("db: %w", err)
 }

@@ -6,7 +6,8 @@ import (
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
@@ -16,29 +17,29 @@ func TestStore_PendingRetry_setAndAgentPickupConsumes(t *testing.T) {
 	s := store.NewStore(db)
 
 	tsk, err := s.Create(ctx, store.CreateTaskInput{
-		Title: "retry-intent", InitialPrompt: "p", Priority: domain.PriorityMedium, Status: domain.StatusFailed,
-	}, domain.ActorUser)
+		Title: "retry-intent", InitialPrompt: "p", Priority: taskcoredomain.PriorityMedium, Status: taskcoredomain.StatusFailed,
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	intent := &domain.PendingRetry{Mode: domain.RetryFresh, ParentCycleID: "parent-cycle-id"}
-	ready := domain.StatusReady
+	intent := &taskcoredomain.PendingRetry{Mode: taskcoredomain.RetryFresh, ParentCycleID: "parent-cycle-id"}
+	ready := taskcoredomain.StatusReady
 	got, err := s.Update(ctx, tsk.ID, store.UpdateTaskInput{
 		Status:       &ready,
 		PendingRetry: intent,
-	}, domain.ActorUser)
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.PendingRetry == nil || got.PendingRetry.Mode != domain.RetryFresh {
+	if got.PendingRetry == nil || got.PendingRetry.Mode != taskcoredomain.RetryFresh {
 		t.Fatalf("pending_retry: %+v", got.PendingRetry)
 	}
 
-	pickup, err := s.AgentPickup(ctx, tsk.ID, domain.ActorAgent)
+	pickup, err := s.AgentPickup(ctx, tsk.ID, taskcoredomain.ActorAgent)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if pickup.Task.Status != domain.StatusRunning {
+	if pickup.Task.Status != taskcoredomain.StatusRunning {
 		t.Fatalf("status %q want running", pickup.Task.Status)
 	}
 	if pickup.Task.PendingRetry != nil {
@@ -63,13 +64,13 @@ func TestStore_AgentPickup_rejectsNonReady(t *testing.T) {
 	s := store.NewStore(db)
 
 	tsk, err := s.Create(ctx, store.CreateTaskInput{
-		Title: "not-ready", InitialPrompt: "p", Priority: domain.PriorityMedium, Status: domain.StatusFailed,
-	}, domain.ActorUser)
+		Title: "not-ready", InitialPrompt: "p", Priority: taskcoredomain.PriorityMedium, Status: taskcoredomain.StatusFailed,
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = s.AgentPickup(ctx, tsk.ID, domain.ActorAgent)
-	if !errors.Is(err, domain.ErrInvalidInput) {
+	_, err = s.AgentPickup(ctx, tsk.ID, taskcoredomain.ActorAgent)
+	if !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		t.Fatalf("got %v want ErrInvalidInput", err)
 	}
 }
@@ -80,17 +81,17 @@ func TestStore_Update_pendingRetrySetAndClearConflict(t *testing.T) {
 	s := store.NewStore(db)
 
 	tsk, err := s.Create(ctx, store.CreateTaskInput{
-		Title: "conflict", InitialPrompt: "p", Priority: domain.PriorityMedium,
-	}, domain.ActorUser)
+		Title: "conflict", InitialPrompt: "p", Priority: taskcoredomain.PriorityMedium,
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	intent := &domain.PendingRetry{Mode: domain.RetryResume, ParentCycleID: "c1"}
+	intent := &taskcoredomain.PendingRetry{Mode: taskcoredomain.RetryResume, ParentCycleID: "c1"}
 	_, err = s.Update(ctx, tsk.ID, store.UpdateTaskInput{
 		PendingRetry:      intent,
 		ClearPendingRetry: true,
-	}, domain.ActorUser)
-	if !errors.Is(err, domain.ErrInvalidInput) {
+	}, taskcoredomain.ActorUser)
+	if !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		t.Fatalf("got %v want ErrInvalidInput", err)
 	}
 }
@@ -101,32 +102,32 @@ func TestStore_RequestTaskRetry_freshAndResume(t *testing.T) {
 	s := store.NewStore(db)
 
 	tsk, err := s.Create(ctx, store.CreateTaskInput{
-		Title: "retry", InitialPrompt: "p", Priority: domain.PriorityMedium, Status: domain.StatusFailed,
-	}, domain.ActorUser)
+		Title: "retry", InitialPrompt: "p", Priority: taskcoredomain.PriorityMedium, Status: taskcoredomain.StatusFailed,
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	cycle, err := s.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
+	cycle, err := s.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.TerminateCycle(ctx, cycle.ID, domain.CycleStatusFailed, "x", domain.ActorAgent); err != nil {
+	if _, err := s.TerminateCycle(ctx, cycle.ID, cyclesdomain.CycleStatusFailed, "x", taskcoredomain.ActorAgent); err != nil {
 		t.Fatal(err)
 	}
 
 	got, err := s.RequestTaskRetry(ctx, store.RequestRetryInput{
-		TaskID: tsk.ID, Mode: domain.RetryFresh,
-	}, domain.ActorUser)
+		TaskID: tsk.ID, Mode: taskcoredomain.RetryFresh,
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Status != domain.StatusReady || got.PendingRetry == nil || got.PendingRetry.ParentCycleID != cycle.ID {
+	if got.Status != taskcoredomain.StatusReady || got.PendingRetry == nil || got.PendingRetry.ParentCycleID != cycle.ID {
 		t.Fatalf("task=%+v", got)
 	}
 
 	got2, err := s.RequestTaskRetry(ctx, store.RequestRetryInput{
-		TaskID: tsk.ID, Mode: domain.RetryFresh,
-	}, domain.ActorUser)
+		TaskID: tsk.ID, Mode: taskcoredomain.RetryFresh,
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -134,17 +135,17 @@ func TestStore_RequestTaskRetry_freshAndResume(t *testing.T) {
 		t.Fatalf("idempotent pending_retry=%+v", got2.PendingRetry)
 	}
 
-	failed := domain.StatusFailed
-	if _, err := s.Update(ctx, tsk.ID, store.UpdateTaskInput{Status: &failed}, domain.ActorUser); err != nil {
+	failed := taskcoredomain.StatusFailed
+	if _, err := s.Update(ctx, tsk.ID, store.UpdateTaskInput{Status: &failed}, taskcoredomain.ActorUser); err != nil {
 		t.Fatal(err)
 	}
 	got3, err := s.RequestTaskRetry(ctx, store.RequestRetryInput{
-		TaskID: tsk.ID, Mode: domain.RetryResume,
-	}, domain.ActorUser)
+		TaskID: tsk.ID, Mode: taskcoredomain.RetryResume,
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got3.PendingRetry == nil || got3.PendingRetry.Mode != domain.RetryResume {
+	if got3.PendingRetry == nil || got3.PendingRetry.Mode != taskcoredomain.RetryResume {
 		t.Fatalf("resume pending_retry=%+v", got3.PendingRetry)
 	}
 }
@@ -155,15 +156,15 @@ func TestStore_RequestTaskRetry_rejectsNonFailed(t *testing.T) {
 	s := store.NewStore(db)
 
 	tsk, err := s.Create(ctx, store.CreateTaskInput{
-		Title: "ready", InitialPrompt: "p", Priority: domain.PriorityMedium, Status: domain.StatusReady,
-	}, domain.ActorUser)
+		Title: "ready", InitialPrompt: "p", Priority: taskcoredomain.PriorityMedium, Status: taskcoredomain.StatusReady,
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
 	_, err = s.RequestTaskRetry(ctx, store.RequestRetryInput{
-		TaskID: tsk.ID, Mode: domain.RetryFresh,
-	}, domain.ActorUser)
-	if !errors.Is(err, domain.ErrInvalidInput) {
+		TaskID: tsk.ID, Mode: taskcoredomain.RetryFresh,
+	}, taskcoredomain.ActorUser)
+	if !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		t.Fatalf("got %v want ErrInvalidInput", err)
 	}
 }
@@ -174,15 +175,15 @@ func TestStore_RequestTaskRetry_noTerminalCycle(t *testing.T) {
 	s := store.NewStore(db)
 
 	tsk, err := s.Create(ctx, store.CreateTaskInput{
-		Title: "no-cycle", InitialPrompt: "p", Priority: domain.PriorityMedium, Status: domain.StatusFailed,
-	}, domain.ActorUser)
+		Title: "no-cycle", InitialPrompt: "p", Priority: taskcoredomain.PriorityMedium, Status: taskcoredomain.StatusFailed,
+	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
 	_, err = s.RequestTaskRetry(ctx, store.RequestRetryInput{
-		TaskID: tsk.ID, Mode: domain.RetryFresh,
-	}, domain.ActorUser)
-	if !errors.Is(err, domain.ErrInvalidInput) {
+		TaskID: tsk.ID, Mode: taskcoredomain.RetryFresh,
+	}, taskcoredomain.ActorUser)
+	if !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		t.Fatalf("got %v want ErrInvalidInput", err)
 	}
 }

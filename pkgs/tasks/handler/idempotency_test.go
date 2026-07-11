@@ -3,6 +3,10 @@ package handler
 import (
 	"bytes"
 	"encoding/json"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/logctx"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
+	"github.com/google/uuid"
 	"io"
 	"log/slog"
 	"net/http"
@@ -11,11 +15,6 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/logctx"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
-	"github.com/google/uuid"
 )
 
 func TestHTTP_idempotency_post_second_replays_from_cache(t *testing.T) {
@@ -73,7 +72,7 @@ func TestHTTP_idempotency_post_second_replays_from_cache(t *testing.T) {
 		t.Fatalf("body mismatch:\n%s\nvs\n%s", b1, b2)
 	}
 
-	var tree domain.Task
+	var tree taskcoredomain.Task
 	if err := json.Unmarshal(b1, &tree); err != nil {
 		t.Fatal(err)
 	}

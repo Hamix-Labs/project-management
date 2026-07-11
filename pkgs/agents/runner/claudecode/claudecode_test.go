@@ -10,7 +10,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/claudecode"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/registry"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -54,7 +54,7 @@ func TestAdapter_RunReturnsErrTimeout(t *testing.T) {
 	res, err := a.Run(context.Background(), runner.Request{TaskID: "t1"})
 	require.Error(t, err)
 	assert.True(t, errors.Is(err, runner.ErrTimeout))
-	assert.Equal(t, domain.PhaseStatusFailed, res.Status)
+	assert.Equal(t, cyclesdomain.PhaseStatusFailed, res.Status)
 }
 
 func TestAdapter_EffectiveModel(t *testing.T) {

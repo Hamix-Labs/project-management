@@ -3,14 +3,13 @@ package handler
 import (
 	"bytes"
 	"encoding/json"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	"github.com/google/uuid"
+	"github.com/prometheus/client_golang/prometheus/testutil"
 	"io"
 	"net/http"
 	"strings"
 	"testing"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/google/uuid"
-	"github.com/prometheus/client_golang/prometheus/testutil"
 )
 
 func TestHTTP_create_and_list(t *testing.T) {
@@ -29,7 +28,7 @@ func TestHTTP_create_and_list(t *testing.T) {
 		}
 		t.Fatalf("status %d body %s", res.StatusCode, b)
 	}
-	var created domain.Task
+	var created taskcoredomain.Task
 	if err := json.NewDecoder(res.Body).Decode(&created); err != nil {
 		t.Fatal(err)
 	}
@@ -49,7 +48,7 @@ func TestHTTP_create_and_list(t *testing.T) {
 		t.Fatalf("list status %d", res2.StatusCode)
 	}
 	var payload struct {
-		Tasks []domain.Task `json:"tasks"`
+		Tasks []taskcoredomain.Task `json:"tasks"`
 	}
 	if err := json.NewDecoder(res2.Body).Decode(&payload); err != nil {
 		t.Fatal(err)
@@ -100,7 +99,7 @@ func TestHTTP_patch_and_delete(t *testing.T) {
 	if res.StatusCode != http.StatusCreated {
 		t.Fatalf("create %d %s", res.StatusCode, b)
 	}
-	var created domain.Task
+	var created taskcoredomain.Task
 	if err := json.Unmarshal(b, &created); err != nil {
 		t.Fatal(err)
 	}
@@ -125,11 +124,11 @@ func TestHTTP_patch_and_delete(t *testing.T) {
 	if res2.StatusCode != http.StatusOK {
 		t.Fatalf("patch %d %s", res2.StatusCode, patchBytes)
 	}
-	var updated domain.Task
+	var updated taskcoredomain.Task
 	if err := json.Unmarshal(patchBytes, &updated); err != nil {
 		t.Fatal(err)
 	}
-	if updated.Status != domain.StatusRunning {
+	if updated.Status != taskcoredomain.StatusRunning {
 		t.Fatalf("status %s", updated.Status)
 	}
 
@@ -165,11 +164,11 @@ func TestHTTP_patch_json_null_leaves_field_unchanged(t *testing.T) {
 	if res.StatusCode != http.StatusCreated {
 		t.Fatalf("create %d %s", res.StatusCode, b)
 	}
-	var created domain.Task
+	var created taskcoredomain.Task
 	if err := json.Unmarshal(b, &created); err != nil {
 		t.Fatal(err)
 	}
-	if created.Priority != domain.PriorityMedium {
+	if created.Priority != taskcoredomain.PriorityMedium {
 		t.Fatalf("priority: %s", created.Priority)
 	}
 
@@ -194,14 +193,14 @@ func TestHTTP_patch_json_null_leaves_field_unchanged(t *testing.T) {
 	if res2.StatusCode != http.StatusOK {
 		t.Fatalf("patch %d %s", res2.StatusCode, patchBytes)
 	}
-	var updated domain.Task
+	var updated taskcoredomain.Task
 	if err := json.Unmarshal(patchBytes, &updated); err != nil {
 		t.Fatal(err)
 	}
-	if updated.Status != domain.StatusReady {
+	if updated.Status != taskcoredomain.StatusReady {
 		t.Fatalf("status should stay ready, got %s", updated.Status)
 	}
-	if updated.Priority != domain.PriorityHigh {
+	if updated.Priority != taskcoredomain.PriorityHigh {
 		t.Fatalf("priority: %s", updated.Priority)
 	}
 }
@@ -224,7 +223,7 @@ func TestHTTP_patch_rejects_empty_patch(t *testing.T) {
 	if res.StatusCode != http.StatusCreated {
 		t.Fatalf("create %d %s", res.StatusCode, b)
 	}
-	var created domain.Task
+	var created taskcoredomain.Task
 	if err := json.Unmarshal(b, &created); err != nil {
 		t.Fatal(err)
 	}
@@ -353,7 +352,7 @@ func TestHTTP_domain_tasks_created_and_updated_counters(t *testing.T) {
 		b, _ := io.ReadAll(res.Body)
 		t.Fatalf("create status %d: %s", res.StatusCode, b)
 	}
-	var created domain.Task
+	var created taskcoredomain.Task
 	if err := json.NewDecoder(res.Body).Decode(&created); err != nil {
 		t.Fatal(err)
 	}
@@ -395,7 +394,7 @@ func TestHTTP_domain_tasks_deleted_counter(t *testing.T) {
 		b, _ := io.ReadAll(res.Body)
 		t.Fatalf("create status %d: %s", res.StatusCode, b)
 	}
-	var created domain.Task
+	var created taskcoredomain.Task
 	if err := json.NewDecoder(res.Body).Decode(&created); err != nil {
 		t.Fatal(err)
 	}

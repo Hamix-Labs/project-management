@@ -10,7 +10,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 )
 
 func newProjectsFacadeStore(t *testing.T) (*Store, context.Context) {
@@ -137,7 +137,7 @@ func TestStore_ProjectCRUD_roundtrip(t *testing.T) {
 		t.Fatalf("delete project: %v", err)
 	}
 	_, err = s.GetProject(ctx, project.ID)
-	if !errors.Is(err, domain.ErrNotFound) {
+	if !errors.Is(err, taskcoredomain.ErrNotFound) {
 		t.Fatalf("get deleted err = %v, want ErrNotFound", err)
 	}
 }
@@ -337,7 +337,7 @@ func TestStore_TaskContextSnapshot_roundtrip(t *testing.T) {
 		t.Fatalf("create project: %v", err)
 	}
 	task := mustCreateTask(t, s, ctx)
-	cycle, err := s.StartCycle(ctx, StartCycleInput{TaskID: task.ID, TriggeredBy: domain.ActorAgent})
+	cycle, err := s.StartCycle(ctx, StartCycleInput{TaskID: task.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatalf("start cycle: %v", err)
 	}
@@ -399,7 +399,7 @@ func TestStore_Project_validation_errors(t *testing.T) {
 	}
 
 	_, err = s.GetProject(ctx, "missing")
-	if !errors.Is(err, domain.ErrNotFound) {
+	if !errors.Is(err, taskcoredomain.ErrNotFound) {
 		t.Fatalf("get missing project err = %v, want ErrNotFound", err)
 	}
 }

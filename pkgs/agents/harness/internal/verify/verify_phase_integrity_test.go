@@ -5,7 +5,8 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/runnerfake"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -26,7 +27,7 @@ func TestWorker_VerifyPhase_repoRootStaysCleanThroughoutCycle(t *testing.T) {
 	defer cancel()
 
 	tsk := h.CreateReadyTask(ctx, "verify-clean-repo")
-	item, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", nil, domain.ActorUser)
+	item, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("add checklist item: %v", err)
 	}
@@ -45,7 +46,7 @@ func TestWorker_VerifyPhase_repoRootStaysCleanThroughoutCycle(t *testing.T) {
 
 	execRunner := runnerfake.New()
 	execHook := &hookRunner{Runner: execRunner, preRun: func(req runner.Request) {
-		if req.Phase != domain.PhaseExecute {
+		if req.Phase != cyclesdomain.PhaseExecute {
 			return
 		}
 		cycles, _ := h.Store.ListCyclesForTask(context.Background(), req.TaskID, 1)
@@ -53,12 +54,12 @@ func TestWorker_VerifyPhase_repoRootStaysCleanThroughoutCycle(t *testing.T) {
 			writeCriteriaReportWithGitWork(t, reportDir, cycles[0].ID, workDir, []string{item.ID})
 		}
 	}}
-	execRunner.Script(tsk.ID, domain.PhaseExecute, runner.NewResult(
-		domain.PhaseStatusSucceeded, "exec ok", nil, ""))
+	execRunner.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(
+		cyclesdomain.PhaseStatusSucceeded, "exec ok", nil, ""))
 
 	verifyRunner := runnerfake.New()
 	verifyHook := &hookRunner{Runner: verifyRunner, preRun: func(req runner.Request) {
-		if req.Phase != domain.PhaseVerify {
+		if req.Phase != cyclesdomain.PhaseVerify {
 			return
 		}
 		cycles, _ := h.Store.ListCyclesForTask(context.Background(), req.TaskID, 1)
@@ -66,15 +67,15 @@ func TestWorker_VerifyPhase_repoRootStaysCleanThroughoutCycle(t *testing.T) {
 			writeVerifyReport(t, reportDir, cycles[0].ID, []string{item.ID})
 		}
 	}}
-	verifyRunner.Script(tsk.ID, domain.PhaseVerify, runner.NewResult(
-		domain.PhaseStatusSucceeded, "verify ok", nil, ""))
+	verifyRunner.Script(tsk.ID, cyclesdomain.PhaseVerify, runner.NewResult(
+		cyclesdomain.PhaseStatusSucceeded, "verify ok", nil, ""))
 
 	done := h.StartHarnessRun(ctx, tsk, execHook, harness.Options{
 		WorkingDir:   workDir,
 		ReportDir:    reportDir,
 		VerifyRunner: verifyHook,
 	})
-	h.WaitTaskStatus(ctx, tsk.ID, domain.StatusDone)
+	h.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusDone)
 	<-done
 	cancel()
 	postStatus, postErr := exec.Command("git", "-C", workDir, "status", "--porcelain").CombinedOutput()
@@ -105,7 +106,7 @@ func TestWorker_terminateCycle_cleansReportDir(t *testing.T) {
 	defer cancel()
 
 	tsk := h.CreateReadyTask(ctx, "verify-cleanup")
-	item, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", nil, domain.ActorUser)
+	item, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("add checklist item: %v", err)
 	}
@@ -115,7 +116,7 @@ func TestWorker_terminateCycle_cleansReportDir(t *testing.T) {
 
 	execRunner := runnerfake.New()
 	execHook := &hookRunner{Runner: execRunner, preRun: func(req runner.Request) {
-		if req.Phase != domain.PhaseExecute {
+		if req.Phase != cyclesdomain.PhaseExecute {
 			return
 		}
 		cycles, _ := h.Store.ListCyclesForTask(context.Background(), req.TaskID, 1)
@@ -123,12 +124,12 @@ func TestWorker_terminateCycle_cleansReportDir(t *testing.T) {
 			writeCriteriaReport(t, reportDir, cycles[0].ID, []string{item.ID})
 		}
 	}}
-	execRunner.Script(tsk.ID, domain.PhaseExecute, runner.NewResult(
-		domain.PhaseStatusSucceeded, "exec ok", nil, ""))
+	execRunner.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(
+		cyclesdomain.PhaseStatusSucceeded, "exec ok", nil, ""))
 
 	verifyRunner := runnerfake.New()
 	verifyHook := &hookRunner{Runner: verifyRunner, preRun: func(req runner.Request) {
-		if req.Phase != domain.PhaseVerify {
+		if req.Phase != cyclesdomain.PhaseVerify {
 			return
 		}
 		cycles, _ := h.Store.ListCyclesForTask(context.Background(), req.TaskID, 1)
@@ -136,15 +137,15 @@ func TestWorker_terminateCycle_cleansReportDir(t *testing.T) {
 			writeVerifyReport(t, reportDir, cycles[0].ID, []string{item.ID})
 		}
 	}}
-	verifyRunner.Script(tsk.ID, domain.PhaseVerify, runner.NewResult(
-		domain.PhaseStatusSucceeded, "verify ok", nil, ""))
+	verifyRunner.Script(tsk.ID, cyclesdomain.PhaseVerify, runner.NewResult(
+		cyclesdomain.PhaseStatusSucceeded, "verify ok", nil, ""))
 
 	done := h.StartHarnessRun(ctx, tsk, execHook, harness.Options{
 		WorkingDir:   workDir,
 		ReportDir:    reportDir,
 		VerifyRunner: verifyHook,
 	})
-	h.WaitTaskStatus(ctx, tsk.ID, domain.StatusDone)
+	h.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusDone)
 	<-done
 	cancel()
 	cycles, _ := h.Store.ListCyclesForTask(context.Background(), tsk.ID, 1)

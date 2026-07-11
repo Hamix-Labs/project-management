@@ -1,6 +1,6 @@
 package orchestration
 
-import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+import checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 
 // RetryMode selects whether the next loop iteration re-runs execute.
 type RetryMode string
@@ -33,7 +33,7 @@ const (
 // ClassifyVerdict is the minimal verdict shape for pure classification.
 type ClassifyVerdict struct {
 	Passed   bool
-	Verifier domain.VerifierKind
+	Verifier checklistdomain.VerifierKind
 }
 
 // ClassifyInput carries pre-fetched booleans for execute-validity gates.
@@ -54,7 +54,7 @@ func ClassifyFailureClass(verdicts []ClassifyVerdict, pipelineFailed bool) Failu
 			continue
 		}
 		switch v.Verifier {
-		case domain.VerifierAgentSelf, domain.VerifierVerifyAgent:
+		case checklistdomain.VerifierAgentSelf, checklistdomain.VerifierVerifyAgent:
 			return FailureClassImplementation
 		}
 	}

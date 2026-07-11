@@ -30,6 +30,5 @@
 //
 // The HTTP server sets read header/read/idle timeouts and a max header size; WriteTimeout is left unset so GET /events (SSE) can stay open.
 //
-// REST contract: see package github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler and domain types
-// in github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain.
+// REST contract: see package github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler and BC domain packages under pkgs/taskcore, taskcycles, etc.
 package main
