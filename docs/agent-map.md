@@ -26,7 +26,8 @@ Repository paths grouped by subsystem. Read only the rows relevant to your task.
 | --- | --- | --- | --- |
 | HTTP API + SSE | `pkgs/tasks/handler/` | REST handlers, SSE hub wiring, route registration | [handler/README.md](../pkgs/tasks/handler/README.md), [domain/sse-hub.md](./domain/sse-hub.md) |
 | Domain types | `pkgs/tasks/domain/` | Task model, status/priority enums, cycles, validation, retry | [data-model.md](./data-model.md) |
-| Persistence | `pkgs/tasks/store/`, `pkgs/tasks/postgres/` | Store facade, GORM migrate, dual-write to `task_events` | [domain/persistence.md](./domain/persistence.md), [store/README.md](../pkgs/tasks/store/README.md) |
+| Projects bounded context | `pkgs/projects/` | Project CRUD, context graph, `/projects*` HTTP | [ADR-0045](./adr/ADR-0045-bounded-context-projects.md), [projects/README.md](../pkgs/projects/README.md) |
+| Persistence | `pkgs/tasks/store/`, `pkgs/projects/store/`, `pkgs/tasks/postgres/` | Store facade, GORM migrate, dual-write to `task_events` | [domain/persistence.md](./domain/persistence.md), [store/README.md](../pkgs/tasks/store/README.md) |
 | Task scheduling | `pkgs/tasks/scheduling/` | Worker readiness predicates, pickup gate, post-commit notify | [domain/task-scheduling.md](./domain/task-scheduling.md), ADR-0023 |
 | Execution cycles HTTP | `pkgs/tasks/handler/handler_cycles.go` | Cycle and phase REST surface | [api.md](./api.md), [data-model.md](./data-model.md) |
 | Operator retry | `handler_tasks_retry.go`, `domain/retry.go`, `harness/retry_run.go` | Start over / resume after failure | [retry-start-over.md](./domain/retry-start-over.md), [retry-resume.md](./domain/retry-resume.md) |

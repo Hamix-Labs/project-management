@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
@@ -28,7 +28,7 @@ func (rig *supervisorTestRig) seedGitRepository(t *testing.T, dir string) {
 	}
 	_ = exec.Command("git", "-C", dir, "commit", "-m", "init", "--allow-empty").Run()
 	ctx := context.Background()
-	if _, err := rig.store.CreateGitRepository(ctx, domain.LegacyGlobalDefaultProjectID, store.CreateGitRepositoryInput{
+	if _, err := rig.store.CreateGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, store.CreateGitRepositoryInput{
 		Path: dir,
 	}, gitwork.New()); err != nil {
 		t.Fatalf("CreateGitRepository: %v", err)

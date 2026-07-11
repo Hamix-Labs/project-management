@@ -9,8 +9,8 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/kernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/postgres"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/kernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"github.com/prometheus/client_golang/prometheus"
 	"gorm.io/gorm"

@@ -79,15 +79,15 @@ if [[ "$TESTS_ONLY" -eq 1 ]]; then
   fi
 elif [[ "$LINT_ONLY" -eq 1 ]]; then
   if [[ "$SKIP_FUNCLOG" -eq 0 ]]; then
-    TOTAL=7
+    TOTAL=8
   else
-    TOTAL=6
+    TOTAL=7
   fi
 else
   if [[ "$SKIP_FUNCLOG" -eq 0 ]]; then
-    TOTAL=10
+    TOTAL=11
   else
-    TOTAL=9
+    TOTAL=10
   fi
 fi
 
@@ -172,6 +172,33 @@ step_sse_publish_boundary() {
     echo "${C_RED}FAILED${C_RESET}"
     echo "h.hub.Publish must only appear in pkgs/tasks/handler/sse_notify.go:"
     echo "$hits"
+    fail_step "$label" 1
+  fi
+
+  PASSED=$((PASSED + 1))
+  print_ok_line "$label" "$elapsed"
+}
+
+step_projects_boundary() {
+  local label="projects boundary"
+  local start=$SECONDS
+  step_prefix
+  printf '%s ' "$label"
+
+  local hits=""
+  if rg -q 'github.com/.*/pkgs/tasks/handler' pkgs/projects/ -g '*.go' 2>/dev/null; then
+    hits="$(rg -n 'github.com/.*/pkgs/tasks/handler' pkgs/projects/ -g '*.go' 2>/dev/null || true)"
+  fi
+  if rg -q 'github.com/.*/pkgs/tasks/store/internal' pkgs/projects/ -g '*.go' 2>/dev/null; then
+    hits+=$'\n'"$(rg -n 'github.com/.*/pkgs/tasks/store/internal' pkgs/projects/ -g '*.go' 2>/dev/null || true)"
+  fi
+  local elapsed=$((SECONDS - start))
+  add_section_time "$elapsed"
+
+  if [[ -n "$(echo "$hits" | sed '/^$/d')" ]]; then
+    echo "${C_RED}FAILED${C_RESET}"
+    echo "pkgs/projects must not import pkgs/tasks/handler or pkgs/tasks/store/internal:"
+    echo "$hits" | sed '/^$/d'
     fail_step "$label" 1
   fi
 
@@ -313,6 +340,7 @@ run_cmd "schema revision" bash "$script_dir/check-schema-revision.sh"
 run_cmd "go vet" go vet ./...
 step_scheduling_boundary
 step_sse_publish_boundary
+step_projects_boundary
 
 if [[ "$LINT_ONLY" -eq 1 ]]; then
   step_test_group_coverage

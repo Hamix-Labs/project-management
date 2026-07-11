@@ -3,7 +3,7 @@ package model
 import (
 	"time"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 )
 
 // ProjectContextEdge is the GORM persistence shape for domain.ProjectContextEdge.
@@ -17,10 +17,6 @@ type ProjectContextEdge struct {
 	Note            string                        `gorm:"type:text;not null;default:''"`
 	CreatedAt       time.Time                     `gorm:"not null;index"`
 	UpdatedAt       time.Time                     `gorm:"not null;index"`
-
-	Project *Project            `gorm:"foreignKey:ProjectID;references:ID;constraint:OnDelete:CASCADE"`
-	Source  *ProjectContextItem `gorm:"foreignKey:SourceContextID;references:ID;constraint:OnDelete:CASCADE"`
-	Target  *ProjectContextItem `gorm:"foreignKey:TargetContextID;references:ID;constraint:OnDelete:CASCADE"`
 }
 
 // TableName pins the project_context_edges table name.

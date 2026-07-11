@@ -3,7 +3,7 @@ package model
 import (
 	"time"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 )
 
 // Project is the GORM persistence shape for domain.Project (columns only).

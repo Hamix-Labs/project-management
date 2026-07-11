@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"time"
 
+	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -41,7 +42,7 @@ func backfillProjectRepository(ctx context.Context, db *gorm.DB) error {
 	if !tableHasColumnPortable(db, "git_repositories", "project_id") {
 		return nil
 	}
-	var projects []model.Project
+	var projects []projectmodel.Project
 	if err := db.WithContext(ctx).Where("repository_id IS NULL").Find(&projects).Error; err != nil {
 		return err
 	}
@@ -57,7 +58,7 @@ func backfillProjectRepository(ctx context.Context, db *gorm.DB) error {
 		if err != nil {
 			return err
 		}
-		if err := db.WithContext(ctx).Model(&model.Project{}).
+		if err := db.WithContext(ctx).Model(&projectmodel.Project{}).
 			Where("id = ?", projects[i].ID).
 			Update("repository_id", repoID).Error; err != nil {
 			return err

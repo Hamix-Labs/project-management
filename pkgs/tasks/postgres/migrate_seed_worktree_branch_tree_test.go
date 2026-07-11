@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
+	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
@@ -60,7 +62,7 @@ func openTreeMigrateDB(t *testing.T) *gorm.DB {
 		t.Fatal(err)
 	}
 	if err := db.AutoMigrate(
-		&domain.Project{},
+		&projectsdomain.Project{},
 		&legacyGitRepo{},
 		&domain.GitWorktree{},
 		&domain.GitBranch{},
@@ -77,7 +79,7 @@ func openTreeMigrateDB(t *testing.T) *gorm.DB {
 func seedLegacyGitTree(ctx context.Context, t *testing.T, db *gorm.DB) (wtID, brID, taskID string) {
 	t.Helper()
 	now := time.Now().UTC()
-	proj := domain.LegacyGlobalDefaultProject(now)
+	proj := projectsdomain.LegacyGlobalDefaultProject(now)
 	if err := db.WithContext(ctx).Create(&proj).Error; err != nil {
 		t.Fatal(err)
 	}
@@ -118,8 +120,8 @@ func TestMigrateSeedWorktreeBranchTree_backfills(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var proj domain.Project
-	if err := db.WithContext(ctx).First(&proj, "id = ?", domain.LegacyGlobalDefaultProjectID).Error; err != nil {
+	var proj projectmodel.Project
+	if err := db.WithContext(ctx).First(&proj, "id = ?", projectsdomain.LegacyGlobalDefaultProjectID).Error; err != nil {
 		t.Fatal(err)
 	}
 	if proj.RepositoryID == nil || *proj.RepositoryID != "repo-1" {
@@ -165,7 +167,7 @@ func TestMigrateSeedWorktreeBranchTree_skipsOrphanPairs(t *testing.T) {
 	db := openTreeMigrateDB(t)
 	ctx := context.Background()
 	now := time.Now().UTC()
-	proj := domain.LegacyGlobalDefaultProject(now)
+	proj := projectsdomain.LegacyGlobalDefaultProject(now)
 	if err := db.WithContext(ctx).Create(&proj).Error; err != nil {
 		t.Fatal(err)
 	}

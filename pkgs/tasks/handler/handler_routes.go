@@ -1,11 +1,21 @@
 package handler
 
-import "net/http"
+import (
+	"net/http"
+
+	projecthandler "github.com/AlexsanderHamir/Hamix/pkgs/projects/handler"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
+)
 
 //funclogmeasure:skip category=hot-path reason="Route table wiring only; operation trace is emitted by registered handlers."
 func (h *Handler) registerRoutes(m *http.ServeMux) {
 	h.registerHealthRoutes(m)
-	h.registerProjectRoutes(m)
+	projecthandler.Register(m, projecthandler.Deps{
+		Store: h.store,
+		Notify: func(typ realtime.ChangeType, id string) {
+			h.notifyChange(TaskChangeType(typ), id)
+		},
+	})
 	h.registerGlobalGitRoutes(m)
 	h.registerTaskDraftTemplateRoutes(m)
 	h.registerTaskRoutes(m)
@@ -22,22 +32,6 @@ func (h *Handler) registerHealthRoutes(m *http.ServeMux) {
 	m.Handle("GET /health/ready", http.HandlerFunc(h.healthReady))
 	m.Handle("GET /system/health", http.HandlerFunc(h.systemHealth))
 	m.Handle("GET /events", http.HandlerFunc(h.streamEvents))
-}
-
-//funclogmeasure:skip category=hot-path reason="Route table wiring only; operation trace is emitted by registered handlers."
-func (h *Handler) registerProjectRoutes(m *http.ServeMux) {
-	m.Handle("GET /projects", http.HandlerFunc(h.listProjects))
-	m.Handle("POST /projects", http.HandlerFunc(h.createProject))
-	m.Handle("GET /projects/{id}", http.HandlerFunc(h.getProject))
-	m.Handle("PATCH /projects/{id}", http.HandlerFunc(h.patchProject))
-	m.Handle("DELETE /projects/{id}", http.HandlerFunc(h.deleteProject))
-	m.Handle("GET /projects/{id}/context", http.HandlerFunc(h.listProjectContext))
-	m.Handle("POST /projects/{id}/context", http.HandlerFunc(h.createProjectContext))
-	m.Handle("POST /projects/{id}/context/edges", http.HandlerFunc(h.createProjectContextEdge))
-	m.Handle("PATCH /projects/{id}/context/edges/{edgeId}", http.HandlerFunc(h.patchProjectContextEdge))
-	m.Handle("DELETE /projects/{id}/context/edges/{edgeId}", http.HandlerFunc(h.deleteProjectContextEdge))
-	m.Handle("PATCH /projects/{id}/context/{contextId}", http.HandlerFunc(h.patchProjectContext))
-	m.Handle("DELETE /projects/{id}/context/{contextId}", http.HandlerFunc(h.deleteProjectContext))
 }
 
 //funclogmeasure:skip category=hot-path reason="Route table wiring only; operation trace is emitted by registered handlers."

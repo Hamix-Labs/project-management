@@ -15,7 +15,7 @@ Ready-task notifications (`(*Store).notifyReadyTask`) are intentionally only fir
 | Concern | Facade file | Tests | Internal package | Notes |
 |---|---|---|---|---|
 | Wiring | `store.go` | (in `facade_tasks_test.go`) | `internal/notify` | `Store`, `NewStore`, `ReadyTaskNotifier`, `SetReadyTaskNotifier`, `notifyReadyTask`. |
-| Projects & project context | `facade_projects.go` | `facade_projects_test.go` | `internal/projects` | Project CRUD, context item CRUD, and immutable task context snapshots used by agent runs. |
+| Projects & project context | `facade_projects.go` | `facade_projects_test.go` | `pkgs/projects/store` | Delegates to `pkgs/projects/store`; integration tests in `facade_projects_test.go`. |
 | Tasks — CRUD, lists & trees | `facade_tasks.go` | `facade_tasks_test.go` | `internal/tasks` | `Get`, `Create`, `Update`, `Delete`, `List` / `ListFlat`, `ListRootForest{,After}`, `GetTaskTree`. Readiness delegates to [`pkgs/tasks/scheduling/`](../scheduling/). `CreateTaskInput`, `UpdateTaskInput`, `ParentFieldPatch`, `TaskNode`, `MaxTaskTreeDepth` aliased here. Tests also cover the ready-task notifier wiring and the operation-duration histogram. |
 | Stats | `facade_stats.go` | — | `internal/stats` | `GlobalTaskStats`. |
 | Checklist | `facade_checklist.go` | `facade_checklist_test.go` | `internal/checklist` | List / add / update / delete / set-done. Exports `ValidateCanMarkDoneInTx` and `DeleteOwnedItemsInTx` for sibling subpackages. |
@@ -26,7 +26,7 @@ Ready-task notifications (`(*Store).notifyReadyTask`) are intentionally only fir
 | Agent ready queue | `facade_ready.go` | `facade_ready_test.go`, `scheduling_parity_test.go` | `internal/ready` | `ListReadyTaskQueueCandidates`, `ListReadyTasksUserCreated`, `DefaultReadyTimeout`. SQL dequeuable predicates mirror [`scheduling/`](../scheduling/). |
 | Health | `facade_health.go` | `facade_health_test.go` | `internal/health` | `Ping`, `Ready`. |
 | Dev simulation | `facade_devmirror.go` | `facade_devmirror_test.go` | `internal/devmirror` | `ApplyDevTaskRowMirror`, `ListDevsimTasks`. |
-| Shared kernel | — | `internal/kernel/*_test.go` | `internal/kernel` | `Op*` Prometheus labels, `DeferLatency`, `AppendEvent`, `NextEventSeq`, `EventPairJSON`, `Valid*` validators, `ValidateActor`, `LoadTask`, `NormalizeJSONObject`, `ResolveID`, `IsDuplicateKey`, `IsDuplicatePrimaryKey`, `MapWriteError`. The only place `promauto` registers metrics. |
+| Shared kernel | — | `pkgs/tasks/kernel/*_test.go` | `pkgs/tasks/kernel` | `Op*` Prometheus labels, `DeferLatency`, `AppendEvent`, `NextEventSeq`, `EventPairJSON`, `Valid*` validators, `ValidateActor`, `LoadTask`, `NormalizeJSONObject`, `ResolveID`, `IsDuplicateKey`, `IsDuplicatePrimaryKey`, `MapWriteError`. Shared with `pkgs/projects/store`. |
 
 Each `facade_<domain>_test.go` exercises the public API end-to-end against the SQLite test harness, mirroring its production sibling 1:1. Store-level DB constraint and ID helpers live in `internal/kernel` with unit tests there.
 

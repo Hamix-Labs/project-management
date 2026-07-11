@@ -197,23 +197,6 @@ func TestTaskDependency_roundTrip(t *testing.T) {
 	}
 }
 
-func TestProject_roundTrip(t *testing.T) {
-	t.Parallel()
-	now := time.Date(2026, 3, 1, 12, 0, 0, 0, time.UTC)
-	orig := domain.Project{
-		ID:        "p1",
-		Name:      "Alpha",
-		Status:    domain.ProjectStatusActive,
-		CreatedAt: now,
-		UpdatedAt: now,
-	}
-	m := FromDomainProject(orig)
-	back := ToDomainProject(m)
-	if !reflect.DeepEqual(orig, back) {
-		t.Fatalf("round-trip mismatch: %+v vs %+v", orig, back)
-	}
-}
-
 func strPtr(s string) *string { return &s }
 
 func TestTaskCycleCriteriaReport_roundTrip(t *testing.T) {

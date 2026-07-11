@@ -5,9 +5,10 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 )
 
 func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
@@ -19,7 +20,7 @@ func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
 		writeError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
-	project, err := h.store.CreateProject(r.Context(), store.CreateProjectInput{
+	project, err := h.store.CreateProject(r.Context(), contract.CreateProjectInput{
 		ID:             body.ID,
 		Name:           body.Name,
 		Description:    body.Description,
@@ -30,7 +31,7 @@ func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
 		writeStoreError(w, r, op, err)
 		return
 	}
-	h.notifyChange(ProjectCreated, project.ID)
+	h.notifyChange(realtime.ProjectCreated, project.ID)
 	writeJSON(w, r, op, http.StatusCreated, project)
 }
 
@@ -55,7 +56,7 @@ func (h *Handler) getProject(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.getProject")
 	const op = "projects.get"
 	r = calltrace.WithRequestRoot(r, op)
-	id, err := parseTaskPathID(r.PathValue("id"))
+	id, err := parsePathID(r.PathValue("id"))
 	if err != nil {
 		writeStoreError(w, r, op, err)
 		return
@@ -72,7 +73,7 @@ func (h *Handler) patchProject(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.patchProject")
 	const op = "projects.patch"
 	r = calltrace.WithRequestRoot(r, op)
-	id, err := parseTaskPathID(r.PathValue("id"))
+	id, err := parsePathID(r.PathValue("id"))
 	if err != nil {
 		writeStoreError(w, r, op, err)
 		return
@@ -86,7 +87,7 @@ func (h *Handler) patchProject(w http.ResponseWriter, r *http.Request) {
 		writeStoreError(w, r, op, fmt.Errorf("%w: no fields to update", domain.ErrInvalidInput))
 		return
 	}
-	project, err := h.store.UpdateProject(r.Context(), id, store.UpdateProjectInput{
+	project, err := h.store.UpdateProject(r.Context(), id, contract.UpdateProjectInput{
 		Name:           body.Name,
 		Description:    body.Description,
 		Status:         body.Status,
@@ -96,7 +97,7 @@ func (h *Handler) patchProject(w http.ResponseWriter, r *http.Request) {
 		writeStoreError(w, r, op, err)
 		return
 	}
-	h.notifyChange(ProjectUpdated, project.ID)
+	h.notifyChange(realtime.ProjectUpdated, project.ID)
 	writeJSON(w, r, op, http.StatusOK, project)
 }
 
@@ -104,7 +105,7 @@ func (h *Handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.deleteProject")
 	const op = "projects.delete"
 	r = calltrace.WithRequestRoot(r, op)
-	id, err := parseTaskPathID(r.PathValue("id"))
+	id, err := parsePathID(r.PathValue("id"))
 	if err != nil {
 		writeStoreError(w, r, op, err)
 		return
@@ -113,7 +114,7 @@ func (h *Handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 		writeStoreError(w, r, op, err)
 		return
 	}
-	h.notifyChange(ProjectDeleted, id)
+	h.notifyChange(realtime.ProjectDeleted, id)
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -121,7 +122,7 @@ func (h *Handler) createProjectContext(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.createProjectContext")
 	const op = "projects.context.create"
 	r = calltrace.WithRequestRoot(r, op)
-	projectID, err := parseTaskPathID(r.PathValue("id"))
+	projectID, err := parsePathID(r.PathValue("id"))
 	if err != nil {
 		writeStoreError(w, r, op, err)
 		return
@@ -131,7 +132,7 @@ func (h *Handler) createProjectContext(w http.ResponseWriter, r *http.Request) {
 		writeError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
-	item, err := h.store.CreateProjectContext(r.Context(), projectID, store.CreateProjectContextInput{
+	item, err := h.store.CreateProjectContext(r.Context(), projectID, contract.CreateProjectContextInput{
 		ID:            body.ID,
 		Kind:          body.Kind,
 		Title:         body.Title,
@@ -145,7 +146,7 @@ func (h *Handler) createProjectContext(w http.ResponseWriter, r *http.Request) {
 		writeStoreError(w, r, op, err)
 		return
 	}
-	h.notifyChange(ProjectContextChanged, projectID)
+	h.notifyChange(realtime.ProjectContextChanged, projectID)
 	writeJSON(w, r, op, http.StatusCreated, item)
 }
 
@@ -153,7 +154,7 @@ func (h *Handler) listProjectContext(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.listProjectContext")
 	const op = "projects.context.list"
 	r = calltrace.WithRequestRoot(r, op)
-	projectID, err := parseTaskPathID(r.PathValue("id"))
+	projectID, err := parsePathID(r.PathValue("id"))
 	if err != nil {
 		writeStoreError(w, r, op, err)
 		return
@@ -184,7 +185,7 @@ func (h *Handler) createProjectContextEdge(w http.ResponseWriter, r *http.Reques
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.createProjectContextEdge")
 	const op = "projects.context.edges.create"
 	r = calltrace.WithRequestRoot(r, op)
-	projectID, err := parseTaskPathID(r.PathValue("id"))
+	projectID, err := parsePathID(r.PathValue("id"))
 	if err != nil {
 		writeStoreError(w, r, op, err)
 		return
@@ -194,7 +195,7 @@ func (h *Handler) createProjectContextEdge(w http.ResponseWriter, r *http.Reques
 		writeError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
-	edge, err := h.store.CreateProjectContextEdge(r.Context(), projectID, store.CreateProjectContextEdgeInput{
+	edge, err := h.store.CreateProjectContextEdge(r.Context(), projectID, contract.CreateProjectContextEdgeInput{
 		ID:              body.ID,
 		SourceContextID: body.SourceContextID,
 		TargetContextID: body.TargetContextID,
@@ -206,7 +207,7 @@ func (h *Handler) createProjectContextEdge(w http.ResponseWriter, r *http.Reques
 		writeStoreError(w, r, op, err)
 		return
 	}
-	h.notifyChange(ProjectContextChanged, projectID)
+	h.notifyChange(realtime.ProjectContextChanged, projectID)
 	writeJSON(w, r, op, http.StatusCreated, edge)
 }
 
@@ -228,7 +229,7 @@ func (h *Handler) patchProjectContextEdge(w http.ResponseWriter, r *http.Request
 		writeStoreError(w, r, op, fmt.Errorf("%w: no fields to update", domain.ErrInvalidInput))
 		return
 	}
-	edge, err := h.store.UpdateProjectContextEdge(r.Context(), projectID, edgeID, store.UpdateProjectContextEdgeInput{
+	edge, err := h.store.UpdateProjectContextEdge(r.Context(), projectID, edgeID, contract.UpdateProjectContextEdgeInput{
 		Relation: body.Relation,
 		Strength: body.Strength,
 		Note:     body.Note,
@@ -237,7 +238,7 @@ func (h *Handler) patchProjectContextEdge(w http.ResponseWriter, r *http.Request
 		writeStoreError(w, r, op, err)
 		return
 	}
-	h.notifyChange(ProjectContextChanged, projectID)
+	h.notifyChange(realtime.ProjectContextChanged, projectID)
 	writeJSON(w, r, op, http.StatusOK, edge)
 }
 
@@ -254,7 +255,7 @@ func (h *Handler) deleteProjectContextEdge(w http.ResponseWriter, r *http.Reques
 		writeStoreError(w, r, op, err)
 		return
 	}
-	h.notifyChange(ProjectContextChanged, projectID)
+	h.notifyChange(realtime.ProjectContextChanged, projectID)
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -276,7 +277,7 @@ func (h *Handler) patchProjectContext(w http.ResponseWriter, r *http.Request) {
 		writeStoreError(w, r, op, fmt.Errorf("%w: no fields to update", domain.ErrInvalidInput))
 		return
 	}
-	item, err := h.store.UpdateProjectContext(r.Context(), projectID, itemID, store.UpdateProjectContextInput{
+	item, err := h.store.UpdateProjectContext(r.Context(), projectID, itemID, contract.UpdateProjectContextInput{
 		Kind:   body.Kind,
 		Title:  body.Title,
 		Body:   body.Body,
@@ -286,7 +287,7 @@ func (h *Handler) patchProjectContext(w http.ResponseWriter, r *http.Request) {
 		writeStoreError(w, r, op, err)
 		return
 	}
-	h.notifyChange(ProjectContextChanged, projectID)
+	h.notifyChange(realtime.ProjectContextChanged, projectID)
 	writeJSON(w, r, op, http.StatusOK, item)
 }
 
@@ -303,6 +304,6 @@ func (h *Handler) deleteProjectContext(w http.ResponseWriter, r *http.Request) {
 		writeStoreError(w, r, op, err)
 		return
 	}
-	h.notifyChange(ProjectContextChanged, projectID)
+	h.notifyChange(realtime.ProjectContextChanged, projectID)
 	w.WriteHeader(http.StatusNoContent)
 }

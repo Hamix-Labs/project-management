@@ -8,7 +8,8 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
+	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
@@ -100,11 +101,11 @@ func resolveComposeProjectRepository(
 	ctx context.Context,
 	db *gorm.DB,
 	projectID string,
-) (proj model.Project, repoID string, remapped bool, err error) {
+) (proj projectmodel.Project, repoID string, remapped bool, err error) {
 	slog.Debug("trace", "operation", "postgres.resolveComposeProjectRepository")
 	projectID = strings.TrimSpace(projectID)
-	if projectID != "" && projectID != domain.LegacyGlobalDefaultProjectID {
-		var row model.Project
+	if projectID != "" && projectID != projectsdomain.LegacyGlobalDefaultProjectID {
+		var row projectmodel.Project
 		loadErr := db.WithContext(ctx).First(&row, "id = ?", projectID).Error
 		if loadErr == nil {
 			if row.RepositoryID != nil {
@@ -113,28 +114,28 @@ func resolveComposeProjectRepository(
 			return row, repoID, false, nil
 		}
 		if !errors.Is(loadErr, gorm.ErrRecordNotFound) {
-			return model.Project{}, "", false, fmt.Errorf("load project %s: %w", projectID, loadErr)
+			return projectmodel.Project{}, "", false, fmt.Errorf("load project %s: %w", projectID, loadErr)
 		}
 	}
 	// Pre-ADR-0042 templates/drafts may still reference the deleted global default
 	// project, or a project row that was removed during repo migration.
 	var repos []model.GitRepository
 	if err := db.WithContext(ctx).Find(&repos).Error; err != nil {
-		return model.Project{}, "", false, err
+		return projectmodel.Project{}, "", false, err
 	}
 	if len(repos) != 1 {
-		return model.Project{}, "", false, nil
+		return projectmodel.Project{}, "", false, nil
 	}
 	repoID = strings.TrimSpace(repos[0].ID)
-	var defaultProj model.Project
+	var defaultProj projectmodel.Project
 	err = db.WithContext(ctx).
 		Where("repository_id = ? AND is_default = ?", repoID, true).
 		First(&defaultProj).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return model.Project{}, "", false, nil
+			return projectmodel.Project{}, "", false, nil
 		}
-		return model.Project{}, "", false, err
+		return projectmodel.Project{}, "", false, err
 	}
 	return defaultProj, repoID, true, nil
 }

@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
@@ -50,7 +51,7 @@ func openContractMigrateDB(t *testing.T) *gorm.DB {
 		t.Fatal(err)
 	}
 	if err := db.AutoMigrate(
-		&domain.Project{},
+		&projectsdomain.Project{},
 		&legacyGitRepository{},
 		&domain.GitWorktree{},
 		&domain.GitBranch{},
@@ -67,7 +68,7 @@ func TestMigrateContractGitTree_dropsColumns(t *testing.T) {
 	ctx := context.Background()
 	now := time.Now().UTC()
 
-	proj := domain.LegacyGlobalDefaultProject(now)
+	proj := projectsdomain.LegacyGlobalDefaultProject(now)
 	if err := db.WithContext(ctx).Create(&proj).Error; err != nil {
 		t.Fatal(err)
 	}

@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/kernel"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/kernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"github.com/google/uuid"
 	"gorm.io/gorm"

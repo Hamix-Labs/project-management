@@ -8,10 +8,12 @@ import (
 	"log/slog"
 	"strings"
 
+	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
+	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/kernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/checklist"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/drafts"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/kernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -228,7 +230,7 @@ func createTaskInTx(tx *gorm.DB, t *domain.Task, in CreateInput, by domain.Actor
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.tasks.createTaskInTx")
 	if t.ProjectID != nil {
 		var n int64
-		if err := tx.Model(&model.Project{}).Where("id = ? AND status = ?", *t.ProjectID, domain.ProjectStatusActive).Count(&n).Error; err != nil {
+		if err := tx.Model(&projectmodel.Project{}).Where("id = ? AND status = ?", *t.ProjectID, projectsdomain.ProjectStatusActive).Count(&n).Error; err != nil {
 			return fmt.Errorf("project lookup: %w", err)
 		}
 		if n == 0 {

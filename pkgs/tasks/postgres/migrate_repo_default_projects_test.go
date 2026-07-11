@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
+	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"github.com/glebarez/sqlite"
@@ -24,7 +26,7 @@ func TestMigrateRepoDefaultProjects_removesGlobalDefault(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	legacy := model.FromDomainProject(domain.LegacyGlobalDefaultProject(now))
+	legacy := projectmodel.FromDomainProject(projectsdomain.LegacyGlobalDefaultProject(now))
 	if err := db.WithContext(ctx).Create(&legacy).Error; err != nil {
 		t.Fatal(err)
 	}
@@ -53,7 +55,7 @@ func TestMigrateRepoDefaultProjects_removesGlobalDefault(t *testing.T) {
 	if err := db.WithContext(ctx).Create(&wt).Error; err != nil {
 		t.Fatal(err)
 	}
-	legacyID := domain.LegacyGlobalDefaultProjectID
+	legacyID := projectsdomain.LegacyGlobalDefaultProjectID
 	task := model.FromDomainTask(domain.Task{
 		ID: "task-1", Title: "t", InitialPrompt: "p", Status: domain.StatusReady, Priority: domain.PriorityMedium,
 		Runner: "cursor", ProjectID: &legacyID, WorktreeID: &wtID,
@@ -70,8 +72,8 @@ func TestMigrateRepoDefaultProjects_removesGlobalDefault(t *testing.T) {
 	}
 
 	var globalCount int64
-	if err := db.WithContext(ctx).Model(&model.Project{}).
-		Where("id = ?", domain.LegacyGlobalDefaultProjectID).
+	if err := db.WithContext(ctx).Model(&projectmodel.Project{}).
+		Where("id = ?", projectsdomain.LegacyGlobalDefaultProjectID).
 		Count(&globalCount).Error; err != nil {
 		t.Fatal(err)
 	}
@@ -79,13 +81,13 @@ func TestMigrateRepoDefaultProjects_removesGlobalDefault(t *testing.T) {
 		t.Fatalf("global default row count = %d, want 0", globalCount)
 	}
 
-	var defaultProjRow model.Project
+	var defaultProjRow projectmodel.Project
 	if err := db.WithContext(ctx).
 		Where("repository_id = ? AND is_default = ?", repo.ID, true).
 		First(&defaultProjRow).Error; err != nil {
 		t.Fatal(err)
 	}
-	defaultProj := model.ToDomainProject(defaultProjRow)
+	defaultProj := projectmodel.ToDomainProject(defaultProjRow)
 	taskRow := model.Task{}
 	if err := db.WithContext(ctx).First(&taskRow, "id = ?", "task-1").Error; err != nil {
 		t.Fatal(err)

@@ -4,7 +4,7 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	"gorm.io/gorm"
 )
 
@@ -37,7 +37,7 @@ func contractNullDefaultProjectOnTasks(ctx context.Context, db *gorm.DB) error {
 	slog.Debug("trace", "operation", "postgres.contractNullDefaultProjectOnTasks")
 	return db.WithContext(ctx).Exec(
 		`UPDATE tasks SET project_id = NULL WHERE project_id = ?`,
-		domain.LegacyGlobalDefaultProjectID,
+		projectsdomain.LegacyGlobalDefaultProjectID,
 	).Error
 }
 

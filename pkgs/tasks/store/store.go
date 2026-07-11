@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	projectsstore "github.com/AlexsanderHamir/Hamix/pkgs/projects/store"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/notify"
 	"gorm.io/gorm"
@@ -18,8 +19,9 @@ import (
 // internal/<domain>/ subpackages; the methods on *Store delegate. See
 // pkgs/tasks/store/README.md for the concern map.
 type Store struct {
-	db     *gorm.DB
-	notify notify.Holder
+	db       *gorm.DB
+	projects *projectsstore.Store
+	notify   notify.Holder
 
 	pickupWakeMu sync.RWMutex
 	pickupWake   PickupWake
@@ -29,7 +31,7 @@ type Store struct {
 // ready-task notifications via SetReadyTaskNotifier after construction.
 func NewStore(db *gorm.DB) *Store {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.NewStore")
-	return &Store{db: db}
+	return &Store{db: db, projects: projectsstore.NewStore(db)}
 }
 
 // ReadyTaskNotifier is invoked by the store after a task row is committed with status ready

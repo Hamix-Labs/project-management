@@ -1,6 +1,8 @@
 package model
 
 import (
+	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
+	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
@@ -39,7 +41,7 @@ var ParityPairs = []ParityPair{
 		Model:  &Task{},
 		Table:  "tasks",
 		ModelMigrateExtra: []any{
-			&Project{},
+			&projectmodel.Project{},
 		},
 	},
 	{
@@ -53,29 +55,29 @@ var ParityPairs = []ParityPair{
 	},
 	{
 		Name:   "Project",
-		Domain: &domain.Project{},
-		Model:  &Project{},
+		Domain: &projectsdomain.Project{},
+		Model:  &projectmodel.Project{},
 		Table:  "projects",
 	},
 	{
 		Name:   "ProjectContextItem",
-		Domain: &domain.ProjectContextItem{},
-		Model:  &ProjectContextItem{},
+		Domain: &projectsdomain.ProjectContextItem{},
+		Model:  &projectmodel.ProjectContextItem{},
 		Table:  "project_context_items",
 		ModelMigrateExtra: []any{
-			&Project{},
+			&projectmodel.Project{},
 			&Task{},
 			&TaskCycle{},
 		},
 	},
 	{
 		Name:   "ProjectContextEdge",
-		Domain: &domain.ProjectContextEdge{},
-		Model:  &ProjectContextEdge{},
+		Domain: &projectsdomain.ProjectContextEdge{},
+		Model:  &projectmodel.ProjectContextEdge{},
 		Table:  "project_context_edges",
 		ModelMigrateExtra: []any{
-			&Project{},
-			&ProjectContextItem{},
+			&projectmodel.Project{},
+			&projectmodel.ProjectContextItem{},
 		},
 	},
 	{
@@ -86,7 +88,7 @@ var ParityPairs = []ParityPair{
 		ModelMigrateExtra: []any{
 			&Task{},
 			&TaskCycle{},
-			&Project{},
+			&projectmodel.Project{},
 		},
 	},
 	{

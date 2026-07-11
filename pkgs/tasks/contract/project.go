@@ -3,7 +3,7 @@ package contract
 import (
 	"context"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 )
 
 // ProjectStore covers projects and the project context graph.

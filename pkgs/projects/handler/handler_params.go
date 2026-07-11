@@ -6,16 +6,16 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 )
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func parseProjectContextPath(r *http.Request) (projectID, itemID string, err error) {
-	projectID, err = parseTaskPathID(r.PathValue("id"))
+	projectID, err = parsePathID(r.PathValue("id"))
 	if err != nil {
 		return "", "", err
 	}
-	itemID, err = parseTaskPathID(r.PathValue("contextId"))
+	itemID, err = parsePathID(r.PathValue("contextId"))
 	if err != nil {
 		return "", "", err
 	}
@@ -24,11 +24,11 @@ func parseProjectContextPath(r *http.Request) (projectID, itemID string, err err
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func parseProjectContextEdgePath(r *http.Request) (projectID, edgeID string, err error) {
-	projectID, err = parseTaskPathID(r.PathValue("id"))
+	projectID, err = parsePathID(r.PathValue("id"))
 	if err != nil {
 		return "", "", err
 	}
-	edgeID, err = parseTaskPathID(r.PathValue("edgeId"))
+	edgeID, err = parsePathID(r.PathValue("edgeId"))
 	if err != nil {
 		return "", "", err
 	}

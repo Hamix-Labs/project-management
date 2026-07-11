@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
+	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
+	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"github.com/glebarez/sqlite"
@@ -105,11 +107,11 @@ func TestMigrateRepoRootToGitRepository_idempotent(t *testing.T) {
 func seedLegacyAppSettingsWithRepoRoot(ctx context.Context, t *testing.T, db *gorm.DB) {
 	t.Helper()
 	if err := db.WithContext(ctx).AutoMigrate(
-		&model.Project{}, &model.AppSettings{}, &model.GitRepository{}, &model.GitWorktree{}, &model.GitBranch{},
+		&projectmodel.Project{}, &model.AppSettings{}, &model.GitRepository{}, &model.GitWorktree{}, &model.GitBranch{},
 	); err != nil {
 		t.Fatal(err)
 	}
-	defaultProject := model.FromDomainProject(domain.LegacyGlobalDefaultProject(time.Now().UTC()))
+	defaultProject := projectmodel.FromDomainProject(projectsdomain.LegacyGlobalDefaultProject(time.Now().UTC()))
 	if err := db.WithContext(ctx).Clauses(clause.OnConflict{DoNothing: true}).Create(&defaultProject).Error; err != nil {
 		t.Fatal(err)
 	}

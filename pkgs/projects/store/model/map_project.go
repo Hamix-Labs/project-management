@@ -1,6 +1,6 @@
 package model
 
-import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+import "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 
 // FromDomainProject copies a domain row to its persistence model.
 //

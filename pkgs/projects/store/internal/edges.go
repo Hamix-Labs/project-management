@@ -1,4 +1,4 @@
-package projects
+package internal
 
 import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 import (
@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
+	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/kernel"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/kernel"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -58,7 +58,7 @@ func CreateContextEdge(ctx context.Context, db *gorm.DB, projectID string, input
 		if err := validateEdgeNodesExist(tx, projectID, drow.SourceContextID, drow.TargetContextID); err != nil {
 			return err
 		}
-		row := model.FromDomainProjectContextEdge(drow)
+		row := projectmodel.FromDomainProjectContextEdge(drow)
 		if err := tx.Create(&row).Error; err != nil {
 			return kernel.MapWriteError(err, "duplicate project row")
 		}
@@ -86,11 +86,11 @@ func ListContextEdges(ctx context.Context, db *gorm.DB, projectID string, nodeID
 		}
 		q = q.Where("source_context_id IN ? AND target_context_id IN ?", ids, ids)
 	}
-	var rows []model.ProjectContextEdge
+	var rows []projectmodel.ProjectContextEdge
 	if err := q.Find(&rows).Error; err != nil {
 		return nil, fmt.Errorf("list project context edges: %w", err)
 	}
-	return model.ToDomainProjectContextEdges(rows), nil
+	return projectmodel.ToDomainProjectContextEdges(rows), nil
 }
 
 // UpdateContextEdge applies a partial patch to one context edge.
@@ -107,14 +107,14 @@ func UpdateContextEdge(ctx context.Context, db *gorm.DB, projectID, edgeID strin
 	}
 	var out domain.ProjectContextEdge
 	err := db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		var row model.ProjectContextEdge
+		var row projectmodel.ProjectContextEdge
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&row, "id = ? AND project_id = ?", edgeID, projectID).Error; err != nil {
 			return kernel.MapNotFound(err)
 		}
-		drow := model.ToDomainProjectContextEdge(row)
+		drow := projectmodel.ToDomainProjectContextEdge(row)
 		applyContextEdgePatch(&drow, input)
 		drow.UpdatedAt = time.Now().UTC()
-		row = model.FromDomainProjectContextEdge(drow)
+		row = projectmodel.FromDomainProjectContextEdge(drow)
 		if err := tx.Save(&row).Error; err != nil {
 			return kernel.MapWriteError(err, "duplicate project row")
 		}
@@ -136,7 +136,7 @@ func DeleteContextEdge(ctx context.Context, db *gorm.DB, projectID, edgeID strin
 	if projectID == "" || edgeID == "" {
 		return fmt.Errorf("%w: project id and edge id required", domain.ErrInvalidInput)
 	}
-	res := db.WithContext(ctx).Where("id = ? AND project_id = ?", edgeID, projectID).Delete(&model.ProjectContextEdge{})
+	res := db.WithContext(ctx).Where("id = ? AND project_id = ?", edgeID, projectID).Delete(&projectmodel.ProjectContextEdge{})
 	if res.Error != nil {
 		return kernel.MapWriteError(res.Error, "duplicate project row")
 	}
@@ -193,7 +193,7 @@ func validateContextRelation(relation domain.ProjectContextRelation) error {
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func validateEdgeNodesExist(tx *gorm.DB, projectID, sourceID, targetID string) error {
 	var count int64
-	if err := tx.Model(&model.ProjectContextItem{}).
+	if err := tx.Model(&projectmodel.ProjectContextItem{}).
 		Where("project_id = ? AND id IN ?", projectID, []string{sourceID, targetID}).
 		Count(&count).Error; err != nil {
 		return fmt.Errorf("context edge node lookup: %w", err)

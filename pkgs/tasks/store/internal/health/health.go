@@ -13,7 +13,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/kernel"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/kernel"
 	"gorm.io/gorm"
 )
 

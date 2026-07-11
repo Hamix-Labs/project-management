@@ -3,6 +3,7 @@ package model
 import (
 	"fmt"
 
+	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
 	"gorm.io/gorm"
 )
 
@@ -12,7 +13,7 @@ import (
 //funclogmeasure:skip category=hot-path reason="Schema migration helper; postgres.Migrate traces the boot boundary."
 func AutoMigrateAll(db *gorm.DB) error {
 	if err := db.AutoMigrate(
-		&Project{},
+		&projectmodel.Project{},
 		&Task{},
 		&TaskDependency{},
 		&TaskEvent{},
@@ -28,8 +29,8 @@ func AutoMigrateAll(db *gorm.DB) error {
 		&TaskCycleVerifyReport{},
 		&TaskCycleCommandRun{},
 		&TaskCycleCommit{},
-		&ProjectContextItem{},
-		&ProjectContextEdge{},
+		&projectmodel.ProjectContextItem{},
+		&projectmodel.ProjectContextEdge{},
 		&TaskContextSnapshot{},
 		&AppSettings{},
 		&GitRepository{},

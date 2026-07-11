@@ -16,6 +16,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/runnerfake"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/worker"
+	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
@@ -378,28 +379,28 @@ func TestWorker_SelectedProjectContext_injectsAndSnapshotsOnlySelectedItems(t *t
 		t.Fatalf("create project: %v", err)
 	}
 	selected, err := h.store.CreateProjectContext(ctx, project.ID, store.CreateProjectContextInput{
-		Kind:      domain.ProjectContextKindDecision,
+		Kind:      projectsdomain.ProjectContextKindDecision,
 		Title:     "Decision",
 		Body:      "The user chose this item.",
-		CreatedBy: domain.ActorUser,
+		CreatedBy: projectsdomain.ActorUser,
 	})
 	if err != nil {
 		t.Fatalf("create selected context: %v", err)
 	}
 	selectedConstraint, err := h.store.CreateProjectContext(ctx, project.ID, store.CreateProjectContextInput{
-		Kind:      domain.ProjectContextKindConstraint,
+		Kind:      projectsdomain.ProjectContextKindConstraint,
 		Title:     "Constraint",
 		Body:      "The user chose this related node.",
-		CreatedBy: domain.ActorUser,
+		CreatedBy: projectsdomain.ActorUser,
 	})
 	if err != nil {
 		t.Fatalf("create selected constraint: %v", err)
 	}
 	unselected, err := h.store.CreateProjectContext(ctx, project.ID, store.CreateProjectContextInput{
-		Kind:      domain.ProjectContextKindNote,
+		Kind:      projectsdomain.ProjectContextKindNote,
 		Title:     "Unselected",
 		Body:      "The worker must not include this.",
-		CreatedBy: domain.ActorUser,
+		CreatedBy: projectsdomain.ActorUser,
 	})
 	if err != nil {
 		t.Fatalf("create unselected context: %v", err)
@@ -407,7 +408,7 @@ func TestWorker_SelectedProjectContext_injectsAndSnapshotsOnlySelectedItems(t *t
 	includedEdge, err := h.store.CreateProjectContextEdge(ctx, project.ID, store.CreateProjectContextEdgeInput{
 		SourceContextID: selected.ID,
 		TargetContextID: selectedConstraint.ID,
-		Relation:        domain.ProjectContextRelationSupports,
+		Relation:        projectsdomain.ProjectContextRelationSupports,
 		Strength:        4,
 		Note:            "Selected relationship",
 	})
@@ -417,7 +418,7 @@ func TestWorker_SelectedProjectContext_injectsAndSnapshotsOnlySelectedItems(t *t
 	excludedEdge, err := h.store.CreateProjectContextEdge(ctx, project.ID, store.CreateProjectContextEdgeInput{
 		SourceContextID: selected.ID,
 		TargetContextID: unselected.ID,
-		Relation:        domain.ProjectContextRelationRelated,
+		Relation:        projectsdomain.ProjectContextRelationRelated,
 		Strength:        2,
 		Note:            "Unselected relationship",
 	})

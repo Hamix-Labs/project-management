@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
+	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"github.com/glebarez/sqlite"
@@ -65,10 +67,10 @@ func TestMigrateComposePayloadWorktree_backfillsTemplatePayload(t *testing.T) {
 		t.Fatal(err)
 	}
 	repoID := repo.ID
-	proj := model.FromDomainProject(domain.Project{
+	proj := projectmodel.FromDomainProject(projectsdomain.Project{
 		ID:           "proj-1",
 		Name:         "Default",
-		Status:       domain.ProjectStatusActive,
+		Status:       projectsdomain.ProjectStatusActive,
 		RepositoryID: &repoID,
 		IsDefault:    true,
 		CreatedAt:    now,
@@ -156,10 +158,10 @@ func TestMigrateComposePayloadWorktree_remapsLegacyGlobalDefaultProject(t *testi
 		t.Fatal(err)
 	}
 	repoID := repo.ID
-	proj := model.FromDomainProject(domain.Project{
+	proj := projectmodel.FromDomainProject(projectsdomain.Project{
 		ID:           "proj-default",
 		Name:         "Default",
-		Status:       domain.ProjectStatusActive,
+		Status:       projectsdomain.ProjectStatusActive,
 		RepositoryID: &repoID,
 		IsDefault:    true,
 		CreatedAt:    now,
@@ -173,7 +175,7 @@ func TestMigrateComposePayloadWorktree_remapsLegacyGlobalDefaultProject(t *testi
 		"title":      "Legacy template",
 		"priority":   "medium",
 		"status":     "ready",
-		"project_id": domain.LegacyGlobalDefaultProjectID,
+		"project_id": projectsdomain.LegacyGlobalDefaultProjectID,
 	})
 	if err != nil {
 		t.Fatal(err)

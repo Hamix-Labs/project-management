@@ -5,6 +5,7 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
+	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
@@ -22,7 +23,7 @@ type BootstrapData struct {
 	Tasks    []domain.Task
 	HasMore  bool
 	Stats    store.TaskStats
-	Projects []domain.Project
+	Projects []projectsdomain.Project
 	Drafts   []store.DraftSummary
 }
 
@@ -31,7 +32,7 @@ type BootstrapStore interface {
 	GetSettings(ctx context.Context) (store.AppSettings, error)
 	ListFlatPage(ctx context.Context, limit, offset int, filter *store.ListFilter) ([]domain.Task, bool, error)
 	TaskStats(ctx context.Context) (store.TaskStats, error)
-	ListProjects(ctx context.Context, includeArchived bool, limit int) ([]domain.Project, error)
+	ListProjects(ctx context.Context, includeArchived bool, limit int) ([]projectsdomain.Project, error)
 	ListDrafts(ctx context.Context, limit int) ([]store.DraftSummary, error)
 }
 

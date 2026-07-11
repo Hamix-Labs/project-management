@@ -9,20 +9,40 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
+	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
-func newProjectStore(t *testing.T) (*Store, context.Context) {
+func newProjectsFacadeStore(t *testing.T) (*Store, context.Context) {
 	t.Helper()
 	return NewStore(tasktestdb.OpenSQLite(t)), context.Background()
 }
 
-func mustRepoDefaultProject(t *testing.T, s *Store, ctx context.Context) (repoID string, defaultProj domain.Project) {
+func initGitRepoForProjects(t *testing.T) string {
+	t.Helper()
+	dir := t.TempDir()
+	runGitForProjects(t, dir, "init")
+	runGitForProjects(t, dir, "config", "user.email", "test@example.com")
+	runGitForProjects(t, dir, "config", "user.name", "Test")
+	runGitForProjects(t, dir, "commit", "--allow-empty", "-m", "init")
+	return dir
+}
+
+func runGitForProjects(t *testing.T, dir string, args ...string) {
+	t.Helper()
+	cmd := exec.Command("git", args...)
+	cmd.Dir = dir
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git %v in %s: %v\n%s", args, dir, err, out)
+	}
+}
+
+func mustRepoDefaultProjectViaFacade(t *testing.T, s *Store, ctx context.Context) (repoID string, defaultProj projectsdomain.Project) {
 	t.Helper()
 	if _, err := exec.LookPath("git"); err != nil {
 		t.Skip("git not on PATH")
 	}
-	main := initGitRepo(t)
+	main := initGitRepoForProjects(t)
 	repo, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main}, gitwork.New())
 	if err != nil {
 		t.Fatalf("CreateGlobalGitRepository: %v", err)
@@ -35,8 +55,8 @@ func mustRepoDefaultProject(t *testing.T, s *Store, ctx context.Context) (repoID
 }
 
 func TestStore_CreateGlobalGitRepository_seedsDefaultProject(t *testing.T) {
-	s, ctx := newProjectStore(t)
-	repoID, defaultProj := mustRepoDefaultProject(t, s, ctx)
+	s, ctx := newProjectsFacadeStore(t)
+	repoID, defaultProj := mustRepoDefaultProjectViaFacade(t, s, ctx)
 	if !defaultProj.IsDefault || defaultProj.RepositoryID == nil || *defaultProj.RepositoryID != repoID {
 		t.Fatalf("default project = %#v", defaultProj)
 	}
@@ -50,15 +70,15 @@ func TestStore_CreateGlobalGitRepository_seedsDefaultProject(t *testing.T) {
 }
 
 func TestStore_CreateProject_requiresRepositoryID(t *testing.T) {
-	s, ctx := newProjectStore(t)
-	if _, err := s.CreateProject(ctx, CreateProjectInput{Name: "No repo"}); !errors.Is(err, domain.ErrInvalidInput) {
+	s, ctx := newProjectsFacadeStore(t)
+	if _, err := s.CreateProject(ctx, CreateProjectInput{Name: "No repo"}); !errors.Is(err, projectsdomain.ErrInvalidInput) {
 		t.Fatalf("create without repo err = %v, want ErrInvalidInput", err)
 	}
 }
 
 func TestStore_ProjectCRUD_roundtrip(t *testing.T) {
-	s, ctx := newProjectStore(t)
-	repoID, defaultProj := mustRepoDefaultProject(t, s, ctx)
+	s, ctx := newProjectsFacadeStore(t)
+	repoID, defaultProj := mustRepoDefaultProjectViaFacade(t, s, ctx)
 
 	project, err := s.CreateProject(ctx, CreateProjectInput{
 		Name:           "Project moat",
@@ -72,7 +92,7 @@ func TestStore_ProjectCRUD_roundtrip(t *testing.T) {
 	if project.ID == "" {
 		t.Fatal("expected generated project id")
 	}
-	if project.Status != domain.ProjectStatusActive {
+	if project.Status != projectsdomain.ProjectStatusActive {
 		t.Fatalf("status = %q, want active", project.Status)
 	}
 
@@ -84,7 +104,7 @@ func TestStore_ProjectCRUD_roundtrip(t *testing.T) {
 		t.Fatalf("project = %#v", got)
 	}
 
-	archived := domain.ProjectStatusArchived
+	archived := projectsdomain.ProjectStatusArchived
 	renamed := "Project context moat"
 	updated, err := s.UpdateProject(ctx, project.ID, UpdateProjectInput{
 		Name:   &renamed,
@@ -123,56 +143,56 @@ func TestStore_ProjectCRUD_roundtrip(t *testing.T) {
 }
 
 func TestStore_DefaultProject_seededAndProtected(t *testing.T) {
-	s, ctx := newProjectStore(t)
-	_, defaultProj := mustRepoDefaultProject(t, s, ctx)
+	s, ctx := newProjectsFacadeStore(t)
+	_, defaultProj := mustRepoDefaultProjectViaFacade(t, s, ctx)
 
 	project, err := s.GetProject(ctx, defaultProj.ID)
 	if err != nil {
 		t.Fatalf("get default project: %v", err)
 	}
-	if project.Name != domain.DefaultProjectName || project.Status != domain.ProjectStatusActive {
+	if project.Name != projectsdomain.DefaultProjectName || project.Status != projectsdomain.ProjectStatusActive {
 		t.Fatalf("default project = %#v", project)
 	}
 	renamed := "Renamed default"
 	if _, err := s.UpdateProject(ctx, defaultProj.ID, UpdateProjectInput{
 		Name: &renamed,
-	}); !errors.Is(err, domain.ErrConflict) {
+	}); !errors.Is(err, projectsdomain.ErrConflict) {
 		t.Fatalf("rename default err = %v, want ErrConflict", err)
 	}
-	archived := domain.ProjectStatusArchived
+	archived := projectsdomain.ProjectStatusArchived
 	if _, err := s.UpdateProject(ctx, defaultProj.ID, UpdateProjectInput{
 		Status: &archived,
-	}); !errors.Is(err, domain.ErrConflict) {
+	}); !errors.Is(err, projectsdomain.ErrConflict) {
 		t.Fatalf("archive default err = %v, want ErrConflict", err)
 	}
-	if err := s.DeleteProject(ctx, defaultProj.ID); !errors.Is(err, domain.ErrConflict) {
+	if err := s.DeleteProject(ctx, defaultProj.ID); !errors.Is(err, projectsdomain.ErrConflict) {
 		t.Fatalf("delete default err = %v, want ErrConflict", err)
 	}
 }
 
 func TestStore_ProjectContextCRUD_roundtrip(t *testing.T) {
-	s, ctx := newProjectStore(t)
-	repoID, _ := mustRepoDefaultProject(t, s, ctx)
+	s, ctx := newProjectsFacadeStore(t)
+	repoID, _ := mustRepoDefaultProjectViaFacade(t, s, ctx)
 	project, err := s.CreateProject(ctx, CreateProjectInput{Name: "Context project", RepositoryID: &repoID})
 	if err != nil {
 		t.Fatalf("create project: %v", err)
 	}
 
 	first, err := s.CreateProjectContext(ctx, project.ID, CreateProjectContextInput{
-		Kind:      domain.ProjectContextKindDecision,
+		Kind:      projectsdomain.ProjectContextKindDecision,
 		Title:     "Use relational memory first",
 		Body:      "Defer embeddings until explicit context works.",
-		CreatedBy: domain.ActorUser,
+		CreatedBy: projectsdomain.ActorUser,
 		Pinned:    true,
 	})
 	if err != nil {
 		t.Fatalf("create first context: %v", err)
 	}
 	second, err := s.CreateProjectContext(ctx, project.ID, CreateProjectContextInput{
-		Kind:      domain.ProjectContextKindNote,
+		Kind:      projectsdomain.ProjectContextKindNote,
 		Title:     "Loose note",
 		Body:      "Visible but not pinned.",
-		CreatedBy: domain.ActorAgent,
+		CreatedBy: projectsdomain.ActorAgent,
 	})
 	if err != nil {
 		t.Fatalf("create second context: %v", err)
@@ -195,7 +215,7 @@ func TestStore_ProjectContextCRUD_roundtrip(t *testing.T) {
 	}
 
 	pinSecond := true
-	kind := domain.ProjectContextKindHandoff
+	kind := projectsdomain.ProjectContextKindHandoff
 	updated, err := s.UpdateProjectContext(ctx, project.ID, second.ID, UpdateProjectContextInput{
 		Kind:   &kind,
 		Pinned: &pinSecond,
@@ -220,26 +240,26 @@ func TestStore_ProjectContextCRUD_roundtrip(t *testing.T) {
 }
 
 func TestStore_ProjectContextEdges_roundtripAndValidation(t *testing.T) {
-	s, ctx := newProjectStore(t)
-	repoID, _ := mustRepoDefaultProject(t, s, ctx)
+	s, ctx := newProjectsFacadeStore(t)
+	repoID, _ := mustRepoDefaultProjectViaFacade(t, s, ctx)
 	project, err := s.CreateProject(ctx, CreateProjectInput{Name: "Graph project", RepositoryID: &repoID})
 	if err != nil {
 		t.Fatalf("create project: %v", err)
 	}
 	first, err := s.CreateProjectContext(ctx, project.ID, CreateProjectContextInput{
-		Kind:      domain.ProjectContextKindDecision,
+		Kind:      projectsdomain.ProjectContextKindDecision,
 		Title:     "Use explicit graph memory",
 		Body:      "Nodes are project owned.",
-		CreatedBy: domain.ActorUser,
+		CreatedBy: projectsdomain.ActorUser,
 	})
 	if err != nil {
 		t.Fatalf("create first context: %v", err)
 	}
 	second, err := s.CreateProjectContext(ctx, project.ID, CreateProjectContextInput{
-		Kind:      domain.ProjectContextKindConstraint,
+		Kind:      projectsdomain.ProjectContextKindConstraint,
 		Title:     "No hidden retrieval",
 		Body:      "Tasks opt into selected nodes.",
-		CreatedBy: domain.ActorUser,
+		CreatedBy: projectsdomain.ActorUser,
 	})
 	if err != nil {
 		t.Fatalf("create second context: %v", err)
@@ -248,7 +268,7 @@ func TestStore_ProjectContextEdges_roundtripAndValidation(t *testing.T) {
 	edge, err := s.CreateProjectContextEdge(ctx, project.ID, CreateProjectContextEdgeInput{
 		SourceContextID: first.ID,
 		TargetContextID: second.ID,
-		Relation:        domain.ProjectContextRelationSupports,
+		Relation:        projectsdomain.ProjectContextRelationSupports,
 		Strength:        4,
 		Note:            "Decision reinforces constraint",
 	})
@@ -268,7 +288,7 @@ func TestStore_ProjectContextEdges_roundtripAndValidation(t *testing.T) {
 	}
 
 	strength := 5
-	relation := domain.ProjectContextRelationRefines
+	relation := projectsdomain.ProjectContextRelationRefines
 	updated, err := s.UpdateProjectContextEdge(ctx, project.ID, edge.ID, UpdateProjectContextEdgeInput{
 		Relation: &relation,
 		Strength: &strength,
@@ -283,17 +303,17 @@ func TestStore_ProjectContextEdges_roundtripAndValidation(t *testing.T) {
 	if _, err := s.CreateProjectContextEdge(ctx, project.ID, CreateProjectContextEdgeInput{
 		SourceContextID: first.ID,
 		TargetContextID: first.ID,
-		Relation:        domain.ProjectContextRelationRelated,
+		Relation:        projectsdomain.ProjectContextRelationRelated,
 		Strength:        3,
-	}); !errors.Is(err, domain.ErrInvalidInput) {
+	}); !errors.Is(err, projectsdomain.ErrInvalidInput) {
 		t.Fatalf("self edge err = %v, want ErrInvalidInput", err)
 	}
 	if _, err := s.CreateProjectContextEdge(ctx, project.ID, CreateProjectContextEdgeInput{
 		SourceContextID: first.ID,
 		TargetContextID: second.ID,
-		Relation:        domain.ProjectContextRelationRelated,
+		Relation:        projectsdomain.ProjectContextRelationRelated,
 		Strength:        6,
-	}); !errors.Is(err, domain.ErrInvalidInput) {
+	}); !errors.Is(err, projectsdomain.ErrInvalidInput) {
 		t.Fatalf("bad strength err = %v, want ErrInvalidInput", err)
 	}
 
@@ -310,8 +330,8 @@ func TestStore_ProjectContextEdges_roundtripAndValidation(t *testing.T) {
 }
 
 func TestStore_TaskContextSnapshot_roundtrip(t *testing.T) {
-	s, ctx := newProjectStore(t)
-	repoID, _ := mustRepoDefaultProject(t, s, ctx)
+	s, ctx := newProjectsFacadeStore(t)
+	repoID, _ := mustRepoDefaultProjectViaFacade(t, s, ctx)
 	project, err := s.CreateProject(ctx, CreateProjectInput{Name: "Snapshot project", RepositoryID: &repoID})
 	if err != nil {
 		t.Fatalf("create project: %v", err)
@@ -351,30 +371,30 @@ func TestStore_TaskContextSnapshot_roundtrip(t *testing.T) {
 }
 
 func TestStore_Project_validation_errors(t *testing.T) {
-	s, ctx := newProjectStore(t)
+	s, ctx := newProjectsFacadeStore(t)
 
-	if _, err := s.CreateProject(ctx, CreateProjectInput{Name: " "}); !errors.Is(err, domain.ErrInvalidInput) {
+	if _, err := s.CreateProject(ctx, CreateProjectInput{Name: " "}); !errors.Is(err, projectsdomain.ErrInvalidInput) {
 		t.Fatalf("create empty name err = %v, want ErrInvalidInput", err)
 	}
 
-	repoID, _ := mustRepoDefaultProject(t, s, ctx)
+	repoID, _ := mustRepoDefaultProjectViaFacade(t, s, ctx)
 	project, err := s.CreateProject(ctx, CreateProjectInput{Name: "Validation project", RepositoryID: &repoID})
 	if err != nil {
 		t.Fatalf("create project: %v", err)
 	}
 	custom, err := s.CreateProjectContext(ctx, project.ID, CreateProjectContextInput{
-		Kind:      domain.ProjectContextKind("memory"),
+		Kind:      projectsdomain.ProjectContextKind("memory"),
 		Title:     "Custom",
 		Body:      "Custom kind",
-		CreatedBy: domain.ActorUser,
+		CreatedBy: projectsdomain.ActorUser,
 	})
 	if err != nil {
 		t.Fatalf("create custom kind: %v", err)
 	}
-	blankKind := domain.ProjectContextKind(" ")
+	blankKind := projectsdomain.ProjectContextKind(" ")
 	if _, err := s.UpdateProjectContext(ctx, project.ID, custom.ID, UpdateProjectContextInput{
 		Kind: &blankKind,
-	}); !errors.Is(err, domain.ErrInvalidInput) {
+	}); !errors.Is(err, projectsdomain.ErrInvalidInput) {
 		t.Fatalf("patch empty kind err = %v, want ErrInvalidInput", err)
 	}
 

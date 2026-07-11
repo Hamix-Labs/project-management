@@ -8,7 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
+	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -59,13 +60,13 @@ func backfillRepoDefaultProjects(ctx context.Context, db *gorm.DB) error {
 	return nil
 }
 
-func ensureDefaultProjectForRepo(ctx context.Context, tx *gorm.DB, repoID string, now time.Time) (model.Project, error) {
+func ensureDefaultProjectForRepo(ctx context.Context, tx *gorm.DB, repoID string, now time.Time) (projectmodel.Project, error) {
 	slog.Debug("trace", "operation", "postgres.ensureDefaultProjectForRepo")
 	repoID = strings.TrimSpace(repoID)
 	if repoID == "" {
-		return model.Project{}, fmt.Errorf("repository_id required")
+		return projectmodel.Project{}, fmt.Errorf("repository_id required")
 	}
-	var existing model.Project
+	var existing projectmodel.Project
 	err := tx.WithContext(ctx).
 		Where("repository_id = ? AND is_default = ?", repoID, true).
 		First(&existing).Error
@@ -73,14 +74,14 @@ func ensureDefaultProjectForRepo(ctx context.Context, tx *gorm.DB, repoID string
 		return existing, nil
 	}
 	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return model.Project{}, err
+		return projectmodel.Project{}, err
 	}
 	now = now.UTC()
-	row := model.Project{
+	row := projectmodel.Project{
 		ID:             uuid.NewString(),
-		Name:           domain.DefaultProjectName,
+		Name:           projectsdomain.DefaultProjectName,
 		Description:    "Built-in project for tasks tied to this repository.",
-		Status:         domain.ProjectStatusActive,
+		Status:         projectsdomain.ProjectStatusActive,
 		ContextSummary: "Default project for this repository.",
 		RepositoryID:   &repoID,
 		IsDefault:      true,
@@ -88,14 +89,14 @@ func ensureDefaultProjectForRepo(ctx context.Context, tx *gorm.DB, repoID string
 		UpdatedAt:      now,
 	}
 	if err := tx.WithContext(ctx).Create(&row).Error; err != nil {
-		return model.Project{}, err
+		return projectmodel.Project{}, err
 	}
 	return row, nil
 }
 
 func reassignTasksToRepoDefaultProjects(ctx context.Context, db *gorm.DB) error {
 	slog.Debug("trace", "operation", "postgres.reassignTasksToRepoDefaultProjects")
-	legacyID := domain.LegacyGlobalDefaultProjectID
+	legacyID := projectsdomain.LegacyGlobalDefaultProjectID
 	type taskRow struct {
 		ID         string
 		WorktreeID *string
@@ -133,17 +134,17 @@ func reassignTasksToRepoDefaultProjects(ctx context.Context, db *gorm.DB) error 
 
 func deleteLegacyGlobalDefaultProject(ctx context.Context, db *gorm.DB) error {
 	slog.Debug("trace", "operation", "postgres.deleteLegacyGlobalDefaultProject")
-	legacyID := domain.LegacyGlobalDefaultProjectID
+	legacyID := projectsdomain.LegacyGlobalDefaultProjectID
 	if err := db.WithContext(ctx).
 		Where("project_id = ?", legacyID).
-		Delete(&model.ProjectContextEdge{}).Error; err != nil {
+		Delete(&projectmodel.ProjectContextEdge{}).Error; err != nil {
 		return err
 	}
 	if err := db.WithContext(ctx).
 		Where("project_id = ?", legacyID).
-		Delete(&model.ProjectContextItem{}).Error; err != nil {
+		Delete(&projectmodel.ProjectContextItem{}).Error; err != nil {
 		return err
 	}
-	res := db.WithContext(ctx).Delete(&model.Project{}, "id = ?", legacyID)
+	res := db.WithContext(ctx).Delete(&projectmodel.Project{}, "id = ?", legacyID)
 	return res.Error
 }

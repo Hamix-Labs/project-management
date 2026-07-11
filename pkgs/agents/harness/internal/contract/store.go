@@ -7,6 +7,7 @@ package contract
 import (
 	"context"
 
+	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
@@ -65,7 +66,7 @@ type Store interface {
 	ListTaskEvents(ctx context.Context, taskID string) ([]domain.TaskEvent, error)
 
 	// Projects
-	GetProject(ctx context.Context, id string) (domain.Project, error)
-	ListProjectContextByIDs(ctx context.Context, projectID string, ids []string) ([]domain.ProjectContextItem, error)
-	ListProjectContextEdges(ctx context.Context, projectID string, nodeIDs []string) ([]domain.ProjectContextEdge, error)
+	GetProject(ctx context.Context, id string) (projectsdomain.Project, error)
+	ListProjectContextByIDs(ctx context.Context, projectID string, ids []string) ([]projectsdomain.ProjectContextItem, error)
+	ListProjectContextEdges(ctx context.Context, projectID string, nodeIDs []string) ([]projectsdomain.ProjectContextEdge, error)
 }

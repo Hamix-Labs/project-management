@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
+	projectsstore "github.com/AlexsanderHamir/Hamix/pkgs/projects/store"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/kernel"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/projects"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/kernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -67,7 +67,7 @@ func (s *Store) registerGitRepository(ctx context.Context, input CreateGitReposi
 			}
 			return err
 		}
-		if _, err := projects.CreateDefaultProjectForRepo(ctx, tx, repo.ID, now); err != nil {
+		if _, err := projectsstore.CreateDefaultProjectForRepo(ctx, tx, repo.ID, now); err != nil {
 			return fmt.Errorf("seed default project: %w", err)
 		}
 		return nil

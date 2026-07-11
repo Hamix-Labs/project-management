@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"strings"
 
+	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"gorm.io/gorm"
 )
 
@@ -38,7 +38,7 @@ func validateProjectContextSelection(tx *gorm.DB, projectID string, ids []string
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.tasks.validateProjectContextSelection",
 		"project_id", projectID, "count", len(ids))
 	var count int64
-	if err := tx.Model(&model.ProjectContextItem{}).
+	if err := tx.Model(&projectmodel.ProjectContextItem{}).
 		Where("project_id = ? AND id IN ?", strings.TrimSpace(projectID), ids).
 		Count(&count).Error; err != nil {
 		return fmt.Errorf("project context selection lookup: %w", err)

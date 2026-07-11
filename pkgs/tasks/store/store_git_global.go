@@ -10,9 +10,11 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
+	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
+	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/kernel"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/kernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -332,7 +334,7 @@ func (s *Store) CreateGitBranchForRepo(ctx context.Context, repoID string, input
 }
 
 // ListProjectsByRepository returns projects tied to a repository.
-func (s *Store) ListProjectsByRepository(ctx context.Context, repoID string) ([]domain.Project, error) {
+func (s *Store) ListProjectsByRepository(ctx context.Context, repoID string) ([]projectsdomain.Project, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ListProjectsByRepository")
 	repoID = strings.TrimSpace(repoID)
 	if repoID == "" {
@@ -341,7 +343,7 @@ func (s *Store) ListProjectsByRepository(ctx context.Context, repoID string) ([]
 	if _, err := s.GetGitRepositoryByID(ctx, repoID); err != nil {
 		return nil, err
 	}
-	var rows []model.Project
+	var rows []projectmodel.Project
 	err := s.db.WithContext(ctx).
 		Where("repository_id = ?", repoID).
 		Order("is_default DESC, updated_at DESC").
@@ -349,7 +351,7 @@ func (s *Store) ListProjectsByRepository(ctx context.Context, repoID string) ([]
 	if err != nil {
 		return nil, fmt.Errorf("list projects by repository: %w", err)
 	}
-	return model.ToDomainProjects(rows), nil
+	return projectmodel.ToDomainProjects(rows), nil
 }
 
 //funclogmeasure:skip category=hot-path reason="Internal helper; trace emitted by calling chokepoint."

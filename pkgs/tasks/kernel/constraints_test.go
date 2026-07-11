@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
+	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
+	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"gorm.io/gorm"
@@ -137,10 +139,10 @@ func TestConstraintClassifiers_sqlite(t *testing.T) {
 
 	t.Run("duplicate key", func(t *testing.T) {
 		id := "kernel-dup-project"
-		row := model.Project{
+		row := projectmodel.Project{
 			ID:        id,
 			Name:      "dup",
-			Status:    domain.ProjectStatusActive,
+			Status:    projectsdomain.ProjectStatusActive,
 			CreatedAt: now,
 			UpdatedAt: now,
 		}
@@ -157,17 +159,16 @@ func TestConstraintClassifiers_sqlite(t *testing.T) {
 	})
 
 	t.Run("foreign key", func(t *testing.T) {
-		badProject := "missing-project-id"
-		task := model.Task{
-			ID:            "kernel-fk-task",
-			Title:         "fk",
-			InitialPrompt: "x",
-			Status:        domain.StatusReady,
-			Priority:      domain.PriorityMedium,
-			ProjectID:     &badProject,
-			Runner:        "cursor",
+		badCycle := "missing-cycle-id"
+		phase := model.TaskCyclePhase{
+			ID:        "kernel-fk-phase",
+			CycleID:   badCycle,
+			Phase:     domain.PhaseExecute,
+			PhaseSeq:  1,
+			Status:    domain.PhaseStatusRunning,
+			StartedAt: now,
 		}
-		err := db.WithContext(ctx).Create(&task).Error
+		err := db.WithContext(ctx).Create(&phase).Error
 		if err == nil {
 			t.Fatal("expected foreign key error")
 		}

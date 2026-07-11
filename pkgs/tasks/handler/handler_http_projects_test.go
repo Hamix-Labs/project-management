@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
@@ -30,11 +31,11 @@ func TestHTTP_projectsCRUDAndContext(t *testing.T) {
 	if res.StatusCode != http.StatusCreated {
 		t.Fatalf("create project status %d body %s", res.StatusCode, projectBytes)
 	}
-	var project domain.Project
+	var project projectsdomain.Project
 	if err := json.Unmarshal(projectBytes, &project); err != nil {
 		t.Fatal(err)
 	}
-	if project.ID == "" || project.Status != domain.ProjectStatusActive {
+	if project.ID == "" || project.Status != projectsdomain.ProjectStatusActive {
 		t.Fatalf("project = %#v", project)
 	}
 	if project.RepositoryID == nil || *project.RepositoryID != git.repositoryID {
@@ -55,11 +56,11 @@ func TestHTTP_projectsCRUDAndContext(t *testing.T) {
 	if itemRes.StatusCode != http.StatusCreated {
 		t.Fatalf("create context status %d body %s", itemRes.StatusCode, itemBytes)
 	}
-	var item domain.ProjectContextItem
+	var item projectsdomain.ProjectContextItem
 	if err := json.Unmarshal(itemBytes, &item); err != nil {
 		t.Fatal(err)
 	}
-	if item.ProjectID != project.ID || item.Kind != domain.ProjectContextKind("requirement") || !item.Pinned {
+	if item.ProjectID != project.ID || item.Kind != projectsdomain.ProjectContextKind("requirement") || !item.Pinned {
 		t.Fatalf("context item = %#v", item)
 	}
 	secondItemRes, err := http.Post(srv.URL+"/projects/"+project.ID+"/context", "application/json", strings.NewReader(`{"kind":"constraint","title":"Explicit selection","body":"Tasks choose context nodes."}`))
@@ -76,7 +77,7 @@ func TestHTTP_projectsCRUDAndContext(t *testing.T) {
 	if secondItemRes.StatusCode != http.StatusCreated {
 		t.Fatalf("create second context status %d body %s", secondItemRes.StatusCode, secondItemBytes)
 	}
-	var secondItem domain.ProjectContextItem
+	var secondItem projectsdomain.ProjectContextItem
 	if err := json.Unmarshal(secondItemBytes, &secondItem); err != nil {
 		t.Fatal(err)
 	}
@@ -95,11 +96,11 @@ func TestHTTP_projectsCRUDAndContext(t *testing.T) {
 	if edgeRes.StatusCode != http.StatusCreated {
 		t.Fatalf("create edge status %d body %s", edgeRes.StatusCode, edgeBytes)
 	}
-	var edge domain.ProjectContextEdge
+	var edge projectsdomain.ProjectContextEdge
 	if err := json.Unmarshal(edgeBytes, &edge); err != nil {
 		t.Fatal(err)
 	}
-	if edge.ProjectID != project.ID || edge.Relation != domain.ProjectContextRelationSupports || edge.Strength != 4 {
+	if edge.ProjectID != project.ID || edge.Relation != projectsdomain.ProjectContextRelationSupports || edge.Strength != 4 {
 		t.Fatalf("edge = %#v", edge)
 	}
 
@@ -112,8 +113,8 @@ func TestHTTP_projectsCRUDAndContext(t *testing.T) {
 		t.Fatalf("context list status %d", listRes.StatusCode)
 	}
 	var list struct {
-		Items []domain.ProjectContextItem `json:"items"`
-		Edges []domain.ProjectContextEdge `json:"edges"`
+		Items []projectsdomain.ProjectContextItem `json:"items"`
+		Edges []projectsdomain.ProjectContextEdge `json:"edges"`
 	}
 	if err := json.NewDecoder(listRes.Body).Decode(&list); err != nil {
 		t.Fatal(err)
@@ -139,11 +140,11 @@ func TestHTTP_projectsCRUDAndContext(t *testing.T) {
 		b, _ := io.ReadAll(patchRes.Body)
 		t.Fatalf("patch project status %d body %s", patchRes.StatusCode, b)
 	}
-	var updated domain.Project
+	var updated projectsdomain.Project
 	if err := json.NewDecoder(patchRes.Body).Decode(&updated); err != nil {
 		t.Fatal(err)
 	}
-	if updated.Status != domain.ProjectStatusArchived {
+	if updated.Status != projectsdomain.ProjectStatusArchived {
 		t.Fatalf("updated status = %q", updated.Status)
 	}
 }
@@ -182,7 +183,7 @@ func TestHTTP_taskProjectIDCreatePatchAndClear(t *testing.T) {
 	}
 }
 
-func postProjectJSON(t *testing.T, srv *httptest.Server, body string, want int) domain.Project {
+func postProjectJSON(t *testing.T, srv *httptest.Server, body string, want int) projectsdomain.Project {
 	t.Helper()
 	res, err := http.Post(srv.URL+"/projects", "application/json", strings.NewReader(body))
 	if err != nil {
@@ -196,7 +197,7 @@ func postProjectJSON(t *testing.T, srv *httptest.Server, body string, want int) 
 	if res.StatusCode != want {
 		t.Fatalf("POST /projects status %d body %s", res.StatusCode, b)
 	}
-	var project domain.Project
+	var project projectsdomain.Project
 	if err := json.Unmarshal(b, &project); err != nil {
 		t.Fatal(err)
 	}
