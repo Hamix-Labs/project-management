@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"time"
 
-	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
 	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
+	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"

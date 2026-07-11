@@ -2,9 +2,9 @@ package store
 
 import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 import (
-	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"context"
 	"fmt"
+	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"log/slog"
 	"os"
 	"path/filepath"

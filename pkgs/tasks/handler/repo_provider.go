@@ -5,9 +5,9 @@ import (
 	"log/slog"
 	"strings"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/repo"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
-	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 )
 
 // GitWorktreeResolver loads git worktree rows for repo path resolution.

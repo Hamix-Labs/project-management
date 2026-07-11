@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	projectsstore "github.com/AlexsanderHamir/Hamix/pkgs/projects/store"
 	gitinventorystore "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store"
+	projectsstore "github.com/AlexsanderHamir/Hamix/pkgs/projects/store"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/notify"
 	"gorm.io/gorm"

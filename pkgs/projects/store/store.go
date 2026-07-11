@@ -57,6 +57,8 @@ func (s *Store) GetDefaultProjectForRepository(ctx context.Context, repoID strin
 }
 
 // CreateDefaultProjectForRepo inserts the non-deletable default for a newly registered repo.
+//
+//funclogmeasure:skip category=delegate-already-logs reason="Package-level forwarder; internal.CreateDefaultProjectForRepo emits trace at the store chokepoint."
 func CreateDefaultProjectForRepo(ctx context.Context, tx *gorm.DB, repoID string, now time.Time) (domain.Project, error) {
 	return internal.CreateDefaultProjectForRepo(ctx, tx, repoID, now)
 }

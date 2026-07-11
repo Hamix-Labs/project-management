@@ -12,19 +12,19 @@ import (
 
 // Git store input and result aliases — re-exported for handlers and harness callers.
 type (
-	CreateGitRepositoryInput     = gitinventorystore.CreateGitRepositoryInput
-	CreateGitWorktreeInput       = gitinventorystore.CreateGitWorktreeInput
-	CreateGitBranchInput         = gitinventorystore.CreateGitBranchInput
-	BindBranchInput              = gitinventorystore.BindBranchInput
-	GitRepositoryListSummary     = gitinventorystore.GitRepositoryListSummary
-	WorktreeInventoryRow         = gitinventorystore.WorktreeInventoryRow
-	GitWorktreeProbeResult       = gitinventorystore.GitWorktreeProbeResult
-	WorktreeCheckoutStatusRow    = gitinventorystore.WorktreeCheckoutStatusRow
-	ReconcileGitInput            = gitinventorystore.ReconcileGitInput
-	ReconcileGitOutput           = gitinventorystore.ReconcileGitOutput
-	ReconcileReport              = gitinventorystore.ReconcileReport
-	ReconcileSkippedWorktree     = gitinventorystore.ReconcileSkippedWorktree
-	ReconcileNeedsBranchBind     = gitinventorystore.ReconcileNeedsBranchBind
+	CreateGitRepositoryInput  = gitinventorystore.CreateGitRepositoryInput
+	CreateGitWorktreeInput    = gitinventorystore.CreateGitWorktreeInput
+	CreateGitBranchInput      = gitinventorystore.CreateGitBranchInput
+	BindBranchInput           = gitinventorystore.BindBranchInput
+	GitRepositoryListSummary  = gitinventorystore.GitRepositoryListSummary
+	WorktreeInventoryRow      = gitinventorystore.WorktreeInventoryRow
+	GitWorktreeProbeResult    = gitinventorystore.GitWorktreeProbeResult
+	WorktreeCheckoutStatusRow = gitinventorystore.WorktreeCheckoutStatusRow
+	ReconcileGitInput         = gitinventorystore.ReconcileGitInput
+	ReconcileGitOutput        = gitinventorystore.ReconcileGitOutput
+	ReconcileReport           = gitinventorystore.ReconcileReport
+	ReconcileSkippedWorktree  = gitinventorystore.ReconcileSkippedWorktree
+	ReconcileNeedsBranchBind  = gitinventorystore.ReconcileNeedsBranchBind
 )
 
 // FindWorktreeInInventory delegates to the git inventory store helper.

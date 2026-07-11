@@ -1,15 +1,15 @@
 package postgres
 
 import (
-	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"context"
 	"encoding/json"
+	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"testing"
 	"time"
 
+	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
-	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"

@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
-	"github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
+	"github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )

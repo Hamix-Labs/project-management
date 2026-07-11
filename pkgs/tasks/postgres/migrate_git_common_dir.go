@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
+	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	"gorm.io/gorm"
 )
 

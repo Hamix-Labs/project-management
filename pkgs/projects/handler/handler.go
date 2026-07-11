@@ -24,6 +24,8 @@ type Handler struct {
 }
 
 // Register mounts /projects* routes on m.
+//
+//funclogmeasure:skip category=hot-path reason="Route table wiring only; operation trace is emitted by registered handlers."
 func Register(m *http.ServeMux, deps Deps) {
 	h := &Handler{store: deps.Store, notify: deps.Notify}
 	m.Handle("GET /projects", http.HandlerFunc(h.listProjects))
@@ -40,6 +42,7 @@ func Register(m *http.ServeMux, deps Deps) {
 	m.Handle("DELETE /projects/{id}/context/{contextId}", http.HandlerFunc(h.deleteProjectContext))
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (h *Handler) notifyChange(typ realtime.ChangeType, id string) {
 	if h.notify == nil || id == "" {
 		return

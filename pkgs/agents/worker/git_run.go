@@ -2,10 +2,10 @@ package worker
 
 import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 import (
-	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"context"
 	"errors"
 	"fmt"
+	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"log/slog"
 	"os"
 	"strings"

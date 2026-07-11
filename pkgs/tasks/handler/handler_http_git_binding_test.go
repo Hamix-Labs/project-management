@@ -12,8 +12,8 @@ import (
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/internal/gittest"
-	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 

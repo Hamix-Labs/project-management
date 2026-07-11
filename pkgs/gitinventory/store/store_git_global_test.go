@@ -1,8 +1,8 @@
 package store
 
 import (
-	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"errors"
+	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"os"
 	"path/filepath"
 	"testing"

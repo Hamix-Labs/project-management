@@ -21,6 +21,7 @@ import (
 const maxPathIDBytes = 128
 const maxListIntQueryParamBytes = 32
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func actorFromRequest(r *http.Request) domain.Actor {
 	if r == nil {
 		return domain.ActorUser
@@ -33,6 +34,7 @@ func actorFromRequest(r *http.Request) domain.Actor {
 	}
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func decodeJSON(ctx context.Context, r io.Reader, dst any) error {
 	dec := json.NewDecoder(r)
 	dec.DisallowUnknownFields()
@@ -48,6 +50,7 @@ func decodeJSON(ctx context.Context, r io.Reader, dst any) error {
 	return fmt.Errorf("%w: json trailing data", domain.ErrInvalidInput)
 }
 
+//funclogmeasure:skip category=delegate-already-logs reason="JSON response helper; HTTP handler chokepoint emits trace."
 func writeJSON(w http.ResponseWriter, r *http.Request, op string, code int, v any) {
 	apijson.ApplySecurityHeaders(w)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -64,6 +67,7 @@ func writeJSON(w http.ResponseWriter, r *http.Request, op string, code int, v an
 	_, _ = w.Write([]byte("\n"))
 }
 
+//funclogmeasure:skip category=delegate-already-logs reason="JSON response helper; HTTP handler chokepoint emits trace."
 func writeJSONWithETag(w http.ResponseWriter, r *http.Request, op string, code int, v any) {
 	apijson.ApplyRevalidatableHeaders(w)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -86,10 +90,12 @@ func writeJSONWithETag(w http.ResponseWriter, r *http.Request, op string, code i
 	_, _ = w.Write([]byte("\n"))
 }
 
+//funclogmeasure:skip category=delegate-already-logs reason="Error response helper; HTTP handler chokepoint emits trace."
 func writeJSONError(w http.ResponseWriter, r *http.Request, op string, code int, msg string) {
 	apijson.WriteJSONError(w, r, op, code, msg, calltrace.Path)
 }
 
+//funclogmeasure:skip category=delegate-already-logs reason="Error response helper; HTTP handler chokepoint emits trace."
 func writeError(w http.ResponseWriter, r *http.Request, op string, err error, code int) {
 	msg := http.StatusText(code)
 	if code == http.StatusBadRequest {
@@ -122,6 +128,7 @@ func writeStoreError(w http.ResponseWriter, r *http.Request, op string, err erro
 	}
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func parsePathID(id string) (string, error) {
 	id = strings.TrimSpace(id)
 	if id == "" {

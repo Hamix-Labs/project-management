@@ -6,8 +6,8 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 )
 
 func openGitRepo(t *testing.T, main string) *gitwork.Repository {

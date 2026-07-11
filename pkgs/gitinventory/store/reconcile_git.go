@@ -2,20 +2,20 @@ package store
 
 import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 import (
-	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"context"
 	"errors"
 	"fmt"
+	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"log/slog"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/internal/git"
+	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/internal/git"
-	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )

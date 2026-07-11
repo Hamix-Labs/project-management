@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
+	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
-	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"

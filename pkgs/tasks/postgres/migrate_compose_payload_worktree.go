@@ -8,9 +8,9 @@ import (
 	"log/slog"
 	"strings"
 
+	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
-	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )

@@ -6,9 +6,9 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
+	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 )
 
 // PathKey delegates to gitwork.PathKey for Hamix ↔ git path compare.

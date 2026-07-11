@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
+	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"

@@ -9,10 +9,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
+	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	"gorm.io/gorm"
 )
 

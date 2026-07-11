@@ -1,12 +1,12 @@
 package handler
 
 import (
-	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"io"
 	"log/slog"
 	"net/http"

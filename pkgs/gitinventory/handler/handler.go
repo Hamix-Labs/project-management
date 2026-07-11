@@ -15,6 +15,7 @@ type HostPathMapper interface {
 
 type noopHostPathMapper struct{}
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (noopHostPathMapper) DisplayHostPath(p string) string { return p }
 
 // Deps wires git inventory HTTP handlers into the taskapi mux.
@@ -36,6 +37,8 @@ type Handler struct {
 }
 
 // Register mounts /git/* routes on m.
+//
+//funclogmeasure:skip category=hot-path reason="Route table wiring only; operation trace is emitted by registered handlers."
 func Register(m *http.ServeMux, deps Deps) {
 	paths := deps.HostPaths
 	if paths == nil {
@@ -71,6 +74,7 @@ func Register(m *http.ServeMux, deps Deps) {
 	m.Handle("GET /git/repositories/{repoId}/projects", http.HandlerFunc(h.listRepoProjects))
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (h *Handler) gitService() gitwork.Service {
 	if h.git != nil {
 		return h.git

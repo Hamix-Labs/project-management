@@ -6,10 +6,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
-	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
+	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
+	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 )
 
 func TestReconcileGitRepository_needsBootstrapWhenPathMissing(t *testing.T) {

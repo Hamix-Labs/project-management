@@ -12,12 +12,12 @@ import (
 	"strings"
 	"time"
 
+	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	taskdomain "github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/kernel"
-	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	taskmodel "github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"

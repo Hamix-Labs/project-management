@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
+	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
-	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )

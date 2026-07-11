@@ -1,9 +1,9 @@
 package handler
 
 import (
-	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"bytes"
 	"encoding/json"
+	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"net/http"
 	"net/http/httptest"
 	"net/url"

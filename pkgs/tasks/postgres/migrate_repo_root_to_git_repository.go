@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
-	taskdomain "github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
+	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
+	taskdomain "github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )

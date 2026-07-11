@@ -24,6 +24,7 @@ type jsonCodedErrorBody struct {
 	RequestID string `json:"request_id,omitempty"`
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func decodeJSON(ctx context.Context, r io.Reader, dst any) error {
 	dec := json.NewDecoder(r)
 	dec.DisallowUnknownFields()
@@ -39,6 +40,7 @@ func decodeJSON(ctx context.Context, r io.Reader, dst any) error {
 	return fmt.Errorf("%w: json trailing data", domain.ErrInvalidInput)
 }
 
+//funclogmeasure:skip category=delegate-already-logs reason="JSON response helper; HTTP handler chokepoint emits trace."
 func writeJSON(w http.ResponseWriter, r *http.Request, op string, code int, v any) {
 	apijson.ApplySecurityHeaders(w)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -55,10 +57,12 @@ func writeJSON(w http.ResponseWriter, r *http.Request, op string, code int, v an
 	_, _ = w.Write([]byte("\n"))
 }
 
+//funclogmeasure:skip category=delegate-already-logs reason="Error response helper; HTTP handler chokepoint emits trace."
 func writeJSONError(w http.ResponseWriter, r *http.Request, op string, code int, msg string) {
 	apijson.WriteJSONError(w, r, op, code, msg, calltrace.Path)
 }
 
+//funclogmeasure:skip category=delegate-already-logs reason="Error response helper; HTTP handler chokepoint emits trace."
 func writeError(w http.ResponseWriter, r *http.Request, op string, err error, code int) {
 	msg := http.StatusText(code)
 	if code == http.StatusBadRequest {
@@ -67,6 +71,7 @@ func writeError(w http.ResponseWriter, r *http.Request, op string, err error, co
 	writeJSONError(w, r, op, code, msg)
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func invalidInputDetail(err error) string {
 	s := err.Error()
 	const mark = "tasks: invalid input: "
@@ -76,6 +81,7 @@ func invalidInputDetail(err error) string {
 	return ""
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func conflictDetail(err error) string {
 	s := err.Error()
 	const mark = "tasks: conflict: "
@@ -86,6 +92,8 @@ func conflictDetail(err error) string {
 }
 
 // GitErrHTTP maps git and domain store errors to HTTP status, code, and message.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func GitErrHTTP(err error) (status int, code, msg string) {
 	status = http.StatusInternalServerError
 	msg = "internal server error"
@@ -121,6 +129,8 @@ func GitErrHTTP(err error) (status int, code, msg string) {
 }
 
 // WriteGitStoreError writes a git-aware JSON error response.
+//
+//funclogmeasure:skip category=delegate-already-logs reason="Error response helper; HTTP handler chokepoint emits trace."
 func WriteGitStoreError(w http.ResponseWriter, r *http.Request, op string, err error) {
 	status, code, msg := GitErrHTTP(err)
 	if code != "" {
@@ -134,6 +144,7 @@ func WriteGitStoreError(w http.ResponseWriter, r *http.Request, op string, err e
 	writeJSONError(w, r, op, status, msg)
 }
 
+//funclogmeasure:skip category=delegate-already-logs reason="Error response helper; HTTP handler chokepoint emits trace."
 func writeJSONCodedError(w http.ResponseWriter, r *http.Request, op string, status int, code, msg string) {
 	apijson.ApplySecurityHeaders(w)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
