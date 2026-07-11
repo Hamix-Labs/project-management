@@ -12,6 +12,7 @@ import (
 	settingsstore "github.com/AlexsanderHamir/Hamix/pkgs/settings/store"
 	checkliststore "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/store"
 	composestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/store"
+	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 	cyclesstore "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store"
 	taskeventsstore "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
@@ -26,6 +27,7 @@ import (
 // pkgs/tasks/store/README.md for the concern map.
 type Store struct {
 	db        *gorm.DB
+	taskcore  *taskcorestore.Store
 	projects  *projectsstore.Store
 	git       *gitinventorystore.Store
 	settings  *settingsstore.Store
@@ -43,7 +45,17 @@ type Store struct {
 // ready-task notifications via SetReadyTaskNotifier after construction.
 func NewStore(db *gorm.DB) *Store {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.NewStore")
-	return &Store{db: db, projects: projectsstore.NewStore(db), git: gitinventorystore.NewStore(db), settings: settingsstore.NewStore(db), compose: composestore.NewStore(db), checklist: checkliststore.NewStore(db), cycles: cyclesstore.NewStore(db), events: taskeventsstore.NewStore(db)}
+	return &Store{
+		db:        db,
+		taskcore:  taskcorestore.NewStore(db),
+		projects:  projectsstore.NewStore(db),
+		git:       gitinventorystore.NewStore(db),
+		settings:  settingsstore.NewStore(db),
+		compose:   composestore.NewStore(db),
+		checklist: checkliststore.NewStore(db),
+		cycles:    cyclesstore.NewStore(db),
+		events:    taskeventsstore.NewStore(db),
+	}
 }
 
 // ReadyTaskNotifier is invoked by the store after a task row is committed with status ready

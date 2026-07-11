@@ -7,8 +7,6 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/scheduling"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/tasks"
 )
 
 // I3 contract gate: scheduling.EvaluateWorkerReadiness must match ListQueueCandidates.
@@ -76,14 +74,13 @@ func TestSchedulingParity_GoReadinessMatchesListQueueCandidates(t *testing.T) {
 			continue
 		}
 		task := &allTasks[i]
-		depsMet, err := tasks.DependenciesSatisfied(ctx, db, task.ID)
+		goReady, pred, err := s.ReadyForAgentPickup(ctx, task, now)
 		if err != nil {
 			t.Fatal(err)
 		}
-		r := scheduling.EvaluateWorkerReadiness(task, now, depsMet)
 		_, inSQL := candidateIDs[task.ID]
-		if r.Ready != inSQL {
-			t.Fatalf("task %q: Go ready=%v (pred=%s) SQL candidate=%v", task.ID, r.Ready, r.FailedPredicate, inSQL)
+		if goReady != inSQL {
+			t.Fatalf("task %q: Go ready=%v (pred=%s) SQL candidate=%v", task.ID, goReady, pred, inSQL)
 		}
 	}
 

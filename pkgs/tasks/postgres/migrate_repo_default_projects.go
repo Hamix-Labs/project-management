@@ -11,7 +11,7 @@ import (
 	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
+	taskmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/model"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -124,7 +124,7 @@ func reassignTasksToRepoDefaultProjects(ctx context.Context, db *gorm.DB) error 
 			continue
 		}
 		if err := db.WithContext(ctx).
-			Model(&model.Task{}).
+			Model(&taskmodel.Task{}).
 			Where("id = ?", task.ID).
 			Update("project_id", defaultProj.ID).Error; err != nil {
 			return err

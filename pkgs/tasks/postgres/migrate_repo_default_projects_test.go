@@ -9,6 +9,7 @@ import (
 	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
+	taskcoremodel "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"github.com/glebarez/sqlite"
@@ -58,7 +59,7 @@ func TestMigrateRepoDefaultProjects_removesGlobalDefault(t *testing.T) {
 		t.Fatal(err)
 	}
 	legacyID := projectsdomain.LegacyGlobalDefaultProjectID
-	task := model.FromDomainTask(domain.Task{
+	task := taskcoremodel.FromDomainTask(domain.Task{
 		ID: "task-1", Title: "t", InitialPrompt: "p", Status: domain.StatusReady, Priority: domain.PriorityMedium,
 		Runner: "cursor", ProjectID: &legacyID, WorktreeID: &wtID,
 	})
@@ -90,11 +91,11 @@ func TestMigrateRepoDefaultProjects_removesGlobalDefault(t *testing.T) {
 		t.Fatal(err)
 	}
 	defaultProj := projectmodel.ToDomainProject(defaultProjRow)
-	taskRow := model.Task{}
+	taskRow := taskcoremodel.Task{}
 	if err := db.WithContext(ctx).First(&taskRow, "id = ?", "task-1").Error; err != nil {
 		t.Fatal(err)
 	}
-	gotTask := model.ToDomainTask(taskRow)
+	gotTask := taskcoremodel.ToDomainTask(taskRow)
 	if gotTask.ProjectID == nil || *gotTask.ProjectID != defaultProj.ID {
 		t.Fatalf("task project_id = %v, want %s", gotTask.ProjectID, defaultProj.ID)
 	}
