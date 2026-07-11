@@ -24,22 +24,23 @@ Repository paths grouped by subsystem. Read only the rows relevant to your task.
 
 | Area | Path | Purpose | Deep dive |
 | --- | --- | --- | --- |
-| HTTP API + SSE | `pkgs/tasks/handler/` | REST handlers, SSE hub wiring, route registration | [handler/README.md](../pkgs/tasks/handler/README.md), [domain/sse-hub.md](./domain/sse-hub.md) |
-| Domain types | `pkgs/tasks/domain/` | Task model, status/priority enums, cycles, validation, retry | [data-model.md](./data-model.md) |
+| HTTP API + SSE | `pkgs/tasks/handler/` | SSE hub, bootstrap, writepolicy; delegates core `/tasks*` to taskcore | [handler/README.md](../pkgs/tasks/handler/README.md), [domain/sse-hub.md](./domain/sse-hub.md) |
+| Task core BC | `pkgs/taskcore/` | Task CRUD, dependencies, gate, retry, stats, ready queue; `/tasks*` routes | [ADR-0059](./adr/ADR-0059-taskcore-extraction.md), [taskcore/README.md](../pkgs/taskcore/README.md) |
+| Domain types | `pkgs/tasks/domain/` | Compatibility aliases to taskcore + sibling BC domains | [data-model.md](./data-model.md) |
 | Projects bounded context | `pkgs/projects/` | Project CRUD, context graph, `/projects*` HTTP | [ADR-0045](./adr/ADR-0045-bounded-context-projects.md), [projects/README.md](../pkgs/projects/README.md) |
 | Git inventory bounded context | `pkgs/gitinventory/` | Registered repos/worktrees/branches, `/git/*` HTTP, reconcile | [ADR-0046](./adr/ADR-0046-bounded-context-gitinventory.md), [gitinventory/README.md](../pkgs/gitinventory/README.md) |
 | Settings bounded context | `pkgs/settings/` | App settings row, `/settings*` HTTP, workspace browse, agent probe/cancel | [ADR-0047](./adr/ADR-0047-bounded-context-settings.md), [settings/README.md](../pkgs/settings/README.md) |
 | Task compose bounded context | `pkgs/taskcompose/` | Task drafts + templates, `/task-drafts*` and `/task-templates*` HTTP | [ADR-0048](./adr/ADR-0048-bounded-context-taskcompose.md), [taskcompose/README.md](../pkgs/taskcompose/README.md) |
 | Workspace repo HTTP | `pkgs/repo/handler/` | `/repo/*` search, file preview, validate-range, diff | [ADR-0049](./adr/ADR-0049-repo-http-handler.md), [repo/handler/README.md](../pkgs/repo/handler/README.md) |
 | Store kernel (shared) | `pkgs/storekernel/` | DeferLatency, MapNotFound, event seq append, validators | [ADR-0050](./adr/ADR-0050-storekernel-extraction.md), [storekernel/README.md](../pkgs/storekernel/README.md) |
-| Task checklist BC | `pkgs/taskchecklist/` | Done criteria CRUD, `/tasks/{id}/checklist*` | [ADR-0051](./adr/ADR-0051-bounded-context-taskchecklist.md), [taskchecklist/README.md](../pkgs/taskchecklist/README.md) |
+| Task checklist BC | `pkgs/taskchecklist/` | Done criteria CRUD, `/tasks/{id}/checklist*`; local `domain/` + `store/model/` | [ADR-0051](./adr/ADR-0051-bounded-context-taskchecklist.md), [ADR-0056](./adr/ADR-0056-taskchecklist-domain-model.md), [taskchecklist/README.md](../pkgs/taskchecklist/README.md) |
 | Runners HTTP | `pkgs/runners/handler/` | `/runners*` probe, list-models, config-schema | [ADR-0052](./adr/ADR-0052-runners-http-handler.md), [runners/handler/README.md](../pkgs/runners/handler/README.md) |
-| Execution cycles BC | `pkgs/taskcycles/` | Cycles, phases, stream, verdicts, commits | [ADR-0053](./adr/ADR-0053-bounded-context-taskcycles.md), [taskcycles/README.md](../pkgs/taskcycles/README.md) |
-| Task audit events BC | `pkgs/taskevents/` | Task event thread, `/tasks/{id}/events*` | [ADR-0054](./adr/ADR-0054-bounded-context-taskevents.md), [taskevents/README.md](../pkgs/taskevents/README.md) |
+| Execution cycles BC | `pkgs/taskcycles/` | Cycles, phases, stream, verdicts, commits; local `domain/` + `store/model/` | [ADR-0053](./adr/ADR-0053-bounded-context-taskcycles.md), [ADR-0058](./adr/ADR-0058-taskcycles-domain-model.md), [taskcycles/README.md](../pkgs/taskcycles/README.md) |
+| Task audit events BC | `pkgs/taskevents/` | Task event thread, `/tasks/{id}/events*`; local `domain/` + `store/model/` | [ADR-0054](./adr/ADR-0054-bounded-context-taskevents.md), [ADR-0057](./adr/ADR-0057-taskevents-domain-model.md), [taskevents/README.md](../pkgs/taskevents/README.md) |
 | Persistence | `pkgs/tasks/store/`, `pkgs/projects/store/`, `pkgs/gitinventory/store/`, `pkgs/settings/store/`, `pkgs/taskcompose/store/`, `pkgs/taskchecklist/store/`, `pkgs/taskcycles/store/`, `pkgs/taskevents/store/`, `pkgs/tasks/postgres/` | Store facade, GORM migrate, dual-write to `task_events` | [domain/persistence.md](./domain/persistence.md), [store/README.md](../pkgs/tasks/store/README.md) |
 | Task scheduling | `pkgs/tasks/scheduling/` | Worker readiness predicates, pickup gate, post-commit notify | [domain/task-scheduling.md](./domain/task-scheduling.md), ADR-0023 |
 | Execution cycles HTTP | `pkgs/taskcycles/handler/` (was `pkgs/tasks/handler/handler_cycles.go`) | Cycle and phase REST surface | [api.md](./api.md), [data-model.md](./data-model.md) |
-| Operator retry | `handler_tasks_retry.go`, `domain/retry.go`, `harness/retry_run.go` | Start over / resume after failure | [retry-start-over.md](./domain/retry-start-over.md), [retry-resume.md](./domain/retry-resume.md) |
+| Operator retry | `pkgs/taskcore/handler/`, `pkgs/taskcore/domain/retry.go`, `harness/retry_run.go` | Start over / resume after failure | [retry-start-over.md](./domain/retry-start-over.md), [retry-resume.md](./domain/retry-resume.md) |
 | Read/write policy | `pkgs/tasks/handler/readpolicy/`, `writepolicy/` | Bootstrap limits, commit-then-notify SSE enrichment | ADR-0026 |
 | Workspace search | `pkgs/repo/` | Path resolution, `@`-mentions; HTTP in `pkgs/repo/handler/` | [domain/workspace-repo.md](./domain/workspace-repo.md), [ADR-0049](./adr/ADR-0049-repo-http-handler.md) |
 | Agent queue | `pkgs/agents/` (notifier hook) | Ready-task enqueue, reconcile tick, queue cap | [domain/agent-queue.md](./domain/agent-queue.md) |

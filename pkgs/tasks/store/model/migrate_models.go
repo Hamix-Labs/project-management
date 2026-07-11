@@ -6,7 +6,11 @@ import (
 	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
 	settingsmodel "github.com/AlexsanderHamir/Hamix/pkgs/settings/store/model"
+	checklistmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/store/model"
 	composemodel "github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/store/model"
+	taskcoremodel "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/model"
+	cyclesmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store/model"
+	eventsmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/model"
 	"gorm.io/gorm"
 )
 
@@ -17,24 +21,24 @@ import (
 func AutoMigrateAll(db *gorm.DB) error {
 	if err := db.AutoMigrate(
 		&projectmodel.Project{},
-		&Task{},
-		&TaskDependency{},
-		&TaskEvent{},
-		&TaskChecklistItem{},
-		&TaskChecklistItemCommand{},
-		&TaskChecklistCompletion{},
+		&taskcoremodel.Task{},
+		&taskcoremodel.TaskDependency{},
+		&eventsmodel.TaskEvent{},
+		&checklistmodel.TaskChecklistItem{},
+		&checklistmodel.TaskChecklistItemCommand{},
+		&checklistmodel.TaskChecklistCompletion{},
 		&composemodel.TaskDraft{},
 		&composemodel.TaskTemplate{},
-		&TaskCycle{},
-		&TaskCyclePhase{},
-		&TaskCycleStreamEvent{},
-		&TaskCycleCriteriaReport{},
-		&TaskCycleVerifyReport{},
-		&TaskCycleCommandRun{},
-		&TaskCycleCommit{},
+		&cyclesmodel.TaskCycle{},
+		&cyclesmodel.TaskCyclePhase{},
+		&cyclesmodel.TaskCycleStreamEvent{},
+		&cyclesmodel.TaskCycleCriteriaReport{},
+		&cyclesmodel.TaskCycleVerifyReport{},
+		&cyclesmodel.TaskCycleCommandRun{},
+		&cyclesmodel.TaskCycleCommit{},
 		&projectmodel.ProjectContextItem{},
 		&projectmodel.ProjectContextEdge{},
-		&TaskContextSnapshot{},
+		&taskcoremodel.TaskContextSnapshot{},
 		&settingsmodel.AppSettings{},
 		&gitmodel.GitRepository{},
 		&gitmodel.GitWorktree{},

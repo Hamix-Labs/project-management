@@ -5,8 +5,14 @@ import (
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
 	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	settingsmodel "github.com/AlexsanderHamir/Hamix/pkgs/settings/store/model"
+	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
+	checklistmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/store/model"
 	composedomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/domain"
 	composemodel "github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/store/model"
+	taskcoremodel "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/model"
+	cyclesmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store/model"
+	eventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
+	eventsmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
@@ -32,17 +38,17 @@ var ParityPairs = []ParityPair{
 	},
 	{
 		Name:   "TaskEvent",
-		Domain: &domain.TaskEvent{},
-		Model:  &TaskEvent{},
+		Domain: &eventsdomain.TaskEvent{},
+		Model:  &eventsmodel.TaskEvent{},
 		Table:  "task_events",
 		ModelMigrateExtra: []any{
-			&Task{},
+			&taskcoremodel.Task{},
 		},
 	},
 	{
 		Name:   "Task",
 		Domain: &domain.Task{},
-		Model:  &Task{},
+		Model:  &taskcoremodel.Task{},
 		Table:  "tasks",
 		ModelMigrateExtra: []any{
 			&projectmodel.Project{},
@@ -51,10 +57,10 @@ var ParityPairs = []ParityPair{
 	{
 		Name:   "TaskDependency",
 		Domain: &domain.TaskDependency{},
-		Model:  &TaskDependency{},
+		Model:  &taskcoremodel.TaskDependency{},
 		Table:  "task_dependencies",
 		ModelMigrateExtra: []any{
-			&Task{},
+			&taskcoremodel.Task{},
 		},
 	},
 	{
@@ -70,8 +76,8 @@ var ParityPairs = []ParityPair{
 		Table:  "project_context_items",
 		ModelMigrateExtra: []any{
 			&projectmodel.Project{},
-			&Task{},
-			&TaskCycle{},
+			&taskcoremodel.Task{},
+			&cyclesmodel.TaskCycle{},
 		},
 	},
 	{
@@ -87,112 +93,112 @@ var ParityPairs = []ParityPair{
 	{
 		Name:   "TaskContextSnapshot",
 		Domain: &domain.TaskContextSnapshot{},
-		Model:  &TaskContextSnapshot{},
+		Model:  &taskcoremodel.TaskContextSnapshot{},
 		Table:  "task_context_snapshots",
 		ModelMigrateExtra: []any{
-			&Task{},
-			&TaskCycle{},
+			&taskcoremodel.Task{},
+			&cyclesmodel.TaskCycle{},
 			&projectmodel.Project{},
 		},
 	},
 	{
 		Name:   "TaskChecklistItem",
-		Domain: &domain.TaskChecklistItem{},
-		Model:  &TaskChecklistItem{},
+		Domain: &checklistdomain.TaskChecklistItem{},
+		Model:  &checklistmodel.TaskChecklistItem{},
 		Table:  "task_checklist_items",
 		ModelMigrateExtra: []any{
-			&Task{},
+			&taskcoremodel.Task{},
 		},
 	},
 	{
 		Name:   "TaskChecklistCompletion",
-		Domain: &domain.TaskChecklistCompletion{},
-		Model:  &TaskChecklistCompletion{},
+		Domain: &checklistdomain.TaskChecklistCompletion{},
+		Model:  &checklistmodel.TaskChecklistCompletion{},
 		Table:  "task_checklist_completions",
 		ModelMigrateExtra: []any{
-			&Task{},
-			&TaskChecklistItem{},
+			&taskcoremodel.Task{},
+			&checklistmodel.TaskChecklistItem{},
 		},
 	},
 	{
 		Name:   "TaskChecklistItemCommand",
-		Domain: &domain.TaskChecklistItemCommand{},
-		Model:  &TaskChecklistItemCommand{},
+		Domain: &checklistdomain.TaskChecklistItemCommand{},
+		Model:  &checklistmodel.TaskChecklistItemCommand{},
 		Table:  "task_checklist_item_commands",
 		ModelMigrateExtra: []any{
-			&TaskChecklistItem{},
+			&checklistmodel.TaskChecklistItem{},
 		},
 	},
 	{
 		Name:   "TaskCycle",
 		Domain: &domain.TaskCycle{},
-		Model:  &TaskCycle{},
+		Model:  &cyclesmodel.TaskCycle{},
 		Table:  "task_cycles",
 		ModelMigrateExtra: []any{
-			&Task{},
+			&taskcoremodel.Task{},
 		},
 	},
 	{
 		Name:   "TaskCyclePhase",
 		Domain: &domain.TaskCyclePhase{},
-		Model:  &TaskCyclePhase{},
+		Model:  &cyclesmodel.TaskCyclePhase{},
 		Table:  "task_cycle_phases",
 		ModelMigrateExtra: []any{
-			&Task{},
-			&TaskCycle{},
+			&taskcoremodel.Task{},
+			&cyclesmodel.TaskCycle{},
 		},
 	},
 	{
 		Name:   "TaskCycleStreamEvent",
 		Domain: &domain.TaskCycleStreamEvent{},
-		Model:  &TaskCycleStreamEvent{},
+		Model:  &cyclesmodel.TaskCycleStreamEvent{},
 		Table:  "task_cycle_stream_events",
 		ModelMigrateExtra: []any{
-			&Task{},
-			&TaskCycle{},
+			&taskcoremodel.Task{},
+			&cyclesmodel.TaskCycle{},
 		},
 	},
 	{
 		Name:   "TaskCycleCriteriaReport",
 		Domain: &domain.TaskCycleCriteriaReport{},
-		Model:  &TaskCycleCriteriaReport{},
+		Model:  &cyclesmodel.TaskCycleCriteriaReport{},
 		Table:  "task_cycle_criteria_reports",
 		ModelMigrateExtra: []any{
-			&Task{},
-			&TaskCycle{},
-			&TaskChecklistItem{},
+			&taskcoremodel.Task{},
+			&cyclesmodel.TaskCycle{},
+			&checklistmodel.TaskChecklistItem{},
 		},
 	},
 	{
 		Name:   "TaskCycleVerifyReport",
 		Domain: &domain.TaskCycleVerifyReport{},
-		Model:  &TaskCycleVerifyReport{},
+		Model:  &cyclesmodel.TaskCycleVerifyReport{},
 		Table:  "task_cycle_verify_reports",
 		ModelMigrateExtra: []any{
-			&Task{},
-			&TaskCycle{},
-			&TaskChecklistItem{},
+			&taskcoremodel.Task{},
+			&cyclesmodel.TaskCycle{},
+			&checklistmodel.TaskChecklistItem{},
 		},
 	},
 	{
 		Name:   "TaskCycleCommandRun",
 		Domain: &domain.TaskCycleCommandRun{},
-		Model:  &TaskCycleCommandRun{},
+		Model:  &cyclesmodel.TaskCycleCommandRun{},
 		Table:  "task_cycle_command_runs",
 		ModelMigrateExtra: []any{
-			&Task{},
-			&TaskCycle{},
-			&TaskChecklistItem{},
+			&taskcoremodel.Task{},
+			&cyclesmodel.TaskCycle{},
+			&checklistmodel.TaskChecklistItem{},
 		},
 	},
 	{
 		Name:   "TaskCycleCommit",
 		Domain: &domain.TaskCycleCommit{},
-		Model:  &TaskCycleCommit{},
+		Model:  &cyclesmodel.TaskCycleCommit{},
 		Table:  "task_cycle_commits",
 		ModelMigrateExtra: []any{
-			&Task{},
-			&TaskCycle{},
+			&taskcoremodel.Task{},
+			&cyclesmodel.TaskCycle{},
 		},
 	},
 	{
