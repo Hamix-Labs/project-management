@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/settings/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/settings/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )

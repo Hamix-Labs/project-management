@@ -9,6 +9,7 @@ HTTP routes (`/settings`, `/settings/workspace-roots`, …) and JSON shapes are 
 | Package | Path | Responsibility |
 | --- | --- | --- |
 | Domain | [`domain/`](./domain/) | `AppSettings`, defaults, validation, sentinel errors — stdlib only |
+| Contract | [`contract/`](./contract/) | `SettingsStore` interface + `SettingsPatch` |
 | Store | [`store/`](./store/) | GORM persistence facade; `internal/settings/` holds CRUD; `model/` holds GORM rows + mappers |
 | Handler | [`handler/`](./handler/) | `/settings*` REST handlers and wire DTOs |
 
@@ -23,8 +24,8 @@ HTTP routes (`/settings`, `/settings/workspace-roots`, …) and JSON shapes are 
 | Package | May import | Must not import |
 | --- | --- | --- |
 | `domain` | stdlib | `pkgs/tasks/*`, GORM |
-| `store` | `settings/domain`, GORM, `pkgs/tasks/kernel`, `pkgs/tasks/contract`, `pkgs/tasks/store/model` (migrate parity) | `pkgs/tasks/handler`, `pkgs/tasks/store/internal` |
-| `handler` | `settings/domain`, `pkgs/tasks/contract`, `pkgs/tasks/apijson`, `pkgs/tasks/calltrace`, `pkgs/tasks/logctx`, `pkgs/tasks/realtime`, `pkgs/gitwork`, `pkgs/repo` | `pkgs/tasks/store` facade, `pkgs/tasks/handler` |
+| `store` | `settings/domain`, `settings/contract`, GORM, `pkgs/storekernel`, `pkgs/tasks/store/model` (migrate parity) | `pkgs/tasks/handler`, `pkgs/tasks/store/internal` |
+| `handler` | `settings/domain`, `settings/contract`, `pkgs/tasks/apijson`, `pkgs/tasks/calltrace`, `pkgs/tasks/logctx`, `pkgs/tasks/realtime`, `pkgs/gitwork`, `pkgs/repo` | `pkgs/tasks/store` facade, `pkgs/tasks/handler` |
 
 Enforced in CI: `scripts/check-go.sh` → `step_settings_boundary`.
 
@@ -41,4 +42,4 @@ Contract coverage for `/settings*` lives in [`handler/handler_http_settings_cont
 
 - [docs/api.md](../../docs/api.md) — `/settings*` contract
 - [docs/configuration.md](../../docs/configuration.md) — env vars and `app_settings` columns
-- [pkgs/tasks/contract/settings.go](../tasks/contract/settings.go) — `SettingsStore` interface
+- [pkgs/settings/contract/settings.go](./contract/settings.go) — `SettingsStore` interface

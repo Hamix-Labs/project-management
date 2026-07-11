@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/registry"
+	"github.com/AlexsanderHamir/Hamix/pkgs/settings/contract"
 	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 )
 

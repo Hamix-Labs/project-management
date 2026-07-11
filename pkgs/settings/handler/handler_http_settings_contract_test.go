@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/settings/contract"
 	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 )
 
 // TestHTTP_GetSettings_returnsSeededDefaults pins the documented

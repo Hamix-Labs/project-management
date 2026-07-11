@@ -6,9 +6,9 @@ import (
 	"context"
 	"log/slog"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/settings/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/settings/store/internal/settings"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	"gorm.io/gorm"
 )
 
@@ -43,4 +43,6 @@ func (s *Store) UpdateSettings(ctx context.Context, patch SettingsPatch) (AppSet
 }
 
 // DB exposes the underlying GORM handle for tests that assert row counts.
+//
+//funclogmeasure:skip category=hot-path reason="Test-only accessor; no store operation boundary."
 func (s *Store) DB() *gorm.DB { return s.db }
