@@ -300,12 +300,21 @@ step_taskchecklist_boundary() {
   if rg -q 'github.com/.*/pkgs/tasks/store/internal' pkgs/taskchecklist/ -g '*.go' 2>/dev/null; then
     hits+=$'\n'"$(rg -n 'github.com/.*/pkgs/tasks/store/internal' pkgs/taskchecklist/ -g '*.go' 2>/dev/null || true)"
   fi
+  if rg -q 'gorm' pkgs/taskchecklist/domain/ -g '*.go' 2>/dev/null; then
+    hits+=$'\n'"$(rg -n 'gorm' pkgs/taskchecklist/domain/ -g '*.go' 2>/dev/null || true)"
+  fi
+  for f in pkgs/taskchecklist/domain/*.go; do
+    [[ -f "$f" ]] || continue
+    if rg -q 'github.com/.*/pkgs/tasks/domain' "$f" 2>/dev/null; then
+      hits+=$'\n'"$f: taskchecklist/domain must not import pkgs/tasks/domain"
+    fi
+  done
   local elapsed=$((SECONDS - start))
   add_section_time "$elapsed"
 
   if [[ -n "$(echo "$hits" | sed '/^$/d')" ]]; then
     echo "${C_RED}FAILED${C_RESET}"
-    echo "pkgs/taskchecklist must not import pkgs/tasks/handler or pkgs/tasks/store/internal:"
+    echo "pkgs/taskchecklist boundary violation:"
     echo "$hits" | sed '/^$/d'
     fail_step "$label" 1
   fi
@@ -327,12 +336,21 @@ step_taskevents_boundary() {
   if rg -q 'github.com/.*/pkgs/tasks/store/internal' pkgs/taskevents/ -g '*.go' 2>/dev/null; then
     hits+=$'\n'"$(rg -n 'github.com/.*/pkgs/tasks/store/internal' pkgs/taskevents/ -g '*.go' 2>/dev/null || true)"
   fi
+  if rg -q 'gorm' pkgs/taskevents/domain/ -g '*.go' 2>/dev/null; then
+    hits+=$'\n'"$(rg -n 'gorm' pkgs/taskevents/domain/ -g '*.go' 2>/dev/null || true)"
+  fi
+  for f in pkgs/taskevents/domain/*.go; do
+    [[ -f "$f" ]] || continue
+    if rg -q 'github.com/.*/pkgs/tasks/domain' "$f" 2>/dev/null; then
+      hits+=$'\n'"$f: taskevents/domain must not import pkgs/tasks/domain"
+    fi
+  done
   local elapsed=$((SECONDS - start))
   add_section_time "$elapsed"
 
   if [[ -n "$(echo "$hits" | sed '/^$/d')" ]]; then
     echo "${C_RED}FAILED${C_RESET}"
-    echo "pkgs/taskevents must not import pkgs/tasks/handler or pkgs/tasks/store/internal:"
+    echo "pkgs/taskevents boundary violation:"
     echo "$hits" | sed '/^$/d'
     fail_step "$label" 1
   fi
@@ -354,12 +372,21 @@ step_taskcycles_boundary() {
   if rg -q 'github.com/.*/pkgs/tasks/store/internal' pkgs/taskcycles/ -g '*.go' 2>/dev/null; then
     hits+=$'\n'"$(rg -n 'github.com/.*/pkgs/tasks/store/internal' pkgs/taskcycles/ -g '*.go' 2>/dev/null || true)"
   fi
+  if rg -q 'gorm' pkgs/taskcycles/domain/ -g '*.go' 2>/dev/null; then
+    hits+=$'\n'"$(rg -n 'gorm' pkgs/taskcycles/domain/ -g '*.go' 2>/dev/null || true)"
+  fi
+  for f in pkgs/taskcycles/domain/*.go; do
+    [[ -f "$f" ]] || continue
+    if rg -q 'github.com/.*/pkgs/tasks/domain' "$f" 2>/dev/null; then
+      hits+=$'\n'"$f: taskcycles/domain must not import pkgs/tasks/domain"
+    fi
+  done
   local elapsed=$((SECONDS - start))
   add_section_time "$elapsed"
 
   if [[ -n "$(echo "$hits" | sed '/^$/d')" ]]; then
     echo "${C_RED}FAILED${C_RESET}"
-    echo "pkgs/taskcycles must not import pkgs/tasks/handler or pkgs/tasks/store/internal:"
+    echo "pkgs/taskcycles boundary violation:"
     echo "$hits" | sed '/^$/d'
     fail_step "$label" 1
   fi
@@ -408,6 +435,42 @@ step_runners_handler_boundary() {
   if [[ -n "$(echo "$hits" | sed '/^$/d')" ]]; then
     echo "${C_RED}FAILED${C_RESET}"
     echo "pkgs/runners/handler must not import pkgs/tasks/handler:"
+    echo "$hits" | sed '/^$/d'
+    fail_step "$label" 1
+  fi
+
+  PASSED=$((PASSED + 1))
+  print_ok_line "$label" "$elapsed"
+}
+
+step_taskcore_boundary() {
+  local label="taskcore boundary"
+  local start=$SECONDS
+  step_prefix
+  printf '%s ' "$label"
+
+  local hits=""
+  if rg -q 'github.com/.*/pkgs/tasks/handler' pkgs/taskcore/ -g '*.go' 2>/dev/null; then
+    hits="$(rg -n 'github.com/.*/pkgs/tasks/handler' pkgs/taskcore/ -g '*.go' 2>/dev/null || true)"
+  fi
+  if rg -q 'github.com/.*/pkgs/tasks/store/internal' pkgs/taskcore/ -g '*.go' 2>/dev/null; then
+    hits+=$'\n'"$(rg -n 'github.com/.*/pkgs/tasks/store/internal' pkgs/taskcore/ -g '*.go' 2>/dev/null || true)"
+  fi
+  if rg -q 'gorm' pkgs/taskcore/domain/ -g '*.go' 2>/dev/null; then
+    hits+=$'\n'"$(rg -n 'gorm' pkgs/taskcore/domain/ -g '*.go' 2>/dev/null || true)"
+  fi
+  for f in pkgs/taskcore/domain/*.go; do
+    [[ -f "$f" ]] || continue
+    if rg -q 'github.com/.*/pkgs/tasks/domain' "$f" 2>/dev/null; then
+      hits+=$'\n'"$f: taskcore/domain must not import pkgs/tasks/domain"
+    fi
+  done
+  local elapsed=$((SECONDS - start))
+  add_section_time "$elapsed"
+
+  if [[ -n "$(echo "$hits" | sed '/^$/d')" ]]; then
+    echo "${C_RED}FAILED${C_RESET}"
+    echo "pkgs/taskcore boundary violation:"
     echo "$hits" | sed '/^$/d'
     fail_step "$label" 1
   fi
@@ -584,6 +647,7 @@ step_taskcompose_boundary
 step_taskchecklist_boundary
 step_taskevents_boundary
 step_taskcycles_boundary
+step_taskcore_boundary
 step_repo_handler_boundary
 step_runners_handler_boundary
 step_storekernel_boundary

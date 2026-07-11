@@ -11,8 +11,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 

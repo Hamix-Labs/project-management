@@ -8,9 +8,9 @@ import (
 	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"log/slog"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"gorm.io/gorm"
 )

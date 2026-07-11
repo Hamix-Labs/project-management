@@ -4,8 +4,9 @@ package handler
 import (
 	"net/http"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
+	projectscontract "github.com/AlexsanderHamir/Hamix/pkgs/projects/contract"
 )
 
 // HostPathMapper translates container paths for JSON host_path fields.
@@ -22,7 +23,7 @@ func (noopHostPathMapper) DisplayHostPath(p string) string { return p }
 type Deps struct {
 	Read       contract.GitReadStore
 	Write      contract.GitWriteStore
-	Projects   contract.ProjectStore
+	Projects   projectscontract.ProjectStore
 	GitService gitwork.Service
 	HostPaths  HostPathMapper
 }
@@ -31,7 +32,7 @@ type Deps struct {
 type Handler struct {
 	read     contract.GitReadStore
 	write    contract.GitWriteStore
-	projects contract.ProjectStore
+	projects projectscontract.ProjectStore
 	git      gitwork.Service
 	paths    HostPathMapper
 }

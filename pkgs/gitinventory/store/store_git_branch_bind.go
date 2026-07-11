@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/google/uuid"
 	"gorm.io/gorm"

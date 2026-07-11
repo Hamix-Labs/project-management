@@ -4,8 +4,8 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 )
 
 func (h *Handler) serveListGitRepositories(w http.ResponseWriter, r *http.Request, op string) {

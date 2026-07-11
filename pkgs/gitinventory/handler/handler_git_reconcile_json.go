@@ -1,6 +1,6 @@
 package handler
 
-import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
+import "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/contract"
 
 type gitReconcileRequest struct {
 	BootstrapPath string `json:"bootstrap_path"`

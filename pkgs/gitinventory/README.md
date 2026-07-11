@@ -9,6 +9,7 @@ HTTP routes (`/git/repositories`, `/git/worktrees`, …) and JSON shapes are unc
 | Package | Path | Responsibility |
 | --- | --- | --- |
 | Domain | [`domain/`](./domain/) | `GitRepository`, `GitWorktree`, `GitBranch`, git error codes — stdlib only |
+| Contract | [`contract/`](./contract/) | `GitReadStore`, `GitWriteStore` + reconcile wire types |
 | Store | [`store/`](./store/) | GORM persistence, reconcile, live worktree inventory; `model/` holds GORM rows + mappers |
 | Handler | [`handler/`](./handler/) | `/git/*` REST handlers and wire DTOs |
 
@@ -24,8 +25,8 @@ HTTP routes (`/git/repositories`, `/git/worktrees`, …) and JSON shapes are unc
 | Package | May import | Must not import |
 | --- | --- | --- |
 | `domain` | stdlib | `pkgs/tasks/*`, GORM |
-| `store` | `gitinventory/domain`, GORM, `pkgs/tasks/kernel`, `pkgs/tasks/contract`, `pkgs/gitwork` | `pkgs/tasks/handler`, `pkgs/tasks/store/internal` |
-| `handler` | `gitinventory/domain`, `pkgs/projects/domain`, `pkgs/tasks/contract`, `pkgs/tasks/apijson`, `pkgs/tasks/calltrace`, `pkgs/tasks/logctx`, `pkgs/gitwork` | `pkgs/tasks/store` facade, `pkgs/tasks/handler` |
+| `store` | `gitinventory/domain`, `gitinventory/contract`, GORM, `pkgs/storekernel`, `pkgs/gitwork` | `pkgs/tasks/handler`, `pkgs/tasks/store/internal` |
+| `handler` | `gitinventory/domain`, `pkgs/projects/domain`, `gitinventory/contract`, `pkgs/tasks/apijson`, `pkgs/tasks/calltrace`, `pkgs/tasks/logctx`, `pkgs/gitwork` | `pkgs/tasks/store` facade, `pkgs/tasks/handler` |
 
 Enforced in CI: `scripts/check-go.sh` → `step_gitinventory_boundary`.
 
@@ -42,5 +43,5 @@ Integration coverage for git CRUD, reconcile, and facade delegation lives in [`p
 
 - [docs/api.md](../../docs/api.md) — `/git/*` contract
 - [docs/domain/worktrees-and-branches.md](../../docs/domain/worktrees-and-branches.md) — operator model
-- [pkgs/tasks/contract/git_read.go](../tasks/contract/git_read.go) — `GitReadStore` interface
-- [pkgs/tasks/contract/git_write.go](../tasks/contract/git_write.go) — `GitWriteStore` interface
+- [pkgs/gitinventory/contract/read.go](./contract/read.go) — `GitReadStore` interface
+- [pkgs/gitinventory/contract/write.go](./contract/write.go) — `GitWriteStore` interface
