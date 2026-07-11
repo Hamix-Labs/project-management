@@ -30,12 +30,13 @@ Repository paths grouped by subsystem. Read only the rows relevant to your task.
 | Git inventory bounded context | `pkgs/gitinventory/` | Registered repos/worktrees/branches, `/git/*` HTTP, reconcile | [ADR-0046](./adr/ADR-0046-bounded-context-gitinventory.md), [gitinventory/README.md](../pkgs/gitinventory/README.md) |
 | Settings bounded context | `pkgs/settings/` | App settings row, `/settings*` HTTP, workspace browse, agent probe/cancel | [ADR-0047](./adr/ADR-0047-bounded-context-settings.md), [settings/README.md](../pkgs/settings/README.md) |
 | Task compose bounded context | `pkgs/taskcompose/` | Task drafts + templates, `/task-drafts*` and `/task-templates*` HTTP | [ADR-0048](./adr/ADR-0048-bounded-context-taskcompose.md), [taskcompose/README.md](../pkgs/taskcompose/README.md) |
+| Workspace repo HTTP | `pkgs/repo/handler/` | `/repo/*` search, file preview, validate-range, diff | [ADR-0049](./adr/ADR-0049-repo-http-handler.md), [repo/handler/README.md](../pkgs/repo/handler/README.md) |
 | Persistence | `pkgs/tasks/store/`, `pkgs/projects/store/`, `pkgs/gitinventory/store/`, `pkgs/settings/store/`, `pkgs/taskcompose/store/`, `pkgs/tasks/postgres/` | Store facade, GORM migrate, dual-write to `task_events` | [domain/persistence.md](./domain/persistence.md), [store/README.md](../pkgs/tasks/store/README.md) |
 | Task scheduling | `pkgs/tasks/scheduling/` | Worker readiness predicates, pickup gate, post-commit notify | [domain/task-scheduling.md](./domain/task-scheduling.md), ADR-0023 |
 | Execution cycles HTTP | `pkgs/tasks/handler/handler_cycles.go` | Cycle and phase REST surface | [api.md](./api.md), [data-model.md](./data-model.md) |
 | Operator retry | `handler_tasks_retry.go`, `domain/retry.go`, `harness/retry_run.go` | Start over / resume after failure | [retry-start-over.md](./domain/retry-start-over.md), [retry-resume.md](./domain/retry-resume.md) |
 | Read/write policy | `pkgs/tasks/handler/readpolicy/`, `writepolicy/` | Bootstrap limits, commit-then-notify SSE enrichment | ADR-0026 |
-| Workspace search | `pkgs/repo/` | Optional `@`-mentions and `/repo/*` file search | [domain/workspace-repo.md](./domain/workspace-repo.md) |
+| Workspace search | `pkgs/repo/` | Path resolution, `@`-mentions; HTTP in `pkgs/repo/handler/` | [domain/workspace-repo.md](./domain/workspace-repo.md), [ADR-0049](./adr/ADR-0049-repo-http-handler.md) |
 | Agent queue | `pkgs/agents/` (notifier hook) | Ready-task enqueue, reconcile tick, queue cap | [domain/agent-queue.md](./domain/agent-queue.md) |
 | Agent harness | `pkgs/agents/harness/` | Execute/verify loop, criteria, git integrity, retry modes | [domain/harness.md](./domain/harness.md), [cursor-session-resume.md](./domain/cursor-session-resume.md) |
 | Cycle commits | `harness/internal/git/commits.go`, `store/internal/commits/` | Agent-claimed commit ledger for verify | [cycle-commits.md](./domain/cycle-commits.md), ADR-0032 |

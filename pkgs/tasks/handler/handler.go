@@ -14,7 +14,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/postgres"
 )
 
-// Task routes: see README.md (handler_task_*.go). /repo: repo_handlers.go. SSE: sse.go.
+// Task routes: see README.md (handler_task_*.go). /repo: pkgs/repo/handler. SSE: sse.go.
 // Settings routes: handler_settings.go (GET/PATCH /settings, POST /settings/probe-cursor,
 // POST /settings/list-cursor-models, POST /settings/cancel-current-run).
 // Runner routes: handler_runners.go (GET /runners, GET /runners/{id}/config-schema,

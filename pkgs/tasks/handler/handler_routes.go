@@ -7,6 +7,7 @@ import (
 
 	gitinventoryhandler "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/handler"
 	projecthandler "github.com/AlexsanderHamir/Hamix/pkgs/projects/handler"
+	repohandler "github.com/AlexsanderHamir/Hamix/pkgs/repo/handler"
 	settingshandler "github.com/AlexsanderHamir/Hamix/pkgs/settings/handler"
 	composehandler "github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/handler"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
@@ -60,7 +61,7 @@ func (h *Handler) registerRoutes(m *http.ServeMux) {
 		},
 	})
 	h.registerTaskRoutes(m)
-	h.registerRepoRoutes(m)
+	repohandler.Register(m, repohandler.Deps{Provider: h.repoProv})
 	h.registerRunnerRoutes(m)
 	h.registerMiscRoutes(m)
 }
@@ -104,14 +105,6 @@ func (h *Handler) registerTaskRoutes(m *http.ServeMux) {
 	m.Handle("GET /tasks/{id}", http.HandlerFunc(h.get))
 	m.Handle("PATCH /tasks/{id}", http.HandlerFunc(h.patch))
 	m.Handle("DELETE /tasks/{id}", http.HandlerFunc(h.delete))
-}
-
-//funclogmeasure:skip category=hot-path reason="Route table wiring only; operation trace is emitted by registered handlers."
-func (h *Handler) registerRepoRoutes(m *http.ServeMux) {
-	m.Handle("GET /repo/search", http.HandlerFunc(h.repoSearch))
-	m.Handle("GET /repo/file", http.HandlerFunc(h.repoFile))
-	m.Handle("GET /repo/validate-range", http.HandlerFunc(h.repoValidateRange))
-	m.Handle("GET /repo/diff", http.HandlerFunc(h.repoDiff))
 }
 
 //funclogmeasure:skip category=hot-path reason="Route table wiring only; operation trace is emitted by registered handlers."

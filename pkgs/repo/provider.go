@@ -1,4 +1,4 @@
-package handler
+package repo
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/repo"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 )
 
@@ -15,15 +14,15 @@ type GitWorktreeResolver interface {
 	GetGitWorktreeByID(ctx context.Context, id string) (domain.GitWorktree, error)
 }
 
-// RepoProvider returns the *repo.Root that /repo/* handlers and prompt
-// mention validation should consult for the current request. Production
-// wiring resolves paths from git_worktrees via OpenWorktreeRoot.
+// RepoProvider returns the *Root that /repo/* handlers and prompt mention
+// validation should consult for the current request. Production wiring
+// resolves paths from git_worktrees via OpenWorktreeRoot.
 type RepoProvider interface {
-	OpenWorktreeRoot(ctx context.Context, worktreeID string) (root *repo.Root, reason string, err error)
+	OpenWorktreeRoot(ctx context.Context, worktreeID string) (root *Root, reason string, err error)
 }
 
 const (
-	// RepoReasonOpenFailed: worktree path is set but repo.OpenRoot rejected it.
+	// RepoReasonOpenFailed: worktree path is set but OpenRoot rejected it.
 	RepoReasonOpenFailed = "worktree_open_failed"
 	// RepoReasonWorktreeIDRequired: /repo/* called without worktree_id.
 	RepoReasonWorktreeIDRequired = "worktree_id_required"
@@ -31,19 +30,18 @@ const (
 	RepoReasonWorktreeNotFound = "worktree_not_found"
 )
 
-// staticRepoProvider returns a fixed *repo.Root for tests.
 type staticRepoProvider struct {
-	root *repo.Root
+	root *Root
 }
 
 // NewStaticRepoProvider wraps r so OpenWorktreeRoot returns it when worktreeID is non-empty.
-func NewStaticRepoProvider(r *repo.Root) RepoProvider {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.NewStaticRepoProvider")
+func NewStaticRepoProvider(r *Root) RepoProvider {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "repo.NewStaticRepoProvider")
 	return &staticRepoProvider{root: r}
 }
 
-func (p *staticRepoProvider) OpenWorktreeRoot(_ context.Context, worktreeID string) (*repo.Root, string, error) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.staticRepoProvider.OpenWorktreeRoot")
+func (p *staticRepoProvider) OpenWorktreeRoot(_ context.Context, worktreeID string) (*Root, string, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "repo.staticRepoProvider.OpenWorktreeRoot")
 	if strings.TrimSpace(worktreeID) == "" {
 		return nil, RepoReasonWorktreeIDRequired, nil
 	}
@@ -53,19 +51,18 @@ func (p *staticRepoProvider) OpenWorktreeRoot(_ context.Context, worktreeID stri
 	return p.root, "", nil
 }
 
-// settingsRepoProvider opens git worktree paths from the resolver at request time.
 type settingsRepoProvider struct {
 	resolver GitWorktreeResolver
 }
 
 // NewSettingsRepoProvider returns a provider backed by git_worktrees in r.
 func NewSettingsRepoProvider(r GitWorktreeResolver) RepoProvider {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.NewSettingsRepoProvider")
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "repo.NewSettingsRepoProvider")
 	return &settingsRepoProvider{resolver: r}
 }
 
-func (p *settingsRepoProvider) OpenWorktreeRoot(ctx context.Context, worktreeID string) (*repo.Root, string, error) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.settingsRepoProvider.OpenWorktreeRoot")
+func (p *settingsRepoProvider) OpenWorktreeRoot(ctx context.Context, worktreeID string) (*Root, string, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "repo.settingsRepoProvider.OpenWorktreeRoot")
 	if p == nil || p.resolver == nil {
 		return nil, RepoReasonWorktreeNotFound, nil
 	}
@@ -80,7 +77,7 @@ func (p *settingsRepoProvider) OpenWorktreeRoot(ctx context.Context, worktreeID 
 		}
 		return nil, "", err
 	}
-	root, openErr := repo.OpenRoot(wt.Path)
+	root, openErr := OpenRoot(wt.Path)
 	if openErr != nil {
 		return nil, RepoReasonOpenFailed, openErr
 	}

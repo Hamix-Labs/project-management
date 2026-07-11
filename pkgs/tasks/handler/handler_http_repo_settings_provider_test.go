@@ -131,7 +131,10 @@ func TestHTTP_repoRoutes_unknownWorktree_returns404(t *testing.T) {
 		b, _ := io.ReadAll(res.Body)
 		t.Fatalf("status %d want 404 body=%s", res.StatusCode, b)
 	}
-	var body repoUnavailableErrorBody
+	var body struct {
+		Error  string `json:"error"`
+		Reason string `json:"reason"`
+	}
 	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
 		t.Fatal(err)
 	}

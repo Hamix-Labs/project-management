@@ -44,7 +44,7 @@ Implementations live in **[`pkgs/tasks/middleware`](../middleware/)** (no import
 | Task audit / events | `handler_task_events.go` |
 | Execution cycles + phases | `handler_cycles.go`, `handler_cycles_query.go`, `handler_cycles_response.go` (DTOs in `handler_cycles_json.go`); see [`docs/data-model.md`](../../docs/data-model.md) |
 | Saved task drafts (`/task-drafts`) | `handler_task_drafts.go` |
-| Workspace `/repo/*` | `repo_handlers.go` |
+| Workspace `/repo/*` | [`pkgs/repo/handler`](../../repo/handler/) (registered from `handler_routes.go`) |
 | App settings | `handler_settings.go` |
 | SPA RUM (`POST /v1/rum`) | `handler_rum.go` |
 
