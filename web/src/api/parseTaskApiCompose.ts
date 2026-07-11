@@ -1,6 +1,6 @@
 import type { TaskDraftChecklistItem } from "@/types/taskCore";
 import type { TaskDraftPayload } from "@/types/taskDrafts";
-import { parseChecklistItemWire } from "./parseTaskApiTasks";
+import { parseChecklistItemWire } from "./parseTaskApiChecklist";
 import {
   isRecord,
   parsePriorityChoice,

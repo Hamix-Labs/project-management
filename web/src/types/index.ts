@@ -1,4 +1,5 @@
 export * from "./task";
+export * from "./checklist";
 export * from "./gate";
 export * from "./cycle";
 export * from "./project";

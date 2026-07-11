@@ -1,10 +1,9 @@
 export {
   parseCycleFailuresListResponse,
-  parseTask,
-  parseTaskChecklistResponse,
-  parseTaskListResponse,
   parseTaskStatsResponse,
-} from "./parseTaskApiTasks";
+} from "./parseTaskApiStats";
+export { parseTaskChecklistResponse } from "./parseTaskApiChecklist";
+export { parseTask, parseTaskListResponse } from "./parseTaskApiTasks";
 export {
   parseTaskEventDetail,
   parseTaskEventsResponse,

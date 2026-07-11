@@ -366,46 +366,18 @@ export type TaskEventDetail = TaskEvent & {
   task_id: string;
 };
 
-/** Optional shell check attached to a done criterion. */
-export type ChecklistVerifyCommandInput = {
-  command: string;
-  expected_outcome?: string;
-};
-
-/** Draft criterion row in create/edit modals before persistence. */
-export type ChecklistItemDraft = {
-  text: string;
-  verify_commands?: ChecklistVerifyCommandInput[];
-};
-
-/** One checklist row from GET /tasks/{id}/checklist. */
-export type TaskChecklistItemView = {
-  id: string;
-  sort_order: number;
-  text: string;
-  done: boolean;
-  evidence?: string;
-  verified_by?: string;
-  verifier_reasoning?: string;
-  cycle_id?: string;
-  verify_commands?: ChecklistVerifyCommandInput[];
-};
-
-export type TaskChecklistResponse = {
-  items: TaskChecklistItemView[];
-};
-
-/** UI display cap for evidence text (backend store cap is 16 KB). See docs/data-model.md. */
-export const CHECKLIST_EVIDENCE_DISPLAY_CAP = 12 * 1024;
-
-/** Defaults aligned with pkgs/tasks/domain/app_settings.go. */
-export const DEFAULT_VERIFY_MAX_RETRIES = 2;
-
-/** Checklist row in compose payloads (drafts, templates, create). */
-export type TaskDraftChecklistItem = {
-  text: string;
-  verify_commands?: ChecklistVerifyCommandInput[];
-};
+export type {
+  ChecklistItemDraft,
+  ChecklistVerifyCommandInput,
+  TaskChecklistItemView,
+  TaskChecklistResponse,
+  TaskDraftChecklistItem,
+} from "./checklist";
+export {
+  CHECKLIST_EVIDENCE_DISPLAY_CAP,
+  DEFAULT_VERIFY_MAX_RETRIES,
+} from "./checklist";
+import type { TaskDraftChecklistItem } from "./checklist";
 
 export type TaskComposePayload = {
   title: string;
