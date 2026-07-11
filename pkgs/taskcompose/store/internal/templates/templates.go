@@ -1,5 +1,5 @@
 // Package templates owns task_templates persistence for POST/GET/PATCH/DELETE
-// /task-templates. Payload writes use kernel.NormalizeJSONObject like drafts.
+// /task-templates. Payload writes use storekernel.NormalizeJSONObject like drafts.
 package templates
 
 import (
@@ -10,11 +10,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/store/internal/namedpayload"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/kernel"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
@@ -38,7 +38,7 @@ func Get(ctx context.Context, db *gorm.DB, id string) (*Detail, error) {
 }
 
 func Patch(ctx context.Context, db *gorm.DB, id string, name *string, payload json.RawMessage) (*Detail, error) {
-	defer kernel.DeferLatency(kernel.OpPatchTemplate)()
+	defer storekernel.DeferLatency(storekernel.OpPatchTemplate)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.templates.Patch")
 	id = strings.TrimSpace(id)
 	if id == "" {
@@ -49,7 +49,7 @@ func Patch(ctx context.Context, db *gorm.DB, id string, name *string, payload js
 	}
 	var row model.TaskTemplate
 	if err := db.WithContext(ctx).Where("id = ?", id).First(&row).Error; err != nil {
-		return nil, kernel.MapNotFound(err)
+		return nil, storekernel.MapNotFound(err)
 	}
 	updates := map[string]any{"updated_at": time.Now().UTC()}
 	if name != nil {
@@ -60,14 +60,14 @@ func Patch(ctx context.Context, db *gorm.DB, id string, name *string, payload js
 		updates["name"] = trimmed
 	}
 	if payload != nil {
-		normalized, err := kernel.NormalizeJSONObject(payload, "payload")
+		normalized, err := storekernel.NormalizeJSONObject(payload, "payload")
 		if err != nil {
 			return nil, err
 		}
 		updates["payload_json"] = datatypes.JSON(normalized)
 	}
 	if err := db.WithContext(ctx).Model(&model.TaskTemplate{}).Where("id = ?", id).Updates(updates).Error; err != nil {
-		return nil, kernel.MapPayloadPersistenceError(fmt.Errorf("patch template: %w", err))
+		return nil, storekernel.MapPayloadPersistenceError(fmt.Errorf("patch template: %w", err))
 	}
 	return Get(ctx, db, id)
 }

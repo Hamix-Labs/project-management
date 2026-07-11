@@ -5,69 +5,57 @@ import (
 	"context"
 	"log/slog"
 
+	cyclesstore "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/reports"
 )
 
-// CriteriaReportEntry is the public re-export of the per-criterion
-// criteria-report payload. The alias keeps the worker call-site
-// (UpsertCriteriaReports) shielded from the internal reports package.
-type CriteriaReportEntry = reports.CriteriaEntry
+type (
+	// CriteriaReportEntry is the per-criterion criteria-report payload.
+	CriteriaReportEntry = cyclesstore.CriteriaReportEntry
+	// VerifyReportEntry is the verify-report counterpart of CriteriaReportEntry.
+	VerifyReportEntry = cyclesstore.VerifyReportEntry
+	// CommandRunEntry is one verify-phase shell command execution row.
+	CommandRunEntry = cyclesstore.CommandRunEntry
+)
 
-// VerifyReportEntry is the verify-report counterpart of
-// CriteriaReportEntry.
-type VerifyReportEntry = reports.VerifyEntry
-
-// CommandRunEntry is one verify-phase shell command execution row.
-type CommandRunEntry = reports.CommandRunEntry
-
-// UpsertCriteriaReports persists one batch of per-criterion
-// criteria-report rows for (cycleID, attemptSeq). See
-// reports.UpsertCriteriaReports for the idempotency contract.
+// UpsertCriteriaReports persists one batch of per-criterion criteria-report rows.
 func (s *Store) UpsertCriteriaReports(ctx context.Context, cycleID string, attemptSeq int64, entries []CriteriaReportEntry) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.UpsertCriteriaReports")
-	return reports.UpsertCriteriaReports(ctx, s.db, cycleID, attemptSeq, entries)
+	return s.cycles.UpsertCriteriaReports(ctx, cycleID, attemptSeq, entries)
 }
 
-// UpsertVerifyReports is the verify-report counterpart of
-// UpsertCriteriaReports.
+// UpsertVerifyReports is the verify-report counterpart of UpsertCriteriaReports.
 func (s *Store) UpsertVerifyReports(ctx context.Context, cycleID string, attemptSeq int64, entries []VerifyReportEntry) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.UpsertVerifyReports")
-	return reports.UpsertVerifyReports(ctx, s.db, cycleID, attemptSeq, entries)
+	return s.cycles.UpsertVerifyReports(ctx, cycleID, attemptSeq, entries)
 }
 
-// ListCriteriaReportsForCycle returns every persisted
-// criteria-report row for cycleID ordered by (attempt_seq ASC,
-// criterion_id ASC). Pre-PR2 cycles return an empty slice.
+// ListCriteriaReportsForCycle returns every persisted criteria-report row for cycleID.
 func (s *Store) ListCriteriaReportsForCycle(ctx context.Context, cycleID string) ([]domain.TaskCycleCriteriaReport, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ListCriteriaReportsForCycle")
-	return reports.ListCriteriaReportsForCycle(ctx, s.db, cycleID)
+	return s.cycles.ListCriteriaReportsForCycle(ctx, cycleID)
 }
 
-// ListVerifyReportsForCycle is the verify counterpart of
-// ListCriteriaReportsForCycle.
+// ListVerifyReportsForCycle is the verify counterpart of ListCriteriaReportsForCycle.
 func (s *Store) ListVerifyReportsForCycle(ctx context.Context, cycleID string) ([]domain.TaskCycleVerifyReport, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ListVerifyReportsForCycle")
-	return reports.ListVerifyReportsForCycle(ctx, s.db, cycleID)
+	return s.cycles.ListVerifyReportsForCycle(ctx, cycleID)
 }
 
-// GetCriteriaReport returns the criteria-report row for
-// (cycleID, attemptSeq, criterionID); ErrNotFound when missing.
-// Exposed primarily for store tests; the handler reads via the bulk
-// list endpoints.
+// GetCriteriaReport returns the criteria-report row for (cycleID, attemptSeq, criterionID).
 func (s *Store) GetCriteriaReport(ctx context.Context, cycleID string, attemptSeq int64, criterionID string) (*domain.TaskCycleCriteriaReport, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.GetCriteriaReport")
-	return reports.GetCriteriaReport(ctx, s.db, cycleID, attemptSeq, criterionID)
+	return s.cycles.GetCriteriaReport(ctx, cycleID, attemptSeq, criterionID)
 }
 
 // UpsertCommandRuns persists command run metadata for one verify attempt.
 func (s *Store) UpsertCommandRuns(ctx context.Context, cycleID string, attemptSeq int64, entries []CommandRunEntry) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.UpsertCommandRuns")
-	return reports.UpsertCommandRuns(ctx, s.db, cycleID, attemptSeq, entries)
+	return s.cycles.UpsertCommandRuns(ctx, cycleID, attemptSeq, entries)
 }
 
 // ListCommandRunsForCycle returns command run rows for cycleID.
 func (s *Store) ListCommandRunsForCycle(ctx context.Context, cycleID string) ([]domain.TaskCycleCommandRun, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ListCommandRunsForCycle")
-	return reports.ListCommandRunsForCycle(ctx, s.db, cycleID)
+	return s.cycles.ListCommandRunsForCycle(ctx, cycleID)
 }

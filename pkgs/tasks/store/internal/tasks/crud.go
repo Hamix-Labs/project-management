@@ -11,10 +11,10 @@ import (
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
 	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
+	checkliststore "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/store"
 	composestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/store"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/kernel"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/checklist"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -24,7 +24,7 @@ import (
 // domain.ErrInvalidInput; missing rows surface as
 // domain.ErrNotFound.
 func Get(ctx context.Context, db *gorm.DB, id string) (*domain.Task, error) {
-	defer kernel.DeferLatency(kernel.OpGetTask)()
+	defer storekernel.DeferLatency(storekernel.OpGetTask)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.tasks.Get")
 	id = strings.TrimSpace(id)
 	if id == "" {
@@ -55,7 +55,7 @@ func Get(ctx context.Context, db *gorm.DB, id string) (*domain.Task, error) {
 // is responsible for firing the ready-task notifier when the returned
 // task has Status == StatusReady (the facade does this).
 func Create(ctx context.Context, db *gorm.DB, in CreateInput, by domain.Actor) (*domain.Task, error) {
-	defer kernel.DeferLatency(kernel.OpCreateTask)()
+	defer storekernel.DeferLatency(storekernel.OpCreateTask)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.tasks.Create")
 	t, title, st, err := buildCreateTaskFromInput(in, by)
 	if err != nil {
@@ -81,9 +81,9 @@ func Create(ctx context.Context, db *gorm.DB, in CreateInput, by domain.Actor) (
 // uses (updated.Status == StatusReady && prevStatus != StatusReady)
 // to decide whether to notify the ready-task channel.
 func Update(ctx context.Context, db *gorm.DB, id string, in UpdateInput, by domain.Actor) (*domain.Task, domain.Status, error) {
-	defer kernel.DeferLatency(kernel.OpUpdateTask)()
+	defer storekernel.DeferLatency(storekernel.OpUpdateTask)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.tasks.Update")
-	if err := kernel.ValidateActor(by); err != nil {
+	if err := storekernel.ValidateActor(by); err != nil {
 		return nil, "", err
 	}
 	id = strings.TrimSpace(id)
@@ -105,7 +105,7 @@ func Update(ctx context.Context, db *gorm.DB, id string, in UpdateInput, by doma
 		}
 		dcur := model.ToDomainTask(cur)
 		origStatus = dcur.Status
-		nextSeq, err := kernel.NextEventSeq(tx, id)
+		nextSeq, err := storekernel.NextEventSeq(tx, id)
 		if err != nil {
 			return err
 		}
@@ -133,9 +133,9 @@ func Update(ctx context.Context, db *gorm.DB, id string, in UpdateInput, by doma
 
 // Delete removes the task at id in one transaction.
 func Delete(ctx context.Context, db *gorm.DB, id string, by domain.Actor) (deletedIDs []string, err error) {
-	defer kernel.DeferLatency(kernel.OpDeleteTask)()
+	defer storekernel.DeferLatency(storekernel.OpDeleteTask)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.tasks.Delete")
-	if err := kernel.ValidateActor(by); err != nil {
+	if err := storekernel.ValidateActor(by); err != nil {
 		return nil, err
 	}
 	id = strings.TrimSpace(id)
@@ -161,7 +161,7 @@ func Delete(ctx context.Context, db *gorm.DB, id string, by domain.Actor) (delet
 
 func buildCreateTaskFromInput(in CreateInput, by domain.Actor) (t *domain.Task, title string, st domain.Status, err error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.tasks.buildCreateTaskFromInput")
-	if err := kernel.ValidateActor(by); err != nil {
+	if err := storekernel.ValidateActor(by); err != nil {
 		return nil, "", "", err
 	}
 	title = strings.TrimSpace(in.Title)
@@ -172,17 +172,17 @@ func buildCreateTaskFromInput(in CreateInput, by domain.Actor) (t *domain.Task, 
 	if st == "" {
 		st = domain.StatusReady
 	}
-	if !kernel.ValidClientWritableStatus(st) {
+	if !storekernel.ValidClientWritableStatus(st) {
 		return nil, "", "", fmt.Errorf("%w: status", domain.ErrInvalidInput)
 	}
 	pr := in.Priority
 	if pr == "" {
 		return nil, "", "", fmt.Errorf("%w: priority required", domain.ErrInvalidInput)
 	}
-	if !kernel.ValidPriority(pr) {
+	if !storekernel.ValidPriority(pr) {
 		return nil, "", "", fmt.Errorf("%w: priority", domain.ErrInvalidInput)
 	}
-	id := kernel.ResolveID(in.ID)
+	id := storekernel.ResolveID(in.ID)
 	projectID := in.ProjectID
 	if projectID != nil {
 		p := strings.TrimSpace(*projectID)
@@ -252,7 +252,7 @@ func createTaskInTx(tx *gorm.DB, t *domain.Task, in CreateInput, by domain.Actor
 	}
 	t.ProjectContextItemIDs = contextIDs
 	if err := tx.Create(model.FromDomainTaskPtr(t)).Error; err != nil {
-		if kernel.IsDuplicatePrimaryKey(err, "tasks") {
+		if storekernel.IsDuplicatePrimaryKey(err, "tasks") {
 			return fmt.Errorf("%w: task id already exists", domain.ErrConflict)
 		}
 		return fmt.Errorf("insert task: %w", err)
@@ -267,16 +267,16 @@ func createTaskInTx(tx *gorm.DB, t *domain.Task, in CreateInput, by domain.Actor
 	if err := composestore.DeleteDraftByIDInTx(tx, in.DraftID); err != nil {
 		return err
 	}
-	if err := kernel.AppendEvent(tx, t.ID, seq, domain.EventTaskCreated, by, nil); err != nil {
+	if err := storekernel.AppendEvent(tx, t.ID, seq, domain.EventTaskCreated, by, nil); err != nil {
 		return err
 	}
 	if len(in.ChecklistItems) > 0 {
-		if err := checklist.SeedDefinitionItemsAtCreateInTx(tx, t.ID, in.ChecklistItems, by); err != nil {
+		if err := checkliststore.SeedDefinitionItemsAtCreateInTx(tx, t.ID, in.ChecklistItems, by); err != nil {
 			return err
 		}
 	}
 	if st == domain.StatusDone {
-		if err := checklist.ValidateCanMarkDoneInTx(tx, t.ID); err != nil {
+		if err := checkliststore.ValidateCanMarkDoneInTx(tx, t.ID); err != nil {
 			return err
 		}
 	}

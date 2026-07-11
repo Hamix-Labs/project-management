@@ -12,8 +12,8 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/settings/store/model"
+	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/kernel"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -30,7 +30,7 @@ type Patch = contract.SettingsPatch
 // constraint on id=1: a parallel Get from another goroutine that wins
 // the insert race will simply re-read the row the loser created.
 func Get(ctx context.Context, db *gorm.DB) (domain.AppSettings, error) {
-	defer kernel.DeferLatency(kernel.OpGetAppSettings)()
+	defer storekernel.DeferLatency(storekernel.OpGetAppSettings)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "settings.store.settings.Get")
 	if db == nil {
 		return domain.AppSettings{}, errors.New("settings store: nil database")
@@ -73,7 +73,7 @@ func Get(ctx context.Context, db *gorm.DB) (domain.AppSettings, error) {
 // domain.DefaultAppSettings before the patch is overlaid, so the first
 // PATCH against a fresh DB is well-defined.
 func Update(ctx context.Context, db *gorm.DB, patch Patch) (domain.AppSettings, error) {
-	defer kernel.DeferLatency(kernel.OpUpdateAppSettings)()
+	defer storekernel.DeferLatency(storekernel.OpUpdateAppSettings)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "settings.store.settings.Update")
 	if db == nil {
 		return domain.AppSettings{}, errors.New("settings store: nil database")

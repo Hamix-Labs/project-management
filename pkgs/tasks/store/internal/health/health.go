@@ -13,14 +13,14 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/kernel"
+	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
 	"gorm.io/gorm"
 )
 
 // Ping checks that the database session is reachable (sql.DB.PingContext).
 // Used by liveness checks and as the first hop of Ready.
 func Ping(ctx context.Context, db *gorm.DB) error {
-	defer kernel.DeferLatency(kernel.OpPing)()
+	defer storekernel.DeferLatency(storekernel.OpPing)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.health.Ping")
 	if db == nil {
 		return errors.New("tasks store: nil database")
@@ -36,7 +36,7 @@ func Ping(ctx context.Context, db *gorm.DB) error {
 // query path (driver hang, broken transaction) is caught before traffic
 // reaches the full read/write code paths.
 func Ready(ctx context.Context, db *gorm.DB) error {
-	defer kernel.DeferLatency(kernel.OpReady)()
+	defer storekernel.DeferLatency(storekernel.OpReady)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.health.Ready")
 	if db == nil {
 		return errors.New("tasks store: nil database")

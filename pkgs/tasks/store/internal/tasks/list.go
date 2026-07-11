@@ -8,8 +8,8 @@ import (
 	"log/slog"
 	"strings"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/kernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"gorm.io/gorm"
 )
@@ -18,7 +18,7 @@ import (
 // first), then id descending. limit is clamped to [1, 200] (default 50)
 // and offset to [0, +inf).
 func ListFlat(ctx context.Context, db *gorm.DB, limit, offset int, filter *ListFilter) ([]domain.Task, error) {
-	defer kernel.DeferLatency(kernel.OpListFlat)()
+	defer storekernel.DeferLatency(storekernel.OpListFlat)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.tasks.ListFlat")
 	if limit <= 0 {
 		limit = 50
@@ -53,7 +53,7 @@ func ListFlat(ctx context.Context, db *gorm.DB, limit, offset int, filter *ListF
 // than the task identified by afterID in the list sort order (created_at
 // desc, id desc).
 func ListFlatAfter(ctx context.Context, db *gorm.DB, limit int, afterID string) ([]domain.Task, bool, error) {
-	defer kernel.DeferLatency(kernel.OpListFlatAfter)()
+	defer storekernel.DeferLatency(storekernel.OpListFlatAfter)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.tasks.ListFlatAfter")
 	afterID = strings.TrimSpace(afterID)
 	if afterID == "" {

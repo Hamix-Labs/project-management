@@ -14,8 +14,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/kernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"gorm.io/gorm"
 )
@@ -44,7 +44,7 @@ type QueueCandidate struct {
 // then task id. Pagination is keyset; pass the cursor from the last
 // row of the previous page.
 func ListQueueCandidates(ctx context.Context, db *gorm.DB, limit int, cursor *QueueCursor) ([]QueueCandidate, error) {
-	defer kernel.DeferLatency(kernel.OpListReadyQueue)()
+	defer storekernel.DeferLatency(storekernel.OpListReadyQueue)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ready.ListQueueCandidates")
 	if limit <= 0 {
 		limit = 200
@@ -111,7 +111,7 @@ func ListQueueCandidates(ctx context.Context, db *gorm.DB, limit int, cursor *Qu
 // policy). Results are ordered by id ascending. afterID, when non-empty
 // after trim, restricts to tasks.id > afterID for pagination.
 func ListUserCreated(ctx context.Context, db *gorm.DB, limit int, afterID string) ([]domain.Task, error) {
-	defer kernel.DeferLatency(kernel.OpListReadyUserCreated)()
+	defer storekernel.DeferLatency(storekernel.OpListReadyUserCreated)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ready.ListUserCreated")
 	if limit <= 0 {
 		limit = 200

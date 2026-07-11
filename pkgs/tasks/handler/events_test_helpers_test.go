@@ -9,6 +9,8 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
+const maxTaskEventSeqParamBytes = 32
+
 // appendApprovalRequestedEvent appends approval_requested and returns its seq.
 // Use after POST /tasks with checklist_items so event numbering stays stable.
 func appendApprovalRequestedEvent(t *testing.T, st *store.Store, ctx context.Context, taskID string) int64 {

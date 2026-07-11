@@ -10,7 +10,10 @@ import (
 	gitinventorystore "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store"
 	projectsstore "github.com/AlexsanderHamir/Hamix/pkgs/projects/store"
 	settingsstore "github.com/AlexsanderHamir/Hamix/pkgs/settings/store"
+	checkliststore "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/store"
 	composestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/store"
+	cyclesstore "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store"
+	taskeventsstore "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/notify"
 	"gorm.io/gorm"
@@ -22,12 +25,15 @@ import (
 // internal/<domain>/ subpackages; the methods on *Store delegate. See
 // pkgs/tasks/store/README.md for the concern map.
 type Store struct {
-	db       *gorm.DB
-	projects *projectsstore.Store
-	git      *gitinventorystore.Store
-	settings *settingsstore.Store
-	compose  *composestore.Store
-	notify   notify.Holder
+	db        *gorm.DB
+	projects  *projectsstore.Store
+	git       *gitinventorystore.Store
+	settings  *settingsstore.Store
+	compose   *composestore.Store
+	checklist *checkliststore.Store
+	cycles    *cyclesstore.Store
+	events    *taskeventsstore.Store
+	notify    notify.Holder
 
 	pickupWakeMu sync.RWMutex
 	pickupWake   PickupWake
@@ -37,7 +43,7 @@ type Store struct {
 // ready-task notifications via SetReadyTaskNotifier after construction.
 func NewStore(db *gorm.DB) *Store {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.NewStore")
-	return &Store{db: db, projects: projectsstore.NewStore(db), git: gitinventorystore.NewStore(db), settings: settingsstore.NewStore(db), compose: composestore.NewStore(db)}
+	return &Store{db: db, projects: projectsstore.NewStore(db), git: gitinventorystore.NewStore(db), settings: settingsstore.NewStore(db), compose: composestore.NewStore(db), checklist: checkliststore.NewStore(db), cycles: cyclesstore.NewStore(db), events: taskeventsstore.NewStore(db)}
 }
 
 // ReadyTaskNotifier is invoked by the store after a task row is committed with status ready

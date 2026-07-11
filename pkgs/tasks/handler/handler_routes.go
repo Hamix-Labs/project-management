@@ -8,8 +8,12 @@ import (
 	gitinventoryhandler "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/handler"
 	projecthandler "github.com/AlexsanderHamir/Hamix/pkgs/projects/handler"
 	repohandler "github.com/AlexsanderHamir/Hamix/pkgs/repo/handler"
+	runnershandler "github.com/AlexsanderHamir/Hamix/pkgs/runners/handler"
 	settingshandler "github.com/AlexsanderHamir/Hamix/pkgs/settings/handler"
+	checklisthandler "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/handler"
 	composehandler "github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/handler"
+	taskcycleshandler "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/handler"
+	eventhandler "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/handler"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 )
@@ -60,9 +64,34 @@ func (h *Handler) registerRoutes(m *http.ServeMux) {
 			}, by)
 		},
 	})
+	checklisthandler.Register(m, checklisthandler.Deps{
+		Checklist: h.store,
+		NotifyTaskUpdated: func(ctx context.Context, taskID string) error {
+			return h.notifyTaskUpdatedEnriched(ctx, taskID)
+		},
+	})
+	eventhandler.Register(m, eventhandler.Deps{
+		Events: h.store,
+		Tasks:  h.store,
+		NotifyTaskEventChanged: func(taskID string, eventSeq int64) {
+			h.notifyTaskEventChanged(taskID, eventSeq)
+		},
+	})
+	taskcycleshandler.Register(m, taskcycleshandler.Deps{
+		Cycles:        h.store,
+		Tasks:         h.store,
+		CycleFailures: h.store,
+		NotifyCycleChanged: func(ctx context.Context, taskID, cycleID string, data any) {
+			if data != nil {
+				h.notifyCycleChanged(taskID, cycleID, data)
+				return
+			}
+			h.notifyCycleChange(taskID, cycleID)
+		},
+	})
 	h.registerTaskRoutes(m)
 	repohandler.Register(m, repohandler.Deps{Provider: h.repoProv})
-	h.registerRunnerRoutes(m)
+	runnershandler.Register(m, runnershandler.Deps{Settings: h.store})
 	h.registerMiscRoutes(m)
 }
 
@@ -80,23 +109,6 @@ func (h *Handler) registerTaskRoutes(m *http.ServeMux) {
 	m.Handle("POST /tasks", http.HandlerFunc(h.create))
 	m.Handle("GET /tasks", http.HandlerFunc(h.list))
 	m.Handle("GET /tasks/stats", http.HandlerFunc(h.stats))
-	m.Handle("GET /tasks/cycle-failures", http.HandlerFunc(h.cycleFailures))
-	m.Handle("GET /tasks/{id}/checklist", http.HandlerFunc(h.getChecklist))
-	m.Handle("POST /tasks/{id}/checklist/items", http.HandlerFunc(h.postChecklistItem))
-	m.Handle("PATCH /tasks/{id}/checklist/items/{itemId}", http.HandlerFunc(h.patchChecklistItem))
-	m.Handle("DELETE /tasks/{id}/checklist/items/{itemId}", http.HandlerFunc(h.deleteChecklistItem))
-	m.Handle("GET /tasks/{id}/events/{seq}", http.HandlerFunc(h.taskEvent))
-	m.Handle("PATCH /tasks/{id}/events/{seq}", http.HandlerFunc(h.patchTaskEventUserResponse))
-	m.Handle("GET /tasks/{id}/events", http.HandlerFunc(h.taskEvents))
-	m.Handle("POST /tasks/{id}/cycles", http.HandlerFunc(h.postTaskCycle))
-	m.Handle("GET /tasks/{id}/cycles", http.HandlerFunc(h.getTaskCycles))
-	m.Handle("GET /tasks/{id}/cycles/{cycleId}/stream", http.HandlerFunc(h.getTaskCycleStream))
-	m.Handle("GET /tasks/{id}/commits", http.HandlerFunc(h.getTaskCommits))
-	m.Handle("GET /tasks/{id}/cycles/{cycleId}/verdicts", http.HandlerFunc(h.getTaskCycleVerdicts))
-	m.Handle("GET /tasks/{id}/cycles/{cycleId}", http.HandlerFunc(h.getTaskCycle))
-	m.Handle("PATCH /tasks/{id}/cycles/{cycleId}", http.HandlerFunc(h.patchTaskCycle))
-	m.Handle("POST /tasks/{id}/cycles/{cycleId}/phases", http.HandlerFunc(h.postTaskCyclePhase))
-	m.Handle("PATCH /tasks/{id}/cycles/{cycleId}/phases/{phaseSeq}", http.HandlerFunc(h.patchTaskCyclePhase))
 	m.Handle("GET /tasks/{id}/dependencies", http.HandlerFunc(h.listTaskDependencies))
 	m.Handle("POST /tasks/{id}/dependencies", http.HandlerFunc(h.addTaskDependency))
 	m.Handle("DELETE /tasks/{id}/dependencies/{depId}", http.HandlerFunc(h.removeTaskDependency))
@@ -105,15 +117,6 @@ func (h *Handler) registerTaskRoutes(m *http.ServeMux) {
 	m.Handle("GET /tasks/{id}", http.HandlerFunc(h.get))
 	m.Handle("PATCH /tasks/{id}", http.HandlerFunc(h.patch))
 	m.Handle("DELETE /tasks/{id}", http.HandlerFunc(h.delete))
-}
-
-//funclogmeasure:skip category=hot-path reason="Route table wiring only; operation trace is emitted by registered handlers."
-func (h *Handler) registerRunnerRoutes(m *http.ServeMux) {
-	m.Handle("GET /runners", http.HandlerFunc(h.listRunners))
-	m.Handle("GET /runners/{id}/config-schema", http.HandlerFunc(h.runnerConfigSchema))
-	m.Handle("POST /runners/{id}/probe", http.HandlerFunc(h.probeRunner))
-	m.Handle("POST /runners/{id}/list-models", http.HandlerFunc(h.listRunnerModels))
-	m.Handle("POST /runners/{id}/validate-config", http.HandlerFunc(h.validateRunnerConfig))
 }
 
 //funclogmeasure:skip category=hot-path reason="Route table wiring only; operation trace is emitted by registered handlers."

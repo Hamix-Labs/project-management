@@ -5,121 +5,95 @@ import (
 	"context"
 	"log/slog"
 
+	cyclescontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/contract"
+	cyclesstore "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/cycles"
 )
 
-// StartCycleInput is the public re-export of the cycles subpackage
-// input struct. The alias keeps every existing call-site unchanged
-// while the implementation lives in internal/cycles.
-type StartCycleInput = cycles.StartCycleInput
+type (
+	// StartCycleInput is the public re-export of the cycles subpackage input struct.
+	StartCycleInput = cyclescontract.StartCycleInput
+	// CompletePhaseInput is the public re-export of the phase completion input struct.
+	CompletePhaseInput = cyclescontract.CompletePhaseInput
+	// AppendCycleStreamEventInput is the durable per-attempt stream event input.
+	AppendCycleStreamEventInput = cyclesstore.AppendCycleStreamEventInput
+)
 
-// CompletePhaseInput is the public re-export of the phase completion
-// input struct. The alias keeps every existing call-site unchanged
-// while the implementation lives in internal/cycles.
-type CompletePhaseInput = cycles.CompletePhaseInput
-
-// AppendCycleStreamEventInput is the public re-export of the durable
-// per-attempt stream event input.
-type AppendCycleStreamEventInput = cycles.AppendStreamEventInput
-
-// StartCycle creates a new TaskCycle row with status=running for the
-// given task. See cycles.Start for the full contract.
+// StartCycle creates a new TaskCycle row with status=running for the given task.
 func (s *Store) StartCycle(ctx context.Context, in StartCycleInput) (*domain.TaskCycle, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.StartCycle")
-	return cycles.Start(ctx, s.db, in)
+	return s.cycles.StartCycle(ctx, in)
 }
 
-// TerminateCycle moves a running cycle into a terminal state. See
-// cycles.Terminate for the full contract.
+// TerminateCycle moves a running cycle into a terminal state.
 func (s *Store) TerminateCycle(ctx context.Context, cycleID string, status domain.CycleStatus, reason string, by domain.Actor) (*domain.TaskCycle, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.TerminateCycle")
-	return cycles.Terminate(ctx, s.db, cycleID, status, reason, by)
+	return s.cycles.TerminateCycle(ctx, cycleID, status, reason, by)
 }
 
 // GetCycle returns one cycle by id; ErrNotFound when missing.
 func (s *Store) GetCycle(ctx context.Context, cycleID string) (*domain.TaskCycle, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.GetCycle")
-	return cycles.Get(ctx, s.db, cycleID)
+	return s.cycles.GetCycle(ctx, cycleID)
 }
 
-// ListCyclesForTask returns cycles for a task ordered by attempt_seq
-// DESC (newest first); limit is clamped to [1, 200].
+// ListCyclesForTask returns cycles for a task ordered by attempt_seq DESC (newest first).
 func (s *Store) ListCyclesForTask(ctx context.Context, taskID string, limit int) ([]domain.TaskCycle, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ListCyclesForTask")
-	return cycles.ListForTask(ctx, s.db, taskID, limit)
+	return s.cycles.ListCyclesForTask(ctx, taskID, limit)
 }
 
-// ListCyclesForTaskBefore is the keyset-paginated form of
-// ListCyclesForTask. When beforeAttemptSeq > 0 the page is restricted to
-// cycles whose attempt_seq is strictly less than beforeAttemptSeq (next
-// page of older cycles past a cursor the caller already saw); a
-// non-positive value behaves identically to ListCyclesForTask. Ordering
-// (attempt_seq DESC, newest first), limit clamping ([1, 200]), and the
-// not-found mapping match ListCyclesForTask exactly so the two callers
-// share the same kernel.OpListCyclesForTask Prometheus label and the
-// same error envelope on the wire.
+// ListCyclesForTaskBefore is the keyset-paginated form of ListCyclesForTask.
 func (s *Store) ListCyclesForTaskBefore(ctx context.Context, taskID string, beforeAttemptSeq int64, limit int) ([]domain.TaskCycle, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ListCyclesForTaskBefore")
-	return cycles.ListForTaskBefore(ctx, s.db, taskID, beforeAttemptSeq, limit)
+	return s.cycles.ListCyclesForTaskBefore(ctx, taskID, beforeAttemptSeq, limit)
 }
 
-// StartPhase appends a new phase row to a running cycle. See
-// cycles.StartPhase for the full state-machine and dual-write
-// contract.
+// StartPhase appends a new phase row to a running cycle.
 func (s *Store) StartPhase(ctx context.Context, cycleID string, phase domain.Phase, by domain.Actor) (*domain.TaskCyclePhase, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.StartPhase")
-	return cycles.StartPhase(ctx, s.db, cycleID, phase, by)
+	return s.cycles.StartPhase(ctx, cycleID, phase, by)
 }
 
-// CompletePhase moves a running phase to a terminal status. See
-// cycles.CompletePhase for the full contract.
+// CompletePhase moves a running phase to a terminal status.
 func (s *Store) CompletePhase(ctx context.Context, in CompletePhaseInput) (*domain.TaskCyclePhase, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.CompletePhase")
-	return cycles.CompletePhase(ctx, s.db, in)
+	return s.cycles.CompletePhase(ctx, in)
 }
 
-// ListPhasesForCycle returns phases for cycleID in execution order
-// (phase_seq ASC).
+// ListPhasesForCycle returns phases for cycleID in execution order (phase_seq ASC).
 func (s *Store) ListPhasesForCycle(ctx context.Context, cycleID string) ([]domain.TaskCyclePhase, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ListPhasesForCycle")
-	return cycles.ListPhasesForCycle(ctx, s.db, cycleID)
+	return s.cycles.ListPhasesForCycle(ctx, cycleID)
 }
 
-// LastSessionID returns the Cursor session_id from the latest completed
-// phase row of the given type within cycleID.
+// LastSessionID returns the Cursor session_id from the latest completed phase row.
 func (s *Store) LastSessionID(ctx context.Context, cycleID string, phase domain.Phase) (string, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.LastSessionID",
 		"cycle_id", cycleID, "phase", string(phase))
-	return cycles.LastSessionID(ctx, s.db, cycleID, phase)
+	return s.cycles.LastSessionID(ctx, cycleID, phase)
 }
 
 // AppendCycleStreamEvent persists one normalized runner progress event for a cycle.
 func (s *Store) AppendCycleStreamEvent(ctx context.Context, in AppendCycleStreamEventInput) (*domain.TaskCycleStreamEvent, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.AppendCycleStreamEvent")
-	return cycles.AppendStreamEvent(ctx, s.db, in)
+	return s.cycles.AppendCycleStreamEvent(ctx, in)
 }
 
 // ListCycleStreamEvents returns persisted stream events for cycleID ordered by stream_seq ASC.
 func (s *Store) ListCycleStreamEvents(ctx context.Context, cycleID string, afterSeq int64, limit int) ([]domain.TaskCycleStreamEvent, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ListCycleStreamEvents")
-	return cycles.ListStreamEvents(ctx, s.db, cycleID, afterSeq, limit)
+	return s.cycles.ListCycleStreamEvents(ctx, cycleID, afterSeq, limit)
 }
 
-// ListRunningCycles returns every cycle currently in CycleStatusRunning
-// across all tasks (no per-task filter, no limit). Used by the agent
-// worker's startup orphan sweep — the worker calls it once at boot to
-// find cycles left dangling by a previous crash. Read-only.
+// ListRunningCycles returns every cycle currently in CycleStatusRunning across all tasks.
 func (s *Store) ListRunningCycles(ctx context.Context) ([]domain.TaskCycle, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ListRunningCycles")
-	return cycles.ListRunning(ctx, s.db)
+	return s.cycles.ListRunningCycles(ctx)
 }
 
-// ListRunningCyclePhases returns every phase row currently in
-// PhaseStatusRunning across all cycles (no filter, no limit). Used by
-// the startup orphan sweep so phase rows whose parent cycle already
-// terminated are not stranded mid-state. Read-only.
+// ListRunningCyclePhases returns every phase row currently in PhaseStatusRunning.
 func (s *Store) ListRunningCyclePhases(ctx context.Context) ([]domain.TaskCyclePhase, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ListRunningCyclePhases")
-	return cycles.ListRunningPhases(ctx, s.db)
+	return s.cycles.ListRunningCyclePhases(ctx)
 }

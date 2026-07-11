@@ -12,9 +12,9 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
+	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/kernel"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -81,7 +81,7 @@ func (s *Store) ResolveOrCreateBranchForRepo(
 	}
 	branchRow := model.FromDomainGitBranch(row)
 	if err := s.db.WithContext(ctx).Create(&branchRow).Error; err != nil {
-		if kernel.IsDuplicateKey(err) {
+		if storekernel.IsDuplicateKey(err) {
 			var dup model.GitBranch
 			if findErr := s.db.WithContext(ctx).
 				Where("repository_id = ? AND name = ?", repo.ID, name).

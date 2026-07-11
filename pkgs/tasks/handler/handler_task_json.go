@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
 	"log/slog"
 	"time"
 
@@ -191,16 +190,6 @@ type taskStatsFailureJSON struct {
 	Reason     string    `json:"reason"`
 }
 
-// cycleFailuresResponse is GET /tasks/cycle-failures (paginated list).
-type cycleFailuresResponse struct {
-	Total               int64                  `json:"total"`
-	Limit               int                    `json:"limit"`
-	Offset              int                    `json:"offset"`
-	Sort                string                 `json:"sort"`
-	ReasonSortTruncated bool                   `json:"reason_sort_truncated"`
-	Failures            []taskStatsFailureJSON `json:"failures"`
-}
-
 // taskStatsResponseFromStore projects the store-level TaskStats onto
 // the wire envelope. The store guarantees every map is non-nil and
 // RecentFailures is a non-nil slice; this projector preserves both
@@ -281,43 +270,4 @@ func bucketJSONFromStore(b store.RunnerBucket) taskStatsRunnerBucketJSON {
 		DurationP50SucceededSeconds: b.DurationP50SucceededSeconds,
 		DurationP95SucceededSeconds: b.DurationP95SucceededSeconds,
 	}
-}
-
-type taskEventLine struct {
-	Seq            int64                        `json:"seq"`
-	At             time.Time                    `json:"at"`
-	Type           domain.EventType             `json:"type"`
-	By             domain.Actor                 `json:"by"`
-	Data           json.RawMessage              `json:"data"`
-	UserResponse   *string                      `json:"user_response,omitempty"`
-	UserResponseAt *time.Time                   `json:"user_response_at,omitempty"`
-	ResponseThread []domain.ResponseThreadEntry `json:"response_thread,omitempty"`
-}
-
-type taskEventsResponse struct {
-	TaskID          string          `json:"task_id"`
-	Events          []taskEventLine `json:"events"`
-	Limit           *int            `json:"limit,omitempty"`
-	Total           *int64          `json:"total,omitempty"`
-	RangeStart      *int64          `json:"range_start,omitempty"`
-	RangeEnd        *int64          `json:"range_end,omitempty"`
-	HasMoreNewer    bool            `json:"has_more_newer"`
-	HasMoreOlder    bool            `json:"has_more_older"`
-	ApprovalPending bool            `json:"approval_pending"`
-}
-
-type taskEventDetailResponse struct {
-	TaskID         string                       `json:"task_id"`
-	Seq            int64                        `json:"seq"`
-	At             time.Time                    `json:"at"`
-	Type           domain.EventType             `json:"type"`
-	By             domain.Actor                 `json:"by"`
-	Data           json.RawMessage              `json:"data"`
-	UserResponse   *string                      `json:"user_response,omitempty"`
-	UserResponseAt *time.Time                   `json:"user_response_at,omitempty"`
-	ResponseThread []domain.ResponseThreadEntry `json:"response_thread,omitempty"`
-}
-
-type taskEventUserResponseJSON struct {
-	UserResponse string `json:"user_response"`
 }

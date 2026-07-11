@@ -287,6 +287,87 @@ step_taskcompose_boundary() {
   print_ok_line "$label" "$elapsed"
 }
 
+step_taskchecklist_boundary() {
+  local label="taskchecklist boundary"
+  local start=$SECONDS
+  step_prefix
+  printf '%s ' "$label"
+
+  local hits=""
+  if rg -q 'github.com/.*/pkgs/tasks/handler' pkgs/taskchecklist/ -g '*.go' 2>/dev/null; then
+    hits="$(rg -n 'github.com/.*/pkgs/tasks/handler' pkgs/taskchecklist/ -g '*.go' 2>/dev/null || true)"
+  fi
+  if rg -q 'github.com/.*/pkgs/tasks/store/internal' pkgs/taskchecklist/ -g '*.go' 2>/dev/null; then
+    hits+=$'\n'"$(rg -n 'github.com/.*/pkgs/tasks/store/internal' pkgs/taskchecklist/ -g '*.go' 2>/dev/null || true)"
+  fi
+  local elapsed=$((SECONDS - start))
+  add_section_time "$elapsed"
+
+  if [[ -n "$(echo "$hits" | sed '/^$/d')" ]]; then
+    echo "${C_RED}FAILED${C_RESET}"
+    echo "pkgs/taskchecklist must not import pkgs/tasks/handler or pkgs/tasks/store/internal:"
+    echo "$hits" | sed '/^$/d'
+    fail_step "$label" 1
+  fi
+
+  PASSED=$((PASSED + 1))
+  print_ok_line "$label" "$elapsed"
+}
+
+step_taskevents_boundary() {
+  local label="taskevents boundary"
+  local start=$SECONDS
+  step_prefix
+  printf '%s ' "$label"
+
+  local hits=""
+  if rg -q 'github.com/.*/pkgs/tasks/handler' pkgs/taskevents/ -g '*.go' 2>/dev/null; then
+    hits="$(rg -n 'github.com/.*/pkgs/tasks/handler' pkgs/taskevents/ -g '*.go' 2>/dev/null || true)"
+  fi
+  if rg -q 'github.com/.*/pkgs/tasks/store/internal' pkgs/taskevents/ -g '*.go' 2>/dev/null; then
+    hits+=$'\n'"$(rg -n 'github.com/.*/pkgs/tasks/store/internal' pkgs/taskevents/ -g '*.go' 2>/dev/null || true)"
+  fi
+  local elapsed=$((SECONDS - start))
+  add_section_time "$elapsed"
+
+  if [[ -n "$(echo "$hits" | sed '/^$/d')" ]]; then
+    echo "${C_RED}FAILED${C_RESET}"
+    echo "pkgs/taskevents must not import pkgs/tasks/handler or pkgs/tasks/store/internal:"
+    echo "$hits" | sed '/^$/d'
+    fail_step "$label" 1
+  fi
+
+  PASSED=$((PASSED + 1))
+  print_ok_line "$label" "$elapsed"
+}
+
+step_taskcycles_boundary() {
+  local label="taskcycles boundary"
+  local start=$SECONDS
+  step_prefix
+  printf '%s ' "$label"
+
+  local hits=""
+  if rg -q 'github.com/.*/pkgs/tasks/handler' pkgs/taskcycles/ -g '*.go' 2>/dev/null; then
+    hits="$(rg -n 'github.com/.*/pkgs/tasks/handler' pkgs/taskcycles/ -g '*.go' 2>/dev/null || true)"
+  fi
+  if rg -q 'github.com/.*/pkgs/tasks/store/internal' pkgs/taskcycles/ -g '*.go' 2>/dev/null; then
+    hits+=$'\n'"$(rg -n 'github.com/.*/pkgs/tasks/store/internal' pkgs/taskcycles/ -g '*.go' 2>/dev/null || true)"
+  fi
+  local elapsed=$((SECONDS - start))
+  add_section_time "$elapsed"
+
+  if [[ -n "$(echo "$hits" | sed '/^$/d')" ]]; then
+    echo "${C_RED}FAILED${C_RESET}"
+    echo "pkgs/taskcycles must not import pkgs/tasks/handler or pkgs/tasks/store/internal:"
+    echo "$hits" | sed '/^$/d'
+    fail_step "$label" 1
+  fi
+
+  PASSED=$((PASSED + 1))
+  print_ok_line "$label" "$elapsed"
+}
+
 step_repo_handler_boundary() {
   local label="repo handler boundary"
   local start=$SECONDS
@@ -303,6 +384,57 @@ step_repo_handler_boundary() {
   if [[ -n "$(echo "$hits" | sed '/^$/d')" ]]; then
     echo "${C_RED}FAILED${C_RESET}"
     echo "pkgs/repo/handler must not import pkgs/tasks/handler:"
+    echo "$hits" | sed '/^$/d'
+    fail_step "$label" 1
+  fi
+
+  PASSED=$((PASSED + 1))
+  print_ok_line "$label" "$elapsed"
+}
+
+step_runners_handler_boundary() {
+  local label="runners handler boundary"
+  local start=$SECONDS
+  step_prefix
+  printf '%s ' "$label"
+
+  local hits=""
+  if rg -q 'github.com/.*/pkgs/tasks/handler' pkgs/runners/handler/ -g '*.go' 2>/dev/null; then
+    hits="$(rg -n 'github.com/.*/pkgs/tasks/handler' pkgs/runners/handler/ -g '*.go' 2>/dev/null || true)"
+  fi
+  local elapsed=$((SECONDS - start))
+  add_section_time "$elapsed"
+
+  if [[ -n "$(echo "$hits" | sed '/^$/d')" ]]; then
+    echo "${C_RED}FAILED${C_RESET}"
+    echo "pkgs/runners/handler must not import pkgs/tasks/handler:"
+    echo "$hits" | sed '/^$/d'
+    fail_step "$label" 1
+  fi
+
+  PASSED=$((PASSED + 1))
+  print_ok_line "$label" "$elapsed"
+}
+
+step_storekernel_boundary() {
+  local label="storekernel boundary"
+  local start=$SECONDS
+  step_prefix
+  printf '%s ' "$label"
+
+  local hits=""
+  if rg -q 'github.com/.*/pkgs/tasks/handler' pkgs/storekernel/ -g '*.go' 2>/dev/null; then
+    hits="$(rg -n 'github.com/.*/pkgs/tasks/handler' pkgs/storekernel/ -g '*.go' 2>/dev/null || true)"
+  fi
+  if rg -q 'github.com/.*/pkgs/tasks/store/internal' pkgs/storekernel/ -g '*.go' 2>/dev/null; then
+    hits+=$'\n'"$(rg -n 'github.com/.*/pkgs/tasks/store/internal' pkgs/storekernel/ -g '*.go' 2>/dev/null || true)"
+  fi
+  local elapsed=$((SECONDS - start))
+  add_section_time "$elapsed"
+
+  if [[ -n "$(echo "$hits" | sed '/^$/d')" ]]; then
+    echo "${C_RED}FAILED${C_RESET}"
+    echo "pkgs/storekernel must not import pkgs/tasks/handler or pkgs/tasks/store/internal:"
     echo "$hits" | sed '/^$/d'
     fail_step "$label" 1
   fi
@@ -449,7 +581,12 @@ step_projects_boundary
 step_gitinventory_boundary
 step_settings_boundary
 step_taskcompose_boundary
+step_taskchecklist_boundary
+step_taskevents_boundary
+step_taskcycles_boundary
 step_repo_handler_boundary
+step_runners_handler_boundary
+step_storekernel_boundary
 
 if [[ "$LINT_ONLY" -eq 1 ]]; then
   step_test_group_coverage

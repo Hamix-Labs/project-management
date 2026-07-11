@@ -8,8 +8,8 @@ import (
 	"log/slog"
 	"strings"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/kernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -25,9 +25,9 @@ type AgentPickupResult struct {
 // AgentPickup locks the task, requires status=ready, flips to running, clears
 // pending_retry, and returns a copy of the consumed intent (if any).
 func AgentPickup(ctx context.Context, db *gorm.DB, taskID string, by domain.Actor) (*AgentPickupResult, error) {
-	defer kernel.DeferLatency(kernel.OpUpdateTask)()
+	defer storekernel.DeferLatency(storekernel.OpUpdateTask)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.tasks.AgentPickup", "task_id", taskID)
-	if err := kernel.ValidateActor(by); err != nil {
+	if err := storekernel.ValidateActor(by); err != nil {
 		return nil, err
 	}
 	taskID = strings.TrimSpace(taskID)
@@ -50,7 +50,7 @@ func AgentPickup(ctx context.Context, db *gorm.DB, taskID string, by domain.Acto
 		out.ConsumedRetry = dcur.PendingRetry.Clone()
 		dcur.PendingRetry = nil
 		running := domain.StatusRunning
-		nextSeq, err := kernel.NextEventSeq(tx, taskID)
+		nextSeq, err := storekernel.NextEventSeq(tx, taskID)
 		if err != nil {
 			return err
 		}

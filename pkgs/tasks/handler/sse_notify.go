@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"context"
 	"log/slog"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
@@ -53,22 +52,4 @@ func (h *Handler) notifyScopelessChange(typ TaskChangeType) {
 		return
 	}
 	h.hub.Publish(TaskChangeEvent{Type: typ})
-}
-
-func (h *Handler) notifyCycleChangedFromStore(ctx context.Context, taskID, cycleID string) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.notifyCycleChangedFromStore", "task_id", taskID, "cycle_id", cycleID)
-	if h.hub == nil || taskID == "" || cycleID == "" {
-		return
-	}
-	cycle, err := h.store.GetCycle(ctx, cycleID)
-	if err != nil {
-		h.notifyCycleChange(taskID, cycleID)
-		return
-	}
-	phases, err := h.store.ListPhasesForCycle(ctx, cycleID)
-	if err != nil {
-		h.notifyCycleChange(taskID, cycleID)
-		return
-	}
-	h.notifyCycleChanged(taskID, cycleID, taskCycleDetailFromDomain(cycle, phases))
 }

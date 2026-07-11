@@ -11,9 +11,9 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/kernel"
 	"gorm.io/gorm"
 )
 
@@ -49,7 +49,7 @@ var allPhases = []domain.Phase{
 // on a fresh database) so the HTTP wire shape stays stable — pinned by
 // handler_http_list_stats_contract_test.go.
 func Get(ctx context.Context, db *gorm.DB) (TaskStats, error) {
-	defer kernel.DeferLatency(kernel.OpTaskStats)()
+	defer storekernel.DeferLatency(storekernel.OpTaskStats)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.stats.Get")
 	r, err := scanTotals(ctx, db, time.Now().UTC())
 	if err != nil {

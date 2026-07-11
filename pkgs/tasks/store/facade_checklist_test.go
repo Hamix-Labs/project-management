@@ -7,7 +7,6 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/checklist"
 )
 
 func TestStore_CreateWithChecklistItems_consecutiveEventSeqs(t *testing.T) {
@@ -16,7 +15,7 @@ func TestStore_CreateWithChecklistItems_consecutiveEventSeqs(t *testing.T) {
 	tsk, err := s.Create(ctx, CreateTaskInput{
 		Title:    "seeded checklist",
 		Priority: domain.PriorityMedium,
-		ChecklistItems: []checklist.CreateChecklistItemInput{
+		ChecklistItems: []CreateChecklistItemInput{
 			{Text: "one"},
 			{Text: "two"},
 			{Text: "three"},

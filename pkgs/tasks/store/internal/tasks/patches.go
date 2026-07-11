@@ -8,9 +8,9 @@ import (
 
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
+	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
+	checkliststore "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/store"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/kernel"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/checklist"
 	"gorm.io/gorm"
 )
 
@@ -179,11 +179,11 @@ func applyTitlePatch(tx *gorm.DB, taskID string, cur *domain.Task, title *string
 	if v == cur.Title {
 		return nil
 	}
-	b, err := kernel.EventPairJSON(cur.Title, v)
+	b, err := storekernel.EventPairJSON(cur.Title, v)
 	if err != nil {
 		return err
 	}
-	if err := kernel.AppendEvent(tx, taskID, *seq, domain.EventMessageAdded, by, b); err != nil {
+	if err := storekernel.AppendEvent(tx, taskID, *seq, domain.EventMessageAdded, by, b); err != nil {
 		return err
 	}
 	*seq++
@@ -199,11 +199,11 @@ func applyInitialPromptPatch(tx *gorm.DB, taskID string, cur *domain.Task, promp
 	if *prompt == cur.InitialPrompt {
 		return nil
 	}
-	b, err := kernel.EventPairJSON(cur.InitialPrompt, *prompt)
+	b, err := storekernel.EventPairJSON(cur.InitialPrompt, *prompt)
 	if err != nil {
 		return err
 	}
-	if err := kernel.AppendEvent(tx, taskID, *seq, domain.EventPromptAppended, by, b); err != nil {
+	if err := storekernel.AppendEvent(tx, taskID, *seq, domain.EventPromptAppended, by, b); err != nil {
 		return err
 	}
 	*seq++
@@ -216,17 +216,17 @@ func applyPriorityPatch(tx *gorm.DB, taskID string, cur *domain.Task, pr *domain
 	if pr == nil {
 		return nil
 	}
-	if !kernel.ValidPriority(*pr) {
+	if !storekernel.ValidPriority(*pr) {
 		return fmt.Errorf("%w: priority", domain.ErrInvalidInput)
 	}
 	if *pr == cur.Priority {
 		return nil
 	}
-	b, err := kernel.EventPairJSON(string(cur.Priority), string(*pr))
+	b, err := storekernel.EventPairJSON(string(cur.Priority), string(*pr))
 	if err != nil {
 		return err
 	}
-	if err := kernel.AppendEvent(tx, taskID, *seq, domain.EventPriorityChanged, by, b); err != nil {
+	if err := storekernel.AppendEvent(tx, taskID, *seq, domain.EventPriorityChanged, by, b); err != nil {
 		return err
 	}
 	*seq++
@@ -239,22 +239,22 @@ func applyStatusPatch(tx *gorm.DB, taskID string, cur *domain.Task, st *domain.S
 	if st == nil {
 		return nil
 	}
-	if !kernel.ValidStatus(*st) {
+	if !storekernel.ValidStatus(*st) {
 		return fmt.Errorf("%w: status", domain.ErrInvalidInput)
 	}
 	if *st == cur.Status {
 		return nil
 	}
 	if *st == domain.StatusDone {
-		if err := checklist.ValidateCanMarkDoneInTx(tx, taskID); err != nil {
+		if err := checkliststore.ValidateCanMarkDoneInTx(tx, taskID); err != nil {
 			return err
 		}
 	}
-	b, err := kernel.EventPairJSON(string(cur.Status), string(*st))
+	b, err := storekernel.EventPairJSON(string(cur.Status), string(*st))
 	if err != nil {
 		return err
 	}
-	if err := kernel.AppendEvent(tx, taskID, *seq, domain.EventStatusChanged, by, b); err != nil {
+	if err := storekernel.AppendEvent(tx, taskID, *seq, domain.EventStatusChanged, by, b); err != nil {
 		return err
 	}
 	*seq++

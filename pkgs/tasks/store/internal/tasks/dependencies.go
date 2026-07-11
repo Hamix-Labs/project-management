@@ -8,15 +8,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/kernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"gorm.io/gorm"
 )
 
 // AddDependency records that taskID cannot run until dependsOnTaskID satisfies satisfies.
 func AddDependency(ctx context.Context, db *gorm.DB, taskID, dependsOnTaskID string, satisfies domain.DependencySatisfies) error {
-	defer kernel.DeferLatency(kernel.OpUpdateTask)()
+	defer storekernel.DeferLatency(storekernel.OpUpdateTask)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.tasks.AddDependency")
 	taskID = strings.TrimSpace(taskID)
 	dependsOnTaskID = strings.TrimSpace(dependsOnTaskID)
@@ -46,7 +46,7 @@ func AddDependency(ctx context.Context, db *gorm.DB, taskID, dependsOnTaskID str
 		}
 		row := model.NewTaskDependencyRow(taskID, dependsOnTaskID, satisfies, time.Now().UTC())
 		if err := tx.Create(&row).Error; err != nil {
-			if kernel.IsDuplicateKey(err) {
+			if storekernel.IsDuplicateKey(err) {
 				return nil
 			}
 			return fmt.Errorf("create dependency: %w", err)

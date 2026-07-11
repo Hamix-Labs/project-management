@@ -7,8 +7,8 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/kernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"gorm.io/gorm"
 )
@@ -23,7 +23,7 @@ type DeferredPickup struct {
 // strictly after `now`, ordered by pickup time then id. Used to hydrate the
 // pickup wake scheduler at startup.
 func ListDeferredReadyPickups(ctx context.Context, db *gorm.DB, now time.Time, limit int) ([]DeferredPickup, error) {
-	defer kernel.DeferLatency(kernel.OpListReadyQueue)()
+	defer storekernel.DeferLatency(storekernel.OpListReadyQueue)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ready.ListDeferredReadyPickups")
 	if limit <= 0 {
 		limit = 10_000

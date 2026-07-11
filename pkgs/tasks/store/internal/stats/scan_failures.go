@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
+	cyclesstore "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/cycles"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
@@ -48,7 +48,7 @@ type cycleFailedRow struct {
 }
 
 // cycleFailedPayload mirrors the keys terminatedPayload writes for
-// EventCycleFailed in pkgs/tasks/store/internal/cycles/cycles.go. Keys
+// EventCycleFailed in pkgs/taskcycles/store/internal/cycles/cycles.go. Keys
 // kept in sync with that producer; the dual-write invariant test would
 // catch a divergence on the producer side.
 type cycleFailedPayload struct {
@@ -120,7 +120,7 @@ func resolveRecentFailureReason(failureSummary, cycleReason string) string {
 }
 
 // phaseFailedMirrorPayload is the subset of phaseTerminatedPayload
-// (pkgs/tasks/store/internal/cycles) needed to surface operator-facing
+// (pkgs/taskcycles/store/internal/cycles) needed to surface operator-facing
 // failure text.
 type phaseFailedMirrorPayload struct {
 	CycleID string         `json:"cycle_id"`
@@ -198,5 +198,5 @@ func observabilityReasonFromPhaseAndCycle(cycleReason string, phase *phaseFailed
 	if phase == nil {
 		return ""
 	}
-	return cycles.FailureSurfaceMessage(true, cycleReason, strings.TrimSpace(phase.Summary), phase.Details)
+	return cyclesstore.FailureSurfaceMessage(true, cycleReason, strings.TrimSpace(phase.Summary), phase.Details)
 }

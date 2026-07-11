@@ -11,9 +11,33 @@ import (
 	_ "github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/registry/all"
 
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
+	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/registry"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
+
+type runnerDescriptorWire struct {
+	ID                string               `json:"id"`
+	Label             string               `json:"label"`
+	DefaultBinaryHint string               `json:"default_binary_hint"`
+	ConfigSchema      *runner.ConfigSchema `json:"config_schema,omitempty"`
+}
+
+type runnerProbeResponse struct {
+	OK         bool   `json:"ok"`
+	Runner     string `json:"runner"`
+	BinaryPath string `json:"binary_path,omitempty"`
+	Version    string `json:"version,omitempty"`
+	Error      string `json:"error,omitempty"`
+}
+
+type runnerListModelsResponse struct {
+	OK         bool               `json:"ok"`
+	Runner     string             `json:"runner"`
+	BinaryPath string             `json:"binary_path,omitempty"`
+	Models     []runner.ModelInfo `json:"models,omitempty"`
+	Error      string             `json:"error,omitempty"`
+}
 
 // runnersTestServer creates a test handler wired with a real SQLite
 // store and the fake agent control (which satisfies AgentWorkerControl).

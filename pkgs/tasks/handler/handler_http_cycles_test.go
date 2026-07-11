@@ -409,7 +409,12 @@ func TestHTTP_cycle_routes_appendMirrorEvents_into_audit_log(t *testing.T) {
 	if res.StatusCode != http.StatusOK {
 		t.Fatalf("events status %d body=%s", res.StatusCode, raw)
 	}
-	var got taskEventsResponse
+	type httpTaskEventsResponse struct {
+		Events []struct {
+			Type domain.EventType `json:"type"`
+		} `json:"events"`
+	}
+	var got httpTaskEventsResponse
 	if err := json.Unmarshal(raw, &got); err != nil {
 		t.Fatalf("decode events: %v body=%s", err, raw)
 	}
@@ -426,23 +431,16 @@ func TestHTTP_cycle_routes_appendMirrorEvents_into_audit_log(t *testing.T) {
 	}
 	for i, want := range wantTypes {
 		if got.Events[i].Type != want {
-			t.Fatalf("events[%d].type=%s want %s (full=%v)", i, got.Events[i].Type, want, eventTypes(got.Events))
+			gotTypes := make([]domain.EventType, len(got.Events))
+			for j, e := range got.Events {
+				gotTypes[j] = e.Type
+			}
+			t.Fatalf("events[%d].type=%s want %s (full=%v)", i, got.Events[i].Type, want, gotTypes)
 		}
 	}
 }
 
-// strItoa is a tiny int64→string helper for path segments. Wraps strconv so
-// the assertion sites stay short and call sites read top-down.
+// strItoa is a tiny int64→string helper for path segments.
 func strItoa(n int64) string {
 	return strconv.FormatInt(n, 10)
-}
-
-// eventTypes is a small debug helper used by the audit-log test to surface a
-// readable diff when mirror types drift.
-func eventTypes(evs []taskEventLine) []domain.EventType {
-	out := make([]domain.EventType, 0, len(evs))
-	for _, e := range evs {
-		out = append(out, e.Type)
-	}
-	return out
 }

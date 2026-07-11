@@ -33,20 +33,32 @@ Implementations live in **[`pkgs/tasks/middleware`](../middleware/)** (no import
 | `sse_stream.go` | `streamEvents` (`GET /events`). |
 | `sse_notify.go` | `notifyChange` / enriched publish helpers; `notifyScopelessChange` for id-less hints (`settings_changed`, `agent_run_cancelled`). Domain doc: [docs/domain/sse-hub.md](../../docs/domain/sse-hub.md). |
 
-## Route handlers (inner mux)
+## Route registration (`handler_routes.go`)
+
+Sibling bounded contexts register via `*.Register(m, Deps)` from this package's `registerRoutes`. **Task-core routes** stay in `registerTaskRoutes`.
+
+| Package | Routes | Registered from |
+| --- | --- | --- |
+| [`pkgs/projects/handler`](../../projects/handler/) | `/projects*` | `projecthandler.Register` |
+| [`pkgs/gitinventory/handler`](../../gitinventory/handler/) | `/git/*` | `gitinventoryhandler.Register` |
+| [`pkgs/settings/handler`](../../settings/handler/) | `/settings*` | `settingshandler.Register` |
+| [`pkgs/taskcompose/handler`](../../taskcompose/handler/) | `/task-drafts*`, `/task-templates*` | `composehandler.Register` |
+| [`pkgs/taskchecklist/handler`](../../taskchecklist/handler/) | `/tasks/{id}/checklist*` | `checklisthandler.Register` |
+| [`pkgs/taskcycles/handler`](../../taskcycles/handler/) | `/tasks/{id}/cycles*`, commits, `/tasks/cycle-failures` | `taskcycleshandler.Register` |
+| [`pkgs/taskevents/handler`](../../taskevents/handler/) | `/tasks/{id}/events*` | `eventhandler.Register` |
+| [`pkgs/repo/handler`](../../repo/handler/) | `/repo/*` | `repohandler.Register` |
+| [`pkgs/runners/handler`](../../runners/handler/) | `/runners*` | `runnershandler.Register` |
+
+## Route handlers — task core (inner mux)
 
 | Area | Files |
 |------|--------|
-| Health | `handler_health.go`, `handler_system_health.go` |
-| Tasks CRUD + list + stats/failures | `handler_task_crud.go`, `handler_cycle_failures.go` |
-| Projects + project context | `handler_projects.go` (DTOs in `handler_projects_json.go`) |
-| Checklist | `handler_checklist.go` |
-| Task audit / events | `handler_task_events.go` |
-| Execution cycles + phases | `handler_cycles.go`, `handler_cycles_query.go`, `handler_cycles_response.go` (DTOs in `handler_cycles_json.go`); see [`docs/data-model.md`](../../docs/data-model.md) |
-| Saved task drafts (`/task-drafts`) | `handler_task_drafts.go` |
-| Workspace `/repo/*` | [`pkgs/repo/handler`](../../repo/handler/) (registered from `handler_routes.go`) |
-| App settings | `handler_settings.go` |
-| SPA RUM (`POST /v1/rum`) | `handler_rum.go` |
+| Health + SSE | `handler_health.go`, `handler_system_health.go`; `sse_*.go` (`GET /events`) |
+| Tasks CRUD + list + stats | `handler_task_crud.go`, `handler_task_create_compose.go`, `handler_task_json.go` |
+| Dependencies + gate + retry | `handler_task_dependencies.go`, `handler_depends_on_json.go`, `handler_tasks_retry.go` |
+| Bootstrap + RUM | `handler_bootstrap.go`, `handler_rum.go` |
+| Write policy | `handler_writepolicy.go`, `writepolicy/` |
+| Read policy | `readpolicy/` |
 
 ## Request/response helpers
 

@@ -9,9 +9,9 @@ import (
 	"log/slog"
 	"strings"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/kernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -24,9 +24,9 @@ type RequestRetryInput = contract.RequestRetryInput
 // Returns (task, prevStatus, err). Idempotent when the task is already ready
 // with the same pending_retry payload.
 func RequestTaskRetry(ctx context.Context, db *gorm.DB, in RequestRetryInput, by domain.Actor) (*domain.Task, domain.Status, error) {
-	defer kernel.DeferLatency(kernel.OpUpdateTask)()
+	defer storekernel.DeferLatency(storekernel.OpUpdateTask)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.tasks.RequestTaskRetry", "task_id", in.TaskID)
-	if err := kernel.ValidateActor(by); err != nil {
+	if err := storekernel.ValidateActor(by); err != nil {
 		return nil, "", err
 	}
 	taskID := strings.TrimSpace(in.TaskID)
@@ -67,7 +67,7 @@ func RequestTaskRetry(ctx context.Context, db *gorm.DB, in RequestRetryInput, by
 		if dcur.Status != domain.StatusFailed {
 			return fmt.Errorf("%w: task status is %q, want failed", domain.ErrInvalidInput, dcur.Status)
 		}
-		nextSeq, err := kernel.NextEventSeq(tx, taskID)
+		nextSeq, err := storekernel.NextEventSeq(tx, taskID)
 		if err != nil {
 			return err
 		}
@@ -78,7 +78,7 @@ func RequestTaskRetry(ctx context.Context, db *gorm.DB, in RequestRetryInput, by
 		if err != nil {
 			return err
 		}
-		if err := kernel.AppendEvent(tx, taskID, nextSeq, domain.EventTaskRetryRequested, by, payload); err != nil {
+		if err := storekernel.AppendEvent(tx, taskID, nextSeq, domain.EventTaskRetryRequested, by, payload); err != nil {
 			return err
 		}
 		nextSeq++

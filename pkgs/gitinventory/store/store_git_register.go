@@ -13,8 +13,8 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	projectsstore "github.com/AlexsanderHamir/Hamix/pkgs/projects/store"
+	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/kernel"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -63,7 +63,7 @@ func (s *Store) registerGitRepository(ctx context.Context, input CreateGitReposi
 	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		repoRow := model.FromDomainGitRepository(repo)
 		if err := tx.Create(&repoRow).Error; err != nil {
-			if kernel.IsDuplicateKey(err) {
+			if storekernel.IsDuplicateKey(err) {
 				return gitdomain.NewGitErr(gitdomain.GitCodeDuplicate, "repository already registered")
 			}
 			return err

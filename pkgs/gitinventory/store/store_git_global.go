@@ -12,9 +12,9 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
+	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/kernel"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -244,7 +244,7 @@ func (s *Store) RegisterExistingGitWorktree(
 	}
 	wtRow := model.FromDomainGitWorktree(wt)
 	if err := s.db.WithContext(ctx).Create(&wtRow).Error; err != nil {
-		if kernel.IsDuplicateKey(err) {
+		if storekernel.IsDuplicateKey(err) {
 			return gitdomain.GitWorktree{}, gitdomain.NewGitErr(gitdomain.GitCodePathExists, "worktree path already registered")
 		}
 		return gitdomain.GitWorktree{}, fmt.Errorf("register git worktree: %w", err)
@@ -324,7 +324,7 @@ func (s *Store) CreateGitBranchForRepo(ctx context.Context, repoID string, input
 	}
 	branchRow := model.FromDomainGitBranch(row)
 	if err := s.db.WithContext(ctx).Create(&branchRow).Error; err != nil {
-		if kernel.IsDuplicateKey(err) {
+		if storekernel.IsDuplicateKey(err) {
 			return gitdomain.GitBranch{}, gitdomain.NewGitErr(gitdomain.GitCodeBranchExists, "branch already exists")
 		}
 		return gitdomain.GitBranch{}, fmt.Errorf("create git branch row: %w", err)
@@ -387,7 +387,7 @@ func (s *Store) createGitWorktreeOnRepo(ctx context.Context, repo gitdomain.GitR
 	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		wtRow := model.FromDomainGitWorktree(row)
 		if err := tx.Create(&wtRow).Error; err != nil {
-			if kernel.IsDuplicateKey(err) {
+			if storekernel.IsDuplicateKey(err) {
 				return gitdomain.NewGitErr(gitdomain.GitCodePathExists, "worktree path already registered")
 			}
 			return err

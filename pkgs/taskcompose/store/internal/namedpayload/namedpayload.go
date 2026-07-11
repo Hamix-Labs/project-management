@@ -10,11 +10,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/kernel"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
@@ -51,14 +51,14 @@ func saveRow(
 	updateErr string,
 	newRow func(string, string, datatypes.JSON, time.Time) model.TaskDraft,
 ) (*Summary, error) {
-	defer kernel.DeferLatency(opSave)()
+	defer storekernel.DeferLatency(opSave)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", logOp)
-	id = kernel.ResolveID(id)
+	id = storekernel.ResolveID(id)
 	name = strings.TrimSpace(name)
 	if name == "" {
 		return nil, fmt.Errorf("%w: %s", domain.ErrInvalidInput, nameRequiredMsg)
 	}
-	normalized, err := kernel.NormalizeJSONObject(payload, "payload")
+	normalized, err := storekernel.NormalizeJSONObject(payload, "payload")
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func saveRow(
 		"payload_json": datatypes.JSON(payload),
 		"updated_at":   now,
 	}).Error; err != nil {
-		return nil, kernel.MapPayloadPersistenceError(fmt.Errorf("%s: %w", updateErr, err))
+		return nil, storekernel.MapPayloadPersistenceError(fmt.Errorf("%s: %w", updateErr, err))
 	}
 	return &Summary{ID: id, Name: name, UpdatedAt: now, CreatedAt: row.CreatedAt}, nil
 }
@@ -90,14 +90,14 @@ func saveTemplateRow(
 	updateErr string,
 	newRow func(string, string, datatypes.JSON, time.Time) model.TaskTemplate,
 ) (*TemplateSummary, error) {
-	defer kernel.DeferLatency(opSave)()
+	defer storekernel.DeferLatency(opSave)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", logOp)
-	id = kernel.ResolveID(id)
+	id = storekernel.ResolveID(id)
 	name = strings.TrimSpace(name)
 	if name == "" {
 		return nil, fmt.Errorf("%w: %s", domain.ErrInvalidInput, nameRequiredMsg)
 	}
-	normalized, err := kernel.NormalizeJSONObject(payload, "payload")
+	normalized, err := storekernel.NormalizeJSONObject(payload, "payload")
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +112,7 @@ func saveTemplateRow(
 		"payload_json": datatypes.JSON(payload),
 		"updated_at":   now,
 	}).Error; err != nil {
-		return nil, kernel.MapPayloadPersistenceError(fmt.Errorf("%s: %w", updateErr, err))
+		return nil, storekernel.MapPayloadPersistenceError(fmt.Errorf("%s: %w", updateErr, err))
 	}
 	return &TemplateSummary{
 		ID:               id,
@@ -127,7 +127,7 @@ func saveTemplateRow(
 func SaveDraft(ctx context.Context, db *gorm.DB, id, name string, payload json.RawMessage) (*Summary, error) {
 	return saveRow(ctx, db, id, name, payload,
 		"draft name required",
-		kernel.OpSaveDraft,
+		storekernel.OpSaveDraft,
 		"tasks.store.drafts.Save",
 		"save draft", "update draft",
 		func(id, name string, p datatypes.JSON, now time.Time) model.TaskDraft {
@@ -139,7 +139,7 @@ func SaveDraft(ctx context.Context, db *gorm.DB, id, name string, payload json.R
 func SaveTemplate(ctx context.Context, db *gorm.DB, id, name string, payload json.RawMessage) (*TemplateSummary, error) {
 	return saveTemplateRow(ctx, db, id, name, payload,
 		"template name required",
-		kernel.OpSaveTemplate,
+		storekernel.OpSaveTemplate,
 		"tasks.store.templates.Save",
 		"save template", "update template",
 		func(id, name string, p datatypes.JSON, now time.Time) model.TaskTemplate {
@@ -149,7 +149,7 @@ func SaveTemplate(ctx context.Context, db *gorm.DB, id, name string, payload jso
 }
 
 func ListDrafts(ctx context.Context, db *gorm.DB, limit int) ([]Summary, error) {
-	defer kernel.DeferLatency(kernel.OpListDrafts)()
+	defer storekernel.DeferLatency(storekernel.OpListDrafts)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.drafts.List")
 	limit = clampLimit(limit)
 	var rows []model.TaskDraft
@@ -160,7 +160,7 @@ func ListDrafts(ctx context.Context, db *gorm.DB, limit int) ([]Summary, error) 
 }
 
 func ListTemplates(ctx context.Context, db *gorm.DB, limit int, q, sort, order, tag string) ([]TemplateSummary, error) {
-	defer kernel.DeferLatency(kernel.OpListTemplates)()
+	defer storekernel.DeferLatency(storekernel.OpListTemplates)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.templates.List")
 	limit = clampLimit(limit)
 	orderClause := sort + " " + order
@@ -194,7 +194,7 @@ func GetTemplate(ctx context.Context, db *gorm.DB, id string) (*Detail, error) {
 }
 
 func getDraftByID(ctx context.Context, db *gorm.DB, id string) (*Detail, error) {
-	defer kernel.DeferLatency(kernel.OpGetDraft)()
+	defer storekernel.DeferLatency(storekernel.OpGetDraft)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.drafts.Get")
 	id = strings.TrimSpace(id)
 	if id == "" {
@@ -202,13 +202,13 @@ func getDraftByID(ctx context.Context, db *gorm.DB, id string) (*Detail, error) 
 	}
 	var row model.TaskDraft
 	if err := db.WithContext(ctx).Where("id = ?", id).First(&row).Error; err != nil {
-		return nil, kernel.MapNotFound(err)
+		return nil, storekernel.MapNotFound(err)
 	}
 	return detailFromDraft(row), nil
 }
 
 func getTemplateByID(ctx context.Context, db *gorm.DB, id string) (*Detail, error) {
-	defer kernel.DeferLatency(kernel.OpGetTemplate)()
+	defer storekernel.DeferLatency(storekernel.OpGetTemplate)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.templates.Get")
 	id = strings.TrimSpace(id)
 	if id == "" {
@@ -216,21 +216,21 @@ func getTemplateByID(ctx context.Context, db *gorm.DB, id string) (*Detail, erro
 	}
 	var row model.TaskTemplate
 	if err := db.WithContext(ctx).Where("id = ?", id).First(&row).Error; err != nil {
-		return nil, kernel.MapNotFound(err)
+		return nil, storekernel.MapNotFound(err)
 	}
 	return detailFromTemplate(row), nil
 }
 
 func DeleteDraft(ctx context.Context, db *gorm.DB, id string) error {
-	return deleteByID(ctx, db, id, kernel.OpDeleteDraft, "tasks.store.drafts.Delete", "delete draft", &model.TaskDraft{})
+	return deleteByID(ctx, db, id, storekernel.OpDeleteDraft, "tasks.store.drafts.Delete", "delete draft", &model.TaskDraft{})
 }
 
 func DeleteTemplate(ctx context.Context, db *gorm.DB, id string) error {
-	return deleteByID(ctx, db, id, kernel.OpDeleteTemplate, "tasks.store.templates.Delete", "delete template", &model.TaskTemplate{})
+	return deleteByID(ctx, db, id, storekernel.OpDeleteTemplate, "tasks.store.templates.Delete", "delete template", &model.TaskTemplate{})
 }
 
 func deleteByID(ctx context.Context, db *gorm.DB, id string, op string, logOp, deleteErr string, row any) error {
-	defer kernel.DeferLatency(op)()
+	defer storekernel.DeferLatency(op)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", logOp)
 	id = strings.TrimSpace(id)
 	if id == "" {
@@ -256,7 +256,7 @@ func summariesFromDraftRows(rows []model.TaskDraft) []Summary {
 }
 
 func IncrementTemplateInstantiateCounts(ctx context.Context, db *gorm.DB, counts map[string]int) error {
-	defer kernel.DeferLatency(kernel.OpIncrementTemplateInstantiateCounts)()
+	defer storekernel.DeferLatency(storekernel.OpIncrementTemplateInstantiateCounts)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.templates.IncrementInstantiateCounts")
 	for id, delta := range counts {
 		if delta <= 0 {

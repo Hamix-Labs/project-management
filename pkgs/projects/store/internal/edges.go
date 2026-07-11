@@ -10,8 +10,8 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
+	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/kernel"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -24,13 +24,13 @@ type UpdateContextEdgeInput = contract.UpdateProjectContextEdgeInput
 
 // CreateContextEdge inserts one relationship between project-owned context nodes.
 func CreateContextEdge(ctx context.Context, db *gorm.DB, projectID string, input CreateContextEdgeInput) (domain.ProjectContextEdge, error) {
-	defer kernel.DeferLatency(kernel.OpCreateProjectContext)()
+	defer storekernel.DeferLatency(storekernel.OpCreateProjectContext)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.projects.CreateContextEdge")
 	projectID = strings.TrimSpace(projectID)
 	if projectID == "" {
 		return domain.ProjectContextEdge{}, fmt.Errorf("%w: project id required", domain.ErrInvalidInput)
 	}
-	id := kernel.ResolveID(input.ID)
+	id := storekernel.ResolveID(input.ID)
 	relation := input.Relation
 	if relation == "" {
 		relation = domain.ProjectContextRelationRelated
@@ -60,7 +60,7 @@ func CreateContextEdge(ctx context.Context, db *gorm.DB, projectID string, input
 		}
 		row := projectmodel.FromDomainProjectContextEdge(drow)
 		if err := tx.Create(&row).Error; err != nil {
-			return kernel.MapWriteError(err, "duplicate project row")
+			return storekernel.MapWriteError(err, "duplicate project row")
 		}
 		return nil
 	})
@@ -72,7 +72,7 @@ func CreateContextEdge(ctx context.Context, db *gorm.DB, projectID string, input
 
 // ListContextEdges returns context edges for one project, optionally restricted to a selected node set.
 func ListContextEdges(ctx context.Context, db *gorm.DB, projectID string, nodeIDs []string) ([]domain.ProjectContextEdge, error) {
-	defer kernel.DeferLatency(kernel.OpListProjectContext)()
+	defer storekernel.DeferLatency(storekernel.OpListProjectContext)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.projects.ListContextEdges")
 	projectID = strings.TrimSpace(projectID)
 	if projectID == "" {
@@ -95,7 +95,7 @@ func ListContextEdges(ctx context.Context, db *gorm.DB, projectID string, nodeID
 
 // UpdateContextEdge applies a partial patch to one context edge.
 func UpdateContextEdge(ctx context.Context, db *gorm.DB, projectID, edgeID string, input UpdateContextEdgeInput) (domain.ProjectContextEdge, error) {
-	defer kernel.DeferLatency(kernel.OpUpdateProjectContext)()
+	defer storekernel.DeferLatency(storekernel.OpUpdateProjectContext)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.projects.UpdateContextEdge")
 	projectID = strings.TrimSpace(projectID)
 	edgeID = strings.TrimSpace(edgeID)
@@ -109,14 +109,14 @@ func UpdateContextEdge(ctx context.Context, db *gorm.DB, projectID, edgeID strin
 	err := db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var row projectmodel.ProjectContextEdge
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&row, "id = ? AND project_id = ?", edgeID, projectID).Error; err != nil {
-			return kernel.MapNotFound(err)
+			return storekernel.MapNotFound(err)
 		}
 		drow := projectmodel.ToDomainProjectContextEdge(row)
 		applyContextEdgePatch(&drow, input)
 		drow.UpdatedAt = time.Now().UTC()
 		row = projectmodel.FromDomainProjectContextEdge(drow)
 		if err := tx.Save(&row).Error; err != nil {
-			return kernel.MapWriteError(err, "duplicate project row")
+			return storekernel.MapWriteError(err, "duplicate project row")
 		}
 		out = drow
 		return nil
@@ -129,7 +129,7 @@ func UpdateContextEdge(ctx context.Context, db *gorm.DB, projectID, edgeID strin
 
 // DeleteContextEdge removes one relationship between project context nodes.
 func DeleteContextEdge(ctx context.Context, db *gorm.DB, projectID, edgeID string) error {
-	defer kernel.DeferLatency(kernel.OpDeleteProjectContext)()
+	defer storekernel.DeferLatency(storekernel.OpDeleteProjectContext)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.projects.DeleteContextEdge")
 	projectID = strings.TrimSpace(projectID)
 	edgeID = strings.TrimSpace(edgeID)
@@ -138,7 +138,7 @@ func DeleteContextEdge(ctx context.Context, db *gorm.DB, projectID, edgeID strin
 	}
 	res := db.WithContext(ctx).Where("id = ? AND project_id = ?", edgeID, projectID).Delete(&projectmodel.ProjectContextEdge{})
 	if res.Error != nil {
-		return kernel.MapWriteError(res.Error, "duplicate project row")
+		return storekernel.MapWriteError(res.Error, "duplicate project row")
 	}
 	if res.RowsAffected == 0 {
 		return domain.ErrNotFound

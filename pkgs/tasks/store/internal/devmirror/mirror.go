@@ -9,9 +9,9 @@ import (
 	"log/slog"
 	"strings"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
+	checkliststore "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/store"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/kernel"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/checklist"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"gorm.io/gorm"
 )
@@ -23,7 +23,7 @@ import (
 // StatusReady. For development simulation only (see
 // pkgs/tasks/devsim).
 func ApplyTaskRowMirror(ctx context.Context, db *gorm.DB, taskID string, typ domain.EventType, data []byte) (*domain.Task, domain.Status, error) {
-	defer kernel.DeferLatency(kernel.OpApplyDevTaskRowMirror)()
+	defer storekernel.DeferLatency(storekernel.OpApplyDevTaskRowMirror)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.devmirror.ApplyTaskRowMirror")
 	taskID = strings.TrimSpace(taskID)
 	if taskID == "" {
@@ -70,7 +70,7 @@ func ApplyTaskRowMirror(ctx context.Context, db *gorm.DB, taskID string, typ dom
 // (dev simulation only). Empty pattern returns ErrInvalidInput so
 // callers cannot accidentally enumerate the entire task table.
 func ListDevsimTasks(ctx context.Context, db *gorm.DB, idLikePattern string) ([]domain.Task, error) {
-	defer kernel.DeferLatency(kernel.OpListDevsimTasks)()
+	defer storekernel.DeferLatency(storekernel.OpListDevsimTasks)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.devmirror.ListDevsimTasks")
 	p := strings.TrimSpace(idLikePattern)
 	if p == "" {
@@ -111,9 +111,9 @@ func statusChanged(tx *gorm.DB, taskID string, t *domain.Task, data []byte) (map
 	}
 	up := map[string]any{}
 	st := domain.Status(m["to"])
-	if kernel.ValidStatus(st) && st != t.Status {
+	if storekernel.ValidStatus(st) && st != t.Status {
 		if st == domain.StatusDone {
-			if err := checklist.ValidateCanMarkDoneInTx(tx, taskID); err != nil {
+			if err := checkliststore.ValidateCanMarkDoneInTx(tx, taskID); err != nil {
 				return nil, err
 			}
 		}
@@ -130,7 +130,7 @@ func priorityChanged(t *domain.Task, data []byte) (map[string]any, error) {
 	}
 	up := map[string]any{}
 	pr := domain.Priority(m["to"])
-	if kernel.ValidPriority(pr) && pr != t.Priority {
+	if storekernel.ValidPriority(pr) && pr != t.Priority {
 		up["priority"] = string(pr)
 	}
 	return up, nil
@@ -159,7 +159,7 @@ func promptOrTitle(t *domain.Task, data []byte, field string) (map[string]any, e
 
 func taskCompleted(tx *gorm.DB, taskID string, t *domain.Task) (map[string]any, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.devmirror.taskCompleted")
-	if err := checklist.ValidateCanMarkDoneInTx(tx, taskID); err != nil {
+	if err := checkliststore.ValidateCanMarkDoneInTx(tx, taskID); err != nil {
 		return nil, err
 	}
 	up := map[string]any{}
