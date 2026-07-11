@@ -36,12 +36,6 @@ type taskCreateJSON struct {
 	WorktreeID      *string                          `json:"worktree_id,omitempty"`
 }
 
-type taskDraftSaveJSON struct {
-	ID      string          `json:"id"`
-	Name    string          `json:"name"`
-	Payload json.RawMessage `json:"payload"`
-}
-
 type taskPatchJSON struct {
 	Title                 *string                   `json:"title"`
 	InitialPrompt         *string                   `json:"initial_prompt"`

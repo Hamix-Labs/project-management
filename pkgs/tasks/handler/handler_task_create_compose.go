@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )

@@ -10,6 +10,7 @@ import (
 	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
+	composemodel "github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
@@ -90,7 +91,7 @@ func TestMigrateComposePayloadWorktree_backfillsTemplatePayload(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	tmpl := model.TaskTemplate{
+	tmpl := composemodel.TaskTemplate{
 		ID:          "tmpl-1",
 		Name:        "Legacy template",
 		PayloadJSON: payload,
@@ -108,7 +109,7 @@ func TestMigrateComposePayloadWorktree_backfillsTemplatePayload(t *testing.T) {
 		t.Fatal("second migrate run should be idempotent")
 	}
 
-	var got model.TaskTemplate
+	var got composemodel.TaskTemplate
 	if err := db.WithContext(ctx).First(&got, "id = ?", tmpl.ID).Error; err != nil {
 		t.Fatal(err)
 	}
@@ -181,7 +182,7 @@ func TestMigrateComposePayloadWorktree_remapsLegacyGlobalDefaultProject(t *testi
 	if err != nil {
 		t.Fatal(err)
 	}
-	tmpl := model.TaskTemplate{
+	tmpl := composemodel.TaskTemplate{
 		ID:          "tmpl-legacy",
 		Name:        "Legacy template",
 		PayloadJSON: payload,
@@ -196,7 +197,7 @@ func TestMigrateComposePayloadWorktree_remapsLegacyGlobalDefaultProject(t *testi
 		t.Fatal(err)
 	}
 
-	var got model.TaskTemplate
+	var got composemodel.TaskTemplate
 	if err := db.WithContext(ctx).First(&got, "id = ?", tmpl.ID).Error; err != nil {
 		t.Fatal(err)
 	}

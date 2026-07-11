@@ -12,7 +12,7 @@ import (
 )
 
 func (h *Handler) listTaskTemplates(w http.ResponseWriter, r *http.Request) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.listTaskTemplates")
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcompose.handler.listTaskTemplates")
 	const op = "task_templates.list"
 	r = calltrace.WithRequestRoot(r, op)
 	limit, err := parseBoundedLimit(r.URL.Query(), 50, 100)
@@ -26,7 +26,7 @@ func (h *Handler) listTaskTemplates(w http.ResponseWriter, r *http.Request) {
 		writeStoreError(w, r, op, err)
 		return
 	}
-	rows, err := h.store.ListTemplates(r.Context(), limit, q, sort, order, tag)
+	rows, err := h.compose.ListTemplates(r.Context(), limit, q, sort, order, tag)
 	if err != nil {
 		writeStoreError(w, r, op, err)
 		return
@@ -35,7 +35,7 @@ func (h *Handler) listTaskTemplates(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) saveTaskTemplate(w http.ResponseWriter, r *http.Request) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.saveTaskTemplate")
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcompose.handler.saveTaskTemplate")
 	const op = "task_templates.save"
 	r = calltrace.WithRequestRoot(r, op)
 	var body taskTemplateSaveJSON
@@ -43,16 +43,20 @@ func (h *Handler) saveTaskTemplate(w http.ResponseWriter, r *http.Request) {
 		writeError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
-	payloadRaw, compose, err := h.normalizeComposePayloadRaw(r.Context(), body.Payload)
+	if h.normalizeCompose == nil {
+		writeJSONError(w, r, op, http.StatusInternalServerError, "internal server error")
+		return
+	}
+	normalized, err := h.normalizeCompose(r.Context(), body.Payload)
 	if err != nil {
 		writeStoreError(w, r, op, err)
 		return
 	}
 	name := strings.TrimSpace(body.Name)
 	if name == "" {
-		name = strings.TrimSpace(compose.Title)
+		name = strings.TrimSpace(normalized.Title)
 	}
-	saved, err := h.store.SaveTemplate(r.Context(), body.ID, name, payloadRaw)
+	saved, err := h.compose.SaveTemplate(r.Context(), body.ID, name, normalized.Payload)
 	if err != nil {
 		writeStoreError(w, r, op, err)
 		return
@@ -61,14 +65,14 @@ func (h *Handler) saveTaskTemplate(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) getTaskTemplate(w http.ResponseWriter, r *http.Request) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.getTaskTemplate")
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcompose.handler.getTaskTemplate")
 	const op = "task_templates.get"
 	r = calltrace.WithRequestRoot(r, op)
-	getNamedPayload(w, r, op, h.store.GetTemplate)
+	getNamedPayload(w, r, op, h.compose.GetTemplate)
 }
 
 func (h *Handler) patchTaskTemplate(w http.ResponseWriter, r *http.Request) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.patchTaskTemplate")
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcompose.handler.patchTaskTemplate")
 	const op = "task_templates.patch"
 	r = calltrace.WithRequestRoot(r, op)
 	id, err := parseTaskPathID(r.PathValue("id"))
@@ -83,19 +87,23 @@ func (h *Handler) patchTaskTemplate(w http.ResponseWriter, r *http.Request) {
 	}
 	var payloadRaw json.RawMessage
 	if len(body.Payload) > 0 {
-		var nerr error
-		payloadRaw, _, nerr = h.normalizeComposePayloadRaw(r.Context(), body.Payload)
+		if h.normalizeCompose == nil {
+			writeJSONError(w, r, op, http.StatusInternalServerError, "internal server error")
+			return
+		}
+		normalized, nerr := h.normalizeCompose(r.Context(), body.Payload)
 		if nerr != nil {
 			writeStoreError(w, r, op, nerr)
 			return
 		}
+		payloadRaw = normalized.Payload
 	}
 	name := body.Name
 	if name == nil && payloadRaw == nil {
 		writeStoreError(w, r, op, fmt.Errorf("%w: no fields to update", domain.ErrInvalidInput))
 		return
 	}
-	updated, err := h.store.PatchTemplate(r.Context(), id, name, payloadRaw)
+	updated, err := h.compose.PatchTemplate(r.Context(), id, name, payloadRaw)
 	if err != nil {
 		writeStoreError(w, r, op, err)
 		return
@@ -104,14 +112,14 @@ func (h *Handler) patchTaskTemplate(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) deleteTaskTemplate(w http.ResponseWriter, r *http.Request) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.deleteTaskTemplate")
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcompose.handler.deleteTaskTemplate")
 	const op = "task_templates.delete"
 	r = calltrace.WithRequestRoot(r, op)
-	deleteNamedPayload(w, r, op, "template_id", h.store.DeleteTemplate)
+	deleteNamedPayload(w, r, op, h.compose.DeleteTemplate)
 }
 
 func (h *Handler) instantiateTaskTemplates(w http.ResponseWriter, r *http.Request) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.instantiateTaskTemplates")
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcompose.handler.instantiateTaskTemplates")
 	const op = "task_templates.instantiate"
 	r = calltrace.WithRequestRoot(r, op)
 	var body taskTemplateInstantiateJSON
@@ -124,6 +132,10 @@ func (h *Handler) instantiateTaskTemplates(w http.ResponseWriter, r *http.Reques
 		writeStoreError(w, r, op, err)
 		return
 	}
+	if h.instantiateFromTemplate == nil {
+		writeJSONError(w, r, op, http.StatusInternalServerError, "internal server error")
+		return
+	}
 	by := actorFromRequest(r)
 	resp := taskTemplateInstantiateResponseJSON{
 		Tasks:  make([]domain.Task, 0),
@@ -132,7 +144,7 @@ func (h *Handler) instantiateTaskTemplates(w http.ResponseWriter, r *http.Reques
 	successCounts := make(map[string]int)
 	for _, item := range items {
 		for range item.Count {
-			detail, err := h.store.GetTemplate(r.Context(), item.TemplateID)
+			detail, err := h.compose.GetTemplate(r.Context(), item.TemplateID)
 			if err != nil {
 				resp.Errors = append(resp.Errors, taskTemplateInstantiateErrorJSON{
 					TemplateID: item.TemplateID,
@@ -140,19 +152,7 @@ func (h *Handler) instantiateTaskTemplates(w http.ResponseWriter, r *http.Reques
 				})
 				continue
 			}
-			compose, err := decodeComposePayload(detail.Payload)
-			if err != nil {
-				resp.Errors = append(resp.Errors, taskTemplateInstantiateErrorJSON{
-					TemplateID: item.TemplateID,
-					Error:      err.Error(),
-				})
-				continue
-			}
-			task, err := h.createTaskFromComposeJSON(r.Context(), r, op, compose, createTaskComposeOpts{
-				StripDependsOn:          true,
-				OmitPastPickupNotBefore: true,
-				InstantiateFromTemplate: true,
-			}, by)
+			task, err := h.instantiateFromTemplate(r.Context(), r, op, detail.Payload, by)
 			if err != nil {
 				resp.Errors = append(resp.Errors, taskTemplateInstantiateErrorJSON{
 					TemplateID: item.TemplateID,
@@ -165,7 +165,7 @@ func (h *Handler) instantiateTaskTemplates(w http.ResponseWriter, r *http.Reques
 		}
 	}
 	if len(successCounts) > 0 {
-		if err := h.store.IncrementTemplateInstantiateCounts(r.Context(), successCounts); err != nil {
+		if err := h.compose.IncrementTemplateInstantiateCounts(r.Context(), successCounts); err != nil {
 			writeStoreError(w, r, op, err)
 			return
 		}

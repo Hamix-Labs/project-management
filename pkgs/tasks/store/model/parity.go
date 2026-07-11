@@ -5,6 +5,8 @@ import (
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
 	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	settingsmodel "github.com/AlexsanderHamir/Hamix/pkgs/settings/store/model"
+	composedomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/domain"
+	composemodel "github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
@@ -195,14 +197,14 @@ var ParityPairs = []ParityPair{
 	},
 	{
 		Name:   "TaskDraft",
-		Domain: &domain.TaskDraft{},
-		Model:  &TaskDraft{},
+		Domain: &composedomain.TaskDraft{},
+		Model:  &composemodel.TaskDraft{},
 		Table:  "task_drafts",
 	},
 	{
 		Name:   "TaskTemplate",
-		Domain: &domain.TaskTemplate{},
-		Model:  &TaskTemplate{},
+		Domain: &composedomain.TaskTemplate{},
+		Model:  &composemodel.TaskTemplate{},
 		Table:  "task_templates",
 	},
 }

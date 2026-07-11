@@ -11,10 +11,10 @@ import (
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
 	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
+	composestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/store"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/kernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/checklist"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/drafts"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -264,7 +264,7 @@ func createTaskInTx(tx *gorm.DB, t *domain.Task, in CreateInput, by domain.Actor
 		t.DependsOn = append([]domain.DependencyEdge(nil), in.DependsOn...)
 	}
 	seq := int64(1)
-	if err := drafts.DeleteByIDInTx(tx, in.DraftID); err != nil {
+	if err := composestore.DeleteDraftByIDInTx(tx, in.DraftID); err != nil {
 		return err
 	}
 	if err := kernel.AppendEvent(tx, t.ID, seq, domain.EventTaskCreated, by, nil); err != nil {

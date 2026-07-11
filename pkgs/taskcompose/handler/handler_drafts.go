@@ -16,7 +16,7 @@ func (h *Handler) listTaskDrafts(w http.ResponseWriter, r *http.Request) {
 		writeStoreError(w, r, op, err)
 		return
 	}
-	rows, err := h.store.ListDrafts(r.Context(), limit)
+	rows, err := h.compose.ListDrafts(r.Context(), limit)
 	if err != nil {
 		writeStoreError(w, r, op, err)
 		return
@@ -33,7 +33,7 @@ func (h *Handler) saveTaskDraft(w http.ResponseWriter, r *http.Request) {
 		writeError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
-	saved, err := h.store.SaveDraft(r.Context(), body.ID, body.Name, body.Payload)
+	saved, err := h.compose.SaveDraft(r.Context(), body.ID, body.Name, body.Payload)
 	if err != nil {
 		writeStoreError(w, r, op, err)
 		return
@@ -45,12 +45,12 @@ func (h *Handler) getTaskDraft(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.getTaskDraft")
 	const op = "task_drafts.get"
 	r = calltrace.WithRequestRoot(r, op)
-	getNamedPayload(w, r, op, h.store.GetDraft)
+	getNamedPayload(w, r, op, h.compose.GetDraft)
 }
 
 func (h *Handler) deleteTaskDraft(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.deleteTaskDraft")
 	const op = "task_drafts.delete"
 	r = calltrace.WithRequestRoot(r, op)
-	deleteNamedPayload(w, r, op, "draft_id", h.store.DeleteDraft)
+	deleteNamedPayload(w, r, op, h.compose.DeleteDraft)
 }

@@ -3,19 +3,15 @@ package contract
 import (
 	"context"
 	"encoding/json"
-
-	composecontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/contract"
 )
 
-type (
-	// TemplateSummary is the listing-row shape for task templates.
-	TemplateSummary = composecontract.TemplateSummary
-	// TemplateDetail is the GET-by-id body shape for task templates.
-	TemplateDetail = composecontract.TemplateDetail
-)
+// ComposeStore covers task draft and template persistence.
+type ComposeStore interface {
+	ListDrafts(ctx context.Context, limit int) ([]DraftSummary, error)
+	SaveDraft(ctx context.Context, id, name string, payload json.RawMessage) (*DraftSummary, error)
+	GetDraft(ctx context.Context, id string) (*DraftDetail, error)
+	DeleteDraft(ctx context.Context, id string) error
 
-// TemplateStore covers task template persistence.
-type TemplateStore interface {
 	ListTemplates(ctx context.Context, limit int, q, sort, order, tag string) ([]TemplateSummary, error)
 	SaveTemplate(ctx context.Context, id, name string, payload json.RawMessage) (*TemplateSummary, error)
 	GetTemplate(ctx context.Context, id string) (*TemplateDetail, error)

@@ -30,7 +30,6 @@ func deleteNamedPayload(
 	w http.ResponseWriter,
 	r *http.Request,
 	op string,
-	debugIDKey string,
 	deleteFn func(context.Context, string) error,
 ) {
 	id, err := parseTaskPathID(r.PathValue("id"))
@@ -42,6 +41,5 @@ func deleteNamedPayload(
 		writeStoreError(w, r, op, err)
 		return
 	}
-	debugHTTPOut(r.Context(), op, http.StatusNoContent, debugIDKey, id, "response_empty", true)
 	w.WriteHeader(http.StatusNoContent)
 }

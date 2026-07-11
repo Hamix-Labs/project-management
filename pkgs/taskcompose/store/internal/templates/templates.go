@@ -10,11 +10,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/store/internal/namedpayload"
+	"github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/kernel"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/namedpayload"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )

@@ -35,10 +35,10 @@ type bootstrapDraftsPayload struct {
 // (older or stripped-down servers) and gracefully fall back.
 type bootstrapResponse struct {
 	Settings settingshandler.SettingsWireResponse `json:"settings"`
-	Tasks    bootstrapTasksPayload  `json:"tasks"`
-	Stats    taskStatsResponse      `json:"stats"`
-	Projects projectsListResponse   `json:"projects"`
-	Drafts   bootstrapDraftsPayload `json:"drafts"`
+	Tasks    bootstrapTasksPayload                `json:"tasks"`
+	Stats    taskStatsResponse                    `json:"stats"`
+	Projects projectsListResponse                 `json:"projects"`
+	Drafts   bootstrapDraftsPayload               `json:"drafts"`
 }
 
 // bootstrap serves GET /v1/bootstrap. It composes the five cold-start

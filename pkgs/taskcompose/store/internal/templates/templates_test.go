@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
+	"github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/store/model"
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -20,7 +20,7 @@ func TestPatch_templatePayloadRoundTrip(t *testing.T) {
 	}
 	ctx := context.Background()
 	now := time.Now().UTC()
-	if err := model.AutoMigrateAll(db); err != nil {
+	if err := model.AutoMigrateCompose(db); err != nil {
 		t.Fatal(err)
 	}
 

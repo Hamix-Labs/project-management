@@ -1,11 +1,15 @@
 package handler
 
 import (
+	"context"
+	"encoding/json"
 	"net/http"
 
 	gitinventoryhandler "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/handler"
 	projecthandler "github.com/AlexsanderHamir/Hamix/pkgs/projects/handler"
 	settingshandler "github.com/AlexsanderHamir/Hamix/pkgs/settings/handler"
+	composehandler "github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/handler"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 )
 
@@ -34,7 +38,27 @@ func (h *Handler) registerRoutes(m *http.ServeMux) {
 			h.notifyScopelessChange(TaskChangeType(typ))
 		},
 	})
-	h.registerTaskDraftTemplateRoutes(m)
+	composehandler.Register(m, composehandler.Deps{
+		Compose: h.store,
+		NormalizeCompose: func(ctx context.Context, raw json.RawMessage) (composehandler.NormalizeComposeResult, error) {
+			payloadRaw, compose, err := h.normalizeComposePayloadRaw(ctx, raw)
+			if err != nil {
+				return composehandler.NormalizeComposeResult{}, err
+			}
+			return composehandler.NormalizeComposeResult{Payload: payloadRaw, Title: compose.Title}, nil
+		},
+		InstantiateFromTemplate: func(ctx context.Context, r *http.Request, op string, payload json.RawMessage, by domain.Actor) (*domain.Task, error) {
+			compose, err := decodeComposePayload(payload)
+			if err != nil {
+				return nil, err
+			}
+			return h.createTaskFromComposeJSON(ctx, r, op, compose, createTaskComposeOpts{
+				StripDependsOn:          true,
+				OmitPastPickupNotBefore: true,
+				InstantiateFromTemplate: true,
+			}, by)
+		},
+	})
 	h.registerTaskRoutes(m)
 	h.registerRepoRoutes(m)
 	h.registerRunnerRoutes(m)
@@ -48,20 +72,6 @@ func (h *Handler) registerHealthRoutes(m *http.ServeMux) {
 	m.Handle("GET /health/ready", http.HandlerFunc(h.healthReady))
 	m.Handle("GET /system/health", http.HandlerFunc(h.systemHealth))
 	m.Handle("GET /events", http.HandlerFunc(h.streamEvents))
-}
-
-//funclogmeasure:skip category=hot-path reason="Route table wiring only; operation trace is emitted by registered handlers."
-func (h *Handler) registerTaskDraftTemplateRoutes(m *http.ServeMux) {
-	m.Handle("GET /task-drafts", http.HandlerFunc(h.listTaskDrafts))
-	m.Handle("POST /task-drafts", http.HandlerFunc(h.saveTaskDraft))
-	m.Handle("GET /task-drafts/{id}", http.HandlerFunc(h.getTaskDraft))
-	m.Handle("DELETE /task-drafts/{id}", http.HandlerFunc(h.deleteTaskDraft))
-	m.Handle("GET /task-templates", http.HandlerFunc(h.listTaskTemplates))
-	m.Handle("POST /task-templates", http.HandlerFunc(h.saveTaskTemplate))
-	m.Handle("GET /task-templates/{id}", http.HandlerFunc(h.getTaskTemplate))
-	m.Handle("PATCH /task-templates/{id}", http.HandlerFunc(h.patchTaskTemplate))
-	m.Handle("DELETE /task-templates/{id}", http.HandlerFunc(h.deleteTaskTemplate))
-	m.Handle("POST /task-templates/instantiate", http.HandlerFunc(h.instantiateTaskTemplates))
 }
 
 //funclogmeasure:skip category=hot-path reason="Route table wiring only; operation trace is emitted by registered handlers."

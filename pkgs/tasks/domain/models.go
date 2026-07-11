@@ -118,24 +118,6 @@ type TaskEvent struct {
 	ResponseThread json.RawMessage `json:"response_thread,omitempty"`
 }
 
-// TaskDraft stores a resumable create-task draft payload.
-type TaskDraft struct {
-	ID          string          `json:"id"`
-	Name        string          `json:"name"`
-	PayloadJSON json.RawMessage `json:"payload_json"`
-	CreatedAt   time.Time       `json:"created_at"`
-	UpdatedAt   time.Time       `json:"updated_at"`
-}
-
-// TaskTemplate stores a reusable task compose blueprint (not a runnable task).
-type TaskTemplate struct {
-	ID          string          `json:"id"`
-	Name        string          `json:"name"`
-	PayloadJSON json.RawMessage `json:"payload_json"`
-	CreatedAt   time.Time       `json:"created_at"`
-	UpdatedAt   time.Time       `json:"updated_at"`
-}
-
 // TaskCycle is one execution attempt for a task. The (TaskID, AttemptSeq) pair
 // gives a stable monotonic ordering of attempts. A cycle's lifecycle is enforced
 // at the store boundary: at most one Running cycle per task at any time, and
