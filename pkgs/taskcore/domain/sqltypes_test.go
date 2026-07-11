@@ -1,0 +1,71 @@
+package domain
+
+import "testing"
+
+func TestStatus_Scan_string_and_bytes(t *testing.T) {
+	var s Status
+	if err := s.Scan("ready"); err != nil || s != StatusReady {
+		t.Fatalf("string: %v %s", err, s)
+	}
+	if err := s.Scan([]byte("running")); err != nil || s != StatusRunning {
+		t.Fatalf("[]byte: %v %s", err, s)
+	}
+}
+
+func TestStatus_Scan_nil_zeroes(t *testing.T) {
+	s := StatusReady
+	if err := s.Scan(nil); err != nil || s != "" {
+		t.Fatalf("nil: %v %q", err, s)
+	}
+}
+
+func TestStatus_Scan_rejects_wrong_type(t *testing.T) {
+	var s Status
+	if err := s.Scan(42); err == nil {
+		t.Fatal("expected error for int")
+	}
+}
+
+func TestActor_Scan_string(t *testing.T) {
+	var a Actor
+	if err := a.Scan("agent"); err != nil || a != ActorAgent {
+		t.Fatal(err)
+	}
+}
+
+func TestPriority_Scan_bytes(t *testing.T) {
+	var p Priority
+	if err := p.Scan([]byte("high")); err != nil || p != PriorityHigh {
+		t.Fatal(err)
+	}
+}
+
+func TestStatus_Value(t *testing.T) {
+	v, err := StatusReady.Value()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if v != string(StatusReady) {
+		t.Fatalf("got %v", v)
+	}
+}
+
+func TestPriority_Value(t *testing.T) {
+	v, err := PriorityMedium.Value()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if v != string(PriorityMedium) {
+		t.Fatalf("got %v", v)
+	}
+}
+
+func TestActor_Value(t *testing.T) {
+	v, err := ActorUser.Value()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if v != string(ActorUser) {
+		t.Fatalf("got %v", v)
+	}
+}

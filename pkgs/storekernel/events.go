@@ -7,12 +7,20 @@ import (
 	"log/slog"
 	"time"
 
+	eventsmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
+
+// taskIDRow is a minimal tasks-table shape for SELECT … FOR UPDATE locking
+// without importing pkgs/tasks/store/model (avoids migrate-graph cycles).
+type taskIDRow struct {
+	ID string `gorm:"column:id;primaryKey"`
+}
+
+func (taskIDRow) TableName() string { return "tasks" }
 
 // NextEventSeq returns the next monotonic seq for taskID inside the open
 // transaction tx. Used by every audit-emitting path (CRUD, checklist,
@@ -38,7 +46,7 @@ import (
 func NextEventSeq(tx *gorm.DB, taskID string) (int64, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.kernel.NextEventSeq")
 	if tx.Dialector.Name() != "sqlite" {
-		var locked model.Task
+		var locked taskIDRow
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 			Select("id").Where("id = ?", taskID).First(&locked).Error; err != nil {
 			return 0, fmt.Errorf("lock task for event seq: %w", err)
@@ -71,7 +79,7 @@ func AppendEvent(tx *gorm.DB, taskID string, seq int64, typ domain.EventType, by
 		return err
 	}
 	data = normalized
-	ev := model.TaskEvent{
+	ev := eventsmodel.TaskEvent{
 		TaskID: taskID,
 		Seq:    seq,
 		At:     time.Now().UTC(),

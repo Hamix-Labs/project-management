@@ -9,8 +9,9 @@ import (
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
+	taskcoremodel "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/model"
+	cyclesmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"gorm.io/gorm"
 )
 
@@ -160,7 +161,7 @@ func TestConstraintClassifiers_sqlite(t *testing.T) {
 
 	t.Run("foreign key", func(t *testing.T) {
 		badCycle := "missing-cycle-id"
-		phase := model.TaskCyclePhase{
+		phase := cyclesmodel.TaskCyclePhase{
 			ID:        "kernel-fk-phase",
 			CycleID:   badCycle,
 			Phase:     domain.PhaseExecute,
@@ -178,7 +179,7 @@ func TestConstraintClassifiers_sqlite(t *testing.T) {
 	})
 
 	t.Run("check constraint", func(t *testing.T) {
-		task := model.Task{
+		task := taskcoremodel.Task{
 			ID:            "kernel-check-task",
 			Title:         "check",
 			InitialPrompt: "x",
