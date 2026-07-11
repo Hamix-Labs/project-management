@@ -9,6 +9,7 @@ HTTP routes (`/projects`, `/projects/{id}/context`, …) and JSON shapes are unc
 | Package | Path | Responsibility |
 | --- | --- | --- |
 | Domain | [`domain/`](./domain/) | `Project`, context types, enums, sentinel errors — stdlib only |
+| Contract | [`contract/`](./contract/) | `ProjectStore` interface + store wire input types |
 | Store | [`store/`](./store/) | GORM persistence facade; `internal/` holds CRUD; `model/` holds GORM rows + mappers |
 | Handler | [`handler/`](./handler/) | `/projects*` REST handlers and wire DTOs |
 
@@ -23,8 +24,8 @@ HTTP routes (`/projects`, `/projects/{id}/context`, …) and JSON shapes are unc
 | Package | May import | Must not import |
 | --- | --- | --- |
 | `domain` | stdlib | `pkgs/tasks/*`, GORM |
-| `store` | `projects/domain`, GORM, `pkgs/tasks/kernel`, `pkgs/tasks/contract`, `pkgs/tasks/store/model` (task FK checks) | `pkgs/tasks/handler`, `pkgs/tasks/store/internal` |
-| `handler` | `projects/domain`, `pkgs/tasks/contract`, `pkgs/tasks/apijson`, `pkgs/tasks/calltrace`, `pkgs/tasks/logctx` | `pkgs/tasks/store` facade, `pkgs/tasks/handler` |
+| `store` | `projects/domain`, `projects/contract`, GORM, `pkgs/storekernel`, `pkgs/tasks/store/model` (task FK checks) | `pkgs/tasks/handler`, `pkgs/tasks/store/internal` |
+| `handler` | `projects/domain`, `projects/contract`, `pkgs/tasks/apijson`, `pkgs/tasks/calltrace`, `pkgs/tasks/logctx` | `pkgs/tasks/store` facade, `pkgs/tasks/handler` |
 
 Enforced in CI: `scripts/check-go.sh` → `step_projects_boundary`.
 
@@ -41,4 +42,5 @@ Integration coverage for project CRUD, context graph, and snapshots lives in [`p
 
 - [docs/api.md](../../docs/api.md) — `/projects*` contract
 - [docs/domain/project-context.md](../../docs/domain/project-context.md) — harness context selection
-- [pkgs/tasks/contract/project.go](../tasks/contract/project.go) — `ProjectStore` interface
+- [pkgs/projects/contract/project.go](./contract/project.go) — `ProjectStore` interface
+- [ADR-0055](../../docs/adr/ADR-0055-contract-colocation.md) — contract colocation
