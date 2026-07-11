@@ -1,0 +1,648 @@
+.app-header-actions {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3, 12px);
+  padding-left: var(--space-4);
+  /* Push the actions cluster (live-status pill + settings cog) to the
+     far right of the header strip. The brand and nav sit on the left
+     and the actions need to stay opposite them on the same row. */
+  margin-left: auto;
+}
+
+/* Thin vertical rule before the actions cluster — mirrors the rule
+   that sits between the brand and the nav (`app-nav::before`), so
+   the header reads as three balanced regions:
+       [Hamix] | Tasks Drafts Projects | [status] [⚙]
+   The eye groups items by the rules instead of by spacing alone. */
+.app-header-actions::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 1px;
+  height: 1.25rem;
+  background: var(--border-hairline);
+  transform: translateY(-50%);
+}
+
+@media (max-width: 600px) {
+  .app-header-actions::before {
+    display: none;
+  }
+}
+
+.app-header-settings-link {
+  display: inline-grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  color: var(--text-secondary, inherit);
+  border: 0;
+  background: transparent;
+  transition:
+    background-color var(--duration-short, 150ms) ease,
+    color var(--duration-short, 150ms) ease;
+}
+
+.app-header-settings-icon {
+  display: block;
+  width: 20px;
+  height: 20px;
+  transition: transform var(--duration-moderate, 250ms) var(--ease-out);
+}
+
+.app-header-settings-link:hover,
+.app-header-settings-link:focus-visible {
+  background: var(--bg-muted, var(--neutral-fill-faint));
+  color: var(--text-primary, inherit);
+}
+
+.app-header-settings-link:active {
+  opacity: 0.9;
+}
+
+/* Active state uses neutral chrome — matches the nav's underline-only
+   active treatment so we don't flood the header with brand purple when
+   /settings is open. */
+.app-header-settings-link[aria-current="page"] {
+  color: var(--text-primary);
+  background: var(--neutral-fill-subtle);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-header-settings-link,
+  .app-header-settings-link .app-header-settings-icon {
+    transition:
+      background-color var(--duration-short, 150ms) ease,
+      border-color var(--duration-short, 150ms) ease,
+      color var(--duration-short, 150ms) ease;
+    transform: none;
+  }
+
+  .app-header-settings-link:hover {
+    transform: none;
+  }
+
+  .app-header-settings-link:hover .app-header-settings-icon {
+    transform: none;
+  }
+}
+
+/*
+ * Settings shell — full width of `#main-content` (same band as `.app-header--sticky` + `.panel`).
+ * Horizontal padding lives on the header / banners only; fieldsets and the save strip span edge
+ * to edge so their borders align with the nav card, matching `app-shell.css` + `app-panel.css`.
+ */
+.settings-page {
+  position: relative;
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+  margin: var(--space-8) 0 var(--space-12);
+  padding: var(--layout-gutter-x) 0 calc(var(--space-12) + var(--space-2));
+  background: var(--bg-page);
+  border-radius: var(--radius-xl, 16px);
+}
+
+.settings-page[aria-busy="true"] {
+  padding-left: var(--layout-gutter-x);
+  padding-right: var(--layout-gutter-x);
+}
+
+.settings-page::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--border-hairline);
+  pointer-events: none;
+  border-top-left-radius: var(--radius-xl, 16px);
+  border-top-right-radius: var(--radius-xl, 16px);
+}
+
+/*
+ * Header is a two-region row: title/subtitle stack on the left, a
+ * "Last saved" chip on the right. Previously the subtitle was a
+ * plain paragraph under the title with no meta chip, which made the
+ * page read like an untitled form — no sense of scope, no reference
+ * for when the server last acknowledged a change. The chip solves
+ * both by making the freshness of the loaded state visible at a
+ * glance (also useful when troubleshooting a stale tab).
+ */
+.settings-page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  padding: 0 var(--layout-gutter-x) 20px;
+  border-bottom: 1px solid var(--border-hairline, var(--color-border, #e5e5e7));
+  animation: settings-fade-up
+    var(--duration-ui-phase, 320ms)
+    var(--ease-ui, cubic-bezier(0.22, 1, 0.36, 1))
+    both;
+}
+
+.settings-page-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.settings-page-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text-primary, var(--color-text, #1a1a1a));
+  line-height: 1.2;
+}
+
+.settings-page-subtitle {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--text-secondary, var(--color-text-muted, #555));
+}
+
+.settings-page-saved-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid var(--border-hairline, var(--color-border, #e5e5e7));
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+  font-size: 0.8125rem;
+  line-height: 1.25;
+  color: var(--text-secondary, var(--color-text-muted, #555));
+  white-space: nowrap;
+}
+
+.settings-page-saved-chip-label {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--text-tertiary, var(--color-text-muted, #777));
+}
+
+.settings-page-saved-chip-time {
+  font-weight: 500;
+  font-size: 0.8125rem;
+  color: var(--text-primary, var(--color-text, #1a1a1a));
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * Warn banner. Structured: icon + title + body with a colored
+ * left-border instead of a uniform yellow fill. The prior flat
+ * banner shouted at the operator without making clear WHAT was
+ * wrong; this one reads like a Stripe/Linear notification card.
+ */
+.settings-banner {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--layout-gutter-x);
+  margin: 0 0 var(--space-5);
+  border-radius: var(--radius-md, 10px);
+  border: 1px solid transparent;
+  background: var(--bg-elevated);
+  align-items: flex-start;
+}
+
+.settings-banner--warn {
+  border-color: color-mix(in srgb, #d97706 24%, transparent);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, #f59e0b 10%, transparent) 0%,
+      var(--surface-card, #fff) 70%
+    );
+  color: var(--text-primary, var(--color-text, #1a1a1a));
+  border-left-width: 3px;
+  border-left-color: #d97706;
+}
+
+.settings-banner-icon {
+  width: 20px;
+  height: 20px;
+  color: #d97706;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.settings-banner-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.settings-banner-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary, var(--color-text, #1a1a1a));
+}
+
+.settings-banner-text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary, var(--color-text-muted, #555));
+}
+
+.settings-banner-text code {
+  font-size: 12px;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+/*
+ * Two-column page layout — sticky in-page index on the left,
+ * stacked section cards on the right. Mirrors Stripe / Linear /
+ * Vercel settings pages: at desktop widths the operator can see
+ * both the section they're in and the section they're heading to;
+ * below 1024px the rail collapses and the form scrolls full-width.
+ *
+ * The aside is independently sticky so it stays anchored under the
+ * app header without re-flowing the form. `min-width: 0` on the
+ * form column is the standard CSS-Grid escape hatch that prevents
+ * `<input>`s and `<pre>`-style code blocks from blowing the column
+ * out past its track width.
+ */
+.settings-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 32px;
+  align-items: start;
+}
+
+.settings-layout-aside {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .settings-layout {
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 48px;
+  }
+
+  .settings-layout-aside {
+    display: block;
+    position: sticky;
+    /* App header is ~56px; add breathing room so the rail's first
+       item doesn't collide with the header's bottom border. */
+    top: 88px;
+  }
+}
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  /* Reserve space for the sticky save bar's drop-shadow at the
+     bottom so the last section card doesn't sit visually on top of
+     the bar when the operator scrolls to the end of the form. */
+  padding-bottom: 16px;
+  min-width: 0;
+}
+
+/*
+ * In-page section index.
+ *
+ * Stripe-style left-rail navigation — vertical list, light divider,
+ * subtle active-state pill. The `aria-current="true"` link uses the
+ * brand-subtle background instead of a heavy fill so the rail reads
+ * as informational chrome, not an action surface. Keep the visual
+ * weight LOWER than the section headings to its right, otherwise
+ * the page reads "navigation -> form" twice.
+ */
+.settings-nav {
+  font-size: var(--text-sm, 0.875rem);
+  line-height: 1.45;
+}
+
+.settings-nav-label {
+  margin: 0 0 8px;
+  padding-left: 12px;
+  font-size: var(--text-xs, 0.75rem);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary, var(--text-secondary, #6b7280));
+}
+
+.settings-nav-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.settings-nav-link {
+  display: block;
+  padding: 6px 12px;
+  border-radius: var(--radius-md, 8px);
+  color: var(--text-secondary, #4b5563);
+  text-decoration: none;
+  border-left: 2px solid transparent;
+  transition:
+    background-color var(--duration-short, 150ms) ease,
+    color var(--duration-short, 150ms) ease,
+    border-color var(--duration-short, 150ms) ease;
+}
+
+.settings-nav-link:hover {
+  background: color-mix(in srgb, currentColor 5%, transparent);
+  color: var(--text-primary, #0a0a0a);
+}
+
+.settings-nav-link:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--focus-ring, rgba(99, 91, 255, 0.35));
+}
+
+.settings-nav-link[aria-current="true"] {
+  background: color-mix(in srgb, var(--focus-ring, #635bff) 10%, transparent);
+  color: var(--text-primary, #0a0a0a);
+  font-weight: 500;
+  box-shadow: inset 3px 0 0 var(--focus-ring, #635bff);
+}
+
+/*
+ * Section cards.
+ * The form is a stack of `.settings-section` cards. Each card has
+ * a real `<h2>` heading at the top — a true page-outline anchor,
+ * not the inset `<legend>` chrome the page used previously. The
+ * heading sits flush-left, matches the type scale of other
+ * primary/secondary headings in the app (1rem / 600 weight), and
+ * is followed by a hairline rule that visually separates the
+ * heading from the form body without introducing a heavy second
+ * border on top of the card's own outline.
+ *
+ * Hover / focus-within strengthens the hairline tone slightly —
+ * same Apple/Stripe "this row is in focus" affordance used
+ * elsewhere in the app, so the operator gets clear feedback about
+ * which section they're acting on without a heavy color treatment.
+ */
+.settings-section {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--border-hairline, var(--color-border, #e5e5e7));
+  border-radius: var(--radius-lg, 12px);
+  background: var(--bg-elevated);
+  transition: border-color var(--duration-short, 150ms) ease;
+  /* Anchor offset for in-page nav clicks and deep links —
+     nav-rail click handlers use scrollIntoView({ block: "start" })
+     and the app header is sticky at ~56px, so each section needs
+     enough top inset that its heading clears the header. */
+  scroll-margin-top: 88px;
+}
+
+@media (hover: hover) {
+  .settings-section:hover {
+    border-color: var(--border-soft, var(--color-border, #d0d0d5));
+  }
+}
+
+.settings-section:focus-within {
+  border-color: var(--border-soft, var(--color-border, #d0d0d5));
+}
+
+.settings-section-title {
+  margin: 0;
+  padding: 18px var(--layout-gutter-x) 14px;
+  font-size: var(--text-md, 1rem);
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text-primary, #0a0a0a);
+  border-bottom: 1px solid var(--border-hairline, var(--color-border, #e5e5e7));
+  letter-spacing: -0.005em;
+}
+
+.settings-section-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px var(--layout-gutter-x) 22px;
+}
+
+.settings-section-lead {
+  margin: 0;
+  font-size: var(--text-sm, 0.875rem);
+  line-height: 1.5;
+  color: var(--text-secondary, var(--color-text-secondary, #4b5563));
+}
+
+.workspace-picker-control {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3, 12px);
+}
+
+.workspace-picker-open {
+  min-height: 40px;
+}
+
+.workspace-selected-path {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1, 4px);
+  margin: 0;
+  max-width: 100%;
+}
+
+.workspace-selected-path-label {
+  font-size: var(--text-xs, 0.75rem);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary, var(--color-text-secondary, #4b5563));
+}
+
+.workspace-selected-path-value {
+  display: block;
+  padding: var(--space-2, 8px) var(--space-3, 12px);
+  border-radius: var(--radius-md, 8px);
+  border: 1px solid var(--border-hairline, var(--color-border, #e5e5e7));
+  background: var(--bg-subtle, var(--color-bg-subtle, #f6f8fa));
+  font-size: var(--text-sm, 0.875rem);
+  overflow-wrap: anywhere;
+}
+
+.workspace-advanced-path {
+  margin-top: var(--space-1, 4px);
+}
+
+/* Legacy: pre-existing fieldset selector. Kept as an alias so any
+   markup that still uses `.settings-fieldset` (older docs/screens,
+   embedded help) inherits the new card styling without breaking.
+   New section markup uses `.settings-section` exclusively. */
+.settings-fieldset {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0;
+  padding: 22px var(--layout-gutter-x) 22px;
+  border: 1px solid var(--border-hairline, var(--color-border, #e5e5e7));
+  border-radius: var(--radius-lg, 12px);
+  background: var(--bg-elevated);
+}
+
+/*
+ * Stagger fade-in for the top-level form children — same easing
+ * curve and duration budget as the create modal and All Tasks
+ * panel so the operator perceives the page settling into place
+ * with the same cadence they're already trained on.
+ *
+ * Disabled under reduced-motion so the form simply appears.
+ */
+.settings-form > * {
+  animation: settings-fade-up
+    var(--duration-ui-phase, 320ms)
+    var(--ease-ui, cubic-bezier(0.22, 1, 0.36, 1))
+    both;
+  animation-delay: var(--settings-fade-delay, 0ms);
+}
+
+.settings-form > *:nth-child(1) { --settings-fade-delay: 0ms; }
+.settings-form > *:nth-child(2) { --settings-fade-delay: 40ms; }
+.settings-form > *:nth-child(3) { --settings-fade-delay: 80ms; }
+.settings-form > *:nth-child(4) { --settings-fade-delay: 120ms; }
+.settings-form > *:nth-child(5) { --settings-fade-delay: 160ms; }
+.settings-form > *:nth-child(6) { --settings-fade-delay: 200ms; }
+.settings-form > *:nth-child(7) { --settings-fade-delay: 240ms; }
+
+@keyframes settings-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-form > *,
+  .settings-page-header {
+    animation: none;
+  }
+}
+
+.settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.875rem;
+}
+
+/* Checkbox rows: the input must sit inline with its label text, not stacked
+   above it. Without this override the column layout floats the checkbox on
+   its own line and the adjacent text reads as an unrelated paragraph. */
+.settings-field--inline {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+
+.settings-field-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  color: var(--text-primary, var(--color-text, #1a1a1a));
+}
+
+/*
+ * Form controls.
+ * Uniform 10×12 padding, 8px radius, hairline border. The hover
+ * state lifts the border one tone for affordance, focus paints a
+ * 3px brand-faint ring with a 1px brand border — the standard
+ * "there is a keyboard here, don't lose track" treatment used by
+ * Stripe / Vercel / Linear. Using `outline` for the focus ring
+ * (rather than a shadow) means it cleanly clears the surrounding
+ * card without bleeding into neighbor controls.
+ */
+.settings-field input[type="text"],
+.settings-field input[type="number"],
+.settings-field select {
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-hairline, var(--color-border, #d0d0d5));
+  background: var(--bg-elevated);
+  color: var(--text-primary, var(--color-text, #1a1a1a));
+  font: inherit;
+  font-size: 0.875rem;
+  line-height: 1.3;
+  width: 100%;
+  box-sizing: border-box;
+  transition:
+    border-color var(--duration-short, 150ms) ease,
+    box-shadow var(--duration-short, 150ms) ease,
+    background-color var(--duration-short, 150ms) ease;
+}
+
+/*
+ * Native <select> chevron.
+ *
+ * Chrome/Safari/Firefox each ship a different platform chevron
+ * (some too small, some too dark) and the result on a settings
+ * page next to plain text inputs is that the operator can't tell
+ * a select from an input until they click. Replace the platform
+ * chevron with an SVG that matches the icon weight used elsewhere
+ * in the app, and reserve right padding so long values don't run
+ * under it.
+ */
+.settings-field select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 36px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none' stroke='%23667085' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><polyline points='3.5 5.5 7 9 10.5 5.5'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 14px 14px;
+}
+
+.settings-field select::-ms-expand {
+  display: none;
+}
+
+.settings-field input[type="text"]:hover,
+.settings-field input[type="number"]:hover,
+.settings-field select:hover {
+  border-color: color-mix(in srgb, currentColor 28%, transparent);
+}
+
+.settings-field input[type="text"]:focus-visible,
+.settings-field input[type="number"]:focus-visible,
+.settings-field select:focus-visible {
+  outline: none;
+  border-color: var(--border-strong, var(--color-border-strong, #a1a1aa));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus-ring, #635bff) 28%, transparent);
+}
+
+.settings-field input[type="text"]::placeholder,
+.settings-field input[type="number"]::placeholder {
+  color: color-mix(in srgb, currentColor 42%, transparent);
+}
+

@@ -1,0 +1,320 @@
+/* Deep links — phase panels and fields inside Phases */
+.settings-phase-panel#agent-worker,
+.settings-phase-panel#verification,
+#run-timeout {
+  scroll-margin-top: 5.5rem;
+}
+
+/*
+ * Input + trailing unit suffix (e.g. "120  seconds").
+ * The suffix sits inside the input shell so the unit reads inline with
+ * the value, while the help text below carries the longer-form
+ * default line. Padding-right reserves space so the entered number
+ * never visually collides with the suffix label.
+ */
+.settings-field-input-suffix {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+}
+
+.settings-field-input-suffix > input[type="number"] {
+  /* 84px reserves room for the longest suffix word ("attempts") plus
+     the right-edge inset; tested at the section's narrowest sensible
+     width on mobile (320px viewport). */
+  padding-right: 84px;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.settings-field-input-suffix > input[type="number"]::-webkit-inner-spin-button,
+.settings-field-input-suffix > input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.settings-field-suffix {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  font-size: 0.8125rem;
+  color: var(--text-tertiary, var(--color-text-muted, #777));
+  pointer-events: none;
+  user-select: none;
+}
+
+.settings-field-error {
+  margin: 0;
+  font-size: 12px;
+  color: #d32f2f;
+}
+
+/*
+ * Resolved-default callout for the Cursor binary field. Shown only
+ * when the input is blank AND the most recent probe surfaced a
+ * concrete path. Lifted out of the field-help paragraph because
+ * cramming "instructional copy" + "live status" into the same
+ * sentence made both unreadable: the operator's eye couldn't tell
+ * where the rules ended and the resolved fact began. Now the help
+ * text is a plain instruction, and this block is a label/value pair
+ * that visually separates "what gets used right now" from "how the
+ * field works".
+ */
+.settings-resolved-bin {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border, #e0e0e0);
+  border-radius: 4px;
+  background: var(--color-bg-subtle, #f7f7fa);
+}
+
+.settings-resolved-bin-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted, #555);
+}
+
+.settings-resolved-bin-path {
+  font-size: 13px;
+  color: var(--color-text, #1a1a1a);
+  word-break: break-all;
+}
+
+/*
+ * Inline actions row inside a section — used for the "Test cursor
+ * binary" probe button. Separated from the main page-level action
+ * footer (`.settings-actions`) so probe actions stay co-located
+ * with the field they operate on.
+ */
+.settings-inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+/*
+ * Shared button treatment.
+ * Three variants sit on top of a neutral base:
+ *   - primary (Save changes) — brand fill, tiny shadow, 98% press
+ *   - secondary (Test binary) — outlined, brightens on hover
+ *   - ghost (Discard) — text-only with a hover tint
+ * All three share min-height, padding, radius, typography so the
+ * page reads as a consistent visual family instead of a grab-bag
+ * of browser defaults.
+ */
+.settings-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 16px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: var(--text-button-tracking, -0.005em);
+  border-radius: var(--radius-md, 10px);
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background-color var(--duration-short, 150ms) ease,
+    border-color var(--duration-short, 150ms) ease,
+    color var(--duration-short, 150ms) ease,
+    box-shadow var(--duration-short, 150ms) ease,
+    transform var(--duration-fast, 100ms) ease;
+}
+
+.settings-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.settings-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-primary) 14%, transparent);
+}
+
+.settings-btn--primary {
+  color: var(--control-primary-fg);
+  background: var(--control-primary-bg);
+  border-color: var(--control-primary-bg);
+}
+
+.settings-btn--primary:not(:disabled):hover {
+  background: var(--control-primary-hover-bg);
+  border-color: var(--control-primary-hover-bg);
+}
+
+.settings-btn--primary:not(:disabled):active {
+  transform: scale(0.98);
+}
+
+.settings-btn--secondary {
+  color: var(--text-primary, var(--color-text, #1a1a1a));
+  background: var(--bg-elevated);
+  border-color: var(--border-hairline, var(--color-border, #d0d0d5));
+}
+
+.settings-btn--secondary:not(:disabled):hover {
+  border-color: var(--border-soft, var(--color-border, #d0d0d5));
+  background: var(--bg-subtle);
+}
+
+.settings-btn--ghost {
+  color: var(--text-secondary, var(--color-text-muted, #555));
+  background: transparent;
+}
+
+.settings-btn--ghost:not(:disabled):hover {
+  color: var(--text-primary, var(--color-text, #1a1a1a));
+  background: color-mix(in srgb, currentColor 6%, transparent);
+}
+
+/*
+ * Action footer.
+ * Two regions: a left-aligned context chip ("Unsaved changes" /
+ * "All changes saved" / "Resolve the errors above") and a right-
+ * aligned button cluster. The context chip solves the common
+ * Settings-page confusion of "why is Save disabled?" without
+ * forcing the operator to hunt for an inline validation error.
+ *
+ * When the form is dirty the bar sticks to the bottom of the
+ * viewport so the operator can save from anywhere on the page —
+ * mirrors the treatment used by Stripe Dashboard / Vercel
+ * project settings / GitHub repo settings, where a long settings
+ * form would otherwise force a scroll-to-bottom round trip per
+ * edit. The clean state reverts to a static card so the form
+ * can rest at the end of the page when there's nothing to save.
+ */
+.settings-actions {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-top: var(--space-3);
+  box-sizing: border-box;
+  width: 100%;
+  padding: var(--space-4) var(--layout-gutter-x);
+  border: 1px solid var(--border-hairline, var(--color-border, #e5e5e7));
+  border-radius: var(--radius-lg, 12px);
+  background: var(--bg-elevated);
+  transition:
+    border-color var(--duration-short, 200ms) ease,
+    background var(--duration-short, 200ms) ease,
+    box-shadow var(--duration-short, 200ms) ease;
+}
+
+.settings-actions[data-dirty="true"] {
+  position: sticky;
+  bottom: 16px;
+  z-index: 5;
+  border-color: var(--border-soft, var(--color-border, #d0d0d5));
+  background: var(--bg-elevated);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 8px 24px -10px rgba(0, 0, 0, 0.18);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-actions {
+    transition: none;
+  }
+}
+
+.settings-actions-status {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.settings-actions-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.3;
+  color: var(--text-secondary, var(--color-text-muted, #555));
+}
+
+.settings-actions-hint--dirty {
+  color: var(--text-primary, var(--color-text, #1a1a1a));
+  font-weight: 500;
+}
+
+.settings-actions-hint--warn {
+  color: var(--danger, #d32f2f);
+  font-weight: 500;
+}
+
+.settings-actions-hint--clean {
+  color: var(--text-tertiary, var(--color-text-muted, #777));
+}
+
+.settings-actions-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-primary);
+  flex-shrink: 0;
+}
+
+.settings-actions-buttons {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/*
+ * Success status banner.
+ * Inline icon + message in a soft green card with a colored left
+ * border. Matches the treatment used elsewhere in the app for
+ * healthy-state callouts (succeeded cycles, system-healthy chip)
+ * so the operator's eye learns one visual vocabulary.
+ */
+.settings-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0 0;
+  padding: 10px 14px;
+  border-radius: var(--radius-md, 10px);
+  border: 1px solid color-mix(in srgb, var(--success, #00a96e) 28%, transparent);
+  border-left-width: 3px;
+  background: color-mix(in srgb, var(--success, #00a96e) 8%, var(--surface-card, #fff));
+  color: var(--text-primary, var(--color-text, #1a1a1a));
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.settings-status-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--success, #00a96e);
+  flex-shrink: 0;
+}
+
+/*
+ * Error banner polish.
+ * The underlying `.err` class (global) renders a role="alert"
+ * with a muted danger background; we add spacing + radius here
+ * so it sits in the same visual rhythm as the success banner.
+ * Keeps the existing `MutationErrorBanner` contract — we only
+ * shape the margin/radius/border-treatment from the outside.
+ */
+.settings-status-err {
+  margin-top: 12px;
+  border-radius: var(--radius-md, 10px);
+  border-left-width: 3px;
+}
+

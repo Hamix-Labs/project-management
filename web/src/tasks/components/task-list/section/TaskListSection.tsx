@@ -1,10 +1,8 @@
 import {
   memo,
-  useCallback,
   useEffect,
   useMemo,
   useRef,
-  useState,
   type ReactNode,
 } from "react";
 import { useDelayedTrue } from "@/lib/useDelayedTrue";
@@ -18,17 +16,6 @@ import type { Task, TaskStatsResponse } from "@/types";
 import type { TaskWithDepth } from "../../../task-tree";
 import type { DeleteTargetInput } from "../../../hooks/useTaskDeleteFlow";
 import type { EmptyStateAction } from "@/shared/EmptyState";
-import {
-  filterTasksForListView,
-  type TaskListClientPriorityFilter,
-  type TaskListClientStatusFilter,
-} from "../filters/taskListClientFilter";
-import {
-  sortTasksForListView,
-  type TaskListSortDir,
-  type TaskListSortKey,
-} from "../filters/taskListSort";
-import { useTaskListSearchShortcut } from "../hooks/useTaskListSearchShortcut";
 import { taskListPagerSummary } from "../pager/taskListPagerSummary";
 import { TaskListTableSkeleton } from "../table/TaskListTableSkeleton";
 import { useAppTimezone } from "@/shared/time/appTimezone";
@@ -37,10 +24,11 @@ import {
   TaskBulkDeleteConfirmModal,
   TaskBulkRescheduleModal,
   TaskListBulkActionBar,
-  useBulkDeleteMutation,
-  useBulkScheduleMutation,
-  useTaskListSelection,
 } from "../bulk";
+import {
+  useTaskListSectionFilters,
+} from "./useTaskListSectionFilters";
+import { useTaskListSectionBulkActions } from "./useTaskListSectionBulkActions";
 
 type Props = {
   tasks: TaskWithDepth[];
@@ -121,223 +109,49 @@ export const TaskListSection = memo(function TaskListSection({
   const scheduleUiEnabled = !isUiFeatureOmitted("schedule");
   const statusDelayMs = smoothTransitions ? LOADING_STATUS_DELAY_MS : 0;
   const showLoadingLine = useDelayedTrue(loading, statusDelayMs);
-
-  const projectNameById = useMemo(() => {
-    const m: Record<string, string> = {};
-    for (const p of projectFilterOptions) {
-      m[p.id] = p.name;
-    }
-    return m;
-  }, [projectFilterOptions]);
-
-  const [statusFilter, setStatusFilter] =
-    useState<TaskListClientStatusFilter>("all");
-  const [priorityFilter, setPriorityFilter] =
-    useState<TaskListClientPriorityFilter>("all");
-  const [projectFilter, setProjectFilter] = useState("all");
-  const [titleSearch, setTitleSearch] = useState("");
-  const [sortKey, setSortKey] = useState<TaskListSortKey>("created_at");
-  const [sortDir, setSortDir] = useState<TaskListSortDir>("desc");
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  useTaskListSearchShortcut(searchInputRef, smoothTransitions);
-
-  const filteredTasks = useMemo(() => {
-    const base = filterTasksForListView(
-      tasks,
-      statusFilter,
-      priorityFilter,
-      titleSearch,
-    );
-    const scoped =
-      projectFilter === "all"
-        ? base
-        : projectFilter === "none"
-          ? base.filter((task) => !task.project_id)
-          : base.filter((task) => task.project_id === projectFilter);
-    return sortTasksForListView(scoped, sortKey, sortDir, projectNameById);
-  }, [
-    tasks,
-    statusFilter,
-    priorityFilter,
-    titleSearch,
-    projectFilter,
-    sortKey,
-    sortDir,
-    projectNameById,
-  ]);
-
-  const handleSortChange = useCallback((key: TaskListSortKey) => {
-    if (sortKey === key) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-      return;
-    }
-    setSortKey(key);
-    setSortDir(key === "created_at" ? "desc" : "asc");
-  }, [sortKey]);
-
-  const visibleIds = useMemo(
-    () => filteredTasks.map((t) => t.id),
-    [filteredTasks],
-  );
-  const selection = useTaskListSelection(visibleIds);
   const appTimezone = useAppTimezone();
-  const bulkSchedule = useBulkScheduleMutation();
-  const bulkDelete = useBulkDeleteMutation();
-  const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
-  const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
-  const [bulkErrorBanner, setBulkErrorBanner] = useState<string | null>(null);
-  /** Inline error inside the bulk-delete modal only (not the list banner). */
-  const [bulkDeleteError, setBulkDeleteError] = useState<string | null>(null);
 
-  const selectedScheduledIds = useMemo(() => {
-    const visibleSelected = new Set(selection.selectedVisibleIds);
-    return filteredTasks
-      .filter(
-        (t) =>
-          visibleSelected.has(t.id) && Boolean(t.pickup_not_before),
-      )
-      .map((t) => t.id);
-  }, [filteredTasks, selection.selectedVisibleIds]);
+  const filters = useTaskListSectionFilters({
+    tasks,
+    projectFilterOptions,
+    showProjectColumn,
+    onListFiltersChange,
+    smoothTransitions,
+  });
 
-  const selectedIncludesDone = useMemo(() => {
-    const visibleSelected = new Set(selection.selectedVisibleIds);
-    return filteredTasks.some(
-      (t) => visibleSelected.has(t.id) && t.status === "done",
-    );
-  }, [filteredTasks, selection.selectedVisibleIds]);
-
-  const selectedRowsForBulkDelete = useMemo(() => {
-    const visibleSelected = new Set(selection.selectedVisibleIds);
-    return filteredTasks
-      .filter((t) => visibleSelected.has(t.id))
-      .map((t) => ({
-        id: t.id,
-        title: t.title,
-      }));
-  }, [filteredTasks, selection.selectedVisibleIds]);
+  const bulk = useTaskListSectionBulkActions({
+    filteredTasks: filters.filteredTasks,
+    visibleIds: filters.visibleIds,
+    scheduleUiEnabled,
+  });
 
   const skipFiltersResetOnMount = useRef(true);
-  // Pull `clearSelection` out of `selection` so the filter-reset
-  // effect's dependency array doesn't include the whole selection
-  // object (it's a fresh reference on every render — see
-  // useTaskListSelection — and depending on it would re-run the
-  // effect after every state update, which would *clear the
-  // running selection on every checkbox toggle*. The hook stabilises
-  // `clearSelection` via useCallback so this is safe.)
-  const { clearSelection } = selection;
+  const { clearSelection } = bulk.selection;
+
   useEffect(() => {
     if (skipFiltersResetOnMount.current) {
       skipFiltersResetOnMount.current = false;
       return;
     }
     onListFiltersChange();
-    // Per the locked plan: "Selection state clears on filter
-    // change, sort change, or successful bulk action — preventing
-    // the classic 'I selected 12, applied filter, now Apply to
-    // selection targets things I cant see'".
     clearSelection();
   }, [
-    statusFilter,
-    priorityFilter,
-    projectFilter,
-    titleSearch,
-    sortKey,
-    sortDir,
+    filters.statusFilter,
+    filters.priorityFilter,
+    filters.projectFilter,
+    filters.titleSearch,
+    filters.sortKey,
+    filters.sortDir,
     onListFiltersChange,
     clearSelection,
   ]);
-
-  const closeReschedule = useCallback(() => {
-    setRescheduleModalOpen(false);
-    bulkSchedule.reset();
-  }, [bulkSchedule]);
-
-  const closeBulkDelete = useCallback(() => {
-    setBulkDeleteModalOpen(false);
-    bulkDelete.reset();
-    setBulkDeleteError(null);
-  }, [bulkDelete]);
-
-  const handleRescheduleSubmit = useCallback(
-    async (next: string | null) => {
-      const ids = selection.selectedVisibleIds;
-      if (ids.length === 0) {
-        setRescheduleModalOpen(false);
-        return;
-      }
-      if (
-        ids.some(
-          (id) => filteredTasks.find((t) => t.id === id)?.status === "done",
-        )
-      ) {
-        setRescheduleModalOpen(false);
-        return;
-      }
-      const result = await bulkSchedule.run(ids, next);
-      if (result.failed.length === 0) {
-        setRescheduleModalOpen(false);
-        selection.clearSelection();
-        setBulkErrorBanner(null);
-      } else {
-        setBulkErrorBanner(formatBulkFailure(result.failed.length, result.attempted));
-      }
-    },
-    [bulkSchedule, filteredTasks, selection],
-  );
-
-  const handleClearSchedule = useCallback(async () => {
-    const ids = selectedScheduledIds;
-    if (ids.length === 0) return;
-    if (ids.length > 5) {
-      const ok = window.confirm(
-        `Clear scheduled pickup on ${ids.length} tasks? They will be eligible for the agent immediately.`,
-      );
-      if (!ok) return;
-    }
-    const result = await bulkSchedule.run(ids, null);
-    if (result.failed.length === 0) {
-      selection.clearSelection();
-      setBulkErrorBanner(null);
-    } else {
-      setBulkErrorBanner(formatBulkFailure(result.failed.length, result.attempted));
-    }
-  }, [bulkSchedule, selectedScheduledIds, selection]);
-
-  const handleBulkDeleteConfirm = useCallback(async () => {
-    const ids = selection.selectedVisibleIds;
-    if (ids.length === 0) {
-      closeBulkDelete();
-      return;
-    }
-    const result = await bulkDelete.run(ids);
-    if (result.failed.length === 0) {
-      setBulkDeleteModalOpen(false);
-      bulkDelete.reset();
-      selection.clearSelection();
-      setBulkDeleteError(null);
-    } else {
-      setBulkDeleteError(
-        formatBulkDeleteFailure(result.failed.length, result.attempted),
-      );
-    }
-  }, [bulkDelete, closeBulkDelete, selection]);
-
-  const handleCancelSelection = useCallback(() => {
-    selection.clearSelection();
-    setBulkErrorBanner(null);
-    setBulkDeleteModalOpen(false);
-    bulkDelete.reset();
-    setBulkDeleteError(null);
-    setRescheduleModalOpen(false);
-    bulkSchedule.reset();
-  }, [bulkDelete, bulkSchedule, selection]);
 
   const showTaskPager =
     !loading && (hasPrevPage || hasNextPage || tasks.length === listPageSize);
 
   const headingSummary = useMemo(
-    () => formatTaskListHeadingSummary(filteredTasks.length, taskStats),
-    [filteredTasks.length, taskStats],
+    () => formatTaskListHeadingSummary(filters.filteredTasks.length, taskStats),
+    [filters.filteredTasks.length, taskStats],
   );
 
   return (
@@ -352,23 +166,23 @@ export const TaskListSection = memo(function TaskListSection({
         {!loading ? (
           <>
             <TaskListStatusTabs
-              value={statusFilter}
-              onChange={setStatusFilter}
+              value={filters.statusFilter}
+              onChange={filters.setStatusFilter}
               stats={taskStats}
             />
             <TaskListFilters
-              priorityFilter={priorityFilter}
+              priorityFilter={filters.priorityFilter}
               onPriorityFilterChange={(v) =>
-                setPriorityFilter(v as TaskListClientPriorityFilter)
+                filters.setPriorityFilter(v as typeof filters.priorityFilter)
               }
-              projectFilter={projectFilter}
+              projectFilter={filters.projectFilter}
               projectOptions={showProjectColumn ? projectFilterOptions : []}
               onProjectFilterChange={
-                showProjectColumn ? setProjectFilter : undefined
+                showProjectColumn ? filters.setProjectFilter : undefined
               }
-              titleSearch={titleSearch}
-              onTitleSearchChange={setTitleSearch}
-              searchInputRef={searchInputRef}
+              titleSearch={filters.titleSearch}
+              onTitleSearchChange={filters.setTitleSearch}
+              searchInputRef={filters.searchInputRef}
             />
           </>
         ) : null}
@@ -387,31 +201,31 @@ export const TaskListSection = memo(function TaskListSection({
             caption={TASK_LIST_TABLE_CAPTION}
             refreshing={refreshing}
             tasks={tasks}
-            filteredTasks={filteredTasks}
+            filteredTasks={filters.filteredTasks}
             saving={saving}
             emptyListAction={emptyListAction}
             onEdit={onEdit}
             onRequestDelete={onRequestDelete}
-            projectNameById={projectNameById}
+            projectNameById={filters.projectNameById}
             showProjectColumn={showProjectColumn}
-            sortKey={sortKey}
-            sortDir={sortDir}
-            onSortChange={handleSortChange}
+            sortKey={filters.sortKey}
+            sortDir={filters.sortDir}
+            onSortChange={filters.handleSortChange}
             selection={{
-              isSelected: selection.isSelected,
-              onRowToggle: selection.toggle,
-              allVisibleSelected: selection.allVisibleSelected,
-              someVisibleSelected: selection.someVisibleSelected,
-              onToggleAllVisible: selection.toggleAllVisible,
+              isSelected: bulk.selection.isSelected,
+              onRowToggle: bulk.selection.toggle,
+              allVisibleSelected: bulk.selection.allVisibleSelected,
+              someVisibleSelected: bulk.selection.someVisibleSelected,
+              onToggleAllVisible: bulk.selection.toggleAllVisible,
             }}
           />
-          {bulkErrorBanner ? (
+          {bulk.bulkErrorBanner ? (
             <p
               className="err task-list-bulk-error"
               role="alert"
               data-testid="task-list-bulk-error"
             >
-              {bulkErrorBanner}
+              {bulk.bulkErrorBanner}
             </p>
           ) : null}
           {showTaskPager ? (
@@ -433,55 +247,35 @@ export const TaskListSection = memo(function TaskListSection({
         </div>
       ) : null}
       <TaskListBulkActionBar
-        selectedCount={selection.selectedVisibleIds.length}
-        scheduledCount={selectedScheduledIds.length}
-        rescheduleDisabled={selectedIncludesDone}
+        selectedCount={bulk.selection.selectedVisibleIds.length}
+        scheduledCount={bulk.selectedScheduledIds.length}
+        rescheduleDisabled={bulk.selectedIncludesDone}
         showScheduleActions={scheduleUiEnabled}
-        busy={bulkSchedule.isPending || bulkDelete.isPending}
-        onReschedule={() => {
-          setBulkDeleteModalOpen(false);
-          bulkDelete.reset();
-          if (selectedIncludesDone) return;
-          setBulkErrorBanner(null);
-          setRescheduleModalOpen(true);
-        }}
-        onClearSchedule={handleClearSchedule}
-        onDelete={() => {
-          setRescheduleModalOpen(false);
-          bulkSchedule.reset();
-          setBulkErrorBanner(null);
-          setBulkDeleteError(null);
-          setBulkDeleteModalOpen(true);
-        }}
-        onCancel={handleCancelSelection}
+        busy={bulk.bulkSchedule.isPending || bulk.bulkDelete.isPending}
+        onReschedule={bulk.openRescheduleModal}
+        onClearSchedule={bulk.handleClearSchedule}
+        onDelete={bulk.openBulkDeleteModal}
+        onCancel={bulk.handleCancelSelection}
       />
-      {bulkDeleteModalOpen && selectedRowsForBulkDelete.length > 0 ? (
+      {bulk.bulkDeleteModalOpen && bulk.selectedRowsForBulkDelete.length > 0 ? (
         <TaskBulkDeleteConfirmModal
-          tasks={selectedRowsForBulkDelete}
-          busy={bulkDelete.isPending}
-          error={bulkDeleteError}
-          onCancel={closeBulkDelete}
-          onConfirm={handleBulkDeleteConfirm}
+          tasks={bulk.selectedRowsForBulkDelete}
+          busy={bulk.bulkDelete.isPending}
+          error={bulk.bulkDeleteError}
+          onCancel={bulk.closeBulkDelete}
+          onConfirm={bulk.handleBulkDeleteConfirm}
         />
       ) : null}
-      {scheduleUiEnabled && rescheduleModalOpen ? (
+      {bulk.rescheduleModalOpen ? (
         <TaskBulkRescheduleModal
-          selectedCount={selection.selectedVisibleIds.length}
+          selectedCount={bulk.selection.selectedVisibleIds.length}
           appTimezone={appTimezone}
-          busy={bulkSchedule.isPending}
-          error={bulkErrorBanner}
-          onClose={closeReschedule}
-          onSubmit={handleRescheduleSubmit}
+          busy={bulk.bulkSchedule.isPending}
+          error={bulk.bulkErrorBanner}
+          onClose={bulk.closeReschedule}
+          onSubmit={bulk.handleRescheduleSubmit}
         />
       ) : null}
     </section>
   );
 });
-
-function formatBulkFailure(failedCount: number, attempted: number): string {
-  return `${failedCount} of ${attempted} reschedules failed. The successful ones already updated; the failed rows kept their previous schedule. Try again or check the task detail pages for details.`;
-}
-
-function formatBulkDeleteFailure(failedCount: number, attempted: number): string {
-  return `${failedCount} of ${attempted} deletes failed. Tasks that were removed stay deleted; try again for the rest.`;
-}
