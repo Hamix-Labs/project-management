@@ -8,8 +8,10 @@ import (
 	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
+	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel/taskload"
+	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
+	checklistmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -29,11 +31,11 @@ func SeedDefinitionItemsAtCreateInTx(tx *gorm.DB, taskID string, items []CreateC
 	if len(items) == 0 {
 		return nil
 	}
-	if _, err := storekernel.LoadTask(tx, taskID); err != nil {
+	if _, err := taskload.LoadTask(tx, taskID); err != nil {
 		return err
 	}
 	var maxOrder int
-	row := tx.Model(&model.TaskChecklistItem{}).Select("COALESCE(MAX(sort_order), 0)").Where("task_id = ?", taskID)
+	row := tx.Model(&checklistmodel.TaskChecklistItem{}).Select("COALESCE(MAX(sort_order), 0)").Where("task_id = ?", taskID)
 	if err := row.Scan(&maxOrder).Error; err != nil {
 		return fmt.Errorf("checklist order: %w", err)
 	}
@@ -51,13 +53,13 @@ func SeedDefinitionItemsAtCreateInTx(tx *gorm.DB, taskID string, items []CreateC
 			return err
 		}
 		maxOrder++
-		it := domain.TaskChecklistItem{
+		it := checklistdomain.TaskChecklistItem{
 			ID:        uuid.NewString(),
 			TaskID:    taskID,
 			SortOrder: maxOrder,
 			Text:      text,
 		}
-		if err := tx.Create(model.FromDomainTaskChecklistItemPtr(&it)).Error; err != nil {
+		if err := tx.Create(checklistmodel.FromDomainTaskChecklistItemPtr(&it)).Error; err != nil {
 			return fmt.Errorf("insert checklist item: %w", err)
 		}
 		if len(cmds) > 0 {

@@ -242,6 +242,7 @@ func actorFromRequest(r *http.Request) domain.Actor {
 	}
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func requestCtx(r *http.Request) context.Context {
 	if r == nil {
 		return context.Background()
@@ -249,6 +250,7 @@ func requestCtx(r *http.Request) context.Context {
 	return r.Context()
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func requestRouteLabel(r *http.Request) string {
 	if r == nil {
 		return ""

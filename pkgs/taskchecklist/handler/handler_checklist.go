@@ -231,6 +231,7 @@ func (h *Handler) deleteChecklistItem(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+//funclogmeasure:skip category=delegate-already-logs reason="SSE notify callback; HTTP handler chokepoint emits trace."
 func (h *Handler) notifyChecklistChange(ctx context.Context, taskID string) error {
 	if h.notifyTaskUpdated == nil {
 		return nil

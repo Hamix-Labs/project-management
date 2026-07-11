@@ -11,8 +11,10 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
+	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel/taskload"
+	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
+	checklistmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -26,7 +28,7 @@ func SetDoneWithEvidenceInTx(
 	tx *gorm.DB,
 	subjectTaskID, itemID string,
 	evidence string,
-	verifier domain.VerifierKind,
+	verifier checklistdomain.VerifierKind,
 	reasoning, cycleID string,
 	by domain.Actor,
 ) (CriteriaFlagChange, error) {
@@ -45,31 +47,31 @@ func SetDoneWithEvidenceInTx(
 	if subjectTaskID == "" || itemID == "" {
 		return CriteriaFlagChange{}, fmt.Errorf("%w: id", domain.ErrInvalidInput)
 	}
-	if _, err := storekernel.LoadTask(tx, subjectTaskID); err != nil {
+	if _, err := taskload.LoadTask(tx, subjectTaskID); err != nil {
 		return CriteriaFlagChange{}, err
 	}
 	defOwner, err := DefinitionSourceTaskIDInTx(tx, subjectTaskID)
 	if err != nil {
 		return CriteriaFlagChange{}, err
 	}
-	var it model.TaskChecklistItem
+	var it checklistmodel.TaskChecklistItem
 	if err := tx.Where("id = ? AND task_id = ?", itemID, defOwner).First(&it).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return CriteriaFlagChange{}, domain.ErrNotFound
 		}
 		return CriteriaFlagChange{}, fmt.Errorf("load checklist item: %w", err)
 	}
-	drow := domain.TaskChecklistCompletion{
+	drow := checklistdomain.TaskChecklistCompletion{
 		TaskID:            subjectTaskID,
 		ItemID:            itemID,
 		At:                time.Now().UTC(),
-		By:                by,
+		By:                string(by),
 		Evidence:          evidence,
 		VerifiedBy:        verifier,
 		VerifierReasoning: reasoning,
 		CycleID:           strings.TrimSpace(cycleID),
 	}
-	row := model.FromDomainTaskChecklistCompletion(drow)
+	row := checklistmodel.FromDomainTaskChecklistCompletion(drow)
 	if err := tx.Clauses(clause.OnConflict{
 		Columns: []clause.Column{{Name: "task_id"}, {Name: "item_id"}},
 		DoUpdates: clause.AssignmentColumns([]string{
@@ -93,11 +95,11 @@ func SetDoneWithEvidenceInTx(
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func validateEvidencePayload(evidence string, verifier domain.VerifierKind, reasoning string) error {
-	if !domain.ValidVerifierKind(verifier) {
+func validateEvidencePayload(evidence string, verifier checklistdomain.VerifierKind, reasoning string) error {
+	if !checklistdomain.ValidVerifierKind(verifier) {
 		return fmt.Errorf("%w: invalid verified_by", domain.ErrInvalidInput)
 	}
-	if verifier != domain.VerifierLegacy {
+	if verifier != checklistdomain.VerifierLegacy {
 		if strings.TrimSpace(evidence) == "" {
 			return fmt.Errorf("%w: evidence required", domain.ErrInvalidInput)
 		}
@@ -117,7 +119,7 @@ func SetDoneWithEvidence(
 	db *gorm.DB,
 	subjectTaskID, itemID string,
 	evidence string,
-	verifier domain.VerifierKind,
+	verifier checklistdomain.VerifierKind,
 	reasoning, cycleID string,
 	by domain.Actor,
 ) (CriteriaFlagChange, error) {

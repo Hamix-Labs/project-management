@@ -7,6 +7,7 @@ import (
 	"log/slog"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/contract"
+	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/store/internal/checklist"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"gorm.io/gorm"
@@ -65,6 +66,8 @@ func SeedDefinitionItemsAtCreateInTx(tx *gorm.DB, taskID string, items []CreateC
 }
 
 // BackfillCriteriaSatisfiedAt sets criteria_satisfied_at for tasks whose checklist is already complete.
+//
+//funclogmeasure:skip category=delegate-already-logs reason="Package-level forwarder; checklist.BackfillCriteriaSatisfiedAt emits trace at the store chokepoint."
 func BackfillCriteriaSatisfiedAt(ctx context.Context, db *gorm.DB) error {
 	return checklist.BackfillCriteriaSatisfiedAt(ctx, db)
 }
@@ -86,7 +89,7 @@ func (s *Store) ListChecklistForSubject(ctx context.Context, taskID string) ([]C
 	return checklist.List(ctx, s.db, taskID)
 }
 
-func (s *Store) AddChecklistItem(ctx context.Context, taskID, text string, verifyCommands []VerifyCommandInput, by domain.Actor) (*domain.TaskChecklistItem, error) {
+func (s *Store) AddChecklistItem(ctx context.Context, taskID, text string, verifyCommands []VerifyCommandInput, by domain.Actor) (*checklistdomain.TaskChecklistItem, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskchecklist.store.AddChecklistItem")
 	return checklist.Add(ctx, s.db, taskID, text, verifyCommands, by)
 }
@@ -110,7 +113,7 @@ func (s *Store) SetChecklistItemDoneWithEvidence(
 	ctx context.Context,
 	subjectTaskID, itemID string,
 	evidence string,
-	verifier domain.VerifierKind,
+	verifier checklistdomain.VerifierKind,
 	reasoning, cycleID string,
 	by domain.Actor,
 ) error {
@@ -125,7 +128,7 @@ func (s *Store) SetDoneWithEvidence(
 	ctx context.Context,
 	subjectTaskID, itemID string,
 	evidence string,
-	verifier domain.VerifierKind,
+	verifier checklistdomain.VerifierKind,
 	reasoning, cycleID string,
 	by domain.Actor,
 ) (CriteriaFlagChange, error) {

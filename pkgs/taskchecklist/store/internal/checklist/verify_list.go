@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
+	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel/taskload"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"gorm.io/gorm"
 )
@@ -32,7 +33,7 @@ func ListForVerify(ctx context.Context, db *gorm.DB, taskID string) ([]VerifyIte
 	}
 	var out []VerifyItem
 	err := db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if _, err := storekernel.LoadTask(tx, taskID); err != nil {
+		if _, err := taskload.LoadTask(tx, taskID); err != nil {
 			return err
 		}
 		defID, err := DefinitionSourceTaskIDInTx(tx, taskID)
