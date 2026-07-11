@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/projects/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )

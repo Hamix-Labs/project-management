@@ -26,7 +26,11 @@ import (
 // Rev 6 (ADR-0042): projects.is_default; per-repo default projects; remove global default row.
 //
 // Rev 7: backfill worktree_id in task_templates / task_drafts compose payloads.
-const SchemaRevision = 7
+//
+// Rev 8 (Tier 3 BC blueprint): domain types colocated to taskchecklist,
+// taskevents, taskcycles, and taskcore; pkgs/tasks/domain keeps compat aliases.
+// No SQL or post-AutoMigrate behavior change.
+const SchemaRevision = 8
 
 const schemaMetaRowID = 1
 

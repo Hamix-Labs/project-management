@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
+	eventsmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 )
 
 func TestStore_events_recorded_for_create_and_title_change(t *testing.T) {
@@ -24,7 +24,7 @@ func TestStore_events_recorded_for_create_and_title_change(t *testing.T) {
 		t.Fatal(err)
 	}
 	var n int64
-	if err := db.Model(&model.TaskEvent{}).Where("task_id = ?", tsk.ID).Count(&n).Error; err != nil {
+	if err := db.Model(&eventsmodel.TaskEvent{}).Where("task_id = ?", tsk.ID).Count(&n).Error; err != nil {
 		t.Fatal(err)
 	}
 	if n < 2 {

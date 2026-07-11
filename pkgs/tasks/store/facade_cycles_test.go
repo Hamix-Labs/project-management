@@ -8,8 +8,9 @@ import (
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
+	cyclesmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store/model"
+	eventsmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"gorm.io/gorm"
 )
 
@@ -910,11 +911,11 @@ func assertSubset(t *testing.T, got, want map[string]any, label string) {
 
 func loadEventBySeq(t *testing.T, db *gorm.DB, taskID string, seq int64) domain.TaskEvent {
 	t.Helper()
-	var row model.TaskEvent
+	var row eventsmodel.TaskEvent
 	if err := db.Where("task_id = ? AND seq = ?", taskID, seq).First(&row).Error; err != nil {
 		t.Fatalf("load event task=%s seq=%d: %v", taskID, seq, err)
 	}
-	return model.ToDomainTaskEvent(row)
+	return eventsmodel.ToDomainTaskEvent(row)
 }
 
 func assertEvent(t *testing.T, db *gorm.DB, taskID string, seq int64, want cycleEventCheck) domain.TaskEvent {
@@ -1149,7 +1150,7 @@ func TestStore_DualWrite_seq_is_monotonic_across_entrypoints(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var rows []model.TaskEvent
+	var rows []eventsmodel.TaskEvent
 	if err := db.Where("task_id = ?", tsk.ID).Order("seq ASC").Find(&rows).Error; err != nil {
 		t.Fatal(err)
 	}
@@ -1164,7 +1165,7 @@ func TestStore_DualWrite_seq_is_monotonic_across_entrypoints(t *testing.T) {
 		t.Fatalf("event count = %d, want %d (%+v)", len(rows), len(wantTypes), rows)
 	}
 	for i, r := range rows {
-		ev := model.ToDomainTaskEvent(r)
+		ev := eventsmodel.ToDomainTaskEvent(r)
 		if ev.Seq != int64(i+1) {
 			t.Fatalf("row %d seq = %d, want %d", i, ev.Seq, i+1)
 		}
@@ -1198,18 +1199,18 @@ func TestStore_DualWrite_StartCycle_rolls_back_when_mirror_insert_fails(t *testi
 		}
 	})
 
-	beforeCycles := countRows(t, db, &model.TaskCycle{})
-	beforeEvents := countRows(t, db, &model.TaskEvent{})
+	beforeCycles := countRows(t, db, &cyclesmodel.TaskCycle{})
+	beforeEvents := countRows(t, db, &eventsmodel.TaskEvent{})
 
 	_, err := s.StartCycle(ctx, StartCycleInput{TaskID: tsk.ID, TriggeredBy: domain.ActorAgent})
 	if err == nil {
 		t.Fatal("StartCycle: want error from mirror failure, got nil")
 	}
 
-	if got := countRows(t, db, &model.TaskCycle{}); got != beforeCycles {
+	if got := countRows(t, db, &cyclesmodel.TaskCycle{}); got != beforeCycles {
 		t.Fatalf("task_cycles count = %d, want %d (cycle insert leaked despite mirror failure)", got, beforeCycles)
 	}
-	if got := countRows(t, db, &model.TaskEvent{}); got != beforeEvents {
+	if got := countRows(t, db, &eventsmodel.TaskEvent{}); got != beforeEvents {
 		t.Fatalf("task_events count = %d, want %d (rollback did not restore baseline)", got, beforeEvents)
 	}
 }

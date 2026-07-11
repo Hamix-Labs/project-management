@@ -4,7 +4,7 @@ package handler
 import (
 	"net/http"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
+	"github.com/AlexsanderHamir/Hamix/pkgs/projects/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 )
 

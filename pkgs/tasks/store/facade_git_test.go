@@ -10,8 +10,8 @@ import (
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
+	taskcoremodel "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 )
 
 func gitTestStore(t *testing.T) (*Store, context.Context, gitwork.Service) {
@@ -146,7 +146,7 @@ func TestStore_GitDeleteGuard_runningTask(t *testing.T) {
 		t.Fatalf("worktree branch_id = %q want %q", wt.BranchID, branchID)
 	}
 	wtID := wt.ID
-	task := model.Task{
+	task := taskcoremodel.Task{
 		ID:            "task-running-guard",
 		Title:         "running",
 		InitialPrompt: "x",
@@ -277,7 +277,7 @@ func TestUnregisterGitWorktreeByID_rejectsRunningTask(t *testing.T) {
 		t.Fatal(err)
 	}
 	wtID := wt.ID
-	task := model.Task{
+	task := taskcoremodel.Task{
 		ID:            "task-global-running",
 		Title:         "running",
 		InitialPrompt: "x",
