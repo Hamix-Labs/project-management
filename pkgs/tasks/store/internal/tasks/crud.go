@@ -10,6 +10,7 @@ import (
 
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
+	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/kernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/checklist"
@@ -193,7 +194,7 @@ func buildCreateTaskFromInput(in CreateInput, by domain.Actor) (t *domain.Task, 
 	}
 	runner := strings.TrimSpace(in.Runner)
 	if runner == "" {
-		runner = domain.DefaultRunner
+		runner = settingsdomain.DefaultRunner
 	}
 	t = &domain.Task{
 		ID:                    id,

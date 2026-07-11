@@ -5,6 +5,7 @@ import (
 
 	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
+	settingsmodel "github.com/AlexsanderHamir/Hamix/pkgs/settings/store/model"
 	"gorm.io/gorm"
 )
 
@@ -33,7 +34,7 @@ func AutoMigrateAll(db *gorm.DB) error {
 		&projectmodel.ProjectContextItem{},
 		&projectmodel.ProjectContextEdge{},
 		&TaskContextSnapshot{},
-		&AppSettings{},
+		&settingsmodel.AppSettings{},
 		&gitmodel.GitRepository{},
 		&gitmodel.GitWorktree{},
 		&gitmodel.GitBranch{},

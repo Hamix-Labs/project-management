@@ -58,7 +58,6 @@ Tasks and harness reference git rows only via contract types and the composed ta
 
 | Context | Trigger |
 | --- | --- |
-| `pkgs/settings/` | Auth / multi-tenant prep |
 | `pkgs/storekernel/` | Third store extraction needs shared kernel |
 | Legacy project-scoped git HTTP | Phase 2 dead-code after global path is sole surface |
 

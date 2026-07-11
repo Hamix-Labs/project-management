@@ -7,6 +7,7 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
+	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
@@ -51,13 +52,13 @@ func (unimplementedHandlerStore) CountGitRepositories(context.Context) (int64, e
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) GetSettings(context.Context) (domain.AppSettings, error) {
-	return domain.AppSettings{}, errNotImplemented
+func (unimplementedHandlerStore) GetSettings(context.Context) (settingsdomain.AppSettings, error) {
+	return settingsdomain.AppSettings{}, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) UpdateSettings(context.Context, contract.SettingsPatch) (domain.AppSettings, error) {
-	return domain.AppSettings{}, errNotImplemented
+func (unimplementedHandlerStore) UpdateSettings(context.Context, contract.SettingsPatch) (settingsdomain.AppSettings, error) {
+	return settingsdomain.AppSettings{}, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."

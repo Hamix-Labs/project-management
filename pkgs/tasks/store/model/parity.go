@@ -3,6 +3,8 @@ package model
 import (
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
+	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
+	settingsmodel "github.com/AlexsanderHamir/Hamix/pkgs/settings/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
@@ -22,8 +24,8 @@ type ParityPair struct {
 var ParityPairs = []ParityPair{
 	{
 		Name:   "AppSettings",
-		Domain: &domain.AppSettings{},
-		Model:  &AppSettings{},
+		Domain: &settingsdomain.AppSettings{},
+		Model:  &settingsmodel.AppSettings{},
 		Table:  "app_settings",
 	},
 	{

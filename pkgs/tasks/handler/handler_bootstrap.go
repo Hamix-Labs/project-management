@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	settingshandler "github.com/AlexsanderHamir/Hamix/pkgs/settings/handler"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler/readpolicy"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/service"
@@ -33,7 +34,7 @@ type bootstrapDraftsPayload struct {
 // GET /settings, etc. — bootstrap clients must tolerate its absence
 // (older or stripped-down servers) and gracefully fall back.
 type bootstrapResponse struct {
-	Settings settingsResponse       `json:"settings"`
+	Settings settingshandler.SettingsWireResponse `json:"settings"`
 	Tasks    bootstrapTasksPayload  `json:"tasks"`
 	Stats    taskStatsResponse      `json:"stats"`
 	Projects projectsListResponse   `json:"projects"`
@@ -63,7 +64,7 @@ func (h *Handler) bootstrap(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := bootstrapResponse{
-		Settings: h.settingsResponseFrom(data.Settings),
+		Settings: settingshandler.SettingsWireFrom(data.Settings),
 		Tasks:    buildListResponse(data.Tasks, readpolicy.BootstrapListLimit, 0, data.HasMore),
 		Stats:    taskStatsResponseFromStore(data.Stats),
 		Projects: projectsListResponse{

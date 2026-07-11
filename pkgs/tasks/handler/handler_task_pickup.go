@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
@@ -36,7 +37,7 @@ import (
 // All times are returned in UTC. Validation errors are wrapped with
 // domain.ErrInvalidInput so the standard handler envelope renders a
 // 400.
-func resolvePickupNotBeforeForCreate(raw *string, status domain.Status, settings domain.AppSettings) (*time.Time, error) {
+func resolvePickupNotBeforeForCreate(raw *string, status domain.Status, settings settingsdomain.AppSettings) (*time.Time, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.resolvePickupNotBeforeForCreate")
 	if raw != nil {
 		s := strings.TrimSpace(*raw)

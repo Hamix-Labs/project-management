@@ -10,7 +10,7 @@ import (
 	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
-	taskdomain "github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -19,7 +19,7 @@ func migrateRepoRootToGitRepository(ctx context.Context, db *gorm.DB) error {
 	slog.Debug("trace", "operation", "postgres.migrateRepoRootToGitRepository")
 	var path string
 	err := db.WithContext(ctx).
-		Raw(`SELECT COALESCE(repo_root, '') FROM app_settings WHERE id = ?`, taskdomain.AppSettingsRowID).
+		Raw(`SELECT COALESCE(repo_root, '') FROM app_settings WHERE id = ?`, settingsdomain.AppSettingsRowID).
 		Scan(&path).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

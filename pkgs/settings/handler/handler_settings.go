@@ -1,0 +1,235 @@
+package handler
+
+import (
+	"errors"
+	"io"
+	"log/slog"
+	"net/http"
+	"strings"
+	"time"
+
+	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/registry"
+	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
+)
+
+func (h *Handler) getSettings(w http.ResponseWriter, r *http.Request) {
+	const op = "settings.get"
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "settings.handler.getSettings")
+	r = calltrace.WithRequestRoot(r, op)
+	debugHTTPRequest(r, op)
+
+	cfg, err := h.settings.GetSettings(r.Context())
+	if err != nil {
+		writeStoreError(w, r, op, err)
+		return
+	}
+	writeJSONWithETag(w, r, op, http.StatusOK, h.settingsResponseFrom(cfg))
+}
+
+func (h *Handler) patchSettings(w http.ResponseWriter, r *http.Request) {
+	const op = "settings.patch"
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "settings.handler.patchSettings")
+	r = calltrace.WithRequestRoot(r, op)
+	debugHTTPRequest(r, op)
+
+	if h.agent == nil {
+		writeJSONError(w, r, op, http.StatusServiceUnavailable, "agent worker control unavailable")
+		return
+	}
+
+	var body settingsPatchBody
+	if err := decodeJSON(r.Context(), r.Body, &body); err != nil {
+		writeError(w, r, op, err, http.StatusBadRequest)
+		return
+	}
+	patch := contract.SettingsPatch{
+		AgentPaused:                 body.AgentPaused,
+		Runner:                      body.Runner,
+		CursorBin:                   body.CursorBin,
+		CursorModel:                 body.CursorModel,
+		MaxRunDurationSeconds:       body.MaxRunDurationSeconds,
+		StreamIdleStuckSeconds:      body.StreamIdleStuckSeconds,
+		AgentPickupDelaySeconds:     body.AgentPickupDelaySeconds,
+		DisplayTimezone:             body.DisplayTimezone,
+		VerifyMaxRetries:            body.VerifyMaxRetries,
+		VerifyRunnerName:            body.VerifyRunnerName,
+		VerifyRunnerModel:           body.VerifyRunnerModel,
+		VerifyCommandTimeoutSeconds: body.VerifyCommandTimeoutSeconds,
+		CursorSessionResumeEnabled:  body.CursorSessionResumeEnabled,
+	}
+	if patch.IsEmpty() {
+		writeJSONError(w, r, op, http.StatusBadRequest, "patch body must include at least one field")
+		return
+	}
+
+	updated, err := h.settings.UpdateSettings(r.Context(), patch)
+	if err != nil {
+		writeStoreError(w, r, op, err)
+		return
+	}
+	if reloadErr := h.agent.Reload(r.Context()); reloadErr != nil {
+		slog.Error("settings patch persisted but supervisor reload failed",
+			"cmd", calltrace.LogCmd, "operation", op, "err", reloadErr)
+		writeJSONError(w, r, op, http.StatusInternalServerError, "settings saved but worker reload failed")
+		return
+	}
+	h.notifyChange(realtime.SettingsChanged)
+	writeJSON(w, r, op, http.StatusOK, h.settingsResponseFrom(updated))
+}
+
+// Deprecated: use POST /runners/{id}/probe instead.
+func (h *Handler) probeCursor(w http.ResponseWriter, r *http.Request) {
+	const op = "settings.probe_cursor"
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "settings.handler.probeCursor")
+	r = calltrace.WithRequestRoot(r, op)
+	debugHTTPRequest(r, op)
+
+	if h.agent == nil {
+		writeJSONError(w, r, op, http.StatusServiceUnavailable, "agent worker control unavailable")
+		return
+	}
+
+	var body probeRequest
+	if r.ContentLength != 0 {
+		if err := decodeJSON(r.Context(), r.Body, &body); err != nil {
+			if !errors.Is(err, io.EOF) {
+				writeError(w, r, op, err, http.StatusBadRequest)
+				return
+			}
+		}
+	}
+	body.Runner = strings.TrimSpace(body.Runner)
+	body.BinaryPath = strings.TrimSpace(body.BinaryPath)
+
+	if body.Runner == "" || body.BinaryPath == "" {
+		cfg, err := h.settings.GetSettings(r.Context())
+		if err != nil {
+			writeStoreError(w, r, op, err)
+			return
+		}
+		if body.Runner == "" {
+			body.Runner = cfg.Runner
+		}
+		if body.BinaryPath == "" {
+			body.BinaryPath = cfg.CursorBin
+		}
+	}
+
+	version, resolvedBin, err := h.agent.ProbeRunner(r.Context(), body.Runner, body.BinaryPath, settingsProbeTimeout)
+	resp := probeResponse{Runner: body.Runner, BinaryPath: resolvedBin}
+	if err != nil {
+		resp.OK = false
+		resp.Error = err.Error()
+		writeJSON(w, r, op, http.StatusOK, resp)
+		return
+	}
+	resp.OK = true
+	resp.Version = version
+	writeJSON(w, r, op, http.StatusOK, resp)
+}
+
+// Deprecated: use POST /runners/{id}/list-models instead.
+func (h *Handler) listCursorModels(w http.ResponseWriter, r *http.Request) {
+	const op = "settings.list_cursor_models"
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "settings.handler.listCursorModels")
+	r = calltrace.WithRequestRoot(r, op)
+	debugHTTPRequest(r, op)
+
+	var body listCursorModelsRequest
+	if r.ContentLength != 0 {
+		if err := decodeJSON(r.Context(), r.Body, &body); err != nil {
+			if !errors.Is(err, io.EOF) {
+				writeError(w, r, op, err, http.StatusBadRequest)
+				return
+			}
+		}
+	}
+	body.Runner = strings.TrimSpace(body.Runner)
+	body.BinaryPath = strings.TrimSpace(body.BinaryPath)
+
+	if body.Runner == "" || body.BinaryPath == "" {
+		cfg, err := h.settings.GetSettings(r.Context())
+		if err != nil {
+			writeStoreError(w, r, op, err)
+			return
+		}
+		if body.Runner == "" {
+			body.Runner = cfg.Runner
+		}
+		if body.BinaryPath == "" {
+			body.BinaryPath = cfg.CursorBin
+		}
+	}
+
+	models, resolved, err := registry.ListModelsForRunner(r.Context(), body.Runner, body.BinaryPath, 30*time.Second)
+	out := listCursorModelsResponse{Runner: body.Runner, BinaryPath: resolved}
+	if err != nil {
+		out.OK = false
+		out.Error = err.Error()
+		writeJSON(w, r, op, http.StatusOK, out)
+		return
+	}
+	out.OK = true
+	out.Models = make([]cursorModelWire, 0, len(models))
+	for _, m := range models {
+		out.Models = append(out.Models, cursorModelWire{ID: m.ID, Label: m.Label})
+	}
+	writeJSON(w, r, op, http.StatusOK, out)
+}
+
+func (h *Handler) cancelCurrentRun(w http.ResponseWriter, r *http.Request) {
+	const op = "settings.cancel_current_run"
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "settings.handler.cancelCurrentRun")
+	r = calltrace.WithRequestRoot(r, op)
+	debugHTTPRequest(r, op)
+
+	if h.agent == nil {
+		writeJSONError(w, r, op, http.StatusServiceUnavailable, "agent worker control unavailable")
+		return
+	}
+	cancelled := h.agent.CancelCurrentRun()
+	if cancelled {
+		h.notifyChange(realtime.AgentRunCancelled)
+	}
+	writeJSON(w, r, op, http.StatusOK, cancelRunResponse{Cancelled: cancelled})
+}
+
+func (h *Handler) settingsResponseFrom(cfg settingsdomain.AppSettings) settingsResponse {
+	return settingsResponseFrom(cfg)
+}
+
+// SettingsWireResponse is the GET /settings JSON shape for bootstrap and GET /settings.
+type SettingsWireResponse = settingsResponse
+
+// SettingsWireFrom maps domain AppSettings to the stable /settings wire shape.
+func SettingsWireFrom(cfg settingsdomain.AppSettings) SettingsWireResponse {
+	return settingsResponseFrom(cfg)
+}
+
+func settingsResponseFrom(cfg settingsdomain.AppSettings) settingsResponse {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "settings.handler.settingsResponseFrom")
+	resp := settingsResponse{
+		AgentPaused:                 cfg.AgentPaused,
+		Runner:                      cfg.Runner,
+		CursorBin:                   cfg.CursorBin,
+		CursorModel:                 cfg.CursorModel,
+		MaxRunDurationSeconds:       cfg.MaxRunDurationSeconds,
+		StreamIdleStuckSeconds:      cfg.StreamIdleStuckSeconds,
+		AgentPickupDelaySeconds:     cfg.AgentPickupDelaySeconds,
+		DisplayTimezone:             cfg.DisplayTimezone,
+		OptimisticMutationsEnabled:  cfg.OptimisticMutationsEnabled,
+		SSEReplayEnabled:            cfg.SSEReplayEnabled,
+		VerifyMaxRetries:            cfg.VerifyMaxRetries,
+		VerifyRunnerName:            cfg.VerifyRunnerName,
+		VerifyRunnerModel:           cfg.VerifyRunnerModel,
+		VerifyCommandTimeoutSeconds: cfg.VerifyCommandTimeoutSeconds,
+		CursorSessionResumeEnabled:  cfg.CursorSessionResumeEnabled,
+	}
+	if !cfg.UpdatedAt.IsZero() {
+		resp.UpdatedAt = cfg.UpdatedAt.UTC().Format(time.RFC3339)
+	}
+	return resp
+}

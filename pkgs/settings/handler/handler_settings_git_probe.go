@@ -8,24 +8,12 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	taskdomain "github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
-
-type gitLiveBranchJSON struct {
-	Name    string `json:"name"`
-	HeadSHA string `json:"head_sha"`
-}
-
-type gitRepositoryProbeResponse struct {
-	Path            string              `json:"path"`
-	IsGitRepository bool                `json:"is_git_repository"`
-	CurrentBranch   string              `json:"current_branch,omitempty"`
-	Branches        []gitLiveBranchJSON `json:"branches"`
-}
 
 func (h *Handler) gitRepositoryProbe(w http.ResponseWriter, r *http.Request) {
 	const op = "settings.git_repository_probe"
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.gitRepositoryProbe")
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "settings.handler.gitRepositoryProbe")
 	r = calltrace.WithRequestRoot(r, op)
 	path := strings.TrimSpace(r.URL.Query().Get("path"))
 	debugHTTPRequest(r, op, "probe_path", truncateRunes(path, maxHTTPLogTitleRunes))
@@ -53,7 +41,7 @@ func (h *Handler) gitRepositoryProbe(w http.ResponseWriter, r *http.Request) {
 			})
 			return
 		}
-		if errors.Is(err, domain.ErrInvalidInput) {
+		if errors.Is(err, taskdomain.ErrInvalidInput) {
 			writeJSONError(w, r, op, http.StatusBadRequest, repoErrUserMessage(err))
 			return
 		}

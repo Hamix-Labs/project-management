@@ -13,7 +13,7 @@ group_packages() {
       go list ./cmd/... ./internal/... ./pkgs/repo/... ./pkgs/gitcore/... ./pkgs/gitexec/... ./pkgs/gitwork/...
       ;;
     tasks)
-      go list ./pkgs/tasks/... ./pkgs/projects/... ./pkgs/gitinventory/... | grep -Ev '/agentreconcile$'
+      go list ./pkgs/tasks/... ./pkgs/projects/... ./pkgs/gitinventory/... ./pkgs/settings/... | grep -Ev '/agentreconcile$'
       ;;
     agents)
       go list ./pkgs/agents/... ./pkgs/tasks/agentreconcile/... | grep -Ev '/harness'

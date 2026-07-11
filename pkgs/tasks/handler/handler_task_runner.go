@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/registry"
+	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
@@ -12,19 +13,19 @@ import (
 // validates the runner id against the registry.
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func resolveTaskRunnerModel(body *taskCreateJSON, settings domain.AppSettings) (runner, cursorModel string, err error) {
+func resolveTaskRunnerModel(body *taskCreateJSON, settings settingsdomain.AppSettings) (runner, cursorModel string, err error) {
 	return resolveRunnerModelFields(body.Runner, body.CursorModel, settings)
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func resolveRunnerModelFields(runnerPtr, cursorModelPtr *string, settings domain.AppSettings) (runner, cursorModel string, err error) {
+func resolveRunnerModelFields(runnerPtr, cursorModelPtr *string, settings settingsdomain.AppSettings) (runner, cursorModel string, err error) {
 	if runnerPtr != nil && strings.TrimSpace(*runnerPtr) != "" {
 		runner = strings.TrimSpace(*runnerPtr)
 	} else {
 		runner = strings.TrimSpace(settings.Runner)
 	}
 	if runner == "" {
-		runner = domain.DefaultRunner
+		runner = settingsdomain.DefaultRunner
 	}
 	if _, lerr := registry.Lookup(runner); lerr != nil {
 		return "", "", fmt.Errorf("%w: runner", domain.ErrInvalidInput)

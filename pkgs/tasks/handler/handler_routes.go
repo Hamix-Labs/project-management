@@ -5,6 +5,7 @@ import (
 
 	gitinventoryhandler "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/handler"
 	projecthandler "github.com/AlexsanderHamir/Hamix/pkgs/projects/handler"
+	settingshandler "github.com/AlexsanderHamir/Hamix/pkgs/settings/handler"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 )
 
@@ -24,10 +25,18 @@ func (h *Handler) registerRoutes(m *http.ServeMux) {
 		GitService: h.git,
 		HostPaths:  h.pathMap,
 	})
+	settingshandler.Register(m, settingshandler.Deps{
+		Settings: h.store,
+		GitRead:  h.store,
+		Agent:    h.agent,
+		Git:      h.git,
+		Notify: func(typ realtime.ChangeType) {
+			h.notifyScopelessChange(TaskChangeType(typ))
+		},
+	})
 	h.registerTaskDraftTemplateRoutes(m)
 	h.registerTaskRoutes(m)
 	h.registerRepoRoutes(m)
-	h.registerSettingsRoutes(m)
 	h.registerRunnerRoutes(m)
 	h.registerMiscRoutes(m)
 }
@@ -93,18 +102,6 @@ func (h *Handler) registerRepoRoutes(m *http.ServeMux) {
 	m.Handle("GET /repo/file", http.HandlerFunc(h.repoFile))
 	m.Handle("GET /repo/validate-range", http.HandlerFunc(h.repoValidateRange))
 	m.Handle("GET /repo/diff", http.HandlerFunc(h.repoDiff))
-}
-
-//funclogmeasure:skip category=hot-path reason="Route table wiring only; operation trace is emitted by registered handlers."
-func (h *Handler) registerSettingsRoutes(m *http.ServeMux) {
-	m.Handle("GET /settings", http.HandlerFunc(h.getSettings))
-	m.Handle("GET /settings/workspace-roots", http.HandlerFunc(h.workspaceRoots))
-	m.Handle("GET /settings/browse-dirs", http.HandlerFunc(h.browseDirs))
-	m.Handle("GET /settings/git-probe", http.HandlerFunc(h.gitRepositoryProbe))
-	m.Handle("PATCH /settings", http.HandlerFunc(h.patchSettings))
-	m.Handle("POST /settings/probe-cursor", http.HandlerFunc(h.probeCursor))
-	m.Handle("POST /settings/list-cursor-models", http.HandlerFunc(h.listCursorModels))
-	m.Handle("POST /settings/cancel-current-run", http.HandlerFunc(h.cancelCurrentRun))
 }
 
 //funclogmeasure:skip category=hot-path reason="Route table wiring only; operation trace is emitted by registered handlers."

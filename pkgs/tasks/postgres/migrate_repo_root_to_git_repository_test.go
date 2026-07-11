@@ -11,8 +11,8 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
+	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
+	settingsmodel "github.com/AlexsanderHamir/Hamix/pkgs/settings/store/model"
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -48,7 +48,7 @@ func TestMigrateRepoRootToGitRepository_idempotentWhenRepoAlreadyRegistered(t *t
 	}
 	// Legacy repo_root may differ from the canonical path stored on git_repositories.
 	if err := db.WithContext(ctx).Exec(
-		`UPDATE app_settings SET repo_root = ? WHERE id = ?`, main+`\`, domain.AppSettingsRowID,
+		`UPDATE app_settings SET repo_root = ? WHERE id = ?`, main+`\`, settingsdomain.AppSettingsRowID,
 	).Error; err != nil {
 		t.Fatal(err)
 	}
@@ -79,7 +79,7 @@ func TestMigrateRepoRootToGitRepository_idempotent(t *testing.T) {
 	seedLegacyAppSettingsWithRepoRoot(ctx, t, db)
 	main := initMigrateGitRepo(t)
 	if err := db.WithContext(ctx).Exec(
-		`UPDATE app_settings SET repo_root = ? WHERE id = ?`, main, domain.AppSettingsRowID,
+		`UPDATE app_settings SET repo_root = ? WHERE id = ?`, main, settingsdomain.AppSettingsRowID,
 	).Error; err != nil {
 		t.Fatal(err)
 	}
@@ -109,7 +109,7 @@ func TestMigrateRepoRootToGitRepository_idempotent(t *testing.T) {
 func seedLegacyAppSettingsWithRepoRoot(ctx context.Context, t *testing.T, db *gorm.DB) {
 	t.Helper()
 	if err := db.WithContext(ctx).AutoMigrate(
-		&projectmodel.Project{}, &model.AppSettings{}, &gitmodel.GitRepository{}, &gitmodel.GitWorktree{}, &gitmodel.GitBranch{},
+		&projectmodel.Project{}, &settingsmodel.AppSettings{}, &gitmodel.GitRepository{}, &gitmodel.GitWorktree{}, &gitmodel.GitBranch{},
 	); err != nil {
 		t.Fatal(err)
 	}
@@ -126,7 +126,7 @@ func seedLegacyAppSettingsWithRepoRoot(ctx context.Context, t *testing.T, db *go
 			t.Fatal(err)
 		}
 	}
-	settings := model.FromDomainAppSettings(domain.DefaultAppSettings())
+	settings := settingsmodel.FromDomainAppSettings(settingsdomain.DefaultAppSettings())
 	if err := db.WithContext(ctx).Clauses(clause.OnConflict{DoNothing: true}).Create(&settings).Error; err != nil {
 		t.Fatal(err)
 	}

@@ -11,6 +11,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/reports"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/storefake"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/runnerfake"
+	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
@@ -59,7 +60,7 @@ func TestRunCriterionCommands_writesEvidenceAndPromptSection(t *testing.T) {
 		items[0].ID: {ClaimedDone: true, Evidence: "done"},
 	}
 	snap := Snapshot{
-		VerifyCommandTimeoutSeconds: domain.DefaultVerifyCommandTimeoutSeconds,
+		VerifyCommandTimeoutSeconds: settingsdomain.DefaultVerifyCommandTimeoutSeconds,
 		Criteria:                    items,
 	}
 

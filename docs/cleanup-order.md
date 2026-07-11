@@ -44,7 +44,7 @@ Each phase is a **bucket** — many plans/PRs per number. This doc is the order;
 | **1. Boundaries** | **Largely done** | 12 findings in [boundaries-roi.md](./audit/boundaries-roi.md); shipped via [#147](https://github.com/AlexsanderHamir/Hamix/pull/147)–[#153](https://github.com/AlexsanderHamir/Hamix/pull/153) |
 | **2. Simplify / delete** | **Next** | Start [dead-code-roi.md](./audit/dead-code-roi.md) **#1** (legacy project-scoped git stack, ROI 10) |
 | **3–6** | Not started | Defer until Phase 2 high-ROI deletes land |
-| **3 structural (early)** | **In progress** | `pkgs/projects/` extracted — ADR-0045; `pkgs/gitinventory/` extracted — ADR-0046; template for settings split |
+| **3 structural (early)** | **Done** | `pkgs/projects/` — ADR-0045; `pkgs/gitinventory/` — ADR-0046; `pkgs/settings/` — ADR-0047 |
 | **∞. Docs** | Continuous | ADR-0044, ADR-0039 acceptance, audit status rows — same PR as behavior |
 
 ### Phase 1 PR map (dependency order)

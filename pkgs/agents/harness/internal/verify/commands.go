@@ -14,7 +14,7 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/reports"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/adapterkit"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
@@ -117,7 +117,7 @@ func (s *Service) RunCriterionCommands(
 	}
 	timeout := time.Duration(snap.VerifyCommandTimeoutSeconds) * time.Second
 	if timeout <= 0 {
-		timeout = time.Duration(domain.DefaultVerifyCommandTimeoutSeconds) * time.Second
+		timeout = time.Duration(settingsdomain.DefaultVerifyCommandTimeoutSeconds) * time.Second
 	}
 	var out []CommandEvidence
 	var persist []store.CommandRunEntry

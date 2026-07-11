@@ -282,6 +282,32 @@ function Step-GitinventoryBoundary {
     Write-OkLine $label $sw.Elapsed
 }
 
+function Step-SettingsBoundary {
+    $label = "settings boundary"
+    Write-StepPrefix
+    Write-Host -NoNewline "$label "
+
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
+    $hits = @()
+    if (& rg -q "github.com/.*/pkgs/tasks/handler" pkgs/settings/ -g "*.go" 2>$null) {
+        $hits += & rg -n "github.com/.*/pkgs/tasks/handler" pkgs/settings/ -g "*.go" 2>$null
+    }
+    if (& rg -q "github.com/.*/pkgs/tasks/store/internal" pkgs/settings/ -g "*.go" 2>$null) {
+        $hits += & rg -n "github.com/.*/pkgs/tasks/store/internal" pkgs/settings/ -g "*.go" 2>$null
+    }
+    $sw.Stop()
+
+    if ($hits) {
+        Write-Host "FAILED" -ForegroundColor Red
+        Write-Host "pkgs/settings must not import pkgs/tasks/handler or pkgs/tasks/store/internal:" -ForegroundColor Red
+        $hits
+        Fail-Step $label 1
+    }
+
+    $script:Passed++
+    Write-OkLine $label $sw.Elapsed
+}
+
 function Step-TestGroupCoverage {
     $label = "test group coverage"
     Write-StepPrefix
@@ -417,6 +443,7 @@ Step-SchedulingBoundary
 Step-SSEPublishBoundary
 Step-ProjectsBoundary
 Step-GitinventoryBoundary
+Step-SettingsBoundary
 
 if ($LintOnly) {
     Step-TestGroupCoverage

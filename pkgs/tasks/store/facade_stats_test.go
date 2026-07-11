@@ -479,3 +479,5 @@ func TestStore_TaskStats_recentFailures_prefersPhaseStandardizedMessage(t *testi
 			got.RecentFailures[0].Reason)
 	}
 }
+
+func ptrString(s string) *string { return &s }

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"net/http/httptest"
 	"net/url"
 	"os"
 	"os/exec"
@@ -58,9 +57,7 @@ func TestHTTP_workspaceRoots_returnsRegisteredRepos(t *testing.T) {
 	}
 
 	st := store.NewStore(db)
-	h := NewHandler(st, NewSSEHub(), nil)
-	srv := httptest.NewServer(h)
-	defer srv.Close()
+	srv := newSettingsHTTPServer(t, st, Deps{Settings: st, GitRead: st})
 
 	res, err := http.Get(srv.URL + "/settings/workspace-roots")
 	if err != nil {
@@ -106,9 +103,7 @@ func TestHTTP_workspaceRoots_expandedScope_includesBootstrap(t *testing.T) {
 	}
 
 	st := store.NewStore(db)
-	h := NewHandler(st, NewSSEHub(), nil)
-	srv := httptest.NewServer(h)
-	defer srv.Close()
+	srv := newSettingsHTTPServer(t, st, Deps{Settings: st, GitRead: st})
 
 	res, err := http.Get(srv.URL + "/settings/workspace-roots?scope=expanded")
 	if err != nil {
@@ -164,9 +159,7 @@ func TestHTTP_workspaceRoots_bootstrapFallbackWhenRegisteredPathMissing(t *testi
 	}
 
 	st := store.NewStore(db)
-	h := NewHandler(st, NewSSEHub(), nil)
-	srv := httptest.NewServer(h)
-	defer srv.Close()
+	srv := newSettingsHTTPServer(t, st, Deps{Settings: st, GitRead: st})
 
 	res, err := http.Get(srv.URL + "/settings/workspace-roots")
 	if err != nil {
@@ -206,9 +199,7 @@ func TestHTTP_workspaceRoots_bootstrapFallbackWhenRegisteredPathMissing(t *testi
 func TestHTTP_workspaceRoots_bootstrapWhenNoRepos(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
 	st := store.NewStore(db)
-	h := NewHandler(st, NewSSEHub(), nil)
-	srv := httptest.NewServer(h)
-	defer srv.Close()
+	srv := newSettingsHTTPServer(t, st, Deps{Settings: st, GitRead: st})
 
 	res, err := http.Get(srv.URL + "/settings/workspace-roots")
 	if err != nil {
@@ -258,9 +249,7 @@ func TestHTTP_workspaceRoots_customOverrideReplacesDB(t *testing.T) {
 	}
 
 	st := store.NewStore(db)
-	h := NewHandler(st, NewSSEHub(), nil)
-	srv := httptest.NewServer(h)
-	defer srv.Close()
+	srv := newSettingsHTTPServer(t, st, Deps{Settings: st, GitRead: st})
 
 	res, err := http.Get(srv.URL + "/settings/workspace-roots")
 	if err != nil {
@@ -293,9 +282,7 @@ func TestHTTP_browseDirs_listsProjectFolder(t *testing.T) {
 
 	db := tasktestdb.OpenSQLite(t)
 	st := store.NewStore(db)
-	h := NewHandler(st, NewSSEHub(), nil)
-	srv := httptest.NewServer(h)
-	defer srv.Close()
+	srv := newSettingsHTTPServer(t, st, Deps{Settings: st, GitRead: st})
 
 	res, err := http.Get(srv.URL + "/settings/browse-dirs?path=" + url.QueryEscape(root))
 	if err != nil {
@@ -326,9 +313,7 @@ func TestHTTP_browseDirs_fullDiskFallback(t *testing.T) {
 
 	db := tasktestdb.OpenSQLite(t)
 	st := store.NewStore(db)
-	h := NewHandler(st, NewSSEHub(), nil)
-	srv := httptest.NewServer(h)
-	defer srv.Close()
+	srv := newSettingsHTTPServer(t, st, Deps{Settings: st, GitRead: st})
 
 	res, err := http.Get(srv.URL + "/settings/browse-dirs?path=" + url.QueryEscape(root))
 	if err != nil {
@@ -354,9 +339,7 @@ func TestHTTP_browseDirs_worksWithoutRepoRootConfigured(t *testing.T) {
 
 	db := tasktestdb.OpenSQLite(t)
 	st := store.NewStore(db)
-	h := NewHandler(st, NewSSEHub(), nil, WithRepoProvider(NewSettingsRepoProvider(st)))
-	srv := httptest.NewServer(h)
-	defer srv.Close()
+	srv := newSettingsHTTPServer(t, st, Deps{Settings: st, GitRead: st})
 
 	res, err := http.Get(srv.URL + "/settings/browse-dirs")
 	if err != nil {
@@ -381,9 +364,7 @@ func TestHTTP_browseDirs_marksCurrentPathGitRepo(t *testing.T) {
 
 	db := tasktestdb.OpenSQLite(t)
 	st := store.NewStore(db)
-	h := NewHandler(st, NewSSEHub(), nil)
-	srv := httptest.NewServer(h)
-	defer srv.Close()
+	srv := newSettingsHTTPServer(t, st, Deps{Settings: st, GitRead: st})
 
 	res, err := http.Get(srv.URL + "/settings/browse-dirs?path=" + url.QueryEscape(gitChild))
 	if err != nil {

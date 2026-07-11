@@ -1,7 +1,7 @@
 // Package settings owns app_settings persistence — the singleton row
 // (id=1) holding all UI-configurable runtime settings (agent worker
-// enabled flag, runner choice, repo root, cursor binary path, max run
-// duration). The public store facade re-exports the model and CRUD via
+// enabled flag, runner choice, cursor binary path, max run duration).
+// The public store facade re-exports the model and CRUD via
 // (*Store).GetSettings / (*Store).UpdateSettings.
 //
 // Two architectural rules pinned by this package:

@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/settings/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/kernel"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -31,9 +31,9 @@ type Patch = contract.SettingsPatch
 // the insert race will simply re-read the row the loser created.
 func Get(ctx context.Context, db *gorm.DB) (domain.AppSettings, error) {
 	defer kernel.DeferLatency(kernel.OpGetAppSettings)()
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.settings.Get")
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "settings.store.settings.Get")
 	if db == nil {
-		return domain.AppSettings{}, errors.New("tasks store: nil database")
+		return domain.AppSettings{}, errors.New("settings store: nil database")
 	}
 	var row model.AppSettings
 	err := db.WithContext(ctx).First(&row, "id = ?", domain.AppSettingsRowID).Error
@@ -59,7 +59,7 @@ func Get(ctx context.Context, db *gorm.DB) (domain.AppSettings, error) {
 		return domain.AppSettings{}, fmt.Errorf("get app settings (post-seed): %w", err)
 	}
 	slog.Info("app settings seeded with defaults",
-		"cmd", calltrace.LogCmd, "operation", "tasks.store.settings.seeded",
+		"cmd", calltrace.LogCmd, "operation", "settings.store.settings.seeded",
 		"agent_paused", row.AgentPaused,
 		"runner", row.Runner,
 		"cursor_bin", row.CursorBin,
@@ -72,23 +72,11 @@ func Get(ctx context.Context, db *gorm.DB) (domain.AppSettings, error) {
 // transaction. If the row doesn't exist yet it is created from
 // domain.DefaultAppSettings before the patch is overlaid, so the first
 // PATCH against a fresh DB is well-defined.
-//
-// Validation enforced here:
-//   - Runner: trimmed; if explicitly set to "" the call returns
-//     domain.ErrInvalidInput (the runner must be a known id; the
-//     handler is responsible for checking it against the registry, this
-//     layer just refuses the empty-string degenerate case).
-//   - MaxRunDurationSeconds: must be >= 0 (matches the DB CHECK).
-//
-// The caller (the handler / supervisor) owns higher-level validation
-// such as "does this path exist on disk" and "is this runner id in the
-// registry" — those depend on out-of-DB state and don't belong in the
-// store layer.
 func Update(ctx context.Context, db *gorm.DB, patch Patch) (domain.AppSettings, error) {
 	defer kernel.DeferLatency(kernel.OpUpdateAppSettings)()
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.settings.Update")
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "settings.store.settings.Update")
 	if db == nil {
-		return domain.AppSettings{}, errors.New("tasks store: nil database")
+		return domain.AppSettings{}, errors.New("settings store: nil database")
 	}
 	if err := validatePatch(patch); err != nil {
 		return domain.AppSettings{}, err
@@ -126,7 +114,7 @@ func Update(ctx context.Context, db *gorm.DB, patch Patch) (domain.AppSettings, 
 }
 
 func validatePatch(patch Patch) error {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.settings.validatePatch")
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "settings.store.settings.validatePatch")
 	if patch.Runner != nil {
 		trimmed := strings.TrimSpace(*patch.Runner)
 		if trimmed == "" {
@@ -150,11 +138,6 @@ func validatePatch(patch Patch) error {
 	}
 	if patch.DisplayTimezone != nil {
 		trimmed := strings.TrimSpace(*patch.DisplayTimezone)
-		// Empty string is allowed and clears the override so the SPA
-		// falls back to browser auto-detect (see
-		// domain.DefaultDisplayTimezone). Non-empty values must parse
-		// as an IANA zone so a stale SPA PATCH can never poison the row
-		// with garbage that would later crash Intl.DateTimeFormat.
 		if trimmed != "" {
 			if _, err := time.LoadLocation(trimmed); err != nil {
 				return fmt.Errorf("%w: display_timezone %q is not a valid IANA timezone: %v", domain.ErrInvalidInput, trimmed, err)
@@ -177,7 +160,7 @@ func validatePatch(patch Patch) error {
 }
 
 func applyPatch(row *domain.AppSettings, patch Patch) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.settings.applyPatch")
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "settings.store.settings.applyPatch")
 	if patch.AgentPaused != nil {
 		row.AgentPaused = *patch.AgentPaused
 	}
@@ -200,10 +183,6 @@ func applyPatch(row *domain.AppSettings, patch Patch) {
 		row.AgentPickupDelaySeconds = *patch.AgentPickupDelaySeconds
 	}
 	if patch.DisplayTimezone != nil {
-		// validatePatch already confirmed the zone parses; store the
-		// trimmed-but-unmodified string so the operator's choice round-trips
-		// verbatim (LoadLocation is forgiving about case but the SPA selects
-		// from Intl.supportedValuesOf which is canonical).
 		row.DisplayTimezone = strings.TrimSpace(*patch.DisplayTimezone)
 	}
 	if patch.OptimisticMutationsEnabled != nil {
@@ -234,12 +213,8 @@ func applyPatch(row *domain.AppSettings, patch Patch) {
 	dualWriteCursorToRunnerConfigs(row)
 }
 
-// dualWriteCursorToRunnerConfigs mirrors the legacy CursorBin and
-// CursorModel typed fields into RunnerConfigs["cursor"] so the new
-// generic path can read them. Called at the end of applyPatch so any
-// CursorBin/CursorModel changes are captured.
 func dualWriteCursorToRunnerConfigs(row *domain.AppSettings) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.settings.dualWriteCursorToRunnerConfigs")
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "settings.store.settings.dualWriteCursorToRunnerConfigs")
 	var configs map[string]json.RawMessage
 	if len(row.RunnerConfigs) > 0 {
 		_ = json.Unmarshal([]byte(row.RunnerConfigs), &configs)
@@ -254,7 +229,7 @@ func dualWriteCursorToRunnerConfigs(row *domain.AppSettings) {
 	raw, err := json.Marshal(cursorCfg)
 	if err != nil {
 		slog.Warn("dual-write cursor config marshal failed",
-			"cmd", calltrace.LogCmd, "operation", "tasks.store.settings.dualWriteCursorToRunnerConfigs",
+			"cmd", calltrace.LogCmd, "operation", "settings.store.settings.dualWriteCursorToRunnerConfigs",
 			"err", err)
 		return
 	}
@@ -262,7 +237,7 @@ func dualWriteCursorToRunnerConfigs(row *domain.AppSettings) {
 	merged, err := json.Marshal(configs)
 	if err != nil {
 		slog.Warn("dual-write runner configs marshal failed",
-			"cmd", calltrace.LogCmd, "operation", "tasks.store.settings.dualWriteCursorToRunnerConfigs",
+			"cmd", calltrace.LogCmd, "operation", "settings.store.settings.dualWriteCursorToRunnerConfigs",
 			"err", err)
 		return
 	}

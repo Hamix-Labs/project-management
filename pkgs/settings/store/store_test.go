@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 )
 
 func newSettingsStore(t *testing.T) (*Store, context.Context) {
@@ -288,7 +288,7 @@ func TestStore_UpdateSettings_concurrentPatchesPreserveSingleton(t *testing.T) {
 	}
 
 	var rowCount int64
-	if err := s.db.Table("app_settings").Count(&rowCount).Error; err != nil {
+	if err := s.DB().Table("app_settings").Count(&rowCount).Error; err != nil {
 		t.Fatalf("count rows: %v", err)
 	}
 	if rowCount != 1 {

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
@@ -123,7 +124,7 @@ func (h *Handler) finalizeCreatedTask(ctx context.Context, t *domain.Task) (*dom
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func (h *Handler) validateComposePayload(ctx context.Context, payload taskComposePayloadJSON, settings domain.AppSettings) error {
+func (h *Handler) validateComposePayload(ctx context.Context, payload taskComposePayloadJSON, settings settingsdomain.AppSettings) error {
 	if err := h.validateComposeGitBinding(ctx, payload.RepositoryID, payload.ProjectID, payload.WorktreeID); err != nil {
 		return err
 	}
@@ -131,7 +132,7 @@ func (h *Handler) validateComposePayload(ctx context.Context, payload taskCompos
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func (h *Handler) validateTaskCreateComposePayload(ctx context.Context, payload taskComposePayloadJSON, settings domain.AppSettings) error {
+func (h *Handler) validateTaskCreateComposePayload(ctx context.Context, payload taskComposePayloadJSON, settings settingsdomain.AppSettings) error {
 	if err := h.validateTaskGitBindingV2(ctx, payload.ProjectID, payload.WorktreeID); err != nil {
 		return err
 	}
@@ -139,7 +140,7 @@ func (h *Handler) validateTaskCreateComposePayload(ctx context.Context, payload 
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func (h *Handler) validateComposePayloadCommon(ctx context.Context, payload taskComposePayloadJSON, settings domain.AppSettings) error {
+func (h *Handler) validateComposePayloadCommon(ctx context.Context, payload taskComposePayloadJSON, settings settingsdomain.AppSettings) error {
 	if err := h.validatePromptMentionsForWorktree(ctx, payload.WorktreeID, payload.InitialPrompt); err != nil {
 		return err
 	}

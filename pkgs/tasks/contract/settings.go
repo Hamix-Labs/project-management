@@ -3,11 +3,11 @@ package contract
 import (
 	"context"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 )
 
 // SettingsStore covers singleton app_settings read/write.
 type SettingsStore interface {
-	GetSettings(ctx context.Context) (domain.AppSettings, error)
-	UpdateSettings(ctx context.Context, patch SettingsPatch) (domain.AppSettings, error)
+	GetSettings(ctx context.Context) (settingsdomain.AppSettings, error)
+	UpdateSettings(ctx context.Context, patch SettingsPatch) (settingsdomain.AppSettings, error)
 }

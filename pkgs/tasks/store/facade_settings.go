@@ -5,19 +5,16 @@ import (
 	"context"
 	"log/slog"
 
+	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/internal/settings"
 )
 
 // AppSettings is the singleton runtime-settings row returned by
-// GetSettings / UpdateSettings. See pkgs/tasks/domain.AppSettings for
+// GetSettings / UpdateSettings. See pkgs/settings/domain.AppSettings for
 // field semantics.
-type AppSettings = domain.AppSettings
+type AppSettings = settingsdomain.AppSettings
 
 // SettingsPatch is the partial-update payload for UpdateSettings.
-// Pointer-typed fields distinguish "not provided" (nil) from an
-// explicit zero value (e.g. *int = 0 means "no limit").
 type SettingsPatch = contract.SettingsPatch
 
 // GetSettings returns the singleton app_settings row, creating it from
@@ -26,7 +23,7 @@ type SettingsPatch = contract.SettingsPatch
 // of truth.
 func (s *Store) GetSettings(ctx context.Context) (AppSettings, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.GetSettings")
-	return settings.Get(ctx, s.db)
+	return s.settings.GetSettings(ctx)
 }
 
 // UpdateSettings applies a partial patch to the singleton row inside a
@@ -35,5 +32,5 @@ func (s *Store) GetSettings(ctx context.Context) (AppSettings, error) {
 // extra round-trip.
 func (s *Store) UpdateSettings(ctx context.Context, patch SettingsPatch) (AppSettings, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.UpdateSettings")
-	return settings.Update(ctx, s.db, patch)
+	return s.settings.UpdateSettings(ctx, patch)
 }

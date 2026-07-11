@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"strings"
 
+	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
@@ -24,7 +25,7 @@ func (s *Service) LoadSnapshot(ctx context.Context, taskID string) (Snapshot, er
 	}
 	timeoutSec := settings.VerifyCommandTimeoutSeconds
 	if timeoutSec <= 0 {
-		timeoutSec = domain.DefaultVerifyCommandTimeoutSeconds
+		timeoutSec = settingsdomain.DefaultVerifyCommandTimeoutSeconds
 	}
 	return Snapshot{
 		Enabled:                     len(items) > 0,
