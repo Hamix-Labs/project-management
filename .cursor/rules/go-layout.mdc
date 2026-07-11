@@ -1,0 +1,149 @@
+---
+description: Go monorepo layout — bounded contexts, composition shell, package boundaries. Apply when creating or moving Go packages.
+globs:
+  - "**/*.go"
+  - "**/go.mod"
+alwaysApply: false
+---
+
+# Go layout — bounded contexts
+
+Hamix backend packages live under `pkgs/`. Each **bounded context (BC)** owns `domain/`, `store/`, `handler/`, and `contract/` where it exposes HTTP or persistence seams. See [docs/agent-map.md](../../docs/agent-map.md) for the live index.
+
+**Companion:** file-size limits and splitting patterns live in `CODE_STANDARDS.mdc`. Go quality bar: `backend-engineering-bar.mdc`.
+
+---
+
+## Monorepo root (Go-relevant)
+
+```
+/
+├── cmd/
+│   ├── taskapi/main.go      # Wire deps, call run(). ≤ 80 lines.
+│   └── dbcheck/main.go
+├── internal/
+│   ├── taskapi/             # HTTP server assembly, agent worker supervisor
+│   ├── tasktestdb/          # SQLite test DB helpers
+│   ├── envload/             # .env loading
+│   └── handlertest/         # Shared HTTP test helpers
+├── pkgs/                    # Importable domain packages (see BC table below)
+├── scripts/check-go.sh      # Lint + test groups (CI parity)
+└── go.mod
+```
+
+- `cmd/` — entrypoints only; no business logic.
+- `internal/` — single-binary or cross-cutting packages not importable externally.
+- `pkgs/` — BCs and shared kernels; no accidental HTTP in `domain/` or `store/`.
+
+---
+
+## Bounded contexts (current)
+
+| Package | Owns | HTTP surface |
+| --- | --- | --- |
+| `pkgs/taskcore/` | Task CRUD, deps, gate, retry, stats, ready queue | `/tasks*` (via handler register) |
+| `pkgs/taskcycles/` | Cycles, phases, stream, verdicts, commits | `/tasks/{id}/cycles*` |
+| `pkgs/taskchecklist/` | Done criteria CRUD | `/tasks/{id}/checklist*` |
+| `pkgs/taskevents/` | Task audit event thread | `/tasks/{id}/events*` |
+| `pkgs/taskcompose/` | Drafts + templates | `/task-drafts*`, `/task-templates*` |
+| `pkgs/projects/` | Projects + context graph | `/projects*` |
+| `pkgs/gitinventory/` | Repos, worktrees, branches | `/git/*` |
+| `pkgs/settings/` | App settings row | `/settings*` |
+| `pkgs/runners/handler/` | Runner probe/schema | `/runners*` |
+| `pkgs/repo/handler/` | Workspace search, diff | `/repo/*` |
+| `pkgs/storekernel/` | Shared store helpers (errors, JSON, validators) | — |
+
+### Composition shell — `pkgs/tasks/`
+
+Not a single domain anymore. It **wires** BCs for `taskapi`:
+
+| Subtree | Role |
+| --- | --- |
+| `pkgs/tasks/handler/` | Route registration, SSE hub, bootstrap, writepolicy, readpolicy — delegates resource handlers to BC packages |
+| `pkgs/tasks/store/` | GORM facade composing BC stores + `internal/notify/` |
+| `pkgs/tasks/store/model/` | Schema registry + parity tests (migrate hub) |
+| `pkgs/tasks/domain/` | **Compat aliases** to BC domains — retiring in Tier 4; do not add new types here |
+| `pkgs/tasks/contract/` | **Hub re-exports** of BC contracts for `HandlerStore` — retiring in Tier 4 |
+| `pkgs/tasks/postgres/` | AutoMigrate orchestration |
+| `pkgs/tasks/scheduling/` | Worker readiness predicates |
+| `pkgs/tasks/middleware/` | HTTP middleware stack |
+
+**Agents:** `pkgs/agents/` (harness, worker, runner adapters) — orchestration, not task HTTP.
+
+---
+
+## Canonical BC package layout
+
+```
+pkgs/<bc>/
+├── domain/           # Types, enums, validation, sentinel errors — stdlib only
+├── contract/         # Store/handler persistence interfaces (+ wire input types)
+├── store/
+│   ├── store.go      # Constructor, delegates to internal/
+│   ├── model/        # GORM models + domain mappers
+│   └── internal/     # SQL/GORM implementation (private to store)
+├── handler/          # HTTP routes for this BC only
+└── README.md         # Routes, files, dependencies
+```
+
+### Package rules
+
+- `domain/` — stdlib only. No GORM tags, no `net/http`, no DB drivers. (Compat `pkgs/tasks/domain` is temporary.)
+- `store/` — GORM/SQL + map to `domain/`. Translate driver errors to domain sentinels.
+- `handler/` — HTTP + domain types + `contract` interfaces. No DB drivers.
+- `contract/` — small interfaces; BC handlers and composition shell depend on these, not on store internals.
+- One `handler_*.go` per resource group; one store file group per entity.
+- When a BC outgrows reviewability, split store by read/write or handler by route group — not by line count alone.
+
+---
+
+## Dependency direction
+
+```
+cmd/*
+  └── internal/*
+        └── pkgs/*/handler
+              └── pkgs/*/contract, pkgs/*/domain
+        └── pkgs/tasks/handler   (composition — registers BC handlers)
+        └── pkgs/tasks/store     (facade — embeds BC stores)
+              └── pkgs/*/store
+                    └── pkgs/*/domain
+```
+
+- BCs do **not** import `pkgs/tasks/handler` or `pkgs/tasks/store/internal`.
+- `pkgs/tasks/domain` imports BC domains (shim only) — new code imports BC domains directly.
+- Shared cross-BC primitives: `pkgs/storekernel/`, and `taskcore/domain` for `Actor` until Tier 4 completes.
+- Harness: `pkgs/agents/harness/internal/contract` composes persistence; migrating to BC contracts (ADR-0061).
+
+### CI checks
+
+`scripts/check-go.sh` runs boundary steps per BC (`step_taskcore_boundary`, `step_taskcycles_boundary`, …). `scripts/check-code-standards.ps1` guards handler DB imports and policy package purity.
+
+---
+
+## Adding a new BC
+
+1. Add `docs/adr/ADR-NNNN-<slug>.md` before cross-package structure lands.
+2. Create `pkgs/<name>/{domain,contract,store,handler}/` using the layout above.
+3. Register routes from `pkgs/tasks/handler/handler_routes.go` (or a dedicated binary if split later).
+4. Add migrate models to `pkgs/tasks/store/model/` parity registry if new tables.
+5. Update [docs/agent-map.md](../../docs/agent-map.md) and [docs/api.md](../../docs/api.md).
+
+---
+
+## Quick reference (Go)
+
+```
+Task CRUD domain/types     → pkgs/taskcore/domain/
+Task HTTP                  → pkgs/taskcore/handler/ (registered via tasks/handler)
+Cycles domain              → pkgs/taskcycles/domain/
+Checklist domain           → pkgs/taskchecklist/domain/
+Events domain              → pkgs/taskevents/domain/
+Persistence facade         → pkgs/tasks/store/ (delegates to BC stores)
+SSE / bootstrap / policy   → pkgs/tasks/handler/
+Server assembly            → internal/taskapi/
+main()                     → cmd/taskapi/main.go
+Harness orchestration      → pkgs/agents/harness/
+```
+
+Full map: [docs/agent-map.md](../../docs/agent-map.md).

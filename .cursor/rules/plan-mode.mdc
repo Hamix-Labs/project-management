@@ -1,8 +1,7 @@
 ---
 description: Plan mode — ask single vs parent/child plans; structure before CreatePlan
-alwaysApply: true
+alwaysApply: false
 ---
-
 # Plan mode workflow
 
 **Scope gate:** Apply this rule only when the system reminder says **plan mode is active**. Otherwise ignore this file entirely — do not ask plan-structure questions during implementation.

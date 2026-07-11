@@ -27,7 +27,7 @@
 ### 1. Web vertical coupling (`tasks/` → `projects/` + `worktrees/`) — ROI 9/10 (High) — **Status: done (2026-07-08)**
 
 - **PR:** [#147](https://github.com/AlexsanderHamir/Hamix/pull/147) (`cleanup/boundaries-vertical-decouple`)
-- **Boundary violated:** Vertical slices — no cross-feature imports ([cleanup-order §1](../cleanup-order.md), `CODE_STANDARDS.mdc` Part 4)
+- **Boundary violated:** Vertical modules — no cross-vertical imports ([cleanup-order §1](../cleanup-order.md), `web-layout.mdc`)
 - **Resolution:** Cross-cutting git-assignment and project-picker code promoted to `web/src/lib/`, `web/src/hooks/`, and `web/src/components/`. `tasks/` imports only the inner ring; `check-code-standards.ps1` enforces the boundary.
 - **New locations (production):**
   - **lib:** [composeGitAssignment.ts](../../web/src/lib/composeGitAssignment.ts), [gitWorktreeRegistration.ts](../../web/src/lib/gitWorktreeRegistration.ts), [ensureRepositoriesRegistered.ts](../../web/src/lib/ensureRepositoriesRegistered.ts), [projectQueryKeys.ts](../../web/src/lib/projectQueryKeys.ts)

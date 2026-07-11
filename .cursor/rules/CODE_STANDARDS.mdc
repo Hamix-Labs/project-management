@@ -1,613 +1,178 @@
 ---
 description: >-
-  File-size limits and folder structure for this Go + TypeScript monorepo.
-  Governs directory layout, module boundaries, and when to split files.
-  Apply when creating, moving, splitting, or reviewing any file or package.
+  File-size limits, naming, splitting, and documentation rules for this Go +
+  TypeScript monorepo. Layout details: go-layout.mdc (Go BCs), web-layout.mdc
+  (SPA verticals).
 globs:
   - "**/*.go"
   - "**/*.ts"
   - "**/*.tsx"
   - "**/*.css"
-  - "**/*.scss"
   - "**/go.mod"
   - "**/package.json"
 alwaysApply: true
 ---
 
-# Project Structure — File Size & Layout
+# Project structure — size, naming, and splits
 
-This repo is a Go + TypeScript monorepo. These rules define where files live, how large they may grow, and when to split them.
+Hamix is a Go + TypeScript monorepo. **Where files live** is documented in:
 
-**Companion rules:** `backend-engineering-bar.mdc` (Go quality), `frontend_bar.mdc` (UI quality). This file wins on structure; those files win on quality within a file.
+- **Go BCs and composition shell** → `go-layout.mdc`
+- **Web vertical modules and inner ring** → `web-layout.mdc`
 
----
-
-## PART 1 — PRINCIPLES
-
-### 1.1 Structure is the first API
-
-A folder structure is a public API for contributors. Directory names communicate ownership, scope, and dependency direction. A contributor should find any piece of logic quickly without guessing.
-
-### 1.2 Core principles
-
-1. **Dependency direction is fixed.** Dependencies flow inward: `cmd → internal → pkgs → domain`. Nothing in the inner ring imports from the outer ring. Violations are hard to unwind later.
-
-2. **Cohesion over collocation.** Files that change together belong together. Files that serve different purposes should be separated even if they feel related today.
-
-3. **Boundaries must be enforceable.** If a module boundary cannot be enforced by the language (Go's `internal/`, TypeScript barrel exports, build rules), document and lint it. Unenforced boundaries erode under deadline pressure.
-
-### 1.3 The File-Size Instinct
-
-A file's line count is a proxy signal for:
-- **Single responsibility** — a file that does one thing rarely exceeds 300 lines.
-- **Reviewability** — a reviewer should read a file top-to-bottom and maintain a mental model of it.
-- **Merge conflict surface** — large files create disproportionate merge conflicts.
-- **Test discoverability** — tests for a 500-line file are hard to locate and maintain.
-
-Line count limits in this document are upper bounds for alarm, not targets. The target is always the smallest correct file.
+This file wins on **file size and naming**; `go-layout.mdc` / `web-layout.mdc` win on directory layout; `backend-engineering-bar.mdc` and `frontend_bar.mdc` win on quality within a file.
 
 ---
 
-## PART 2 — MONOREPO ROOT STRUCTURE
+## Principles
 
-```
-/
-├── cmd/                        # Executable entrypoints — one dir per binary
-│   ├── taskapi/
-│   │   └── main.go             # Wire deps, call run(). Max 80 lines.
-│   └── worker/
-│       └── main.go
-│
-├── internal/                   # Private application packages (non-importable externally)
-│   ├── taskapi/                # HTTP server assembly for taskapi binary
-│   ├── tasktestdb/             # Test DB helpers (SQLite)
-│   ├── envload/                # .env loading and resolution
-│   ├── httpsecurity/           # Security header middleware and tests
-│   └── handlertest/            # Shared HTTP test helpers
-│
-├── pkgs/                       # Domain packages — importable by multiple binaries
-│   ├── tasks/                  # Core task domain (see Part 3)
-│   ├── agents/                 # Agent orchestration domain
-│   └── repo/                   # Workspace/repo abstraction
-│
-├── web/                        # React/TypeScript frontend (see Part 4)
-│
-├── docs/                       # Contributor reference (Microsoft-style)
-│   ├── README.md               # Index + read order
-│   ├── architecture.md         # System overview, components, persistence, worker, SSE
-│   ├── data-model.md           # Tasks, projects, cycles/phases, checklist, dependencies
-│   ├── api.md                  # REST + SSE endpoint surface
-│   ├── configuration.md        # Env vars + app_settings
-│   ├── web.md                  # SPA architecture
-│   ├── (see CONTRIBUTING.md at repo root)  # Setup, PR checklist, doc routing
-│   └── adr/                    # Architecture Decision Records (ADR-NNNN.md)
-│
-├── scripts/                    # Build, check, and dev scripts
-│   ├── check.sh
-│   └── check.ps1
-│
-├── .agent/                     # Autonomous agent logs and snapshots (gitignored)
-├── .cursor/                    # Cursor IDE rules
-├── go.mod
-├── go.sum
-└── README.md
-```
-
-### Root-Level Rules
-
-- `cmd/` contains only entrypoints. If you find business logic in `cmd/`, move it before adding more.
-- `internal/` is for packages used by exactly one binary or for cross-cutting concerns that must not be externally imported.
-- `pkgs/` is for domain packages potentially used by multiple binaries. Do not put HTTP-specific code in `pkgs/`.
-- Every top-level directory must have a one-line description in `DESIGN.md`.
-- Add a new top-level directory only when it represents a distinct deployable or importable boundary, and you have written the `docs/` entry first.
+1. **Structure is the first API** — folder names communicate ownership and dependency direction.
+2. **Dependency direction is fixed** — see layout rules for Go BC graph and web inner ring.
+3. **Cohesion over collocation** — files that change together belong together.
+4. **Line count is a reviewability signal** — limits below are alarms, not targets.
 
 ---
 
-## PART 3 — GO PACKAGE STRUCTURE (PER DOMAIN)
+## File-size limits
 
-Each domain package in `pkgs/` follows this canonical layout:
+### Go (non-generated `*.go`)
 
-```
-pkgs/tasks/
-├── domain/
-│   ├── task.go                 # Task type, status/priority enums, validation
-│   ├── cycle.go                # Cycle and phase types
-│   ├── errors.go               # ErrNotFound, ErrInvalidInput, etc.
-│   └── transitions.go          # State machine validation functions
-│
-├── store/
-│   ├── store.go                # Store struct, constructor, interface compliance check
-│   ├── store_tasks.go          # Task CRUD
-│   ├── store_cycles.go         # Cycle CRUD + dual-write
-│   ├── store_cycle_phases.go   # Phase CRUD + dual-write
-│   └── store_events.go         # task_events append
-│
-├── handler/
-│   ├── handler.go              # Handler struct, constructor, route registration
-│   ├── handler_tasks.go        # /tasks routes
-│   ├── handler_cycles.go       # /cycles routes
-│   ├── handler_sse.go          # /events SSE endpoint
-│   ├── handler_health.go       # /health endpoints
-│   ├── handler_tasks_json.go   # Request/response types for tasks
-│   ├── handler_cycles_json.go  # Request/response types for cycles
-│   ├── hub.go                  # SSE subscriber hub
-│   └── middleware.go           # Handler-local middleware
-│
-├── middleware/
-│   ├── stack.go                # Stack() — ordered middleware assembly
-│   ├── middleware_recovery.go
-│   ├── middleware_logger.go
-│   ├── middleware_metrics.go
-│   └── middleware_requestid.go
-│
-├── service/                    # Orchestration layer (when needed)
-│   └── task_service.go
-│
-├── postgres/
-│   └── migrate.go
-│
-└── README.md                   # Maps files to routes/responsibilities
-```
+| Zone | Green | Yellow | Red (split) |
+| --- | --- | --- | --- |
+| `cmd/*/main.go` | ≤ 80 | 81–120 | > 120 |
+| `domain/*.go` | ≤ 200 | 201–350 | > 350 |
+| `store_*.go` / store internal | ≤ 300 | 301–500 | > 500 |
+| `handler_*.go` | ≤ 300 | 301–500 | > 500 |
+| `*_json.go` DTOs | ≤ 200 | 201–350 | > 350 |
+| Middleware | ≤ 150 | 151–250 | > 250 |
+| `*_test.go` | ≤ 400 | 401–600 | > 600 |
+| General application | ≤ 400 | 401–700 | > 800 |
 
-### Go File-Size Limits
+Generated code (`// Code generated … DO NOT EDIT`) is exempt — mark at file top.
 
-| Zone | Green | Yellow (justify or split) | Red (must split) |
-|------|-------|---------------------------|------------------|
-| `cmd/*/main.go` | ≤ 80 lines | 81–120 | > 120 |
-| Domain types (`domain/*.go`) | ≤ 200 lines | 201–350 | > 350 |
-| Store files (`store_*.go`) | ≤ 300 lines | 301–500 | > 500 |
-| Handler files (`handler_*.go`) | ≤ 300 lines | 301–500 | > 500 |
-| JSON/DTO files (`*_json.go`) | ≤ 200 lines | 201–350 | > 350 |
-| Middleware files | ≤ 150 lines | 151–250 | > 250 |
-| Service files | ≤ 300 lines | 301–450 | > 450 |
-| Test files (`*_test.go`) | ≤ 400 lines | 401–600 | > 600 |
-| General application code | ≤ 400 lines | 401–700 | > 800 |
+### TypeScript / React
 
-Generated code (`// Code generated … DO NOT EDIT`, sqlc, protobuf, stringer) is exempt from all limits. Add a file-level comment so reviewers do not flag it.
+| Zone | Green | Yellow | Red (split) |
+| --- | --- | --- | --- |
+| `*Page.tsx` | ≤ 80 | 81–150 | > 150 |
+| Container components | ≤ 120 | 121–200 | > 200 |
+| Presentational components | ≤ 150 | 151–250 | > 250 |
+| `use*.ts` hooks | ≤ 80 | 81–150 | > 150 |
+| `api/*.ts` | ≤ 200 | 201–350 | > 350 |
+| `utils/*.ts` | ≤ 150 | 151–250 | > 250 |
+| Types files | ≤ 200 | 201–400 | > 400 |
+| `*.test.tsx` | ≤ 300 | 301–500 | > 500 |
+| Component CSS | ≤ 200 | 201–350 | > 350 |
 
-### Go Package Rules
-
-- A package name must describe what it provides, never what it is (`store` not `datastorepackage`).
-- A `store_*.go` file maps 1:1 to a database entity. If one entity's store methods exceed Red, split by operation: `store_tasks_read.go` / `store_tasks_write.go`.
-- A `handler_*.go` file maps 1:1 to a resource group. Never mix `/tasks` and `/cycles` handlers in one file.
-- Create `*_json.go` files immediately when a handler file has more than 3 inline request/response types.
-- Never put SQL in handler files. Never put HTTP logic in store files. This is an enforced boundary.
-- When a domain grows beyond one team's working context, split it into its own `pkgs/` entry with its own full subtree.
+Web tests: also see `web-testing-bar.mdc` (≤ 500 lines per test file).
 
 ---
 
-## PART 4 — TYPESCRIPT/REACT FRONTEND STRUCTURE
+## Splitting guide
 
-```
-web/
-├── src/
-│   ├── app/                    # Application shell — routing, providers, layouts
-│   │   ├── App.tsx             # Root component, provider tree. Max 80 lines.
-│   │   ├── Router.tsx          # Route definitions only. Max 60 lines.
-│   │   └── providers/
-│   │       └── AppProviders.tsx
-│   │
-│   ├── features/               # Feature modules — vertical slices
-│   │   ├── tasks/
-│   │   ├── cycles/
-│   │   ├── agents/
-│   │   └── settings/
-│   │
-│   ├── components/             # Shared, domain-agnostic UI components
-│   │   ├── ui/                 # Primitives: Button, Input, Modal, Badge
-│   │   ├── layout/             # Page shells, Sidebar, TopNav, Grid
-│   │   ├── feedback/           # ErrorState, EmptyState, Toast, Skeleton
-│   │   └── ErrorBoundary.tsx
-│   │
-│   ├── api/                    # ALL fetch calls live here — no exceptions
-│   │   ├── client.ts           # Base fetch wrapper, error handling, abort
-│   │   ├── tasks.ts            # Task API calls + parseTask response parser
-│   │   ├── cycles.ts
-│   │   └── index.ts
-│   │
-│   ├── hooks/                  # Shared hooks used across multiple features
-│   │   ├── useDebounce.ts
-│   │   ├── useMediaQuery.ts
-│   │   └── useLocalStorage.ts
-│   │
-│   ├── stores/                 # Global client state (Zustand / Jotai)
-│   │   └── useUIStore.ts       # UI-only: sidebar open, theme, etc.
-│   │
-│   ├── types/                  # Shared TypeScript types and API contracts
-│   │   ├── task.ts
-│   │   ├── cycle.ts
-│   │   └── api.ts
-│   │
-│   ├── utils/                  # Pure functions with no React dependency
-│   │   ├── formatters.ts
-│   │   ├── validators.ts
-│   │   └── cn.ts
-│   │
-│   ├── styles/                 # Global styles and design tokens
-│   │   ├── tokens.css          # CSS custom properties (full token set)
-│   │   ├── reset.css
-│   │   ├── typography.css
-│   │   └── global.css
-│   │
-│   └── test/                   # Test infrastructure (not test files)
-│       ├── setup.ts
-│       ├── server.ts           # MSW server instance
-│       ├── handlers/           # MSW request handlers per resource
-│       │   ├── tasks.ts
-│       │   └── cycles.ts
-│       └── factories/          # Test data factories
-│           ├── task.ts
-│           └── cycle.ts
-│
-├── public/
-├── index.html
-├── vite.config.ts
-├── tsconfig.json
-└── package.json
-```
+| Symptom | Split |
+| --- | --- |
+| Handler spans multiple resources | One `handler_<resource>.go` per group |
+| Handler DTOs dominate file | `handler_*_json.go` |
+| Store file too large | `store_*_read.go` / `store_*_write.go` |
+| Page component too large | Container + presentational children |
+| Hook mixes query + mutation | Separate hooks |
+| API file mixes BC resources | One parser module per BC (`parseTaskApi*.ts`) |
 
-### Feature Module Structure
-
-Each feature is a vertical slice. It owns its components, hooks, and local types. It may import from `src/components/`, `src/api/`, `src/types/`, and `src/hooks/` — never from another feature module.
-
-```
-features/tasks/
-├── index.ts                    # Public barrel export — the only import surface
-├── TasksPage.tsx               # Route-level container. Max 80 lines.
-├── TasksPage.test.tsx
-│
-├── components/
-│   ├── TaskList.tsx
-│   ├── TaskList.test.tsx
-│   ├── TaskCard.tsx
-│   ├── TaskCard.test.tsx
-│   ├── TaskDetail.tsx
-│   └── TaskForm.tsx
-│
-├── hooks/
-│   ├── useTask.ts
-│   ├── useTasks.ts
-│   ├── useCreateTask.ts
-│   ├── useUpdateTask.ts
-│   └── useDeleteTask.ts
-│
-├── stores/
-│   └── useTaskUIStore.ts       # Selection state, filter state
-│
-└── types/
-    └── taskFilters.ts          # Types NOT shared outside this feature
-```
-
-### TypeScript/React File-Size Limits
-
-| Zone | Green | Yellow (justify or split) | Red (must split) |
-|------|-------|---------------------------|------------------|
-| Route-level page (`*Page.tsx`) | ≤ 80 lines | 81–150 | > 150 |
-| Container components | ≤ 120 lines | 121–200 | > 200 |
-| Presentational components | ≤ 150 lines | 151–250 | > 250 |
-| Custom hooks (`use*.ts`) | ≤ 80 lines | 81–150 | > 150 |
-| API client files (`api/*.ts`) | ≤ 200 lines | 201–350 | > 350 |
-| Utility files (`utils/*.ts`) | ≤ 150 lines | 151–250 | > 250 |
-| Type definition files | ≤ 200 lines | 201–400 | > 400 |
-| Test files (`*.test.tsx`) | ≤ 300 lines | 301–500 | > 500 |
-| CSS files (per component) | ≤ 200 lines | 201–350 | > 350 |
-| `tokens.css` / global CSS | ≤ 500 lines | — | > 700 (split by category) |
-
-### TypeScript Module Boundary Rules
-
-- **Feature modules are closed.** `features/tasks/` may not import from `features/cycles/`. Shared concepts belong in `src/types/` or `src/api/`.
-- **Barrel exports are the public API.** Each feature's `index.ts` is the only allowed import surface. Deep imports into another feature (`features/tasks/hooks/useTask`) are a boundary violation.
-- **`src/api/` is the only place that calls `fetch`.** All server responses are `unknown` until parsed through the response parser in that file.
-- **`src/components/` is domain-agnostic.** If a component in `src/components/` imports from `src/types/task.ts`, it has leaked into the feature domain — move it to `features/tasks/components/`.
-- **`src/hooks/` contains only hooks with no feature dependency.** A hook that imports from `src/api/tasks.ts` belongs in `features/tasks/hooks/`.
+**Do not split** if it creates circular imports, files < 30 lines, or arbitrary mid-function cuts.
 
 ---
 
-## PART 5 — DOCUMENTATION AND ADR STRUCTURE
+## Naming
 
-```
-docs/
-├── README.md                   # Index + read order
-├── architecture.md             # System overview: components, persistence, worker, SSE
-├── data-model.md               # Tasks, projects, cycles/phases, checklist, dependencies
-├── api.md                      # REST + SSE endpoint surface (handler godoc is authoritative)
-├── configuration.md            # Every HAMIX_* env var + app_settings DB row
-├── web.md                      # SPA architecture
-├── (see CONTRIBUTING.md at repo root)  # Setup, PR checklist, doc routing
-└── adr/
-    ├── ADR-0001-...md
-    └── ADR-NNNN-<slug>.md      # One file per decision
-```
-
-### ADR Format
-
-```markdown
-# ADR-NNNN: <Short Title>
-
-**Date:** YYYY-MM-DD
-**Status:** Proposed | Accepted | Deprecated | Superseded by ADR-XXXX
-**Deciders:** [names or roles]
-
-## Context
-What situation forced this decision? What constraints existed?
-
-## Decision
-What was decided? State it precisely.
-
-## Consequences
-### Positive
-- ...
-### Negative / Trade-offs
-- ...
-
-## Alternatives Considered
-| Alternative | Reason Rejected |
-|-------------|-----------------|
-```
-
-### Documentation Rules
-
-- Every public HTTP route must appear in `docs/api.md` before the handler is merged.
-- Every `HAMIX_*` env variable used in code must appear in `docs/configuration.md`.
-- Any change that alters observable behavior (status codes, JSON fields, SSE event names) requires a doc update in the same commit.
-- Write an ADR when: a structural decision affects more than one package, a technology is added or removed, or a team disagreed during review.
-
----
-
-## PART 6 — SPLITTING DECISION GUIDE
-
-### Go Splitting Patterns
-
-| Symptom | Correct Split |
-|---------|---------------|
-| Handler file has multiple resource groups | One file per resource: `handler_tasks.go`, `handler_cycles.go` |
-| Handler file has many DTO types | Extract to `handler_tasks_json.go` |
-| Store file has too many methods for one entity | `store_tasks_read.go` / `store_tasks_write.go` |
-| Domain file has types AND state machine logic | `task.go` (types) + `transitions.go` (logic) |
-| `main.go` has server config and startup | Extract `run()` to `internal/taskapi/server.go` |
-| Middleware file has multiple unrelated concerns | One file per middleware |
-| Test file > 600 lines | Extract fixtures to `testdata_test.go`, helpers to `helpers_test.go` |
-
-### TypeScript/React Splitting Patterns
-
-| Symptom | Correct Split |
-|---------|---------------|
-| Page component > 150 lines | Extract data fetching to container, rendering to children |
-| Component imports from a sibling feature | The shared element belongs in `src/components/` or `src/types/` |
-| Hook > 150 lines | Split query hooks from mutation hooks |
-| API file has unrelated resources | One file per resource |
-| Type file mixes wire types and UI state | `types/api.ts` (server contracts) vs feature-local types |
-| Test file > 500 lines | Separate state tests from render tests; extract factories |
-
-### When NOT to Split
-
-Do not split solely to meet a line count target. A split is wrong if:
-
-- The two resulting files would import each other (circular dependency — restructure instead).
-- One of the resulting files would be < 30 lines.
-- The split creates a new abstraction with no clear name.
-- The split happens mid-function or mid-type-group.
-
----
-
-## PART 7 — NAMING CONVENTIONS AT SCALE
-
-### Go Naming
+### Go
 
 | Entity | Convention | Example |
-|--------|------------|---------|
-| Package | Lowercase single word | `store`, `domain`, `handler` |
-| File | Snake_case | `store_tasks.go`, `handler_cycles_json.go` |
-| Type | PascalCase noun | `Task`, `CyclePhase`, `PostgresTaskStore` |
-| Interface | PascalCase behavior noun | `TaskStore`, `Notifier`, `Clock` |
-| Constructor | `New` or `New<Type>` | `NewHandler(deps)` |
-| Error variable | `Err` prefix | `ErrNotFound`, `ErrInvalidInput` |
-| Test function | `Test<Type>_<method>_<scenario>` | `TestStore_GetByID_returns_not_found` |
-| Test helper | lowercase descriptive | `newTestServer(t)`, `seedTask(t, db)` |
+| --- | --- | --- |
+| Package | lowercase single word | `store`, `domain` |
+| File | snake_case | `handler_cycles_json.go` |
+| Type | PascalCase noun | `TaskCycle` |
+| Interface | behavior noun | `CycleStore` |
+| Constructor | `New` / `New<Type>` | `NewStore` |
+| Errors | `Err` prefix | `ErrNotFound` |
+| Tests | `Test<Type>_<scenario>` | `TestStore_GetByID_not_found` |
 
-### TypeScript/React Naming
+### TypeScript
 
 | Entity | Convention | Example |
-|--------|------------|---------|
-| Feature directory | Lowercase plural noun | `tasks/`, `cycles/` |
-| Component file | PascalCase `.tsx` | `TaskCard.tsx` |
-| Hook file | camelCase `use` prefix `.ts` | `useTask.ts` |
-| API file | camelCase resource noun | `tasks.ts` |
-| Type file | camelCase concept noun | `task.ts`, `apiContracts.ts` |
-| Utility file | camelCase noun | `formatters.ts`, `validators.ts` |
-| Test file | Same name + `.test` | `TaskCard.test.tsx` |
-| MSW handler | Resource noun | `test/handlers/tasks.ts` |
-| Factory file | Resource noun | `test/factories/task.ts` |
+| --- | --- | --- |
+| Vertical dir | lowercase plural | `tasks/`, `projects/` |
+| Component | PascalCase `.tsx` | `TaskCard.tsx` |
+| Hook | `use` prefix | `useTask.ts` |
+| API module | resource noun | `tasks.ts`, `parseTaskApiCycles.ts` |
+| Test | co-located `.test.ts(x)` | `TaskCard.test.tsx` |
 
-### Universal Naming Rules
-
-- A file name must describe its primary export or responsibility. If you cannot name it without using "and" or "or", the file is doing too much.
-- Test files live next to their source file. Never in a separated top-level `__tests__/` folder.
-- Never use `utils.ts`, `helpers.go`, `common.ts`, or `shared.go` as dumping grounds.
-- Avoid abbreviations except universally understood ones (`id`, `url`, `http`, `ctx`, `cfg`).
+No `utils.ts` / `helpers.go` dumping grounds. No `and` / `or` in file names.
 
 ---
 
-## PART 8 — DEPENDENCY DIRECTION ENFORCEMENT
+## Documentation and ADRs
 
-### Go Dependency Graph
+- Public HTTP route → [docs/api.md](../../docs/api.md) in same PR.
+- `HAMIX_*` env var → [docs/configuration.md](../../docs/configuration.md).
+- Observable behavior change (status, JSON, SSE) → update focused doc.
+- Cross-package structure → ADR in [docs/adr/](../../docs/adr/) before merge.
 
-```
-cmd/*
-  └── imports → internal/*
-                  └── imports → pkgs/*/handler
-                                  └── imports → pkgs/*/store
-                                                  └── imports → pkgs/*/domain
-                                                                  └── (stdlib only)
-```
-
-- `domain` imports: stdlib only. No DB drivers. No HTTP packages.
-- `store` imports: `domain` + DB driver + stdlib. No HTTP packages.
-- `handler` imports: `domain` + `store` interfaces + HTTP stdlib. No DB drivers.
-- `internal` imports: any `pkgs/*` package. Wires them together.
-- `cmd` imports: `internal/*` only. Max 80 lines.
-
-### TypeScript Dependency Graph
-
-```
-app/ (routing, providers)
-  └── imports → features/*/index.ts
-                  └── imports → src/api/, src/types/, src/components/, src/hooks/
-                                  └── imports → src/utils/, src/styles/
-                                                  └── (no src/ imports)
-```
-
-- `src/utils/` imports: nothing from `src/`. Pure TypeScript.
-- `src/types/` imports: nothing from `src/`. Type-only.
-- `src/api/` imports: `src/types/` only. No component imports.
-- `src/components/` imports: `src/types/`, `src/utils/`, `src/hooks/`. Never `src/api/`. Never `features/`.
-- `features/*/` imports: `src/api/`, `src/types/`, `src/components/`, `src/hooks/`. Never another feature.
-- `app/` imports: `features/*/index.ts` public surface only.
-
-### CI Violation Checks
-
-Add these to your CI pipeline:
-
-```bash
-# Go: detect handler importing db driver directly
-grep -rn "database/sql\|lib/pq\|jackc/pgx" pkgs/tasks/handler/ --include="*.go"
-
-# Go: detect domain importing http or db
-grep -rn "net/http\|database/sql\|gorm" pkgs/tasks/domain/ --include="*.go"
-
-# TypeScript: detect feature importing another feature
-grep -rn "from '.*features/" web/src/features/ --include="*.ts" --include="*.tsx" \
-  | grep -v "from '\.\." | grep -v "from '\./\|from '\.\./\."
-
-# TypeScript: detect fetch outside api/
-grep -rn "fetch(" web/src/ --include="*.ts" --include="*.tsx" \
-  | grep -v "web/src/api/" | grep -v "test/"
-```
+ADR format: Context → Decision → Consequences → Alternatives. See existing ADR-00xx files.
 
 ---
 
-## PART 9 — GROWTH MILESTONES AND TRIGGERS
+## Growth milestones
 
-### Milestone 1: Second Domain Package
-
-**Trigger:** A second distinct business domain is introduced (billing, auth, notifications).
-
-**Required:**
-- Create `pkgs/<domain>/` with its own full subtree.
-- Add `docs/adr/ADR-NNNN-add-<domain>.md`.
-- The new domain must not import from `pkgs/tasks/`. Domains are independent.
-- If two domains share a type, it belongs in `pkgs/shared/domain/`, not in either domain.
-
-### Milestone 2: Second Binary
-
-**Trigger:** A `cmd/worker` or `cmd/scheduler` entrypoint is added.
-
-**Required:**
-- The new binary gets its own `internal/<binary>/` assembly package.
-- Shared domain logic stays in `pkgs/` — never duplicated.
-- Shared infrastructure (logging, config, DB pool) moves to `pkgs/infra/`.
-- Add `docs/adr/ADR-NNNN-add-<binary>-binary.md`.
-
-### Milestone 3: Frontend Feature Count > 5
-
-**Trigger:** More than 5 feature directories in `web/src/features/`.
-
-**Required:**
-- Audit all cross-feature imports. Any found must be resolved before adding feature 6.
-- Ensure every feature's `index.ts` exports are documented in `docs/web.md`.
-- Add a `CODEOWNERS` entry per feature directory.
-
-### Milestone 4: API Surface > 20 Routes
-
-**Trigger:** `docs/api.md` documents more than 20 distinct routes.
-
-**Required:**
-- No handler file may span more than one resource group.
-- Add URL versioning (`/v1/`, `/v2/`) if any route has breaking changes planned.
-- Generate or maintain a machine-readable `docs/openapi.yaml`.
-- Add a CI step that diffs the spec against the implementation.
-
-### Milestone 5: Test Suite > 10 Minutes
-
-**Trigger:** `go test ./... -count=1` or `npm test -- --run` exceeds 10 minutes.
-
-**Required:**
-- Separate integration tests with build tags (`//go:build integration`).
-- Parallelize test packages in CI.
-- Any test > 5 seconds that does not use a real network or DB is incorrectly implemented — mock it.
+| Trigger | Action |
+| --- | --- |
+| New BC package | ADR + full `{domain,contract,store,handler}` subtree — see `go-layout.mdc` |
+| Second binary | `internal/<binary>/` assembly; shared logic stays in `pkgs/` |
+| Web vertical count > 5 | Audit cross-vertical imports; document in `docs/web.md` |
+| API routes > 20 | One handler file per resource; consider OpenAPI diff in CI |
+| Test suite > 10 min | Integration build tags; parallelize CI groups |
 
 ---
 
-## PART 10 — FILE MIGRATION CHECKLIST
+## Migration checklist (file hits Red)
 
-When a file hits Red during review, complete this before splitting:
-
-- [ ] Write the primary responsibility of the file in one sentence.
-- [ ] List every function/type and label it with the responsibility it serves.
-- [ ] Group by responsibility. Any group with a clear name is a split candidate.
-- [ ] Verify the proposed split does not create a circular import.
-- [ ] Verify each resulting file would be > 30 lines.
-- [ ] Name the split files before creating them. If you cannot name one, reconsider.
-- [ ] Create the split files in the same package unless dependency direction requires otherwise.
-- [ ] Move functions without rewriting them — rewrites are a separate commit.
-- [ ] Update all imports.
-- [ ] Run `go test ./...` or `npm test -- --run`. Must pass before committing.
-- [ ] Commit as a single atomic commit: `refactor(<pkg>): split <old> into <a> and <b>`.
+1. One-sentence responsibility for the file.
+2. Group functions/types by responsibility; name split candidates.
+3. Verify no circular imports; each new file > 30 lines.
+4. Move without behavior change; update imports.
+5. `.\scripts\check.ps1` (or scoped `-GoOnly` / `-WebOnly`) green.
+6. Commit: `refactor(<pkg>): split <old> into <a> and <b>`.
 
 ---
 
-## PART 11 — DO NOT
+## Do not
 
-**Structure violations:**
-- Do not create `utils/`, `helpers/`, `common/`, `shared/`, or `misc/` packages as dumping grounds.
-- Do not let `cmd/*/main.go` grow beyond 80 lines.
-- Do not create circular imports between packages.
-- Do not mix database-driver-specific code into handler or domain layers.
-- Do not let a feature module import from another feature module.
-- Do not add a new top-level directory without a `docs/` entry and an ADR if it crosses a domain boundary.
-
-**Size violations:**
-- Do not let a file cross the Red threshold and then add more code to it — split first.
-- Do not split a file by cutting it arbitrarily in half — splits must land on responsibility boundaries.
-- Do not combine a structural split with a behavior change in the same commit.
-
-**Naming violations:**
-- Do not use file names with "and" or "or" in them.
-- Do not name files after implementation details (`postgres_handler.go`) — use domain names (`handler_tasks.go`).
-- Do not use inconsistent casing conventions within a stack.
-
-**Documentation violations:**
-- Do not merge a new public route without updating `docs/api.md`.
-- Do not add a `HAMIX_*` env variable without updating `docs/configuration.md`.
-- Do not make a structural change affecting multiple packages without an ADR.
+- Put business logic in `cmd/`.
+- Mix SQL in handlers or HTTP in stores.
+- Cross-import web verticals (use inner ring — `web-layout.mdc`).
+- Add types to `pkgs/tasks/domain` (compat shim — use BC `domain/`).
+- Merge routes without `docs/api.md`.
+- Split and change behavior in one commit.
 
 ---
 
-## PART 12 — QUICK REFERENCE
+## Quick reference
 
 ```
 WHERE DOES X LIVE?
 ──────────────────────────────────────────────────────────────────────
-Business logic for tasks          → pkgs/tasks/domain/ or service/
-DB access for tasks               → pkgs/tasks/store/store_tasks.go
-HTTP handler for /tasks           → pkgs/tasks/handler/handler_tasks.go
-Request/response types            → pkgs/tasks/handler/handler_tasks_json.go
-Server assembly                   → internal/taskapi/
-main()                            → cmd/taskapi/main.go (≤ 80 lines)
-Cross-domain shared Go types      → pkgs/shared/domain/
-React components shared globally  → web/src/components/
-Feature-specific components       → web/src/features/<name>/components/
-All fetch() calls                 → web/src/api/<resource>.ts
-Shared React hooks                → web/src/hooks/
-Feature-local React hooks         → web/src/features/<name>/hooks/
-Global UI state                   → web/src/stores/
-Design tokens                     → web/src/styles/tokens.css
-Schema migration path             → pkgs/tasks/postgres/ (GORM AutoMigrate)
-Go test helpers                   → internal/tasktestdb/ or *_test.go
-TS test factories                 → web/src/test/factories/
-TS MSW handlers                   → web/src/test/handlers/
-Env variable documentation        → docs/configuration.md
-HTTP contract documentation       → docs/api.md
-Architectural decisions           → docs/adr/ADR-NNNN-<slug>.md
+Go layout / BC map              → go-layout.mdc, docs/agent-map.md
+Web layout / verticals        → web-layout.mdc, docs/web.md
+Task domain (canonical)       → pkgs/taskcore/domain/
+Cycles / checklist / events   → pkgs/taskcycles|taskchecklist|taskevents/domain/
+HTTP composition + SSE        → pkgs/tasks/handler/
+Store facade                  → pkgs/tasks/store/
+fetch() + API parsers         → web/src/api/
+Task sync / mutations         → web/src/tasks/sync/, tasks/mutations/
+Shared web inner ring         → web/src/lib/, web/src/hooks/
+Go quality bar                → backend-engineering-bar.mdc
+Web UI bar                    → frontend_bar.mdc
+Web test bar                  → web-testing-bar.mdc
+Verify before PR              → ci-verification.mdc
 ──────────────────────────────────────────────────────────────────────
 ```

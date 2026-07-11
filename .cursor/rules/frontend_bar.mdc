@@ -1,23 +1,12 @@
 ---
-description: >-
-  UI/UX standards for web/: typography, color, spacing, motion, components,
-  and accessibility. Complements CODE_STANDARDS (structure, API) and docs/web.md (Vitest patterns).
-globs:
-  - "**/*.tsx"
-  - "**/*.jsx"
-  - "**/*.css"
-  - "**/*.scss"
-  - "**/*.ts"
-  - "**/*.js"
-  - "**/*.html"
-alwaysApply: true
+description: UI/UX standards for web/ — apply when building, styling, or polishing React   UI (typography, color, spacing, motion, buttons, forms, modals, tables,   accessibility, dark mode). Complements CODE_STANDARDS (structure) and   web-testing-bar (tests).
+alwaysApply: false
 ---
-
 # UI/UX Design Standards
 
 These rules define how UI in `web/` should look and behave. Use design tokens and existing patterns before adding one-off styles. When a choice is ambiguous, prefer clarity, consistency, and accessibility over novelty.
 
-**Repo context:** For **`web/`**, also follow **`CODE_STANDARDS.mdc`** (Vite/React structure, **`src/api/`**) and co-located Vitest tests per **`docs/web.md`**. This file covers visual and interaction quality; those files cover structure and tests.
+**Repo context:** For **`web/`**, also follow **`web-layout.mdc`** (vertical modules, **`src/api/`**), **`CODE_STANDARDS.mdc`** (file sizes), **`web-testing-bar.mdc`**, and **`docs/web.md`**. This file covers visual and interaction quality only.
 
 ---
 

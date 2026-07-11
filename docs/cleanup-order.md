@@ -98,7 +98,7 @@ Phase 0 is **not** a standalone plan — bake it into every child plan's exit cr
 | Go `store/` | SQL/GORM + map to domain | SQL or GORM in handlers |
 | Go `handler/` | HTTP + domain types | DB drivers in handlers |
 | `web/src/api/` | sole `fetch` owner | `fetch` in components |
-| `web/src/features/` | no cross-feature imports | feature A imports feature B |
+| `web/src/tasks/` (and sibling verticals) | no cross-vertical imports | vertical A imports vertical B directly |
 | Sync | policy in `tasks/sync/` | ad-hoc cache invalidation in components |
 
 **ROI-ranked backlog:** [audit/boundaries-roi.md](./audit/boundaries-roi.md) — ranked violations and verified-clean boundaries. Pick one finding per plan/PR. Violation signals above are **audit checks**; several are already clean (see audit §Verified clean).

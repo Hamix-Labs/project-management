@@ -1,4 +1,4 @@
-# CODE_STANDARDS.mdc guardrails (see .cursor/rules/CODE_STANDARDS.mdc Part 8).
+# Layout guardrails (see .cursor/rules/web-layout.mdc and go-layout.mdc).
 # Exit 0 when clean; exit 1 when a rule is violated.
 # Run from repository root: pwsh -File scripts/check-code-standards.ps1
 
@@ -137,7 +137,7 @@ if (Test-Path $createRoot) {
     }
 }
 
-# TypeScript: feature modules must not import other feature modules (CODE_STANDARDS Part 4).
+# TypeScript: vertical modules must not cross-import (web-layout.mdc).
 $featureDirs = @(
     @{ Name = "tasks"; Path = (Join-Path $srcRoot "tasks"); Forbidden = @("projects", "worktrees") },
     @{ Name = "projects"; Path = (Join-Path $srcRoot "projects"); Forbidden = @("tasks", "settings", "worktrees") },

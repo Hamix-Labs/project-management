@@ -1,9 +1,7 @@
 ---
 description: Web test quality bar — MSW, Vitest projects, file size
-globs: web/**/*
 alwaysApply: false
 ---
-
 # Web testing bar
 
 Full reference: [docs/domain/web-testing.md](../../docs/domain/web-testing.md).

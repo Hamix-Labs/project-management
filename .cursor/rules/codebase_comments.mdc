@@ -1,17 +1,7 @@
 ---
-description: >-
-  Comment standards for Go and TypeScript/React. Comments explain why, not what.
-  Required for non-obvious logic, edge cases, and public APIs. Omit on
-  self-explanatory code.
-globs:
-  - "**/*.go"
-  - "**/*.ts"
-  - "**/*.tsx"
-  - "**/*.css"
-  - "**/*.sql"
-alwaysApply: true
+description: Comment standards for Go, TypeScript, React, CSS, and SQL — apply when adding,   editing, or reviewing comments or godoc/JSDoc. Comments explain why, not what;   required for non-obvious logic, edge cases, and exported APIs; omit on   self-explanatory code.
+alwaysApply: false
 ---
-
 # Code Commenting Standards
 
 Comments are not decoration. They are not a sign of thoroughness. They are a last resort — used only when the code itself cannot communicate the full truth. A comment that describes what the code does is a failure. A comment that explains why the code does it that way, or warns about a non-obvious consequence, is invaluable.

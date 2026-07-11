@@ -99,7 +99,7 @@ Intent-based lookup. For subsystem inventory, use [docs/agent-map.md](docs/agent
 | Projects UI | `web/src/projects/` |
 | Settings page | `web/src/settings/` |
 | SSE transport hook (not sync policy) | `web/src/tasks/hooks/useTaskEventStream.ts`, [docs/domain/sse-hub.md](docs/domain/sse-hub.md) |
-| Vitest / MSW test setup | `web/src/test/`, `.cursor/rules/UI_AUTOMATION/testing-recipes.mdc` |
+| Vitest / MSW test setup | `web/src/test/`, `.cursor/rules/web-testing-bar.mdc`, [docs/domain/web-testing.md](docs/domain/web-testing.md) |
 | Go test tiers, CI groups, coverage gate | [docs/domain/testing.md](docs/domain/testing.md), `scripts/test-groups.sh`, `scripts/coverage-baselines.json` |
 | Write operator / checklist copy | [docs/execute-and-verify.md](docs/execute-and-verify.md), [docs/domain/done-criteria.md](docs/domain/done-criteria.md) |
 | UI tokens or spacing | `web/src/app/styles/tokens/`, `frontend_bar.mdc` |
@@ -119,7 +119,7 @@ Intent-based lookup. For subsystem inventory, use [docs/agent-map.md](docs/agent
 
 | I need to… | Go to |
 | --- | --- |
-| Where a new file goes | `.cursor/rules/CODE_STANDARDS.mdc` Part 12 |
+| Where a new file goes | `.cursor/rules/go-layout.mdc` (Go), `.cursor/rules/web-layout.mdc` (web), `CODE_STANDARDS.mdc` (sizes) |
 | Handler file too large | [pkgs/tasks/handler/README.md](pkgs/tasks/handler/README.md) |
 | Default Go tests | `internal/tasktestdb/`, [CONTRIBUTING.md](CONTRIBUTING.md#before-you-open-a-pr) |
 | Env or app settings | [docs/configuration.md](docs/configuration.md), Settings SPA |
@@ -127,7 +127,7 @@ Intent-based lookup. For subsystem inventory, use [docs/agent-map.md](docs/agent
 ## Tooling and rules
 
 - **Plan mode:** `.cursor/rules/plan-mode.mdc` — agent asks **single plan vs parent + child plans** before `CreatePlan`; see umbrella + child layout under `.cursor/plans/`
-- **Cursor rules:** `CODE_STANDARDS.mdc`, `codebase_comments.mdc`, `backend-engineering-bar.mdc`, `frontend_bar.mdc`, `plan-mode.mdc` (plan mode only)
+- **Cursor rules:** `CODE_STANDARDS.mdc`, `go-layout.mdc`, `web-layout.mdc`, `codebase_comments.mdc`, `backend-engineering-bar.mdc`, `frontend_bar.mdc`, `web-testing-bar.mdc`, `ci-verification.mdc`, `codegraph-tools.mdc`, `plan-mode.mdc` (plan mode only)
 - **CI:** `go-lint` runs `./scripts/check-go.sh --lint-only --verbose`; `go-tests` matrix runs `./scripts/check-go.sh --tests-only --group=<name> --verbose`; web job runs `./scripts/check-web.sh --install --verbose` — see `.github/workflows/ci.yml`
 - **Local bar:** see [CONTRIBUTING.md § Before you open a PR](CONTRIBUTING.md#before-you-open-a-pr)
 - **TDD default:** failing test first, then implement until green
@@ -165,7 +165,7 @@ Default tests must not require real Postgres, real outbound network, or a runnin
 - Do not rely on `taskapi` serving `web/dist`; production is static files + reverse proxy.
 - `GET /events` is SSE; `/health` is plain JSON — different clients.
 - Default per-IP rate limit is 120/min (`HAMIX_RATE_LIMIT_PER_MIN`); set **`0`** to disable locally.
-- Verify with **`./scripts/check.sh`** / **`.\scripts\check.ps1`** — not **`gh run watch`** (see `.cursor/rules/verification.mdc`).
+- Verify with **`./scripts/check.sh`** / **`.\scripts\check.ps1`** — not **`gh run watch`** (see `.cursor/rules/ci-verification.mdc`).
 
 ## Full indexes
 

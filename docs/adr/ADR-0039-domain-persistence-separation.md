@@ -28,8 +28,8 @@ Project standards require the opposite dependency direction:
 
 | Rule | Source |
 | --- | --- |
-| `domain` imports stdlib only — no DB drivers, no HTTP | `CODE_STANDARDS.mdc` Part 8, `backend-engineering-bar.mdc` §2 |
-| Stores implement domain contracts; schema lives outside domain | `CODE_STANDARDS.mdc` Part 3, `docs/domain/persistence.md` |
+| `domain` imports stdlib only — no DB drivers, no HTTP | `go-layout.mdc`, `backend-engineering-bar.mdc` §2 |
+| Stores implement domain contracts; schema lives outside domain | `go-layout.mdc`, `docs/domain/persistence.md` |
 | Schema changes bump `SchemaRevision` and run through opt-in migrate | [ADR-0034](./ADR-0034-opt-in-schema-migration.md) |
 
 The mismatch is longstanding pragmatism: one struct set avoids mapping boilerplate

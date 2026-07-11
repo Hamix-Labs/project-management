@@ -1,0 +1,142 @@
+---
+description: Web SPA layout — vertical modules, inner ring, fetch/parser boundaries. Apply when creating or moving files under web/.
+globs:
+  - "web/**/*.ts"
+  - "web/**/*.tsx"
+  - "web/**/*.css"
+  - "web/package.json"
+alwaysApply: false
+---
+
+# Web layout — vertical modules
+
+The SPA lives under `web/src/`. This repo uses **vertical modules** (`tasks/`, `projects/`, …), not `src/features/`. Boundaries are enforced by `scripts/check-code-standards.ps1` and [ADR-0044](../../docs/adr/ADR-0044-query-invalidation-catalog.md).
+
+**Companion:** file-size limits in `CODE_STANDARDS.mdc`. UI quality: `frontend_bar.mdc`. Tests: `web-testing-bar.mdc`. Data policy: [docs/web.md](../../docs/web.md).
+
+---
+
+## Directory layout (actual)
+
+```
+web/src/
+├── app/                    # Shell: App.tsx, Router, providers, bootstrap, global styles
+│   └── styles/             # Global + feature CSS (tokens under styles/tokens/)
+├── api/                    # ALL fetch() calls — parseTaskApi* parsers live here
+├── components/             # Domain-agnostic UI (ui/, layout/, feedback/, …)
+├── hooks/                  # Shared hooks with no vertical dependency
+├── lib/                    # Inner ring: query policy, invalidation catalog, git assignment
+├── types/                  # Wire types shared across verticals (taskCore, cycle, project, …)
+├── shared/                 # Small shared UI/helpers (toast, error boundary, …)
+├── tasks/                  # Task vertical (largest): pages, sync, mutations, create, checklist
+├── projects/               # Projects vertical
+├── settings/               # Settings vertical
+├── worktrees/              # Git worktree UI (legacy name; global git hooks live in hooks/)
+├── observability/          # System status chip, etc.
+└── test/                   # MSW server, handlers, factories, integration harnesses
+```
+
+### Vertical module shape (example: `tasks/`)
+
+```
+tasks/
+├── pages/                  # Route containers (*Page.tsx) — thin
+├── components/             # Feature UI
+├── hooks/                  # Task-specific hooks
+├── sync/                   # SSE cache policy (decideSyncFrame, applySyncEffects)
+├── mutations/              # Guarded optimistic writes
+├── create/                 # Create-flow decide/apply (ADR-0024)
+├── checklist/              # Detail checklist mutations
+├── task-query/             # Query keys + list/detail hooks
+└── index.ts                # Narrow public exports for app/ lazy routes
+```
+
+---
+
+## Module boundary rules
+
+### Inner ring (cross-vertical)
+
+Promote to `lib/`, `hooks/`, or `components/` when **two or more** verticals need the same code:
+
+- Query invalidation: `lib/queryInvalidation/`
+- Git assignment: `lib/composeGitAssignment.ts`, `hooks/useComposeGitAssignment.ts`
+- Project picker: `components/project/`, `hooks/useProjects.ts`
+
+`tasks/` must **not** import `@/projects/` or `@/worktrees/` directly — use the inner ring. Enforced in CI.
+
+### Vertical isolation
+
+| Vertical | Must not import from |
+| --- | --- |
+| `tasks/` | `projects/`, `worktrees/` |
+| `projects/` | `tasks/`, `settings/`, `worktrees/` |
+| `settings/` | `tasks/`, `projects/`, `worktrees/` |
+| `worktrees/` | `tasks/`, `projects/`, `settings/` |
+
+Shared concepts → `types/` or `api/`, not cross-vertical deep imports.
+
+### Other rules
+
+- **`api/`** — sole owner of `fetch()`. Responses are `unknown` until `parseTaskApi*` validates.
+- **`components/`** — domain-agnostic; no imports from `tasks/` or other verticals.
+- **`hooks/`** (top-level) — no imports from `api/tasks` or vertical paths; vertical hooks live under `tasks/hooks/`, etc.
+- **Mutations** — project/git `invalidateQueries` only in `*/mutations/` modules (see check script).
+- **Pure policy modules** — `tasks/mutations/*.ts` and `tasks/create/*.ts` (non-test) must not import React.
+
+---
+
+## API parsers (BC-aligned)
+
+Parsers mirror backend bounded contexts:
+
+| Module | Backend BC |
+| --- | --- |
+| `api/parseTaskApiCore.ts` | Shared parse helpers + enums |
+| `api/parseTaskApiTasks.ts` | taskcore task list/get/stats |
+| `api/parseTaskApiCycles.ts` | taskcycles |
+| `api/parseTaskApiEvents.ts` | taskevents |
+| `api/parseTaskApiCompose.ts` | drafts/templates |
+| `api/parseTaskApi.ts` | Barrel re-exports only |
+
+Types: `types/taskCore.ts`, `types/cycle.ts`, `types/taskDrafts.ts`, … — barrel via `types/index.ts`.
+
+---
+
+## Dependency graph
+
+```
+app/
+  └── tasks/, projects/, settings/ (vertical pages)
+        └── api/, types/, components/, hooks/, lib/
+              └── (no imports from verticals)
+```
+
+---
+
+## CI enforcement
+
+`npm run check:standards` → `scripts/check-code-standards.ps1`:
+
+- `fetch(` only under `web/src/api/` (excluding tests)
+- Vertical cross-import matrix (table above)
+- Raw colors / sub-minimum font sizes in component CSS
+- `invalidateQueries` scoped to `mutations/` in projects/worktrees
+
+---
+
+## Quick reference (web)
+
+```
+fetch()                    → web/src/api/
+SSE sync policy            → web/src/tasks/sync/
+Guarded task writes        → web/src/tasks/mutations/
+Create flow policy         → web/src/tasks/create/
+Query tiers                → web/src/lib/queryPolicy.ts
+Project/git invalidation   → web/src/lib/queryInvalidation/
+Routes                     → web/src/app/Router.tsx
+Task pages                 → web/src/tasks/pages/
+MSW handlers               → web/src/test/handlers/
+```
+
+Details: [docs/web.md](../../docs/web.md), [AGENTS.md](../../AGENTS.md) web rows.

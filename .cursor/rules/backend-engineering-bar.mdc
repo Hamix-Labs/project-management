@@ -1,22 +1,12 @@
 ---
-description: >-
-  Go backend standards for this repo: structure, file-size limits, error handling,
-  HTTP APIs, database access, observability, testing, security, and operations.
-globs:
-  - "**/*.go"
-  - "**/go.mod"
-  - "**/go.sum"
-  - "**/Makefile"
-  - "**/Dockerfile"
-  - "**/*.sql"
-alwaysApply: true
+description: Go backend standards — apply when writing, reviewing, or refactoring Go code (handlers,stores, domain, middleware, errors, HTTP APIs, SQL, tests,   observability, security, shutdown). Complements CODE_STANDARDS for layout.
+alwaysApply: false
 ---
-
 # Go Backend Engineering Standards
 
 Standards for Go code in this repo: package layout, errors, HTTP handlers, stores, observability, and tests. Follow the [Go spec](https://go.dev/ref/spec) and [Effective Go](https://go.dev/doc/effective_go); this file adds project-specific requirements.
 
-**Repo context:** Applies to all Go packages. For where files live and size limits, see **`CODE_STANDARDS.mdc`**.
+**Repo context:** Applies to all Go packages. Layout: **`go-layout.mdc`**. File sizes: **`CODE_STANDARDS.mdc`**.
 
 ---
 
@@ -32,44 +22,21 @@ Standards for Go code in this repo: package layout, errors, HTTP handlers, store
 
 ---
 
-## 2. PROJECT STRUCTURE
+## 2. PROJECT STRUCTURE (Hamix)
 
-Use a flat, intent-revealing layout. Avoid `pkg/` and `internal/` nesting that adds depth without meaning.
+**Layout and BC map:** `go-layout.mdc` and [docs/agent-map.md](../../docs/agent-map.md). **File-size limits:** `CODE_STANDARDS.mdc`.
 
-```
-myservice/
-├── cmd/
-│   └── myservice/
-│       └── main.go          # Entrypoint only — wire deps, call run()
-├── internal/
-│   ├── api/                 # HTTP handlers and routing
-│   │   ├── handler_users.go
-│   │   ├── handler_orders.go
-│   │   └── middleware.go
-│   ├── domain/              # Core types, business logic, interfaces
-│   │   ├── user.go
-│   │   └── order.go
-│   ├── store/               # Database access layer (implements domain interfaces)
-│   │   ├── user_store.go
-│   │   └── order_store.go
-│   ├── service/             # Orchestration between domain + external systems
-│   │   └── order_service.go
-│   └── config/              # Config loading and validation
-│       └── config.go
-├── migrations/              # SQL migration files (numbered, up/down)
-├── Makefile
-├── Dockerfile
-└── go.mod
-```
+Hamix uses bounded contexts under `pkgs/` (`taskcore`, `taskcycles`, `taskchecklist`, …) plus a **composition shell** at `pkgs/tasks/` (route wiring, SSE hub, store facade). `cmd/taskapi/main.go` wires `internal/taskapi/` only.
 
 ### Rules
 
-- `main.go` must do only three things: parse config, wire dependencies, start the server.
-- `internal/` prevents accidental external import. Use it for everything not intentionally public.
-- No `utils/` or `helpers/` packages. Name packages by what they provide, not what they are.
-- Domain types (`User`, `Order`) live in `domain/`. They have no database or HTTP awareness.
-- Stores implement domain interfaces. Services call stores through those interfaces.
-- One file per handler group. One file per store entity. Keep files focused.
+- `main.go` — parse config, wire dependencies, start server (≤ 80 lines).
+- `internal/` — not importable outside the binary; server assembly lives here.
+- No `utils/` or `helpers/` packages. Name packages by what they provide.
+- `domain/` — stdlib only (no GORM, no HTTP). Types live in each BC's `domain/`, not in new code under `pkgs/tasks/domain/` (compat shim only).
+- `store/` — SQL/GORM + map to domain; translate errors to domain sentinels.
+- `handler/` — HTTP + domain + `contract` interfaces; no DB drivers.
+- One handler file per resource group; one store group per entity.
 
 ### File size (reviewability bar)
 

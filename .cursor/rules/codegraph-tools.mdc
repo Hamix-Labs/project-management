@@ -1,0 +1,99 @@
+---
+description: Use Codegraph MCP tools for symbol lookup, source reads, and call-graph traversal before Grep/Read loops
+alwaysApply: true
+---
+
+# Codegraph MCP — agent guide
+
+Codegraph is a per-project SQLite index of symbols, call edges, and file metadata under `.codegraph/`. All tools on the `user-codegraph` server read from that index — faster and more structured than ad-hoc Grep and Read loops.
+
+**Index gate:** If no `.codegraph/` exists or `codegraph_status` shows zero files, stop calling Codegraph for that project and use Read, Grep, and Glob. Mention `codegraph init` to the user; do not run it yourself.
+
+**`projectPath`:** Pass the absolute repo root (or subdirectory) on every call when the workspace root itself is unindexed.
+
+---
+
+## Primary tool — `codegraph_explore`
+
+Call **first** for almost any question or before an edit: "how does X work", architecture, a bug, where/what is X, surveying an area, or the symbols you are about to change.
+
+- Query: natural-language question **or** a bag of symbol/file names (e.g. `RunAuto entry.go`, `mutateElement renderScene`).
+- Returns: verbatim line-numbered source grouped by file (Read-equivalent — treat as already Read), call path among symbols (including dynamic-dispatch hops), and blast-radius summary.
+- One call usually answers the whole question. Call again with more specific names if needed.
+
+**Do not** re-verify indexed code with Grep after explore returns it. Reach for Read/Grep only for non-indexed paths (configs, docs, CI) or files flagged stale (see below).
+
+---
+
+## Granular tools — when explore is not enough
+
+| Tool | Best for | Avoid when |
+| --- | --- | --- |
+| `codegraph_status` | Index health check | Normal exploration |
+| `codegraph_files` | Package layout, symbol counts (`format=tree\|flat\|grouped`) | Non-indexed paths |
+| `codegraph_search` | Find definitions by name (`kind` filter optional) | You need source or call graph |
+| `codegraph_node` (file) | Read source + dependents note | File not in index |
+| `codegraph_node` (symbol) | Body + one-hop trail before edit | Ambiguous name without `file` pin |
+| `codegraph_callers` | Full inbound call list | Name overloaded without `file` |
+| `codegraph_callees` | Outbound dependencies (one hop) | You need multi-hop reach |
+| `codegraph_impact` | Refactor blast radius (`depth` default 2) | You need code bodies inline |
+
+**`codegraph_node` modes:**
+- **File mode** — pass `file` alone; same format as Read, plus dependents. Use `symbolsOnly=true` for a structural preview; `offset`/`limit` paginate.
+- **Symbol mode** — pass `symbol`; pin with `file` and `line` when overloaded. Set `includeCode=true` for bodies + inline trail.
+
+**Disambiguation:** Common names (`Run`, `Handler`) need `file` (and `line` for symbol mode). List all definitions first without `includeCode`, then re-query pinned.
+
+---
+
+## Named workflows
+
+**New area onboarding.** `codegraph_files` on the package → `codegraph_explore` with entry symbol or route name. Replaces Glob → Grep → Read.
+
+**Refactor prep.** `codegraph_explore` or `codegraph_search` to locate the symbol → `codegraph_impact` at appropriate `depth` → `codegraph_node` with `includeCode=true` on high-risk hits → `codegraph_callers` with `file` if impact depth missed a caller.
+
+**Pin an ambiguous symbol.** `codegraph_node` with just `symbol` to list definitions → pick `file:line` → re-query pinned for one body and trail.
+
+**Read before editing.** Prefer `codegraph_explore` or `codegraph_node` with `file` over Read — same source, plus dependents and blast radius.
+
+**Explore unavailable fallback.** If `codegraph_explore` returns "tool not found", use: `codegraph_search` → `codegraph_node` (`includeCode=true`, `file` pin) → `codegraph_callers` → `codegraph_callees`.
+
+---
+
+## Staleness and limitations
+
+- Index lags file writes by ~1s.
+- Response banner **"Some files referenced below were edited since the last index sync"** — Read only those listed files; trust everything else.
+- Banner **"CodeGraph auto-sync is DISABLED"** — whole index frozen; Read directly for anything that may have changed.
+- Cross-file resolution is best-effort; ambiguous calls may return multiple candidates.
+- No live correctness validation — compiler, linter, and tests still decide correctness.
+
+---
+
+## Fall back to built-in tools
+
+| Situation | Use instead |
+| --- | --- |
+| No index or zero files in status | Read, Grep, Glob |
+| Non-source files (markdown, YAML, `.env`, CI) | Read or Grep |
+| Wrong/stale path after rename | Read directly; user may re-run `codegraph init` |
+| Concept search ("where is auth handled?") | SemanticSearch or Grep — needs a symbol name |
+| String literal or comment search | Grep — index tracks symbols and edges, not all text |
+
+---
+
+## Do / Do not
+
+**Do**
+- Call `codegraph_explore` before Read/Grep on indexed source.
+- Pin overloaded symbols with `file` (and `line`) before editing.
+- Use `codegraph_impact` before signature changes, renames, or deletions.
+- Pass `projectPath` when querying an indexed subdirectory or second codebase.
+
+**Do not**
+- Grep or Read first to find or understand indexed code.
+- Re-verify explore/node results with Grep (wastes context).
+- Chain six granular calls when one `codegraph_explore` query would suffice.
+- Call Codegraph tools after status shows the project is unindexed.
+
+Extended reference: [codegraph-tools.md](../../codegraph-tools.md) (granular tool benchmarks).
