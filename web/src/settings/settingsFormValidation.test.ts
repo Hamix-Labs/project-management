@@ -1,0 +1,43 @@
+import { describe, expect, it } from "vitest";
+import type { SettingsFormState } from "./settingsForm";
+import { parseSettingsNumericValidation } from "./settingsFormValidation";
+
+function form(overrides: Partial<SettingsFormState> = {}): SettingsFormState {
+  return {
+    runner: "cursor",
+    cursorBin: "",
+    cursorModel: "",
+    maxRunDurationSeconds: "3600",
+    streamIdleStuckSeconds: "300",
+    agentPickupDelaySeconds: "0",
+    displayTimezone: "",
+    verifyMaxRetries: "3",
+    verifyRunnerName: "",
+    verifyRunnerModel: "",
+    ...overrides,
+  };
+}
+
+describe("parseSettingsNumericValidation", () => {
+  it("returns no invalid flags when form is null", () => {
+    expect(parseSettingsNumericValidation(null)).toEqual({
+      maxInvalid: false,
+      streamIdleInvalid: false,
+      pickupInvalid: false,
+    });
+  });
+
+  it("flags negative max run duration", () => {
+    expect(parseSettingsNumericValidation(form({ maxRunDurationSeconds: "-1" }))).toMatchObject({
+      maxInvalid: true,
+    });
+  });
+
+  it("flags pickup delay above one week", () => {
+    expect(
+      parseSettingsNumericValidation(form({ agentPickupDelaySeconds: "604801" })),
+    ).toMatchObject({
+      pickupInvalid: true,
+    });
+  });
+});
