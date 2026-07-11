@@ -9,22 +9,23 @@ import (
 	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
+	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
+	eventsmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"gorm.io/gorm"
 )
 
 // List returns audit events for a task in ascending sequence order.
 // Used for full-history reads (small tasks) and as the canonical
 // ordering reference for tests; pagination should go through PageCursor.
-func List(ctx context.Context, db *gorm.DB, taskID string) ([]domain.TaskEvent, error) {
+func List(ctx context.Context, db *gorm.DB, taskID string) ([]taskeventsdomain.TaskEvent, error) {
 	defer storekernel.DeferLatency(storekernel.OpListTaskEvents)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskevents.store.events.List")
 	taskID = strings.TrimSpace(taskID)
 	if taskID == "" {
 		return nil, fmt.Errorf("%w: id", domain.ErrInvalidInput)
 	}
-	var rows []model.TaskEvent
+	var rows []eventsmodel.TaskEvent
 	err := db.WithContext(ctx).
 		Where("task_id = ?", taskID).
 		Order("seq ASC").
@@ -32,7 +33,7 @@ func List(ctx context.Context, db *gorm.DB, taskID string) ([]domain.TaskEvent, 
 	if err != nil {
 		return nil, fmt.Errorf("list task events: %w", err)
 	}
-	return model.ToDomainTaskEvents(rows), nil
+	return eventsmodel.ToDomainTaskEvents(rows), nil
 }
 
 // Count returns how many audit rows exist for taskID.
@@ -44,7 +45,7 @@ func Count(ctx context.Context, db *gorm.DB, taskID string) (int64, error) {
 		return 0, fmt.Errorf("%w: id", domain.ErrInvalidInput)
 	}
 	var n int64
-	err := db.WithContext(ctx).Model(&model.TaskEvent{}).Where("task_id = ?", taskID).Count(&n).Error
+	err := db.WithContext(ctx).Model(&eventsmodel.TaskEvent{}).Where("task_id = ?", taskID).Count(&n).Error
 	if err != nil {
 		return 0, fmt.Errorf("count task events: %w", err)
 	}
@@ -61,7 +62,7 @@ func LastSeq(ctx context.Context, db *gorm.DB, taskID string) (int64, error) {
 		return 0, fmt.Errorf("%w: id", domain.ErrInvalidInput)
 	}
 	var maxSeq int64
-	err := db.WithContext(ctx).Model(&model.TaskEvent{}).
+	err := db.WithContext(ctx).Model(&eventsmodel.TaskEvent{}).
 		Where("task_id = ?", taskID).
 		Select("COALESCE(MAX(seq), 0)").
 		Scan(&maxSeq).Error
@@ -73,7 +74,7 @@ func LastSeq(ctx context.Context, db *gorm.DB, taskID string) (int64, error) {
 
 // Get returns one task_events row by composite key (task_id, seq), or
 // domain.ErrNotFound when the row does not exist.
-func Get(ctx context.Context, db *gorm.DB, taskID string, seq int64) (*domain.TaskEvent, error) {
+func Get(ctx context.Context, db *gorm.DB, taskID string, seq int64) (*taskeventsdomain.TaskEvent, error) {
 	defer storekernel.DeferLatency(storekernel.OpGetTaskEvent)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskevents.store.events.Get")
 	taskID = strings.TrimSpace(taskID)
@@ -83,7 +84,7 @@ func Get(ctx context.Context, db *gorm.DB, taskID string, seq int64) (*domain.Ta
 	if seq < 1 {
 		return nil, fmt.Errorf("%w: seq", domain.ErrInvalidInput)
 	}
-	var ev model.TaskEvent
+	var ev eventsmodel.TaskEvent
 	err := db.WithContext(ctx).Where("task_id = ? AND seq = ?", taskID, seq).First(&ev).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -91,6 +92,6 @@ func Get(ctx context.Context, db *gorm.DB, taskID string, seq int64) (*domain.Ta
 		}
 		return nil, fmt.Errorf("get task event: %w", err)
 	}
-	d := model.ToDomainTaskEvent(ev)
+	d := eventsmodel.ToDomainTaskEvent(ev)
 	return &d, nil
 }

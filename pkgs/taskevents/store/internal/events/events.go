@@ -21,8 +21,8 @@ import (
 	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
+	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"gorm.io/gorm"
 )
 
@@ -30,7 +30,7 @@ import (
 // the parent task exists (so we never leak orphan events). Each call
 // runs in its own transaction so the seq allocator and the insert
 // are observed atomically.
-func Append(ctx context.Context, db *gorm.DB, taskID string, typ domain.EventType, by domain.Actor, data []byte) error {
+func Append(ctx context.Context, db *gorm.DB, taskID string, typ taskeventsdomain.EventType, by taskeventsdomain.Actor, data []byte) error {
 	defer storekernel.DeferLatency(storekernel.OpAppendTaskEvent)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskevents.store.events.Append")
 	if err := storekernel.ValidateActor(by); err != nil {
@@ -42,7 +42,7 @@ func Append(ctx context.Context, db *gorm.DB, taskID string, typ domain.EventTyp
 	}
 	err := db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var n int64
-		if err := tx.Model(&model.Task{}).Where("id = ?", taskID).Count(&n).Error; err != nil {
+		if err := tx.Raw(`SELECT COUNT(*) FROM tasks WHERE id = ?`, taskID).Scan(&n).Error; err != nil {
 			return fmt.Errorf("task lookup: %w", err)
 		}
 		if n == 0 {

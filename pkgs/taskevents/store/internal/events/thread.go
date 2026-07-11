@@ -11,8 +11,9 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
+	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
+	eventsmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -25,12 +26,12 @@ const (
 // parseResponseThreadJSON unmarshals the response_thread_json column.
 // nil / empty / "null" all map to a nil slice (legacy rows that pre-date
 // the thread column); a malformed payload is surfaced as an error.
-func parseResponseThreadJSON(raw []byte) ([]domain.ResponseThreadEntry, error) {
+func parseResponseThreadJSON(raw []byte) ([]taskeventsdomain.ResponseThreadEntry, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskevents.store.events.parseResponseThreadJSON")
 	if len(raw) == 0 || string(raw) == "null" {
 		return nil, nil
 	}
-	var out []domain.ResponseThreadEntry
+	var out []taskeventsdomain.ResponseThreadEntry
 	if err := json.Unmarshal(raw, &out); err != nil {
 		return nil, fmt.Errorf("response_thread_json: %w", err)
 	}
@@ -41,7 +42,7 @@ func parseResponseThreadJSON(raw []byte) ([]domain.ResponseThreadEntry, error) {
 // including legacy rows that only have user_response / user_response_at
 // populated. Re-exported by the public store facade so handlers and
 // devsim tests keep saying store.ThreadEntriesForDisplay unchanged.
-func ThreadEntriesForDisplay(ev *domain.TaskEvent) []domain.ResponseThreadEntry {
+func ThreadEntriesForDisplay(ev *taskeventsdomain.TaskEvent) []taskeventsdomain.ResponseThreadEntry {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskevents.store.events.ThreadEntriesForDisplay")
 	if ev == nil {
 		return nil
@@ -60,7 +61,7 @@ func ThreadEntriesForDisplay(ev *domain.TaskEvent) []domain.ResponseThreadEntry 
 			if ev.UserResponseAt != nil {
 				at = *ev.UserResponseAt
 			}
-			return []domain.ResponseThreadEntry{{At: at, By: domain.ActorUser, Body: u}}
+			return []taskeventsdomain.ResponseThreadEntry{{At: at, By: taskeventsdomain.ActorUser, Body: u}}
 		}
 	}
 	return nil
@@ -74,10 +75,10 @@ func ThreadEntriesForDisplay(ev *domain.TaskEvent) []domain.ResponseThreadEntry 
 // most recent ack. Postgres takes a row-level lock on the event row to
 // serialize concurrent thread appends; SQLite relies on its
 // single-writer model.
-func AppendResponseMessage(ctx context.Context, db *gorm.DB, taskID string, seq int64, text string, by domain.Actor) error {
+func AppendResponseMessage(ctx context.Context, db *gorm.DB, taskID string, seq int64, text string, by taskeventsdomain.Actor) error {
 	defer storekernel.DeferLatency(storekernel.OpAppendTaskEventResponse)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskevents.store.events.AppendResponseMessage")
-	if by != domain.ActorUser && by != domain.ActorAgent {
+	if by != taskeventsdomain.ActorUser && by != taskeventsdomain.ActorAgent {
 		return fmt.Errorf("%w: by must be user or agent", domain.ErrInvalidInput)
 	}
 	text = strings.TrimSpace(text)
@@ -100,9 +101,9 @@ func AppendResponseMessage(ctx context.Context, db *gorm.DB, taskID string, seq 
 	})
 }
 
-func appendResponseMessageInTx(tx *gorm.DB, tid string, seq int64, text string, by domain.Actor) error {
+func appendResponseMessageInTx(tx *gorm.DB, tid string, seq int64, text string, by taskeventsdomain.Actor) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskevents.store.events.appendResponseMessageInTx")
-	var ev model.TaskEvent
+	var ev eventsmodel.TaskEvent
 	q := tx.Where("task_id = ? AND seq = ?", tid, seq)
 	if tx.Dialector.Name() != "sqlite" {
 		q = q.Clauses(clause.Locking{Strength: "UPDATE"})
@@ -113,7 +114,7 @@ func appendResponseMessageInTx(tx *gorm.DB, tid string, seq int64, text string, 
 		}
 		return fmt.Errorf("load task event: %w", err)
 	}
-	if !domain.EventTypeAcceptsUserResponse(ev.Type) {
+	if !taskeventsdomain.EventTypeAcceptsUserResponse(ev.Type) {
 		return fmt.Errorf("%w: this event type does not accept thread messages", domain.ErrInvalidInput)
 	}
 	thread, err := parseResponseThreadJSON(ev.ResponseThread)
@@ -127,14 +128,14 @@ func appendResponseMessageInTx(tx *gorm.DB, tid string, seq int64, text string, 
 			if ev.UserResponseAt != nil {
 				at = *ev.UserResponseAt
 			}
-			thread = []domain.ResponseThreadEntry{{At: at, By: domain.ActorUser, Body: u}}
+			thread = []taskeventsdomain.ResponseThreadEntry{{At: at, By: taskeventsdomain.ActorUser, Body: u}}
 		}
 	}
 	if len(thread) >= maxResponseThreadEntries {
 		return fmt.Errorf("%w: thread is full (max %d messages)", domain.ErrInvalidInput, maxResponseThreadEntries)
 	}
 	now := time.Now().UTC()
-	thread = append(thread, domain.ResponseThreadEntry{At: now, By: by, Body: text})
+	thread = append(thread, taskeventsdomain.ResponseThreadEntry{At: now, By: by, Body: text})
 	raw, err := json.Marshal(thread)
 	if err != nil {
 		return fmt.Errorf("marshal response thread: %w", err)
@@ -142,7 +143,7 @@ func appendResponseMessageInTx(tx *gorm.DB, tid string, seq int64, text string, 
 	var userResp *string
 	var userAt *time.Time
 	for i := len(thread) - 1; i >= 0; i-- {
-		if thread[i].By == domain.ActorUser {
+		if thread[i].By == taskeventsdomain.ActorUser {
 			b := thread[i].Body
 			userResp = &b
 			t := thread[i].At.UTC()
@@ -150,7 +151,7 @@ func appendResponseMessageInTx(tx *gorm.DB, tid string, seq int64, text string, 
 			break
 		}
 	}
-	if err := tx.Model(&model.TaskEvent{}).
+	if err := tx.Model(&eventsmodel.TaskEvent{}).
 		Where("task_id = ? AND seq = ?", tid, seq).
 		Updates(map[string]any{
 			"response_thread_json": raw,

@@ -1,117 +1,29 @@
 package domain
 
-type Status string
+import taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 
-const (
-	StatusReady   Status = "ready"
-	StatusRunning Status = "running"
-	StatusBlocked Status = "blocked"
-	StatusReview  Status = "review"
-	StatusDone    Status = "done"
-	StatusFailed  Status = "failed"
-	// StatusOnHold flags a task that the operator wants to keep out of
-	// the agent worker's queue. Pickup is gated on Status == StatusReady
-	// (see pkgs/tasks/store/internal/tasks/readiness.go), so on_hold
-	// rows simply never become eligible. The user resumes the task by
-	// flipping it back to StatusReady from the detail page.
-	StatusOnHold Status = "on_hold"
+type (
+	Status     = taskcoredomain.Status
+	Priority   = taskcoredomain.Priority
+	GateStatus = taskcoredomain.GateStatus
 )
 
-type Priority string
-
 const (
-	PriorityLow      Priority = "low"
-	PriorityMedium   Priority = "medium"
-	PriorityHigh     Priority = "high"
-	PriorityCritical Priority = "critical"
-)
+	StatusReady   = taskcoredomain.StatusReady
+	StatusRunning = taskcoredomain.StatusRunning
+	StatusBlocked = taskcoredomain.StatusBlocked
+	StatusReview  = taskcoredomain.StatusReview
+	StatusDone    = taskcoredomain.StatusDone
+	StatusFailed  = taskcoredomain.StatusFailed
+	StatusOnHold  = taskcoredomain.StatusOnHold
 
-// GateStatus is the lifecycle for a task release gate.
-type GateStatus string
+	PriorityLow      = taskcoredomain.PriorityLow
+	PriorityMedium   = taskcoredomain.PriorityMedium
+	PriorityHigh     = taskcoredomain.PriorityHigh
+	PriorityCritical = taskcoredomain.PriorityCritical
 
-const (
-	GateStatusLocked         GateStatus = "locked"
-	GateStatusActive         GateStatus = "active"
-	GateStatusPendingRelease GateStatus = "pending_release"
-	GateStatusReleased       GateStatus = "released"
-)
-
-type EventType string
-
-const (
-	EventTaskCreated           EventType = "task_created"
-	EventStatusChanged         EventType = "status_changed"
-	EventPriorityChanged       EventType = "priority_changed"
-	EventPromptAppended        EventType = "prompt_appended"
-	EventContextAdded          EventType = "context_added"
-	EventConstraintAdded       EventType = "constraint_added"
-	EventSuccessCriterionAdded EventType = "success_criterion_added"
-	EventNonGoalAdded          EventType = "non_goal_added"
-	EventPlanAdded             EventType = "plan_added"
-	EventChecklistItemAdded    EventType = "checklist_item_added"
-	EventChecklistItemToggled  EventType = "checklist_item_toggled"
-	EventChecklistItemUpdated  EventType = "checklist_item_updated"
-	EventChecklistItemRemoved  EventType = "checklist_item_removed"
-	EventMessageAdded          EventType = "message_added"
-	EventArtifactAdded         EventType = "artifact_added"
-	EventApprovalRequested     EventType = "approval_requested"
-	EventApprovalGranted       EventType = "approval_granted"
-	EventTaskCompleted         EventType = "task_completed"
-	EventOnTaskDone            EventType = "on_task_done"
-	EventTaskFailed            EventType = "task_failed"
-	EventTaskRetryRequested    EventType = "task_retry_requested"
-	// EventTaskPickupFailed is emitted when the worker cannot persist ready→running
-	// (e.g. store/jsonb errors). The task stays ready; pickup is deferred.
-	EventTaskPickupFailed EventType = "task_pickup_failed"
-	// Execution-cycle audit mirrors. Emitted in the same SQL transaction as writes to
-	// task_cycles / task_cycle_phases so GET /tasks/{id}/events stays a complete witness
-	// of cycle activity. See docs/data-model.md.
-	EventCycleStarted   EventType = "cycle_started"
-	EventCycleCompleted EventType = "cycle_completed"
-	EventCycleFailed    EventType = "cycle_failed"
-	EventPhaseStarted   EventType = "phase_started"
-	EventPhaseCompleted EventType = "phase_completed"
-	EventPhaseFailed    EventType = "phase_failed"
-	EventPhaseSkipped   EventType = "phase_skipped"
-	// EventSyncPing is included in the dev ticker rotation (HAMIX_SSE_TEST) alongside every other EventType.
-	EventSyncPing EventType = "sync_ping"
-)
-
-// Phase is one entry in a task execution cycle. The pipeline runs
-// `execute → verify`, with verify → execute allowed as the corrective
-// retry edge. The earlier `diagnose` (no-op skip) and `persist`
-// (never reached) phases were removed once the V1 worker proved
-// neither carried information the UI or audit trail needed.
-type Phase string
-
-const (
-	PhaseExecute Phase = "execute"
-	PhaseVerify  Phase = "verify"
-)
-
-// CycleStatus is the lifecycle state of a single task_cycles row.
-type CycleStatus string
-
-const (
-	CycleStatusRunning   CycleStatus = "running"
-	CycleStatusSucceeded CycleStatus = "succeeded"
-	CycleStatusFailed    CycleStatus = "failed"
-	CycleStatusAborted   CycleStatus = "aborted"
-)
-
-// PhaseStatus is the lifecycle state of a single task_cycle_phases row.
-type PhaseStatus string
-
-const (
-	PhaseStatusRunning   PhaseStatus = "running"
-	PhaseStatusSucceeded PhaseStatus = "succeeded"
-	PhaseStatusFailed    PhaseStatus = "failed"
-	PhaseStatusSkipped   PhaseStatus = "skipped"
-)
-
-type Actor string
-
-const (
-	ActorUser  Actor = "user"
-	ActorAgent Actor = "agent"
+	GateStatusLocked         = taskcoredomain.GateStatusLocked
+	GateStatusActive         = taskcoredomain.GateStatusActive
+	GateStatusPendingRelease = taskcoredomain.GateStatusPendingRelease
+	GateStatusReleased       = taskcoredomain.GateStatusReleased
 )

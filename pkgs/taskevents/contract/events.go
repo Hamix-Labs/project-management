@@ -3,16 +3,17 @@ package contract
 import (
 	"context"
 
+	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
 // TaskEventStore covers task audit/event timeline reads and response append.
 type TaskEventStore interface {
-	GetTaskEvent(ctx context.Context, taskID string, seq int64) (*domain.TaskEvent, error)
-	ListTaskEvents(ctx context.Context, taskID string) ([]domain.TaskEvent, error)
+	GetTaskEvent(ctx context.Context, taskID string, seq int64) (*taskeventsdomain.TaskEvent, error)
+	ListTaskEvents(ctx context.Context, taskID string) ([]taskeventsdomain.TaskEvent, error)
 	ListTaskEventsPageCursor(ctx context.Context, taskID string, limit int, beforeSeq, afterSeq *int64) (*TaskEventsPage, error)
 	ApprovalPending(ctx context.Context, taskID string) (bool, error)
-	AppendTaskEventResponseMessage(ctx context.Context, taskID string, seq int64, text string, by domain.Actor) error
+	AppendTaskEventResponseMessage(ctx context.Context, taskID string, seq int64, text string, by taskeventsdomain.Actor) error
 }
 
 // TaskGetter loads a task row for route guards (404 when missing).

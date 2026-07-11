@@ -7,8 +7,8 @@ import (
 	"log/slog"
 
 	taskeventscontract "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/contract"
+	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/internal/events"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"gorm.io/gorm"
 )
 
@@ -31,18 +31,18 @@ type (
 // ThreadEntriesForDisplay returns the conversation for API/list UI.
 //
 //funclogmeasure:skip category=delegate-already-logs reason="Package-level forwarder; events.ThreadEntriesForDisplay emits trace at the store chokepoint."
-func ThreadEntriesForDisplay(ev *domain.TaskEvent) []domain.ResponseThreadEntry {
+func ThreadEntriesForDisplay(ev *taskeventsdomain.TaskEvent) []taskeventsdomain.ResponseThreadEntry {
 	return events.ThreadEntriesForDisplay(ev)
 }
 
 // AppendTaskEvent appends one task_events row if the task exists.
-func (s *Store) AppendTaskEvent(ctx context.Context, taskID string, typ domain.EventType, by domain.Actor, data []byte) error {
+func (s *Store) AppendTaskEvent(ctx context.Context, taskID string, typ taskeventsdomain.EventType, by taskeventsdomain.Actor, data []byte) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskevents.store.AppendTaskEvent")
 	return events.Append(ctx, s.db, taskID, typ, by, data)
 }
 
 // ListTaskEvents returns audit events for a task in ascending sequence order.
-func (s *Store) ListTaskEvents(ctx context.Context, taskID string) ([]domain.TaskEvent, error) {
+func (s *Store) ListTaskEvents(ctx context.Context, taskID string) ([]taskeventsdomain.TaskEvent, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskevents.store.ListTaskEvents")
 	return events.List(ctx, s.db, taskID)
 }
@@ -60,7 +60,7 @@ func (s *Store) LastEventSeq(ctx context.Context, taskID string) (int64, error) 
 }
 
 // GetTaskEvent returns one task_events row by composite key, or ErrNotFound.
-func (s *Store) GetTaskEvent(ctx context.Context, taskID string, seq int64) (*domain.TaskEvent, error) {
+func (s *Store) GetTaskEvent(ctx context.Context, taskID string, seq int64) (*taskeventsdomain.TaskEvent, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskevents.store.GetTaskEvent")
 	return events.Get(ctx, s.db, taskID, seq)
 }
@@ -78,7 +78,7 @@ func (s *Store) ApprovalPending(ctx context.Context, taskID string) (bool, error
 }
 
 // AppendTaskEventResponseMessage appends one message to the event thread.
-func (s *Store) AppendTaskEventResponseMessage(ctx context.Context, taskID string, seq int64, text string, by domain.Actor) error {
+func (s *Store) AppendTaskEventResponseMessage(ctx context.Context, taskID string, seq int64, text string, by taskeventsdomain.Actor) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskevents.store.AppendTaskEventResponseMessage")
 	return events.AppendResponseMessage(ctx, s.db, taskID, seq, text, by)
 }

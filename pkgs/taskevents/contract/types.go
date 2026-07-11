@@ -1,10 +1,10 @@
 package contract
 
-import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+import taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 
 // TaskEventsPage is one window of audit events plus paging metadata.
 type TaskEventsPage struct {
-	Events       []domain.TaskEvent
+	Events       []taskeventsdomain.TaskEvent
 	Total        int64
 	RangeStart   int64
 	RangeEnd     int64
