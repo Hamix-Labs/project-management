@@ -11,8 +11,9 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
+	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel/taskload"
+	"github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -44,7 +45,7 @@ func Start(ctx context.Context, db *gorm.DB, in StartCycleInput) (*domain.TaskCy
 	}
 	var created *domain.TaskCycle
 	err = db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if _, err := storekernel.LoadTask(tx, taskID); err != nil {
+		if _, err := taskload.LoadTask(tx, taskID); err != nil {
 			return err
 		}
 		if err := assertNoRunningCycleForTaskInTx(tx, taskID); err != nil {
@@ -75,7 +76,7 @@ func Start(ctx context.Context, db *gorm.DB, in StartCycleInput) (*domain.TaskCy
 			AttemptSeq:    nextAttempt,
 			Status:        domain.CycleStatusRunning,
 			StartedAt:     now,
-			TriggeredBy:   in.TriggeredBy,
+			TriggeredBy:   string(in.TriggeredBy),
 			ParentCycleID: in.ParentCycleID,
 			MetaJSON:      json.RawMessage(meta),
 		}
@@ -236,7 +237,7 @@ func ListForTaskBefore(ctx context.Context, db *gorm.DB, taskID string, beforeAt
 	}
 	var rows []model.TaskCycle
 	err := db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if _, err := storekernel.LoadTask(tx, taskID); err != nil {
+		if _, err := taskload.LoadTask(tx, taskID); err != nil {
 			return err
 		}
 		q := tx.Where("task_id = ?", taskID)

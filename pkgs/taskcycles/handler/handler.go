@@ -62,6 +62,7 @@ func Register(m *http.ServeMux, deps Deps) {
 	m.Handle("PATCH /tasks/{id}/cycles/{cycleId}/phases/{phaseSeq}", http.HandlerFunc(h.patchTaskCyclePhase))
 }
 
+//funclogmeasure:skip category=delegate-already-logs reason="SSE notify callback; HTTP handler chokepoint emits trace."
 func (h *Handler) notifyCycleChangedFromStore(ctx context.Context, taskID, cycleID string) {
 	if h.notifyCycleChanged == nil || taskID == "" || cycleID == "" {
 		return

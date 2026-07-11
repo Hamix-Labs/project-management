@@ -35,6 +35,7 @@ type cycleFailuresResponse struct {
 	Failures            []cycleFailureEntry `json:"failures"`
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure DTO mapper without I/O; operation trace is emitted by the calling chokepoint."
 func recentFailuresToJSON(failures []taskscontract.RecentFailure) []cycleFailureEntry {
 	out := make([]cycleFailureEntry, 0, len(failures))
 	for _, f := range failures {

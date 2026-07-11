@@ -67,7 +67,7 @@ func TestTaskCycleResponseFromDomain_normalizes_non_object_meta(t *testing.T) {
 				AttemptSeq:  1,
 				Status:      domain.CycleStatusRunning,
 				StartedAt:   time.Now().UTC(),
-				TriggeredBy: domain.ActorUser,
+				TriggeredBy: string(domain.ActorUser),
 				MetaJSON:    raw,
 			}
 			resp := taskCycleResponseFromDomain(c)
@@ -103,7 +103,7 @@ func TestTaskCycleDetailFromDomain_normalizes_non_object_meta_and_phase_details(
 				AttemptSeq:  1,
 				Status:      domain.CycleStatusRunning,
 				StartedAt:   time.Now().UTC(),
-				TriggeredBy: domain.ActorUser,
+				TriggeredBy: string(domain.ActorUser),
 				MetaJSON:    raw,
 			}
 			phases := []domain.TaskCyclePhase{{
@@ -132,7 +132,7 @@ func TestTaskCycleResponseFromDomain_object_passes_through(t *testing.T) {
 		AttemptSeq:  1,
 		Status:      domain.CycleStatusRunning,
 		StartedAt:   time.Now().UTC(),
-		TriggeredBy: domain.ActorUser,
+		TriggeredBy: string(domain.ActorUser),
 		MetaJSON:    []byte(`{"runner":"cursor-cli","prompt_hash":"abc"}`),
 	}
 	resp := taskCycleResponseFromDomain(c)
