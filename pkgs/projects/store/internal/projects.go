@@ -17,6 +17,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	taskdomain "github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/kernel"
+	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	taskmodel "github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -58,7 +59,7 @@ func CreateProject(ctx context.Context, db *gorm.DB, input CreateProjectInput) (
 	if repoID == nil {
 		return domain.Project{}, fmt.Errorf("%w: repository_id required", domain.ErrInvalidInput)
 	}
-	var repo taskmodel.GitRepository
+	var repo gitmodel.GitRepository
 	if err := db.WithContext(ctx).First(&repo, "id = ?", *repoID).Error; err != nil {
 		return domain.Project{}, kernel.MapNotFound(err)
 	}
@@ -527,6 +528,29 @@ func CreateDefaultProjectForRepo(ctx context.Context, tx *gorm.DB, repoID string
 		return domain.Project{}, kernel.MapWriteError(err, "duplicate default project")
 	}
 	return drow, nil
+}
+
+// ListProjectsByRepository returns projects tied to a repository.
+func ListProjectsByRepository(ctx context.Context, db *gorm.DB, repoID string) ([]domain.Project, error) {
+	defer kernel.DeferLatency(kernel.OpListProjects)()
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.projects.ListProjectsByRepository")
+	repoID = strings.TrimSpace(repoID)
+	if repoID == "" {
+		return nil, fmt.Errorf("%w: repository_id required", domain.ErrInvalidInput)
+	}
+	var repo gitmodel.GitRepository
+	if err := db.WithContext(ctx).First(&repo, "id = ?", repoID).Error; err != nil {
+		return nil, kernel.MapNotFound(err)
+	}
+	var rows []projectmodel.Project
+	err := db.WithContext(ctx).
+		Where("repository_id = ?", repoID).
+		Order("is_default DESC, updated_at DESC").
+		Find(&rows).Error
+	if err != nil {
+		return nil, fmt.Errorf("list projects by repository: %w", err)
+	}
+	return projectmodel.ToDomainProjects(rows), nil
 }
 
 // GetDefaultProjectForRepository returns the system default project for a repo.

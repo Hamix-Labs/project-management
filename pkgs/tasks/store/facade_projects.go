@@ -24,6 +24,12 @@ type (
 // CreateDefaultProjectForRepo delegates to the projects bounded context.
 var CreateDefaultProjectForRepo = projectsstore.CreateDefaultProjectForRepo
 
+// ListProjectsByRepository returns projects tied to a repository.
+func (s *Store) ListProjectsByRepository(ctx context.Context, repoID string) ([]domain.Project, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ListProjectsByRepository")
+	return s.projects.ListProjectsByRepository(ctx, repoID)
+}
+
 // GetDefaultProjectForRepository returns the system default project for a repo.
 func (s *Store) GetDefaultProjectForRepository(ctx context.Context, repoID string) (domain.Project, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.GetDefaultProjectForRepository")

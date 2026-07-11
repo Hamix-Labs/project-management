@@ -1,12 +1,14 @@
 package postgres
 
 import (
+	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"context"
 	"testing"
 	"time"
 
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
+	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"github.com/glebarez/sqlite"
@@ -30,7 +32,7 @@ func TestMigrateRepoDefaultProjects_removesGlobalDefault(t *testing.T) {
 	if err := db.WithContext(ctx).Create(&legacy).Error; err != nil {
 		t.Fatal(err)
 	}
-	repo := model.FromDomainGitRepository(domain.GitRepository{
+	repo := gitmodel.FromDomainGitRepository(gitdomain.GitRepository{
 		ID:            "repo-1",
 		Path:          "/repos/app",
 		GitCommonDir:  "/repos/app/.git",
@@ -43,13 +45,13 @@ func TestMigrateRepoDefaultProjects_removesGlobalDefault(t *testing.T) {
 	}
 	wtID := "wt-1"
 	brID := "br-1"
-	br := model.FromDomainGitBranch(domain.GitBranch{
+	br := gitmodel.FromDomainGitBranch(gitdomain.GitBranch{
 		ID: brID, RepositoryID: repo.ID, Name: "main", CreatedAt: now,
 	})
 	if err := db.WithContext(ctx).Create(&br).Error; err != nil {
 		t.Fatal(err)
 	}
-	wt := model.FromDomainGitWorktree(domain.GitWorktree{
+	wt := gitmodel.FromDomainGitWorktree(gitdomain.GitWorktree{
 		ID: wtID, RepositoryID: repo.ID, Path: repo.Path, Name: "main", IsMain: true, BranchID: brID, CreatedAt: now,
 	})
 	if err := db.WithContext(ctx).Create(&wt).Error; err != nil {

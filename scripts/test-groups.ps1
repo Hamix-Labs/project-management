@@ -13,7 +13,7 @@ function Get-GroupPackages {
             go list ./cmd/... ./internal/... ./pkgs/repo/... ./pkgs/gitcore/... ./pkgs/gitexec/... ./pkgs/gitwork/...
         }
         'tasks' {
-            go list ./pkgs/tasks/... | Where-Object { $_ -notmatch '/agentreconcile$' }
+            go list ./pkgs/tasks/... ./pkgs/projects/... ./pkgs/gitinventory/... | Where-Object { $_ -notmatch '/agentreconcile$' }
         }
         'agents' {
             go list ./pkgs/agents/... ./pkgs/tasks/agentreconcile/... | Where-Object { $_ -notmatch '/harness' }

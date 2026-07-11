@@ -44,6 +44,12 @@ type UpdateProjectContextEdgeInput = internal.UpdateContextEdgeInput
 // CreateTaskContextSnapshotInput records the rendered project context passed to a cycle.
 type CreateTaskContextSnapshotInput = internal.CreateSnapshotInput
 
+// ListProjectsByRepository returns projects tied to a repository.
+func (s *Store) ListProjectsByRepository(ctx context.Context, repoID string) ([]domain.Project, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ListProjectsByRepository")
+	return internal.ListProjectsByRepository(ctx, s.db, repoID)
+}
+
 // GetDefaultProjectForRepository returns the system default project for a repo.
 func (s *Store) GetDefaultProjectForRepository(ctx context.Context, repoID string) (domain.Project, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.GetDefaultProjectForRepository")

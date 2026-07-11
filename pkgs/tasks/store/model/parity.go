@@ -203,28 +203,4 @@ var ParityPairs = []ParityPair{
 		Model:  &TaskTemplate{},
 		Table:  "task_templates",
 	},
-	{
-		Name:   "GitRepository",
-		Domain: &domain.GitRepository{},
-		Model:  &GitRepository{},
-		Table:  "git_repositories",
-	},
-	{
-		Name:   "GitWorktree",
-		Domain: &domain.GitWorktree{},
-		Model:  &GitWorktree{},
-		Table:  "git_worktrees",
-		ModelMigrateExtra: []any{
-			&GitRepository{},
-		},
-	},
-	{
-		Name:   "GitBranch",
-		Domain: &domain.GitBranch{},
-		Model:  &GitBranch{},
-		Table:  "git_branches",
-		ModelMigrateExtra: []any{
-			&GitRepository{},
-		},
-	},
 }

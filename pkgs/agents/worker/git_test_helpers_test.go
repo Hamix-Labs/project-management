@@ -1,6 +1,7 @@
 package worker_test
 
 import (
+	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"context"
 	"testing"
 

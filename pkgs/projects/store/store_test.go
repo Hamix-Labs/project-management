@@ -8,7 +8,7 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	"github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
-	taskmodel "github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
+	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -23,7 +23,7 @@ func seedRepoWithDefaultProject(t *testing.T, db *gorm.DB, ctx context.Context) 
 	t.Helper()
 	repoID = uuid.NewString()
 	now := time.Now().UTC()
-	repo := taskmodel.GitRepository{
+	repo := gitmodel.GitRepository{
 		ID:        repoID,
 		Path:      t.TempDir(),
 		CreatedAt: now,

@@ -11,6 +11,11 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 )
 
+type gitLiveBranchJSON struct {
+	Name    string `json:"name"`
+	HeadSHA string `json:"head_sha"`
+}
+
 type gitRepositoryProbeResponse struct {
 	Path            string              `json:"path"`
 	IsGitRepository bool                `json:"is_git_repository"`

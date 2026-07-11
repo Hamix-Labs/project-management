@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"context"
 	"encoding/json"
 	"testing"
@@ -8,7 +9,7 @@ import (
 
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
@@ -27,7 +28,7 @@ func TestMigrateComposePayloadWorktree_backfillsTemplatePayload(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	repo := model.FromDomainGitRepository(domain.GitRepository{
+	repo := gitmodel.FromDomainGitRepository(gitdomain.GitRepository{
 		ID:            "repo-1",
 		Path:          "/repos/app",
 		GitCommonDir:  "/repos/app/.git",
@@ -42,25 +43,25 @@ func TestMigrateComposePayloadWorktree_backfillsTemplatePayload(t *testing.T) {
 	extraBrID := "br-2"
 	mainWtID := "wt-main"
 	extraWtID := "wt-extra"
-	br := model.FromDomainGitBranch(domain.GitBranch{
+	br := gitmodel.FromDomainGitBranch(gitdomain.GitBranch{
 		ID: brID, RepositoryID: repo.ID, Name: "main", CreatedAt: now,
 	})
 	if err := db.WithContext(ctx).Create(&br).Error; err != nil {
 		t.Fatal(err)
 	}
-	extraBr := model.FromDomainGitBranch(domain.GitBranch{
+	extraBr := gitmodel.FromDomainGitBranch(gitdomain.GitBranch{
 		ID: extraBrID, RepositoryID: repo.ID, Name: "feature", CreatedAt: now,
 	})
 	if err := db.WithContext(ctx).Create(&extraBr).Error; err != nil {
 		t.Fatal(err)
 	}
-	mainWt := model.FromDomainGitWorktree(domain.GitWorktree{
+	mainWt := gitmodel.FromDomainGitWorktree(gitdomain.GitWorktree{
 		ID: mainWtID, RepositoryID: repo.ID, Path: repo.Path, Name: "main", IsMain: true, BranchID: brID, CreatedAt: now,
 	})
 	if err := db.WithContext(ctx).Create(&mainWt).Error; err != nil {
 		t.Fatal(err)
 	}
-	extraWt := model.FromDomainGitWorktree(domain.GitWorktree{
+	extraWt := gitmodel.FromDomainGitWorktree(gitdomain.GitWorktree{
 		ID: extraWtID, RepositoryID: repo.ID, Path: "/repos/app-extra", Name: "extra", BranchID: extraBrID, CreatedAt: now.Add(time.Minute),
 	})
 	if err := db.WithContext(ctx).Create(&extraWt).Error; err != nil {
@@ -132,7 +133,7 @@ func TestMigrateComposePayloadWorktree_remapsLegacyGlobalDefaultProject(t *testi
 		t.Fatal(err)
 	}
 
-	repo := model.FromDomainGitRepository(domain.GitRepository{
+	repo := gitmodel.FromDomainGitRepository(gitdomain.GitRepository{
 		ID:            "repo-1",
 		Path:          "/repos/app",
 		GitCommonDir:  "/repos/app/.git",
@@ -145,13 +146,13 @@ func TestMigrateComposePayloadWorktree_remapsLegacyGlobalDefaultProject(t *testi
 	}
 	brID := "br-1"
 	mainWtID := "wt-main"
-	br := model.FromDomainGitBranch(domain.GitBranch{
+	br := gitmodel.FromDomainGitBranch(gitdomain.GitBranch{
 		ID: brID, RepositoryID: repo.ID, Name: "main", CreatedAt: now,
 	})
 	if err := db.WithContext(ctx).Create(&br).Error; err != nil {
 		t.Fatal(err)
 	}
-	mainWt := model.FromDomainGitWorktree(domain.GitWorktree{
+	mainWt := gitmodel.FromDomainGitWorktree(gitdomain.GitWorktree{
 		ID: mainWtID, RepositoryID: repo.ID, Path: repo.Path, Name: "main", IsMain: true, BranchID: brID, CreatedAt: now,
 	})
 	if err := db.WithContext(ctx).Create(&mainWt).Error; err != nil {

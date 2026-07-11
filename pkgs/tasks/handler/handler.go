@@ -12,7 +12,6 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/postgres"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/service"
 )
 
 // Task routes: see README.md (handler_task_*.go). /repo: repo_handlers.go. SSE: sse.go.
@@ -50,7 +49,6 @@ type Handler struct {
 	agent          AgentWorkerControl
 	systemHealthFn systemHealthSnapshotter
 	git            gitwork.Service
-	gitOps         *service.Git
 	pathMap        *PathMap
 	gitAvailable   bool
 	schemaDrift    postgres.SchemaDriftReport
@@ -80,12 +78,6 @@ func NewHandler(s contract.HandlerStore, hub *SSEHub, rep *repo.Root, opts ...Ha
 	}
 	for _, opt := range opts {
 		opt(h)
-	}
-	if h.gitOps == nil {
-		h.gitOps = &service.Git{
-			Store: gitStoreAdapter{s},
-			Svc:   h.git,
-		}
 	}
 	m := http.NewServeMux()
 	h.registerRoutes(m)

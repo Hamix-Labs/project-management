@@ -3,6 +3,7 @@ package model
 import (
 	"fmt"
 
+	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
 	"gorm.io/gorm"
 )
@@ -33,9 +34,9 @@ func AutoMigrateAll(db *gorm.DB) error {
 		&projectmodel.ProjectContextEdge{},
 		&TaskContextSnapshot{},
 		&AppSettings{},
-		&GitRepository{},
-		&GitWorktree{},
-		&GitBranch{},
+		&gitmodel.GitRepository{},
+		&gitmodel.GitWorktree{},
+		&gitmodel.GitBranch{},
 	); err != nil {
 		return fmt.Errorf("automigrate store models: %w", err)
 	}

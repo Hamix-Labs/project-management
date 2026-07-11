@@ -3,7 +3,7 @@ package contract
 import (
 	"context"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 )
 
 // GitReadStore covers git entity reads and DB-only mutations (no gitSvc).

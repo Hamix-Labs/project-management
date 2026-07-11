@@ -1,6 +1,7 @@
 package storefake
 
 import (
+	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"context"
 	"encoding/json"
 
@@ -310,7 +311,7 @@ func (unimplementedHandlerStore) IncrementTemplateInstantiateCounts(context.Cont
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) ListAllGitRepositories(context.Context) ([]domain.GitRepository, error) {
+func (unimplementedHandlerStore) ListAllGitRepositories(context.Context) ([]gitdomain.GitRepository, error) {
 	return nil, errNotImplemented
 }
 
@@ -320,18 +321,18 @@ func (unimplementedHandlerStore) ListAllGitRepositoriesWithSummary(context.Conte
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) ListGitRepositories(context.Context, string) ([]domain.GitRepository, error) {
+func (unimplementedHandlerStore) ListGitRepositories(context.Context, string) ([]gitdomain.GitRepository, error) {
 	return nil, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) GetGitRepositoryByID(context.Context, string) (domain.GitRepository, error) {
-	return domain.GitRepository{}, errNotImplemented
+func (unimplementedHandlerStore) GetGitRepositoryByID(context.Context, string) (gitdomain.GitRepository, error) {
+	return gitdomain.GitRepository{}, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) GetGitRepository(context.Context, string, string) (domain.GitRepository, error) {
-	return domain.GitRepository{}, errNotImplemented
+func (unimplementedHandlerStore) GetGitRepository(context.Context, string, string) (gitdomain.GitRepository, error) {
+	return gitdomain.GitRepository{}, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
@@ -345,12 +346,12 @@ func (unimplementedHandlerStore) DeleteGitRepository(context.Context, string, st
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) ListGitWorktreesByRepo(context.Context, string) ([]domain.GitWorktree, error) {
+func (unimplementedHandlerStore) ListGitWorktreesByRepo(context.Context, string) ([]gitdomain.GitWorktree, error) {
 	return nil, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) ListGitWorktrees(context.Context, string, string) ([]domain.GitWorktree, error) {
+func (unimplementedHandlerStore) ListGitWorktrees(context.Context, string, string) ([]gitdomain.GitWorktree, error) {
 	return nil, errNotImplemented
 }
 
@@ -365,33 +366,33 @@ func (unimplementedHandlerStore) UnregisterGitWorktree(context.Context, string, 
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) ListGitBranchesByRepo(context.Context, string) ([]domain.GitBranch, error) {
+func (unimplementedHandlerStore) ListGitBranchesByRepo(context.Context, string) ([]gitdomain.GitBranch, error) {
 	return nil, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) ListGitBranches(context.Context, string, string) ([]domain.GitBranch, error) {
+func (unimplementedHandlerStore) ListGitBranches(context.Context, string, string) ([]gitdomain.GitBranch, error) {
 	return nil, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) CreateGlobalGitRepository(context.Context, contract.CreateGitRepositoryInput, gitwork.Service) (domain.GitRepository, error) {
-	return domain.GitRepository{}, errNotImplemented
+func (unimplementedHandlerStore) CreateGlobalGitRepository(context.Context, contract.CreateGitRepositoryInput, gitwork.Service) (gitdomain.GitRepository, error) {
+	return gitdomain.GitRepository{}, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) CreateGitRepository(context.Context, string, contract.CreateGitRepositoryInput, gitwork.Service) (domain.GitRepository, error) {
-	return domain.GitRepository{}, errNotImplemented
+func (unimplementedHandlerStore) CreateGitRepository(context.Context, string, contract.CreateGitRepositoryInput, gitwork.Service) (gitdomain.GitRepository, error) {
+	return gitdomain.GitRepository{}, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) CreateGitWorktreeForRepo(context.Context, string, contract.CreateGitWorktreeInput, gitwork.Service) (domain.GitWorktree, error) {
-	return domain.GitWorktree{}, errNotImplemented
+func (unimplementedHandlerStore) CreateGitWorktreeForRepo(context.Context, string, contract.CreateGitWorktreeInput, gitwork.Service) (gitdomain.GitWorktree, error) {
+	return gitdomain.GitWorktree{}, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) CreateGitWorktree(context.Context, string, string, contract.CreateGitWorktreeInput, gitwork.Service) (domain.GitWorktree, error) {
-	return domain.GitWorktree{}, errNotImplemented
+func (unimplementedHandlerStore) CreateGitWorktree(context.Context, string, string, contract.CreateGitWorktreeInput, gitwork.Service) (gitdomain.GitWorktree, error) {
+	return gitdomain.GitWorktree{}, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
@@ -405,8 +406,8 @@ func (unimplementedHandlerStore) RemoveGitWorktreeFromDisk(context.Context, stri
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) CreateGitBranch(context.Context, string, string, contract.CreateGitBranchInput, gitwork.Service) (domain.GitBranch, error) {
-	return domain.GitBranch{}, errNotImplemented
+func (unimplementedHandlerStore) CreateGitBranch(context.Context, string, string, contract.CreateGitBranchInput, gitwork.Service) (gitdomain.GitBranch, error) {
+	return gitdomain.GitBranch{}, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
@@ -415,12 +416,12 @@ func (unimplementedHandlerStore) DeleteGitBranch(context.Context, string, string
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) RepoWorktreeInventory(context.Context, domain.GitRepository, gitwork.Service) ([]contract.WorktreeInventoryRow, error) {
+func (unimplementedHandlerStore) RepoWorktreeInventory(context.Context, gitdomain.GitRepository, gitwork.Service) ([]contract.WorktreeInventoryRow, error) {
 	return nil, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) RepoWorktreeCheckoutStatus(context.Context, domain.GitRepository, gitwork.Service) ([]contract.WorktreeCheckoutStatusRow, error) {
+func (unimplementedHandlerStore) RepoWorktreeCheckoutStatus(context.Context, gitdomain.GitRepository, gitwork.Service) ([]contract.WorktreeCheckoutStatusRow, error) {
 	return nil, errNotImplemented
 }
 
@@ -430,8 +431,8 @@ func (unimplementedHandlerStore) ProbeGitWorktree(context.Context, string, strin
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) RegisterExistingGitWorktree(context.Context, string, string, string, contract.BindBranchInput, gitwork.Service) (domain.GitWorktree, error) {
-	return domain.GitWorktree{}, errNotImplemented
+func (unimplementedHandlerStore) RegisterExistingGitWorktree(context.Context, string, string, string, contract.BindBranchInput, gitwork.Service) (gitdomain.GitWorktree, error) {
+	return gitdomain.GitWorktree{}, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
@@ -445,6 +446,6 @@ func (unimplementedHandlerStore) RelocateGitRepository(context.Context, string, 
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) RelocateGitWorktree(context.Context, string, string, gitwork.Service) (domain.GitWorktree, error) {
-	return domain.GitWorktree{}, errNotImplemented
+func (unimplementedHandlerStore) RelocateGitWorktree(context.Context, string, string, gitwork.Service) (gitdomain.GitWorktree, error) {
+	return gitdomain.GitWorktree{}, errNotImplemented
 }

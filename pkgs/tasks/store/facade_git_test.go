@@ -1,6 +1,7 @@
 package store
 
 import (
+	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"context"
 	"os/exec"
 	"path/filepath"
@@ -70,7 +71,7 @@ func TestStore_GitRepository_notARepository(t *testing.T) {
 	s, ctx, gitSvc := gitTestStore(t)
 	dir := t.TempDir()
 	_, err := s.CreateGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, CreateGitRepositoryInput{Path: dir}, gitSvc)
-	if domain.GitErrCode(err) != domain.GitCodeNotARepository {
+	if gitdomain.GitErrCode(err) != gitdomain.GitCodeNotARepository {
 		t.Fatalf("got %v want not_a_git_repository", err)
 	}
 }
@@ -158,7 +159,138 @@ func TestStore_GitDeleteGuard_runningTask(t *testing.T) {
 		t.Fatal(err)
 	}
 	err = s.UnregisterGitWorktree(ctx, projectsdomain.LegacyGlobalDefaultProjectID, wt.ID)
-	if ge := domain.GitErrCode(err); ge != domain.GitCodeHasRunningTask {
+	if ge := gitdomain.GitErrCode(err); ge != gitdomain.GitCodeHasRunningTask {
 		t.Fatalf("got code %q want has_running_task (%v)", ge, err)
+	}
+}
+
+func TestStore_GlobalGitRepository_andWorktreeBinding(t *testing.T) {
+	s, ctx, gitSvc := gitTestStore(t)
+	main := initGitRepo(t)
+
+	repo, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main}, gitSvc)
+	if err != nil {
+		t.Fatalf("CreateGlobalGitRepository: %v", err)
+	}
+	wtPath := filepath.Join(filepath.Dir(main), "wt-global")
+	wt, err := s.CreateGitWorktreeForRepo(ctx, repo.ID, CreateGitWorktreeInput{
+		Path:         wtPath,
+		Branch:       "feature-global",
+		CreateBranch: true,
+	}, gitSvc)
+	if err != nil {
+		t.Fatalf("CreateGitWorktreeForRepo: %v", err)
+	}
+	if wt.BranchID == "" {
+		t.Fatal("worktree missing branch_id after create")
+	}
+	if err := s.ValidateTaskWorktreeBinding(ctx, nil, wt.ID); err != nil {
+		t.Fatalf("ValidateTaskWorktreeBinding: %v", err)
+	}
+	gitCtx, err := s.ResolveTaskGitContext(ctx, wt.ID)
+	if err != nil {
+		t.Fatalf("ResolveTaskGitContext: %v", err)
+	}
+	if gitCtx.WorktreePath == "" || gitCtx.BranchName != "feature-global" {
+		t.Fatalf("context=%+v", gitCtx)
+	}
+	wt2Path := filepath.Join(filepath.Dir(main), "wt-global-2")
+	_, err = s.CreateGitWorktreeForRepo(ctx, repo.ID, CreateGitWorktreeInput{
+		Path:         wt2Path,
+		Branch:       "feature-global",
+		CreateBranch: true,
+	}, gitSvc)
+	if gitdomain.GitErrCode(err) != gitdomain.GitCodeBranchBoundToWorktree {
+		t.Fatalf("duplicate branch on second worktree: got %v want branch_bound_to_worktree", err)
+	}
+}
+
+func TestStore_ProjectRepositoryBinding(t *testing.T) {
+	s, ctx, gitSvc := gitTestStore(t)
+	main := initGitRepo(t)
+	repo, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main}, gitSvc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	repoID := repo.ID
+	proj, err := s.CreateProject(ctx, CreateProjectInput{
+		Name:         "Overlay",
+		RepositoryID: &repoID,
+	})
+	if err != nil {
+		t.Fatalf("CreateProject: %v", err)
+	}
+	byRepo, err := s.ListProjectsByRepository(ctx, repo.ID)
+	if err != nil || len(byRepo) != 2 {
+		t.Fatalf("ListProjectsByRepository: %v len=%d want 2 (default + overlay)", err, len(byRepo))
+	}
+	wtPath := filepath.Join(filepath.Dir(main), "wt-proj")
+	wt, err := s.CreateGitWorktreeForRepo(ctx, repo.ID, CreateGitWorktreeInput{
+		Path:         wtPath,
+		Branch:       "proj-branch",
+		CreateBranch: true,
+	}, gitSvc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pid := proj.ID
+	if err := s.ValidateTaskWorktreeBinding(ctx, &pid, wt.ID); err != nil {
+		t.Fatalf("valid project binding: %v", err)
+	}
+	otherMain := initGitRepo(t)
+	otherRepo, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: otherMain}, gitSvc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	otherRepoID := otherRepo.ID
+	otherProj, err := s.CreateProject(ctx, CreateProjectInput{
+		Name:         "Other overlay",
+		RepositoryID: &otherRepoID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	otherPID := otherProj.ID
+	err = s.ValidateTaskWorktreeBinding(ctx, &otherPID, wt.ID)
+	if err == nil {
+		t.Fatal("expected project_repo_mismatch for project tied to different repo")
+	}
+	if gitdomain.GitErrCode(err) != gitdomain.GitCodeProjectRepoMismatch {
+		t.Fatalf("got %v want project_repo_mismatch", err)
+	}
+}
+
+func TestUnregisterGitWorktreeByID_rejectsRunningTask(t *testing.T) {
+	s, ctx, gitSvc := gitTestStore(t)
+	main := initGitRepo(t)
+	repo, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main}, gitSvc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wtPath := filepath.Join(filepath.Dir(main), "wt-running-global")
+	wt, err := s.CreateGitWorktreeForRepo(ctx, repo.ID, CreateGitWorktreeInput{
+		Path:         wtPath,
+		Branch:       "running-global",
+		CreateBranch: true,
+	}, gitSvc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wtID := wt.ID
+	task := model.Task{
+		ID:            "task-global-running",
+		Title:         "running",
+		InitialPrompt: "x",
+		Status:        domain.StatusRunning,
+		Priority:      domain.PriorityMedium,
+		Runner:        "cursor",
+		WorktreeID:    &wtID,
+	}
+	if err := s.db.WithContext(ctx).Create(&task).Error; err != nil {
+		t.Fatal(err)
+	}
+	err = s.UnregisterGitWorktreeByID(ctx, wt.ID)
+	if gitdomain.GitErrCode(err) != gitdomain.GitCodeHasRunningTask {
+		t.Fatalf("got %v want has_running_task", err)
 	}
 }

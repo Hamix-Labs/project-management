@@ -1,6 +1,7 @@
 package handler
 
 import (
+	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -11,6 +12,7 @@ import (
 	"net/http"
 	"strings"
 
+	gitinventoryhandler "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/handler"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/apijson"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
@@ -317,8 +319,8 @@ func storeErrHTTPResponse(ctx context.Context, err error) (code int, msg string)
 
 func writeStoreError(w http.ResponseWriter, r *http.Request, op string, err error, logExtras ...any) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.writeStoreError", "http_op", op)
-	if domain.GitErrCode(err) != "" {
-		writeGitStoreError(w, r, op, err)
+	if gitdomain.GitErrCode(err) != "" {
+		gitinventoryhandler.WriteGitStoreError(w, r, op, err)
 		return
 	}
 	ctxErr := calltrace.Push(requestCtx(r), "writeStoreError")

@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
+	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	"gorm.io/gorm"
 )
 
@@ -21,7 +21,7 @@ func migrateGitCommonDir(ctx context.Context, db *gorm.DB) error {
 			return fmt.Errorf("add git_repositories.git_common_dir: %w", err)
 		}
 	}
-	var repos []model.GitRepository
+	var repos []gitmodel.GitRepository
 	if err := db.WithContext(ctx).Find(&repos).Error; err != nil {
 		return fmt.Errorf("list git repositories for common dir backfill: %w", err)
 	}
@@ -52,7 +52,7 @@ func migrateGitCommonDir(ctx context.Context, db *gorm.DB) error {
 			return fmt.Errorf("duplicate git object database %q on repositories %s and %s", commonDir, prev, repo.ID)
 		}
 		seenCommon[commonDir] = repo.ID
-		if err := db.WithContext(ctx).Model(&model.GitRepository{}).
+		if err := db.WithContext(ctx).Model(&gitmodel.GitRepository{}).
 			Where("id = ?", repo.ID).
 			Updates(map[string]any{"git_common_dir": commonDir, "path": mainRoot}).Error; err != nil {
 			return fmt.Errorf("backfill git_common_dir for %s: %w", repo.ID, err)

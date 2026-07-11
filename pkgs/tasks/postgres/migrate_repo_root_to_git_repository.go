@@ -8,8 +8,9 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
+	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
+	taskdomain "github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -18,7 +19,7 @@ func migrateRepoRootToGitRepository(ctx context.Context, db *gorm.DB) error {
 	slog.Debug("trace", "operation", "postgres.migrateRepoRootToGitRepository")
 	var path string
 	err := db.WithContext(ctx).
-		Raw(`SELECT COALESCE(repo_root, '') FROM app_settings WHERE id = ?`, domain.AppSettingsRowID).
+		Raw(`SELECT COALESCE(repo_root, '') FROM app_settings WHERE id = ?`, taskdomain.AppSettingsRowID).
 		Scan(&path).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -41,7 +42,7 @@ func migrateRepoRootToGitRepository(ctx context.Context, db *gorm.DB) error {
 	}
 	repoRoot := opened.Root
 	var existing int64
-	if err := db.WithContext(ctx).Model(&model.GitRepository{}).
+	if err := db.WithContext(ctx).Model(&gitmodel.GitRepository{}).
 		Where("path = ?", repoRoot).
 		Count(&existing).Error; err != nil {
 		return err
@@ -55,20 +56,20 @@ func migrateRepoRootToGitRepository(ctx context.Context, db *gorm.DB) error {
 		return nil
 	}
 	now := time.Now().UTC()
-	repo := model.FromDomainGitRepository(domain.GitRepository{
+	repo := gitmodel.FromDomainGitRepository(gitdomain.GitRepository{
 		ID: uuid.NewString(), Path: opened.Root, DefaultBranch: "main", CreatedAt: now, UpdatedAt: now,
 	})
-	mainWT := model.FromDomainGitWorktree(domain.GitWorktree{
+	mainWT := gitmodel.FromDomainGitWorktree(gitdomain.GitWorktree{
 		ID: uuid.NewString(), RepositoryID: repo.ID, Path: opened.Root, Name: "main", IsMain: true, CreatedAt: now,
 	})
-	var branchRows []model.GitBranch
+	var branchRows []gitmodel.GitBranch
 	for _, b := range branches {
-		branchRows = append(branchRows, model.FromDomainGitBranch(domain.GitBranch{
+		branchRows = append(branchRows, gitmodel.FromDomainGitBranch(gitdomain.GitBranch{
 			ID: uuid.NewString(), RepositoryID: repo.ID, Name: b.Name, HeadSHA: b.HeadSHA, CreatedAt: now,
 		}))
 	}
 	if len(branchRows) == 0 {
-		branchRows = append(branchRows, model.FromDomainGitBranch(domain.GitBranch{
+		branchRows = append(branchRows, gitmodel.FromDomainGitBranch(gitdomain.GitBranch{
 			ID: uuid.NewString(), RepositoryID: repo.ID, Name: "main", CreatedAt: now,
 		}))
 	}

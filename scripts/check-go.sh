@@ -206,6 +206,33 @@ step_projects_boundary() {
   print_ok_line "$label" "$elapsed"
 }
 
+step_gitinventory_boundary() {
+  local label="gitinventory boundary"
+  local start=$SECONDS
+  step_prefix
+  printf '%s ' "$label"
+
+  local hits=""
+  if rg -q 'github.com/.*/pkgs/tasks/handler' pkgs/gitinventory/ -g '*.go' 2>/dev/null; then
+    hits="$(rg -n 'github.com/.*/pkgs/tasks/handler' pkgs/gitinventory/ -g '*.go' 2>/dev/null || true)"
+  fi
+  if rg -q 'github.com/.*/pkgs/tasks/store/internal' pkgs/gitinventory/ -g '*.go' 2>/dev/null; then
+    hits+=$'\n'"$(rg -n 'github.com/.*/pkgs/tasks/store/internal' pkgs/gitinventory/ -g '*.go' 2>/dev/null || true)"
+  fi
+  local elapsed=$((SECONDS - start))
+  add_section_time "$elapsed"
+
+  if [[ -n "$(echo "$hits" | sed '/^$/d')" ]]; then
+    echo "${C_RED}FAILED${C_RESET}"
+    echo "pkgs/gitinventory must not import pkgs/tasks/handler or pkgs/tasks/store/internal:"
+    echo "$hits" | sed '/^$/d'
+    fail_step "$label" 1
+  fi
+
+  PASSED=$((PASSED + 1))
+  print_ok_line "$label" "$elapsed"
+}
+
 step_test_group_coverage() {
   local label="test group coverage"
   local start=$SECONDS
@@ -341,6 +368,7 @@ run_cmd "go vet" go vet ./...
 step_scheduling_boundary
 step_sse_publish_boundary
 step_projects_boundary
+step_gitinventory_boundary
 
 if [[ "$LINT_ONLY" -eq 1 ]]; then
   step_test_group_coverage

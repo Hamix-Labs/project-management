@@ -230,6 +230,58 @@ function Step-SSEPublishBoundary {
     Write-OkLine $label $sw.Elapsed
 }
 
+function Step-ProjectsBoundary {
+    $label = "projects boundary"
+    Write-StepPrefix
+    Write-Host -NoNewline "$label "
+
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
+    $hits = @()
+    if (& rg -q "github.com/.*/pkgs/tasks/handler" pkgs/projects/ -g "*.go" 2>$null) {
+        $hits += & rg -n "github.com/.*/pkgs/tasks/handler" pkgs/projects/ -g "*.go" 2>$null
+    }
+    if (& rg -q "github.com/.*/pkgs/tasks/store/internal" pkgs/projects/ -g "*.go" 2>$null) {
+        $hits += & rg -n "github.com/.*/pkgs/tasks/store/internal" pkgs/projects/ -g "*.go" 2>$null
+    }
+    $sw.Stop()
+
+    if ($hits) {
+        Write-Host "FAILED" -ForegroundColor Red
+        Write-Host "pkgs/projects must not import pkgs/tasks/handler or pkgs/tasks/store/internal:" -ForegroundColor Red
+        $hits
+        Fail-Step $label 1
+    }
+
+    $script:Passed++
+    Write-OkLine $label $sw.Elapsed
+}
+
+function Step-GitinventoryBoundary {
+    $label = "gitinventory boundary"
+    Write-StepPrefix
+    Write-Host -NoNewline "$label "
+
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
+    $hits = @()
+    if (& rg -q "github.com/.*/pkgs/tasks/handler" pkgs/gitinventory/ -g "*.go" 2>$null) {
+        $hits += & rg -n "github.com/.*/pkgs/tasks/handler" pkgs/gitinventory/ -g "*.go" 2>$null
+    }
+    if (& rg -q "github.com/.*/pkgs/tasks/store/internal" pkgs/gitinventory/ -g "*.go" 2>$null) {
+        $hits += & rg -n "github.com/.*/pkgs/tasks/store/internal" pkgs/gitinventory/ -g "*.go" 2>$null
+    }
+    $sw.Stop()
+
+    if ($hits) {
+        Write-Host "FAILED" -ForegroundColor Red
+        Write-Host "pkgs/gitinventory must not import pkgs/tasks/handler or pkgs/tasks/store/internal:" -ForegroundColor Red
+        $hits
+        Fail-Step $label 1
+    }
+
+    $script:Passed++
+    Write-OkLine $label $sw.Elapsed
+}
+
 function Step-TestGroupCoverage {
     $label = "test group coverage"
     Write-StepPrefix
@@ -363,6 +415,8 @@ Invoke-CapturedStep "schema revision" { & "$PSScriptRoot\check-schema-revision.p
 Invoke-CapturedStep "go vet" { go vet ./... }
 Step-SchedulingBoundary
 Step-SSEPublishBoundary
+Step-ProjectsBoundary
+Step-GitinventoryBoundary
 
 if ($LintOnly) {
     Step-TestGroupCoverage

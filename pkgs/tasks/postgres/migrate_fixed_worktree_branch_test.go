@@ -7,6 +7,7 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
+	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -47,9 +48,9 @@ func openRev3FixedBranchDB(t *testing.T) *gorm.DB {
 		t.Fatal(err)
 	}
 	if err := db.AutoMigrate(
-		&domain.GitRepository{},
+		&gitmodel.GitRepository{},
 		&legacyRev3GitWorktree{},
-		&domain.GitBranch{},
+		&gitmodel.GitBranch{},
 		&testWorktreeBranch{},
 		&legacyRev3Task{},
 	); err != nil {
@@ -63,11 +64,11 @@ func TestMigrateExpandFixedWorktreeBranch_backfillsBeforeAutoMigrate(t *testing.
 	ctx := context.Background()
 	now := time.Now().UTC()
 
-	repo := domain.GitRepository{ID: "repo-1", Path: "/repos/app", DefaultBranch: "main", CreatedAt: now, UpdatedAt: now}
+	repo := gitmodel.GitRepository{ID: "repo-1", Path: "/repos/app", DefaultBranch: "main", CreatedAt: now, UpdatedAt: now}
 	if err := db.WithContext(ctx).Create(&repo).Error; err != nil {
 		t.Fatal(err)
 	}
-	br := domain.GitBranch{ID: "br-1", RepositoryID: repo.ID, Name: "main", CreatedAt: now}
+	br := gitmodel.GitBranch{ID: "br-1", RepositoryID: repo.ID, Name: "main", CreatedAt: now}
 	if err := db.WithContext(ctx).Create(&br).Error; err != nil {
 		t.Fatal(err)
 	}
@@ -95,14 +96,14 @@ func TestMigrateExpandFixedWorktreeBranch_backfillsBeforeAutoMigrate(t *testing.
 	if err := migrateExpandFixedWorktreeBranch(ctx, db); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.WithContext(ctx).AutoMigrate(&model.GitWorktree{}, &model.Task{}); err != nil {
+	if err := db.WithContext(ctx).AutoMigrate(&gitmodel.GitWorktree{}, &model.Task{}); err != nil {
 		t.Fatalf("automigrate after expand: %v", err)
 	}
 	if err := migrateFixedWorktreeBranch(ctx, db); err != nil {
 		t.Fatal(err)
 	}
 
-	var got model.GitWorktree
+	var got gitmodel.GitWorktree
 	if err := db.WithContext(ctx).First(&got, "id = ?", wt.ID).Error; err != nil {
 		t.Fatal(err)
 	}

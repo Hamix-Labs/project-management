@@ -13,7 +13,7 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/internal/gittest"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
@@ -89,7 +89,10 @@ func TestHTTP_createTask_projectRepoMismatch_returns409(t *testing.T) {
 	if res.StatusCode != http.StatusConflict {
 		t.Fatalf("status %d body=%s want 409 project_repo_mismatch", res.StatusCode, raw)
 	}
-	var errBody jsonCodedErrorBody
+	var errBody struct {
+		Error string `json:"error"`
+		Code  string `json:"code,omitempty"`
+	}
 	if err := json.Unmarshal(raw, &errBody); err != nil {
 		t.Fatalf("decode: %v body=%s", err, raw)
 	}

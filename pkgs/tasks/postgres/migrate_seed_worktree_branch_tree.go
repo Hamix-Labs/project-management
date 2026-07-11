@@ -7,7 +7,7 @@ import (
 	"time"
 
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
+	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -123,12 +123,12 @@ func backfillTaskWorktreeBranch(ctx context.Context, db *gorm.DB) error {
 func worktreeBranchEndpointsExist(ctx context.Context, db *gorm.DB, p worktreeBranchPair) (bool, error) {
 	slog.Debug("trace", "operation", "postgres.worktreeBranchEndpointsExist")
 	var wt int64
-	if err := db.WithContext(ctx).Model(&model.GitWorktree{}).
+	if err := db.WithContext(ctx).Model(&gitmodel.GitWorktree{}).
 		Where("id = ?", p.WorktreeID).Count(&wt).Error; err != nil {
 		return false, err
 	}
 	var br int64
-	if err := db.WithContext(ctx).Model(&model.GitBranch{}).
+	if err := db.WithContext(ctx).Model(&gitmodel.GitBranch{}).
 		Where("id = ?", p.BranchID).Count(&br).Error; err != nil {
 		return false, err
 	}

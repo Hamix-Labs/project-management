@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 )
 
 // GitWriteStore covers git mutators that invoke gitwork.Service on disk.

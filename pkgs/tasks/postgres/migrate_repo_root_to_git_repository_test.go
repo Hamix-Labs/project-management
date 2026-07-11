@@ -9,8 +9,10 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
+	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
+	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -38,7 +40,7 @@ func TestMigrateRepoRootToGitRepository_idempotentWhenRepoAlreadyRegistered(t *t
 		t.Fatal(err)
 	}
 	now := time.Now().UTC()
-	existing := model.FromDomainGitRepository(domain.GitRepository{
+	existing := gitmodel.FromDomainGitRepository(gitdomain.GitRepository{
 		ID: "existing-repo", Path: opened.Root, DefaultBranch: "main", CreatedAt: now, UpdatedAt: now,
 	})
 	if err := db.WithContext(ctx).Create(&existing).Error; err != nil {
@@ -54,7 +56,7 @@ func TestMigrateRepoRootToGitRepository_idempotentWhenRepoAlreadyRegistered(t *t
 		t.Fatal(err)
 	}
 	var n int64
-	if err := db.Model(&model.GitRepository{}).Count(&n).Error; err != nil {
+	if err := db.Model(&gitmodel.GitRepository{}).Count(&n).Error; err != nil {
 		t.Fatal(err)
 	}
 	if n != 1 {
@@ -85,7 +87,7 @@ func TestMigrateRepoRootToGitRepository_idempotent(t *testing.T) {
 		t.Fatal(err)
 	}
 	var n int64
-	if err := db.Model(&model.GitRepository{}).Count(&n).Error; err != nil {
+	if err := db.Model(&gitmodel.GitRepository{}).Count(&n).Error; err != nil {
 		t.Fatal(err)
 	}
 	if n != 1 {
@@ -94,7 +96,7 @@ func TestMigrateRepoRootToGitRepository_idempotent(t *testing.T) {
 	if err := migrateRepoRootToGitRepository(ctx, db); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.Model(&model.GitRepository{}).Count(&n).Error; err != nil {
+	if err := db.Model(&gitmodel.GitRepository{}).Count(&n).Error; err != nil {
 		t.Fatal(err)
 	}
 	if n != 1 {
@@ -107,7 +109,7 @@ func TestMigrateRepoRootToGitRepository_idempotent(t *testing.T) {
 func seedLegacyAppSettingsWithRepoRoot(ctx context.Context, t *testing.T, db *gorm.DB) {
 	t.Helper()
 	if err := db.WithContext(ctx).AutoMigrate(
-		&projectmodel.Project{}, &model.AppSettings{}, &model.GitRepository{}, &model.GitWorktree{}, &model.GitBranch{},
+		&projectmodel.Project{}, &model.AppSettings{}, &gitmodel.GitRepository{}, &gitmodel.GitWorktree{}, &gitmodel.GitBranch{},
 	); err != nil {
 		t.Fatal(err)
 	}

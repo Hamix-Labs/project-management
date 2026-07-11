@@ -1,6 +1,7 @@
 package agentreconcile
 
 import (
+	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"context"
 	"os/exec"
 	"path/filepath"

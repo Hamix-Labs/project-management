@@ -10,7 +10,7 @@ import (
 
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
+	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
@@ -119,7 +119,7 @@ func resolveComposeProjectRepository(
 	}
 	// Pre-ADR-0042 templates/drafts may still reference the deleted global default
 	// project, or a project row that was removed during repo migration.
-	var repos []model.GitRepository
+	var repos []gitmodel.GitRepository
 	if err := db.WithContext(ctx).Find(&repos).Error; err != nil {
 		return projectmodel.Project{}, "", false, err
 	}
@@ -146,7 +146,7 @@ func pickDefaultWorktreeID(ctx context.Context, db *gorm.DB, repositoryID string
 	if repositoryID == "" {
 		return "", nil
 	}
-	var wt model.GitWorktree
+	var wt gitmodel.GitWorktree
 	err := db.WithContext(ctx).
 		Where("repository_id = ? AND branch_id IS NOT NULL AND branch_id <> ''", repositoryID).
 		Order("is_main DESC, created_at ASC").

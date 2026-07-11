@@ -6,6 +6,7 @@ import (
 	"time"
 
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
+	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
@@ -53,8 +54,8 @@ func openContractMigrateDB(t *testing.T) *gorm.DB {
 	if err := db.AutoMigrate(
 		&projectsdomain.Project{},
 		&legacyGitRepository{},
-		&domain.GitWorktree{},
-		&domain.GitBranch{},
+		&gitmodel.GitWorktree{},
+		&gitmodel.GitBranch{},
 		&testWorktreeBranch{},
 		&legacyTask{},
 	); err != nil {
@@ -79,11 +80,11 @@ func TestMigrateContractGitTree_dropsColumns(t *testing.T) {
 	if err := db.WithContext(ctx).Create(&repo).Error; err != nil {
 		t.Fatal(err)
 	}
-	wt := domain.GitWorktree{ID: "wt-1", RepositoryID: repo.ID, Path: "/repos/app", Name: "main", IsMain: true, CreatedAt: now}
+	wt := gitmodel.GitWorktree{ID: "wt-1", RepositoryID: repo.ID, Path: "/repos/app", Name: "main", IsMain: true, CreatedAt: now}
 	if err := db.WithContext(ctx).Create(&wt).Error; err != nil {
 		t.Fatal(err)
 	}
-	br := domain.GitBranch{ID: "br-1", RepositoryID: repo.ID, Name: "main", CreatedAt: now}
+	br := gitmodel.GitBranch{ID: "br-1", RepositoryID: repo.ID, Name: "main", CreatedAt: now}
 	if err := db.WithContext(ctx).Create(&br).Error; err != nil {
 		t.Fatal(err)
 	}

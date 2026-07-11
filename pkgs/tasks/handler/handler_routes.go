@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 
+	gitinventoryhandler "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/handler"
 	projecthandler "github.com/AlexsanderHamir/Hamix/pkgs/projects/handler"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 )
@@ -16,7 +17,13 @@ func (h *Handler) registerRoutes(m *http.ServeMux) {
 			h.notifyChange(TaskChangeType(typ), id)
 		},
 	})
-	h.registerGlobalGitRoutes(m)
+	gitinventoryhandler.Register(m, gitinventoryhandler.Deps{
+		Read:       h.store,
+		Write:      h.store,
+		Projects:   h.store,
+		GitService: h.git,
+		HostPaths:  h.pathMap,
+	})
 	h.registerTaskDraftTemplateRoutes(m)
 	h.registerTaskRoutes(m)
 	h.registerRepoRoutes(m)
@@ -32,27 +39,6 @@ func (h *Handler) registerHealthRoutes(m *http.ServeMux) {
 	m.Handle("GET /health/ready", http.HandlerFunc(h.healthReady))
 	m.Handle("GET /system/health", http.HandlerFunc(h.systemHealth))
 	m.Handle("GET /events", http.HandlerFunc(h.streamEvents))
-}
-
-//funclogmeasure:skip category=hot-path reason="Route table wiring only; operation trace is emitted by registered handlers."
-func (h *Handler) registerGlobalGitRoutes(m *http.ServeMux) {
-	m.Handle("GET /git/repositories", http.HandlerFunc(h.listGlobalGitRepositories))
-	m.Handle("POST /git/repositories", http.HandlerFunc(h.createGlobalGitRepository))
-	m.Handle("GET /git/repositories/{repoId}", http.HandlerFunc(h.getGlobalGitRepository))
-	m.Handle("DELETE /git/repositories/{repoId}", http.HandlerFunc(h.deleteGlobalGitRepository))
-	m.Handle("GET /git/repositories/{repoId}/worktrees", http.HandlerFunc(h.listGlobalGitWorktrees))
-	m.Handle("GET /git/repositories/{repoId}/worktrees/live", http.HandlerFunc(h.listGlobalGitWorktreesLive))
-	m.Handle("GET /git/repositories/{repoId}/worktrees/checkout-status", http.HandlerFunc(h.listGlobalGitWorktreesCheckoutStatus))
-	m.Handle("GET /git/repositories/{repoId}/worktrees/probe", http.HandlerFunc(h.probeGlobalGitWorktree))
-	m.Handle("POST /git/repositories/{repoId}/worktrees", http.HandlerFunc(h.createGlobalGitWorktree))
-	m.Handle("POST /git/repositories/{repoId}/worktrees/register", http.HandlerFunc(h.registerGlobalGitWorktree))
-	m.Handle("POST /git/repositories/{repoId}/reconcile", http.HandlerFunc(h.reconcileGlobalGitRepository))
-	m.Handle("POST /git/repositories/{repoId}/relocate", http.HandlerFunc(h.relocateGlobalGitRepository))
-	m.Handle("POST /git/worktrees/{worktreeId}/relocate", http.HandlerFunc(h.relocateGlobalGitWorktree))
-	m.Handle("DELETE /git/worktrees/{worktreeId}", http.HandlerFunc(h.deleteGlobalGitWorktree))
-	m.Handle("GET /git/repositories/{repoId}/branches", http.HandlerFunc(h.listGlobalGitBranches))
-	m.Handle("GET /git/repositories/{repoId}/branches/live", http.HandlerFunc(h.listGlobalGitBranchesLive))
-	m.Handle("GET /git/repositories/{repoId}/projects", http.HandlerFunc(h.listRepoProjects))
 }
 
 //funclogmeasure:skip category=hot-path reason="Route table wiring only; operation trace is emitted by registered handlers."

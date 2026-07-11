@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/repo"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 )
 
 func TestResolveWorkspacePickerRoots_expandedScope_mergesBootstrapPlaces(t *testing.T) {

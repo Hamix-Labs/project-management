@@ -2,7 +2,7 @@ package contract
 
 import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 )
 
 // GitRepositoryListSummary augments a repository row with list-page metadata.

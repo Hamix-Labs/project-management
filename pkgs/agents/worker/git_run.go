@@ -2,6 +2,7 @@ package worker
 
 import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 import (
+	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"context"
 	"errors"
 	"fmt"
@@ -62,10 +63,10 @@ func (w *Worker) resolveTaskGitBinding(ctx context.Context, task *domain.Task) (
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func mapResolveGitContextError(err error) error {
-	if domain.GitErrCode(err) == domain.GitCodeWorktreeNotFound {
+	if gitdomain.GitErrCode(err) == gitdomain.GitCodeWorktreeNotFound {
 		return fmt.Errorf("worktree_missing: %w", err)
 	}
-	if domain.GitErrCode(err) == domain.GitCodeBranchNotFound {
+	if gitdomain.GitErrCode(err) == gitdomain.GitCodeBranchNotFound {
 		return fmt.Errorf("branch_missing: %w", err)
 	}
 	return err

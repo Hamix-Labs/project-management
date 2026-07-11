@@ -11,6 +11,7 @@ import (
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
+	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -45,7 +46,7 @@ WHERE is_default = true AND repository_id IS NOT NULL
 
 func backfillRepoDefaultProjects(ctx context.Context, db *gorm.DB) error {
 	slog.Debug("trace", "operation", "postgres.backfillRepoDefaultProjects")
-	var repos []model.GitRepository
+	var repos []gitmodel.GitRepository
 	if err := db.WithContext(ctx).Find(&repos).Error; err != nil {
 		return err
 	}
@@ -114,7 +115,7 @@ func reassignTasksToRepoDefaultProjects(ctx context.Context, db *gorm.DB) error 
 		if task.WorktreeID == nil {
 			continue
 		}
-		var wt model.GitWorktree
+		var wt gitmodel.GitWorktree
 		if err := db.WithContext(ctx).First(&wt, "id = ?", *task.WorktreeID).Error; err != nil {
 			continue
 		}
