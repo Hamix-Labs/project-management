@@ -1,4 +1,4 @@
-package handler
+package handlerhttp
 
 import (
 	"bytes"
@@ -6,40 +6,46 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"io"
 	"log/slog"
 	"net/http"
 	"strings"
 
+	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	gitinventoryhandler "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/handler"
-	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/apijson"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/logctx"
 )
 
-func actorFromRequest(r *http.Request) (a domain.Actor) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.actorFromRequest")
+const maxHTTPLogJSONPreviewBytes = 16384
+
+// ActorFromRequest reads X-Actor (user default, agent when set).
+func ActorFromRequest(r *http.Request) taskcoredomain.Actor {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handlerhttp.ActorFromRequest")
 	if r == nil {
-		return domain.ActorUser
+		return taskcoredomain.ActorUser
 	}
 	ctx := calltrace.Push(r.Context(), "actorFromRequest")
 	raw := strings.TrimSpace(r.Header.Get("X-Actor"))
 	calltrace.HelperIOIn(ctx, "actorFromRequest", "x_actor_raw", raw)
+	var a taskcoredomain.Actor
 	defer func() {
 		calltrace.HelperIOOut(ctx, "actorFromRequest", "actor", string(a))
 	}()
 	switch strings.ToLower(raw) {
 	case "agent":
-		return domain.ActorAgent
+		a = taskcoredomain.ActorAgent
 	default:
-		return domain.ActorUser
+		a = taskcoredomain.ActorUser
 	}
+	return a
 }
 
-func decodeJSON(ctx context.Context, r io.Reader, dst any) (err error) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.decodeJSON")
+// DecodeJSON decodes a single JSON value from r into dst; rejects trailing data.
+func DecodeJSON(ctx context.Context, r io.Reader, dst any) (err error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handlerhttp.DecodeJSON")
 	ctx = calltrace.Push(ctx, "decodeJSON")
 	calltrace.HelperIOIn(ctx, "decodeJSON", "dst_type", fmt.Sprintf("%T", dst))
 	defer func() { calltrace.HelperIOOut(ctx, "decodeJSON", "err", err) }()
@@ -57,22 +63,19 @@ func decodeJSON(ctx context.Context, r io.Reader, dst any) (err error) {
 		err = fmt.Errorf("json trailing data: %w", err)
 		return err
 	}
-	err = fmt.Errorf("%w: json trailing data", domain.ErrInvalidInput)
+	err = fmt.Errorf("%w: json trailing data", taskcoredomain.ErrInvalidInput)
 	return err
 }
 
-// setAPISecurityHeaders sets baseline hardening headers for browser-facing HTTP responses (SSE, plain-text errors, idempotency replay).
-func setAPISecurityHeaders(w http.ResponseWriter) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.setAPISecurityHeaders")
+// SetAPISecurityHeaders sets baseline hardening headers for browser-facing responses.
+func SetAPISecurityHeaders(w http.ResponseWriter) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handlerhttp.SetAPISecurityHeaders")
 	apijson.ApplySecurityHeaders(w)
 }
 
-// WrapPrometheusHandler applies the same baseline response hardening as API routes
-// (see apijson.ApplySecurityHeaders) before delegating to the Prometheus registry handler.
-// Scrapers ignore these headers; they help when /metrics is opened in a browser.
-// Per-scrape debug trace is omitted so metrics polling does not flood logs at level debug.
+// WrapPrometheusHandler applies baseline security headers before Prometheus scrape.
 func WrapPrometheusHandler(next http.Handler) http.Handler {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.WrapPrometheusHandler")
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handlerhttp.WrapPrometheusHandler")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		apijson.ApplySecurityHeaders(w)
 		next.ServeHTTP(w, r)
@@ -80,27 +83,22 @@ func WrapPrometheusHandler(next http.Handler) http.Handler {
 }
 
 func setJSONHeaders(w http.ResponseWriter) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.setJSONHeaders")
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handlerhttp.setJSONHeaders")
 	apijson.ApplySecurityHeaders(w)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 }
 
-type jsonErrorBody struct {
-	Error     string `json:"error"`
-	RequestID string `json:"request_id,omitempty"`
-}
-
-// writeJSON writes v as JSON. When r is non-nil and Debug is enabled, logs response_body (truncated) and response_json_bytes.
-func writeJSON(w http.ResponseWriter, r *http.Request, op string, code int, v any) {
+// WriteJSON writes v as JSON with optional debug http.io logging.
+func WriteJSON(w http.ResponseWriter, r *http.Request, op string, code int, v any) {
 	setJSONHeaders(w)
-	ctx := requestCtx(r)
+	ctx := RequestCtx(r)
 	var buf bytes.Buffer
 	enc := json.NewEncoder(&buf)
 	enc.SetEscapeHTML(false)
 	if err := enc.Encode(v); err != nil {
 		if r != nil {
 			rid := logctx.RequestIDFromContext(ctx)
-			route := requestRouteLabel(r)
+			route := RequestRouteLabel(r)
 			slog.Log(ctx, slog.LevelError, "response encode failed",
 				"cmd", calltrace.LogCmd, "operation", op, "request_id", rid, "route", route,
 				"failure_stage", "response_encode", "err", err)
@@ -108,7 +106,7 @@ func writeJSON(w http.ResponseWriter, r *http.Request, op string, code int, v an
 			slog.Error("response encode failed", "cmd", calltrace.LogCmd, "operation", op,
 				"failure_stage", "response_encode", "err", err)
 		}
-		writeJSONError(w, r, op, http.StatusInternalServerError, "internal server error")
+		WriteJSONError(w, r, op, http.StatusInternalServerError, "internal server error")
 		return
 	}
 	payload := bytes.TrimSuffix(buf.Bytes(), []byte("\n"))
@@ -129,36 +127,25 @@ func writeJSON(w http.ResponseWriter, r *http.Request, op string, code int, v an
 	}
 }
 
-func writeJSONError(w http.ResponseWriter, r *http.Request, op string, code int, msg string) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.writeJSONError", "http_op", op, "http_status", code)
+// WriteJSONError writes a JSON error envelope.
+func WriteJSONError(w http.ResponseWriter, r *http.Request, op string, code int, msg string) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handlerhttp.WriteJSONError", "http_op", op, "http_status", code)
 	apijson.WriteJSONError(w, r, op, code, msg, calltrace.Path)
 }
 
-// writeJSONWithETag encodes v as JSON, attaches a strong ETag derived from the
-// body, and serves 304 Not Modified when the request's If-None-Match header
-// matches. It replaces the baseline Cache-Control: no-store with
-// "private, no-cache, must-revalidate" so the browser keeps the cached body
-// and revalidates with a conditional request — the network saves the body
-// payload when the resource has not changed.
-//
-// The trade-off is honest: the server still encodes and hashes the body on
-// every request. The win is bandwidth + browser parse cost + downstream
-// React Query revalidation. Endpoints where computing the body is the
-// expensive step (e.g. /tasks/stats) should keep writeJSON for now and
-// migrate later if profiling justifies a pre-read ETag derived from
-// updated_at.
-func writeJSONWithETag(w http.ResponseWriter, r *http.Request, op string, code int, v any) {
+// WriteJSONWithETag serves JSON with strong ETag and 304 support.
+func WriteJSONWithETag(w http.ResponseWriter, r *http.Request, op string, code int, v any) {
 	apijson.ApplyRevalidatableHeaders(w)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
-	ctx := requestCtx(r)
+	ctx := RequestCtx(r)
 	var buf bytes.Buffer
 	enc := json.NewEncoder(&buf)
 	enc.SetEscapeHTML(false)
 	if err := enc.Encode(v); err != nil {
 		if r != nil {
 			rid := logctx.RequestIDFromContext(ctx)
-			route := requestRouteLabel(r)
+			route := RequestRouteLabel(r)
 			slog.Log(ctx, slog.LevelError, "response encode failed",
 				"cmd", calltrace.LogCmd, "operation", op, "request_id", rid, "route", route,
 				"failure_stage", "response_encode", "err", err)
@@ -166,7 +153,7 @@ func writeJSONWithETag(w http.ResponseWriter, r *http.Request, op string, code i
 			slog.Error("response encode failed", "cmd", calltrace.LogCmd, "operation", op,
 				"failure_stage", "response_encode", "err", err)
 		}
-		writeJSONError(w, r, op, http.StatusInternalServerError, "internal server error")
+		WriteJSONError(w, r, op, http.StatusInternalServerError, "internal server error")
 		return
 	}
 	payload := bytes.TrimSuffix(buf.Bytes(), []byte("\n"))
@@ -203,13 +190,14 @@ func writeJSONWithETag(w http.ResponseWriter, r *http.Request, op string, code i
 	}
 }
 
-func userFacingJSONError(err error) string {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.userFacingJSONError")
+// UserFacingJSONError maps decode/validation errors to client messages.
+func UserFacingJSONError(err error) string {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handlerhttp.UserFacingJSONError")
 	s := err.Error()
 	if strings.HasPrefix(s, "json decode: ") {
 		return strings.TrimPrefix(s, "json decode: ")
 	}
-	if errors.Is(err, domain.ErrInvalidInput) {
+	if errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		return "request body must contain a single JSON value"
 	}
 	if strings.HasPrefix(s, "json trailing data:") {
@@ -218,17 +206,18 @@ func userFacingJSONError(err error) string {
 	return s
 }
 
-func storeErrorClientMessage(err error) string {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.storeErrorClientMessage")
+// StoreErrorClientMessage maps domain/store errors to JSON error text.
+func StoreErrorClientMessage(err error) string {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handlerhttp.StoreErrorClientMessage")
 	switch {
-	case errors.Is(err, domain.ErrNotFound):
+	case errors.Is(err, taskcoredomain.ErrNotFound):
 		return "not found"
-	case errors.Is(err, domain.ErrConflict):
+	case errors.Is(err, taskcoredomain.ErrConflict):
 		if d := conflictDetail(err); d != "" {
 			return d
 		}
 		return "task id already exists"
-	case errors.Is(err, domain.ErrInvalidInput):
+	case errors.Is(err, taskcoredomain.ErrInvalidInput):
 		if d := invalidInputDetail(err); d != "" {
 			return d
 		}
@@ -239,9 +228,7 @@ func storeErrorClientMessage(err error) string {
 }
 
 func invalidInputDetail(err error) string {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.invalidInputDetail")
-	// Seam: store layers wrap domain.ErrInvalidInput with fmt.Errorf("%w: %v", ...).
-	// Until those errors expose a typed Detail() accessor, parse the stable prefix.
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handlerhttp.invalidInputDetail")
 	s := err.Error()
 	const mark = "tasks: invalid input: "
 	if i := strings.Index(s, mark); i >= 0 {
@@ -251,9 +238,7 @@ func invalidInputDetail(err error) string {
 }
 
 func conflictDetail(err error) string {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.conflictDetail")
-	// Seam: store layers wrap domain.ErrConflict with fmt.Errorf("%w: %s", ...).
-	// Until those errors expose a typed Detail() accessor, parse the stable prefix.
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handlerhttp.conflictDetail")
 	s := err.Error()
 	const mark = "tasks: conflict: "
 	if i := strings.Index(s, mark); i >= 0 {
@@ -262,13 +247,14 @@ func conflictDetail(err error) string {
 	return ""
 }
 
-func writeError(w http.ResponseWriter, r *http.Request, op string, err error, code int) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.writeError", "http_op", op)
+// WriteError writes a JSON error for non-store failures (decode, max body, etc.).
+func WriteError(w http.ResponseWriter, r *http.Request, op string, err error, code int) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handlerhttp.WriteError", "http_op", op)
 	var maxErr *http.MaxBytesError
 	if errors.As(err, &maxErr) {
 		code = http.StatusRequestEntityTooLarge
 	}
-	ctxErr := calltrace.Push(requestCtx(r), "writeError")
+	ctxErr := calltrace.Push(RequestCtx(r), "writeError")
 	calltrace.HelperIOIn(ctxErr, "writeError", "http_op", op, "http_status", code, "err", err)
 	logRequestFailure(r, op, err, code)
 	msg := http.StatusText(code)
@@ -276,18 +262,18 @@ func writeError(w http.ResponseWriter, r *http.Request, op string, err error, co
 	case http.StatusRequestEntityTooLarge:
 		msg = "request body too large"
 	case http.StatusBadRequest:
-		msg = userFacingJSONError(err)
+		msg = UserFacingJSONError(err)
 		if msg == "" {
 			msg = "bad request"
 		}
 	}
 	calltrace.HelperIOOut(ctxErr, "writeError", "client_facing_msg", msg)
-	writeJSONError(w, r, op, code, msg)
+	WriteJSONError(w, r, op, code, msg)
 }
 
-// storeErrHTTPResponse maps store/domain errors to an HTTP status and JSON error body message.
-func storeErrHTTPResponse(ctx context.Context, err error) (code int, msg string) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.storeErrHTTPResponse")
+// StoreErrHTTPResponse maps store/domain errors to HTTP status and client message.
+func StoreErrHTTPResponse(ctx context.Context, err error) (code int, msg string) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handlerhttp.StoreErrHTTPResponse")
 	ctx = calltrace.Push(ctx, "storeErrHTTPResponse")
 	calltrace.HelperIOIn(ctx, "storeErrHTTPResponse", "err", err)
 	defer func() {
@@ -303,44 +289,47 @@ func storeErrHTTPResponse(ctx context.Context, err error) (code int, msg string)
 		code = http.StatusRequestTimeout
 		msg = "request canceled"
 		return code, msg
-	case errors.Is(err, domain.ErrNotFound):
+	case errors.Is(err, taskcoredomain.ErrNotFound):
 		code = http.StatusNotFound
-	case errors.Is(err, domain.ErrInvalidInput):
+	case errors.Is(err, taskcoredomain.ErrInvalidInput):
 		code = http.StatusBadRequest
-	case errors.Is(err, domain.ErrConflict):
+	case errors.Is(err, taskcoredomain.ErrConflict):
 		code = http.StatusConflict
 	}
-	msg = storeErrorClientMessage(err)
+	msg = StoreErrorClientMessage(err)
 	if code == http.StatusInternalServerError {
 		msg = "internal server error"
 	}
 	return code, msg
 }
 
-func writeStoreError(w http.ResponseWriter, r *http.Request, op string, err error, logExtras ...any) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.writeStoreError", "http_op", op)
+// WriteStoreError maps store/domain errors to HTTP status + JSON body.
+func WriteStoreError(w http.ResponseWriter, r *http.Request, op string, err error, logExtras ...any) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handlerhttp.WriteStoreError", "http_op", op)
 	if gitdomain.GitErrCode(err) != "" {
 		gitinventoryhandler.WriteGitStoreError(w, r, op, err)
 		return
 	}
-	ctxErr := calltrace.Push(requestCtx(r), "writeStoreError")
+	ctxErr := calltrace.Push(RequestCtx(r), "writeStoreError")
 	calltrace.HelperIOIn(ctxErr, "writeStoreError", "http_op", op, "err", err)
-	code, msg := storeErrHTTPResponse(ctxErr, err)
+	code, msg := StoreErrHTTPResponse(ctxErr, err)
 	calltrace.HelperIOOut(ctxErr, "writeStoreError", "http_status", code, "client_facing_msg", msg)
 	logRequestFailure(r, op, err, code, logExtras...)
-	writeJSONError(w, r, op, code, msg)
+	WriteJSONError(w, r, op, code, msg)
 }
 
-func requestCtx(r *http.Request) context.Context {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.requestCtx")
+// RequestCtx returns r.Context() or background when r is nil.
+func RequestCtx(r *http.Request) context.Context {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handlerhttp.RequestCtx")
 	if r == nil {
 		return context.Background()
 	}
 	return r.Context()
 }
 
-func requestRouteLabel(r *http.Request) string {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.requestRouteLabel")
+// RequestRouteLabel returns the route pattern or URL path for logs.
+func RequestRouteLabel(r *http.Request) string {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handlerhttp.RequestRouteLabel")
 	if r == nil {
 		return ""
 	}
@@ -354,12 +343,12 @@ func requestRouteLabel(r *http.Request) string {
 }
 
 func logRequestFailure(r *http.Request, op string, err error, httpStatus int, extra ...any) {
-	ctx := requestCtx(r)
+	ctx := RequestCtx(r)
 	rid := ""
 	route := ""
 	if r != nil {
 		rid = logctx.RequestIDFromContext(ctx)
-		route = requestRouteLabel(r)
+		route = RequestRouteLabel(r)
 	}
 	attrs := []any{
 		"cmd", calltrace.LogCmd, "operation", op,
@@ -380,10 +369,15 @@ func logResponseWriteFailure(ctx context.Context, r *http.Request, op string, er
 	route := ""
 	if r != nil {
 		rid = logctx.RequestIDFromContext(ctx)
-		route = requestRouteLabel(r)
+		route = RequestRouteLabel(r)
 	}
 	slog.Log(ctx, slog.LevelError, "response write failed",
 		"cmd", calltrace.LogCmd, "operation", op,
 		"request_id", rid, "route", route,
 		"failure_stage", stage, "err", err)
+}
+
+// LogRequestFailure logs warn/error for failed requests (exported for handler package tests).
+func LogRequestFailure(r *http.Request, op string, err error, httpStatus int, extra ...any) {
+	logRequestFailure(r, op, err, httpStatus, extra...)
 }

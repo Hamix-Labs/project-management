@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/worker"
+	taskcorecontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 // ReconcileTickInterval is the fixed period between background
@@ -45,7 +45,7 @@ func ReconcileReadyTasksNotQueued(ctx context.Context, st worker.Store, q *Memor
 	if pageSize <= 0 {
 		pageSize = 200
 	}
-	var pageCursor *store.ReadyTaskQueueCursor
+	var pageCursor *taskcorecontract.ReadyTaskQueueCursor
 	for {
 		batch, err := st.ListReadyTaskQueueCandidates(ctx, pageSize, pageCursor)
 		if err != nil {
@@ -73,7 +73,7 @@ func ReconcileReadyTasksNotQueued(ctx context.Context, st worker.Store, q *Memor
 			break
 		}
 		last := batch[len(batch)-1]
-		pageCursor = &store.ReadyTaskQueueCursor{
+		pageCursor = &taskcorecontract.ReadyTaskQueueCursor{
 			AfterTaskCreatedAt: last.TaskCreatedAt,
 			AfterTaskID:        last.Task.ID,
 			AfterEventRowID:    last.EventRowID,

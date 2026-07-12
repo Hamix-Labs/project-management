@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
+	taskcorecontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/model"
 	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
@@ -24,20 +25,12 @@ import (
 // QueueCursor is a keyset cursor for ListQueueCandidates. Nil means
 // the first page. On SQLite, AfterEventRowID is the joined task_events
 // rowid for stable FIFO when task_created timestamps tie.
-type QueueCursor struct {
-	AfterTaskCreatedAt time.Time
-	AfterTaskID        string
-	AfterEventRowID    int64
-}
+type QueueCursor = taskcorecontract.ReadyTaskQueueCursor
 
 // QueueCandidate is one ready task plus scheduling metadata for the
 // agent queue. EventRowID is the SQLite rowid of the seq=1
 // task_created row (0 on other dialects).
-type QueueCandidate struct {
-	Task          domain.Task
-	TaskCreatedAt time.Time
-	EventRowID    int64
-}
+type QueueCandidate = taskcorecontract.ReadyTaskQueueCandidate
 
 // ListQueueCandidates returns ready tasks ordered for fair scheduling:
 // oldest task_created first (task_events seq 1), then a

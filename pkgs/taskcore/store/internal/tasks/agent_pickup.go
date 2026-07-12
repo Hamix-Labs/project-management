@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
+	taskcorecontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/model"
 	"gorm.io/gorm"
@@ -17,10 +18,7 @@ import (
 
 // AgentPickupResult is returned when the worker atomically transitions a task
 // from ready to running and consumes any pending retry intent.
-type AgentPickupResult struct {
-	Task          *domain.Task
-	ConsumedRetry *domain.PendingRetry
-}
+type AgentPickupResult = taskcorecontract.AgentPickupResult
 
 // AgentPickup locks the task, requires status=ready, flips to running, clears
 // pending_retry, and returns a copy of the consumed intent (if any).

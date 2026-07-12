@@ -33,15 +33,15 @@ type (
 	// CompletePhaseInput is the public re-export of the phase completion input struct.
 	CompletePhaseInput = contract.CompletePhaseInput
 	// AppendCycleStreamEventInput is the durable per-attempt stream event input.
-	AppendCycleStreamEventInput = cycles.AppendStreamEventInput
+	AppendCycleStreamEventInput = contract.AppendCycleStreamEventInput
 	// CycleCommitEntry is a commit upsert payload.
-	CycleCommitEntry = commits.Entry
+	CycleCommitEntry = contract.CycleCommitEntry
 	// CriteriaReportEntry is the per-criterion criteria-report payload.
-	CriteriaReportEntry = reports.CriteriaEntry
+	CriteriaReportEntry = contract.CriteriaReportEntry
 	// VerifyReportEntry is the verify-report counterpart of CriteriaReportEntry.
-	VerifyReportEntry = reports.VerifyEntry
+	VerifyReportEntry = contract.VerifyReportEntry
 	// CommandRunEntry is one verify-phase shell command execution row.
-	CommandRunEntry = reports.CommandRunEntry
+	CommandRunEntry = contract.CommandRunEntry
 )
 
 // FailureSurfaceMessage returns operator-facing failure text for cycle_failed mirrors.
@@ -99,7 +99,7 @@ func (s *Store) LastSessionID(ctx context.Context, cycleID string, phase cyclesd
 
 func (s *Store) AppendCycleStreamEvent(ctx context.Context, in AppendCycleStreamEventInput) (*cyclesdomain.TaskCycleStreamEvent, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.AppendCycleStreamEvent")
-	return cycles.AppendStreamEvent(ctx, s.db, in)
+	return cycles.AppendStreamEvent(ctx, s.db, appendStreamIn(in))
 }
 
 func (s *Store) ListCycleStreamEvents(ctx context.Context, cycleID string, afterSeq int64, limit int) ([]cyclesdomain.TaskCycleStreamEvent, error) {
@@ -119,7 +119,7 @@ func (s *Store) ListRunningCyclePhases(ctx context.Context) ([]cyclesdomain.Task
 
 func (s *Store) UpsertCycleCommits(ctx context.Context, taskID, cycleID string, entries []CycleCommitEntry) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.UpsertCycleCommits")
-	return commits.UpsertCycleCommits(ctx, s.db, taskID, cycleID, entries)
+	return commits.UpsertCycleCommits(ctx, s.db, taskID, cycleID, cycleCommitEntries(entries))
 }
 
 func (s *Store) ListCommitsForCycle(ctx context.Context, cycleID string) ([]cyclesdomain.TaskCycleCommit, error) {
@@ -134,12 +134,12 @@ func (s *Store) ListCommitsForTask(ctx context.Context, taskID string) ([]cycles
 
 func (s *Store) UpsertCriteriaReports(ctx context.Context, cycleID string, attemptSeq int64, entries []CriteriaReportEntry) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.UpsertCriteriaReports")
-	return reports.UpsertCriteriaReports(ctx, s.db, cycleID, attemptSeq, entries)
+	return reports.UpsertCriteriaReports(ctx, s.db, cycleID, attemptSeq, criteriaReportEntries(entries))
 }
 
 func (s *Store) UpsertVerifyReports(ctx context.Context, cycleID string, attemptSeq int64, entries []VerifyReportEntry) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.UpsertVerifyReports")
-	return reports.UpsertVerifyReports(ctx, s.db, cycleID, attemptSeq, entries)
+	return reports.UpsertVerifyReports(ctx, s.db, cycleID, attemptSeq, verifyReportEntries(entries))
 }
 
 func (s *Store) ListCriteriaReportsForCycle(ctx context.Context, cycleID string) ([]cyclesdomain.TaskCycleCriteriaReport, error) {
@@ -159,7 +159,7 @@ func (s *Store) GetCriteriaReport(ctx context.Context, cycleID string, attemptSe
 
 func (s *Store) UpsertCommandRuns(ctx context.Context, cycleID string, attemptSeq int64, entries []CommandRunEntry) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.UpsertCommandRuns")
-	return reports.UpsertCommandRuns(ctx, s.db, cycleID, attemptSeq, entries)
+	return reports.UpsertCommandRuns(ctx, s.db, cycleID, attemptSeq, commandRunEntries(entries))
 }
 
 func (s *Store) ListCommandRunsForCycle(ctx context.Context, cycleID string) ([]cyclesdomain.TaskCycleCommandRun, error) {

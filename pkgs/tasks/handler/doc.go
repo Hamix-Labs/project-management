@@ -2,7 +2,7 @@
 //
 // File layout: README.md in this directory maps routes, middleware wrappers, SSE, and helpers.
 //
-// Wiring: handler.go (mux + security header helpers). Task routes span handler_task_*.go, handler_checklist.go, handler_task_events.go—see README.md.
+// Wiring: handler.go (mux + security header helpers). Task routes span handler_routes.go and BC-delegating handlers—see README.md.
 // GET /repo/*: pkgs/repo/handler. GET /events: sse.go. Prometheus HTTP metrics: metrics_http.go (WithHTTPMetrics; GET /metrics is mounted on the outer mux in cmd/taskapi).
 // Per-IP rate limiting: rate_limit.go (WithRateLimit; HAMIX_RATE_LIMIT_PER_MIN in docs/configuration.md).
 // Idempotency: idempotency.go (WithIdempotency; optional Idempotency-Key on POST/PATCH/DELETE; HAMIX_IDEMPOTENCY_TTL in docs/configuration.md).

@@ -1,10 +1,14 @@
 package scheduling
 
-import "time"
+import (
+	"time"
+
+	taskcorecontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
+)
 
 // FailedPredicate identifies the first worker readiness check that failed.
 // String values are stable for logs and metrics.
-type FailedPredicate string
+type FailedPredicate = taskcorecontract.FailedPredicate
 
 const (
 	FailedPredicateNone         FailedPredicate = "none"

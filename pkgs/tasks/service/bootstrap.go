@@ -6,8 +6,10 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
+	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
+	composecontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/contract"
+	taskcorecontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 // BootstrapLimits caps each sub-read in the cold-start aggregate.
@@ -19,21 +21,22 @@ type BootstrapLimits struct {
 
 // BootstrapData is the HTTP-agnostic cold-start bundle for GET /v1/bootstrap.
 type BootstrapData struct {
-	Settings store.AppSettings
+	Settings settingsdomain.AppSettings
 	Tasks    []taskcoredomain.Task
 	HasMore  bool
-	Stats    store.TaskStats
+	Stats    taskcorecontract.TaskStats
 	Projects []projectsdomain.Project
-	Drafts   []store.DraftSummary
+	Drafts   []composecontract.DraftSummary
 }
 
 // BootstrapStore is the persistence surface required for cold-start aggregation.
+// Method shapes mirror bounded-context contracts; *store.Store satisfies this at wiring.
 type BootstrapStore interface {
-	GetSettings(ctx context.Context) (store.AppSettings, error)
-	ListFlatPage(ctx context.Context, limit, offset int, filter *store.ListFilter) ([]taskcoredomain.Task, bool, error)
-	TaskStats(ctx context.Context) (store.TaskStats, error)
+	GetSettings(ctx context.Context) (settingsdomain.AppSettings, error)
+	ListFlatPage(ctx context.Context, limit, offset int, filter *taskcorecontract.ListFilter) ([]taskcoredomain.Task, bool, error)
+	TaskStats(ctx context.Context) (taskcorecontract.TaskStats, error)
 	ListProjects(ctx context.Context, includeArchived bool, limit int) ([]projectsdomain.Project, error)
-	ListDrafts(ctx context.Context, limit int) ([]store.DraftSummary, error)
+	ListDrafts(ctx context.Context, limit int) ([]composecontract.DraftSummary, error)
 }
 
 // Bootstrap loads settings, tasks page, stats, projects, and drafts in parallel.

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
 	"io"
 	"log/slog"
 	"net/http"
@@ -97,7 +98,7 @@ func TestStoreErrHTTPResponse(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			code, msg := storeErrHTTPResponse(context.Background(), tt.err)
+			code, msg := handlerhttp.StoreErrHTTPResponse(context.Background(), tt.err)
 			if code != tt.wantCode || msg != tt.wantMsg {
 				t.Fatalf("code=%d msg=%q want code=%d msg=%q", code, msg, tt.wantCode, tt.wantMsg)
 			}

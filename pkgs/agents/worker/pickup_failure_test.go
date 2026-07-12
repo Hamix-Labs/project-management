@@ -8,6 +8,7 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/runnerfake"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/worker"
+	taskcorecontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
@@ -17,7 +18,7 @@ type agentPickupFailStore struct {
 	*store.Store
 }
 
-func (s *agentPickupFailStore) AgentPickup(ctx context.Context, taskID string, by taskcoredomain.Actor) (*store.AgentPickupResult, error) {
+func (s *agentPickupFailStore) AgentPickup(ctx context.Context, taskID string, by taskcoredomain.Actor) (*taskcorecontract.AgentPickupResult, error) {
 	return nil, fmt.Errorf("save task: simulated persistence failure")
 }
 

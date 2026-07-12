@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"time"
 
+	taskcorecontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/internal/devmirror"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/internal/health"
@@ -44,7 +45,7 @@ func (s *Store) DB() *gorm.DB {
 const DefaultReadyTimeout = 2 * time.Second
 
 // FailedPredicate identifies the first worker readiness check that failed.
-type FailedPredicate = scheduling.FailedPredicate
+type FailedPredicate = taskcorecontract.FailedPredicate
 
 type (
 	CreateTaskInput         = tasks.CreateInput

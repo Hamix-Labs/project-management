@@ -6,23 +6,24 @@ import (
 	"log/slog"
 	"time"
 
+	taskcorecontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/scheduling"
 )
 
 type (
-	FailedPredicate         = taskcorestore.FailedPredicate
+	FailedPredicate         = taskcorecontract.FailedPredicate
 	CreateTaskInput         = taskcorestore.CreateTaskInput
 	UpdateTaskInput         = taskcorestore.UpdateTaskInput
 	ProjectFieldPatch       = taskcorestore.ProjectFieldPatch
 	PickupNotBeforePatch    = taskcorestore.PickupNotBeforePatch
 	RequestRetryInput       = taskcorestore.RequestRetryInput
-	AgentPickupResult       = taskcorestore.AgentPickupResult
+	AgentPickupResult       = taskcorecontract.AgentPickupResult
 	ListFilter              = taskcorestore.ListFilter
-	ReadyTaskQueueCursor    = taskcorestore.ReadyTaskQueueCursor
-	ReadyTaskQueueCandidate = taskcorestore.ReadyTaskQueueCandidate
-	DeferredPickup          = taskcorestore.DeferredPickup
+	ReadyTaskQueueCursor    = taskcorecontract.ReadyTaskQueueCursor
+	ReadyTaskQueueCandidate = taskcorecontract.ReadyTaskQueueCandidate
+	DeferredPickup          = taskcorecontract.DeferredPickup
 )
 
 //funclogmeasure:skip category=hot-path reason="Pure forwarder to taskcore/store; operation trace is emitted by the BC chokepoint."

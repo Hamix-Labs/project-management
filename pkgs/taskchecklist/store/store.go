@@ -28,7 +28,7 @@ type (
 	// ChecklistItemView is the per-task checklist row shape returned by List.
 	ChecklistItemView = checklist.ItemView
 	// ChecklistVerifyItem is a criterion row for worker verification.
-	ChecklistVerifyItem = checklist.VerifyItem
+	ChecklistVerifyItem = contract.ChecklistVerifyItem
 	// CreateChecklistItemInput is one criterion seeded at task create.
 	CreateChecklistItemInput = contract.CreateChecklistItemInput
 	// VerifyCommandInput is the checklist verify command wire shape.
@@ -101,7 +101,21 @@ func (s *Store) ReplaceChecklistVerifyCommands(ctx context.Context, taskID, item
 
 func (s *Store) ListChecklistForVerify(ctx context.Context, taskID string) ([]ChecklistVerifyItem, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskchecklist.store.ListChecklistForVerify")
-	return checklist.ListForVerify(ctx, s.db, taskID)
+	rows, err := checklist.ListForVerify(ctx, s.db, taskID)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]ChecklistVerifyItem, len(rows))
+	for i, r := range rows {
+		out[i] = ChecklistVerifyItem{
+			ID:             r.ID,
+			Text:           r.Text,
+			SourceTaskID:   r.SourceTaskID,
+			DefinitionTask: r.DefinitionTask,
+			VerifyCommands: r.VerifyCommands,
+		}
+	}
+	return out, nil
 }
 
 func (s *Store) IsTaskCycleRunning(ctx context.Context, taskID string) (bool, error) {

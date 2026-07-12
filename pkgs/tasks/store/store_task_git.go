@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
+	taskcorecontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"log/slog"
 	"os"
@@ -12,12 +13,7 @@ import (
 )
 
 // TaskGitContext is the resolved filesystem path and branch name for a task binding.
-type TaskGitContext struct {
-	WorktreeID   string
-	BranchID     string
-	WorktreePath string
-	BranchName   string
-}
+type TaskGitContext = taskcorecontract.TaskGitContext
 
 // ValidateTaskWorktreeBinding checks worktree_id exists and, when projectID is
 // set, that project.repository_id matches the worktree's repo.

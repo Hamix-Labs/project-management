@@ -219,7 +219,7 @@ var invalidInputPrefix = taskcoredomain.ErrInvalidInput.Error() + ": "
 // on the wire instead of the historical doubled "tasks: invalid input: mention
 // @<path>: tasks: invalid input: <reason>". errors.Is(err, taskcoredomain.ErrInvalidInput)
 // remains true via the %w on taskcoredomain.ErrInvalidInput, so all existing 400
-// mappings in pkgs/tasks/handler/handler_http_json.go::storeErrorClientMessage
+// mappings in pkgs/tasks/handlerhttp.StoreErrorClientMessage
 // continue to fire unchanged.
 func wrapMention(label string, cause error) error {
 	slog.Debug("trace", "operation", "repo.wrapMention")

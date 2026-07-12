@@ -8,16 +8,14 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
+	taskcorecontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/model"
 	"gorm.io/gorm"
 )
 
 // DeferredPickup is a ready task with pickup_not_before still in the future.
-type DeferredPickup struct {
-	ID              string
-	PickupNotBefore time.Time
-}
+type DeferredPickup = taskcorecontract.DeferredPickup
 
 // ListDeferredReadyPickups returns ready tasks whose pickup_not_before is
 // strictly after `now`, ordered by pickup time then id. Used to hydrate the
