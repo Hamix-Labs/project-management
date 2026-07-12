@@ -3,12 +3,15 @@ package agentworker
 import (
 	"context"
 	"encoding/json"
+	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
+	"sync"
 	"testing"
+	"time"
 
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 type recordingPublisher struct {
@@ -19,13 +22,24 @@ func (r *recordingPublisher) Publish(ev realtime.Event) {
 	r.events = append(r.events, ev)
 }
 
+func waitForEvents(t *testing.T, pub *recordingPublisher, want int, timeout time.Duration) {
+	t.Helper()
+	deadline := time.Now().Add(timeout)
+	for len(pub.events) < want && time.Now().Before(deadline) {
+		time.Sleep(5 * time.Millisecond)
+	}
+	if len(pub.events) != want {
+		t.Fatalf("events: got %d want %d", len(pub.events), want)
+	}
+}
+
 func TestTaskUpdatedSSEAdapter_publishesEnrichedWireShape(t *testing.T) {
 	t.Parallel()
 	db := tasktestdb.OpenSQLite(t)
-	st := store.NewStore(db)
+	st := composition.NewAPI(db)
 	ctx := context.Background()
 
-	created, err := st.Create(ctx, store.CreateTaskInput{
+	created, err := st.Create(ctx, taskcorestore.CreateTaskInput{
 		Title:    "sse-task-updated",
 		Priority: taskcoredomain.PriorityMedium,
 		Status:   taskcoredomain.StatusDone,
@@ -35,12 +49,10 @@ func TestTaskUpdatedSSEAdapter_publishesEnrichedWireShape(t *testing.T) {
 	}
 
 	pub := &recordingPublisher{}
-	adapter := newTaskUpdatedSSEAdapter(pub, st)
+	adapter := newTaskUpdatedSSEAdapter(pub, st, nil)
 	adapter.PublishTaskUpdated(created.ID)
+	waitForEvents(t, pub, 1, 2*time.Second)
 
-	if len(pub.events) != 1 {
-		t.Fatalf("events: got %d want 1", len(pub.events))
-	}
 	ev := pub.events[0]
 	if ev.Type != realtime.TaskUpdated {
 		t.Fatalf("type = %q, want task_updated", ev.Type)
@@ -64,4 +76,85 @@ func TestTaskUpdatedSSEAdapter_publishesEnrichedWireShape(t *testing.T) {
 	if wire.Status != string(taskcoredomain.StatusDone) {
 		t.Fatalf("data.status = %q, want done", wire.Status)
 	}
+}
+
+type blockingPublisher struct {
+	mu      sync.Mutex
+	block   chan struct{}
+	events  []realtime.Event
+	unblock chan struct{}
+}
+
+func newBlockingPublisher() *blockingPublisher {
+	return &blockingPublisher{
+		block:   make(chan struct{}),
+		unblock: make(chan struct{}, 1),
+	}
+}
+
+func (b *blockingPublisher) Publish(ev realtime.Event) {
+	b.mu.Lock()
+	b.events = append(b.events, ev)
+	b.mu.Unlock()
+	select {
+	case <-b.unblock:
+	case <-b.block:
+	}
+}
+
+func TestTaskUpdatedSSEAdapter_returnsWithoutBlockingOnSlowPublisher(t *testing.T) {
+	t.Parallel()
+	pub := newBlockingPublisher()
+	adapter := newTaskUpdatedSSEAdapter(pub, &slowTaskGetter{}, nil)
+
+	start := time.Now()
+	adapter.PublishTaskUpdated("task-1")
+	if elapsed := time.Since(start); elapsed > 100*time.Millisecond {
+		t.Fatalf("PublishTaskUpdated blocked for %v, want <100ms", elapsed)
+	}
+	close(pub.block)
+}
+
+type slowTaskGetter struct{}
+
+func (slowTaskGetter) Get(context.Context, string) (*taskcoredomain.Task, error) {
+	time.Sleep(200 * time.Millisecond)
+	return &taskcoredomain.Task{ID: "task-1", Status: taskcoredomain.StatusReady}, nil
+}
+
+func TestTaskUpdatedSSEAdapter_dropsWhenQueueFull(t *testing.T) {
+	t.Parallel()
+	pub := &recordingPublisher{}
+	metrics := &fakeNotifierMetrics{}
+	block := make(chan struct{})
+	getter := &blockingTaskGetter{block: block}
+	adapter := newTaskUpdatedSSEAdapter(pub, getter, metrics)
+
+	adapter.PublishTaskUpdated("task-1")
+	for i := 0; i < taskUpdatedQueueDepth; i++ {
+		adapter.PublishTaskUpdated("task-fill")
+	}
+	adapter.PublishTaskUpdated("task-overflow")
+
+	if metrics.dropped != 1 {
+		t.Fatalf("dropped = %d, want 1", metrics.dropped)
+	}
+	close(block)
+}
+
+type blockingTaskGetter struct {
+	block chan struct{}
+}
+
+func (g *blockingTaskGetter) Get(context.Context, string) (*taskcoredomain.Task, error) {
+	<-g.block
+	return &taskcoredomain.Task{ID: "task-1", Status: taskcoredomain.StatusReady}, nil
+}
+
+type fakeNotifierMetrics struct {
+	dropped int
+}
+
+func (f *fakeNotifierMetrics) RecordNotifierDropped(string) {
+	f.dropped++
 }

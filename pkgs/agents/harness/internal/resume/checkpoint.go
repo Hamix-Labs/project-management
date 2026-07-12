@@ -5,9 +5,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"log/slog"
 	"strings"
+
+	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/verify"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
 const (
@@ -58,15 +60,17 @@ func (s *Service) ReconstructCheckpoint(ctx context.Context, cycle *cyclesdomain
 		return cp, fmt.Errorf("resume: cannot continue from phase %q status %q", last.Phase, last.Status)
 	}
 
-	previouslyPassed, maxAttempt, verifyFeedback, err := s.loadVerifyCheckpointData(ctx, cycle.ID)
+	previouslyPassed, maxAttempt, verifyFeedback, verifyRetry, err := s.loadVerifyCheckpointData(ctx, cycle.ID, phases)
 	if err != nil {
 		return cp, err
 	}
 	cp.PreviouslyPassed = previouslyPassed
-	if maxAttempt > 0 {
+	if verifyRetry >= 0 {
+		cp.VerifyAttempt = verifyRetry
+	} else if maxAttempt > 0 {
 		cp.VerifyAttempt = int(maxAttempt)
-		cp.VerifyFeedback = verifyFeedback
 	}
+	cp.VerifyFeedback = verifyFeedback
 
 	commits, err := s.loadKnownCommitsForTask(ctx, cycle.TaskID)
 	if err != nil {
@@ -99,11 +103,11 @@ func (s *Service) loadKnownCommitsForTask(ctx context.Context, taskID string) ([
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func (s *Service) loadVerifyCheckpointData(ctx context.Context, cycleID string) (map[string]CriterionVerdict, int64, string, error) {
+func (s *Service) loadVerifyCheckpointData(ctx context.Context, cycleID string, phases []cyclesdomain.TaskCyclePhase) (map[string]CriterionVerdict, int64, string, int, error) {
 	previouslyPassed := map[string]CriterionVerdict{}
 	verifyRows, err := s.store.ListVerifyReportsForCycle(ctx, cycleID)
 	if err != nil {
-		return nil, 0, "", err
+		return nil, 0, "", -1, err
 	}
 	var maxAttempt int64
 	for _, row := range verifyRows {
@@ -128,7 +132,22 @@ func (s *Service) loadVerifyCheckpointData(ctx context.Context, cycleID string) 
 	if maxAttempt > 0 {
 		feedback = buildVerifyFeedbackFromRows(verifyRows, maxAttempt)
 	}
-	return previouslyPassed, maxAttempt, feedback, nil
+	verifyRetry := -1
+	for i := len(phases) - 1; i >= 0; i-- {
+		p := phases[i]
+		if p.Phase != cyclesdomain.PhaseVerify {
+			continue
+		}
+		if rc, ok := verify.ParseVerifyRetryCount([]byte(p.DetailsJSON)); ok {
+			verifyRetry = rc
+			break
+		}
+		if maxAttempt > 0 {
+			verifyRetry = int(maxAttempt)
+		}
+		break
+	}
+	return previouslyPassed, maxAttempt, feedback, verifyRetry, nil
 }
 
 func isInterruptPhase(p cyclesdomain.TaskCyclePhase) bool {

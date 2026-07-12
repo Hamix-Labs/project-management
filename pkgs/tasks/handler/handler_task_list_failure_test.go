@@ -13,9 +13,10 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/logctx"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 	"github.com/google/uuid"
 )
 
@@ -49,7 +50,7 @@ func TestHTTP_list_storeFailure_logsPaginationContext(t *testing.T) {
 	buf := captureHandlerLogs(t, slog.LevelError)
 
 	db := tasktestdb.OpenSQLite(t)
-	st := store.NewStore(db)
+	st := composition.NewAPI(db)
 	srv := httptest.NewServer(NewHandler(st, NewSSEHub(), nil))
 	t.Cleanup(srv.Close)
 
@@ -97,7 +98,7 @@ func TestHTTP_list_keysetStoreFailure_logsKeysetContext(t *testing.T) {
 	buf := captureHandlerLogs(t, slog.LevelError)
 
 	db := tasktestdb.OpenSQLite(t)
-	st := store.NewStore(db)
+	st := composition.NewAPI(db)
 	srv := httptest.NewServer(NewHandler(st, NewSSEHub(), nil))
 	t.Cleanup(srv.Close)
 
@@ -137,7 +138,7 @@ func TestHTTP_list_canceledContext_logsStoreList(t *testing.T) {
 	buf := captureHandlerLogs(t, slog.LevelWarn)
 
 	db := tasktestdb.OpenSQLite(t)
-	st := store.NewStore(db)
+	st := composition.NewAPI(db)
 	h := NewHandler(st, NewSSEHub(), nil)
 	rec := httptest.NewRecorder()
 
@@ -211,7 +212,7 @@ func TestWriteJSON_responseWriteFailure_logs(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/tasks", nil)
 	req = req.WithContext(logctx.ContextWithRequestID(req.Context(), "list-write-rid"))
 
-	writeJSON(w, req, "tasks.list", http.StatusOK, map[string]any{"tasks": []any{}})
+	handlerhttp.WriteJSON(w, req, "tasks.list", http.StatusOK, map[string]any{"tasks": []any{}})
 
 	line := lastLogLine(t, buf)
 	if line["msg"] != "response write failed" {
@@ -236,7 +237,7 @@ func TestWriteJSONWithETag_responseWriteFailure_logs(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/tasks", nil)
 	req = req.WithContext(logctx.ContextWithRequestID(req.Context(), "list-etag-write-rid"))
 
-	writeJSONWithETag(w, req, "tasks.list", http.StatusOK, map[string]any{"tasks": []any{}})
+	handlerhttp.WriteJSONWithETag(w, req, "tasks.list", http.StatusOK, map[string]any{"tasks": []any{}})
 
 	line := lastLogLine(t, buf)
 	if line["msg"] != "response write failed" {
@@ -257,7 +258,7 @@ func TestWriteJSONWithETag_encodeFailure_logs(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/tasks", nil)
 	req = req.WithContext(logctx.ContextWithRequestID(req.Context(), "list-etag-encode-rid"))
 
-	writeJSONWithETag(rr, req, "tasks.list", http.StatusOK, map[string]any{"bad": make(chan int)})
+	handlerhttp.WriteJSONWithETag(rr, req, "tasks.list", http.StatusOK, map[string]any{"bad": make(chan int)})
 
 	line := lastLogLine(t, buf)
 	if line["msg"] != "response encode failed" {

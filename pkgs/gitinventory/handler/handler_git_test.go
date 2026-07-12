@@ -8,10 +8,10 @@ import (
 	"os/exec"
 	"testing"
 
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 func gitHandlerTest(t *testing.T) (http.Handler, string) {
@@ -19,7 +19,7 @@ func gitHandlerTest(t *testing.T) (http.Handler, string) {
 	if _, err := exec.LookPath("git"); err != nil {
 		t.Skip("git not on PATH")
 	}
-	st := store.NewStore(tasktestdb.OpenSQLite(t))
+	st := composition.NewAPI(tasktestdb.OpenSQLite(t))
 	main := initHandlerGitRepo(t)
 	mux := http.NewServeMux()
 	Register(mux, Deps{

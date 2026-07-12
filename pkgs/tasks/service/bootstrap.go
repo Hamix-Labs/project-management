@@ -30,7 +30,7 @@ type BootstrapData struct {
 }
 
 // BootstrapStore is the persistence surface required for cold-start aggregation.
-// Method shapes mirror bounded-context contracts; *store.Store satisfies this at wiring.
+// Method shapes mirror bounded-context contracts; *composition.API satisfies this at wiring.
 type BootstrapStore interface {
 	GetSettings(ctx context.Context) (settingsdomain.AppSettings, error)
 	ListFlatPage(ctx context.Context, limit, offset int, filter *taskcorecontract.ListFilter) ([]taskcoredomain.Task, bool, error)

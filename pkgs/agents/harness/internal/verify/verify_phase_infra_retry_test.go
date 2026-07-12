@@ -5,9 +5,9 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/runnerfake"
+	settingscontract "github.com/AlexsanderHamir/Hamix/pkgs/settings/contract"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 	"sync/atomic"
 	"testing"
 )
@@ -38,7 +38,7 @@ func TestWorker_VerifyPhase_carriesPassesAcrossRetries(t *testing.T) {
 	}
 
 	maxRetries := 2
-	if _, err := h.Store.UpdateSettings(ctx, store.SettingsPatch{VerifyMaxRetries: &maxRetries}); err != nil {
+	if _, err := h.Store.UpdateSettings(ctx, settingscontract.SettingsPatch{VerifyMaxRetries: &maxRetries}); err != nil {
 		t.Fatalf("set max retries: %v", err)
 	}
 

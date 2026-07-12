@@ -2,31 +2,33 @@ package worker_test
 
 import (
 	"context"
+	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
+	cyclescontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/contract"
 	"testing"
 
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/worker"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 	"gorm.io/gorm"
 )
 
 type sweepHarness struct {
 	t  *testing.T
-	st *store.Store
+	st *composition.API
 	db *gorm.DB
 }
 
 func newSweepHarness(t *testing.T) *sweepHarness {
 	t.Helper()
 	db := tasktestdb.OpenSQLite(t)
-	return &sweepHarness{t: t, st: store.NewStore(db), db: db}
+	return &sweepHarness{t: t, st: composition.NewAPI(db), db: db}
 }
 
 func (h *sweepHarness) makeRunningTaskWithRunningCycleAndPhase(t *testing.T, ctx context.Context, title string, phase cyclesdomain.Phase) (*taskcoredomain.Task, *cyclesdomain.TaskCycle, *cyclesdomain.TaskCyclePhase) {
 	t.Helper()
-	tsk, err := h.st.Create(ctx, store.CreateTaskInput{
+	tsk, err := h.st.Create(ctx, taskcorestore.CreateTaskInput{
 		Title:         title,
 		InitialPrompt: "do work",
 		Status:        taskcoredomain.StatusReady,
@@ -36,10 +38,10 @@ func (h *sweepHarness) makeRunningTaskWithRunningCycleAndPhase(t *testing.T, ctx
 		t.Fatalf("create task: %v", err)
 	}
 	running := taskcoredomain.StatusRunning
-	if _, err := h.st.Update(ctx, tsk.ID, store.UpdateTaskInput{Status: &running}, taskcoredomain.ActorAgent); err != nil {
+	if _, err := h.st.Update(ctx, tsk.ID, taskcorestore.UpdateTaskInput{Status: &running}, taskcoredomain.ActorAgent); err != nil {
 		t.Fatalf("transition task to running: %v", err)
 	}
-	cycle, err := h.st.StartCycle(ctx, store.StartCycleInput{
+	cycle, err := h.st.StartCycle(ctx, cyclescontract.StartCycleInput{
 		TaskID:      tsk.ID,
 		TriggeredBy: taskcoredomain.ActorAgent,
 	})
@@ -120,7 +122,7 @@ func TestSweep_OrphanPhaseUnderTerminalCycle_isFailed(t *testing.T) {
 
 	tsk, cycle, ph := h.makeRunningTaskWithRunningCycleAndPhase(t, ctx, "orphan-phase", cyclesdomain.PhaseExecute)
 
-	if _, err := h.st.CompletePhase(ctx, store.CompletePhaseInput{
+	if _, err := h.st.CompletePhase(ctx, cyclescontract.CompletePhaseInput{
 		CycleID:  cycle.ID,
 		PhaseSeq: ph.PhaseSeq,
 		Status:   cyclesdomain.PhaseStatusSucceeded,

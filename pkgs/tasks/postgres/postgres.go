@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
@@ -63,9 +62,7 @@ func Open(dsn string, cfg *gorm.Config) (*gorm.DB, error) {
 	return db, nil
 }
 
-// Migrate runs AutoMigrate for store persistence models via model.AutoMigrateAll
-// (works with any GORM dialector, e.g. tests on SQLite). Domain types are not
-// passed to GORM — see pkgs/tasks/store/model.
+// Migrate runs AutoMigrate for store persistence models (works with any GORM dialector).
 func Migrate(ctx context.Context, db *gorm.DB) error {
 	slog.Debug("trace", "operation", "postgres.Migrate")
 	db = db.Session(&gorm.Session{
@@ -84,7 +81,7 @@ func Migrate(ctx context.Context, db *gorm.DB) error {
 	if err := migrateExpandFixedWorktreeBranch(ctx, db); err != nil {
 		return fmt.Errorf("expand fixed worktree branch: %w", err)
 	}
-	if err := model.AutoMigrateAll(db.WithContext(ctx)); err != nil {
+	if err := autoMigrateStoreModels(db.WithContext(ctx)); err != nil {
 		return fmt.Errorf("automigrate store models: %w", err)
 	}
 	if err := db.WithContext(ctx).AutoMigrate(&SchemaMeta{}); err != nil {

@@ -3,10 +3,12 @@ package agentreconcile
 import (
 	"context"
 	"encoding/json"
+	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 	"testing"
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/internal/gittest"
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
@@ -15,7 +17,6 @@ import (
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 const (
@@ -39,11 +40,11 @@ func TestAgentWorkerE2E_readyTaskRunsThroughReconcileAndWorker(t *testing.T) {
 	rootCtx, rootCancel := context.WithCancel(context.Background())
 	defer rootCancel()
 
-	st := store.NewStore(tasktestdb.OpenSQLite(t))
+	st := composition.NewAPI(tasktestdb.OpenSQLite(t))
 	q := agents.NewMemoryQueue(4)
 
 	wtID, _ := gittest.SeedWorktreeTemp(t, st)
-	tsk, err := st.Create(rootCtx, store.CreateTaskInput{
+	tsk, err := st.Create(rootCtx, taskcorestore.CreateTaskInput{
 		Title:         "e2e",
 		InitialPrompt: "do the thing",
 		Status:        taskcoredomain.StatusReady,
@@ -150,11 +151,11 @@ func TestAgentWorkerE2E_worktreeBinding(t *testing.T) {
 	rootCtx, rootCancel := context.WithCancel(context.Background())
 	defer rootCancel()
 
-	st := store.NewStore(tasktestdb.OpenSQLite(t))
+	st := composition.NewAPI(tasktestdb.OpenSQLite(t))
 	q := agents.NewMemoryQueue(4)
 
 	wtID, _ := gittest.SeedWorktreeTemp(t, st)
-	tsk, err := st.Create(rootCtx, store.CreateTaskInput{
+	tsk, err := st.Create(rootCtx, taskcorestore.CreateTaskInput{
 		Title:         "e2e-wb",
 		InitialPrompt: "via association",
 		Status:        taskcoredomain.StatusReady,
@@ -209,11 +210,11 @@ func TestAgentWorkerE2E_sameWorktreeSequential(t *testing.T) {
 	rootCtx, rootCancel := context.WithCancel(context.Background())
 	defer rootCancel()
 
-	st := store.NewStore(tasktestdb.OpenSQLite(t))
+	st := composition.NewAPI(tasktestdb.OpenSQLite(t))
 	q := agents.NewMemoryQueue(4)
 
 	wtID, _ := gittest.SeedWorktreeTemp(t, st)
-	taskA, err := st.Create(rootCtx, store.CreateTaskInput{
+	taskA, err := st.Create(rootCtx, taskcorestore.CreateTaskInput{
 		Title:         "task-a",
 		InitialPrompt: "first",
 		Status:        taskcoredomain.StatusReady,
@@ -223,7 +224,7 @@ func TestAgentWorkerE2E_sameWorktreeSequential(t *testing.T) {
 	if err != nil {
 		t.Fatalf("create task A: %v", err)
 	}
-	taskB, err := st.Create(rootCtx, store.CreateTaskInput{
+	taskB, err := st.Create(rootCtx, taskcorestore.CreateTaskInput{
 		Title:         "task-b",
 		InitialPrompt: "second",
 		Status:        taskcoredomain.StatusReady,
@@ -285,12 +286,12 @@ func TestAgentWorkerE2E_differentWorktreesParallel(t *testing.T) {
 	rootCtx, rootCancel := context.WithCancel(context.Background())
 	defer rootCancel()
 
-	st := store.NewStore(tasktestdb.OpenSQLite(t))
+	st := composition.NewAPI(tasktestdb.OpenSQLite(t))
 	q := agents.NewMemoryQueue(8)
 
 	wtA, _ := gittest.SeedWorktreeTemp(t, st)
 	wtB := seedSecondWorktreeOnRepo(t, st, wtA)
-	taskA, err := st.Create(rootCtx, store.CreateTaskInput{
+	taskA, err := st.Create(rootCtx, taskcorestore.CreateTaskInput{
 		Title:         "parallel-a",
 		InitialPrompt: "on wt a",
 		Status:        taskcoredomain.StatusReady,
@@ -300,7 +301,7 @@ func TestAgentWorkerE2E_differentWorktreesParallel(t *testing.T) {
 	if err != nil {
 		t.Fatalf("create task A: %v", err)
 	}
-	taskB, err := st.Create(rootCtx, store.CreateTaskInput{
+	taskB, err := st.Create(rootCtx, taskcorestore.CreateTaskInput{
 		Title:         "parallel-b",
 		InitialPrompt: "on wt b",
 		Status:        taskcoredomain.StatusReady,
@@ -360,11 +361,11 @@ func TestAgentWorkerE2E_dependencyBlocksUntilUpstreamDone(t *testing.T) {
 	rootCtx, rootCancel := context.WithCancel(context.Background())
 	defer rootCancel()
 
-	st := store.NewStore(tasktestdb.OpenSQLite(t))
+	st := composition.NewAPI(tasktestdb.OpenSQLite(t))
 	q := agents.NewMemoryQueue(8)
 
 	wtID, _ := gittest.SeedWorktreeTemp(t, st)
-	upstream, err := st.Create(rootCtx, store.CreateTaskInput{
+	upstream, err := st.Create(rootCtx, taskcorestore.CreateTaskInput{
 		Title:         "upstream",
 		InitialPrompt: "first",
 		Status:        taskcoredomain.StatusReady,
@@ -374,7 +375,7 @@ func TestAgentWorkerE2E_dependencyBlocksUntilUpstreamDone(t *testing.T) {
 	if err != nil {
 		t.Fatalf("create upstream: %v", err)
 	}
-	dependent, err := st.Create(rootCtx, store.CreateTaskInput{
+	dependent, err := st.Create(rootCtx, taskcorestore.CreateTaskInput{
 		Title:         "dependent",
 		InitialPrompt: "after upstream",
 		Status:        taskcoredomain.StatusReady,
@@ -437,7 +438,7 @@ func TestAgentWorkerE2E_dependencyBlocksUntilUpstreamDone(t *testing.T) {
 	<-reconcileDone
 }
 
-func waitTaskStatusE2E(t *testing.T, ctx context.Context, st *store.Store, taskID string, want taskcoredomain.Status) {
+func waitTaskStatusE2E(t *testing.T, ctx context.Context, st *composition.API, taskID string, want taskcoredomain.Status) {
 	t.Helper()
 	deadline := time.Now().Add(e2ePollTimeout)
 	for time.Now().Before(deadline) {

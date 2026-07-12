@@ -24,7 +24,7 @@ import (
 )
 
 // ItemView is one definition row plus completion for a subject task.
-// Re-aliased by the store facade as store.ChecklistItemView so the
+// Re-aliased by the store facade so the
 // JSON field tags stay stable on the wire.
 type ItemView = contract.ChecklistItemView
 

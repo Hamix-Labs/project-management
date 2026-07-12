@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/contract"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
+	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store"
 )
 
 func TestStore_implements_GitReadStore(t *testing.T) {

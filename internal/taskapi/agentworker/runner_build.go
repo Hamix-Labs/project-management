@@ -3,6 +3,7 @@ package agentworker
 import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 import (
 	"context"
+	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	"log/slog"
 	"time"
 
@@ -10,10 +11,9 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/registry"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/worker"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
-func (s *Supervisor) buildVerifyRunner(ctx context.Context, cfg store.AppSettings) (runner.Runner, string) {
+func (s *Supervisor) buildVerifyRunner(ctx context.Context, cfg settingsdomain.AppSettings) (runner.Runner, string) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskapi.agentWorkerSupervisor.buildVerifyRunner",
 		"verify_runner", cfg.VerifyRunnerName)
 	if cfg.VerifyRunnerName == "" {
@@ -46,7 +46,7 @@ func (s *Supervisor) buildVerifyRunner(ctx context.Context, cfg store.AppSetting
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func (s *Supervisor) probeExecuteRunner(ctx context.Context, cfg store.AppSettings) (string, error) {
+func (s *Supervisor) probeExecuteRunner(ctx context.Context, cfg settingsdomain.AppSettings) (string, error) {
 	probeCtx, cancel := context.WithTimeout(ctx, s.probeBudge)
 	defer cancel()
 	version, _, probeErr := s.probe(probeCtx, cfg.Runner, cfg.CursorBin, s.probeBudge)

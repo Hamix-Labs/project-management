@@ -9,13 +9,13 @@ import (
 // StartCycleInput captures everything needed to begin a new execution
 // attempt for a task. The store decides AttemptSeq; callers cannot
 // supply it. Re-aliased by the public store facade as
-// store.StartCycleInput so handler code stays unchanged.
+// cyclescontract.StartCycleInput so handler code stays unchanged.
 type StartCycleInput = contract.StartCycleInput
 
 // CompletePhaseInput captures the terminal transition for a phase row,
 // keyed by (cycleID, phaseSeq) so the URL-level identifier from
 // /cycles/{cycleId}/phases/{phaseSeq} is also the natural store key.
-// Re-aliased by the public store facade as store.CompletePhaseInput.
+// Re-aliased by the public store facade as cyclescontract.CompletePhaseInput.
 type CompletePhaseInput = contract.CompletePhaseInput
 
 // AppendStreamEventInput captures one durable normalized progress event for

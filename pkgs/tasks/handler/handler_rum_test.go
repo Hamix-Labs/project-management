@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/middleware"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 )
 
@@ -23,7 +23,7 @@ import (
 // sendBeacon never sees the response body.
 func TestPostRUM_acceptsBatchAndRecordsMetrics(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
-	h := NewHandler(store.NewStore(db), NewSSEHub(), nil)
+	h := NewHandler(composition.NewAPI(db), NewSSEHub(), nil)
 	srv := httptest.NewServer(h)
 	defer srv.Close()
 
@@ -64,7 +64,7 @@ func TestPostRUM_acceptsBatchAndRecordsMetrics(t *testing.T) {
 // whole RUM pipeline.
 func TestPostRUM_dropsUnknownEventTypes(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
-	h := NewHandler(store.NewStore(db), NewSSEHub(), nil)
+	h := NewHandler(composition.NewAPI(db), NewSSEHub(), nil)
 	srv := httptest.NewServer(h)
 	defer srv.Close()
 
@@ -99,7 +99,7 @@ func TestPostRUM_dropsUnknownEventTypes(t *testing.T) {
 // runaway-looping or trying to DoS the metrics pipeline; both 400.
 func TestPostRUM_rejectsEmptyAndOversizedBatches(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
-	h := NewHandler(store.NewStore(db), NewSSEHub(), nil)
+	h := NewHandler(composition.NewAPI(db), NewSSEHub(), nil)
 	srv := httptest.NewServer(h)
 	defer srv.Close()
 

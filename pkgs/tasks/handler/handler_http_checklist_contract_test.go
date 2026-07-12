@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
+	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 	"io"
 	"net/http"
 	"strings"
@@ -121,7 +121,7 @@ func TestHTTP_postChecklistItem_rejectsRunningTask(t *testing.T) {
 	srv, st := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 	ctx := context.Background()
-	tsk, err := st.Create(ctx, store.CreateTaskInput{
+	tsk, err := st.Create(ctx, taskcorestore.CreateTaskInput{
 		Title: "running", Priority: taskcoredomain.PriorityMedium, Status: taskcoredomain.StatusRunning,
 	}, taskcoredomain.ActorUser)
 	if err != nil {
@@ -150,7 +150,7 @@ func TestHTTP_postChecklistItem_allowsDoneTask(t *testing.T) {
 	srv, st := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 	ctx := context.Background()
-	tsk, err := st.Create(ctx, store.CreateTaskInput{
+	tsk, err := st.Create(ctx, taskcorestore.CreateTaskInput{
 		Title: "done", Priority: taskcoredomain.PriorityMedium, Status: taskcoredomain.StatusDone,
 	}, taskcoredomain.ActorUser)
 	if err != nil {

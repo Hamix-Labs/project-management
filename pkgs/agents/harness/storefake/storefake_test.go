@@ -2,18 +2,18 @@ package storefake_test
 
 import (
 	"context"
+	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/storefake"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 func TestFake_satisfiesHarnessStore_createAndGet(t *testing.T) {
 	t.Parallel()
 	f := storefake.New(t)
 	ctx := context.Background()
-	tsk, err := f.Create(ctx, store.CreateTaskInput{
+	tsk, err := f.Create(ctx, taskcorestore.CreateTaskInput{
 		Title:         "x",
 		InitialPrompt: "p",
 		Status:        taskcoredomain.StatusReady,

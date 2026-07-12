@@ -5,11 +5,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	checklistcontract "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/contract"
+	cyclesstore "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store"
 	"log/slog"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/reports"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 func (s *Service) loadCriteriaSelfReport(ctx context.Context, cycleID string, attemptSeq int64, expected map[string]struct{}) (map[string]reports.CriteriaEntry, error) {
@@ -53,13 +54,13 @@ func (s *Service) PersistCriteriaReports(
 	ctx context.Context,
 	cycleID string,
 	attemptSeq int64,
-	criteria []store.ChecklistVerifyItem,
+	criteria []checklistcontract.ChecklistVerifyItem,
 	previouslyPassed map[string]Verdict,
 	selfReport map[string]reports.CriteriaEntry,
 ) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.verify.persistCriteriaReports",
 		"cycle_id", cycleID, "attempt_seq", attemptSeq)
-	entries := make([]store.CriteriaReportEntry, 0, len(criteria))
+	entries := make([]cyclesstore.CriteriaReportEntry, 0, len(criteria))
 	for _, it := range criteria {
 		if _, locked := previouslyPassed[it.ID]; locked {
 			continue
@@ -68,7 +69,7 @@ func (s *Service) PersistCriteriaReports(
 		if !ok {
 			continue
 		}
-		entries = append(entries, store.CriteriaReportEntry{
+		entries = append(entries, cyclesstore.CriteriaReportEntry{
 			CriterionID: it.ID,
 			ClaimedDone: e.ClaimedDone,
 			Evidence:    e.Evidence,
@@ -86,12 +87,12 @@ func (s *Service) persistVerifyReports(
 ) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.verify.persistVerifyReports",
 		"cycle_id", cycleID, "attempt_seq", attemptSeq, "verdict_count", len(verdicts))
-	entries := make([]store.VerifyReportEntry, 0, len(verdicts))
+	entries := make([]cyclesstore.VerifyReportEntry, 0, len(verdicts))
 	for _, v := range verdicts {
 		if _, locked := previouslyPassed[v.ID]; locked {
 			continue
 		}
-		entries = append(entries, store.VerifyReportEntry{
+		entries = append(entries, cyclesstore.VerifyReportEntry{
 			CriterionID:  v.ID,
 			Verified:     v.Passed,
 			VerifierKind: v.Verifier,

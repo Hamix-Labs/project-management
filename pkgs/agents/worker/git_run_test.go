@@ -2,13 +2,13 @@ package worker_test
 
 import (
 	"context"
+	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 	"testing"
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/runnerfake"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/worker"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 func TestWorker_missingGitBinding_defersPickup(t *testing.T) {
@@ -17,7 +17,7 @@ func TestWorker_missingGitBinding_defersPickup(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	tsk, err := h.store.Create(ctx, store.CreateTaskInput{
+	tsk, err := h.store.Create(ctx, taskcorestore.CreateTaskInput{
 		Title:         "unbound",
 		InitialPrompt: "do the thing",
 		Status:        taskcoredomain.StatusReady,

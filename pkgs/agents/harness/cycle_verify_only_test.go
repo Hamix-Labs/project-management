@@ -3,18 +3,20 @@ package harness
 import (
 	"context"
 	"encoding/json"
+	settingscontract "github.com/AlexsanderHamir/Hamix/pkgs/settings/contract"
+	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 	"os"
 	"path/filepath"
 	"sync/atomic"
 	"testing"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/storefake"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/runnerfake"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 type cycleVerifyHookRunner struct {
@@ -95,11 +97,11 @@ func writePartialVerifyReportCycleTest(t *testing.T, reportDir, cycleID string, 
 	}
 }
 
-func startVerifyOnlyTask(t *testing.T, maxRetries int, extraItems ...string) (*store.Store, *taskcoredomain.Task, []string) {
+func startVerifyOnlyTask(t *testing.T, maxRetries int, extraItems ...string) (*composition.API, *taskcoredomain.Task, []string) {
 	t.Helper()
 	ctx := context.Background()
-	st := storefake.New(t).Store
-	tsk, err := st.Create(ctx, store.CreateTaskInput{
+	st := storefake.New(t).API
+	tsk, err := st.Create(ctx, taskcorestore.CreateTaskInput{
 		Title: "verify-only", InitialPrompt: "work", Priority: taskcoredomain.PriorityMedium, Status: taskcoredomain.StatusReady,
 	}, taskcoredomain.ActorUser)
 	if err != nil {
@@ -119,11 +121,11 @@ func startVerifyOnlyTask(t *testing.T, maxRetries int, extraItems ...string) (*s
 		ids = append(ids, it.ID)
 		_ = i
 	}
-	if _, err := st.UpdateSettings(ctx, store.SettingsPatch{VerifyMaxRetries: &maxRetries}); err != nil {
+	if _, err := st.UpdateSettings(ctx, settingscontract.SettingsPatch{VerifyMaxRetries: &maxRetries}); err != nil {
 		t.Fatal(err)
 	}
 	running := taskcoredomain.StatusRunning
-	if _, err := st.Update(ctx, tsk.ID, store.UpdateTaskInput{Status: &running}, taskcoredomain.ActorAgent); err != nil {
+	if _, err := st.Update(ctx, tsk.ID, taskcorestore.UpdateTaskInput{Status: &running}, taskcoredomain.ActorAgent); err != nil {
 		t.Fatal(err)
 	}
 	return st, tsk, ids

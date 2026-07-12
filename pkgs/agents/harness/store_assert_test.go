@@ -1,7 +1,7 @@
 package harness
 
 import (
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 )
 
-var _ Store = (*store.Store)(nil)
+var _ Store = (*composition.API)(nil)

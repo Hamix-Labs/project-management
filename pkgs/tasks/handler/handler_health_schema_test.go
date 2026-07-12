@@ -7,14 +7,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/postgres"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 func TestHealthReady_schemaPendingReturns503(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
-	st := store.NewStore(db)
+	st := composition.NewAPI(db)
 	h := NewHandler(st, NewSSEHub(), nil,
 		WithGitAvailable(true),
 		WithSchemaDriftReport(postgres.SchemaDriftReport{
@@ -53,7 +53,7 @@ func TestHealthReady_schemaPendingReturns503(t *testing.T) {
 
 func TestHealthReady_schemaOKWhenAligned(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
-	st := store.NewStore(db)
+	st := composition.NewAPI(db)
 	h := NewHandler(st, NewSSEHub(), nil,
 		WithGitAvailable(true),
 		WithSchemaDriftReport(postgres.SchemaDriftReport{

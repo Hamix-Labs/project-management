@@ -11,10 +11,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/repo"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 func initBrowseTestGitRepo(t *testing.T, dir string) {
@@ -56,7 +56,7 @@ func TestHTTP_workspaceRoots_returnsRegisteredRepos(t *testing.T) {
 		t.Fatalf("seed repo: %v", err)
 	}
 
-	st := store.NewStore(db)
+	st := composition.NewAPI(db)
 	srv := newSettingsHTTPServer(t, st, Deps{Settings: st, GitRead: st})
 
 	res, err := http.Get(srv.URL + "/settings/workspace-roots")
@@ -102,7 +102,7 @@ func TestHTTP_workspaceRoots_expandedScope_includesBootstrap(t *testing.T) {
 		t.Fatalf("seed repo: %v", err)
 	}
 
-	st := store.NewStore(db)
+	st := composition.NewAPI(db)
 	srv := newSettingsHTTPServer(t, st, Deps{Settings: st, GitRead: st})
 
 	res, err := http.Get(srv.URL + "/settings/workspace-roots?scope=expanded")
@@ -158,7 +158,7 @@ func TestHTTP_workspaceRoots_bootstrapFallbackWhenRegisteredPathMissing(t *testi
 		t.Fatalf("seed repo: %v", err)
 	}
 
-	st := store.NewStore(db)
+	st := composition.NewAPI(db)
 	srv := newSettingsHTTPServer(t, st, Deps{Settings: st, GitRead: st})
 
 	res, err := http.Get(srv.URL + "/settings/workspace-roots")
@@ -198,7 +198,7 @@ func TestHTTP_workspaceRoots_bootstrapFallbackWhenRegisteredPathMissing(t *testi
 // when no repositories are registered and HAMIX_BROWSE_ROOTS is unset.
 func TestHTTP_workspaceRoots_bootstrapWhenNoRepos(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
-	st := store.NewStore(db)
+	st := composition.NewAPI(db)
 	srv := newSettingsHTTPServer(t, st, Deps{Settings: st, GitRead: st})
 
 	res, err := http.Get(srv.URL + "/settings/workspace-roots")
@@ -248,7 +248,7 @@ func TestHTTP_workspaceRoots_customOverrideReplacesDB(t *testing.T) {
 		t.Fatalf("seed repo: %v", err)
 	}
 
-	st := store.NewStore(db)
+	st := composition.NewAPI(db)
 	srv := newSettingsHTTPServer(t, st, Deps{Settings: st, GitRead: st})
 
 	res, err := http.Get(srv.URL + "/settings/workspace-roots")
@@ -281,7 +281,7 @@ func TestHTTP_browseDirs_listsProjectFolder(t *testing.T) {
 	t.Setenv("HAMIX_BROWSE_ROOTS", root)
 
 	db := tasktestdb.OpenSQLite(t)
-	st := store.NewStore(db)
+	st := composition.NewAPI(db)
 	srv := newSettingsHTTPServer(t, st, Deps{Settings: st, GitRead: st})
 
 	res, err := http.Get(srv.URL + "/settings/browse-dirs?path=" + url.QueryEscape(root))
@@ -312,7 +312,7 @@ func TestHTTP_browseDirs_fullDiskFallback(t *testing.T) {
 	}
 
 	db := tasktestdb.OpenSQLite(t)
-	st := store.NewStore(db)
+	st := composition.NewAPI(db)
 	srv := newSettingsHTTPServer(t, st, Deps{Settings: st, GitRead: st})
 
 	res, err := http.Get(srv.URL + "/settings/browse-dirs?path=" + url.QueryEscape(root))
@@ -338,7 +338,7 @@ func TestHTTP_browseDirs_worksWithoutRepoRootConfigured(t *testing.T) {
 	t.Setenv("HAMIX_BROWSE_ROOTS", root)
 
 	db := tasktestdb.OpenSQLite(t)
-	st := store.NewStore(db)
+	st := composition.NewAPI(db)
 	srv := newSettingsHTTPServer(t, st, Deps{Settings: st, GitRead: st})
 
 	res, err := http.Get(srv.URL + "/settings/browse-dirs")
@@ -363,7 +363,7 @@ func TestHTTP_browseDirs_marksCurrentPathGitRepo(t *testing.T) {
 	t.Setenv("HAMIX_BROWSE_ROOTS", root)
 
 	db := tasktestdb.OpenSQLite(t)
-	st := store.NewStore(db)
+	st := composition.NewAPI(db)
 	srv := newSettingsHTTPServer(t, st, Deps{Settings: st, GitRead: st})
 
 	res, err := http.Get(srv.URL + "/settings/browse-dirs?path=" + url.QueryEscape(gitChild))

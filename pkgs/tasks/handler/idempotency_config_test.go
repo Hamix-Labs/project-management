@@ -3,6 +3,8 @@ package handler
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/middleware"
 	"io"
 	"log/slog"
 	"net/http"
@@ -11,58 +13,58 @@ import (
 	"testing"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/logctx"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 	"github.com/google/uuid"
 )
 
 func TestIdempotencyTTLConfigured(t *testing.T) {
-	t.Cleanup(clearIdempotencyStateForTest)
+	t.Cleanup(middleware.ClearIdempotencyStateForTest)
 	const defaultTTL = 24 * time.Hour
 	t.Setenv("HAMIX_IDEMPOTENCY_TTL", "")
-	if IdempotencyTTL() != defaultTTL {
+	if middleware.IdempotencyTTL() != defaultTTL {
 		t.Fatalf("default ttl")
 	}
 	t.Setenv("HAMIX_IDEMPOTENCY_TTL", "0")
-	if IdempotencyTTL() != 0 {
+	if middleware.IdempotencyTTL() != 0 {
 		t.Fatalf("zero")
 	}
 	t.Setenv("HAMIX_IDEMPOTENCY_TTL", "30m")
-	if got := IdempotencyTTL(); got != 30*time.Minute {
+	if got := middleware.IdempotencyTTL(); got != 30*time.Minute {
 		t.Fatalf("30m: got %v", got)
 	}
 	t.Setenv("HAMIX_IDEMPOTENCY_TTL", "not-a-duration")
-	if IdempotencyTTL() != defaultTTL {
+	if middleware.IdempotencyTTL() != defaultTTL {
 		t.Fatalf("invalid falls back")
 	}
 }
 
 func TestIdempotencyCacheLimitsConfigured(t *testing.T) {
-	t.Cleanup(clearIdempotencyStateForTest)
+	t.Cleanup(middleware.ClearIdempotencyStateForTest)
 	t.Setenv("HAMIX_IDEMPOTENCY_MAX_ENTRIES", "")
 	t.Setenv("HAMIX_IDEMPOTENCY_MAX_BYTES", "")
-	maxEntries, maxBytes := IdempotencyCacheLimits()
+	maxEntries, maxBytes := middleware.IdempotencyCacheLimits()
 	if maxEntries != 2048 || maxBytes != 8<<20 {
 		t.Fatalf("defaults got entries=%d bytes=%d", maxEntries, maxBytes)
 	}
 
 	t.Setenv("HAMIX_IDEMPOTENCY_MAX_ENTRIES", "128")
 	t.Setenv("HAMIX_IDEMPOTENCY_MAX_BYTES", "262144")
-	maxEntries, maxBytes = IdempotencyCacheLimits()
+	maxEntries, maxBytes = middleware.IdempotencyCacheLimits()
 	if maxEntries != 128 || maxBytes != 262144 {
 		t.Fatalf("configured got entries=%d bytes=%d", maxEntries, maxBytes)
 	}
 
 	t.Setenv("HAMIX_IDEMPOTENCY_MAX_ENTRIES", "-1")
 	t.Setenv("HAMIX_IDEMPOTENCY_MAX_BYTES", "nope")
-	maxEntries, maxBytes = IdempotencyCacheLimits()
+	maxEntries, maxBytes = middleware.IdempotencyCacheLimits()
 	if maxEntries != 2048 || maxBytes != 8<<20 {
 		t.Fatalf("invalid fallback got entries=%d bytes=%d", maxEntries, maxBytes)
 	}
 }
 
 func TestWithAccessLog_idempotencyCacheEviction_logIncludesRequestID(t *testing.T) {
-	t.Cleanup(clearIdempotencyStateForTest)
+	t.Cleanup(middleware.ClearIdempotencyStateForTest)
 	t.Setenv("HAMIX_IDEMPOTENCY_TTL", "1h")
 	t.Setenv("HAMIX_IDEMPOTENCY_MAX_ENTRIES", "2")
 	t.Setenv("HAMIX_IDEMPOTENCY_MAX_BYTES", "0")
@@ -74,8 +76,8 @@ func TestWithAccessLog_idempotencyCacheEviction_logIncludesRequestID(t *testing.
 	base := logctx.WrapSlogHandlerWithRequestContext(slog.NewJSONHandler(&buf, &slog.HandlerOptions{Level: slog.LevelWarn}))
 	slog.SetDefault(slog.New(logctx.WrapSlogHandlerWithLogSequence(base, &processSeq)))
 
-	srv := newBoundTaskServer(t, func(st *store.Store) http.Handler {
-		return WithAccessLog(WithIdempotency(boundTaskHandler(st)))
+	srv := newBoundTaskServer(t, func(st *composition.API) http.Handler {
+		return middleware.WithAccessLog(middleware.WithIdempotency(boundTaskHandler(st)), calltrace.Path)
 	})
 
 	const rid = "rid-idem-cache-evict"

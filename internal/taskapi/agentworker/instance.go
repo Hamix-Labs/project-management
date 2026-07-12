@@ -3,6 +3,7 @@ package agentworker
 import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 import (
 	"context"
+	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	"log/slog"
 	"time"
 
@@ -10,7 +11,6 @@ import (
 	"github.com/AlexsanderHamir/Hamix/internal/taskapiconfig"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/worker"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 type instance struct {
@@ -18,7 +18,7 @@ type instance struct {
 	cancelCtx    context.CancelFunc
 	doneCh       chan struct{}
 	runTimeout   time.Duration
-	settings     store.AppSettings
+	settings     settingsdomain.AppSettings
 	runner       runner.Runner
 	verifyRunner runner.Runner
 }
@@ -40,13 +40,13 @@ func instanceSnapshot(inst *instance, version string) *policy.InstanceSnapshot {
 	return snap
 }
 
-func instanceMatchesSettings(inst *instance, cfg store.AppSettings, version string) bool {
+func instanceMatchesSettings(inst *instance, cfg settingsdomain.AppSettings, version string) bool {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskapi.instanceMatchesSettings")
 	return policy.InstanceMatchesSettings(instanceSnapshot(inst, version), cfg, version)
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func verifyRunnerStatusForInstance(prev *instance, cfg store.AppSettings) string {
+func verifyRunnerStatusForInstance(prev *instance, cfg settingsdomain.AppSettings) string {
 	hasVerify := prev != nil && prev.verifyRunner != nil
 	return policy.VerifyRunnerStatus(hasVerify, cfg)
 }
@@ -73,12 +73,12 @@ func stopWorkerInstance(inst *instance, reason string) {
 	}
 }
 
-func (s *Supervisor) spawnWorkerInstance(ctx context.Context, cfg store.AppSettings, r runner.Runner) (*instance, string) {
+func (s *Supervisor) spawnWorkerInstance(ctx context.Context, cfg settingsdomain.AppSettings, r runner.Runner) (*instance, string) {
 	runTimeout := time.Duration(cfg.MaxRunDurationSeconds) * time.Second
 	streamIdleStuck := time.Duration(cfg.StreamIdleStuckSeconds) * time.Second
-	notifier := newCycleChangeSSEAdapter(s.publisher)
-	taskUpdatedNotifier := newTaskUpdatedSSEAdapter(s.publisher, s.store)
-	progressNotifier := newRunProgressSSEAdapter(s.publisher, agentRunProgressMinInterval)
+	notifier := newCycleChangeSSEAdapter(s.publisher, s.notifierMetrics)
+	taskUpdatedNotifier := newTaskUpdatedSSEAdapter(s.publisher, s.store, s.notifierMetrics)
+	progressNotifier := newRunProgressSSEAdapter(s.publisher, agentRunProgressMinInterval, s.notifierMetrics)
 	verifyRunner, verifyStatus := s.buildVerifyRunner(ctx, cfg)
 	reportDir := taskapiconfig.WorkerReportDir()
 	if err := ensureWorkerReportDirWritable(reportDir); err != nil {

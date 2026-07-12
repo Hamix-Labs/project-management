@@ -6,7 +6,9 @@ import (
 	"fmt"
 	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
+	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
+	cyclescontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/contract"
+	cyclesstore "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store"
 	"net/http"
 	"testing"
 )
@@ -27,7 +29,7 @@ func TestHandler_GetCycleVerdicts_returnsBothReports(t *testing.T) {
 
 	ctx := context.Background()
 
-	tsk, err := st.Create(ctx, store.CreateTaskInput{Priority: taskcoredomain.PriorityMedium, Title: "verdict-test"}, taskcoredomain.ActorUser)
+	tsk, err := st.Create(ctx, taskcorestore.CreateTaskInput{Priority: taskcoredomain.PriorityMedium, Title: "verdict-test"}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("create task: %v", err)
 	}
@@ -39,7 +41,7 @@ func TestHandler_GetCycleVerdicts_returnsBothReports(t *testing.T) {
 	if err != nil {
 		t.Fatalf("add c2: %v", err)
 	}
-	cycle, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
+	cycle, err := st.StartCycle(ctx, cyclescontract.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatalf("start cycle: %v", err)
 	}
@@ -56,13 +58,13 @@ func TestHandler_GetCycleVerdicts_returnsBothReports(t *testing.T) {
 
 	// Mirror what the worker would persist: c1 passes via verify_agent
 	// on attempt 1; c2 is claimed-but-not-verified on attempt 1.
-	if err := st.UpsertCriteriaReports(ctx, cycle.ID, 1, []store.CriteriaReportEntry{
+	if err := st.UpsertCriteriaReports(ctx, cycle.ID, 1, []cyclesstore.CriteriaReportEntry{
 		{CriterionID: c1.ID, ClaimedDone: true, Evidence: "ev-c1"},
 		{CriterionID: c2.ID, ClaimedDone: true, Evidence: "ev-c2"},
 	}); err != nil {
 		t.Fatalf("upsert criteria: %v", err)
 	}
-	if err := st.UpsertVerifyReports(ctx, cycle.ID, 1, []store.VerifyReportEntry{
+	if err := st.UpsertVerifyReports(ctx, cycle.ID, 1, []cyclesstore.VerifyReportEntry{
 		{
 			CriterionID:  c1.ID,
 			Verified:     true,

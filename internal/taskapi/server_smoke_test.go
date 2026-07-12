@@ -7,17 +7,17 @@ import (
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi"
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/postgres"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 // Smoke test for the production HTTP assembly path (middleware.Stack +
 // handler.NewHandler via taskapi.NewHTTPHandler).
 func TestNewHTTPHandler_healthAndBootstrap(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
-	st := store.NewStore(db)
+	st := composition.NewAPI(db)
 	hub := handler.NewSSEHub()
 	api := taskapi.NewHTTPHandler(st, hub, nil, nil, postgres.SchemaDriftReport{
 		Status:       postgres.SchemaDriftOK,

@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/projects/contract"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
+	"github.com/AlexsanderHamir/Hamix/pkgs/projects/store"
 )
 
 func TestStore_implements_ProjectStore(t *testing.T) {

@@ -15,8 +15,8 @@
 // concern out of the transactional path.
 //
 // Public re-exports kept by the facade:
-//   - CreateInput      <- store.CreateTaskInput
-//   - UpdateInput      <- store.UpdateTaskInput
+//   - CreateInput      <- contract.CreateTaskInput (via store facade)
+//   - UpdateInput      <- contract.UpdateTaskInput (via store facade)
 //   - ParentFieldPatch <- store.ParentFieldPatch
 //   - Node             <- store.TaskNode
 //   - MaxTreeDepth     <- store.MaxTaskTreeDepth

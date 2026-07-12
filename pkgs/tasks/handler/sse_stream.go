@@ -3,6 +3,7 @@ package handler
 import (
 	"errors"
 	"fmt"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -29,16 +30,16 @@ func (h *Handler) streamEvents(w http.ResponseWriter, r *http.Request) {
 	r = calltrace.WithRequestRoot(r, op)
 	debugHTTPRequest(r, op, "sse_accept", "text/event-stream")
 	if h.hub == nil {
-		writeJSONError(w, r, op, http.StatusServiceUnavailable, "event stream unavailable")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusServiceUnavailable, "event stream unavailable")
 		return
 	}
 	flusher, ok := w.(http.Flusher)
 	if !ok {
 		slog.Error("streaming unsupported", "cmd", calltrace.LogCmd, "operation", op, "err", errors.New("response writer is not an http.Flusher"))
-		writeJSONError(w, r, op, http.StatusInternalServerError, "streaming unsupported")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusInternalServerError, "streaming unsupported")
 		return
 	}
-	setAPISecurityHeaders(w)
+	handlerhttp.SetAPISecurityHeaders(w)
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("Connection", "keep-alive")

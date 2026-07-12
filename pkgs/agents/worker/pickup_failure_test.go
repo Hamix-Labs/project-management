@@ -6,16 +6,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/runnerfake"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/worker"
 	taskcorecontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 type agentPickupFailStore struct {
-	*store.Store
+	*composition.API
 }
 
 func (s *agentPickupFailStore) AgentPickup(ctx context.Context, taskID string, by taskcoredomain.Actor) (*taskcorecontract.AgentPickupResult, error) {
@@ -29,7 +29,7 @@ func TestWorker_pickupPersistenceFailure_defersAndRecordsEvent(t *testing.T) {
 	defer cancel()
 
 	tsk := h.createReadyTask(ctx, "pickup-fail")
-	wrapped := &agentPickupFailStore{Store: h.store}
+	wrapped := &agentPickupFailStore{API: h.store}
 	w := worker.NewWorker(wrapped, h.queue, runnerfake.New(), worker.Options{Notifier: h.notifier})
 
 	done := make(chan error, 1)

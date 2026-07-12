@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	taskcorehandler "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/handler"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -92,7 +93,7 @@ func truncateRunes(s string, maxRunes int) string {
 // debug is off. Skip-listed in cmd/funclogmeasure/analyze.go.
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func taskCreateInputFields(body *taskCreateJSON, actor string) []any {
+func taskCreateInputFields(body *taskcorehandler.TaskCreateJSON, actor string) []any {
 	if body == nil {
 		return nil
 	}
@@ -125,7 +126,7 @@ func taskCreateInputFields(body *taskCreateJSON, actor string) []any {
 // entry.
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func taskPatchInputFields(body *taskPatchJSON) []any {
+func taskPatchInputFields(body *taskcorehandler.TaskPatchJSON) []any {
 	if body == nil {
 		return nil
 	}

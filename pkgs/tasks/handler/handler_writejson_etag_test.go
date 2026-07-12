@@ -8,13 +8,14 @@ import (
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/apijson"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
 )
 
 func TestWriteJSONWithETag_emits_etag_and_revalidatable_cache_control(t *testing.T) {
 	t.Parallel()
 	rr := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/tasks/x", nil)
-	writeJSONWithETag(rr, req, "test.etag", http.StatusOK, map[string]any{"id": "x", "n": 1})
+	handlerhttp.WriteJSONWithETag(rr, req, "test.etag", http.StatusOK, map[string]any{"id": "x", "n": 1})
 	if rr.Code != http.StatusOK {
 		t.Fatalf("status = %d, want 200", rr.Code)
 	}
@@ -44,7 +45,7 @@ func TestWriteJSONWithETag_returns_304_when_if_none_match_matches(t *testing.T) 
 	t.Parallel()
 	first := httptest.NewRecorder()
 	body := map[string]any{"id": "y", "v": 42}
-	writeJSONWithETag(first, httptest.NewRequest(http.MethodGet, "/tasks/y", nil), "test.etag", http.StatusOK, body)
+	handlerhttp.WriteJSONWithETag(first, httptest.NewRequest(http.MethodGet, "/tasks/y", nil), "test.etag", http.StatusOK, body)
 	etag := first.Header().Get("ETag")
 	if etag == "" {
 		t.Fatal("first response missing ETag")
@@ -53,7 +54,7 @@ func TestWriteJSONWithETag_returns_304_when_if_none_match_matches(t *testing.T) 
 	second := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/tasks/y", nil)
 	req.Header.Set("If-None-Match", etag)
-	writeJSONWithETag(second, req, "test.etag", http.StatusOK, body)
+	handlerhttp.WriteJSONWithETag(second, req, "test.etag", http.StatusOK, body)
 
 	if second.Code != http.StatusNotModified {
 		t.Fatalf("status = %d, want 304", second.Code)
@@ -74,7 +75,7 @@ func TestWriteJSONWithETag_returns_full_body_when_if_none_match_differs(t *testi
 	rr := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/tasks/z", nil)
 	req.Header.Set("If-None-Match", `"deadbeef"`)
-	writeJSONWithETag(rr, req, "test.etag", http.StatusOK, map[string]any{"id": "z"})
+	handlerhttp.WriteJSONWithETag(rr, req, "test.etag", http.StatusOK, map[string]any{"id": "z"})
 	if rr.Code != http.StatusOK {
 		t.Fatalf("status = %d, want 200", rr.Code)
 	}
@@ -87,7 +88,7 @@ func TestWriteJSONWithETag_emits_security_headers(t *testing.T) {
 	t.Parallel()
 	rr := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/tasks/h", nil)
-	writeJSONWithETag(rr, req, "test.etag", http.StatusOK, map[string]any{"ok": true})
+	handlerhttp.WriteJSONWithETag(rr, req, "test.etag", http.StatusOK, map[string]any{"ok": true})
 
 	if got := rr.Header().Get("X-Frame-Options"); got != "DENY" {
 		t.Errorf("X-Frame-Options = %q", got)

@@ -2,15 +2,15 @@ package verify
 
 import (
 	"encoding/json"
+	checklistcontract "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/contract"
 	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 	"strings"
 	"testing"
 )
 
 func TestFormatPhaseSummary_success(t *testing.T) {
 	t.Parallel()
-	criteria := []store.ChecklistVerifyItem{
+	criteria := []checklistcontract.ChecklistVerifyItem{
 		{ID: "c1", Text: "Ship tests"},
 		{ID: "c2", Text: "Update docs"},
 	}
@@ -26,7 +26,7 @@ func TestFormatPhaseSummary_success(t *testing.T) {
 
 func TestFormatPhaseSummary_failureListsReasoning(t *testing.T) {
 	t.Parallel()
-	criteria := []store.ChecklistVerifyItem{
+	criteria := []checklistcontract.ChecklistVerifyItem{
 		{ID: "c1", Text: "Each branch has a test"},
 		{ID: "c2", Text: "Docs updated"},
 	}
@@ -48,7 +48,7 @@ func TestFormatPhaseSummary_failureListsReasoning(t *testing.T) {
 
 func TestEncodePhaseDetails_includesStructuredSnapshot(t *testing.T) {
 	t.Parallel()
-	criteria := []store.ChecklistVerifyItem{
+	criteria := []checklistcontract.ChecklistVerifyItem{
 		{ID: "c1", Text: "Criterion A"},
 	}
 	verdicts := []Verdict{
@@ -59,7 +59,7 @@ func TestEncodePhaseDetails_includesStructuredSnapshot(t *testing.T) {
 			Reasoning: "Missing coverage",
 		},
 	}
-	raw := EncodePhaseDetails(2, criteria, verdicts)
+	raw := EncodePhaseDetails(2, criteria, verdicts, PhaseDetailsOpts{VerifyRetryCount: 1})
 	var got verifyPhaseDetailsPayload
 	if err := json.Unmarshal(raw, &got); err != nil {
 		t.Fatalf("unmarshal: %v", err)

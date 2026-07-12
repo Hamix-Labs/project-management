@@ -56,7 +56,7 @@ Taskapi-only knobs (listen address, log level, agent intervals, etc.) are **not*
 |----------|-------------------|
 | This directory (`package middleware`) | Whitebox tests that need unexported symbols (e.g. rate-limit IP parsing, idempotency cache internals, Prometheus vec handles). |
 | [`internal/middlewaretest`](../../internal/middlewaretest/) (`package middlewaretest`) | Black-box tests that only use the exported `middleware` API (recovery, request timeout, max-body env parsing). |
-| [`pkgs/tasks/handler`](../handler/) | Integration tests that compose `With*` through [`middleware_shim.go`](../handler/middleware_shim.go). |
+| [`pkgs/tasks/handler`](../handler/) | Integration tests that compose `middleware.With*` directly (e.g. `middleware.WithAccessLog(h, calltrace.Path)`). |
 
 `go test ./...` from the repo root runs both trees.
 

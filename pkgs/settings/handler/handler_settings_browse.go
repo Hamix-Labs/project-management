@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
 	"log/slog"
 	"net/http"
 	"os"
@@ -18,29 +19,29 @@ func (h *Handler) workspaceRoots(w http.ResponseWriter, r *http.Request) {
 	r = calltrace.WithRequestRoot(r, op)
 	debugHTTPRequest(r, op)
 	if r.Method != http.MethodGet {
-		writeError(w, r, op, errors.New("method not allowed"), http.StatusMethodNotAllowed)
+		handlerhttp.WriteError(w, r, op, errors.New("method not allowed"), http.StatusMethodNotAllowed)
 		return
 	}
 	wd, err := os.Getwd()
 	if err != nil {
-		writeJSONError(w, r, op, http.StatusInternalServerError, "working directory unavailable")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusInternalServerError, "working directory unavailable")
 		return
 	}
 	gitRepos, err := h.gitRead.ListAllGitRepositories(r.Context())
 	if err != nil {
 		slog.Log(r.Context(), slog.LevelError, "list git repositories failed",
 			"cmd", calltrace.LogCmd, "operation", op, "err", err)
-		writeJSONError(w, r, op, http.StatusInternalServerError, "workspace roots unavailable")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusInternalServerError, "workspace roots unavailable")
 		return
 	}
 	roots, env, err := repo.ResolveWorkspacePickerRoots(wd, gitRepos, workspaceRootsScope(r))
 	if err != nil {
 		slog.Log(r.Context(), slog.LevelError, "workspace roots failed",
 			"cmd", calltrace.LogCmd, "operation", op, "err", err)
-		writeJSONError(w, r, op, http.StatusInternalServerError, "browse roots unavailable")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusInternalServerError, "browse roots unavailable")
 		return
 	}
-	writeJSON(w, r, op, http.StatusOK, workspaceRootsResponse{Roots: roots, Environment: env})
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, workspaceRootsResponse{Roots: roots, Environment: env})
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
@@ -59,11 +60,11 @@ func (h *Handler) browseDirs(w http.ResponseWriter, r *http.Request) {
 	path := strings.TrimSpace(r.URL.Query().Get("path"))
 	debugHTTPRequest(r, op, "browse_path", truncateRunes(path, maxHTTPLogTitleRunes))
 	if r.Method != http.MethodGet {
-		writeError(w, r, op, errors.New("method not allowed"), http.StatusMethodNotAllowed)
+		handlerhttp.WriteError(w, r, op, errors.New("method not allowed"), http.StatusMethodNotAllowed)
 		return
 	}
 	if len(path) > maxRepoRelPathQueryBytes {
-		writeJSONError(w, r, op, http.StatusBadRequest, "path too long")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusBadRequest, "path too long")
 		return
 	}
 
@@ -72,12 +73,12 @@ func (h *Handler) browseDirs(w http.ResponseWriter, r *http.Request) {
 	if repo.CustomBrowseRootsConfigured() {
 		wd, err := os.Getwd()
 		if err != nil {
-			writeJSONError(w, r, op, http.StatusInternalServerError, "working directory unavailable")
+			handlerhttp.WriteJSONError(w, r, op, http.StatusInternalServerError, "working directory unavailable")
 			return
 		}
 		roots, _, err := repo.ResolveBrowseRoots(wd)
 		if err != nil {
-			writeJSONError(w, r, op, http.StatusInternalServerError, "browse roots unavailable")
+			handlerhttp.WriteJSONError(w, r, op, http.StatusInternalServerError, "browse roots unavailable")
 			return
 		}
 		listing, listErr = repo.ListBrowseDirs(roots, path)
@@ -86,15 +87,15 @@ func (h *Handler) browseDirs(w http.ResponseWriter, r *http.Request) {
 	}
 	if listErr != nil {
 		if errors.Is(listErr, taskcoredomain.ErrInvalidInput) {
-			writeJSONError(w, r, op, http.StatusBadRequest, repoErrUserMessage(listErr))
+			handlerhttp.WriteJSONError(w, r, op, http.StatusBadRequest, repoErrUserMessage(listErr))
 			return
 		}
 		slog.Log(r.Context(), slog.LevelError, "browse dirs failed",
 			"cmd", calltrace.LogCmd, "operation", op, "err", listErr)
-		writeJSONError(w, r, op, http.StatusInternalServerError, "browse failed")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusInternalServerError, "browse failed")
 		return
 	}
-	writeJSON(w, r, op, http.StatusOK, browseDirsResponse{
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, browseDirsResponse{
 		Path:       listing.Path,
 		ParentPath: listing.ParentPath,
 		IsGitRepo:  listing.IsGitRepo,

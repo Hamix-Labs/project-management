@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
 	"log/slog"
 	"net/http"
 
@@ -13,15 +14,15 @@ func (h *Handler) listTaskDrafts(w http.ResponseWriter, r *http.Request) {
 	r = calltrace.WithRequestRoot(r, op)
 	limit, err := parseBoundedLimit(r.URL.Query(), 50, 100)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	rows, err := h.compose.ListDrafts(r.Context(), limit)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
-	writeJSON(w, r, op, http.StatusOK, map[string]any{"drafts": rows})
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, map[string]any{"drafts": rows})
 }
 
 func (h *Handler) saveTaskDraft(w http.ResponseWriter, r *http.Request) {
@@ -29,16 +30,16 @@ func (h *Handler) saveTaskDraft(w http.ResponseWriter, r *http.Request) {
 	const op = "task_drafts.save"
 	r = calltrace.WithRequestRoot(r, op)
 	var body taskDraftSaveJSON
-	if err := decodeJSON(r.Context(), r.Body, &body); err != nil {
-		writeError(w, r, op, err, http.StatusBadRequest)
+	if err := handlerhttp.DecodeJSON(r.Context(), r.Body, &body); err != nil {
+		handlerhttp.WriteError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
 	saved, err := h.compose.SaveDraft(r.Context(), body.ID, body.Name, body.Payload)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
-	writeJSON(w, r, op, http.StatusCreated, saved)
+	handlerhttp.WriteJSON(w, r, op, http.StatusCreated, saved)
 }
 
 func (h *Handler) getTaskDraft(w http.ResponseWriter, r *http.Request) {

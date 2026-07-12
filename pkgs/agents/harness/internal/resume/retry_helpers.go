@@ -6,8 +6,10 @@ import (
 	"errors"
 	"fmt"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
+	cyclescontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/contract"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
+	cyclesstore "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store"
 	"log/slog"
 )
 
@@ -44,7 +46,7 @@ func (s *Service) SeedCrossCycleExecuteFromParent(ctx context.Context, cycle *cy
 	if len(details) == 0 {
 		details = nil
 	}
-	_, err = s.store.CompletePhase(ctx, store.CompletePhaseInput{
+	_, err = s.store.CompletePhase(ctx, cyclescontract.CompletePhaseInput{
 		CycleID: cycle.ID, PhaseSeq: exec.PhaseSeq,
 		Status: cyclesdomain.PhaseStatusSucceeded, Summary: &summary,
 		Details: details, By: taskcoredomain.ActorAgent,
@@ -60,9 +62,9 @@ func (s *Service) MirrorParentCriteriaForVerifyOnly(ctx context.Context, childCy
 	if err != nil {
 		return err
 	}
-	byAttempt := map[int64][]store.CriteriaReportEntry{}
+	byAttempt := map[int64][]cyclesstore.CriteriaReportEntry{}
 	for _, row := range rows {
-		byAttempt[row.AttemptSeq] = append(byAttempt[row.AttemptSeq], store.CriteriaReportEntry{
+		byAttempt[row.AttemptSeq] = append(byAttempt[row.AttemptSeq], cyclesstore.CriteriaReportEntry{
 			CriterionID: row.CriterionID, ClaimedDone: row.ClaimedDone, Evidence: row.Evidence,
 		})
 	}
@@ -82,7 +84,7 @@ func (s *Service) FailTaskAfterRetryPrep(ctx context.Context, taskID, reason str
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.resume.FailTaskAfterRetryPrep",
 		"task_id", taskID, "reason", reason)
 	failed := taskcoredomain.StatusFailed
-	if _, err := s.store.Update(ctx, taskID, store.UpdateTaskInput{Status: &failed}, taskcoredomain.ActorAgent); err != nil {
+	if _, err := s.store.Update(ctx, taskID, taskcorestore.UpdateTaskInput{Status: &failed}, taskcoredomain.ActorAgent); err != nil {
 		level := slog.LevelWarn
 		if errors.Is(err, taskcoredomain.ErrNotFound) {
 			level = slog.LevelInfo

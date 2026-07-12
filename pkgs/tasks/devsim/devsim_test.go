@@ -3,14 +3,15 @@ package devsim
 import (
 	"context"
 	"encoding/json"
+	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 	"sync/atomic"
 	"testing"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 func TestEventCycle_exhaustive(t *testing.T) {
@@ -56,13 +57,13 @@ func TestEventCycle_exhaustive(t *testing.T) {
 
 func TestPersistAllTasks_emitsOnePublishPerTask(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
-	st := store.NewStore(db)
+	st := composition.NewAPI(db)
 	ctx := context.Background()
-	a, err := st.Create(ctx, store.CreateTaskInput{Priority: taskcoredomain.PriorityMedium, Title: "a"}, taskcoredomain.ActorUser)
+	a, err := st.Create(ctx, taskcorestore.CreateTaskInput{Priority: taskcoredomain.PriorityMedium, Title: "a"}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	b, err := st.Create(ctx, store.CreateTaskInput{Priority: taskcoredomain.PriorityMedium, Title: "b"}, taskcoredomain.ActorUser)
+	b, err := st.Create(ctx, taskcorestore.CreateTaskInput{Priority: taskcoredomain.PriorityMedium, Title: "b"}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -110,9 +111,9 @@ func TestPersistAllTasks_emitsOnePublishPerTask(t *testing.T) {
 
 func TestPersistAllTasks_burst_emitsMultiplePublishes(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
-	st := store.NewStore(db)
+	st := composition.NewAPI(db)
 	ctx := context.Background()
-	if _, err := st.Create(ctx, store.CreateTaskInput{Priority: taskcoredomain.PriorityMedium, Title: "solo"}, taskcoredomain.ActorUser); err != nil {
+	if _, err := st.Create(ctx, taskcorestore.CreateTaskInput{Priority: taskcoredomain.PriorityMedium, Title: "solo"}, taskcoredomain.ActorUser); err != nil {
 		t.Fatal(err)
 	}
 	var n int
@@ -124,9 +125,9 @@ func TestPersistAllTasks_burst_emitsMultiplePublishes(t *testing.T) {
 
 func TestPersistAllTasks_syncRow_updatesStatus(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
-	st := store.NewStore(db)
+	st := composition.NewAPI(db)
 	ctx := context.Background()
-	tsk, err := st.Create(ctx, store.CreateTaskInput{Priority: taskcoredomain.PriorityMedium, Title: "x"}, taskcoredomain.ActorUser)
+	tsk, err := st.Create(ctx, taskcorestore.CreateTaskInput{Priority: taskcoredomain.PriorityMedium, Title: "x"}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -142,9 +143,9 @@ func TestPersistAllTasks_syncRow_updatesStatus(t *testing.T) {
 
 func TestPersistAllTasks_userResponse_appendsThread(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
-	st := store.NewStore(db)
+	st := composition.NewAPI(db)
 	ctx := context.Background()
-	tsk, err := st.Create(ctx, store.CreateTaskInput{Priority: taskcoredomain.PriorityMedium, Title: "t"}, taskcoredomain.ActorUser)
+	tsk, err := st.Create(ctx, taskcorestore.CreateTaskInput{Priority: taskcoredomain.PriorityMedium, Title: "t"}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -172,7 +173,7 @@ func TestPersistAllTasks_userResponse_appendsThread(t *testing.T) {
 	if last.Type != taskeventsdomain.EventApprovalRequested {
 		t.Fatalf("last type %q want approval_requested", last.Type)
 	}
-	entries := store.ThreadEntriesForDisplay(&last)
+	entries := composition.ThreadEntriesForDisplay(&last)
 	if len(entries) == 0 {
 		t.Fatal("expected response thread entries")
 	}
@@ -183,8 +184,8 @@ func TestPersistAllTasks_userResponse_appendsThread(t *testing.T) {
 
 func TestRunTicker_StopsOnContextCancel(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
-	st := store.NewStore(db)
-	if _, err := st.Create(context.Background(), store.CreateTaskInput{Priority: taskcoredomain.PriorityMedium, Title: "pre-cancel"}, taskcoredomain.ActorUser); err != nil {
+	st := composition.NewAPI(db)
+	if _, err := st.Create(context.Background(), taskcorestore.CreateTaskInput{Priority: taskcoredomain.PriorityMedium, Title: "pre-cancel"}, taskcoredomain.ActorUser); err != nil {
 		t.Fatal(err)
 	}
 
@@ -207,7 +208,7 @@ func TestRunTicker_StopsOnContextCancel(t *testing.T) {
 
 func TestRunTicker_NoOpOnInvalidArgs(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
-	st := store.NewStore(db)
+	st := composition.NewAPI(db)
 	publish := func(ChangeKind, string) {}
 
 	RunTicker(context.Background(), nil, time.Second, Options{}, publish)
@@ -217,9 +218,9 @@ func TestRunTicker_NoOpOnInvalidArgs(t *testing.T) {
 
 func TestSamplePayload_JSON(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
-	st := store.NewStore(db)
+	st := composition.NewAPI(db)
 	ctx := context.Background()
-	task, err := st.Create(ctx, store.CreateTaskInput{Priority: taskcoredomain.PriorityMedium, Title: "x"}, taskcoredomain.ActorUser)
+	task, err := st.Create(ctx, taskcorestore.CreateTaskInput{Priority: taskcoredomain.PriorityMedium, Title: "x"}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}

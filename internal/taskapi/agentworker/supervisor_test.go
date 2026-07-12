@@ -3,6 +3,9 @@ package agentworker_test
 import (
 	"context"
 	"errors"
+	settingscontract "github.com/AlexsanderHamir/Hamix/pkgs/settings/contract"
+	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
+	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -10,15 +13,15 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi/agentworker"
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi/agentworker/policy"
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 type supervisorTestRig struct {
-	store *store.Store
+	store *composition.API
 	queue *agents.MemoryQueue
 	hub   *handler.SSEHub
 	sup   *agentworker.Supervisor
@@ -26,7 +29,7 @@ type supervisorTestRig struct {
 
 func newSupervisorTestRig(t *testing.T, ctx context.Context, probeFn func(ctx context.Context, id, bin string, timeout time.Duration) (string, string, error)) *supervisorTestRig {
 	t.Helper()
-	st := store.NewStore(tasktestdb.OpenSQLite(t))
+	st := composition.NewAPI(tasktestdb.OpenSQLite(t))
 	q := agents.NewMemoryQueue(8)
 	st.SetReadyTaskNotifier(q)
 	hub := handler.NewSSEHub()
@@ -69,7 +72,7 @@ func TestSupervisor_StaysIdleWhenAgentPaused(t *testing.T) {
 
 	rig := newSupervisorTestRig(t, ctx, nil)
 	rig.seedGitRepository(t, "")
-	if _, err := rig.store.UpdateSettings(ctx, store.SettingsPatch{
+	if _, err := rig.store.UpdateSettings(ctx, settingscontract.SettingsPatch{
 		AgentPaused: ptrBool(true),
 	}); err != nil {
 		t.Fatalf("seed settings: %v", err)
@@ -107,7 +110,7 @@ func TestSupervisor_ReloadStopsRunningWorkerOnPause(t *testing.T) {
 		t.Fatal("precondition: supervisor failed to spawn worker for valid config")
 	}
 
-	if _, err := rig.store.UpdateSettings(ctx, store.SettingsPatch{
+	if _, err := rig.store.UpdateSettings(ctx, settingscontract.SettingsPatch{
 		AgentPaused: ptrBool(true),
 	}); err != nil {
 		t.Fatalf("flip AgentPaused=true: %v", err)
@@ -170,7 +173,7 @@ func TestSupervisor_ReloadRespawnsOnMaterialSettingsChange(t *testing.T) {
 		return "v1", "", nil
 	})
 	rig.seedRunnableWorker(t)
-	if _, err := rig.store.UpdateSettings(ctx, store.SettingsPatch{
+	if _, err := rig.store.UpdateSettings(ctx, settingscontract.SettingsPatch{
 		CursorModel: ptrString("model-a"),
 	}); err != nil {
 		t.Fatalf("seed cursor model: %v", err)
@@ -183,7 +186,7 @@ func TestSupervisor_ReloadRespawnsOnMaterialSettingsChange(t *testing.T) {
 		t.Fatal("first start did not spawn worker")
 	}
 
-	if _, err := rig.store.UpdateSettings(ctx, store.SettingsPatch{
+	if _, err := rig.store.UpdateSettings(ctx, settingscontract.SettingsPatch{
 		CursorModel: ptrString("model-b"),
 	}); err != nil {
 		t.Fatalf("update: %v", err)
@@ -291,7 +294,7 @@ func TestSupervisor_ConcurrentReloadIsSerialized(t *testing.T) {
 	atomic.StoreInt32(&concurrentMax, 0)
 	atomic.StoreInt32(&concurrentNow, 0)
 
-	if _, err := rig.store.UpdateSettings(ctx, store.SettingsPatch{
+	if _, err := rig.store.UpdateSettings(ctx, settingscontract.SettingsPatch{
 		CursorModel: ptrString("reload-model-b"),
 	}); err != nil {
 		t.Fatalf("update: %v", err)
@@ -337,7 +340,7 @@ func TestSupervisor_probeSchedulingHint_emitsAwaitingScheduledTask(t *testing.T)
 
 	rig := newSupervisorTestRig(t, ctx, nil)
 	future := time.Now().UTC().Add(time.Hour)
-	if _, err := rig.store.Create(ctx, store.CreateTaskInput{
+	if _, err := rig.store.Create(ctx, taskcorestore.CreateTaskInput{
 		Title:           "deferred",
 		Priority:        taskcoredomain.PriorityMedium,
 		Status:          taskcoredomain.StatusReady,
@@ -358,7 +361,7 @@ func TestSupervisor_probeSchedulingHint_silentWhenQueueHasReadyNow(t *testing.T)
 	defer cancel()
 
 	rig := newSupervisorTestRig(t, ctx, nil)
-	if _, err := rig.store.Create(ctx, store.CreateTaskInput{
+	if _, err := rig.store.Create(ctx, taskcorestore.CreateTaskInput{
 		Title:    "ready-now",
 		Priority: taskcoredomain.PriorityMedium,
 		Status:   taskcoredomain.StatusReady,
@@ -366,7 +369,7 @@ func TestSupervisor_probeSchedulingHint_silentWhenQueueHasReadyNow(t *testing.T)
 		t.Fatalf("create ready-now task: %v", err)
 	}
 	future := time.Now().UTC().Add(time.Hour)
-	if _, err := rig.store.Create(ctx, store.CreateTaskInput{
+	if _, err := rig.store.Create(ctx, taskcorestore.CreateTaskInput{
 		Title:           "deferred",
 		Priority:        taskcoredomain.PriorityMedium,
 		Status:          taskcoredomain.StatusReady,
@@ -400,7 +403,7 @@ func TestSupervisor_buildVerifyRunner_returnsNilWhenUnconfigured(t *testing.T) {
 		t.Fatal("probe must not be called when VerifyRunnerName is empty")
 		return "", "", nil
 	})
-	r, status := rig.sup.BuildVerifyRunnerForTest(ctx, store.AppSettings{Runner: "cursor", VerifyRunnerName: ""})
+	r, status := rig.sup.BuildVerifyRunnerForTest(ctx, settingsdomain.AppSettings{Runner: "cursor", VerifyRunnerName: ""})
 	if r != nil || status != "" {
 		t.Fatalf("buildVerifyRunner(unconfigured) = (%v, %q), want (nil, \"\")", r, status)
 	}
@@ -416,7 +419,7 @@ func TestSupervisor_buildVerifyRunner_demotesOnProbeFailure(t *testing.T) {
 		probeCalls++
 		return "", "", errors.New("verify binary not found")
 	})
-	r, status := rig.sup.BuildVerifyRunnerForTest(ctx, store.AppSettings{
+	r, status := rig.sup.BuildVerifyRunnerForTest(ctx, settingsdomain.AppSettings{
 		Runner:           "cursor",
 		VerifyRunnerName: "claudecode",
 	})
@@ -440,7 +443,7 @@ func TestSupervisor_buildVerifyRunner_reuseExecuteRunnerWhenSameName(t *testing.
 		t.Fatal("probe must not be called when verify == execute")
 		return "", "", nil
 	})
-	r, status := rig.sup.BuildVerifyRunnerForTest(ctx, store.AppSettings{
+	r, status := rig.sup.BuildVerifyRunnerForTest(ctx, settingsdomain.AppSettings{
 		Runner:           "cursor",
 		VerifyRunnerName: "cursor",
 	})

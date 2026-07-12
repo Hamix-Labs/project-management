@@ -9,9 +9,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/version"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/postgres"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 	"gorm.io/gorm"
 )
 
@@ -93,7 +93,7 @@ func migrateIfRequested(db *gorm.DB, want bool) error {
 	if err := postgres.Migrate(migrateCtx, db); err != nil {
 		return fmt.Errorf("postgres.Migrate: %w", err)
 	}
-	if err := store.BackfillCriteriaSatisfiedAt(migrateCtx, db); err != nil {
+	if err := composition.BackfillCriteriaSatisfiedAt(migrateCtx, db); err != nil {
 		return fmt.Errorf("backfill criteria_satisfied_at: %w", err)
 	}
 	return nil

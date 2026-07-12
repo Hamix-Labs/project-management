@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	taskcorehandler "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/handler"
 	"io"
 	"net/http"
 	"strings"
@@ -118,14 +119,14 @@ func TestHTTP_list_query_validation_error_messages(t *testing.T) {
 	if got := getErr(base + "?after_id=not-a-uuid"); got != "after_id must be a UUID" {
 		t.Fatalf("bad uuid: %q", got)
 	}
-	long := strings.Repeat("1", maxListIntQueryParamBytes+1)
+	long := strings.Repeat("1", taskcorehandler.MaxListIntQueryParamBytes+1)
 	if got := getErr(base + "?limit=" + long); got != "limit value too long" {
 		t.Fatalf("long limit: %q", got)
 	}
 	if got := getErr(base + "?offset=" + long); got != "offset value too long" {
 		t.Fatalf("long offset: %q", got)
 	}
-	longAfter := strings.Repeat("a", maxListAfterIDParamBytes+1)
+	longAfter := strings.Repeat("a", taskcorehandler.MaxListAfterIDParamBytes+1)
 	if got := getErr(base + "?after_id=" + longAfter); got != "after_id too long" {
 		t.Fatalf("long after_id: %q", got)
 	}

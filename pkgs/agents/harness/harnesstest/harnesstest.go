@@ -5,18 +5,19 @@ package harnesstest
 import (
 	"context"
 	"fmt"
+	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/notifierfake"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/storefake"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 const PollInterval = 10 * time.Millisecond
@@ -30,7 +31,7 @@ const DefaultPollTimeout = defaultPollTimeout
 type Env struct {
 	T           *testing.T
 	Store       harness.Store
-	Concrete    *store.Store
+	Concrete    *composition.API
 	Notifier    *notifierfake.RecordingCycleNotifier
 	pollTimeout time.Duration
 }
@@ -56,7 +57,7 @@ func NewEnv(t *testing.T, opts ...EnvOption) *Env {
 	e := &Env{
 		T:           t,
 		Store:       sf,
-		Concrete:    sf.Store,
+		Concrete:    sf.API,
 		Notifier:    notifierfake.NewRecordingCycleNotifier(),
 		pollTimeout: defaultPollTimeout,
 	}
@@ -71,7 +72,7 @@ func NewEnv(t *testing.T, opts ...EnvOption) *Env {
 //funclogmeasure:skip category=tool-required-noop reason="Test-only harness helper; not part of production trace paths."
 func (h *Env) CreateReadyTask(ctx context.Context, title string) *taskcoredomain.Task {
 	h.T.Helper()
-	tsk, err := h.Store.Create(ctx, store.CreateTaskInput{
+	tsk, err := h.Store.Create(ctx, taskcorestore.CreateTaskInput{
 		Title:         title,
 		InitialPrompt: "do the thing",
 		Status:        taskcoredomain.StatusReady,
@@ -88,7 +89,7 @@ func (h *Env) CreateReadyTask(ctx context.Context, title string) *taskcoredomain
 //funclogmeasure:skip category=tool-required-noop reason="Test-only harness helper; not part of production trace paths."
 func (h *Env) CreateReadyTaskWithModel(ctx context.Context, title, model string) *taskcoredomain.Task {
 	h.T.Helper()
-	tsk, err := h.Store.Create(ctx, store.CreateTaskInput{
+	tsk, err := h.Store.Create(ctx, taskcorestore.CreateTaskInput{
 		Title:         title,
 		InitialPrompt: "do the thing",
 		Status:        taskcoredomain.StatusReady,
@@ -107,7 +108,7 @@ func (h *Env) CreateReadyTaskWithModel(ctx context.Context, title, model string)
 func (h *Env) TransitionRunning(ctx context.Context, tsk *taskcoredomain.Task) *taskcoredomain.Task {
 	h.T.Helper()
 	running := taskcoredomain.StatusRunning
-	updated, err := h.Store.Update(ctx, tsk.ID, store.UpdateTaskInput{Status: &running}, taskcoredomain.ActorAgent)
+	updated, err := h.Store.Update(ctx, tsk.ID, taskcorestore.UpdateTaskInput{Status: &running}, taskcoredomain.ActorAgent)
 	if err != nil {
 		h.T.Fatalf("transition running: %v", err)
 	}

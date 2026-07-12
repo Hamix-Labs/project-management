@@ -3,6 +3,8 @@ package verify
 import (
 	"context"
 	"encoding/json"
+	checklistcontract "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/contract"
+	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,22 +15,21 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/runnerfake"
 	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 func TestRunCriterionCommands_writesEvidenceAndPromptSection(t *testing.T) {
 	t.Parallel()
-	st := storefake.New(t).Store
+	st := storefake.New(t).API
 	ctx := context.Background()
 
-	task, err := st.Create(ctx, store.CreateTaskInput{
+	task, err := st.Create(ctx, taskcorestore.CreateTaskInput{
 		Title:         "verify-cmd",
 		InitialPrompt: "do work",
 		Status:        taskcoredomain.StatusReady,
 		Priority:      taskcoredomain.PriorityMedium,
-		ChecklistItems: []store.CreateChecklistItemInput{{
+		ChecklistItems: []checklistcontract.CreateChecklistItemInput{{
 			Text: "tests pass",
-			VerifyCommands: []store.VerifyCommandInput{{
+			VerifyCommands: []checklistcontract.VerifyCommandInput{{
 				Command:         "echo hello",
 				ExpectedOutcome: "prints hello",
 			}},

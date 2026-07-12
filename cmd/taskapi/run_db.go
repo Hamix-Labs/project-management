@@ -10,8 +10,8 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/internal/envload"
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi"
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/postgres"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 	"gorm.io/gorm"
 )
 
@@ -34,7 +34,7 @@ func migrateDBAndRegisterMetrics(db *gorm.DB) error {
 			errors.Is(err, context.DeadlineExceeded),
 			err)
 	}
-	if err := store.BackfillCriteriaSatisfiedAt(migrateCtx, db); err != nil {
+	if err := composition.BackfillCriteriaSatisfiedAt(migrateCtx, db); err != nil {
 		return fmt.Errorf("backfill criteria_satisfied_at: %w", err)
 	}
 	slog.Info("migrate ok", "cmd", cmdName, "operation", "taskapi.migrate",

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
 	"log/slog"
 	"net/http"
 
@@ -22,18 +23,18 @@ func (h *Handler) postTaskRetry(w http.ResponseWriter, r *http.Request) {
 	r = calltrace.WithRequestRoot(r, op)
 	taskID, err := parseTaskPathID(r.PathValue("id"))
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
-	by := actorFromRequest(r)
+	by := handlerhttp.ActorFromRequest(r)
 	if by != domain.ActorUser {
-		writeStoreError(w, r, op, domain.ErrInvalidInput)
+		handlerhttp.WriteStoreError(w, r, op, domain.ErrInvalidInput)
 		return
 	}
 	var body taskRetryJSON
-	if err := decodeJSON(r.Context(), r.Body, &body); err != nil {
+	if err := handlerhttp.DecodeJSON(r.Context(), r.Body, &body); err != nil {
 		debugHTTPRequest(r, op, "task_id", taskID, "json_decode_failed", true)
-		writeError(w, r, op, err, http.StatusBadRequest)
+		handlerhttp.WriteError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
 	debugHTTPRequest(r, op, "task_id", taskID, "mode", string(body.Mode), "parent_cycle_id", body.ParentCycleID)
@@ -43,10 +44,10 @@ func (h *Handler) postTaskRetry(w http.ResponseWriter, r *http.Request) {
 		ParentCycleID: body.ParentCycleID,
 	}, by)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	h.notifyTaskChangedSafe(realtime.TaskUpdated, taskID, t)
 	taskapiDomainTasksUpdatedTotal.Inc()
-	writeJSON(w, r, op, http.StatusOK, t)
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, t)
 }

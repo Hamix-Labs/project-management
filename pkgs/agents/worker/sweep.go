@@ -5,8 +5,8 @@ import (
 	"context"
 	"errors"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclescontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/contract"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 	"log/slog"
 )
 
@@ -57,7 +57,7 @@ func FinalizeInterruptedPhases(ctx context.Context, st Store) (FinalizeResult, e
 			return res, ctx.Err()
 		}
 		summary := InterruptPhaseReason
-		if _, err := st.CompletePhase(ctx, store.CompletePhaseInput{
+		if _, err := st.CompletePhase(ctx, cyclescontract.CompletePhaseInput{
 			CycleID:  p.CycleID,
 			PhaseSeq: p.PhaseSeq,
 			Status:   cyclesdomain.PhaseStatusFailed,

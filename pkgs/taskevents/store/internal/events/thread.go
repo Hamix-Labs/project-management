@@ -41,7 +41,7 @@ func parseResponseThreadJSON(raw []byte) ([]taskeventsdomain.ResponseThreadEntry
 // ThreadEntriesForDisplay returns the conversation for API/list UI,
 // including legacy rows that only have user_response / user_response_at
 // populated. Re-exported by the public store facade so handlers and
-// devsim tests keep saying store.ThreadEntriesForDisplay unchanged.
+// devsim tests keep saying taskeventsstore.ThreadEntriesForDisplay unchanged.
 func ThreadEntriesForDisplay(ev *taskeventsdomain.TaskEvent) []taskeventsdomain.ResponseThreadEntry {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskevents.store.events.ThreadEntriesForDisplay")
 	if ev == nil {

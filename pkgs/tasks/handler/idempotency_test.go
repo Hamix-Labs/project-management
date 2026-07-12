@@ -3,9 +3,11 @@ package handler
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/logctx"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/middleware"
 	"github.com/google/uuid"
 	"io"
 	"log/slog"
@@ -18,13 +20,13 @@ import (
 )
 
 func TestHTTP_idempotency_post_second_replays_from_cache(t *testing.T) {
-	t.Cleanup(clearIdempotencyStateForTest)
+	t.Cleanup(middleware.ClearIdempotencyStateForTest)
 	t.Setenv("HAMIX_IDEMPOTENCY_TTL", "1h")
 
-	var st *store.Store
-	srv := newBoundTaskServer(t, func(s *store.Store) http.Handler {
+	var st *composition.API
+	srv := newBoundTaskServer(t, func(s *composition.API) http.Handler {
 		st = s
-		return WithIdempotency(boundTaskHandler(s))
+		return middleware.WithIdempotency(boundTaskHandler(s))
 	})
 
 	body := withCreateChecklistForURL(srv.URL, `{"title":"idem-cache","priority":"medium"}`)
@@ -93,13 +95,13 @@ func TestHTTP_idempotency_post_second_replays_from_cache(t *testing.T) {
 }
 
 func TestHTTP_idempotency_disabled_allows_duplicate_post(t *testing.T) {
-	t.Cleanup(clearIdempotencyStateForTest)
+	t.Cleanup(middleware.ClearIdempotencyStateForTest)
 	t.Setenv("HAMIX_IDEMPOTENCY_TTL", "0")
 
-	var st *store.Store
-	srv := newBoundTaskServer(t, func(s *store.Store) http.Handler {
+	var st *composition.API
+	srv := newBoundTaskServer(t, func(s *composition.API) http.Handler {
 		st = s
-		return WithIdempotency(boundTaskHandler(s))
+		return middleware.WithIdempotency(boundTaskHandler(s))
 	})
 
 	body := withCreateChecklistForURL(srv.URL, `{"title":"idem-off","priority":"medium"}`)
@@ -146,13 +148,13 @@ func TestHTTP_idempotency_disabled_allows_duplicate_post(t *testing.T) {
 }
 
 func TestHTTP_idempotency_different_body_same_key_creates_two(t *testing.T) {
-	t.Cleanup(clearIdempotencyStateForTest)
+	t.Cleanup(middleware.ClearIdempotencyStateForTest)
 	t.Setenv("HAMIX_IDEMPOTENCY_TTL", "1h")
 
-	var st *store.Store
-	srv := newBoundTaskServer(t, func(s *store.Store) http.Handler {
+	var st *composition.API
+	srv := newBoundTaskServer(t, func(s *composition.API) http.Handler {
 		st = s
-		return WithIdempotency(boundTaskHandler(s))
+		return middleware.WithIdempotency(boundTaskHandler(s))
 	})
 
 	key := "idem-body-" + uuid.NewString()
@@ -194,13 +196,13 @@ func TestHTTP_idempotency_different_body_same_key_creates_two(t *testing.T) {
 }
 
 func TestHTTP_idempotency_concurrent_post_single_row(t *testing.T) {
-	t.Cleanup(clearIdempotencyStateForTest)
+	t.Cleanup(middleware.ClearIdempotencyStateForTest)
 	t.Setenv("HAMIX_IDEMPOTENCY_TTL", "1h")
 
-	var st *store.Store
-	srv := newBoundTaskServer(t, func(s *store.Store) http.Handler {
+	var st *composition.API
+	srv := newBoundTaskServer(t, func(s *composition.API) http.Handler {
 		st = s
-		return WithIdempotency(boundTaskHandler(s))
+		return middleware.WithIdempotency(boundTaskHandler(s))
 	})
 
 	body := withCreateChecklistForURL(srv.URL, `{"title":"idem-concurrent","priority":"medium"}`)
@@ -251,7 +253,7 @@ func TestHTTP_idempotency_concurrent_post_single_row(t *testing.T) {
 }
 
 func TestWithAccessLog_idempotencyKeyTooLong_logIncludesRequestID(t *testing.T) {
-	t.Cleanup(clearIdempotencyStateForTest)
+	t.Cleanup(middleware.ClearIdempotencyStateForTest)
 	t.Setenv("HAMIX_IDEMPOTENCY_TTL", "1h")
 
 	var buf bytes.Buffer
@@ -261,8 +263,8 @@ func TestWithAccessLog_idempotencyKeyTooLong_logIncludesRequestID(t *testing.T) 
 	base := logctx.WrapSlogHandlerWithRequestContext(slog.NewJSONHandler(&buf, &slog.HandlerOptions{Level: slog.LevelWarn}))
 	slog.SetDefault(slog.New(logctx.WrapSlogHandlerWithLogSequence(base, &processSeq)))
 
-	h := newDirectBoundHandler(t, func(st *store.Store) http.Handler {
-		return WithAccessLog(WithIdempotency(boundTaskHandler(st)))
+	h := newDirectBoundHandler(t, func(st *composition.API) http.Handler {
+		return middleware.WithAccessLog(middleware.WithIdempotency(boundTaskHandler(st)), calltrace.Path)
 	})
 
 	longKey := strings.Repeat("k", 128+1)
@@ -299,11 +301,11 @@ func TestWithAccessLog_idempotencyKeyTooLong_logIncludesRequestID(t *testing.T) 
 }
 
 func TestHTTP_idempotency_rejects_overlength_key(t *testing.T) {
-	t.Cleanup(clearIdempotencyStateForTest)
+	t.Cleanup(middleware.ClearIdempotencyStateForTest)
 	t.Setenv("HAMIX_IDEMPOTENCY_TTL", "1h")
 
-	srv := newBoundTaskServer(t, func(st *store.Store) http.Handler {
-		return WithIdempotency(boundTaskHandler(st))
+	srv := newBoundTaskServer(t, func(st *composition.API) http.Handler {
+		return middleware.WithIdempotency(boundTaskHandler(st))
 	})
 
 	longKey := strings.Repeat("k", 128+1)
@@ -332,11 +334,11 @@ func TestHTTP_idempotency_rejects_overlength_key(t *testing.T) {
 }
 
 func TestHTTP_idempotency_accepts_boundary_key_length(t *testing.T) {
-	t.Cleanup(clearIdempotencyStateForTest)
+	t.Cleanup(middleware.ClearIdempotencyStateForTest)
 	t.Setenv("HAMIX_IDEMPOTENCY_TTL", "1h")
 
-	srv := newBoundTaskServer(t, func(st *store.Store) http.Handler {
-		return WithIdempotency(boundTaskHandler(st))
+	srv := newBoundTaskServer(t, func(st *composition.API) http.Handler {
+		return middleware.WithIdempotency(boundTaskHandler(st))
 	})
 
 	key := strings.Repeat("k", 128)
@@ -372,11 +374,11 @@ func TestHTTP_idempotency_accepts_boundary_key_length(t *testing.T) {
 }
 
 func TestHTTP_idempotency_rejects_unknown_content_length(t *testing.T) {
-	t.Cleanup(clearIdempotencyStateForTest)
+	t.Cleanup(middleware.ClearIdempotencyStateForTest)
 	t.Setenv("HAMIX_IDEMPOTENCY_TTL", "1h")
 
-	h := newDirectBoundHandler(t, func(st *store.Store) http.Handler {
-		return WithIdempotency(boundTaskHandler(st))
+	h := newDirectBoundHandler(t, func(st *composition.API) http.Handler {
+		return middleware.WithIdempotency(boundTaskHandler(st))
 	})
 
 	req := httptest.NewRequest(http.MethodPost, "/tasks", io.NopCloser(strings.NewReader(withCreateChecklistForURL(directHandlerTestURL, `{"title":"idem-unknown","priority":"medium"}`))))
@@ -399,11 +401,11 @@ func TestHTTP_idempotency_rejects_unknown_content_length(t *testing.T) {
 }
 
 func TestHTTP_idempotency_rejects_large_content_length(t *testing.T) {
-	t.Cleanup(clearIdempotencyStateForTest)
+	t.Cleanup(middleware.ClearIdempotencyStateForTest)
 	t.Setenv("HAMIX_IDEMPOTENCY_TTL", "1h")
 
-	h := newDirectBoundHandler(t, func(st *store.Store) http.Handler {
-		return WithIdempotency(boundTaskHandler(st))
+	h := newDirectBoundHandler(t, func(st *composition.API) http.Handler {
+		return middleware.WithIdempotency(boundTaskHandler(st))
 	})
 
 	req := httptest.NewRequest(http.MethodPost, "/tasks", strings.NewReader(withCreateChecklistForURL(directHandlerTestURL, `{"title":"idem-large","priority":"medium"}`)))

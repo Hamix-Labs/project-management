@@ -7,11 +7,11 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/harnesstest"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/runnerfake"
+	settingscontract "github.com/AlexsanderHamir/Hamix/pkgs/settings/contract"
 	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 	"os"
 	"path/filepath"
 	"strings"
@@ -40,7 +40,7 @@ func TestWorker_VerifyPhase_opensWhileExecuteIsTerminal(t *testing.T) {
 	// writes criteria-report.json so verification fails on every attempt
 	// — the point of the test is the phase ledger, not the verdict.
 	maxRetries := 1
-	if _, err := h.Store.UpdateSettings(ctx, store.SettingsPatch{VerifyMaxRetries: &maxRetries}); err != nil {
+	if _, err := h.Store.UpdateSettings(ctx, settingscontract.SettingsPatch{VerifyMaxRetries: &maxRetries}); err != nil {
 		t.Fatalf("set verify max retries: %v", err)
 	}
 
@@ -151,7 +151,7 @@ func TestWorker_VerifyPhase_recordsDisagreementAsAgentSelfFailed(t *testing.T) {
 	}
 
 	maxRetries := 0
-	if _, err := h.Store.UpdateSettings(ctx, store.SettingsPatch{VerifyMaxRetries: &maxRetries}); err != nil {
+	if _, err := h.Store.UpdateSettings(ctx, settingscontract.SettingsPatch{VerifyMaxRetries: &maxRetries}); err != nil {
 		t.Fatalf("set max retries: %v", err)
 	}
 

@@ -6,13 +6,13 @@ import (
 	"errors"
 	"fmt"
 	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
+	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 	"log/slog"
 	"os"
 	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 type taskGitBinding struct {
@@ -101,7 +101,7 @@ func (w *Worker) abortRunningFromGitPrep(ctx context.Context, taskID string, pre
 		"operation", "agent.worker.Worker.abortRunningFromGitPrep",
 		"task_id", taskID, "err", prepErr)
 	failed := taskcoredomain.StatusFailed
-	if _, err := w.store.Update(ctx, taskID, store.UpdateTaskInput{Status: &failed}, taskcoredomain.ActorAgent); err != nil {
+	if _, err := w.store.Update(ctx, taskID, taskcorestore.UpdateTaskInput{Status: &failed}, taskcoredomain.ActorAgent); err != nil {
 		if !errors.Is(err, taskcoredomain.ErrNotFound) {
 			slog.Warn("agent worker git prep task transition failed", "cmd", calltrace.LogCmd,
 				"operation", "agent.worker.Worker.abortRunningFromGitPrep.err",

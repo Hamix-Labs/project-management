@@ -9,9 +9,9 @@ import (
 	"os/exec"
 	"testing"
 
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 func initGitRepo(t *testing.T, dir string) {
@@ -38,7 +38,7 @@ func TestHTTP_gitRepositoryProbe_notARepository(t *testing.T) {
 	dir := t.TempDir()
 
 	db := tasktestdb.OpenSQLite(t)
-	st := store.NewStore(db)
+	st := composition.NewAPI(db)
 	srv := newSettingsHTTPServer(t, st, Deps{Settings: st, GitRead: st, Git: stubGitService{}})
 
 	res, err := http.Get(srv.URL + "/settings/git-probe?path=" + url.QueryEscape(dir))
@@ -68,7 +68,7 @@ func TestHTTP_gitRepositoryProbe_listsBranches(t *testing.T) {
 	runGit(t, dir, "branch", "feature")
 
 	db := tasktestdb.OpenSQLite(t)
-	st := store.NewStore(db)
+	st := composition.NewAPI(db)
 	srv := newSettingsHTTPServer(t, st, Deps{Settings: st, GitRead: st, Git: gitwork.New()})
 
 	res, err := http.Get(srv.URL + "/settings/git-probe?path=" + url.QueryEscape(dir))

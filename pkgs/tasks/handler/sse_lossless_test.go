@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -12,9 +13,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/middleware"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 )
 
@@ -28,7 +29,7 @@ func TestSSEHub_Publish_assignsMonotonicIDs(t *testing.T) {
 	h := NewSSEHubWith(SSEHubOptions{RingSize: 16, SubscriberBuffer: 16})
 	const n = 50
 	for i := 0; i < n; i++ {
-		h.Publish(TaskChangeEvent{Type: TaskUpdated, ID: fmt.Sprintf("t-%d", i)})
+		h.Publish(realtime.Event{Type: realtime.TaskUpdated, ID: fmt.Sprintf("t-%d", i)})
 	}
 	if got, want := h.LastEventID(), uint64(n); got != want {
 		t.Fatalf("LastEventID=%d want %d", got, want)
@@ -45,7 +46,7 @@ func TestSSEHub_Publish_assignsMonotonicIDs(t *testing.T) {
 func TestSSEHub_Publish_replayFromLastEventID(t *testing.T) {
 	h := NewSSEHubWith(SSEHubOptions{RingSize: 16, SubscriberBuffer: 16})
 	for i := 1; i <= 5; i++ {
-		h.Publish(TaskChangeEvent{Type: TaskUpdated, ID: fmt.Sprintf("t-%d", i)})
+		h.Publish(realtime.Event{Type: realtime.TaskUpdated, ID: fmt.Sprintf("t-%d", i)})
 	}
 
 	sub, replay, hadGap, cancel := h.subscribe(2)
@@ -84,7 +85,7 @@ func TestSSEHub_Publish_gapDetectionForOldLastEventID(t *testing.T) {
 	// 6 publishes into a 4-entry ring → oldest retained id is 3,
 	// ids 1 and 2 are evicted.
 	for i := 1; i <= 6; i++ {
-		h.Publish(TaskChangeEvent{Type: TaskUpdated, ID: fmt.Sprintf("t-%d", i)})
+		h.Publish(realtime.Event{Type: realtime.TaskUpdated, ID: fmt.Sprintf("t-%d", i)})
 	}
 
 	_, _, hadGap, cancel := h.subscribe(1) // client says it last saw id=1
@@ -119,7 +120,7 @@ func TestSSEHub_Publish_coalescesIdenticalFrames(t *testing.T) {
 	defer cancel()
 
 	for i := 0; i < 10; i++ {
-		h.Publish(TaskChangeEvent{Type: TaskUpdated, ID: "foo"})
+		h.Publish(realtime.Event{Type: realtime.TaskUpdated, ID: "foo"})
 	}
 
 	// Drain everything that landed within 100ms — only the first
@@ -159,9 +160,9 @@ func TestSSEHub_Publish_doesNotCoalesceCycleFrames(t *testing.T) {
 	ch, cancel := h.Subscribe()
 	defer cancel()
 
-	h.Publish(TaskChangeEvent{Type: TaskCycleChanged, ID: "task-1", CycleID: "c-1"})
-	h.Publish(TaskChangeEvent{Type: TaskCycleChanged, ID: "task-1", CycleID: "c-1"})
-	h.Publish(TaskChangeEvent{Type: TaskCycleChanged, ID: "task-1", CycleID: "c-1"})
+	h.Publish(realtime.Event{Type: realtime.TaskCycleChanged, ID: "task-1", CycleID: "c-1"})
+	h.Publish(realtime.Event{Type: realtime.TaskCycleChanged, ID: "task-1", CycleID: "c-1"})
+	h.Publish(realtime.Event{Type: realtime.TaskCycleChanged, ID: "task-1", CycleID: "c-1"})
 
 	delivered := 0
 	timeout := time.After(100 * time.Millisecond)
@@ -199,10 +200,10 @@ func TestSSEHub_Publish_evictsSlowConsumer(t *testing.T) {
 
 	// First 4 publishes fill the per-subscriber buffer (no overflow).
 	for i := 0; i < 4; i++ {
-		h.Publish(TaskChangeEvent{Type: TaskUpdated, ID: fmt.Sprintf("t-%d", i)})
+		h.Publish(realtime.Event{Type: realtime.TaskUpdated, ID: fmt.Sprintf("t-%d", i)})
 	}
 	// Next publish overflows → eviction.
-	h.Publish(TaskChangeEvent{Type: TaskUpdated, ID: "overflow"})
+	h.Publish(realtime.Event{Type: realtime.TaskUpdated, ID: "overflow"})
 
 	select {
 	case <-sub.cancel:
@@ -290,15 +291,15 @@ func TestHTTP_SSE_emitsIDLineForEventSourceResume(t *testing.T) {
 // parser) would silently break browser reconnects.
 func TestHTTP_SSE_replaysOnReconnectWithLastEventID(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
-	s := store.NewStore(db)
+	s := composition.NewAPI(db)
 	hub := NewSSEHubWith(SSEHubOptions{RingSize: 16, SubscriberBuffer: 32})
 	h := NewHandler(s, hub, nil)
 	srv := httptest.NewServer(h)
 	defer srv.Close()
 
-	hub.Publish(TaskChangeEvent{Type: TaskUpdated, ID: "first"})  // id=1
-	hub.Publish(TaskChangeEvent{Type: TaskUpdated, ID: "second"}) // id=2
-	hub.Publish(TaskChangeEvent{Type: TaskUpdated, ID: "third"})  // id=3
+	hub.Publish(realtime.Event{Type: realtime.TaskUpdated, ID: "first"})  // id=1
+	hub.Publish(realtime.Event{Type: realtime.TaskUpdated, ID: "second"}) // id=2
+	hub.Publish(realtime.Event{Type: realtime.TaskUpdated, ID: "third"})  // id=3
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -343,7 +344,7 @@ func TestHTTP_SSE_replaysOnReconnectWithLastEventID(t *testing.T) {
 // the in-memory ring can't bridge the gap.
 func TestHTTP_SSE_emitsResyncWhenLastEventIDOutsideRing(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
-	s := store.NewStore(db)
+	s := composition.NewAPI(db)
 	// 4-entry ring + 6 publishes → ids 1..2 are evicted, oldest
 	// retained id = 3.
 	hub := NewSSEHubWith(SSEHubOptions{RingSize: 4, SubscriberBuffer: 32})
@@ -352,7 +353,7 @@ func TestHTTP_SSE_emitsResyncWhenLastEventIDOutsideRing(t *testing.T) {
 	defer srv.Close()
 
 	for i := 1; i <= 6; i++ {
-		hub.Publish(TaskChangeEvent{Type: TaskUpdated, ID: fmt.Sprintf("t-%d", i)})
+		hub.Publish(realtime.Event{Type: realtime.TaskUpdated, ID: fmt.Sprintf("t-%d", i)})
 	}
 
 	resyncBefore := testutil.ToFloat64(middleware.SSEResyncEmittedCounter())
@@ -402,7 +403,7 @@ func TestHTTP_SSE_heartbeatLineKeepsConnectionAlive(t *testing.T) {
 		SubscriberBuffer: 32,
 		HeartbeatPeriod:  50 * time.Millisecond,
 	})
-	h := NewHandler(store.NewStore(db), hub, nil)
+	h := NewHandler(composition.NewAPI(db), hub, nil)
 	srv := httptest.NewServer(h)
 	defer srv.Close()
 
@@ -474,8 +475,8 @@ func TestSSEHub_Publish_concurrentSafetyUnderLoad(t *testing.T) {
 		go func(idx int) {
 			defer pub.Done()
 			for i := 0; i < eventsPerPublisher; i++ {
-				h.Publish(TaskChangeEvent{
-					Type: TaskUpdated,
+				h.Publish(realtime.Event{
+					Type: realtime.TaskUpdated,
 					ID:   fmt.Sprintf("p%d-%d", idx, i),
 				})
 			}

@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	taskcorehandler "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/handler"
 	"io"
 	"net/http"
 	"strings"
@@ -78,7 +79,7 @@ func TestHTTP_taskDependencies_endpoints(t *testing.T) {
 	if res.StatusCode != http.StatusOK {
 		t.Fatalf("list dep: %d %s", res.StatusCode, raw)
 	}
-	var listed taskDependenciesListResponse
+	var listed taskcorehandler.TaskDependenciesListResponse
 	if err := json.Unmarshal(raw, &listed); err != nil {
 		t.Fatal(err)
 	}

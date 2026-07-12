@@ -5,17 +5,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	"log/slog"
 
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi/agentworker/policy"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/registry"
 	_ "github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/registry/all"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 type applySettingsSnapshot struct {
-	cfg  store.AppSettings
+	cfg  settingsdomain.AppSettings
 	prev *instance
 }
 
@@ -85,7 +85,7 @@ func (s *Supervisor) loadApplySettingsSnapshot(ctx context.Context) (*applySetti
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func baseEffectiveSettings(cfg store.AppSettings) effectiveSettingsLog {
+func baseEffectiveSettings(cfg settingsdomain.AppSettings) effectiveSettingsLog {
 	return effectiveSettingsLog{
 		AgentPaused:           cfg.AgentPaused,
 		Runner:                cfg.Runner,
@@ -112,7 +112,7 @@ func (s *Supervisor) clearCurrentInstance(prev *instance, stopReason string) {
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func (s *Supervisor) handleApplySettingsIdle(phase string, cfg store.AppSettings, prev *instance, reason string) error {
+func (s *Supervisor) handleApplySettingsIdle(phase string, cfg settingsdomain.AppSettings, prev *instance, reason string) error {
 	s.clearCurrentInstance(prev, "idle:"+reason)
 	eff := baseEffectiveSettings(cfg)
 	eff.Idle = true
@@ -121,7 +121,7 @@ func (s *Supervisor) handleApplySettingsIdle(phase string, cfg store.AppSettings
 	return nil
 }
 
-func (s *Supervisor) handleApplySettingsProbeFailed(phase string, cfg store.AppSettings, prev *instance, probeErr error) error {
+func (s *Supervisor) handleApplySettingsProbeFailed(phase string, cfg settingsdomain.AppSettings, prev *instance, probeErr error) error {
 	s.clearCurrentInstance(prev, "probe_failed")
 	slog.Warn("agent worker probe failed; staying idle", "cmd", calltrace.LogCmd,
 		"operation", "taskapi.agent_worker.probe_err", "phase", phase,
@@ -134,7 +134,7 @@ func (s *Supervisor) handleApplySettingsProbeFailed(phase string, cfg store.AppS
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func (s *Supervisor) handleApplySettingsUnchanged(ctx context.Context, phase string, cfg store.AppSettings, prev *instance, version string) error {
+func (s *Supervisor) handleApplySettingsUnchanged(ctx context.Context, phase string, cfg settingsdomain.AppSettings, prev *instance, version string) error {
 	eff := baseEffectiveSettings(cfg)
 	eff.RunnerVersion = version
 	eff.IdleReason = s.probeSchedulingHint(ctx)
@@ -144,7 +144,7 @@ func (s *Supervisor) handleApplySettingsUnchanged(ctx context.Context, phase str
 	return nil
 }
 
-func (s *Supervisor) restartWorkerWithSettings(ctx context.Context, phase string, cfg store.AppSettings, prev *instance, version string) error {
+func (s *Supervisor) restartWorkerWithSettings(ctx context.Context, phase string, cfg settingsdomain.AppSettings, prev *instance, version string) error {
 	if err := s.runStartupSweep(ctx); err != nil {
 		slog.Warn("agent worker startup sweep failed (continuing)",
 			"cmd", calltrace.LogCmd, "operation", "taskapi.agent_worker.sweep_err",

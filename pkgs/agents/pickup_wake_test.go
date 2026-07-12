@@ -2,17 +2,18 @@ package agents
 
 import (
 	"context"
+	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 	"testing"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 func TestPickupWakeScheduler_WakeEnqueuesNearFutureTask(t *testing.T) {
 	ctx := context.Background()
-	st := store.NewStore(tasktestdb.OpenSQLite(t))
+	st := composition.NewAPI(tasktestdb.OpenSQLite(t))
 	q := NewMemoryQueue(32)
 	st.SetReadyTaskNotifier(q)
 	w := NewPickupWakeScheduler(st, q)
@@ -20,7 +21,7 @@ func TestPickupWakeScheduler_WakeEnqueuesNearFutureTask(t *testing.T) {
 	defer w.Stop()
 
 	future := time.Now().UTC().Add(40 * time.Millisecond)
-	tk, err := st.Create(ctx, store.CreateTaskInput{
+	tk, err := st.Create(ctx, taskcorestore.CreateTaskInput{
 		Title: "wake-test", Priority: taskcoredomain.PriorityMedium,
 		PickupNotBefore: &future,
 	}, taskcoredomain.ActorUser)
@@ -51,7 +52,7 @@ func TestPickupWakeScheduler_WakeEnqueuesNearFutureTask(t *testing.T) {
 
 func TestPickupWakeScheduler_CancelPreventsWake(t *testing.T) {
 	ctx := context.Background()
-	st := store.NewStore(tasktestdb.OpenSQLite(t))
+	st := composition.NewAPI(tasktestdb.OpenSQLite(t))
 	q := NewMemoryQueue(32)
 	st.SetReadyTaskNotifier(q)
 	w := NewPickupWakeScheduler(st, q)
@@ -59,7 +60,7 @@ func TestPickupWakeScheduler_CancelPreventsWake(t *testing.T) {
 	defer w.Stop()
 
 	future := time.Now().UTC().Add(200 * time.Millisecond)
-	tk, err := st.Create(ctx, store.CreateTaskInput{
+	tk, err := st.Create(ctx, taskcorestore.CreateTaskInput{
 		Title: "cancel-test", Priority: taskcoredomain.PriorityMedium,
 		PickupNotBefore: &future,
 	}, taskcoredomain.ActorUser)

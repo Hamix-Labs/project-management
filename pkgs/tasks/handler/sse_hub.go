@@ -191,7 +191,7 @@ func (h *SSEHub) appendRingLocked(ev bufferedEvent) {
 }
 
 // Publish delivers one JSON-encoded event to all current subscribers.
-func (h *SSEHub) Publish(ev TaskChangeEvent) {
+func (h *SSEHub) Publish(ev realtime.Event) {
 	if h == nil {
 		return
 	}

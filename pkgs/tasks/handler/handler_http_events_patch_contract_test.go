@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -46,7 +46,7 @@ func patchEventUserResponse(t *testing.T, baseURL, taskID, seq, body, actor stri
 
 // seedApprovalRequested creates a task with checklist_items and appends
 // approval_requested. Returns the task id and the approval event seq.
-func seedApprovalRequested(t *testing.T, srv *httptest.Server, st *store.Store) (string, int64) {
+func seedApprovalRequested(t *testing.T, srv *httptest.Server, st *composition.API) (string, int64) {
 	t.Helper()
 	task := postTaskJSON(t, srv, `{"title":"e","priority":"medium"}`, http.StatusCreated)
 	approvalSeq := appendApprovalRequestedEvent(t, st, context.Background(), task.ID)

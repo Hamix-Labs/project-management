@@ -25,7 +25,7 @@ func (h *Handler) registerRoutes(m *http.ServeMux) {
 	projecthandler.Register(m, projecthandler.Deps{
 		Store: h.store,
 		Notify: func(typ realtime.ChangeType, id string) {
-			h.notifyChange(TaskChangeType(typ), id)
+			h.notifyChange(realtime.ChangeType(typ), id)
 		},
 	})
 	gitinventoryhandler.Register(m, gitinventoryhandler.Deps{
@@ -41,7 +41,7 @@ func (h *Handler) registerRoutes(m *http.ServeMux) {
 		Agent:    h.agent,
 		Git:      h.git,
 		Notify: func(typ realtime.ChangeType) {
-			h.notifyScopelessChange(TaskChangeType(typ))
+			h.notifyScopelessChange(realtime.ChangeType(typ))
 		},
 	})
 	tc := h.taskcoreHandler()

@@ -3,6 +3,8 @@ package git
 import (
 	"context"
 	"encoding/json"
+	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
+	cyclescontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/contract"
 	"os"
 	"path/filepath"
 	"testing"
@@ -11,7 +13,6 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/storefake"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 func TestResetHardClean_resetsAndCleansUntracked(t *testing.T) {
@@ -38,14 +39,14 @@ func TestResetHardClean_resetsAndCleansUntracked(t *testing.T) {
 
 func TestResolveFreshRetryAnchor_fromExecutePhaseDetails(t *testing.T) {
 	ctx := context.Background()
-	st := storefake.New(t).Store
-	tsk, err := st.Create(ctx, store.CreateTaskInput{
+	st := storefake.New(t).API
+	tsk, err := st.Create(ctx, taskcorestore.CreateTaskInput{
 		Title: "t", InitialPrompt: "p", Priority: taskcoredomain.PriorityMedium, Status: taskcoredomain.StatusFailed,
 	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	cycle, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
+	cycle, err := st.StartCycle(ctx, cyclescontract.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,7 +57,7 @@ func TestResolveFreshRetryAnchor_fromExecutePhaseDetails(t *testing.T) {
 	details, _ := json.Marshal(map[string]any{
 		"git": map[string]string{"cycle_base_sha": "abc123deadbeef"},
 	})
-	if _, err := st.CompletePhase(ctx, store.CompletePhaseInput{
+	if _, err := st.CompletePhase(ctx, cyclescontract.CompletePhaseInput{
 		CycleID: cycle.ID, PhaseSeq: exec.PhaseSeq,
 		Status: cyclesdomain.PhaseStatusSucceeded, Details: details, By: taskcoredomain.ActorAgent,
 	}); err != nil {

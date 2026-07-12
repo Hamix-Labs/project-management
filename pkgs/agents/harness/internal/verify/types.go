@@ -2,8 +2,8 @@ package verify
 
 import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
+	checklistcontract "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/contract"
 	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 const failedReasonPrefix = "verification_failed"
@@ -16,7 +16,7 @@ type Snapshot struct {
 	Enabled                     bool
 	MaxRetries                  int
 	VerifyCommandTimeoutSeconds int
-	Criteria                    []store.ChecklistVerifyItem
+	Criteria                    []checklistcontract.ChecklistVerifyItem
 	VerifyRunner                runner.Runner
 	VerifyModel                 string
 }

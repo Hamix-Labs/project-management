@@ -10,10 +10,10 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/worker"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
+	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 )
 
-// PickupWakeScheduler implements store.PickupWake: a min-heap of
+// PickupWakeScheduler implements storehooks.PickupWake: a min-heap of
 // (pickup_not_before, task_id) with one timer for the earliest deadline.
 // On fire it loads the task and enqueues when ShouldNotifyReadyNow holds.
 type PickupWakeScheduler struct {
@@ -69,7 +69,7 @@ func (h *wakeHeap) Pop() interface{} {
 }
 
 // NewPickupWakeScheduler returns a scheduler backed by st and q. The
-// caller must register it with (*store.Store).SetPickupWake and call
+// caller must register it with (*composition.API).SetPickupWake and call
 // Hydrate once at startup.
 func NewPickupWakeScheduler(st worker.Store, q *MemoryQueue) *PickupWakeScheduler {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agents.NewPickupWakeScheduler")
@@ -216,7 +216,7 @@ func (w *PickupWakeScheduler) tryNotify(taskID string, now time.Time) {
 	if err != nil || t == nil || t.Status != taskcoredomain.StatusReady {
 		return
 	}
-	if !store.ShouldNotifyReadyNow(t.PickupNotBefore, now) {
+	if !taskcorestore.ShouldNotifyReadyNow(t.PickupNotBefore, now) {
 		return
 	}
 	_ = w.q.NotifyReadyTask(ctx, *t)

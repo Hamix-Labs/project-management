@@ -5,12 +5,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	projectsstore "github.com/AlexsanderHamir/Hamix/pkgs/projects/store"
+	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
+	cyclescontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/contract"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
@@ -20,7 +24,6 @@ import (
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 const pollInterval = 10 * time.Millisecond
@@ -30,7 +33,7 @@ const pollTimeout = 3 * time.Second
 
 type harness struct {
 	t          *testing.T
-	store      *store.Store
+	store      *composition.API
 	queue      *agents.MemoryQueue
 	notifier   *recordingNotifier
 	worktreeID string
@@ -39,7 +42,7 @@ type harness struct {
 
 func newHarness(t *testing.T) *harness {
 	t.Helper()
-	st := store.NewStore(tasktestdb.OpenSQLite(t))
+	st := composition.NewAPI(tasktestdb.OpenSQLite(t))
 	q := agents.NewMemoryQueue(8)
 	st.SetReadyTaskNotifier(q)
 	wtID, dir := seedWorkerTestGit(t, st)
@@ -52,7 +55,7 @@ func newHarness(t *testing.T) *harness {
 func (h *harness) createReadyTask(ctx context.Context, title string) *taskcoredomain.Task {
 	h.t.Helper()
 	wb := h.gitBinding()
-	tsk, err := h.store.Create(ctx, store.CreateTaskInput{
+	tsk, err := h.store.Create(ctx, taskcorestore.CreateTaskInput{
 		Title:         title,
 		InitialPrompt: "do the thing",
 		Status:        taskcoredomain.StatusReady,
@@ -71,7 +74,7 @@ func (h *harness) createReadyTask(ctx context.Context, title string) *taskcoredo
 func (h *harness) createReadyTaskWithModel(ctx context.Context, title, model string) *taskcoredomain.Task {
 	h.t.Helper()
 	wb := h.gitBinding()
-	tsk, err := h.store.Create(ctx, store.CreateTaskInput{
+	tsk, err := h.store.Create(ctx, taskcorestore.CreateTaskInput{
 		Title:         title,
 		InitialPrompt: "do the thing",
 		Status:        taskcoredomain.StatusReady,
@@ -230,7 +233,7 @@ func (b *blockingRunner) Run(ctx context.Context, req runner.Request) (runner.Re
 
 // --- helper assertions --------------------------------------------------
 
-func assertCycleStatus(t *testing.T, st *store.Store, taskID string, wantCount int, wantStatus cyclesdomain.CycleStatus) *cyclesdomain.TaskCycle {
+func assertCycleStatus(t *testing.T, st *composition.API, taskID string, wantCount int, wantStatus cyclesdomain.CycleStatus) *cyclesdomain.TaskCycle {
 	t.Helper()
 	cycles, err := st.ListCyclesForTask(context.Background(), taskID, 10)
 	if err != nil {
@@ -372,7 +375,7 @@ func TestWorker_SelectedProjectContext_injectsAndSnapshotsOnlySelectedItems(t *t
 	defer cancel()
 
 	repoID := h.repositoryID()
-	project, err := h.store.CreateProject(ctx, store.CreateProjectInput{
+	project, err := h.store.CreateProject(ctx, projectsstore.CreateProjectInput{
 		Name:           "Moat",
 		ContextSummary: "Use user-selected shared memory only.",
 		RepositoryID:   &repoID,
@@ -380,7 +383,7 @@ func TestWorker_SelectedProjectContext_injectsAndSnapshotsOnlySelectedItems(t *t
 	if err != nil {
 		t.Fatalf("create project: %v", err)
 	}
-	selected, err := h.store.CreateProjectContext(ctx, project.ID, store.CreateProjectContextInput{
+	selected, err := h.store.CreateProjectContext(ctx, project.ID, projectsstore.CreateProjectContextInput{
 		Kind:      projectsdomain.ProjectContextKindDecision,
 		Title:     "Decision",
 		Body:      "The user chose this item.",
@@ -389,7 +392,7 @@ func TestWorker_SelectedProjectContext_injectsAndSnapshotsOnlySelectedItems(t *t
 	if err != nil {
 		t.Fatalf("create selected context: %v", err)
 	}
-	selectedConstraint, err := h.store.CreateProjectContext(ctx, project.ID, store.CreateProjectContextInput{
+	selectedConstraint, err := h.store.CreateProjectContext(ctx, project.ID, projectsstore.CreateProjectContextInput{
 		Kind:      projectsdomain.ProjectContextKindConstraint,
 		Title:     "Constraint",
 		Body:      "The user chose this related node.",
@@ -398,7 +401,7 @@ func TestWorker_SelectedProjectContext_injectsAndSnapshotsOnlySelectedItems(t *t
 	if err != nil {
 		t.Fatalf("create selected constraint: %v", err)
 	}
-	unselected, err := h.store.CreateProjectContext(ctx, project.ID, store.CreateProjectContextInput{
+	unselected, err := h.store.CreateProjectContext(ctx, project.ID, projectsstore.CreateProjectContextInput{
 		Kind:      projectsdomain.ProjectContextKindNote,
 		Title:     "Unselected",
 		Body:      "The worker must not include this.",
@@ -407,7 +410,7 @@ func TestWorker_SelectedProjectContext_injectsAndSnapshotsOnlySelectedItems(t *t
 	if err != nil {
 		t.Fatalf("create unselected context: %v", err)
 	}
-	includedEdge, err := h.store.CreateProjectContextEdge(ctx, project.ID, store.CreateProjectContextEdgeInput{
+	includedEdge, err := h.store.CreateProjectContextEdge(ctx, project.ID, projectsstore.CreateProjectContextEdgeInput{
 		SourceContextID: selected.ID,
 		TargetContextID: selectedConstraint.ID,
 		Relation:        projectsdomain.ProjectContextRelationSupports,
@@ -417,7 +420,7 @@ func TestWorker_SelectedProjectContext_injectsAndSnapshotsOnlySelectedItems(t *t
 	if err != nil {
 		t.Fatalf("create included edge: %v", err)
 	}
-	excludedEdge, err := h.store.CreateProjectContextEdge(ctx, project.ID, store.CreateProjectContextEdgeInput{
+	excludedEdge, err := h.store.CreateProjectContextEdge(ctx, project.ID, projectsstore.CreateProjectContextEdgeInput{
 		SourceContextID: selected.ID,
 		TargetContextID: unselected.ID,
 		Relation:        projectsdomain.ProjectContextRelationRelated,
@@ -428,7 +431,7 @@ func TestWorker_SelectedProjectContext_injectsAndSnapshotsOnlySelectedItems(t *t
 		t.Fatalf("create excluded edge: %v", err)
 	}
 	wb := h.gitBinding()
-	tsk, err := h.store.Create(ctx, store.CreateTaskInput{
+	tsk, err := h.store.Create(ctx, taskcorestore.CreateTaskInput{
 		Title:                 "with selected context",
 		InitialPrompt:         "do the selected thing",
 		Status:                taskcoredomain.StatusReady,
@@ -494,8 +497,7 @@ func TestWorker_SelectedProjectContext_injectsAndSnapshotsOnlySelectedItems(t *t
 // intent, adapter default). The fifth row (both empty) is already
 // pinned by TestWorker_HappyPath_writesTwoPhasesAndSixMirrors.
 func TestWorker_StartCycle_recordsRunnerModelAttribution(t *testing.T) {
-	t.Parallel()
-
+	// Not parallel: four sequential subtests each run worker + in-memory SQLite.
 	cases := []struct {
 		name          string
 		taskModel     string
@@ -630,7 +632,7 @@ func TestWorker_StaleTaskAtDequeue_ackAndSkip(t *testing.T) {
 
 	// Move the task off `ready` AFTER it was enqueued by Create.
 	doneStatus := taskcoredomain.StatusDone
-	if _, err := h.store.Update(ctx, tsk.ID, store.UpdateTaskInput{Status: &doneStatus}, taskcoredomain.ActorUser); err != nil {
+	if _, err := h.store.Update(ctx, tsk.ID, taskcorestore.UpdateTaskInput{Status: &doneStatus}, taskcoredomain.ActorUser); err != nil {
 		t.Fatalf("update to done: %v", err)
 	}
 
@@ -847,7 +849,7 @@ func TestWorker_NoDoubleCycleOnRedelivery(t *testing.T) {
 		t.Fatal("timed out waiting for first runner Run")
 	}
 
-	_, err := h.store.StartCycle(context.Background(), store.StartCycleInput{
+	_, err := h.store.StartCycle(context.Background(), cyclescontract.StartCycleInput{
 		TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent,
 	})
 	if !errors.Is(err, taskcoredomain.ErrInvalidInput) {
@@ -1012,7 +1014,7 @@ func TestWorker_CompletePhaseFailure_terminatesCycleAndFailsTask(t *testing.T) {
 						continue
 					}
 					summary := "preempted by test"
-					if _, err := h.store.CompletePhase(bg, store.CompletePhaseInput{
+					if _, err := h.store.CompletePhase(bg, cyclescontract.CompletePhaseInput{
 						CycleID:  cycles[0].ID,
 						PhaseSeq: ph.PhaseSeq,
 						Status:   cyclesdomain.PhaseStatusFailed,

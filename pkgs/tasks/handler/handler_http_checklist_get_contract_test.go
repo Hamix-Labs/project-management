@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
+	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 	"io"
 	"net/http"
 	"sort"
@@ -98,7 +98,7 @@ func TestHTTP_getChecklist_emptyItemsIsArrayNotNull(t *testing.T) {
 	srv, st := newTaskCreateTestServerWithStore(t)
 	defer srv.Close()
 	ctx := context.Background()
-	created, err := st.Create(ctx, store.CreateTaskInput{
+	created, err := st.Create(ctx, taskcorestore.CreateTaskInput{
 		Title:    "chk-empty-get",
 		Priority: taskcoredomain.PriorityMedium,
 		Status:   taskcoredomain.StatusReady,

@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	gitinventorystore "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store"
+	projectsstore "github.com/AlexsanderHamir/Hamix/pkgs/projects/store"
 	"io"
 	"net/http"
 	"os/exec"
@@ -14,7 +16,6 @@ import (
 	"github.com/AlexsanderHamir/Hamix/internal/gittest"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 func TestHTTP_createTask_branchBoundToWorktree_returns409(t *testing.T) {
@@ -32,7 +33,7 @@ func TestHTTP_createTask_branchBoundToWorktree_returns409(t *testing.T) {
 		t.Fatalf("ListAllGitRepositories: %v len=%d", err, len(repos))
 	}
 	wt2Path := filepath.Join(filepath.Dir(dir), "wt-bound-test")
-	_, err = st.CreateGitWorktreeForRepo(ctx, repos[0].ID, store.CreateGitWorktreeInput{
+	_, err = st.CreateGitWorktreeForRepo(ctx, repos[0].ID, gitinventorystore.CreateGitWorktreeInput{
 		Path:         wt2Path,
 		Branch:       "feature-bound",
 		CreateBranch: true,
@@ -41,7 +42,7 @@ func TestHTTP_createTask_branchBoundToWorktree_returns409(t *testing.T) {
 		t.Fatalf("CreateGitWorktreeForRepo first: %v", err)
 	}
 	wt3Path := filepath.Join(filepath.Dir(dir), "wt-bound-dup")
-	_, err = st.CreateGitWorktreeForRepo(ctx, repos[0].ID, store.CreateGitWorktreeInput{
+	_, err = st.CreateGitWorktreeForRepo(ctx, repos[0].ID, gitinventorystore.CreateGitWorktreeInput{
 		Path:         wt3Path,
 		Branch:       "feature-bound",
 		CreateBranch: true,
@@ -63,12 +64,12 @@ func TestHTTP_createTask_projectRepoMismatch_returns409(t *testing.T) {
 	gitSvc := gitwork.New()
 	otherDir := t.TempDir()
 	gittest.EnsureMain(t, otherDir)
-	otherRepo, err := st.CreateGlobalGitRepository(ctx, store.CreateGitRepositoryInput{Path: otherDir}, gitSvc)
+	otherRepo, err := st.CreateGlobalGitRepository(ctx, gitinventorystore.CreateGitRepositoryInput{Path: otherDir}, gitSvc)
 	if err != nil {
 		t.Fatalf("CreateGlobalGitRepository: %v", err)
 	}
 	otherRepoID := otherRepo.ID
-	otherProj, err := st.CreateProject(ctx, store.CreateProjectInput{
+	otherProj, err := st.CreateProject(ctx, projectsstore.CreateProjectInput{
 		Name:         "wrong-repo overlay",
 		RepositoryID: &otherRepoID,
 	})

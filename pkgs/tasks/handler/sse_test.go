@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -11,9 +12,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/middleware"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 )
 
@@ -38,14 +39,14 @@ func TestSSEHub_Publish_deliversToSubscriber(t *testing.T) {
 	ch, cancel := h.Subscribe()
 	defer cancel()
 
-	h.Publish(TaskChangeEvent{Type: TaskCreated, ID: "abc-123"})
+	h.Publish(realtime.Event{Type: realtime.TaskCreated, ID: "abc-123"})
 	select {
 	case line := <-ch:
-		var ev TaskChangeEvent
+		var ev realtime.Event
 		if err := json.Unmarshal([]byte(line), &ev); err != nil {
 			t.Fatal(err)
 		}
-		if ev.Type != TaskCreated || ev.ID != "abc-123" {
+		if ev.Type != realtime.TaskCreated || ev.ID != "abc-123" {
 			t.Fatalf("got %+v", ev)
 		}
 	case <-time.After(2 * time.Second):
@@ -58,7 +59,7 @@ func TestSSEHub_Publish_nonBlockingSlowConsumer(t *testing.T) {
 	_, cancel := h.Subscribe()
 	defer cancel()
 	for i := 0; i < 64; i++ {
-		h.Publish(TaskChangeEvent{Type: TaskUpdated, ID: "x"})
+		h.Publish(realtime.Event{Type: realtime.TaskUpdated, ID: "x"})
 	}
 }
 
@@ -92,7 +93,7 @@ func TestSSEHub_Publish_recordsDroppedFramesCounter(t *testing.T) {
 
 	const subscriberBufferCap = 32
 	for i := 0; i < subscriberBufferCap; i++ {
-		h.Publish(TaskChangeEvent{Type: TaskUpdated, ID: "fill"})
+		h.Publish(realtime.Event{Type: realtime.TaskUpdated, ID: "fill"})
 	}
 	if got := testutil.ToFloat64(c); got != base {
 		t.Fatalf("counter advanced before drops: got %v want %v", got, base)
@@ -100,7 +101,7 @@ func TestSSEHub_Publish_recordsDroppedFramesCounter(t *testing.T) {
 
 	const overflowOneSub = 5
 	for i := 0; i < overflowOneSub; i++ {
-		h.Publish(TaskChangeEvent{Type: TaskUpdated, ID: "drop1"})
+		h.Publish(realtime.Event{Type: realtime.TaskUpdated, ID: "drop1"})
 	}
 	if got, want := testutil.ToFloat64(c), base+overflowOneSub; got != want {
 		t.Fatalf("after %d drops on 1 subscriber: counter=%v want %v", overflowOneSub, got, want)
@@ -111,7 +112,7 @@ func TestSSEHub_Publish_recordsDroppedFramesCounter(t *testing.T) {
 
 	const dropFanoutFrames = 3
 	for i := 0; i < dropFanoutFrames+subscriberBufferCap; i++ {
-		h.Publish(TaskChangeEvent{Type: TaskUpdated, ID: "drop2"})
+		h.Publish(realtime.Event{Type: realtime.TaskUpdated, ID: "drop2"})
 	}
 	wantAfter := base + overflowOneSub + dropFanoutFrames*2 + subscriberBufferCap*1
 	if got := testutil.ToFloat64(c); got != wantAfter {
@@ -122,7 +123,7 @@ func TestSSEHub_Publish_recordsDroppedFramesCounter(t *testing.T) {
 
 func TestHTTP_SSE_responseHeaders(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
-	h := NewHandler(store.NewStore(db), NewSSEHub(), nil)
+	h := NewHandler(composition.NewAPI(db), NewSSEHub(), nil)
 	srv := httptest.NewServer(h)
 	defer srv.Close()
 
@@ -225,11 +226,11 @@ func TestHTTP_SSE_receivesEventAfterCreate(t *testing.T) {
 
 	select {
 	case p := <-payload:
-		var ev TaskChangeEvent
+		var ev realtime.Event
 		if err := json.Unmarshal([]byte(p), &ev); err != nil {
 			t.Fatal(err)
 		}
-		if ev.Type != TaskCreated {
+		if ev.Type != realtime.TaskCreated {
 			t.Fatalf("type %q", ev.Type)
 		}
 		if ev.ID == "" {

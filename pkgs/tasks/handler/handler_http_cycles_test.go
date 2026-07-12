@@ -3,10 +3,12 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclescontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/contract"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
+	cyclesstore "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store"
 	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 	"io"
 	"net/http"
 	"strconv"
@@ -136,7 +138,7 @@ func TestHTTP_getTaskCycleStream_listsPersistedEvents(t *testing.T) {
 	cycle, phase := mustCreateCycleWithExecutePhase(t, st, context.Background(), taskID)
 
 	for i := 0; i < 2; i++ {
-		if _, err := st.AppendCycleStreamEvent(context.Background(), store.AppendCycleStreamEventInput{
+		if _, err := st.AppendCycleStreamEvent(context.Background(), cyclesstore.AppendCycleStreamEventInput{
 			TaskID:   taskID,
 			CycleID:  cycle.ID,
 			PhaseSeq: phase.PhaseSeq,
@@ -181,9 +183,9 @@ func TestHTTP_getTaskCycleStream_crossTaskCycleIsNotFound(t *testing.T) {
 	}
 }
 
-func mustCreateCycleWithExecutePhase(t *testing.T, st *store.Store, ctx context.Context, taskID string) (*cyclesdomain.TaskCycle, *cyclesdomain.TaskCyclePhase) {
+func mustCreateCycleWithExecutePhase(t *testing.T, st *composition.API, ctx context.Context, taskID string) (*cyclesdomain.TaskCycle, *cyclesdomain.TaskCyclePhase) {
 	t.Helper()
-	cycle, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: taskID, TriggeredBy: taskcoredomain.ActorAgent})
+	cycle, err := st.StartCycle(ctx, cyclescontract.StartCycleInput{TaskID: taskID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatalf("start cycle: %v", err)
 	}

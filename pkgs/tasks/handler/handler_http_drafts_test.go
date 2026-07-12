@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	taskcorehandler "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/handler"
 	"io"
 	"net/http"
 	"strconv"
@@ -99,7 +100,7 @@ func TestHTTP_task_drafts_list_overlong_limit(t *testing.T) {
 	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
-	long := strings.Repeat("1", maxListIntQueryParamBytes+1)
+	long := strings.Repeat("1", taskcorehandler.MaxListIntQueryParamBytes+1)
 	res, err := http.Get(srv.URL + "/task-drafts?limit=" + long)
 	if err != nil {
 		t.Fatal(err)

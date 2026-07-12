@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
 	"log/slog"
 	"net/http"
 	"time"
@@ -31,22 +32,22 @@ func (h *Handler) getTaskCommits(w http.ResponseWriter, r *http.Request) {
 	r = calltrace.WithRequestRoot(r, op)
 	taskID, err := parseTaskPathID(r.PathValue("id"))
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	debugHTTPRequest(r, op, "task_id", taskID)
 	if _, err := h.tasks.Get(r.Context(), taskID); err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	rows, err := h.cycles.ListCommitsForTask(r.Context(), taskID)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	cycles, err := h.cycles.ListCyclesForTaskBefore(r.Context(), taskID, 0, 500)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	attemptByCycle := make(map[string]int64, len(cycles))
@@ -73,5 +74,5 @@ func (h *Handler) getTaskCommits(w http.ResponseWriter, r *http.Request) {
 	}
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.handler.getTaskCommits",
 		"task_id", taskID, "commit_count", len(resp.Commits))
-	writeJSON(w, r, op, http.StatusOK, resp)
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, resp)
 }

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	settingscontract "github.com/AlexsanderHamir/Hamix/pkgs/settings/contract"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -9,8 +10,8 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/internal/systemhealth"
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -73,7 +74,7 @@ type systemHealthAgentRaw struct {
 func newSystemHealthTestServer(t *testing.T, g systemhealth.Gather) *httptest.Server {
 	t.Helper()
 	db := tasktestdb.OpenSQLite(t)
-	h := NewHandler(store.NewStore(db), NewSSEHub(), nil, WithSystemHealthGatherer(g))
+	h := NewHandler(composition.NewAPI(db), NewSSEHub(), nil, WithSystemHealthGatherer(g))
 	return httptest.NewServer(h)
 }
 
@@ -176,7 +177,7 @@ func TestHTTP_systemHealth_populated(t *testing.T) {
 // stops layering the field on top of the metric snapshot.
 func TestHTTP_systemHealth_agentPaused(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
-	s := store.NewStore(db)
+	s := composition.NewAPI(db)
 	h := NewHandler(s, NewSSEHub(), nil, WithSystemHealthGatherer(prometheus.NewPedanticRegistry()))
 	srv := httptest.NewServer(h)
 	defer srv.Close()
@@ -191,7 +192,7 @@ func TestHTTP_systemHealth_agentPaused(t *testing.T) {
 	}
 
 	paused := true
-	if _, err := s.UpdateSettings(t.Context(), store.SettingsPatch{AgentPaused: &paused}); err != nil {
+	if _, err := s.UpdateSettings(t.Context(), settingscontract.SettingsPatch{AgentPaused: &paused}); err != nil {
 		t.Fatalf("flip AgentPaused=true: %v", err)
 	}
 
@@ -228,7 +229,7 @@ func TestHTTP_systemHealth_methodNotAllowed(t *testing.T) {
 func TestHTTP_systemHealth_doesNotPublishSSE(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
 	hub := NewSSEHub()
-	h := NewHandler(store.NewStore(db), hub, nil, WithSystemHealthGatherer(prometheus.NewPedanticRegistry()))
+	h := NewHandler(composition.NewAPI(db), hub, nil, WithSystemHealthGatherer(prometheus.NewPedanticRegistry()))
 	srv := httptest.NewServer(h)
 	defer srv.Close()
 

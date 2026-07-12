@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	cyclesstore "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -15,7 +16,6 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/reports"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/adapterkit"
 	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 const maxCommandOutputBytes = 256 * 1024
@@ -120,7 +120,7 @@ func (s *Service) RunCriterionCommands(
 		timeout = time.Duration(settingsdomain.DefaultVerifyCommandTimeoutSeconds) * time.Second
 	}
 	var out []CommandEvidence
-	var persist []store.CommandRunEntry
+	var persist []cyclesstore.CommandRunEntry
 	for _, it := range snap.Criteria {
 		entry, ok := selfReport[it.ID]
 		if !ok || !entry.ClaimedDone || len(it.VerifyCommands) == 0 {
@@ -192,7 +192,7 @@ func (s *Service) RunCriterionCommands(
 				ev.RunError = runErr.Error()
 			}
 			out = append(out, ev)
-			persist = append(persist, store.CommandRunEntry{
+			persist = append(persist, cyclesstore.CommandRunEntry{
 				CriterionID: it.ID,
 				CommandSeq:  int64(seq),
 				ExitCode:    exitCode,

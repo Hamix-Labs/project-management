@@ -4,10 +4,9 @@ import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 import (
 	"encoding/json"
 	"fmt"
+	checklistcontract "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/contract"
 	"log/slog"
 	"strings"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 type verifyCriterionPayload struct {
@@ -27,10 +26,18 @@ type verifySnapshotPayload struct {
 }
 
 type verifyPhaseDetailsPayload struct {
-	Verification verifySnapshotPayload `json:"verification"`
+	Verification     verifySnapshotPayload `json:"verification"`
+	MirrorDegraded   *bool                 `json:"mirror_degraded,omitempty"`
+	VerifyRetryCount *int                  `json:"verify_retry_count,omitempty"`
 }
 
-func criterionTextIndex(items []store.ChecklistVerifyItem) map[string]string {
+// PhaseDetailsOpts carries optional verify phase metadata persisted in details_json.
+type PhaseDetailsOpts struct {
+	MirrorDegraded   bool
+	VerifyRetryCount int
+}
+
+func criterionTextIndex(items []checklistcontract.ChecklistVerifyItem) map[string]string {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.verify.criterionTextIndex", "items", len(items))
 	out := make(map[string]string, len(items))
 	for _, it := range items {
@@ -53,7 +60,7 @@ func countVerdictOutcome(verdicts []Verdict) (passed, failed int) {
 
 // FormatPhaseSummary builds human-readable verify phase.summary for audit mirrors.
 func FormatPhaseSummary(
-	criteria []store.ChecklistVerifyItem,
+	criteria []checklistcontract.ChecklistVerifyItem,
 	verdicts []Verdict,
 	succeeded bool,
 ) string {
@@ -94,11 +101,13 @@ func FormatPhaseSummary(
 // EncodePhaseDetails returns structured verify phase details JSON for phase rows.
 func EncodePhaseDetails(
 	attemptSeq int64,
-	criteria []store.ChecklistVerifyItem,
+	criteria []checklistcontract.ChecklistVerifyItem,
 	verdicts []Verdict,
+	opts PhaseDetailsOpts,
 ) []byte {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.verify.EncodePhaseDetails",
-		"attempt_seq", attemptSeq, "criteria", len(criteria), "verdicts", len(verdicts))
+		"attempt_seq", attemptSeq, "criteria", len(criteria), "verdicts", len(verdicts),
+		"mirror_degraded", opts.MirrorDegraded, "verify_retry_count", opts.VerifyRetryCount)
 	textByID := criterionTextIndex(criteria)
 	passed, failed := countVerdictOutcome(verdicts)
 	rows := make([]verifyCriterionPayload, 0, len(verdicts))
@@ -127,9 +136,48 @@ func EncodePhaseDetails(
 			Criteria:    rows,
 		},
 	}
+	if opts.MirrorDegraded {
+		v := true
+		payload.MirrorDegraded = &v
+	}
+	retry := opts.VerifyRetryCount
+	payload.VerifyRetryCount = &retry
 	b, err := json.Marshal(payload)
 	if err != nil {
 		return []byte("{}")
 	}
 	return b
+}
+
+// ParseVerifyRetryCount reads verify_retry_count from a verify phase details_json
+// payload. The second return is false when the field is absent (callers fall back
+// to attempt_seq from verify report rows).
+//
+//funclogmeasure:skip category=hot-path reason="Pure JSON parser; verify phase persistence traces at store chokepoints."
+func ParseVerifyRetryCount(detailsJSON []byte) (int, bool) {
+	if len(detailsJSON) == 0 {
+		return 0, false
+	}
+	var payload verifyPhaseDetailsPayload
+	if err := json.Unmarshal(detailsJSON, &payload); err != nil {
+		return 0, false
+	}
+	if payload.VerifyRetryCount == nil {
+		return 0, false
+	}
+	return *payload.VerifyRetryCount, true
+}
+
+// ParseMirrorDegraded reports whether mirror_degraded was set in verify phase details.
+//
+//funclogmeasure:skip category=hot-path reason="Pure JSON parser; verify phase persistence traces at store chokepoints."
+func ParseMirrorDegraded(detailsJSON []byte) bool {
+	if len(detailsJSON) == 0 {
+		return false
+	}
+	var payload verifyPhaseDetailsPayload
+	if err := json.Unmarshal(detailsJSON, &payload); err != nil {
+		return false
+	}
+	return payload.MirrorDegraded != nil && *payload.MirrorDegraded
 }

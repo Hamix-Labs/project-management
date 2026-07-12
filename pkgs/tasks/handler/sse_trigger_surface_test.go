@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -13,19 +14,19 @@ import (
 	"testing"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 // newSSETriggerServer wires a real handler against an in-memory SQLite store and
 // returns the SSE hub so the test can subscribe and observe published events
 // produced by HTTP writes. It mirrors newTaskTestServerWithStore but exposes
 // the hub for assertion.
-func newSSETriggerServer(t *testing.T) (*httptest.Server, *store.Store, *SSEHub) {
+func newSSETriggerServer(t *testing.T) (*httptest.Server, *composition.API, *SSEHub) {
 	t.Helper()
 	db := tasktestdb.OpenSQLite(t)
-	st := store.NewStore(db)
+	st := composition.NewAPI(db)
 	binding := seedHandlerTestGitRepo(t, st)
 	hub := NewSSEHub()
 	srv := httptest.NewServer(newTaskTestHandlerWithHub(st, hub))
@@ -36,9 +37,9 @@ func newSSETriggerServer(t *testing.T) (*httptest.Server, *store.Store, *SSEHub)
 // drainSSE collects up to want events from ch, returning whatever arrived
 // within timeout. Returning early when len(out) == want keeps tests fast.
 // The caller should assert on the slice rather than block forever.
-func drainSSE(t *testing.T, ch <-chan string, want int, timeout time.Duration) []TaskChangeEvent {
+func drainSSE(t *testing.T, ch <-chan string, want int, timeout time.Duration) []realtime.Event {
 	t.Helper()
-	out := make([]TaskChangeEvent, 0, want)
+	out := make([]realtime.Event, 0, want)
 	deadline := time.After(timeout)
 	for len(out) < want {
 		select {
@@ -46,7 +47,7 @@ func drainSSE(t *testing.T, ch <-chan string, want int, timeout time.Duration) [
 			if !ok {
 				return out
 			}
-			var ev TaskChangeEvent
+			var ev realtime.Event
 			if err := json.Unmarshal([]byte(s), &ev); err != nil {
 				t.Fatalf("decode sse line %q: %v", s, err)
 			}
@@ -58,7 +59,7 @@ func drainSSE(t *testing.T, ch <-chan string, want int, timeout time.Duration) [
 	// Quick grace-window read to surface unexpected extras the test wasn't expecting.
 	select {
 	case s := <-ch:
-		var ev TaskChangeEvent
+		var ev realtime.Event
 		if err := json.Unmarshal([]byte(s), &ev); err == nil {
 			out = append(out, ev)
 		}
@@ -67,11 +68,11 @@ func drainSSE(t *testing.T, ch <-chan string, want int, timeout time.Duration) [
 	return out
 }
 
-// summarize collapses a TaskChangeEvent slice into a stable string set so
+// summarize collapses a realtime.Event slice into a stable string set so
 // tests can compare published events without relying on publish order. The
 // format is "type:id" for task-only events, "type:id/cycle_id" for
 // task_cycle_changed events, and "type:id/seq" when event_seq is set.
-func summarize(events []TaskChangeEvent) []string {
+func summarize(events []realtime.Event) []string {
 	out := make([]string, 0, len(events))
 	for _, ev := range events {
 		if ev.EventSeq > 0 {
@@ -101,10 +102,10 @@ func mustEqualEvents(t *testing.T, route string, got, want []string) {
 	}
 }
 
-func mustHaveTaskUpdatedData(t *testing.T, route string, events []TaskChangeEvent, taskID string) {
+func mustHaveTaskUpdatedData(t *testing.T, route string, events []realtime.Event, taskID string) {
 	t.Helper()
 	for _, ev := range events {
-		if ev.Type == TaskUpdated && ev.ID == taskID {
+		if ev.Type == realtime.TaskUpdated && ev.ID == taskID {
 			if ev.Data == nil {
 				t.Fatalf("%s: task_updated:%s missing data enrichment (ADR-0026)", route, taskID)
 			}

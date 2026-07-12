@@ -506,6 +506,33 @@ step_tasks_domain_retired() {
   print_ok_line "$label" "$elapsed"
 }
 
+step_tasks_contract_retired() {
+  local label="tasks/contract retired"
+  local start=$SECONDS
+  step_prefix
+  printf '%s ' "$label"
+
+  local hits=""
+  if [[ -d pkgs/tasks/contract ]]; then
+    hits="pkgs/tasks/contract directory must not exist (Tier 4 ADR-0062)"
+  fi
+  if rg -q 'github.com/.*/pkgs/tasks/contract' --glob '*.go' 2>/dev/null; then
+    hits+=$'\n'"$(rg -n 'github.com/.*/pkgs/tasks/contract' --glob '*.go' 2>/dev/null || true)"
+  fi
+  local elapsed=$((SECONDS - start))
+  add_section_time "$elapsed"
+
+  if [[ -n "$(echo "$hits" | sed '/^$/d')" ]]; then
+    echo "${C_RED}FAILED${C_RESET}"
+    echo "pkgs/tasks/contract compat shim must be fully retired:"
+    echo "$hits" | sed '/^$/d'
+    fail_step "$label" 1
+  fi
+
+  PASSED=$((PASSED + 1))
+  print_ok_line "$label" "$elapsed"
+}
+
 step_tasks_wire_handler_api() {
   local label="tasks wire handler API"
   local start=$SECONDS
@@ -519,11 +546,11 @@ step_tasks_wire_handler_api() {
   if ! rg -q 'type HandlerStore = wire\.HandlerAPI' pkgs/tasks/handler/handler_store.go 2>/dev/null; then
     hits+=$'\n'"handler_store.go must alias wire.HandlerAPI"
   fi
-  if ! rg -q 'type HandlerAPI = wire\.HandlerAPI' pkgs/tasks/store/handler_api.go 2>/dev/null; then
-    hits+=$'\n'"store/handler_api.go must alias wire.HandlerAPI"
+  if ! rg -q 'var _ wire\.HandlerAPI = \(\*API\)\(nil\)' internal/taskapi/composition/ 2>/dev/null; then
+    hits+=$'\n'"composition.API must implement wire.HandlerAPI (ADR-0079)"
   fi
-  if rg -q '^type HandlerAPI interface' pkgs/tasks/handler/ pkgs/tasks/store/ 2>/dev/null; then
-    hits+=$'\n'"$(rg -n '^type HandlerAPI interface' pkgs/tasks/handler/ pkgs/tasks/store/ 2>/dev/null || true)"
+  if rg -q '^type HandlerAPI interface' pkgs/tasks/handler/ 2>/dev/null; then
+    hits+=$'\n'"$(rg -n '^type HandlerAPI interface' pkgs/tasks/handler/ 2>/dev/null || true)"
   fi
   if rg -q '^type HandlerStore interface' pkgs/tasks/handler/ 2>/dev/null; then
     hits+=$'\n'"$(rg -n '^type HandlerStore interface' pkgs/tasks/handler/ 2>/dev/null || true)"
@@ -715,6 +742,7 @@ step_repo_handler_boundary
 step_runners_handler_boundary
 step_storekernel_boundary
 step_tasks_domain_retired
+step_tasks_contract_retired
 step_tasks_wire_handler_api
 
 if [[ "$LINT_ONLY" -eq 1 ]]; then

@@ -2,6 +2,9 @@ package resume
 
 import (
 	"context"
+	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
+	cyclescontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/contract"
+	cyclesstore "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store"
 	"os/exec"
 	"testing"
 	"time"
@@ -11,14 +14,13 @@ import (
 	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 func TestReconstructCheckpoint_lockedCriteriaAndVerifyAttempt(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
-	st := storefake.New(t).Store
-	tsk, err := st.Create(ctx, store.CreateTaskInput{
+	st := storefake.New(t).API
+	tsk, err := st.Create(ctx, taskcorestore.CreateTaskInput{
 		Title: "checkpoint", InitialPrompt: "work", Status: taskcoredomain.StatusReady, Priority: taskcoredomain.PriorityMedium,
 	}, taskcoredomain.ActorUser)
 	if err != nil {
@@ -29,10 +31,10 @@ func TestReconstructCheckpoint_lockedCriteriaAndVerifyAttempt(t *testing.T) {
 		t.Fatalf("add checklist: %v", err)
 	}
 	running := taskcoredomain.StatusRunning
-	if _, err := st.Update(ctx, tsk.ID, store.UpdateTaskInput{Status: &running}, taskcoredomain.ActorAgent); err != nil {
+	if _, err := st.Update(ctx, tsk.ID, taskcorestore.UpdateTaskInput{Status: &running}, taskcoredomain.ActorAgent); err != nil {
 		t.Fatalf("update: %v", err)
 	}
-	cycle, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
+	cycle, err := st.StartCycle(ctx, cyclescontract.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatalf("start cycle: %v", err)
 	}
@@ -41,13 +43,13 @@ func TestReconstructCheckpoint_lockedCriteriaAndVerifyAttempt(t *testing.T) {
 		t.Fatalf("start execute: %v", err)
 	}
 	summary := cyclesdomain.PhaseInterruptReason
-	if _, err := st.CompletePhase(ctx, store.CompletePhaseInput{
+	if _, err := st.CompletePhase(ctx, cyclescontract.CompletePhaseInput{
 		CycleID: cycle.ID, PhaseSeq: exec.PhaseSeq,
 		Status: cyclesdomain.PhaseStatusFailed, Summary: &summary, By: taskcoredomain.ActorAgent,
 	}); err != nil {
 		t.Fatalf("complete execute: %v", err)
 	}
-	if err := st.UpsertVerifyReports(ctx, cycle.ID, 1, []store.VerifyReportEntry{
+	if err := st.UpsertVerifyReports(ctx, cycle.ID, 1, []cyclesstore.VerifyReportEntry{
 		{CriterionID: item.ID, Verified: true, VerifierKind: checklistdomain.VerifierAgentSelf, Reasoning: "ok"},
 	}); err != nil {
 		t.Fatalf("upsert verify: %v", err)
@@ -72,18 +74,18 @@ func TestReconstructCheckpoint_lockedCriteriaAndVerifyAttempt(t *testing.T) {
 func TestReconstructCheckpoint_interruptedVerify(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
-	st := storefake.New(t).Store
-	tsk, err := st.Create(ctx, store.CreateTaskInput{
+	st := storefake.New(t).API
+	tsk, err := st.Create(ctx, taskcorestore.CreateTaskInput{
 		Title: "verify resume", InitialPrompt: "work", Status: taskcoredomain.StatusReady, Priority: taskcoredomain.PriorityMedium,
 	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("create: %v", err)
 	}
 	running := taskcoredomain.StatusRunning
-	if _, err := st.Update(ctx, tsk.ID, store.UpdateTaskInput{Status: &running}, taskcoredomain.ActorAgent); err != nil {
+	if _, err := st.Update(ctx, tsk.ID, taskcorestore.UpdateTaskInput{Status: &running}, taskcoredomain.ActorAgent); err != nil {
 		t.Fatalf("update: %v", err)
 	}
-	cycle, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
+	cycle, err := st.StartCycle(ctx, cyclescontract.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatalf("start cycle: %v", err)
 	}
@@ -91,7 +93,7 @@ func TestReconstructCheckpoint_interruptedVerify(t *testing.T) {
 	if err != nil {
 		t.Fatalf("start execute: %v", err)
 	}
-	if _, err := st.CompletePhase(ctx, store.CompletePhaseInput{
+	if _, err := st.CompletePhase(ctx, cyclescontract.CompletePhaseInput{
 		CycleID: cycle.ID, PhaseSeq: exec.PhaseSeq,
 		Status: cyclesdomain.PhaseStatusSucceeded, By: taskcoredomain.ActorAgent,
 	}); err != nil {
@@ -102,7 +104,7 @@ func TestReconstructCheckpoint_interruptedVerify(t *testing.T) {
 		t.Fatalf("start verify: %v", err)
 	}
 	summary := cyclesdomain.PhaseInterruptReason
-	if _, err := st.CompletePhase(ctx, store.CompletePhaseInput{
+	if _, err := st.CompletePhase(ctx, cyclescontract.CompletePhaseInput{
 		CycleID: cycle.ID, PhaseSeq: verify.PhaseSeq,
 		Status: cyclesdomain.PhaseStatusFailed, Summary: &summary, By: taskcoredomain.ActorAgent,
 	}); err != nil {
@@ -122,8 +124,8 @@ func TestReconstructCheckpoint_interruptedVerify(t *testing.T) {
 func TestLoadContinuationBundle_verifyOnlyWhenExecuteSucceeded(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
-	st := storefake.New(t).Store
-	tsk, err := st.Create(ctx, store.CreateTaskInput{
+	st := storefake.New(t).API
+	tsk, err := st.Create(ctx, taskcorestore.CreateTaskInput{
 		Title: "verify-only parent", InitialPrompt: "work", Status: taskcoredomain.StatusReady, Priority: taskcoredomain.PriorityMedium,
 	}, taskcoredomain.ActorUser)
 	if err != nil {
@@ -133,7 +135,7 @@ func TestLoadContinuationBundle_verifyOnlyWhenExecuteSucceeded(t *testing.T) {
 	if err != nil {
 		t.Fatalf("add checklist: %v", err)
 	}
-	cycle, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
+	cycle, err := st.StartCycle(ctx, cyclescontract.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatalf("start cycle: %v", err)
 	}
@@ -141,7 +143,7 @@ func TestLoadContinuationBundle_verifyOnlyWhenExecuteSucceeded(t *testing.T) {
 	if err != nil {
 		t.Fatalf("start execute: %v", err)
 	}
-	if _, err := st.CompletePhase(ctx, store.CompletePhaseInput{
+	if _, err := st.CompletePhase(ctx, cyclescontract.CompletePhaseInput{
 		CycleID: cycle.ID, PhaseSeq: exec.PhaseSeq,
 		Status: cyclesdomain.PhaseStatusSucceeded, By: taskcoredomain.ActorAgent,
 	}); err != nil {
@@ -152,7 +154,7 @@ func TestLoadContinuationBundle_verifyOnlyWhenExecuteSucceeded(t *testing.T) {
 		t.Fatalf("start verify: %v", err)
 	}
 	summary := verificationFailedReason + ": criterion failed"
-	if _, err := st.CompletePhase(ctx, store.CompletePhaseInput{
+	if _, err := st.CompletePhase(ctx, cyclescontract.CompletePhaseInput{
 		CycleID: cycle.ID, PhaseSeq: verify.PhaseSeq,
 		Status: cyclesdomain.PhaseStatusFailed, Summary: &summary, By: taskcoredomain.ActorAgent,
 	}); err != nil {
@@ -162,13 +164,13 @@ func TestLoadContinuationBundle_verifyOnlyWhenExecuteSucceeded(t *testing.T) {
 		t.Fatalf("terminate: %v", err)
 	}
 	when := time.Date(2026, 6, 18, 12, 0, 0, 0, time.UTC)
-	if err := st.UpsertCycleCommits(ctx, tsk.ID, cycle.ID, []store.CycleCommitEntry{{
+	if err := st.UpsertCycleCommits(ctx, tsk.ID, cycle.ID, []cyclesstore.CycleCommitEntry{{
 		PhaseSeq: 1, Seq: 1, Repo: "/repo", Worktree: "/repo", Branch: "main",
 		SHA: "abc1234567890abcdef1234567890abcdef1234", CommittedAt: when, Message: "feat",
 	}}); err != nil {
 		t.Fatalf("upsert commits: %v", err)
 	}
-	if err := st.UpsertVerifyReports(ctx, cycle.ID, 1, []store.VerifyReportEntry{
+	if err := st.UpsertVerifyReports(ctx, cycle.ID, 1, []cyclesstore.VerifyReportEntry{
 		{CriterionID: item.ID, Verified: false, VerifierKind: checklistdomain.VerifierVerifyAgent, Reasoning: "still failing"},
 	}); err != nil {
 		t.Fatalf("upsert verify: %v", err)
@@ -190,14 +192,14 @@ func TestLoadContinuationBundle_verifyOnlyWhenExecuteSucceeded(t *testing.T) {
 func TestLoadContinuationBundle_carriesCriteriaReportProbeErr(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
-	st := storefake.New(t).Store
-	tsk, err := st.Create(ctx, store.CreateTaskInput{
+	st := storefake.New(t).API
+	tsk, err := st.Create(ctx, taskcorestore.CreateTaskInput{
 		Title: "criteria probe parent", InitialPrompt: "work", Status: taskcoredomain.StatusReady, Priority: taskcoredomain.PriorityMedium,
 	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("create: %v", err)
 	}
-	cycle, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
+	cycle, err := st.StartCycle(ctx, cyclescontract.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatalf("start cycle: %v", err)
 	}
@@ -208,7 +210,7 @@ func TestLoadContinuationBundle_carriesCriteriaReportProbeErr(t *testing.T) {
 	probeErr := "criteria report invalid: unknown field function"
 	details := git.MergeCriteriaReportProbeErr([]byte(`{"summary":"runner failed"}`), probeErr)
 	summary := git.ExecuteInvalidCommitReason
-	if _, err := st.CompletePhase(ctx, store.CompletePhaseInput{
+	if _, err := st.CompletePhase(ctx, cyclescontract.CompletePhaseInput{
 		CycleID: cycle.ID, PhaseSeq: exec.PhaseSeq,
 		Status: cyclesdomain.PhaseStatusFailed, Summary: &summary, Details: details, By: taskcoredomain.ActorAgent,
 	}); err != nil {
@@ -230,14 +232,14 @@ func TestLoadContinuationBundle_carriesCriteriaReportProbeErr(t *testing.T) {
 
 func TestLoadCheckpointFromParent_requiresTerminal(t *testing.T) {
 	ctx := context.Background()
-	st := storefake.New(t).Store
-	tsk, err := st.Create(ctx, store.CreateTaskInput{
+	st := storefake.New(t).API
+	tsk, err := st.Create(ctx, taskcorestore.CreateTaskInput{
 		Title: "t", InitialPrompt: "p", Priority: taskcoredomain.PriorityMedium,
 	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	cycle, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
+	cycle, err := st.StartCycle(ctx, cyclescontract.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -249,14 +251,14 @@ func TestLoadCheckpointFromParent_requiresTerminal(t *testing.T) {
 
 func TestSeedCrossCycleExecuteFromParent_recordsSucceededExecute(t *testing.T) {
 	ctx := context.Background()
-	st := storefake.New(t).Store
-	tsk, err := st.Create(ctx, store.CreateTaskInput{
+	st := storefake.New(t).API
+	tsk, err := st.Create(ctx, taskcorestore.CreateTaskInput{
 		Title: "seed execute", InitialPrompt: "work", Priority: taskcoredomain.PriorityMedium,
 	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	parent, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
+	parent, err := st.StartCycle(ctx, cyclescontract.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -264,7 +266,7 @@ func TestSeedCrossCycleExecuteFromParent_recordsSucceededExecute(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := st.CompletePhase(ctx, store.CompletePhaseInput{
+	if _, err := st.CompletePhase(ctx, cyclescontract.CompletePhaseInput{
 		CycleID: parent.ID, PhaseSeq: exec.PhaseSeq,
 		Status: cyclesdomain.PhaseStatusSucceeded, By: taskcoredomain.ActorAgent,
 	}); err != nil {
@@ -273,7 +275,7 @@ func TestSeedCrossCycleExecuteFromParent_recordsSucceededExecute(t *testing.T) {
 	if _, err := st.TerminateCycle(ctx, parent.ID, cyclesdomain.CycleStatusFailed, verificationFailedReason, taskcoredomain.ActorAgent); err != nil {
 		t.Fatal(err)
 	}
-	child, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
+	child, err := st.StartCycle(ctx, cyclescontract.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatal(err)
 	}

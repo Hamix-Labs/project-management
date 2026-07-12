@@ -2,6 +2,7 @@ package handler
 
 import (
 	"fmt"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -17,30 +18,30 @@ func (h *Handler) patchTaskGate(w http.ResponseWriter, r *http.Request) {
 	r = calltrace.WithRequestRoot(r, op)
 	id, err := parseTaskPathID(r.PathValue("id"))
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	var body taskGateActionJSON
-	if err := decodeJSON(r.Context(), r.Body, &body); err != nil {
-		writeError(w, r, op, err, http.StatusBadRequest)
+	if err := handlerhttp.DecodeJSON(r.Context(), r.Body, &body); err != nil {
+		handlerhttp.WriteError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
 	action := strings.TrimSpace(strings.ToLower(body.Action))
 	if action == "" {
-		writeStoreError(w, r, op, fmt.Errorf("%w: action required", domain.ErrInvalidInput))
+		handlerhttp.WriteStoreError(w, r, op, fmt.Errorf("%w: action required", domain.ErrInvalidInput))
 		return
 	}
-	by := actorFromRequest(r)
+	by := handlerhttp.ActorFromRequest(r)
 	if _, err := h.tasks.ApplyTaskGateAction(r.Context(), id, action, by); err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	task, err := h.tasks.Get(r.Context(), id)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	h.notifyChangeSafe(realtime.TaskGateChanged, id)
 	h.notifyTaskChangedSafe(realtime.TaskUpdated, id, task)
-	writeJSON(w, r, op, http.StatusOK, task)
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, task)
 }

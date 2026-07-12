@@ -11,6 +11,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	taskcorehandler "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/handler"
 )
 
 func listDrafts(t *testing.T, baseURL, query string) (*http.Response, []byte) {
@@ -124,7 +126,7 @@ func TestHTTP_listDrafts_400Limit(t *testing.T) {
 		query string
 		want  string
 	}{
-		{"overlongValue", "limit=" + strings.Repeat("1", maxListIntQueryParamBytes+1), "limit value too long"},
+		{"overlongValue", "limit=" + strings.Repeat("1", taskcorehandler.MaxListIntQueryParamBytes+1), "limit value too long"},
 		{"nonNumeric", "limit=nope", "limit must be integer 0..100"},
 		{"negative", "limit=-1", "limit must be integer 0..100"},
 		{"overMax", "limit=101", "limit must be integer 0..100"},

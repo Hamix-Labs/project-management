@@ -1,6 +1,8 @@
 package handler
 
 import (
+	taskcorehandler "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/handler"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
 	"log/slog"
 	"net/http"
 
@@ -10,10 +12,10 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/service"
 )
 
-// bootstrapTasksPayload mirrors listResponse so the SPA can seed
+// bootstrapTasksPayload mirrors taskcorehandler.ListResponse so the SPA can seed
 // taskQueryKeys.list directly from bootstrap without a follow-up
 // GET /tasks call. The wire shape is identical on purpose.
-type bootstrapTasksPayload = listResponse
+type bootstrapTasksPayload = taskcorehandler.ListResponse
 
 // bootstrapDraftsPayload mirrors the GET /task-drafts envelope so the
 // SPA's existing draft list parser consumes it unchanged.
@@ -36,7 +38,7 @@ type bootstrapDraftsPayload struct {
 type bootstrapResponse struct {
 	Settings settingshandler.SettingsWireResponse `json:"settings"`
 	Tasks    bootstrapTasksPayload                `json:"tasks"`
-	Stats    taskStatsResponse                    `json:"stats"`
+	Stats    taskcorehandler.TaskStatsResponse    `json:"stats"`
 	Projects projectsListResponse                 `json:"projects"`
 	Drafts   bootstrapDraftsPayload               `json:"drafts"`
 }
@@ -59,19 +61,19 @@ func (h *Handler) bootstrap(w http.ResponseWriter, r *http.Request) {
 		DraftsLimit:   readpolicy.BootstrapDraftsLimit,
 	})
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 
 	resp := bootstrapResponse{
 		Settings: settingshandler.SettingsWireFrom(data.Settings),
-		Tasks:    buildListResponse(data.Tasks, readpolicy.BootstrapListLimit, 0, data.HasMore),
-		Stats:    taskStatsResponseFromStore(data.Stats),
+		Tasks:    taskcorehandler.BuildListResponse(data.Tasks, readpolicy.BootstrapListLimit, 0, data.HasMore),
+		Stats:    taskcorehandler.TaskStatsResponseFromStore(data.Stats),
 		Projects: projectsListResponse{
 			Projects: data.Projects,
 			Limit:    readpolicy.BootstrapProjectsLimit,
 		},
 		Drafts: bootstrapDraftsPayload{Drafts: data.Drafts},
 	}
-	writeJSONWithETag(w, r, op, http.StatusOK, resp)
+	handlerhttp.WriteJSONWithETag(w, r, op, http.StatusOK, resp)
 }

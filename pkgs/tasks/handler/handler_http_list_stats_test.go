@@ -3,12 +3,11 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	settingscontract "github.com/AlexsanderHamir/Hamix/pkgs/settings/contract"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 func TestHTTP_list_keyset_after_id(t *testing.T) {
@@ -145,7 +144,7 @@ func TestHTTP_tasks_stats_scheduled_count(t *testing.T) {
 	// "ready, no schedule" row spuriously satisfies the
 	// `pickup_not_before > now` predicate this test pins.
 	zero := 0
-	if _, err := st.UpdateSettings(context.Background(), store.SettingsPatch{AgentPickupDelaySeconds: &zero}); err != nil {
+	if _, err := st.UpdateSettings(context.Background(), settingscontract.SettingsPatch{AgentPickupDelaySeconds: &zero}); err != nil {
 		t.Fatalf("UpdateSettings: %v", err)
 	}
 

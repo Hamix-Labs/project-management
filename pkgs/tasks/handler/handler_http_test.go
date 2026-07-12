@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	taskcorehandler "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/handler"
 	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"io"
@@ -337,8 +338,8 @@ func TestHTTP_method_not_allowed_routes_only_registered_verbs(t *testing.T) {
 }
 
 func TestHTTP_domain_tasks_created_and_updated_counters(t *testing.T) {
-	beforeC := testutil.ToFloat64(taskapiDomainTasksCreatedTotal)
-	beforeU := testutil.ToFloat64(taskapiDomainTasksUpdatedTotal)
+	beforeC := testutil.ToFloat64(taskcorehandler.DomainTasksCreatedTotal)
+	beforeU := testutil.ToFloat64(taskcorehandler.DomainTasksUpdatedTotal)
 
 	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
@@ -356,8 +357,8 @@ func TestHTTP_domain_tasks_created_and_updated_counters(t *testing.T) {
 	if err := json.NewDecoder(res.Body).Decode(&created); err != nil {
 		t.Fatal(err)
 	}
-	if testutil.ToFloat64(taskapiDomainTasksCreatedTotal) < beforeC+1 {
-		t.Fatalf("created counter did not increment (before=%v after=%v)", beforeC, testutil.ToFloat64(taskapiDomainTasksCreatedTotal))
+	if testutil.ToFloat64(taskcorehandler.DomainTasksCreatedTotal) < beforeC+1 {
+		t.Fatalf("created counter did not increment (before=%v after=%v)", beforeC, testutil.ToFloat64(taskcorehandler.DomainTasksCreatedTotal))
 	}
 
 	patchBody := `{"title":"metric-t2"}`
@@ -375,13 +376,13 @@ func TestHTTP_domain_tasks_created_and_updated_counters(t *testing.T) {
 		b, _ := io.ReadAll(res2.Body)
 		t.Fatalf("patch status %d: %s", res2.StatusCode, b)
 	}
-	if testutil.ToFloat64(taskapiDomainTasksUpdatedTotal) < beforeU+1 {
-		t.Fatalf("updated counter did not increment (before=%v after=%v)", beforeU, testutil.ToFloat64(taskapiDomainTasksUpdatedTotal))
+	if testutil.ToFloat64(taskcorehandler.DomainTasksUpdatedTotal) < beforeU+1 {
+		t.Fatalf("updated counter did not increment (before=%v after=%v)", beforeU, testutil.ToFloat64(taskcorehandler.DomainTasksUpdatedTotal))
 	}
 }
 
 func TestHTTP_domain_tasks_deleted_counter(t *testing.T) {
-	beforeD := testutil.ToFloat64(taskapiDomainTasksDeletedTotal)
+	beforeD := testutil.ToFloat64(taskcorehandler.DomainTasksDeletedTotal)
 	srv := newTaskCreateTestServer(t)
 	defer srv.Close()
 
@@ -412,7 +413,7 @@ func TestHTTP_domain_tasks_deleted_counter(t *testing.T) {
 		b, _ := io.ReadAll(res2.Body)
 		t.Fatalf("delete status %d: %s", res2.StatusCode, b)
 	}
-	if testutil.ToFloat64(taskapiDomainTasksDeletedTotal) < beforeD+1 {
-		t.Fatalf("deleted counter did not increment (before=%v after=%v)", beforeD, testutil.ToFloat64(taskapiDomainTasksDeletedTotal))
+	if testutil.ToFloat64(taskcorehandler.DomainTasksDeletedTotal) < beforeD+1 {
+		t.Fatalf("deleted counter did not increment (before=%v after=%v)", beforeD, testutil.ToFloat64(taskcorehandler.DomainTasksDeletedTotal))
 	}
 }

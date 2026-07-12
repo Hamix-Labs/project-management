@@ -5,14 +5,14 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestserver"
 	"github.com/AlexsanderHamir/Hamix/pkgs/repo"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 //funclogmeasure:skip category=tool-required-noop reason="Test-only handler wiring; not part of production trace paths."
-func buildHandler(st *store.Store, workspace *repo.Root) http.Handler {
+func buildHandler(st *composition.API, workspace *repo.Root) http.Handler {
 	opts := []handler.HandlerOption{}
 	if workspace != nil {
 		opts = append(opts, handler.WithRepoProvider(handler.NewSettingsRepoProvider(st)))
@@ -32,7 +32,7 @@ func NewServer(t *testing.T) *httptest.Server {
 // NewServerWithStore is like [NewServer] but also returns the store for direct DB setup.
 //
 //funclogmeasure:skip category=tool-required-noop reason="Test-only HTTP wiring; not part of production trace paths."
-func NewServerWithStore(t *testing.T) (*httptest.Server, *store.Store) {
+func NewServerWithStore(t *testing.T) (*httptest.Server, *composition.API) {
 	t.Helper()
 	st, srv := tasktestserver.NewWithStore(t, buildHandler)
 	return srv, st
@@ -49,7 +49,7 @@ func NewServerWithRepo(t *testing.T, repoDir string) *httptest.Server {
 // NewServerWithRepoStore mounts a workspace repo, seeds git worktree rows, and returns IDs for repo routes.
 //
 //funclogmeasure:skip category=tool-required-noop reason="Test-only HTTP wiring; not part of production trace paths."
-func NewServerWithRepoStore(t *testing.T, repoDir string) (*httptest.Server, *store.Store, string, string, string) {
+func NewServerWithRepoStore(t *testing.T, repoDir string) (*httptest.Server, *composition.API, string, string, string) {
 	t.Helper()
 	return tasktestserver.NewWithRepoStore(t, repoDir, buildHandler)
 }

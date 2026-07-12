@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	cyclesstore "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store"
 	"log/slog"
 	"strings"
 	"time"
@@ -12,7 +13,6 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/reports"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 const (
@@ -119,11 +119,11 @@ func (s *Service) resolveClaimedCommits(
 	g phaseContext,
 	claims []reports.CriteriaCommitClaim,
 	execPhaseSeq int64,
-) ([]store.CycleCommitEntry, error) {
+) ([]cyclesstore.CycleCommitEntry, error) {
 	if len(claims) == 0 {
 		return nil, nil
 	}
-	out := make([]store.CycleCommitEntry, 0, len(claims))
+	out := make([]cyclesstore.CycleCommitEntry, 0, len(claims))
 	for i, claim := range claims {
 		sha := strings.TrimSpace(claim.SHA)
 		if !s.commitExists(ctx, g.Worktree, sha) {
@@ -145,7 +145,7 @@ func (s *Service) resolveClaimedCommits(
 		if branch == "" {
 			branch = g.BaseBranch
 		}
-		out = append(out, store.CycleCommitEntry{
+		out = append(out, cyclesstore.CycleCommitEntry{
 			Seq:         int64(i + 1),
 			Repo:        g.Repo,
 			Worktree:    g.Worktree,

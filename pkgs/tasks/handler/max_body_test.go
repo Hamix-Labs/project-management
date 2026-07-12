@@ -3,6 +3,8 @@ package handler
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/middleware"
 	"io"
 	"log/slog"
 	"net/http"
@@ -11,9 +13,9 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/logctx"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 func TestWithAccessLog_maxBodyOverLimit_logIncludesRequestID(t *testing.T) {
@@ -26,7 +28,7 @@ func TestWithAccessLog_maxBodyOverLimit_logIncludesRequestID(t *testing.T) {
 	slog.SetDefault(slog.New(logctx.WrapSlogHandlerWithLogSequence(base, &processSeq)))
 
 	db := tasktestdb.OpenSQLite(t)
-	h := WithAccessLog(WithMaxRequestBody(NewHandler(store.NewStore(db), NewSSEHub(), nil)))
+	h := middleware.WithAccessLog(middleware.WithMaxRequestBody(NewHandler(composition.NewAPI(db), NewSSEHub(), nil)), calltrace.Path)
 
 	body := `{"title":"` + strings.Repeat("h", 40) + `","priority":"medium"}`
 	if len(body) <= 50 {
@@ -66,7 +68,7 @@ func TestWithAccessLog_maxBodyOverLimit_logIncludesRequestID(t *testing.T) {
 func TestHTTP_max_body_rejects_content_length_over_limit(t *testing.T) {
 	t.Setenv("HAMIX_MAX_REQUEST_BODY_BYTES", "50")
 	db := tasktestdb.OpenSQLite(t)
-	srv := httptest.NewServer(WithMaxRequestBody(NewHandler(store.NewStore(db), NewSSEHub(), nil)))
+	srv := httptest.NewServer(middleware.WithMaxRequestBody(NewHandler(composition.NewAPI(db), NewSSEHub(), nil)))
 	t.Cleanup(srv.Close)
 
 	body := `{"title":"` + strings.Repeat("h", 40) + `","priority":"medium"}`
@@ -98,8 +100,8 @@ func TestHTTP_max_body_rejects_content_length_over_limit(t *testing.T) {
 
 func TestHTTP_max_body_allows_under_limit(t *testing.T) {
 	t.Setenv("HAMIX_MAX_REQUEST_BODY_BYTES", "4096")
-	srv := newBoundTaskServer(t, func(st *store.Store) http.Handler {
-		return WithMaxRequestBody(boundTaskHandler(st))
+	srv := newBoundTaskServer(t, func(st *composition.API) http.Handler {
+		return middleware.WithMaxRequestBody(boundTaskHandler(st))
 	})
 
 	body := withCreateChecklistForURL(srv.URL, `{"title":"ok","priority":"medium"}`)
@@ -116,8 +118,8 @@ func TestHTTP_max_body_allows_under_limit(t *testing.T) {
 
 func TestHTTP_max_body_unknown_content_length_still_bounded(t *testing.T) {
 	t.Setenv("HAMIX_MAX_REQUEST_BODY_BYTES", "48")
-	h := newDirectBoundHandler(t, func(st *store.Store) http.Handler {
-		return WithMaxRequestBody(boundTaskHandler(st))
+	h := newDirectBoundHandler(t, func(st *composition.API) http.Handler {
+		return middleware.WithMaxRequestBody(boundTaskHandler(st))
 	})
 
 	body := withCreateChecklistForURL(directHandlerTestURL, `{"title":"`+strings.Repeat("x", 40)+`","priority":"medium"}`)

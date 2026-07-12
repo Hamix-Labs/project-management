@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -18,15 +19,15 @@ func (h *Handler) gitRepositoryProbe(w http.ResponseWriter, r *http.Request) {
 	path := strings.TrimSpace(r.URL.Query().Get("path"))
 	debugHTTPRequest(r, op, "probe_path", truncateRunes(path, maxHTTPLogTitleRunes))
 	if r.Method != http.MethodGet {
-		writeError(w, r, op, errors.New("method not allowed"), http.StatusMethodNotAllowed)
+		handlerhttp.WriteError(w, r, op, errors.New("method not allowed"), http.StatusMethodNotAllowed)
 		return
 	}
 	if path == "" {
-		writeJSONError(w, r, op, http.StatusBadRequest, "path required")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusBadRequest, "path required")
 		return
 	}
 	if len(path) > maxRepoRelPathQueryBytes {
-		writeJSONError(w, r, op, http.StatusBadRequest, "path too long")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusBadRequest, "path too long")
 		return
 	}
 
@@ -34,7 +35,7 @@ func (h *Handler) gitRepositoryProbe(w http.ResponseWriter, r *http.Request) {
 	opened, err := gitSvc.OpenRepository(r.Context(), path)
 	if err != nil {
 		if errors.Is(err, gitwork.ErrNotARepository) {
-			writeJSON(w, r, op, http.StatusOK, gitRepositoryProbeResponse{
+			handlerhttp.WriteJSON(w, r, op, http.StatusOK, gitRepositoryProbeResponse{
 				Path:            path,
 				IsGitRepository: false,
 				Branches:        []gitLiveBranchJSON{},
@@ -42,12 +43,12 @@ func (h *Handler) gitRepositoryProbe(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if errors.Is(err, taskcoredomain.ErrInvalidInput) {
-			writeJSONError(w, r, op, http.StatusBadRequest, repoErrUserMessage(err))
+			handlerhttp.WriteJSONError(w, r, op, http.StatusBadRequest, repoErrUserMessage(err))
 			return
 		}
 		slog.Log(r.Context(), slog.LevelError, "git repository probe failed",
 			"cmd", calltrace.LogCmd, "operation", op, "err", err)
-		writeJSONError(w, r, op, http.StatusInternalServerError, "git probe failed")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusInternalServerError, "git probe failed")
 		return
 	}
 
@@ -55,7 +56,7 @@ func (h *Handler) gitRepositoryProbe(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		slog.Log(r.Context(), slog.LevelError, "list branches for probe failed",
 			"cmd", calltrace.LogCmd, "operation", op, "err", err)
-		writeJSONError(w, r, op, http.StatusInternalServerError, "git probe failed")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusInternalServerError, "git probe failed")
 		return
 	}
 
@@ -67,7 +68,7 @@ func (h *Handler) gitRepositoryProbe(w http.ResponseWriter, r *http.Request) {
 			current = b.Name
 		}
 	}
-	writeJSON(w, r, op, http.StatusOK, gitRepositoryProbeResponse{
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, gitRepositoryProbeResponse{
 		Path:            opened.Root,
 		IsGitRepository: true,
 		CurrentBranch:   current,

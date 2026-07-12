@@ -412,7 +412,7 @@ flowchart LR
   C -->|implementation or gate fail| FE
 ```
 
-The phase ledger allows `verify → verify` when the previous verify row is terminal failed (`ValidVerifyOnlyRetryTransition` in `pkgs/tasks/domain/cycle_state.go`).
+The phase ledger allows `verify → verify` when the previous verify row is terminal failed (`ValidVerifyOnlyRetryTransition` in `pkgs/taskcycles/domain/cycle_state.go`).
 
 | EC ID | Behavior | Test |
 | --- | --- | --- |

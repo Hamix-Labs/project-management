@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	taskcorehandler "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/handler"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
 	"io"
 	"log/slog"
@@ -21,8 +22,8 @@ func TestDecodeJSON_taskCreate_fixture(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var got taskCreateJSON
-	if err := decodeJSON(context.Background(), strings.NewReader(string(b)), &got); err != nil {
+	var got taskcorehandler.TaskCreateJSON
+	if err := handlerhttp.DecodeJSON(context.Background(), strings.NewReader(string(b)), &got); err != nil {
 		t.Fatal(err)
 	}
 	if got.Title != "Example from testdata" {
@@ -38,8 +39,8 @@ func TestDecodeJSON_taskPatch_fixture(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var got taskPatchJSON
-	if err := decodeJSON(context.Background(), strings.NewReader(string(b)), &got); err != nil {
+	var got taskcorehandler.TaskPatchJSON
+	if err := handlerhttp.DecodeJSON(context.Background(), strings.NewReader(string(b)), &got); err != nil {
 		t.Fatal(err)
 	}
 	if got.Status == nil || *got.Status != taskcoredomain.StatusRunning {
@@ -49,8 +50,8 @@ func TestDecodeJSON_taskPatch_fixture(t *testing.T) {
 
 func TestDecodeJSON_rejectsUnknownField(t *testing.T) {
 	const raw = `{"title":"x","initial_prompt":"","nope":1}`
-	var got taskCreateJSON
-	err := decodeJSON(context.Background(), strings.NewReader(raw), &got)
+	var got taskcorehandler.TaskCreateJSON
+	err := handlerhttp.DecodeJSON(context.Background(), strings.NewReader(raw), &got)
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -58,8 +59,8 @@ func TestDecodeJSON_rejectsUnknownField(t *testing.T) {
 
 func TestDecodeJSON_rejectsTrailingJSON(t *testing.T) {
 	const raw = `{"title":"x","initial_prompt":""}{}`
-	var got taskCreateJSON
-	err := decodeJSON(context.Background(), strings.NewReader(raw), &got)
+	var got taskcorehandler.TaskCreateJSON
+	err := handlerhttp.DecodeJSON(context.Background(), strings.NewReader(raw), &got)
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -125,13 +126,13 @@ func TestParseListParams(t *testing.T) {
 		{name: "limit_nan", q: url.Values{"limit": {"nope"}}, wantErr: true},
 		{name: "limit_201", q: url.Values{"limit": {"201"}}, wantErr: true},
 		{name: "offset_negative", q: url.Values{"offset": {"-1"}}, wantErr: true},
-		{name: "limit_value_too_long", q: url.Values{"limit": {strings.Repeat("1", maxListIntQueryParamBytes+1)}}, wantErr: true},
-		{name: "offset_value_too_long", q: url.Values{"offset": {strings.Repeat("1", maxListIntQueryParamBytes+1)}}, wantErr: true},
-		{name: "after_id_too_long", q: url.Values{"after_id": {strings.Repeat("a", maxListAfterIDParamBytes+1)}}, wantErr: true},
+		{name: "limit_value_too_long", q: url.Values{"limit": {strings.Repeat("1", taskcorehandler.MaxListIntQueryParamBytes+1)}}, wantErr: true},
+		{name: "offset_value_too_long", q: url.Values{"offset": {strings.Repeat("1", taskcorehandler.MaxListIntQueryParamBytes+1)}}, wantErr: true},
+		{name: "after_id_too_long", q: url.Values{"after_id": {strings.Repeat("a", taskcorehandler.MaxListAfterIDParamBytes+1)}}, wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			limit, offset, afterID, err := parseListParams(context.Background(), tt.q)
+			limit, offset, afterID, err := taskcorehandler.ParseListParams(context.Background(), tt.q)
 			if tt.wantErr {
 				if err == nil {
 					t.Fatal("expected error")
@@ -150,8 +151,8 @@ func TestParseListParams(t *testing.T) {
 
 func TestDecodeJSON_trailing_garbage_after_object(t *testing.T) {
 	const raw = `{"title":"x","initial_prompt":""}junk`
-	var got taskCreateJSON
-	err := decodeJSON(context.Background(), strings.NewReader(raw), &got)
+	var got taskcorehandler.TaskCreateJSON
+	err := handlerhttp.DecodeJSON(context.Background(), strings.NewReader(raw), &got)
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -162,17 +163,17 @@ func TestLogRequestFailure_warnAndError(t *testing.T) {
 	t.Cleanup(func() { slog.SetDefault(prev) })
 	slog.SetDefault(slog.New(slog.NewTextHandler(io.Discard, nil)))
 
-	logRequestFailure(nil, "test.op", errors.New("client"), http.StatusBadRequest)
-	logRequestFailure(nil, "test.op", errors.New("server"), http.StatusInternalServerError)
+	handlerhttp.LogRequestFailure(nil, "test.op", errors.New("client"), http.StatusBadRequest)
+	handlerhttp.LogRequestFailure(nil, "test.op", errors.New("server"), http.StatusInternalServerError)
 }
 
 func TestActorFromRequest(t *testing.T) {
 	r := &http.Request{Header: http.Header{}}
-	if actorFromRequest(r) != taskcoredomain.ActorUser {
+	if handlerhttp.ActorFromRequest(r) != taskcoredomain.ActorUser {
 		t.Fatal("default actor")
 	}
 	r.Header.Set("X-Actor", "agent")
-	if actorFromRequest(r) != taskcoredomain.ActorAgent {
+	if handlerhttp.ActorFromRequest(r) != taskcoredomain.ActorAgent {
 		t.Fatal("agent")
 	}
 }

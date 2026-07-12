@@ -4,7 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
+	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 	"io"
 	"net/http"
 	"strings"
@@ -194,7 +195,7 @@ func TestHTTP_patchTask_clearsPickupNotBefore(t *testing.T) {
 			id := mustCreateTask(t, srv.URL, `{"title":"clear","priority":"medium"}`)
 			seed := time.Now().UTC().Add(3 * time.Hour).Truncate(time.Second)
 			if _, err := st.Update(context.Background(), id,
-				store.UpdateTaskInput{PickupNotBefore: &store.PickupNotBeforePatch{At: seed}},
+				taskcorestore.UpdateTaskInput{PickupNotBefore: &taskcorestore.PickupNotBeforePatch{At: seed}},
 				taskcoredomain.ActorUser); err != nil {
 				t.Fatalf("seed pickup: %v", err)
 			}
@@ -285,7 +286,7 @@ func TestHTTP_patchTask_emitsTaskUpdatedSSE_onScheduleChange(t *testing.T) {
 		t.Fatalf("status %d body=%s", res.StatusCode, raw)
 	}
 	got := summarize(drainSSE(t, ch, 1, 2*time.Second))
-	mustEqualEvents(t, "PATCH /tasks/{id} pickup_not_before", got, []string{string(TaskUpdated) + ":" + id})
+	mustEqualEvents(t, "PATCH /tasks/{id} pickup_not_before", got, []string{string(realtime.TaskUpdated) + ":" + id})
 }
 
 // TestHTTP_patchTask_publishesTaskUpdated pins the documented SSE side effect:
@@ -306,5 +307,5 @@ func TestHTTP_patchTask_publishesTaskUpdated(t *testing.T) {
 		t.Fatalf("PATCH status %d body=%s", res.StatusCode, raw)
 	}
 	got := summarize(drainSSE(t, ch, 1, 2*time.Second))
-	mustEqualEvents(t, "PATCH /tasks/{id}", got, []string{string(TaskUpdated) + ":" + id})
+	mustEqualEvents(t, "PATCH /tasks/{id}", got, []string{string(realtime.TaskUpdated) + ":" + id})
 }

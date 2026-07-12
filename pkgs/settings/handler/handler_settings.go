@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
 	"io"
 	"log/slog"
 	"net/http"
@@ -26,7 +27,7 @@ func (h *Handler) getSettings(w http.ResponseWriter, r *http.Request) {
 		writeStoreError(w, r, op, err)
 		return
 	}
-	writeJSONWithETag(w, r, op, http.StatusOK, h.settingsResponseFrom(cfg))
+	handlerhttp.WriteJSONWithETag(w, r, op, http.StatusOK, h.settingsResponseFrom(cfg))
 }
 
 func (h *Handler) patchSettings(w http.ResponseWriter, r *http.Request) {
@@ -36,13 +37,13 @@ func (h *Handler) patchSettings(w http.ResponseWriter, r *http.Request) {
 	debugHTTPRequest(r, op)
 
 	if h.agent == nil {
-		writeJSONError(w, r, op, http.StatusServiceUnavailable, "agent worker control unavailable")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusServiceUnavailable, "agent worker control unavailable")
 		return
 	}
 
 	var body settingsPatchBody
-	if err := decodeJSON(r.Context(), r.Body, &body); err != nil {
-		writeError(w, r, op, err, http.StatusBadRequest)
+	if err := handlerhttp.DecodeJSON(r.Context(), r.Body, &body); err != nil {
+		handlerhttp.WriteError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
 	patch := contract.SettingsPatch{
@@ -61,7 +62,7 @@ func (h *Handler) patchSettings(w http.ResponseWriter, r *http.Request) {
 		CursorSessionResumeEnabled:  body.CursorSessionResumeEnabled,
 	}
 	if patch.IsEmpty() {
-		writeJSONError(w, r, op, http.StatusBadRequest, "patch body must include at least one field")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusBadRequest, "patch body must include at least one field")
 		return
 	}
 
@@ -73,11 +74,11 @@ func (h *Handler) patchSettings(w http.ResponseWriter, r *http.Request) {
 	if reloadErr := h.agent.Reload(r.Context()); reloadErr != nil {
 		slog.Error("settings patch persisted but supervisor reload failed",
 			"cmd", calltrace.LogCmd, "operation", op, "err", reloadErr)
-		writeJSONError(w, r, op, http.StatusInternalServerError, "settings saved but worker reload failed")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusInternalServerError, "settings saved but worker reload failed")
 		return
 	}
 	h.notifyChange(realtime.SettingsChanged)
-	writeJSON(w, r, op, http.StatusOK, h.settingsResponseFrom(updated))
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, h.settingsResponseFrom(updated))
 }
 
 // Deprecated: use POST /runners/{id}/probe instead.
@@ -88,15 +89,15 @@ func (h *Handler) probeCursor(w http.ResponseWriter, r *http.Request) {
 	debugHTTPRequest(r, op)
 
 	if h.agent == nil {
-		writeJSONError(w, r, op, http.StatusServiceUnavailable, "agent worker control unavailable")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusServiceUnavailable, "agent worker control unavailable")
 		return
 	}
 
 	var body probeRequest
 	if r.ContentLength != 0 {
-		if err := decodeJSON(r.Context(), r.Body, &body); err != nil {
+		if err := handlerhttp.DecodeJSON(r.Context(), r.Body, &body); err != nil {
 			if !errors.Is(err, io.EOF) {
-				writeError(w, r, op, err, http.StatusBadRequest)
+				handlerhttp.WriteError(w, r, op, err, http.StatusBadRequest)
 				return
 			}
 		}
@@ -123,12 +124,12 @@ func (h *Handler) probeCursor(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		resp.OK = false
 		resp.Error = err.Error()
-		writeJSON(w, r, op, http.StatusOK, resp)
+		handlerhttp.WriteJSON(w, r, op, http.StatusOK, resp)
 		return
 	}
 	resp.OK = true
 	resp.Version = version
-	writeJSON(w, r, op, http.StatusOK, resp)
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, resp)
 }
 
 // Deprecated: use POST /runners/{id}/list-models instead.
@@ -140,9 +141,9 @@ func (h *Handler) listCursorModels(w http.ResponseWriter, r *http.Request) {
 
 	var body listCursorModelsRequest
 	if r.ContentLength != 0 {
-		if err := decodeJSON(r.Context(), r.Body, &body); err != nil {
+		if err := handlerhttp.DecodeJSON(r.Context(), r.Body, &body); err != nil {
 			if !errors.Is(err, io.EOF) {
-				writeError(w, r, op, err, http.StatusBadRequest)
+				handlerhttp.WriteError(w, r, op, err, http.StatusBadRequest)
 				return
 			}
 		}
@@ -169,7 +170,7 @@ func (h *Handler) listCursorModels(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		out.OK = false
 		out.Error = err.Error()
-		writeJSON(w, r, op, http.StatusOK, out)
+		handlerhttp.WriteJSON(w, r, op, http.StatusOK, out)
 		return
 	}
 	out.OK = true
@@ -177,7 +178,7 @@ func (h *Handler) listCursorModels(w http.ResponseWriter, r *http.Request) {
 	for _, m := range models {
 		out.Models = append(out.Models, cursorModelWire{ID: m.ID, Label: m.Label})
 	}
-	writeJSON(w, r, op, http.StatusOK, out)
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, out)
 }
 
 func (h *Handler) cancelCurrentRun(w http.ResponseWriter, r *http.Request) {
@@ -187,14 +188,14 @@ func (h *Handler) cancelCurrentRun(w http.ResponseWriter, r *http.Request) {
 	debugHTTPRequest(r, op)
 
 	if h.agent == nil {
-		writeJSONError(w, r, op, http.StatusServiceUnavailable, "agent worker control unavailable")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusServiceUnavailable, "agent worker control unavailable")
 		return
 	}
 	cancelled := h.agent.CancelCurrentRun()
 	if cancelled {
 		h.notifyChange(realtime.AgentRunCancelled)
 	}
-	writeJSON(w, r, op, http.StatusOK, cancelRunResponse{Cancelled: cancelled})
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, cancelRunResponse{Cancelled: cancelled})
 }
 
 func (h *Handler) settingsResponseFrom(cfg settingsdomain.AppSettings) settingsResponse {

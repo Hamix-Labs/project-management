@@ -30,7 +30,10 @@ import (
 // Rev 8 (Tier 3 BC blueprint): domain types colocated to taskchecklist,
 // taskevents, taskcycles, and taskcore; BC domain packages are canonical.
 // No SQL or post-AutoMigrate behavior change.
-const SchemaRevision = 8
+//
+// Rev 9 (ADR-0079): delete pkgs/tasks/store facade; postgres.Migrate calls
+// BC store models via migrate_models.go. No SQL or post-AutoMigrate change.
+const SchemaRevision = 9
 
 const schemaMetaRowID = 1
 

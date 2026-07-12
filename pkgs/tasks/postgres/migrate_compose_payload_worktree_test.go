@@ -11,7 +11,6 @@ import (
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
 	composemodel "github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/store/model"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -25,7 +24,7 @@ func TestMigrateComposePayloadWorktree_backfillsTemplatePayload(t *testing.T) {
 	ctx := context.Background()
 	now := time.Now().UTC()
 
-	if err := model.AutoMigrateAll(db); err != nil {
+	if err := autoMigrateStoreModels(db); err != nil {
 		t.Fatal(err)
 	}
 
@@ -130,7 +129,7 @@ func TestMigrateComposePayloadWorktree_remapsLegacyGlobalDefaultProject(t *testi
 	ctx := context.Background()
 	now := time.Now().UTC()
 
-	if err := model.AutoMigrateAll(db); err != nil {
+	if err := autoMigrateStoreModels(db); err != nil {
 		t.Fatal(err)
 	}
 

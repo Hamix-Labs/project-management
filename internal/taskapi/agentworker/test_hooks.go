@@ -2,11 +2,11 @@ package agentworker
 
 import (
 	"context"
+	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	"time"
 	"unsafe"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 // HasRunningInstance reports whether a worker instance is currently active.
@@ -59,7 +59,7 @@ func (s *Supervisor) SetProbeBudgetForTest(d time.Duration) {
 }
 
 // BuildVerifyRunnerForTest exposes buildVerifyRunner for cmd tests.
-func (s *Supervisor) BuildVerifyRunnerForTest(ctx context.Context, cfg store.AppSettings) (runner.Runner, string) {
+func (s *Supervisor) BuildVerifyRunnerForTest(ctx context.Context, cfg settingsdomain.AppSettings) (runner.Runner, string) {
 	return s.buildVerifyRunner(ctx, cfg)
 }
 

@@ -16,7 +16,7 @@ Human learning path: [docs/guide.md](docs/guide.md). Doc index: [docs/README.md]
 | If you are… | Read (in order) | Skip |
 | --- | --- | --- |
 | Changing Go REST / handlers | [docs/api.md](docs/api.md), [pkgs/tasks/handler/README.md](pkgs/tasks/handler/README.md) | harness docs, [docs/web.md](docs/web.md) |
-| Changing Go domain / store | [docs/data-model.md](docs/data-model.md), [pkgs/tasks/store/README.md](pkgs/tasks/store/README.md) | web, harness |
+| Changing Go domain / store | [docs/data-model.md](docs/data-model.md), `internal/taskapi/composition/`, BC `pkgs/*/store/` | web, harness |
 | Changing agent worker / harness | [docs/domain/harness.md](docs/domain/harness.md), [docs/domain/harness-testing.md](docs/domain/harness-testing.md), [docs/configuration.md](docs/configuration.md) | [docs/web.md](docs/web.md) |
 | Changing tests / CI / coverage | [docs/domain/testing.md](docs/domain/testing.md), [CONTRIBUTING.md](CONTRIBUTING.md) | web-only work |
 | Changing web UI only | [docs/web.md](docs/web.md), `.cursor/rules/frontend_bar.mdc` | architecture, harness |
@@ -45,11 +45,11 @@ Intent-based lookup. For subsystem inventory, use [docs/agent-map.md](docs/agent
 | I need to… | Go to |
 | --- | --- |
 | Add or change a REST route | `pkgs/tasks/handler/handler_*.go`, [docs/api.md](docs/api.md) |
-| Add DB persistence | `pkgs/tasks/store/`, [docs/domain/persistence.md](docs/domain/persistence.md) |
-| Change task JSON shape | `pkgs/tasks/domain/`, `handler_*_json.go`, `web/src/api/parseTaskApi*.ts` |
+| Add DB persistence | BC `pkgs/<bc>/store/`, [docs/domain/persistence.md](docs/domain/persistence.md) |
+| Change task JSON shape | `pkgs/taskcore/domain/`, `handler_*_json.go`, `web/src/api/parseTaskApi*.ts` |
 | Wire SSE after a write | handler `notifyChange`, [docs/domain/sse-hub.md](docs/domain/sse-hub.md) |
 | Middleware change | `pkgs/tasks/middleware/`, `internal/middlewaretest/` |
-| Change task status or transitions | `pkgs/tasks/domain/`, [docs/data-model.md](docs/data-model.md) |
+| Change task status or transitions | `pkgs/taskcore/domain/`, [docs/data-model.md](docs/data-model.md) |
 | Task scheduling / when worker picks up | `pkgs/tasks/scheduling/`, [docs/domain/task-scheduling.md](docs/domain/task-scheduling.md) |
 | Checklist API | `handler_checklist.go`, `handler_create_checklist.go`, [docs/domain/done-criteria.md](docs/domain/done-criteria.md) |
 | Task dependencies or release gates | `handler_task_dependencies.go`, `handler_depends_on_json.go`, `handler_task_gate.go`, [docs/data-model.md](docs/data-model.md) |

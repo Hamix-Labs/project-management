@@ -85,11 +85,11 @@ Passes run against [HARNESS_LANDSCAPE.md](HARNESS_LANDSCAPE.md), [docs/domain/ha
 | **Dependencies / risks** | Label cardinality if per-tool spans exported to Prometheus — prefer trace backend for fine grain |
 | **Success signal** | One query links phase ledger row → harness logs → progress SSE for a stuck run |
 
-#### - [ ] 3. Surface or gate verdict DB mirror failures
+#### - [x] 3. Surface or gate verdict DB mirror failures
 
 | | |
 | --- | --- |
-| **Status** | Not started |
+| **Status** | Shipped (visible-only) — [ADR-0074](docs/adr/ADR-0074-verdict-mirror-degradation.md), handoff harness P0 PR2 |
 | **ROI_score** | ~3.8 |
 | **Problem** | `UpsertVerifyReports` / criteria mirror failures are logged and verify continues ([`checks.go`](pkgs/agents/harness/internal/verify/checks.go)); UI and support tooling read DB mirrors ([harness.md § Limitations](docs/domain/harness.md)). |
 | **Proposed change** | (a) Operator-visible: SSE `agent_run_progress` or cycle `details_json` flag `mirror_degraded`; and/or (b) fail verify retryably when mirror write fails after parse success. |
@@ -99,11 +99,11 @@ Passes run against [HARNESS_LANDSCAPE.md](HARNESS_LANDSCAPE.md), [docs/domain/ha
 | **Dependencies / risks** | Failing verify on mirror error may increase retries — prefer visible degradation first |
 | **Success signal** | Zero silent mirror failures in production logs without matching UI/SSE signal |
 
-#### - [ ] 4. Non-blocking notifier contract + hub back-pressure guard
+#### - [x] 4. Non-blocking notifier contract + hub back-pressure guard
 
 | | |
 | --- | --- |
-| **Status** | Not started |
+| **Status** | Shipped — [ADR-0075](docs/adr/ADR-0075-non-blocking-harness-notifier.md), handoff harness P0 PR1 |
 | **ROI_score** | ~3.7 |
 | **Problem** | Harness assumes notifiers do not block; SSE adapters publish synchronously on the worker goroutine ([`sse.go`](internal/taskapi/agentworker/sse.go)). |
 | **Proposed change** | Document contract in `CycleChangeNotifier` / `ProgressNotifier`; enqueue to hub via non-blocking send or timeout; count dropped notifications in metrics. |
@@ -113,11 +113,11 @@ Passes run against [HARNESS_LANDSCAPE.md](HARNESS_LANDSCAPE.md), [docs/domain/ha
 | **Dependencies / risks** | SSE hub may need drop policy alignment ([sse-hub.md](docs/domain/sse-hub.md)) |
 | **Success signal** | Harness run duration p99 unaffected by synthetic slow subscriber test |
 
-#### - [ ] 5. Harden T0/T2 resume parity for verify retry budget
+#### - [x] 5. Harden T0/T2 resume parity for verify retry budget
 
 | | |
 | --- | --- |
-| **Status** | Not started |
+| **Status** | Shipped — [ADR-0076](docs/adr/ADR-0076-verify-retry-count-resume.md), handoff harness P0 PR3 |
 | **ROI_score** | ~3.6 |
 | **Problem** | `verifyAttempt` is derived from DB `attempt_seq` on resume ([`checkpoint.go`](pkgs/agents/harness/internal/resume/checkpoint.go)); cross-cycle resume resets to 0 by design. Edge mismatches could over- or under-count retries vs `verify_max_retries`. |
 | **Proposed change** | Explicit `verify_retry_count` in phase `details_json` or cycle meta at each verify boundary; resume reads that field; table-driven tests for interrupt mid-retry. |

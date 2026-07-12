@@ -8,11 +8,11 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi"
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/registry"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/worker"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 const (
@@ -26,13 +26,14 @@ const (
 // Methods are safe for concurrent use; applyMu serialises Start/Reload
 // end-to-end so concurrent settings patches cannot leak worker goroutines.
 type Supervisor struct {
-	parentCtx  context.Context
-	store      *store.Store
-	queue      *agents.MemoryQueue
-	publisher  realtime.Publisher
-	metrics    worker.RunMetrics
-	probe      func(ctx context.Context, id, binaryPath string, timeout time.Duration) (version, resolvedBin string, err error)
-	probeBudge time.Duration
+	parentCtx       context.Context
+	store           *composition.API
+	queue           *agents.MemoryQueue
+	publisher       realtime.Publisher
+	metrics         worker.RunMetrics
+	notifierMetrics NotifierMetrics
+	probe           func(ctx context.Context, id, binaryPath string, timeout time.Duration) (version, resolvedBin string, err error)
+	probeBudge      time.Duration
 
 	applyMu sync.Mutex
 
@@ -44,16 +45,17 @@ type Supervisor struct {
 // New wires the supervisor with its dependencies. The supervisor does
 // not start the worker; the caller invokes Start once after the rest
 // of taskapi assembly finishes.
-func New(ctx context.Context, st *store.Store, q *agents.MemoryQueue, pub realtime.Publisher) *Supervisor {
+func New(ctx context.Context, st *composition.API, q *agents.MemoryQueue, pub realtime.Publisher) *Supervisor {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskapi.newAgentWorkerSupervisor")
 	return &Supervisor{
-		parentCtx:  ctx,
-		store:      st,
-		queue:      q,
-		publisher:  pub,
-		metrics:    taskapi.RegisterAgentWorkerMetrics(),
-		probe:      registry.Probe,
-		probeBudge: 5 * time.Second,
+		parentCtx:       ctx,
+		store:           st,
+		queue:           q,
+		publisher:       pub,
+		metrics:         taskapi.RegisterAgentWorkerMetrics(),
+		notifierMetrics: RegisterNotifierMetrics(),
+		probe:           registry.Probe,
+		probeBudge:      5 * time.Second,
 	}
 }
 

@@ -14,7 +14,7 @@ import (
 )
 
 // HandlerAPI is the composed persistence contract required by pkgs/tasks/handler
-// and implemented by *pkgs/tasks/store.Store at the taskapi wiring edge.
+// and implemented by *internal/taskapi/composition.API at the taskapi wiring edge.
 type HandlerAPI interface {
 	taskcorecontract.HealthStore
 	settingscontract.SettingsStore

@@ -3,6 +3,8 @@ package handler
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/middleware"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -25,7 +27,7 @@ func TestWithAccessLog_rateLimitWarn_carriesRequestID(t *testing.T) {
 	inner := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
-	h := WithAccessLog(WithRateLimit(inner))
+	h := middleware.WithAccessLog(middleware.WithRateLimit(inner), calltrace.Path)
 	addr := "198.51.100.22:5555"
 
 	req1 := httptest.NewRequest(http.MethodGet, "/tasks", nil)

@@ -13,11 +13,12 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi"
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/taskapiconfig"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/devsim"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
@@ -26,7 +27,7 @@ import (
 // graceful Serve+Shutdown loop. Split off run_helpers.go per
 // backend-engineering-bar.mdc §2 / §16.
 
-func mountTaskAPIMux(ctx context.Context, api http.Handler, hub *handler.SSEHub, taskStore *store.Store, agentQueue *agents.MemoryQueue) *http.ServeMux {
+func mountTaskAPIMux(ctx context.Context, api http.Handler, hub *handler.SSEHub, taskStore *composition.API, agentQueue *agents.MemoryQueue) *http.ServeMux {
 	taskapi.RegisterDefaultPrometheusCollectors()
 	taskapi.RegisterBuildInfoGauge()
 	taskapi.RegisterAgentQueueMetrics(agentQueue)
@@ -41,7 +42,7 @@ func mountTaskAPIMux(ctx context.Context, api http.Handler, hub *handler.SSEHub,
 	return mux
 }
 
-func maybeRunSSEDevTicker(ctx context.Context, taskStore *store.Store, hub *handler.SSEHub) {
+func maybeRunSSEDevTicker(ctx context.Context, taskStore *composition.API, hub *handler.SSEHub) {
 	d := taskapiconfig.SSETestTickerInterval()
 	if d < time.Second {
 		slog.Info("sse dev env on, ticker off", "cmd", cmdName, "operation", "taskapi.sse_dev",
@@ -51,16 +52,16 @@ func maybeRunSSEDevTicker(ctx context.Context, taskStore *store.Store, hub *hand
 	slog.Info("sse dev ticker enabled", "cmd", cmdName, "operation", "taskapi.sse_dev", "interval", d.String())
 	opts := devsim.LoadOptions()
 	devsim.RunTicker(ctx, taskStore, d, opts, func(kind devsim.ChangeKind, id string) {
-		var typ handler.TaskChangeType
+		var typ realtime.ChangeType
 		switch kind {
 		case devsim.ChangeCreated:
-			typ = handler.TaskCreated
+			typ = realtime.TaskCreated
 		case devsim.ChangeDeleted:
-			typ = handler.TaskDeleted
+			typ = realtime.TaskDeleted
 		default:
-			typ = handler.TaskUpdated
+			typ = realtime.TaskUpdated
 		}
-		hub.Publish(handler.TaskChangeEvent{Type: typ, ID: id})
+		hub.Publish(realtime.Event{Type: typ, ID: id})
 	})
 }
 

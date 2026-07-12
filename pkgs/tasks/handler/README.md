@@ -6,7 +6,7 @@ The returned `http.Handler` from `NewHandler` is the **inner mux** (routes only)
 
 ## Middleware (`With*` — outer stack from `middleware.Stack`)
 
-Implementations live in **[`pkgs/tasks/middleware`](../middleware/)** (no import of `handler`). **`middleware_shim.go`** re-exports the same names for `cmd/taskapi` and tests that still import `handler`. **File map, `Stack` order, and env table:** [`../middleware/README.md`](../middleware/README.md).
+Implementations live in **[`pkgs/tasks/middleware`](../middleware/)** (no import of `handler`). **`cmd/taskapi`** and tests import **`middleware`** directly (e.g. `middleware.WithAccessLog(h, calltrace.Path)`). **File map, `Stack` order, and env table:** [`../middleware/README.md`](../middleware/README.md).
 
 | Middleware | Role |
 |------------|------|
@@ -28,8 +28,7 @@ Implementations live in **[`pkgs/tasks/middleware`](../middleware/)** (no import
 | File | Role |
 |------|------|
 | `handler.go` | `Handler`, `NewHandler`, route registration, JSON security header helpers. |
-| `sse_types.go` | Wire type aliases to `pkgs/tasks/realtime`. |
-| `sse_hub.go` | `SSEHub`, publish fanout, ring buffer, eviction. |
+| `sse_hub.go` | `SSEHub`, publish fanout, ring buffer, eviction (`realtime.Event`). |
 | `sse_stream.go` | `streamEvents` (`GET /events`). |
 | `sse_notify.go` | `notifyChange` / enriched publish helpers; `notifyScopelessChange` for id-less hints (`settings_changed`, `agent_run_cancelled`). Domain doc: [docs/domain/sse-hub.md](../../docs/domain/sse-hub.md). |
 
@@ -55,7 +54,7 @@ Sibling bounded contexts register via `*.Register(m, Deps)` from this package's 
 | Area | Files |
 |------|--------|
 | Health + SSE | `handler_health.go`, `handler_system_health.go`; `sse_*.go` (`GET /events`) |
-| Taskcore wiring | `handler_taskcore_wire.go`, `handler_taskcore_compat.go`, `handler_taskcore_compose.go` |
+| Taskcore wiring | `handler_taskcore_wire.go`, `handler_taskcore_compose.go` |
 | Bootstrap + RUM | `handler_bootstrap.go`, `handler_rum.go` |
 | Write policy | `handler_writepolicy.go`, `writepolicy/` |
 | Read policy | `readpolicy/` |

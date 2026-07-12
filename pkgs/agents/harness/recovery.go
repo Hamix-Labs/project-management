@@ -5,13 +5,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
+	cyclescontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/contract"
 	"log/slog"
 	"runtime/debug"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/reports"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 // cleanup.go owns every non-happy-path closeout for a single task:
@@ -39,7 +40,7 @@ func (h *Harness) handleShutdownAfterRun(state *processState, taskID string) {
 	defer cancel()
 	if state.phase.runningPhaseSeq > 0 {
 		summary := ShutdownReason
-		if _, err := h.store.CompletePhase(bg, store.CompletePhaseInput{
+		if _, err := h.store.CompletePhase(bg, cyclescontract.CompletePhaseInput{
 			CycleID:  state.cycle.cycleID,
 			PhaseSeq: state.phase.runningPhaseSeq,
 			Status:   cyclesdomain.PhaseStatusFailed,
@@ -67,7 +68,7 @@ func (h *Harness) handleShutdownAfterRun(state *processState, taskID string) {
 		state.cycle.cycleStarted = false
 	}
 	failed := taskcoredomain.StatusFailed
-	if _, err := h.store.Update(bg, taskID, store.UpdateTaskInput{Status: &failed}, taskcoredomain.ActorAgent); err != nil {
+	if _, err := h.store.Update(bg, taskID, taskcorestore.UpdateTaskInput{Status: &failed}, taskcoredomain.ActorAgent); err != nil {
 		if !errors.Is(err, taskcoredomain.ErrNotFound) {
 			slog.Warn("agent harness shutdown task transition failed", "cmd", calltrace.LogCmd,
 				"operation", "agent.harness.Harness.handleShutdownAfterRun.task_err",
@@ -113,7 +114,7 @@ func (h *Harness) recoverFromPanic(state *processState, task taskcoredomain.Task
 	defer cancel()
 	if state.phase.runningPhaseSeq > 0 {
 		summary := PanicReason
-		if _, err := h.store.CompletePhase(bg, store.CompletePhaseInput{
+		if _, err := h.store.CompletePhase(bg, cyclescontract.CompletePhaseInput{
 			CycleID:  state.cycle.cycleID,
 			PhaseSeq: state.phase.runningPhaseSeq,
 			Status:   cyclesdomain.PhaseStatusFailed,
@@ -141,7 +142,7 @@ func (h *Harness) recoverFromPanic(state *processState, task taskcoredomain.Task
 		state.cycle.cycleStarted = false
 	}
 	failed := taskcoredomain.StatusFailed
-	if _, err := h.store.Update(bg, task.ID, store.UpdateTaskInput{Status: &failed}, taskcoredomain.ActorAgent); err != nil {
+	if _, err := h.store.Update(bg, task.ID, taskcorestore.UpdateTaskInput{Status: &failed}, taskcoredomain.ActorAgent); err != nil {
 		if !errors.Is(err, taskcoredomain.ErrNotFound) {
 			slog.Warn("agent harness panic task transition failed", "cmd", calltrace.LogCmd,
 				"operation", "agent.harness.Harness.recoverFromPanic.task_err",
@@ -159,7 +160,7 @@ func (h *Harness) bestEffortFailTask(ctx context.Context, taskID string) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.bestEffortFailTask",
 		"task_id", taskID)
 	failed := taskcoredomain.StatusFailed
-	if _, err := h.store.Update(ctx, taskID, store.UpdateTaskInput{Status: &failed}, taskcoredomain.ActorAgent); err != nil {
+	if _, err := h.store.Update(ctx, taskID, taskcorestore.UpdateTaskInput{Status: &failed}, taskcoredomain.ActorAgent); err != nil {
 		if !errors.Is(err, taskcoredomain.ErrNotFound) {
 			slog.Warn("agent harness bestEffortFailTask failed", "cmd", calltrace.LogCmd,
 				"operation", "agent.harness.Harness.bestEffortFailTask.err",
@@ -177,7 +178,7 @@ func (h *Harness) bestEffortTerminate(ctx context.Context, state *processState, 
 		"cycle_id", state.cycle.cycleID, "status", string(status), "reason", reason)
 	if state.phase.runningPhaseSeq > 0 {
 		summary := reason
-		if _, err := h.store.CompletePhase(ctx, store.CompletePhaseInput{
+		if _, err := h.store.CompletePhase(ctx, cyclescontract.CompletePhaseInput{
 			CycleID:  state.cycle.cycleID,
 			PhaseSeq: state.phase.runningPhaseSeq,
 			Status:   cyclesdomain.PhaseStatusFailed,

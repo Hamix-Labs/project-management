@@ -3,8 +3,9 @@ package devsim
 import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 import (
 	"context"
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
+	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 	"github.com/google/uuid"
 	"log/slog"
 	"math/rand/v2"
@@ -13,7 +14,7 @@ import (
 const devsimTaskIDPrefix = "hamix-devsim-"
 
 // RunLifecycleOnce either creates a prefixed dev task or deletes one (no children), then calls publish.
-func RunLifecycleOnce(ctx context.Context, st *store.Store, publish func(ChangeKind, string)) {
+func RunLifecycleOnce(ctx context.Context, st *composition.API, publish func(ChangeKind, string)) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "devsim.RunLifecycleOnce")
 	if st == nil || publish == nil {
 		return
@@ -25,9 +26,9 @@ func RunLifecycleOnce(ctx context.Context, st *store.Store, publish func(ChangeK
 	tryDeleteDevsimTask(ctx, st, publish)
 }
 
-func tryCreateDevsimTask(ctx context.Context, st *store.Store, publish func(ChangeKind, string)) {
+func tryCreateDevsimTask(ctx context.Context, st *composition.API, publish func(ChangeKind, string)) {
 	id := devsimTaskIDPrefix + uuid.NewString()
-	t, err := st.Create(ctx, store.CreateTaskInput{
+	t, err := st.Create(ctx, taskcorestore.CreateTaskInput{
 		ID:            id,
 		Title:         "Dev sim task",
 		InitialPrompt: "<p>Synthetic task for UI / SSE exercise.</p>",
@@ -41,7 +42,7 @@ func tryCreateDevsimTask(ctx context.Context, st *store.Store, publish func(Chan
 	publish(ChangeCreated, t.ID)
 }
 
-func tryDeleteDevsimTask(ctx context.Context, st *store.Store, publish func(ChangeKind, string)) {
+func tryDeleteDevsimTask(ctx context.Context, st *composition.API, publish func(ChangeKind, string)) {
 	tasks, err := st.ListDevsimTasks(ctx, devsimTaskIDPrefix+"%")
 	if err != nil {
 		slog.Debug("sse dev lifecycle list skipped", "cmd", calltrace.LogCmd, "operation", "devsim.lifecycle_list", "err", err)

@@ -2,21 +2,24 @@ package handler
 
 import (
 	"encoding/json"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/middleware"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/apijson"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/logctx"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 func TestWriteJSONError_includes_request_id_from_context(t *testing.T) {
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	req = req.WithContext(logctx.ContextWithRequestID(req.Context(), "unit-rid-1"))
-	writeJSONError(rec, req, "test.op", http.StatusBadRequest, "bad")
+	apijson.WriteJSONError(rec, req, "test.op", http.StatusBadRequest, "bad", calltrace.Path)
 	var out struct {
 		Error     string `json:"error"`
 		RequestID string `json:"request_id"`
@@ -31,7 +34,7 @@ func TestWriteJSONError_includes_request_id_from_context(t *testing.T) {
 
 func TestHTTP_error_JSON_includes_request_id_with_access_middleware(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
-	api := WithAccessLog(NewHandler(store.NewStore(db), NewSSEHub(), nil))
+	api := middleware.WithAccessLog(NewHandler(composition.NewAPI(db), NewSSEHub(), nil), calltrace.Path)
 	srv := httptest.NewServer(api)
 	t.Cleanup(srv.Close)
 

@@ -10,14 +10,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 // TestHTTP_repoRoutes_requireWorktreeID pins that /repo/* endpoints require worktree_id.
 func TestHTTP_repoRoutes_requireWorktreeID(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
-	st := store.NewStore(db)
+	st := composition.NewAPI(db)
 	h := NewHandler(st, NewSSEHub(), nil, WithRepoProvider(NewSettingsRepoProvider(st)))
 	srv := httptest.NewServer(h)
 	defer srv.Close()
@@ -52,7 +52,7 @@ func TestHTTP_repoRoutes_followRegisteredWorktree(t *testing.T) {
 	}
 
 	db := tasktestdb.OpenSQLite(t)
-	st := store.NewStore(db)
+	st := composition.NewAPI(db)
 	worktreeID, _ := seedTestGitWorktree(t, st, dir)
 	h := NewHandler(st, NewSSEHub(), nil, WithRepoProvider(NewSettingsRepoProvider(st)))
 	srv := httptest.NewServer(h)
@@ -117,7 +117,7 @@ func ptrString(s string) *string { return &s }
 
 func TestHTTP_repoRoutes_unknownWorktree_returns404(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
-	st := store.NewStore(db)
+	st := composition.NewAPI(db)
 	h := NewHandler(st, NewSSEHub(), nil, WithRepoProvider(NewSettingsRepoProvider(st)))
 	srv := httptest.NewServer(h)
 	defer srv.Close()

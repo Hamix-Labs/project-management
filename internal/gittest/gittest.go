@@ -6,11 +6,12 @@ package gittest
 
 import (
 	"context"
+	gitinventorystore "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store"
 	"os/exec"
 	"testing"
 
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 // SkipIfNoGit skips t when the git binary is not on PATH.
@@ -97,12 +98,12 @@ func EnsureMain(t *testing.T, dir string) {
 // SeedWorktree registers repoDir in the store and returns the main worktree id.
 //
 //funclogmeasure:skip category=tool-required-noop reason="Test-only git bootstrap; not part of production trace paths."
-func SeedWorktree(t *testing.T, st *store.Store, repoDir string) (worktreeID, branchID string) {
+func SeedWorktree(t *testing.T, st *composition.API, repoDir string) (worktreeID, branchID string) {
 	t.Helper()
 	EnsureMain(t, repoDir)
 	ctx := context.Background()
 	gitSvc := gitwork.New()
-	repoRow, err := st.CreateGlobalGitRepository(ctx, store.CreateGitRepositoryInput{
+	repoRow, err := st.CreateGlobalGitRepository(ctx, gitinventorystore.CreateGitRepositoryInput{
 		Path: repoDir,
 	}, gitSvc)
 	if err != nil {
@@ -122,7 +123,7 @@ func SeedWorktree(t *testing.T, st *store.Store, repoDir string) (worktreeID, br
 // and returns the worktree id and repo directory path.
 //
 //funclogmeasure:skip category=tool-required-noop reason="Test-only git bootstrap; not part of production trace paths."
-func SeedWorktreeTemp(t *testing.T, st *store.Store) (worktreeID, workDir string) {
+func SeedWorktreeTemp(t *testing.T, st *composition.API) (worktreeID, workDir string) {
 	t.Helper()
 	dir := t.TempDir()
 	InitMain(t, dir)

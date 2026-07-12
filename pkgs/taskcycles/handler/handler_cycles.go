@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
 	"log/slog"
 	"net/http"
 
@@ -15,16 +16,16 @@ func (h *Handler) postTaskCycle(w http.ResponseWriter, r *http.Request) {
 	r = calltrace.WithRequestRoot(r, op)
 	taskID, err := parseTaskPathID(r.PathValue("id"))
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	var body cycleStartJSON
-	if err := decodeJSON(r.Context(), r.Body, &body); err != nil {
+	if err := handlerhttp.DecodeJSON(r.Context(), r.Body, &body); err != nil {
 		debugHTTPRequest(r, op, "task_id", taskID, "json_decode_failed", true)
-		writeError(w, r, op, err, http.StatusBadRequest)
+		handlerhttp.WriteError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
-	by := actorFromRequest(r)
+	by := handlerhttp.ActorFromRequest(r)
 	debugHTTPRequest(r, op, "task_id", taskID, "actor", string(by),
 		"parent_cycle_id_set", body.ParentCycleID != nil,
 		"meta_bytes", len(body.Meta))
@@ -36,11 +37,11 @@ func (h *Handler) postTaskCycle(w http.ResponseWriter, r *http.Request) {
 	}
 	cycle, err := h.cycles.StartCycle(r.Context(), in)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	h.notifyCycleChangedFromStore(r.Context(), taskID, cycle.ID)
-	writeJSON(w, r, op, http.StatusCreated, taskCycleResponseFromDomain(cycle))
+	handlerhttp.WriteJSON(w, r, op, http.StatusCreated, taskCycleResponseFromDomain(cycle))
 }
 
 // getTaskCycles handles GET /tasks/{id}/cycles.
@@ -50,23 +51,23 @@ func (h *Handler) getTaskCycles(w http.ResponseWriter, r *http.Request) {
 	r = calltrace.WithRequestRoot(r, op)
 	taskID, err := parseTaskPathID(r.PathValue("id"))
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	limit, err := parseCycleListLimit(r.Context(), r.URL.Query())
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	beforeAttemptSeq, err := parseCycleListBeforeAttemptSeq(r.Context(), r.URL.Query())
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	debugHTTPRequest(r, op, "task_id", taskID, "limit", limit, "before_attempt_seq", beforeAttemptSeq)
 	rows, err := h.cycles.ListCyclesForTaskBefore(r.Context(), taskID, beforeAttemptSeq, limit+1)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	out, hasMore, next := paginateMappedRows(rows, limit, taskCycleResponseFromDomain, func(r taskCycleResponse) int64 {
@@ -79,7 +80,7 @@ func (h *Handler) getTaskCycles(w http.ResponseWriter, r *http.Request) {
 		HasMore:              hasMore,
 		NextBeforeAttemptSeq: next,
 	}
-	writeJSONWithETag(w, r, op, http.StatusOK, resp)
+	handlerhttp.WriteJSONWithETag(w, r, op, http.StatusOK, resp)
 }
 
 // getTaskCycle handles GET /tasks/{id}/cycles/{cycleId}.
@@ -89,25 +90,25 @@ func (h *Handler) getTaskCycle(w http.ResponseWriter, r *http.Request) {
 	r = calltrace.WithRequestRoot(r, op)
 	taskID, cycleID, err := parseCyclePathPair(r)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	debugHTTPRequest(r, op, "task_id", taskID, "cycle_id", cycleID)
 	if err := assertCycleBelongsToTask(r.Context(), h.cycles, taskID, cycleID); err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	cycle, err := h.cycles.GetCycle(r.Context(), cycleID)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	phases, err := h.cycles.ListPhasesForCycle(r.Context(), cycleID)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
-	writeJSONWithETag(w, r, op, http.StatusOK, taskCycleDetailFromDomain(cycle, phases))
+	handlerhttp.WriteJSONWithETag(w, r, op, http.StatusOK, taskCycleDetailFromDomain(cycle, phases))
 }
 
 // getTaskCycleStream handles GET /tasks/{id}/cycles/{cycleId}/stream.
@@ -117,26 +118,26 @@ func (h *Handler) getTaskCycleStream(w http.ResponseWriter, r *http.Request) {
 	r = calltrace.WithRequestRoot(r, op)
 	taskID, cycleID, err := parseCyclePathPair(r)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	limit, err := parseCycleStreamLimit(r.Context(), r.URL.Query())
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	afterSeq, err := parseCycleStreamAfterSeq(r.Context(), r.URL.Query())
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	if err := assertCycleBelongsToTask(r.Context(), h.cycles, taskID, cycleID); err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	rows, err := h.cycles.ListCycleStreamEvents(r.Context(), cycleID, afterSeq, limit+1)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	out, hasMore, next := paginateMappedRows(rows, limit, taskCycleStreamEventResponseFromDomain, func(r taskCycleStreamEventResponse) int64 {
@@ -150,7 +151,7 @@ func (h *Handler) getTaskCycleStream(w http.ResponseWriter, r *http.Request) {
 		HasMore:      hasMore,
 		NextAfterSeq: next,
 	}
-	writeJSON(w, r, op, http.StatusOK, resp)
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, resp)
 }
 
 // getTaskCycleVerdicts handles GET /tasks/{id}/cycles/{cycleId}/verdicts.
@@ -160,32 +161,32 @@ func (h *Handler) getTaskCycleVerdicts(w http.ResponseWriter, r *http.Request) {
 	r = calltrace.WithRequestRoot(r, op)
 	taskID, cycleID, err := parseCyclePathPair(r)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	debugHTTPRequest(r, op, "task_id", taskID, "cycle_id", cycleID)
 	if err := assertCycleBelongsToTask(r.Context(), h.cycles, taskID, cycleID); err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	criteriaRows, err := h.cycles.ListCriteriaReportsForCycle(r.Context(), cycleID)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	verifyRows, err := h.cycles.ListVerifyReportsForCycle(r.Context(), cycleID)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	commandRows, err := h.cycles.ListCommandRunsForCycle(r.Context(), cycleID)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	commitRows, err := h.cycles.ListCommitsForCycle(r.Context(), cycleID)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	resp := cycleVerdictsResponse{
@@ -211,7 +212,7 @@ func (h *Handler) getTaskCycleVerdicts(w http.ResponseWriter, r *http.Request) {
 	for i := range commandRows {
 		resp.CommandRuns = append(resp.CommandRuns, cycleCommandRunFromDomain(&commandRows[i]))
 	}
-	writeJSON(w, r, op, http.StatusOK, resp)
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, resp)
 }
 
 // patchTaskCycle handles PATCH /tasks/{id}/cycles/{cycleId}.
@@ -221,31 +222,31 @@ func (h *Handler) patchTaskCycle(w http.ResponseWriter, r *http.Request) {
 	r = calltrace.WithRequestRoot(r, op)
 	taskID, cycleID, err := parseCyclePathPair(r)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	var body cycleTerminateJSON
-	if err := decodeJSON(r.Context(), r.Body, &body); err != nil {
+	if err := handlerhttp.DecodeJSON(r.Context(), r.Body, &body); err != nil {
 		debugHTTPRequest(r, op, "task_id", taskID, "cycle_id", cycleID, "json_decode_failed", true)
-		writeError(w, r, op, err, http.StatusBadRequest)
+		handlerhttp.WriteError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
-	by := actorFromRequest(r)
+	by := handlerhttp.ActorFromRequest(r)
 	debugHTTPRequest(r, op, "task_id", taskID, "cycle_id", cycleID,
 		"actor", string(by), "body_status", string(body.Status),
 		"reason_len", len(body.Reason),
 		"reason_preview", truncateRunes(body.Reason, maxHTTPLogTextRunes))
 	if err := assertCycleBelongsToTask(r.Context(), h.cycles, taskID, cycleID); err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	cycle, err := h.cycles.TerminateCycle(r.Context(), cycleID, body.Status, body.Reason, by)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	h.notifyCycleChangedFromStore(r.Context(), taskID, cycleID)
-	writeJSON(w, r, op, http.StatusOK, taskCycleResponseFromDomain(cycle))
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, taskCycleResponseFromDomain(cycle))
 }
 
 // postTaskCyclePhase handles POST /tasks/{id}/cycles/{cycleId}/phases.
@@ -255,29 +256,29 @@ func (h *Handler) postTaskCyclePhase(w http.ResponseWriter, r *http.Request) {
 	r = calltrace.WithRequestRoot(r, op)
 	taskID, cycleID, err := parseCyclePathPair(r)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	var body phaseStartJSON
-	if err := decodeJSON(r.Context(), r.Body, &body); err != nil {
+	if err := handlerhttp.DecodeJSON(r.Context(), r.Body, &body); err != nil {
 		debugHTTPRequest(r, op, "task_id", taskID, "cycle_id", cycleID, "json_decode_failed", true)
-		writeError(w, r, op, err, http.StatusBadRequest)
+		handlerhttp.WriteError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
-	by := actorFromRequest(r)
+	by := handlerhttp.ActorFromRequest(r)
 	debugHTTPRequest(r, op, "task_id", taskID, "cycle_id", cycleID,
 		"actor", string(by), "body_phase", string(body.Phase))
 	if err := assertCycleBelongsToTask(r.Context(), h.cycles, taskID, cycleID); err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	phase, err := h.cycles.StartPhase(r.Context(), cycleID, body.Phase, by)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	h.notifyCycleChangedFromStore(r.Context(), taskID, cycleID)
-	writeJSON(w, r, op, http.StatusCreated, taskCyclePhaseResponseFromDomain(phase))
+	handlerhttp.WriteJSON(w, r, op, http.StatusCreated, taskCyclePhaseResponseFromDomain(phase))
 }
 
 // patchTaskCyclePhase handles PATCH /tasks/{id}/cycles/{cycleId}/phases/{phaseSeq}.
@@ -287,26 +288,26 @@ func (h *Handler) patchTaskCyclePhase(w http.ResponseWriter, r *http.Request) {
 	r = calltrace.WithRequestRoot(r, op)
 	taskID, cycleID, err := parseCyclePathPair(r)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	phaseSeq, err := parseTaskPathPhaseSeq(r.PathValue("phaseSeq"))
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	var body phasePatchJSON
-	if err := decodeJSON(r.Context(), r.Body, &body); err != nil {
+	if err := handlerhttp.DecodeJSON(r.Context(), r.Body, &body); err != nil {
 		debugHTTPRequest(r, op, "task_id", taskID, "cycle_id", cycleID, "phase_seq", phaseSeq, "json_decode_failed", true)
-		writeError(w, r, op, err, http.StatusBadRequest)
+		handlerhttp.WriteError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
-	by := actorFromRequest(r)
+	by := handlerhttp.ActorFromRequest(r)
 	debugHTTPRequest(r, op, "task_id", taskID, "cycle_id", cycleID, "phase_seq", phaseSeq,
 		"actor", string(by), "body_status", string(body.Status),
 		"summary_set", body.Summary != nil, "details_bytes", len(body.Details))
 	if err := assertCycleBelongsToTask(r.Context(), h.cycles, taskID, cycleID); err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	in := contract.CompletePhaseInput{
@@ -319,9 +320,9 @@ func (h *Handler) patchTaskCyclePhase(w http.ResponseWriter, r *http.Request) {
 	}
 	ph, err := h.cycles.CompletePhase(r.Context(), in)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	h.notifyCycleChangedFromStore(r.Context(), taskID, cycleID)
-	writeJSON(w, r, op, http.StatusOK, taskCyclePhaseResponseFromDomain(ph))
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, taskCyclePhaseResponseFromDomain(ph))
 }

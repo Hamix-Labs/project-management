@@ -11,7 +11,6 @@ import (
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskcoremodel "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/model"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store/model"
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -25,7 +24,7 @@ func TestMigrateRepoDefaultProjects_removesGlobalDefault(t *testing.T) {
 	ctx := context.Background()
 	now := time.Now().UTC()
 
-	if err := model.AutoMigrateAll(db); err != nil {
+	if err := autoMigrateStoreModels(db); err != nil {
 		t.Fatal(err)
 	}
 

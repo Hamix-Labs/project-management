@@ -5,6 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/middleware"
 	"io"
 	"log/slog"
 	"net/http"
@@ -33,7 +35,7 @@ func TestWithAccessLog_echoesXRequestIDAndLogsAccess(t *testing.T) {
 		_, _ = w.Write([]byte("x"))
 	})
 
-	srv := httptest.NewServer(WithAccessLog(inner))
+	srv := httptest.NewServer(middleware.WithAccessLog(inner, calltrace.Path))
 	t.Cleanup(srv.Close)
 
 	req, err := http.NewRequest(http.MethodGet, srv.URL+"/tasks", nil)
@@ -104,7 +106,7 @@ func TestWithAccessLog_skipsHealth(t *testing.T) {
 		}
 		w.WriteHeader(http.StatusOK)
 	})
-	srv := httptest.NewServer(WithAccessLog(inner))
+	srv := httptest.NewServer(middleware.WithAccessLog(inner, calltrace.Path))
 	t.Cleanup(srv.Close)
 
 	for _, path := range []string{"/health", "/health/live", "/health/ready"} {
@@ -168,7 +170,7 @@ func TestWithAccessLog_FlushDelegatesToUnderlyingFlusher(t *testing.T) {
 	})
 
 	req := httptest.NewRequest(http.MethodGet, "/stream", nil)
-	WithAccessLog(inner).ServeHTTP(rec, req)
+	middleware.WithAccessLog(inner, calltrace.Path).ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status %d", rec.Code)
@@ -188,7 +190,7 @@ func TestWithAccessLog_truncatesLongXRequestID(t *testing.T) {
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/x", nil)
 	req.Header.Set("X-Request-ID", long)
-	WithAccessLog(inner).ServeHTTP(rec, req)
+	middleware.WithAccessLog(inner, calltrace.Path).ServeHTTP(rec, req)
 
 	echo := rec.Header().Get("X-Request-ID")
 	if len(echo) != logctx.MaxIncomingRequestIDLen {

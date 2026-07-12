@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -17,21 +18,21 @@ func (h *Handler) listTaskTemplates(w http.ResponseWriter, r *http.Request) {
 	r = calltrace.WithRequestRoot(r, op)
 	limit, err := parseBoundedLimit(r.URL.Query(), 50, 100)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	q := strings.TrimSpace(r.URL.Query().Get("q"))
 	sort, order, tag, err := parseTemplateListQuery(r.URL.Query())
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	rows, err := h.compose.ListTemplates(r.Context(), limit, q, sort, order, tag)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
-	writeJSON(w, r, op, http.StatusOK, map[string]any{"templates": rows})
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, map[string]any{"templates": rows})
 }
 
 func (h *Handler) saveTaskTemplate(w http.ResponseWriter, r *http.Request) {
@@ -39,17 +40,17 @@ func (h *Handler) saveTaskTemplate(w http.ResponseWriter, r *http.Request) {
 	const op = "task_templates.save"
 	r = calltrace.WithRequestRoot(r, op)
 	var body taskTemplateSaveJSON
-	if err := decodeJSON(r.Context(), r.Body, &body); err != nil {
-		writeError(w, r, op, err, http.StatusBadRequest)
+	if err := handlerhttp.DecodeJSON(r.Context(), r.Body, &body); err != nil {
+		handlerhttp.WriteError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
 	if h.normalizeCompose == nil {
-		writeJSONError(w, r, op, http.StatusInternalServerError, "internal server error")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusInternalServerError, "internal server error")
 		return
 	}
 	normalized, err := h.normalizeCompose(r.Context(), body.Payload)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	name := strings.TrimSpace(body.Name)
@@ -58,10 +59,10 @@ func (h *Handler) saveTaskTemplate(w http.ResponseWriter, r *http.Request) {
 	}
 	saved, err := h.compose.SaveTemplate(r.Context(), body.ID, name, normalized.Payload)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
-	writeJSON(w, r, op, http.StatusCreated, saved)
+	handlerhttp.WriteJSON(w, r, op, http.StatusCreated, saved)
 }
 
 func (h *Handler) getTaskTemplate(w http.ResponseWriter, r *http.Request) {
@@ -77,38 +78,38 @@ func (h *Handler) patchTaskTemplate(w http.ResponseWriter, r *http.Request) {
 	r = calltrace.WithRequestRoot(r, op)
 	id, err := parseTaskPathID(r.PathValue("id"))
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	var body taskTemplatePatchJSON
-	if err := decodeJSON(r.Context(), r.Body, &body); err != nil {
-		writeError(w, r, op, err, http.StatusBadRequest)
+	if err := handlerhttp.DecodeJSON(r.Context(), r.Body, &body); err != nil {
+		handlerhttp.WriteError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
 	var payloadRaw json.RawMessage
 	if len(body.Payload) > 0 {
 		if h.normalizeCompose == nil {
-			writeJSONError(w, r, op, http.StatusInternalServerError, "internal server error")
+			handlerhttp.WriteJSONError(w, r, op, http.StatusInternalServerError, "internal server error")
 			return
 		}
 		normalized, nerr := h.normalizeCompose(r.Context(), body.Payload)
 		if nerr != nil {
-			writeStoreError(w, r, op, nerr)
+			handlerhttp.WriteStoreError(w, r, op, nerr)
 			return
 		}
 		payloadRaw = normalized.Payload
 	}
 	name := body.Name
 	if name == nil && payloadRaw == nil {
-		writeStoreError(w, r, op, fmt.Errorf("%w: no fields to update", taskcoredomain.ErrInvalidInput))
+		handlerhttp.WriteStoreError(w, r, op, fmt.Errorf("%w: no fields to update", taskcoredomain.ErrInvalidInput))
 		return
 	}
 	updated, err := h.compose.PatchTemplate(r.Context(), id, name, payloadRaw)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
-	writeJSON(w, r, op, http.StatusOK, updated)
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, updated)
 }
 
 func (h *Handler) deleteTaskTemplate(w http.ResponseWriter, r *http.Request) {
@@ -123,20 +124,20 @@ func (h *Handler) instantiateTaskTemplates(w http.ResponseWriter, r *http.Reques
 	const op = "task_templates.instantiate"
 	r = calltrace.WithRequestRoot(r, op)
 	var body taskTemplateInstantiateJSON
-	if err := decodeJSON(r.Context(), r.Body, &body); err != nil {
-		writeError(w, r, op, err, http.StatusBadRequest)
+	if err := handlerhttp.DecodeJSON(r.Context(), r.Body, &body); err != nil {
+		handlerhttp.WriteError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
 	items, err := normalizeInstantiateItems(body)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	if h.instantiateFromTemplate == nil {
-		writeJSONError(w, r, op, http.StatusInternalServerError, "internal server error")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusInternalServerError, "internal server error")
 		return
 	}
-	by := actorFromRequest(r)
+	by := handlerhttp.ActorFromRequest(r)
 	resp := taskTemplateInstantiateResponseJSON{
 		Tasks:  make([]taskcoredomain.Task, 0),
 		Errors: make([]taskTemplateInstantiateErrorJSON, 0),
@@ -166,9 +167,9 @@ func (h *Handler) instantiateTaskTemplates(w http.ResponseWriter, r *http.Reques
 	}
 	if len(successCounts) > 0 {
 		if err := h.compose.IncrementTemplateInstantiateCounts(r.Context(), successCounts); err != nil {
-			writeStoreError(w, r, op, err)
+			handlerhttp.WriteStoreError(w, r, op, err)
 			return
 		}
 	}
-	writeJSON(w, r, op, http.StatusOK, resp)
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, resp)
 }

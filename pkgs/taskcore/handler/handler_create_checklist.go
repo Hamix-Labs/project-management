@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	checklistcontract "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/contract"
 	checkliststore "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/store"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
@@ -20,9 +21,9 @@ func parseCreateChecklistItems(items []contract.CreateChecklistItemInput) ([]con
 		if t == "" {
 			continue
 		}
-		cmds := make([]checkliststore.VerifyCommandInput, 0, len(it.VerifyCommands))
+		cmds := make([]checklistcontract.VerifyCommandInput, 0, len(it.VerifyCommands))
 		for _, c := range it.VerifyCommands {
-			cmds = append(cmds, checkliststore.VerifyCommandInput{
+			cmds = append(cmds, checklistcontract.VerifyCommandInput{
 				Command:         c.Command,
 				ExpectedOutcome: c.ExpectedOutcome,
 			})

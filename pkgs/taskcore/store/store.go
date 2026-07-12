@@ -31,7 +31,7 @@ func NewStore(db *gorm.DB) *Store {
 	return &Store{db: db}
 }
 
-// DB exposes the underlying GORM handle for composition wiring in pkgs/tasks/store.
+// DB exposes the underlying GORM handle for composition wiring in internal/taskapi/composition.
 //
 //funclogmeasure:skip category=hot-path reason="Test-only accessor; no store operation boundary."
 func (s *Store) DB() *gorm.DB {
@@ -79,7 +79,7 @@ const (
 
 // ShouldNotifyReadyNow returns true when a freshly-ready task should enter the in-memory queue.
 func ShouldNotifyReadyNow(pickupNotBefore *time.Time, now time.Time) bool {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcore.store.ShouldNotifyReadyNow", "has_pickup", pickupNotBefore != nil)
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcore.taskcorestore.ShouldNotifyReadyNow", "has_pickup", pickupNotBefore != nil)
 	return scheduling.ShouldNotifyReadyNow(pickupNotBefore, now)
 }
 

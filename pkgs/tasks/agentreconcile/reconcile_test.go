@@ -2,25 +2,26 @@ package agentreconcile
 
 import (
 	"context"
+	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 	"testing"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 func TestReconcileReadyTasksNotQueued_enqueuesMissing(t *testing.T) {
 	ctx := context.Background()
-	st := store.NewStore(tasktestdb.OpenSQLite(t))
+	st := composition.NewAPI(tasktestdb.OpenSQLite(t))
 	q := agents.NewMemoryQueue(8)
 
-	t1, err := st.Create(ctx, store.CreateTaskInput{Title: "a", Priority: taskcoredomain.PriorityMedium}, taskcoredomain.ActorUser)
+	t1, err := st.Create(ctx, taskcorestore.CreateTaskInput{Title: "a", Priority: taskcoredomain.PriorityMedium}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	t2, err := st.Create(ctx, store.CreateTaskInput{Title: "b", Priority: taskcoredomain.PriorityMedium}, taskcoredomain.ActorUser)
+	t2, err := st.Create(ctx, taskcorestore.CreateTaskInput{Title: "b", Priority: taskcoredomain.PriorityMedium}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,12 +67,12 @@ func TestReconcileReadyTasksNotQueued_nilStore(t *testing.T) {
 
 func TestReconcileReadyTasksNotQueued_stopsOnFull(t *testing.T) {
 	ctx := context.Background()
-	st := store.NewStore(tasktestdb.OpenSQLite(t))
+	st := composition.NewAPI(tasktestdb.OpenSQLite(t))
 	q := agents.NewMemoryQueue(1)
-	if _, err := st.Create(ctx, store.CreateTaskInput{Title: "a", Priority: taskcoredomain.PriorityMedium}, taskcoredomain.ActorUser); err != nil {
+	if _, err := st.Create(ctx, taskcorestore.CreateTaskInput{Title: "a", Priority: taskcoredomain.PriorityMedium}, taskcoredomain.ActorUser); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := st.Create(ctx, store.CreateTaskInput{Title: "b", Priority: taskcoredomain.PriorityMedium}, taskcoredomain.ActorUser); err != nil {
+	if _, err := st.Create(ctx, taskcorestore.CreateTaskInput{Title: "b", Priority: taskcoredomain.PriorityMedium}, taskcoredomain.ActorUser); err != nil {
 		t.Fatal(err)
 	}
 	if err := q.NotifyReadyTask(ctx, taskcoredomain.Task{ID: "00000000-0000-4000-8000-000000000001", Title: "stub", Priority: taskcoredomain.PriorityMedium}); err != nil {

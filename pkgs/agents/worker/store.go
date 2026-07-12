@@ -24,7 +24,7 @@ type QueueStore interface {
 }
 
 // Store is the persistence contract for the agent worker, reconcile loop, pickup
-// wake scheduler, and harness orchestration. Concrete *store.Store satisfies it
+// wake scheduler, and harness orchestration. Concrete *composition.API satisfies it
 // at the taskapi wiring edge.
 type Store interface {
 	harness.Store

@@ -6,9 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 	"log/slog"
 	"strings"
 	"time"
@@ -39,8 +39,8 @@ func (w *Worker) deferTaskPickup(ctx context.Context, taskID string, delay time.
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.worker.Worker.deferTaskPickup",
 		"task_id", taskID, "delay", delay.String())
 	at := w.clock().Add(delay).UTC()
-	patch := store.PickupNotBeforePatch{At: at}
-	if _, err := w.store.Update(ctx, taskID, store.UpdateTaskInput{PickupNotBefore: &patch}, taskcoredomain.ActorAgent); err != nil {
+	patch := taskcorestore.PickupNotBeforePatch{At: at}
+	if _, err := w.store.Update(ctx, taskID, taskcorestore.UpdateTaskInput{PickupNotBefore: &patch}, taskcoredomain.ActorAgent); err != nil {
 		slog.Warn("agent worker defer pickup failed", "cmd", calltrace.LogCmd,
 			"operation", "agent.worker.Worker.deferTaskPickup.err", "task_id", taskID, "err", err)
 	}
@@ -203,7 +203,7 @@ func (w *Worker) recoverAdmissionPanic(taskID string) {
 	bg, cancel := context.WithTimeout(context.Background(), DefaultShutdownAbortTimeout)
 	defer cancel()
 	failed := taskcoredomain.StatusFailed
-	if _, err := w.store.Update(bg, taskID, store.UpdateTaskInput{Status: &failed}, taskcoredomain.ActorAgent); err != nil {
+	if _, err := w.store.Update(bg, taskID, taskcorestore.UpdateTaskInput{Status: &failed}, taskcoredomain.ActorAgent); err != nil {
 		if !errors.Is(err, taskcoredomain.ErrNotFound) {
 			slog.Warn("agent worker admission panic task transition failed", "cmd", calltrace.LogCmd,
 				"operation", "agent.worker.Worker.recoverAdmissionPanic.err",

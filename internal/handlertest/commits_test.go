@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
+	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
+	cyclescontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/contract"
+	cyclesstore "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store"
 	"net/http"
 	"testing"
 	"time"
@@ -27,18 +29,18 @@ func TestHandler_GetTaskCommits_returnsRows(t *testing.T) {
 	defer srv.Close()
 
 	ctx := context.Background()
-	tsk, err := st.Create(ctx, store.CreateTaskInput{
+	tsk, err := st.Create(ctx, taskcorestore.CreateTaskInput{
 		Priority: taskcoredomain.PriorityMedium, Title: "commits-api",
 	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("create task: %v", err)
 	}
-	cycle, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
+	cycle, err := st.StartCycle(ctx, cyclescontract.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatalf("start cycle: %v", err)
 	}
 	when := time.Date(2026, 6, 18, 12, 0, 0, 0, time.UTC)
-	if err := st.UpsertCycleCommits(ctx, tsk.ID, cycle.ID, []store.CycleCommitEntry{
+	if err := st.UpsertCycleCommits(ctx, tsk.ID, cycle.ID, []cyclesstore.CycleCommitEntry{
 		{
 			PhaseSeq: 1, Seq: 1, Repo: "/repo", Worktree: "/repo", Branch: "main",
 			SHA: "abc1234567890abcdef1234567890abcdef1234", CommittedAt: when, Message: "feat",
@@ -69,7 +71,7 @@ func TestHandler_GetTaskCommits_emptyForNewTask(t *testing.T) {
 	defer srv.Close()
 
 	ctx := context.Background()
-	tsk, err := st.Create(ctx, store.CreateTaskInput{
+	tsk, err := st.Create(ctx, taskcorestore.CreateTaskInput{
 		Priority: taskcoredomain.PriorityMedium, Title: "no-commits",
 	}, taskcoredomain.ActorUser)
 	if err != nil {

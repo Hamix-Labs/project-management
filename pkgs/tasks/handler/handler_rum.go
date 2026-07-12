@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
 	"io"
 	"log/slog"
 	"net/http"
@@ -123,22 +124,22 @@ func (h *Handler) postRUM(w http.ResponseWriter, r *http.Request) {
 	debugHTTPRequest(r, op, "rum_post", "")
 
 	if r.ContentLength > maxRUMBatchBytes {
-		writeJSONError(w, r, op, http.StatusRequestEntityTooLarge,
+		handlerhttp.WriteJSONError(w, r, op, http.StatusRequestEntityTooLarge,
 			"rum batch too large")
 		return
 	}
 
 	body, err := io.ReadAll(io.LimitReader(r.Body, maxRUMBatchBytes+1))
 	if err != nil {
-		writeJSONError(w, r, op, http.StatusBadRequest, "rum read failed")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusBadRequest, "rum read failed")
 		return
 	}
 	if len(body) == 0 {
-		writeJSONError(w, r, op, http.StatusBadRequest, "rum batch empty")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusBadRequest, "rum batch empty")
 		return
 	}
 	if len(body) > maxRUMBatchBytes {
-		writeJSONError(w, r, op, http.StatusRequestEntityTooLarge,
+		handlerhttp.WriteJSONError(w, r, op, http.StatusRequestEntityTooLarge,
 			"rum batch too large")
 		return
 	}
@@ -152,19 +153,19 @@ func (h *Handler) postRUM(w http.ResponseWriter, r *http.Request) {
 		// strict flag.
 		var lenient rumBatch
 		if jerr := json.Unmarshal(body, &lenient); jerr != nil {
-			writeJSONError(w, r, op, http.StatusBadRequest,
+			handlerhttp.WriteJSONError(w, r, op, http.StatusBadRequest,
 				"rum batch must be JSON {events:[…]}")
 			return
 		}
 		batch = lenient
 	}
 	if len(batch.Events) == 0 {
-		writeJSONError(w, r, op, http.StatusBadRequest,
+		handlerhttp.WriteJSONError(w, r, op, http.StatusBadRequest,
 			"rum batch must contain at least one event")
 		return
 	}
 	if len(batch.Events) > maxRUMBatchSize {
-		writeJSONError(w, r, op, http.StatusBadRequest,
+		handlerhttp.WriteJSONError(w, r, op, http.StatusBadRequest,
 			"rum batch too large (max 100 events)")
 		return
 	}

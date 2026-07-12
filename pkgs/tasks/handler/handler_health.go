@@ -3,13 +3,14 @@ package handler
 import (
 	"context"
 	"errors"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
 	"log/slog"
 	"net/http"
 	"time"
 
+	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/postgres"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 func health(w http.ResponseWriter, r *http.Request) {
@@ -17,7 +18,7 @@ func health(w http.ResponseWriter, r *http.Request) {
 	const op = "health"
 	r = calltrace.WithRequestRoot(r, op)
 	debugHTTPRequest(r, op)
-	writeJSON(w, r, op, http.StatusOK, map[string]string{
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, map[string]string{
 		"status":  "ok",
 		"version": ServerVersion(),
 	})
@@ -28,7 +29,7 @@ func healthLive(w http.ResponseWriter, r *http.Request) {
 	const op = "health.live"
 	r = calltrace.WithRequestRoot(r, op)
 	debugHTTPRequest(r, op)
-	writeJSON(w, r, op, http.StatusOK, map[string]string{
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, map[string]string{
 		"status":  "ok",
 		"version": ServerVersion(),
 	})
@@ -39,7 +40,7 @@ func (h *Handler) healthReady(w http.ResponseWriter, r *http.Request) {
 	const op = "health.ready"
 	r = calltrace.WithRequestRoot(r, op)
 	debugHTTPRequest(r, op)
-	ctx, cancel := context.WithTimeout(r.Context(), store.DefaultReadyTimeout)
+	ctx, cancel := context.WithTimeout(r.Context(), taskcorestore.DefaultReadyTimeout)
 	defer cancel()
 
 	checks := map[string]string{}
@@ -47,9 +48,9 @@ func (h *Handler) healthReady(w http.ResponseWriter, r *http.Request) {
 	if err := h.store.Ready(ctx); err != nil {
 		slog.Warn("readiness check failed", "cmd", calltrace.LogCmd, "operation", op, "check", "database", "err", err,
 			"deadline_exceeded", errors.Is(err, context.DeadlineExceeded),
-			"timeout_sec", int(store.DefaultReadyTimeout/time.Second))
+			"timeout_sec", int(taskcorestore.DefaultReadyTimeout/time.Second))
 		checks["database"] = "fail"
-		writeJSON(w, r, op, http.StatusServiceUnavailable, map[string]any{
+		handlerhttp.WriteJSON(w, r, op, http.StatusServiceUnavailable, map[string]any{
 			"status":  "degraded",
 			"checks":  checks,
 			"version": ServerVersion(),
@@ -68,7 +69,7 @@ func (h *Handler) healthReady(w http.ResponseWriter, r *http.Request) {
 			"code_revision", h.schemaDrift.CodeRevision,
 			"db_revision", h.schemaDrift.DBRevision)
 		checks["schema"] = schemaCheck
-		writeJSON(w, r, op, http.StatusServiceUnavailable, map[string]any{
+		handlerhttp.WriteJSON(w, r, op, http.StatusServiceUnavailable, map[string]any{
 			"status": "degraded",
 			"checks": checks,
 			"schema": map[string]any{
@@ -84,7 +85,7 @@ func (h *Handler) healthReady(w http.ResponseWriter, r *http.Request) {
 	if !h.gitAvailable {
 		slog.Warn("readiness check failed", "cmd", calltrace.LogCmd, "operation", op, "check", "git_available")
 		checks["git_available"] = "fail"
-		writeJSON(w, r, op, http.StatusServiceUnavailable, map[string]any{
+		handlerhttp.WriteJSON(w, r, op, http.StatusServiceUnavailable, map[string]any{
 			"status":  "degraded",
 			"checks":  checks,
 			"version": ServerVersion(),
@@ -97,7 +98,7 @@ func (h *Handler) healthReady(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		slog.Warn("readiness check failed", "cmd", calltrace.LogCmd, "operation", op, "check", "registered_repositories", "err", err)
 		checks["registered_repositories"] = "fail"
-		writeJSON(w, r, op, http.StatusServiceUnavailable, map[string]any{
+		handlerhttp.WriteJSON(w, r, op, http.StatusServiceUnavailable, map[string]any{
 			"status":  "degraded",
 			"checks":  checks,
 			"version": ServerVersion(),
@@ -111,7 +112,7 @@ func (h *Handler) healthReady(w http.ResponseWriter, r *http.Request) {
 		checks["registered_repositories"] = "ok"
 	}
 
-	writeJSON(w, r, op, http.StatusOK, map[string]any{
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, map[string]any{
 		"status":  "ok",
 		"checks":  checks,
 		"version": ServerVersion(),

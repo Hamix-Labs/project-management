@@ -3,6 +3,9 @@ package harness
 import (
 	"context"
 	"encoding/json"
+	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
+	cyclescontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/contract"
+	cyclesstore "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store"
 	"os"
 	"path/filepath"
 	"strings"
@@ -16,13 +19,12 @@ import (
 	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 func TestRunWithRetry_freshStartsNewCycleWithParent(t *testing.T) {
 	ctx := context.Background()
-	st := storefake.New(t).Store
-	tsk, err := st.Create(ctx, store.CreateTaskInput{
+	st := storefake.New(t).API
+	tsk, err := st.Create(ctx, taskcorestore.CreateTaskInput{
 		Title: "fresh-retry", InitialPrompt: "work", Priority: taskcoredomain.PriorityMedium,
 	}, taskcoredomain.ActorUser)
 	if err != nil {
@@ -32,10 +34,10 @@ func TestRunWithRetry_freshStartsNewCycleWithParent(t *testing.T) {
 		t.Fatal(err)
 	}
 	running := taskcoredomain.StatusRunning
-	if _, err := st.Update(ctx, tsk.ID, store.UpdateTaskInput{Status: &running}, taskcoredomain.ActorAgent); err != nil {
+	if _, err := st.Update(ctx, tsk.ID, taskcorestore.UpdateTaskInput{Status: &running}, taskcoredomain.ActorAgent); err != nil {
 		t.Fatal(err)
 	}
-	parent, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
+	parent, err := st.StartCycle(ctx, cyclescontract.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -43,11 +45,11 @@ func TestRunWithRetry_freshStartsNewCycleWithParent(t *testing.T) {
 		t.Fatal(err)
 	}
 	failed := taskcoredomain.StatusFailed
-	if _, err := st.Update(ctx, tsk.ID, store.UpdateTaskInput{Status: &failed}, taskcoredomain.ActorAgent); err != nil {
+	if _, err := st.Update(ctx, tsk.ID, taskcorestore.UpdateTaskInput{Status: &failed}, taskcoredomain.ActorAgent); err != nil {
 		t.Fatal(err)
 	}
 	running = taskcoredomain.StatusRunning
-	if _, err := st.Update(ctx, tsk.ID, store.UpdateTaskInput{Status: &running}, taskcoredomain.ActorAgent); err != nil {
+	if _, err := st.Update(ctx, tsk.ID, taskcorestore.UpdateTaskInput{Status: &running}, taskcoredomain.ActorAgent); err != nil {
 		t.Fatal(err)
 	}
 
@@ -75,8 +77,8 @@ func TestRunWithRetry_freshStartsNewCycleWithParent(t *testing.T) {
 func TestRunWithRetry_resumeCarriesPassedCriteria(t *testing.T) {
 	ctx := context.Background()
 
-	st := storefake.New(t).Store
-	tsk, err := st.Create(ctx, store.CreateTaskInput{
+	st := storefake.New(t).API
+	tsk, err := st.Create(ctx, taskcorestore.CreateTaskInput{
 		Title: "resume-retry", InitialPrompt: "work", Priority: taskcoredomain.PriorityMedium,
 	}, taskcoredomain.ActorUser)
 	if err != nil {
@@ -87,14 +89,14 @@ func TestRunWithRetry_resumeCarriesPassedCriteria(t *testing.T) {
 		t.Fatal(err)
 	}
 	running := taskcoredomain.StatusRunning
-	if _, err := st.Update(ctx, tsk.ID, store.UpdateTaskInput{Status: &running}, taskcoredomain.ActorAgent); err != nil {
+	if _, err := st.Update(ctx, tsk.ID, taskcorestore.UpdateTaskInput{Status: &running}, taskcoredomain.ActorAgent); err != nil {
 		t.Fatal(err)
 	}
-	parent, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
+	parent, err := st.StartCycle(ctx, cyclescontract.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := st.UpsertVerifyReports(ctx, parent.ID, 1, []store.VerifyReportEntry{
+	if err := st.UpsertVerifyReports(ctx, parent.ID, 1, []cyclesstore.VerifyReportEntry{
 		{CriterionID: item.ID, Verified: true, VerifierKind: checklistdomain.VerifierAgentSelf, Reasoning: "ok"},
 	}); err != nil {
 		t.Fatal(err)
@@ -103,11 +105,11 @@ func TestRunWithRetry_resumeCarriesPassedCriteria(t *testing.T) {
 		t.Fatal(err)
 	}
 	failed := taskcoredomain.StatusFailed
-	if _, err := st.Update(ctx, tsk.ID, store.UpdateTaskInput{Status: &failed}, taskcoredomain.ActorAgent); err != nil {
+	if _, err := st.Update(ctx, tsk.ID, taskcorestore.UpdateTaskInput{Status: &failed}, taskcoredomain.ActorAgent); err != nil {
 		t.Fatal(err)
 	}
 	running = taskcoredomain.StatusRunning
-	if _, err := st.Update(ctx, tsk.ID, store.UpdateTaskInput{Status: &running}, taskcoredomain.ActorAgent); err != nil {
+	if _, err := st.Update(ctx, tsk.ID, taskcorestore.UpdateTaskInput{Status: &running}, taskcoredomain.ActorAgent); err != nil {
 		t.Fatal(err)
 	}
 
@@ -161,14 +163,14 @@ func TestRunWithRetry_resumeCarriesPassedCriteria(t *testing.T) {
 
 func TestSeedCrossCycleExecuteFromParent_recordsSucceededExecute(t *testing.T) {
 	ctx := context.Background()
-	st := storefake.New(t).Store
-	tsk, err := st.Create(ctx, store.CreateTaskInput{
+	st := storefake.New(t).API
+	tsk, err := st.Create(ctx, taskcorestore.CreateTaskInput{
 		Title: "seed execute", InitialPrompt: "work", Priority: taskcoredomain.PriorityMedium,
 	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	parent, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
+	parent, err := st.StartCycle(ctx, cyclescontract.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -176,7 +178,7 @@ func TestSeedCrossCycleExecuteFromParent_recordsSucceededExecute(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := st.CompletePhase(ctx, store.CompletePhaseInput{
+	if _, err := st.CompletePhase(ctx, cyclescontract.CompletePhaseInput{
 		CycleID: parent.ID, PhaseSeq: exec.PhaseSeq,
 		Status: cyclesdomain.PhaseStatusSucceeded, By: taskcoredomain.ActorAgent,
 	}); err != nil {
@@ -185,7 +187,7 @@ func TestSeedCrossCycleExecuteFromParent_recordsSucceededExecute(t *testing.T) {
 	if _, err := st.TerminateCycle(ctx, parent.ID, cyclesdomain.CycleStatusFailed, verificationFailedReason, taskcoredomain.ActorAgent); err != nil {
 		t.Fatal(err)
 	}
-	child, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
+	child, err := st.StartCycle(ctx, cyclescontract.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -208,8 +210,8 @@ func TestVerifyOnlyCrossCycleResume_runCycleLoopSkipsRunnerExecute(t *testing.T)
 	reportDir := t.TempDir()
 
 	ctx := context.Background()
-	st := storefake.New(t).Store
-	tsk, err := st.Create(ctx, store.CreateTaskInput{
+	st := storefake.New(t).API
+	tsk, err := st.Create(ctx, taskcorestore.CreateTaskInput{
 		Title: "verify-only resume", InitialPrompt: "work", Priority: taskcoredomain.PriorityMedium,
 	}, taskcoredomain.ActorUser)
 	if err != nil {
@@ -220,10 +222,10 @@ func TestVerifyOnlyCrossCycleResume_runCycleLoopSkipsRunnerExecute(t *testing.T)
 		t.Fatal(err)
 	}
 	running := taskcoredomain.StatusRunning
-	if _, err := st.Update(ctx, tsk.ID, store.UpdateTaskInput{Status: &running}, taskcoredomain.ActorAgent); err != nil {
+	if _, err := st.Update(ctx, tsk.ID, taskcorestore.UpdateTaskInput{Status: &running}, taskcoredomain.ActorAgent); err != nil {
 		t.Fatal(err)
 	}
-	parent, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
+	parent, err := st.StartCycle(ctx, cyclescontract.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -231,7 +233,7 @@ func TestVerifyOnlyCrossCycleResume_runCycleLoopSkipsRunnerExecute(t *testing.T)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := st.CompletePhase(ctx, store.CompletePhaseInput{
+	if _, err := st.CompletePhase(ctx, cyclescontract.CompletePhaseInput{
 		CycleID: parent.ID, PhaseSeq: exec.PhaseSeq,
 		Status: cyclesdomain.PhaseStatusSucceeded, By: taskcoredomain.ActorAgent,
 	}); err != nil {
@@ -242,7 +244,7 @@ func TestVerifyOnlyCrossCycleResume_runCycleLoopSkipsRunnerExecute(t *testing.T)
 		t.Fatal(err)
 	}
 	summary := verificationFailedReason + ": failed"
-	if _, err := st.CompletePhase(ctx, store.CompletePhaseInput{
+	if _, err := st.CompletePhase(ctx, cyclescontract.CompletePhaseInput{
 		CycleID: parent.ID, PhaseSeq: verify.PhaseSeq,
 		Status: cyclesdomain.PhaseStatusFailed, Summary: &summary, By: taskcoredomain.ActorAgent,
 	}); err != nil {
@@ -252,13 +254,13 @@ func TestVerifyOnlyCrossCycleResume_runCycleLoopSkipsRunnerExecute(t *testing.T)
 		t.Fatal(err)
 	}
 	when := time.Date(2026, 6, 18, 12, 0, 0, 0, time.UTC)
-	if err := st.UpsertCycleCommits(ctx, tsk.ID, parent.ID, []store.CycleCommitEntry{{
+	if err := st.UpsertCycleCommits(ctx, tsk.ID, parent.ID, []cyclesstore.CycleCommitEntry{{
 		PhaseSeq: 1, Seq: 1, Repo: "/repo", Worktree: "/repo", Branch: "main",
 		SHA: "abc1234567890abcdef1234567890abcdef1234", CommittedAt: when, Message: "feat",
 	}}); err != nil {
 		t.Fatal(err)
 	}
-	if err := st.UpsertCriteriaReports(ctx, parent.ID, 1, []store.CriteriaReportEntry{
+	if err := st.UpsertCriteriaReports(ctx, parent.ID, 1, []cyclesstore.CriteriaReportEntry{
 		{CriterionID: item.ID, ClaimedDone: true, Evidence: "execute done"},
 	}); err != nil {
 		t.Fatal(err)
@@ -316,14 +318,14 @@ func TestVerifyOnlyCrossCycleResume_runCycleLoopSkipsRunnerExecute(t *testing.T)
 
 func TestLoadCheckpointFromParent_requiresTerminal(t *testing.T) {
 	ctx := context.Background()
-	st := storefake.New(t).Store
-	tsk, err := st.Create(ctx, store.CreateTaskInput{
+	st := storefake.New(t).API
+	tsk, err := st.Create(ctx, taskcorestore.CreateTaskInput{
 		Title: "t", InitialPrompt: "p", Priority: taskcoredomain.PriorityMedium,
 	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	cycle, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
+	cycle, err := st.StartCycle(ctx, cyclescontract.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -22,7 +22,8 @@ for f in "${diff_files[@]:-}"; do
   [[ -z "$f" ]] && continue
   case "$f" in
     pkgs/tasks/postgres/schema_revision.go) revision_touched=1 ;;
-    pkgs/tasks/domain/*) needs_bump=1 ;;
+    pkgs/taskcore/domain/*) needs_bump=1 ;;
+    pkgs/*/store/model/*) needs_bump=1 ;;
     pkgs/tasks/postgres/postgres.go) needs_bump=1 ;;
   esac
 done
@@ -34,5 +35,5 @@ if [[ "$revision_touched" -eq 1 ]]; then
   exit 0
 fi
 
-echo "schema revision: changes under pkgs/tasks/domain or pkgs/tasks/postgres/postgres.go require bumping SchemaRevision in pkgs/tasks/postgres/schema_revision.go" >&2
+echo "schema revision: changes under BC domain/store model paths or pkgs/tasks/postgres/postgres.go require bumping SchemaRevision in pkgs/tasks/postgres/schema_revision.go" >&2
 exit 1

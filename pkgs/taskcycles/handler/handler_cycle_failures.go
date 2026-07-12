@@ -2,6 +2,7 @@ package handler
 
 import (
 	"fmt"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -58,7 +59,7 @@ func (h *Handler) cycleFailures(w http.ResponseWriter, r *http.Request) {
 	r = calltrace.WithRequestRoot(r, op)
 	limit, offset, sort, err := parseCycleFailuresQuery(r.URL.Query())
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	debugHTTPRequest(r, op, "limit", limit, "offset", offset, "sort", sort)
@@ -68,10 +69,10 @@ func (h *Handler) cycleFailures(w http.ResponseWriter, r *http.Request) {
 		Sort:   sort,
 	})
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
-	writeJSON(w, r, op, http.StatusOK, cycleFailuresResponse{
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, cycleFailuresResponse{
 		Total:               out.Total,
 		Limit:               limit,
 		Offset:              offset,

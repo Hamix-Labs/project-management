@@ -6,20 +6,20 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestserver"
 	"github.com/AlexsanderHamir/Hamix/pkgs/repo"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
-func taskTestHandlerBuilder(st *store.Store, workspace *repo.Root) http.Handler {
+func taskTestHandlerBuilder(st *composition.API, workspace *repo.Root) http.Handler {
 	return NewHandler(st, NewSSEHub(), workspace, WithRepoProvider(NewSettingsRepoProvider(st)))
 }
 
-func newTaskTestHandler(st *store.Store, opts ...HandlerOption) http.Handler {
+func newTaskTestHandler(st *composition.API, opts ...HandlerOption) http.Handler {
 	return newTaskTestHandlerWithHub(st, NewSSEHub(), opts...)
 }
 
-func newTaskTestHandlerWithHub(st *store.Store, hub *SSEHub, opts ...HandlerOption) http.Handler {
+func newTaskTestHandlerWithHub(st *composition.API, hub *SSEHub, opts ...HandlerOption) http.Handler {
 	base := []HandlerOption{WithRepoProvider(NewSettingsRepoProvider(st))}
 	return NewHandler(st, hub, nil, append(base, opts...)...)
 }
@@ -37,13 +37,13 @@ func newTaskCreateTestServer(t *testing.T) *httptest.Server {
 	return srv
 }
 
-func newTaskTestServerWithStore(t *testing.T) (*httptest.Server, *store.Store) {
+func newTaskTestServerWithStore(t *testing.T) (*httptest.Server, *composition.API) {
 	t.Helper()
 	st, srv := tasktestserver.NewWithStore(t, taskTestHandlerBuilder)
 	return srv, st
 }
 
-func newTaskCreateTestServerWithStore(t *testing.T) (*httptest.Server, *store.Store) {
+func newTaskCreateTestServerWithStore(t *testing.T) (*httptest.Server, *composition.API) {
 	t.Helper()
 	st, srv := tasktestserver.NewWithStore(t, taskTestHandlerBuilder)
 	binding := seedHandlerTestGitRepo(t, st)
@@ -51,9 +51,9 @@ func newTaskCreateTestServerWithStore(t *testing.T) (*httptest.Server, *store.St
 	return srv, st
 }
 
-func newTaskCreateTestServerWithHub(t *testing.T, hub *SSEHub, opts ...HandlerOption) (*httptest.Server, *store.Store) {
+func newTaskCreateTestServerWithHub(t *testing.T, hub *SSEHub, opts ...HandlerOption) (*httptest.Server, *composition.API) {
 	t.Helper()
-	st, srv := tasktestserver.NewWithStore(t, func(s *store.Store, workspace *repo.Root) http.Handler {
+	st, srv := tasktestserver.NewWithStore(t, func(s *composition.API, workspace *repo.Root) http.Handler {
 		return newTaskTestHandlerWithHub(s, hub, opts...)
 	})
 	binding := seedHandlerTestGitRepo(t, st)
@@ -61,7 +61,7 @@ func newTaskCreateTestServerWithHub(t *testing.T, hub *SSEHub, opts ...HandlerOp
 	return srv, st
 }
 
-func newTaskCreateTestServerFromStore(t *testing.T, st *store.Store, opts ...HandlerOption) *httptest.Server {
+func newTaskCreateTestServerFromStore(t *testing.T, st *composition.API, opts ...HandlerOption) *httptest.Server {
 	t.Helper()
 	binding := seedHandlerTestGitRepo(t, st)
 	srv := httptest.NewServer(newTaskTestHandler(st, opts...))
@@ -69,7 +69,7 @@ func newTaskCreateTestServerFromStore(t *testing.T, st *store.Store, opts ...Han
 	return srv
 }
 
-func seedTestGitWorktree(t *testing.T, st *store.Store, repoDir string) (worktreeID, branchID string) {
+func seedTestGitWorktree(t *testing.T, st *composition.API, repoDir string) (worktreeID, branchID string) {
 	t.Helper()
 	return tasktestserver.SeedWorktree(t, st, repoDir)
 }
@@ -79,7 +79,7 @@ func newTaskTestServerWithRepo(t *testing.T, repoDir string) (*httptest.Server, 
 	return srv, wt, br
 }
 
-func newTaskTestServerWithRepoStore(t *testing.T, repoDir string) (*httptest.Server, *store.Store, string, string) {
+func newTaskTestServerWithRepoStore(t *testing.T, repoDir string) (*httptest.Server, *composition.API, string, string) {
 	t.Helper()
 	srv, st, wt, br, _ := tasktestserver.NewWithRepoStore(t, repoDir, taskTestHandlerBuilder)
 	binding := setHandlerTestGitBinding(t, st, wt)

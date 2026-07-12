@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 	"testing"
 	"time"
 )
@@ -8,11 +9,11 @@ import (
 func TestHandler_notifyScopelessChange_publishesIdLessFrame(t *testing.T) {
 	tests := []struct {
 		name string
-		typ  TaskChangeType
+		typ  realtime.ChangeType
 		want string
 	}{
-		{name: "settings_changed", typ: SettingsChanged, want: "settings_changed:"},
-		{name: "agent_run_cancelled", typ: AgentRunCancelled, want: "agent_run_cancelled:"},
+		{name: "settings_changed", typ: realtime.SettingsChanged, want: "settings_changed:"},
+		{name: "agent_run_cancelled", typ: realtime.AgentRunCancelled, want: "agent_run_cancelled:"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -31,5 +32,5 @@ func TestHandler_notifyScopelessChange_publishesIdLessFrame(t *testing.T) {
 func TestHandler_notifyScopelessChange_nilHubNoop(t *testing.T) {
 	h, _, _ := newWritepolicyTestHandler(t)
 	h.hub = nil
-	h.notifyScopelessChange(SettingsChanged)
+	h.notifyScopelessChange(realtime.SettingsChanged)
 }

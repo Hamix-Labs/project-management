@@ -6,6 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
+	cyclescontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/contract"
+	cyclesstore "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store"
 	"log/slog"
 	"time"
 
@@ -15,7 +18,6 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 // process.go owns the happy-path per-task lifecycle: dequeue → reload
@@ -59,6 +61,7 @@ type verifyLifecycleState struct {
 	lastFailedVerdicts []criterionVerdict
 	reportParseErr     string
 	reportTampered     bool
+	mirrorDegraded     bool
 }
 
 type gitLifecycleState struct {
@@ -94,7 +97,7 @@ func (h *Harness) Run(parentCtx context.Context, task *taskcoredomain.Task) {
 func (h *Harness) transitionTask(ctx context.Context, taskID string, next taskcoredomain.Status, op string) bool {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.transitionTask",
 		"task_id", taskID, "next", string(next), "op", op)
-	if _, err := h.store.Update(ctx, taskID, store.UpdateTaskInput{Status: &next}, taskcoredomain.ActorAgent); err != nil {
+	if _, err := h.store.Update(ctx, taskID, taskcorestore.UpdateTaskInput{Status: &next}, taskcoredomain.ActorAgent); err != nil {
 		level := slog.LevelWarn
 		if errors.Is(err, taskcoredomain.ErrNotFound) {
 			level = slog.LevelInfo
@@ -136,7 +139,7 @@ func (h *Harness) startCycle(ctx context.Context, task *taskcoredomain.Task, sta
 	if opts.retryMode != "" {
 		meta = mergeCycleMetaBytes(meta, map[string]any{"retry_mode": string(opts.retryMode)})
 	}
-	in := store.StartCycleInput{
+	in := cyclescontract.StartCycleInput{
 		TaskID:        task.ID,
 		TriggeredBy:   taskcoredomain.ActorAgent,
 		ParentCycleID: opts.parentCycleID,
@@ -279,7 +282,7 @@ func (h *Harness) persistProgress(ctx context.Context, taskID, cycleID string, p
 			payload = []byte("{}")
 		}
 	}
-	if _, err := h.store.AppendCycleStreamEvent(ctx, store.AppendCycleStreamEventInput{
+	if _, err := h.store.AppendCycleStreamEvent(ctx, cyclesstore.AppendCycleStreamEventInput{
 		TaskID:   taskID,
 		CycleID:  cycleID,
 		PhaseSeq: phaseSeq,
@@ -318,7 +321,7 @@ func (h *Harness) completeExecutePhase(ctx context.Context, state *processState,
 	if details == nil {
 		details = detailsBytes(result)
 	}
-	in := store.CompletePhaseInput{
+	in := cyclescontract.CompletePhaseInput{
 		CycleID:  cycle.ID,
 		PhaseSeq: exec.PhaseSeq,
 		Status:   status,

@@ -2,20 +2,21 @@ package handler
 
 import (
 	"context"
+	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 	"testing"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler/writepolicy"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
-func newWritepolicyTestHandler(t *testing.T) (*Handler, *store.Store, *SSEHub) {
+func newWritepolicyTestHandler(t *testing.T) (*Handler, *composition.API, *SSEHub) {
 	t.Helper()
 	db := tasktestdb.OpenSQLite(t)
-	st := store.NewStore(db)
+	st := composition.NewAPI(db)
 	hub := NewSSEHub()
 	return &Handler{store: st, hub: hub, repoProv: NewStaticRepoProvider(nil)}, st, hub
 }
@@ -63,7 +64,7 @@ func TestHandler_notifyTaskUpdatedEnriched_storeErrorNeverPublishes(t *testing.T
 func TestHandler_notifyTaskUpdatedEnriched_publishesData(t *testing.T) {
 	h, st, hub := newWritepolicyTestHandler(t)
 
-	task, err := st.Create(context.Background(), store.CreateTaskInput{
+	task, err := st.Create(context.Background(), taskcorestore.CreateTaskInput{
 		Title:         "enriched notify",
 		InitialPrompt: "p",
 		Status:        taskcoredomain.StatusReady,

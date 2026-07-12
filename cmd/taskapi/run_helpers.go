@@ -9,11 +9,12 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi/agentworker"
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/taskapiconfig"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/middleware"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/postgres"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 	"gorm.io/gorm"
 )
 
@@ -36,24 +37,24 @@ func logHTTPTimeoutsAndShutdown() {
 }
 
 func logHandlerMiddlewareConfig() {
-	rlim := handler.RateLimitPerMinuteConfigured()
+	rlim := middleware.RateLimitPerMinuteConfigured()
 	slog.Info("rate limit config", "cmd", cmdName, "operation", "taskapi.rate_limit",
 		"enabled", rlim > 0, "per_ip_per_min", rlim)
 	slog.Info("api auth config", "cmd", cmdName, "operation", "taskapi.api_auth",
-		"enabled", handler.APIAuthEnabled())
+		"enabled", middleware.APIAuthEnabled())
 
-	mb := handler.MaxRequestBodyBytesConfigured()
+	mb := middleware.MaxRequestBodyBytesConfigured()
 	slog.Info("max request body config", "cmd", cmdName, "operation", "taskapi.max_body",
 		"enabled", mb > 0, "max_bytes", mb)
-	reqTimeout := handler.RequestTimeout()
+	reqTimeout := middleware.RequestTimeout()
 	reqTimeoutSec := int(reqTimeout / time.Second)
 	if reqTimeout > 0 && reqTimeoutSec == 0 {
 		reqTimeoutSec = 1
 	}
 	slog.Info("request timeout config", "cmd", cmdName, "operation", "taskapi.request_timeout",
 		"enabled", reqTimeout > 0, "timeout_sec", reqTimeoutSec)
-	idemTTL := handler.IdempotencyTTL()
-	idemMaxEntries, idemMaxBytes := handler.IdempotencyCacheLimits()
+	idemTTL := middleware.IdempotencyTTL()
+	idemMaxEntries, idemMaxBytes := middleware.IdempotencyCacheLimits()
 	idemSec := int(idemTTL / time.Second)
 	if idemTTL > 0 && idemSec == 0 {
 		idemSec = 1
@@ -64,7 +65,7 @@ func logHandlerMiddlewareConfig() {
 }
 
 type taskAPIApp struct {
-	taskStore   *store.Store
+	taskStore   *composition.API
 	hub         *handler.SSEHub
 	agentQueue  *agents.MemoryQueue
 	agentWorker *agentworker.Supervisor
@@ -73,7 +74,7 @@ type taskAPIApp struct {
 
 func buildTaskAPIApp(ctx context.Context, db *gorm.DB) (*taskAPIApp, context.CancelFunc, error) {
 	slog.Debug("trace", "cmd", cmdName, "operation", "taskapi.buildTaskAPIApp")
-	taskStore := store.NewStore(db)
+	taskStore := composition.NewAPI(db)
 	// Production hub picks the full default options (ring buffer for
 	// Last-Event-ID resume, per-subscriber backpressure with slow-
 	// consumer eviction, 15s heartbeats, AND 50ms {type,id} duplicate

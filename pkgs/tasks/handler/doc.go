@@ -1,4 +1,5 @@
-// Package handler exposes REST JSON CRUD for tasks backed by a store.Store (pkgs/tasks/store).
+// Package handler exposes REST JSON CRUD for tasks backed by wire.HandlerAPI
+// (implemented by internal/taskapi/composition.API at the taskapi wiring edge).
 //
 // File layout: README.md in this directory maps routes, middleware wrappers, SSE, and helpers.
 //
@@ -55,7 +56,7 @@
 // title (required, non-empty after trim),
 // initial_prompt, status, priority (see domain package for enums; defaults ready; priority required).
 //
-// PATCH body: optional title, initial_prompt, status, priority. At least one field must be present. See store.UpdateTaskInput.
+// PATCH body: optional title, initial_prompt, status, priority. At least one field must be present. See taskcorestore.UpdateTaskInput.
 //
 // Errors: domain.ErrNotFound → 404, domain.ErrInvalidInput → 400, domain.ErrConflict → 409 (duplicate client id on POST /tasks);
 // other store errors → 500. Response bodies are JSON {"error":"..."} (same shape as writeJSONError). Failures are logged once

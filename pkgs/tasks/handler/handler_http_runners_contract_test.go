@@ -10,10 +10,10 @@ import (
 
 	_ "github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/registry/all"
 
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/registry"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 type runnerDescriptorWire struct {
@@ -43,7 +43,7 @@ type runnerListModelsResponse struct {
 // store and the fake agent control (which satisfies AgentWorkerControl).
 func runnersTestServer(t *testing.T) *httptest.Server {
 	t.Helper()
-	st := store.NewStore(tasktestdb.OpenSQLite(t))
+	st := composition.NewAPI(tasktestdb.OpenSQLite(t))
 	hub := NewSSEHub()
 	ctrl := &fakeAgentControl{}
 	h := NewHandler(st, hub, nil, WithAgentWorkerControl(ctrl))

@@ -2,13 +2,13 @@ package harness
 
 import (
 	"context"
+	checklistcontract "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/contract"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/reports"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/verify"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 type criterionVerdict = verify.Verdict
@@ -77,7 +77,7 @@ func (h *Harness) runVerificationPipeline(
 	svc.SetPlanVerifyRun(func(ctx context.Context, in verify.PlanVerifyRunInput) (verify.VerifyRunPlan, error) {
 		return h.planVerifyRun(ctx, in.Task, in.Cycle, state, in.Snap, in.VerifyAttempt, in.Feedback, in.CmdEvidence, in.SelfReport)
 	})
-	return svc.RunPipeline(parentCtx, task, cycle, snap, state.verify.verifyAttempt, state.verify.previouslyPassed, feedback, verify.PhaseCallbacks{
+	return svc.RunPipeline(parentCtx, task, cycle, snap, state.verify.verifyAttempt, state.verify.previouslyPassed, feedback, state.verify.mirrorDegraded, verify.PhaseCallbacks{
 		OnStarted: func(phase *cyclesdomain.TaskCyclePhase) {
 			state.phase.runningPhase = cyclesdomain.PhaseVerify
 			state.phase.runningPhaseSeq = phase.PhaseSeq
@@ -110,7 +110,7 @@ func (h *Harness) persistCriteriaReports(
 	ctx context.Context,
 	cycleID string,
 	attemptSeq int64,
-	criteria []store.ChecklistVerifyItem,
+	criteria []checklistcontract.ChecklistVerifyItem,
 	previouslyPassed map[string]criterionVerdict,
 	selfReport map[string]reports.CriteriaEntry,
 ) error {

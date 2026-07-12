@@ -5,10 +5,10 @@ import (
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/internal/gittest"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 )
 
-func seedWorkerTestGit(t *testing.T, st *store.Store) (worktreeID, workDir string) {
+func seedWorkerTestGit(t *testing.T, st *composition.API) (worktreeID, workDir string) {
 	t.Helper()
 	return gittest.SeedWorktreeTemp(t, st)
 }

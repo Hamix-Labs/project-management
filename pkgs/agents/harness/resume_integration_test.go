@@ -2,10 +2,14 @@ package harness_test
 
 import (
 	"context"
+	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
+	cyclescontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/contract"
+	cyclesstore "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/harnesstest"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/storefake"
@@ -14,12 +18,11 @@ import (
 	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
-func seedInterruptedExecute(t *testing.T, st *store.Store, ctx context.Context) (*taskcoredomain.Task, *cyclesdomain.TaskCycle, string) {
+func seedInterruptedExecute(t *testing.T, st *composition.API, ctx context.Context) (*taskcoredomain.Task, *cyclesdomain.TaskCycle, string) {
 	t.Helper()
-	tsk, err := st.Create(ctx, store.CreateTaskInput{
+	tsk, err := st.Create(ctx, taskcorestore.CreateTaskInput{
 		Title: "resume", InitialPrompt: "do the thing", Status: taskcoredomain.StatusReady, Priority: taskcoredomain.PriorityMedium,
 	}, taskcoredomain.ActorUser)
 	if err != nil {
@@ -30,10 +33,10 @@ func seedInterruptedExecute(t *testing.T, st *store.Store, ctx context.Context) 
 		t.Fatalf("add checklist: %v", err)
 	}
 	running := taskcoredomain.StatusRunning
-	if _, err := st.Update(ctx, tsk.ID, store.UpdateTaskInput{Status: &running}, taskcoredomain.ActorAgent); err != nil {
+	if _, err := st.Update(ctx, tsk.ID, taskcorestore.UpdateTaskInput{Status: &running}, taskcoredomain.ActorAgent); err != nil {
 		t.Fatalf("update running: %v", err)
 	}
-	cycle, err := st.StartCycle(ctx, store.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
+	cycle, err := st.StartCycle(ctx, cyclescontract.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
 	if err != nil {
 		t.Fatalf("start cycle: %v", err)
 	}
@@ -42,13 +45,13 @@ func seedInterruptedExecute(t *testing.T, st *store.Store, ctx context.Context) 
 		t.Fatalf("start execute: %v", err)
 	}
 	summary := cyclesdomain.PhaseInterruptReason
-	if _, err := st.CompletePhase(ctx, store.CompletePhaseInput{
+	if _, err := st.CompletePhase(ctx, cyclescontract.CompletePhaseInput{
 		CycleID: cycle.ID, PhaseSeq: exec.PhaseSeq,
 		Status: cyclesdomain.PhaseStatusFailed, Summary: &summary, By: taskcoredomain.ActorAgent,
 	}); err != nil {
 		t.Fatalf("complete execute interrupt: %v", err)
 	}
-	if err := st.UpsertVerifyReports(ctx, cycle.ID, 1, []store.VerifyReportEntry{
+	if err := st.UpsertVerifyReports(ctx, cycle.ID, 1, []cyclesstore.VerifyReportEntry{
 		{CriterionID: item.ID, Verified: true, VerifierKind: checklistdomain.VerifierAgentSelf, Reasoning: "locked"},
 	}); err != nil {
 		t.Fatalf("upsert verify: %v", err)
@@ -62,7 +65,7 @@ func TestHarness_Resume_afterInterruptedExecute_composesResumePrompt(t *testing.
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	st := storefake.New(t).Store
+	st := storefake.New(t).API
 	tsk, cycle, criterionID := seedInterruptedExecute(t, st, ctx)
 
 	promptCh := make(chan string, 1)

@@ -5,12 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	projectsstore "github.com/AlexsanderHamir/Hamix/pkgs/projects/store"
+	checklistcontract "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/contract"
 	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/prompt"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 type renderedProjectContext struct {
@@ -64,7 +65,7 @@ func (h *Harness) selectedProjectContext(ctx context.Context, task *taskcoredoma
 	} else if !errors.Is(err, taskcoredomain.ErrNotFound) {
 		return renderedProjectContext{}, fmt.Errorf("get context snapshot: %w", err)
 	}
-	_, err = h.store.CreateTaskContextSnapshot(ctx, store.CreateTaskContextSnapshotInput{
+	_, err = h.store.CreateTaskContextSnapshot(ctx, projectsstore.CreateTaskContextSnapshotInput{
 		TaskID:          task.ID,
 		CycleID:         cycle.ID,
 		ProjectID:       project.ID,
@@ -83,7 +84,7 @@ func (h *Harness) selectedProjectContext(ctx context.Context, task *taskcoredoma
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func checklistItemsForPrompt(items []store.ChecklistVerifyItem) []prompt.ChecklistItem {
+func checklistItemsForPrompt(items []checklistcontract.ChecklistVerifyItem) []prompt.ChecklistItem {
 	if len(items) == 0 {
 		return nil
 	}

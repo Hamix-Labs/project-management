@@ -2,16 +2,16 @@ package service
 
 import (
 	"context"
+	gitinventorystore "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 // GitStore is the git persistence surface used by Git orchestration.
 type GitStore interface {
-	ReconcileGitRepository(ctx context.Context, projectID, repoID string, input store.ReconcileGitInput, gitSvc gitwork.Service) (store.ReconcileGitOutput, error)
-	RelocateGitRepository(ctx context.Context, projectID, repoID, path string, gitSvc gitwork.Service) (store.ReconcileGitOutput, error)
+	ReconcileGitRepository(ctx context.Context, projectID, repoID string, input gitinventorystore.ReconcileGitInput, gitSvc gitwork.Service) (gitinventorystore.ReconcileGitOutput, error)
+	RelocateGitRepository(ctx context.Context, projectID, repoID, path string, gitSvc gitwork.Service) (gitinventorystore.ReconcileGitOutput, error)
 	RelocateGitWorktree(ctx context.Context, worktreeID, path string, gitSvc gitwork.Service) (domain.GitWorktree, error)
 }
 
@@ -36,8 +36,8 @@ func (g *Git) gitSvc() gitwork.Service {
 func (g *Git) ReconcileRepository(
 	ctx context.Context,
 	projectID, repoID string,
-	input store.ReconcileGitInput,
-) (store.ReconcileGitOutput, error) {
+	input gitinventorystore.ReconcileGitInput,
+) (gitinventorystore.ReconcileGitOutput, error) {
 	return g.Store.ReconcileGitRepository(ctx, projectID, repoID, input, g.gitSvc())
 }
 
@@ -47,7 +47,7 @@ func (g *Git) ReconcileRepository(
 func (g *Git) RelocateRepository(
 	ctx context.Context,
 	projectID, repoID, path string,
-) (store.ReconcileGitOutput, error) {
+) (gitinventorystore.ReconcileGitOutput, error) {
 	return g.Store.RelocateGitRepository(ctx, projectID, repoID, path, g.gitSvc())
 }
 

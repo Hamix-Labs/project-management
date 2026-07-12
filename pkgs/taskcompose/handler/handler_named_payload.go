@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
 	"net/http"
 )
 
@@ -14,15 +15,15 @@ func getNamedPayload[T any](
 ) {
 	id, err := parseTaskPathID(r.PathValue("id"))
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	row, err := get(r.Context(), id)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
-	writeJSON(w, r, op, http.StatusOK, row)
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, row)
 }
 
 //funclogmeasure:skip category=delegate-already-logs reason="Named-payload route helper; list/get/delete handlers emit trace."
@@ -34,11 +35,11 @@ func deleteNamedPayload(
 ) {
 	id, err := parseTaskPathID(r.PathValue("id"))
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	if err := deleteFn(r.Context(), id); err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)

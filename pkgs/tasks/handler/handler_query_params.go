@@ -3,6 +3,7 @@ package handler
 import (
 	"fmt"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	taskcorehandler "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/handler"
 	"strconv"
 	"strings"
 )
@@ -13,7 +14,7 @@ func parseBoundedLimit(q map[string][]string, def, max int) (int, error) {
 	if raw == "" {
 		return def, nil
 	}
-	if len(raw) > maxListIntQueryParamBytes {
+	if len(raw) > taskcorehandler.MaxListIntQueryParamBytes {
 		return 0, fmt.Errorf("%w: limit value too long", taskcoredomain.ErrInvalidInput)
 	}
 	n, err := strconv.Atoi(raw)

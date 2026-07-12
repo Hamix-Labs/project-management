@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
 	"log/slog"
 	"net/http"
 	"time"
@@ -53,7 +54,7 @@ func (h *Handler) systemHealth(w http.ResponseWriter, r *http.Request) {
 			snap.Agent.Paused = cfg.AgentPaused
 		}
 	}
-	writeJSON(w, r, op, http.StatusOK, snap)
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, snap)
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."

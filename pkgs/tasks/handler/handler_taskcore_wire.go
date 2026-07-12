@@ -12,10 +12,10 @@ func (h *Handler) taskcoreDeps() taskcorehandler.Deps {
 		Settings:   h.store,
 		GitCompose: h,
 		NotifyChange: func(typ realtime.ChangeType, id string) {
-			h.notifyChange(TaskChangeType(typ), id)
+			h.notifyChange(typ, id)
 		},
 		NotifyTaskChanged: func(typ realtime.ChangeType, id string, data any) {
-			h.notifyTaskChanged(TaskChangeType(typ), id, data)
+			h.notifyTaskChanged(typ, id, data)
 		},
 	}
 }

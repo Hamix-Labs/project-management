@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
 	"log/slog"
 	"net/http"
 	"os"
@@ -71,11 +72,11 @@ func (h *Handler) requireWorktreeRepo(w http.ResponseWriter, r *http.Request, op
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "repo.handler.Handler.requireWorktreeRepo", "http_op", op)
 	worktreeID := strings.TrimSpace(r.URL.Query().Get("worktree_id"))
 	if worktreeID == "" {
-		writeJSONError(w, r, op, http.StatusBadRequest, "worktree_id query parameter is required")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusBadRequest, "worktree_id query parameter is required")
 		return nil, false
 	}
 	if h.provider == nil {
-		writeJSON(w, r, op, http.StatusNotFound, repoUnavailableErrorBody{
+		handlerhttp.WriteJSON(w, r, op, http.StatusNotFound, repoUnavailableErrorBody{
 			Error:  "worktree not found",
 			Reason: repo.RepoReasonWorktreeNotFound,
 		})
@@ -85,20 +86,20 @@ func (h *Handler) requireWorktreeRepo(w http.ResponseWriter, r *http.Request, op
 	if err != nil {
 		slog.Log(r.Context(), slog.LevelError, "repo provider failed",
 			"cmd", calltrace.LogCmd, "operation", op, "reason", reason, "err", err)
-		writeJSON(w, r, op, http.StatusInternalServerError, repoUnavailableErrorBody{
+		handlerhttp.WriteJSON(w, r, op, http.StatusInternalServerError, repoUnavailableErrorBody{
 			Error: err.Error(), Reason: reason,
 		})
 		return nil, false
 	}
 	if root == nil {
 		if reason == repo.RepoReasonWorktreeNotFound {
-			writeJSON(w, r, op, http.StatusNotFound, repoUnavailableErrorBody{
+			handlerhttp.WriteJSON(w, r, op, http.StatusNotFound, repoUnavailableErrorBody{
 				Error:  "worktree not found",
 				Reason: reason,
 			})
 			return nil, false
 		}
-		writeJSONError(w, r, op, http.StatusBadRequest, "worktree_id query parameter is required")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusBadRequest, "worktree_id query parameter is required")
 		return nil, false
 	}
 	return root, true
@@ -109,7 +110,7 @@ func (h *Handler) repoSearch(w http.ResponseWriter, r *http.Request) {
 	r = calltrace.WithRequestRoot(r, op)
 	debugHTTPRequest(r, op, "search_q", truncateRunes(r.URL.Query().Get("q"), maxHTTPLogTitleRunes))
 	if r.Method != http.MethodGet {
-		writeError(w, r, op, methodNotAllowed(), http.StatusMethodNotAllowed)
+		handlerhttp.WriteError(w, r, op, methodNotAllowed(), http.StatusMethodNotAllowed)
 		return
 	}
 	root, ok := h.requireWorktreeRepo(w, r, op)
@@ -118,7 +119,7 @@ func (h *Handler) repoSearch(w http.ResponseWriter, r *http.Request) {
 	}
 	q := r.URL.Query().Get("q")
 	if len(q) > MaxSearchQueryBytes {
-		writeJSONError(w, r, op, http.StatusBadRequest, "search query too long")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusBadRequest, "search query too long")
 		return
 	}
 	t0 := time.Now()
@@ -126,11 +127,11 @@ func (h *Handler) repoSearch(w http.ResponseWriter, r *http.Request) {
 	dur := time.Since(t0)
 	if err != nil {
 		slog.Log(r.Context(), slog.LevelError, "repo operation failed", "cmd", calltrace.LogCmd, "operation", op, "duration_ms", dur.Milliseconds(), "err", err)
-		writeJSONError(w, r, op, http.StatusInternalServerError, "search failed")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusInternalServerError, "search failed")
 		return
 	}
 	slog.Info("repo search completed", "cmd", calltrace.LogCmd, "operation", op, "path_count", len(paths), "duration_ms", dur.Milliseconds(), "q_empty", strings.TrimSpace(q) == "")
-	writeJSON(w, r, op, http.StatusOK, repoSearchResponse{Paths: paths})
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, repoSearchResponse{Paths: paths})
 }
 
 func (h *Handler) repoValidateRange(w http.ResponseWriter, r *http.Request) {
@@ -141,7 +142,7 @@ func (h *Handler) repoValidateRange(w http.ResponseWriter, r *http.Request) {
 	startStr := strings.TrimSpace(r.URL.Query().Get("start"))
 	endStr := strings.TrimSpace(r.URL.Query().Get("end"))
 	if r.Method != http.MethodGet {
-		writeError(w, r, op, methodNotAllowed(), http.StatusMethodNotAllowed)
+		handlerhttp.WriteError(w, r, op, methodNotAllowed(), http.StatusMethodNotAllowed)
 		return
 	}
 	root, ok := h.requireWorktreeRepo(w, r, op)
@@ -149,22 +150,22 @@ func (h *Handler) repoValidateRange(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if path == "" || startStr == "" || endStr == "" {
-		writeJSONError(w, r, op, http.StatusBadRequest, "path, start, and end query parameters are required")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusBadRequest, "path, start, and end query parameters are required")
 		return
 	}
 	if len(path) > MaxRelPathQueryBytes {
-		writeJSONError(w, r, op, http.StatusBadRequest, "path too long")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusBadRequest, "path too long")
 		return
 	}
 	if len(startStr) > MaxLineQueryParamBytes || len(endStr) > MaxLineQueryParamBytes {
-		writeJSONError(w, r, op, http.StatusBadRequest, "start or end too long")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusBadRequest, "start or end too long")
 		return
 	}
 	debugHTTPRequest(r, op, "validate_path", truncateRunes(path, maxHTTPLogTitleRunes), "validate_start", truncateRunes(startStr, maxHTTPLogTitleRunes), "validate_end", truncateRunes(endStr, maxHTTPLogTitleRunes))
 	start, err1 := strconv.Atoi(startStr)
 	end, err2 := strconv.Atoi(endStr)
 	if err1 != nil || err2 != nil {
-		writeJSONError(w, r, op, http.StatusBadRequest, "start and end must be integers")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusBadRequest, "start and end must be integers")
 		return
 	}
 	h.writeRepoValidateRangeOutcome(w, r, op, root, path, start, end)
@@ -174,7 +175,7 @@ func (h *Handler) writeRepoValidateRangeOutcome(w http.ResponseWriter, r *http.R
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "repo.handler.Handler.writeRepoValidateRangeOutcome")
 	abs, err := root.Resolve(path)
 	if err != nil {
-		writeJSON(w, r, op, http.StatusOK, repoValidateRangeResponse{
+		handlerhttp.WriteJSON(w, r, op, http.StatusOK, repoValidateRangeResponse{
 			OK:      false,
 			Warning: repoErrUserMessage(err),
 		})
@@ -182,21 +183,21 @@ func (h *Handler) writeRepoValidateRangeOutcome(w http.ResponseWriter, r *http.R
 	}
 	n, err := repo.LineCount(abs)
 	if err != nil {
-		writeJSON(w, r, op, http.StatusOK, repoValidateRangeResponse{
+		handlerhttp.WriteJSON(w, r, op, http.StatusOK, repoValidateRangeResponse{
 			OK:      false,
 			Warning: repoErrUserMessage(err),
 		})
 		return
 	}
 	if err := repo.ValidateRange(abs, start, end); err != nil {
-		writeJSON(w, r, op, http.StatusOK, repoValidateRangeResponse{
+		handlerhttp.WriteJSON(w, r, op, http.StatusOK, repoValidateRangeResponse{
 			OK:        false,
 			LineCount: n,
 			Warning:   repoErrUserMessage(err),
 		})
 		return
 	}
-	writeJSON(w, r, op, http.StatusOK, repoValidateRangeResponse{OK: true, LineCount: n})
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, repoValidateRangeResponse{OK: true, LineCount: n})
 }
 
 func (h *Handler) repoFile(w http.ResponseWriter, r *http.Request) {
@@ -205,7 +206,7 @@ func (h *Handler) repoFile(w http.ResponseWriter, r *http.Request) {
 	path := strings.TrimSpace(r.URL.Query().Get("path"))
 	debugHTTPRequest(r, op, "file_path", truncateRunes(path, maxHTTPLogTitleRunes))
 	if r.Method != http.MethodGet {
-		writeError(w, r, op, methodNotAllowed(), http.StatusMethodNotAllowed)
+		handlerhttp.WriteError(w, r, op, methodNotAllowed(), http.StatusMethodNotAllowed)
 		return
 	}
 	root, ok := h.requireWorktreeRepo(w, r, op)
@@ -213,16 +214,16 @@ func (h *Handler) repoFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if path == "" {
-		writeJSONError(w, r, op, http.StatusBadRequest, "path query parameter is required")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusBadRequest, "path query parameter is required")
 		return
 	}
 	if len(path) > MaxRelPathQueryBytes {
-		writeJSONError(w, r, op, http.StatusBadRequest, "path too long")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusBadRequest, "path too long")
 		return
 	}
 	abs, err := root.Resolve(path)
 	if err != nil {
-		writeJSONError(w, r, op, http.StatusBadRequest, repoErrUserMessage(err))
+		handlerhttp.WriteJSONError(w, r, op, http.StatusBadRequest, repoErrUserMessage(err))
 		return
 	}
 	t0 := time.Now()
@@ -230,11 +231,11 @@ func (h *Handler) repoFile(w http.ResponseWriter, r *http.Request) {
 	dur := time.Since(t0)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			writeJSONError(w, r, op, http.StatusNotFound, "file not found")
+			handlerhttp.WriteJSONError(w, r, op, http.StatusNotFound, "file not found")
 			return
 		}
 		slog.Log(r.Context(), slog.LevelError, "repo operation failed", "cmd", calltrace.LogCmd, "operation", op, "duration_ms", dur.Milliseconds(), "err", err)
-		writeJSONError(w, r, op, http.StatusInternalServerError, "read failed")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusInternalServerError, "read failed")
 		return
 	}
 	slog.Info("repo file preview", "cmd", calltrace.LogCmd, "operation", op, "duration_ms", dur.Milliseconds(), "binary", fp.Binary, "truncated", fp.Truncated, "size_bytes", fp.SizeBytes)
@@ -254,7 +255,7 @@ func (h *Handler) repoFile(w http.ResponseWriter, r *http.Request) {
 	case fp.Truncated:
 		resp.Warning = "Preview truncated to the first 32 MiB of the file. Line selection applies only to the visible text."
 	}
-	writeJSON(w, r, op, http.StatusOK, resp)
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, resp)
 }
 
 func (h *Handler) repoDiff(w http.ResponseWriter, r *http.Request) {
@@ -263,7 +264,7 @@ func (h *Handler) repoDiff(w http.ResponseWriter, r *http.Request) {
 	sha := strings.TrimSpace(r.URL.Query().Get("sha"))
 	debugHTTPRequest(r, op, "diff_sha", truncateRunes(sha, maxHTTPLogTitleRunes))
 	if r.Method != http.MethodGet {
-		writeError(w, r, op, methodNotAllowed(), http.StatusMethodNotAllowed)
+		handlerhttp.WriteError(w, r, op, methodNotAllowed(), http.StatusMethodNotAllowed)
 		return
 	}
 	root, ok := h.requireWorktreeRepo(w, r, op)
@@ -271,15 +272,15 @@ func (h *Handler) repoDiff(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if sha == "" {
-		writeJSONError(w, r, op, http.StatusBadRequest, "sha query parameter is required")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusBadRequest, "sha query parameter is required")
 		return
 	}
 	if len(sha) > MaxShaQueryBytes {
-		writeJSONError(w, r, op, http.StatusBadRequest, "sha too long")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusBadRequest, "sha too long")
 		return
 	}
 	if !repoShaQueryPattern.MatchString(sha) {
-		writeJSONError(w, r, op, http.StatusBadRequest, "invalid sha")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusBadRequest, "invalid sha")
 		return
 	}
 	t0 := time.Now()
@@ -288,12 +289,12 @@ func (h *Handler) repoDiff(w http.ResponseWriter, r *http.Request) {
 	dur := time.Since(t0)
 	if err != nil {
 		if errors.Is(err, gitexec.ErrNotFound) {
-			writeJSONError(w, r, op, http.StatusNotFound, "commit not found")
+			handlerhttp.WriteJSONError(w, r, op, http.StatusNotFound, "commit not found")
 			return
 		}
 		slog.Log(r.Context(), slog.LevelError, "repo diff failed",
 			"cmd", calltrace.LogCmd, "operation", op, "duration_ms", dur.Milliseconds(), "err", err)
-		writeJSONError(w, r, op, http.StatusInternalServerError, "diff failed")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusInternalServerError, "diff failed")
 		return
 	}
 	if metaErr != nil && !errors.Is(metaErr, gitexec.ErrNotFound) {
@@ -302,7 +303,7 @@ func (h *Handler) repoDiff(w http.ResponseWriter, r *http.Request) {
 	}
 	slog.Info("repo diff completed", "cmd", calltrace.LogCmd, "operation", op,
 		"duration_ms", dur.Milliseconds(), "truncated", truncated, "size_bytes", len(patch))
-	writeJSON(w, r, op, http.StatusOK, repoDiffResponse{
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, repoDiffResponse{
 		SHA:          sha,
 		Patch:        patch,
 		Truncated:    truncated,

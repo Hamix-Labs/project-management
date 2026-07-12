@@ -4,22 +4,23 @@ import (
 	"log/slog"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 )
 
-func (h *Handler) notifyChange(typ TaskChangeType, id string) {
+func (h *Handler) notifyChange(typ realtime.ChangeType, id string) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.notifyChange", "change_type", typ)
 	if h.hub == nil || id == "" {
 		return
 	}
-	h.hub.Publish(TaskChangeEvent{Type: typ, ID: id})
+	h.hub.Publish(realtime.Event{Type: typ, ID: id})
 }
 
-func (h *Handler) notifyTaskChanged(typ TaskChangeType, id string, data any) {
+func (h *Handler) notifyTaskChanged(typ realtime.ChangeType, id string, data any) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.notifyTaskChanged", "change_type", typ)
 	if h.hub == nil || id == "" {
 		return
 	}
-	h.hub.Publish(TaskChangeEvent{Type: typ, ID: id, Data: data})
+	h.hub.Publish(realtime.Event{Type: typ, ID: id, Data: data})
 }
 
 func (h *Handler) notifyCycleChange(taskID, cycleID string) {
@@ -27,7 +28,7 @@ func (h *Handler) notifyCycleChange(taskID, cycleID string) {
 	if h.hub == nil || taskID == "" || cycleID == "" {
 		return
 	}
-	h.hub.Publish(TaskChangeEvent{Type: TaskCycleChanged, ID: taskID, CycleID: cycleID})
+	h.hub.Publish(realtime.Event{Type: realtime.TaskCycleChanged, ID: taskID, CycleID: cycleID})
 }
 
 func (h *Handler) notifyCycleChanged(taskID, cycleID string, data any) {
@@ -35,7 +36,7 @@ func (h *Handler) notifyCycleChanged(taskID, cycleID string, data any) {
 	if h.hub == nil || taskID == "" || cycleID == "" {
 		return
 	}
-	h.hub.Publish(TaskChangeEvent{Type: TaskCycleChanged, ID: taskID, CycleID: cycleID, Data: data})
+	h.hub.Publish(realtime.Event{Type: realtime.TaskCycleChanged, ID: taskID, CycleID: cycleID, Data: data})
 }
 
 func (h *Handler) notifyTaskEventChanged(taskID string, eventSeq int64) {
@@ -43,13 +44,13 @@ func (h *Handler) notifyTaskEventChanged(taskID string, eventSeq int64) {
 	if h.hub == nil || taskID == "" || eventSeq < 1 {
 		return
 	}
-	h.hub.Publish(TaskChangeEvent{Type: TaskEventChanged, ID: taskID, EventSeq: eventSeq})
+	h.hub.Publish(realtime.Event{Type: realtime.TaskEventChanged, ID: taskID, EventSeq: eventSeq})
 }
 
-func (h *Handler) notifyScopelessChange(typ TaskChangeType) {
+func (h *Handler) notifyScopelessChange(typ realtime.ChangeType) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.notifyScopelessChange", "change_type", typ)
 	if h.hub == nil {
 		return
 	}
-	h.hub.Publish(TaskChangeEvent{Type: typ})
+	h.hub.Publish(realtime.Event{Type: typ})
 }

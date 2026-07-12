@@ -21,11 +21,13 @@ func (s *Service) runVerifyChecks(
 	snap Snapshot,
 	previouslyPassed map[string]Verdict,
 	feedback string,
-) ([]Verdict, string, error) {
+	mirrorDegradedIn bool,
+) ([]Verdict, string, bool, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.verify.runVerifyChecks",
 		"task_id", task.ID, "cycle_id", cycle.ID,
 		"run_correlation_id", runCorrelationID,
 		"criteria_count", len(snap.Criteria), "previously_passed", len(previouslyPassed))
+	mirrorDegraded := mirrorDegradedIn
 	expected := make(map[string]struct{}, len(snap.Criteria))
 	for _, it := range snap.Criteria {
 		if _, locked := previouslyPassed[it.ID]; locked {
@@ -36,10 +38,11 @@ func (s *Service) runVerifyChecks(
 
 	selfReport, err := s.loadCriteriaSelfReport(parentCtx, cycle.ID, attemptSeq, expected)
 	if err != nil {
-		return nil, "", err
+		return nil, "", mirrorDegraded, err
 	}
 
 	if uerr := s.PersistCriteriaReports(parentCtx, cycle.ID, attemptSeq, snap.Criteria, previouslyPassed, selfReport); uerr != nil {
+		mirrorDegraded = true
 		slog.Warn("agent harness UpsertCriteriaReports failed",
 			"cmd", calltrace.LogCmd, "operation", "agent.harness.verify.runVerifyChecks.upsert_criteria_err",
 			"cycle_id", cycle.ID, "attempt_seq", attemptSeq, "err", uerr)
@@ -73,17 +76,18 @@ func (s *Service) runVerifyChecks(
 	if needLLMVerify {
 		cmdEvidence, cmdErr := s.RunCriterionCommands(parentCtx, cycle.ID, attemptSeq, snap, selfReport, nil)
 		if cmdErr != nil {
-			return nil, "", cmdErr
+			return nil, "", mirrorDegraded, cmdErr
 		}
 		runErr := s.runLLMVerifyAgent(parentCtx, task, cycle, phaseSeq, runCorrelationID, snap, previouslyPassed, selfReport, feedback, cmdEvidence, int(attemptSeq)-1)
 		nextVerdicts, parseErr := s.assembleVerdictsFromVerifyReport(cycle.ID, expected, verdicts, selfReport, previouslyPassed)
 		if err := verifyLLMRunError(runErr, parseErr); err != nil {
-			return nil, "", err
+			return nil, "", mirrorDegraded, err
 		}
 		verdicts = nextVerdicts
 	}
 
 	if uerr := s.persistVerifyReports(parentCtx, cycle.ID, attemptSeq, verdicts, previouslyPassed); uerr != nil {
+		mirrorDegraded = true
 		slog.Warn("agent harness UpsertVerifyReports failed",
 			"cmd", calltrace.LogCmd, "operation", "agent.harness.verify.runVerifyChecks.upsert_verify_err",
 			"cycle_id", cycle.ID, "attempt_seq", attemptSeq, "err", uerr)
@@ -96,7 +100,7 @@ func (s *Service) runVerifyChecks(
 		}
 	}
 	if len(failures) > 0 {
-		return verdicts, strings.Join(failures, "; "), fmt.Errorf("verification failed")
+		return verdicts, strings.Join(failures, "; "), mirrorDegraded, fmt.Errorf("verification failed")
 	}
-	return verdicts, "", nil
+	return verdicts, "", mirrorDegraded, nil
 }

@@ -2,22 +2,23 @@ package handler
 
 import (
 	"context"
+	settingscontract "github.com/AlexsanderHamir/Hamix/pkgs/settings/contract"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 func TestUserCreatedTaskEnqueuesForAgents(t *testing.T) {
 	t.Parallel()
 	db := tasktestdb.OpenSQLite(t)
 	q := agents.NewMemoryQueue(8)
-	st := store.NewStore(db)
+	st := composition.NewAPI(db)
 	st.SetReadyTaskNotifier(q)
 	// Disable the global pickup delay; this test exercises the
 	// immediate-notify path, not the deferred path. Without this,
@@ -25,7 +26,7 @@ func TestUserCreatedTaskEnqueuesForAgents(t *testing.T) {
 	// the task by DefaultAgentPickupDelaySeconds and the Recv loop
 	// times out.
 	zero := 0
-	if _, err := st.UpdateSettings(context.Background(), store.SettingsPatch{AgentPickupDelaySeconds: &zero}); err != nil {
+	if _, err := st.UpdateSettings(context.Background(), settingscontract.SettingsPatch{AgentPickupDelaySeconds: &zero}); err != nil {
 		t.Fatalf("UpdateSettings: %v", err)
 	}
 	srv := newTaskCreateTestServerFromStore(t, st)
@@ -58,10 +59,10 @@ func TestAgentActorCreateEnqueuesWhenReady(t *testing.T) {
 	t.Parallel()
 	db := tasktestdb.OpenSQLite(t)
 	q := agents.NewMemoryQueue(8)
-	st := store.NewStore(db)
+	st := composition.NewAPI(db)
 	st.SetReadyTaskNotifier(q)
 	zero := 0
-	if _, err := st.UpdateSettings(context.Background(), store.SettingsPatch{AgentPickupDelaySeconds: &zero}); err != nil {
+	if _, err := st.UpdateSettings(context.Background(), settingscontract.SettingsPatch{AgentPickupDelaySeconds: &zero}); err != nil {
 		t.Fatalf("UpdateSettings: %v", err)
 	}
 	srv := newTaskCreateTestServerFromStore(t, st)

@@ -37,6 +37,32 @@ Each phase is a **bucket** — many plans/PRs per number. This doc is the order;
 
 ---
 
+## Tier 5 status (2026-07-11)
+
+| Track | Status | Notes |
+| --- | --- | --- |
+| **5A handlerhttp + wire** | **Done** ([#191](https://github.com/AlexsanderHamir/Hamix/pull/191)) | `pkgs/tasks/handlerhttp`, `pkgs/tasks/wire`, ADR-0065–0069 |
+| **5B taskapi shell** | **Done** (#191) | ADR-0070 |
+| **5C parity registries** | **Done** (#191) | Per-BC parity; empty facade hub — ADR-0071 |
+| **5D web splits** | **Pending merge** ([#192](https://github.com/AlexsanderHamir/Hamix/pull/192)) | Parser/type splits, `TaskListTableChrome` — ADR-0072 |
+
+---
+
+## Post–Tier 5 handoff progress
+
+Handoff train: [.cursor/plans/post-tier5_handoff_train_d063a5c6.plan.md](../.cursor/plans/post-tier5_handoff_train_d063a5c6.plan.md). One PR per branch; merge when CI green.
+
+| Track | Weight | Exit |
+| --- | --- | --- |
+| Kickoff | 5% | contract CI guard + handoff progress table |
+| Harness P0 | 20% | HARNESS_IMPROVEMENTS #3–#5 shipped |
+| handlerhttp BC | 25% | 0 duplicate BC `http_helpers` generic stacks |
+| Facade aliases | 25% | `store.(DraftSummary\|TaskStats\|ReadyTask)` grep clean outside facade |
+| Facade deletion | 100% | `pkgs/tasks/store` package removed |
+| Shell shims + docs | 100% | handler compat files gone; docs grep-clean |
+
+---
+
 ## Current progress (2026-07-08)
 
 | Phase | Status | Notes |

@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 func mustEqualEvents(t *testing.T, route string, got, want []string) {
@@ -67,7 +67,7 @@ func summarizeNotifyEvents(events []string) []string {
 	return out
 }
 
-func newSettingsHTTPServer(t *testing.T, st *store.Store, deps Deps) *httptest.Server {
+func newSettingsHTTPServer(t *testing.T, st *composition.API, deps Deps) *httptest.Server {
 	t.Helper()
 	if deps.Settings == nil {
 		deps.Settings = st
@@ -85,9 +85,9 @@ func newSettingsHTTPServer(t *testing.T, st *store.Store, deps Deps) *httptest.S
 	return srv
 }
 
-func settingsTestServer(t *testing.T) (*httptest.Server, *store.Store, *sseNotifyCapture, *fakeAgentControl) {
+func settingsTestServer(t *testing.T) (*httptest.Server, *composition.API, *sseNotifyCapture, *fakeAgentControl) {
 	t.Helper()
-	st := store.NewStore(tasktestdb.OpenSQLite(t))
+	st := composition.NewAPI(tasktestdb.OpenSQLite(t))
 	capture, notify := newSSENotifyCapture()
 	ctrl := &fakeAgentControl{}
 	srv := newSettingsHTTPServer(t, st, Deps{
@@ -99,9 +99,9 @@ func settingsTestServer(t *testing.T) (*httptest.Server, *store.Store, *sseNotif
 	return srv, st, capture, ctrl
 }
 
-func settingsTestServerNoAgent(t *testing.T) (*httptest.Server, *store.Store) {
+func settingsTestServerNoAgent(t *testing.T) (*httptest.Server, *composition.API) {
 	t.Helper()
-	st := store.NewStore(tasktestdb.OpenSQLite(t))
+	st := composition.NewAPI(tasktestdb.OpenSQLite(t))
 	srv := newSettingsHTTPServer(t, st, Deps{Settings: st, GitRead: st})
 	return srv, st
 }

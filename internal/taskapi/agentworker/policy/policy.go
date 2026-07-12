@@ -2,8 +2,7 @@ package policy
 
 import (
 	"context"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
+	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 )
 
 // SchedulingIdleHintReason is the diagnostic idle reason emitted when
@@ -31,7 +30,7 @@ func DecideSchedulingIdleHint(queueEmpty bool, scheduledCount int64) string {
 // checkGit inspects registered git repositories and worktree paths.
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func DecideIdle(ctx context.Context, cfg store.AppSettings, checkGit GitRegistrationChecker) (idle bool, reason string) {
+func DecideIdle(ctx context.Context, cfg settingsdomain.AppSettings, checkGit GitRegistrationChecker) (idle bool, reason string) {
 	if cfg.AgentPaused {
 		return true, "paused_by_operator"
 	}
@@ -48,7 +47,7 @@ func DecideIdle(ctx context.Context, cfg store.AppSettings, checkGit GitRegistra
 // InstanceSnapshot captures the running worker state needed for
 // material-change comparison without importing supervisor types.
 type InstanceSnapshot struct {
-	Settings        store.AppSettings
+	Settings        settingsdomain.AppSettings
 	RunnerVersion   string
 	HasVerifyRunner bool
 }
@@ -57,7 +56,7 @@ type InstanceSnapshot struct {
 // matches desired settings and probed runner version.
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func InstanceMatchesSettings(inst *InstanceSnapshot, cfg store.AppSettings, version string) bool {
+func InstanceMatchesSettings(inst *InstanceSnapshot, cfg settingsdomain.AppSettings, version string) bool {
 	if inst == nil {
 		return false
 	}
@@ -95,7 +94,7 @@ func InstanceMatchesSettings(inst *InstanceSnapshot, cfg store.AppSettings, vers
 // label for an unchanged reload.
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func VerifyRunnerStatus(hasVerifyRunner bool, cfg store.AppSettings) string {
+func VerifyRunnerStatus(hasVerifyRunner bool, cfg settingsdomain.AppSettings) string {
 	if hasVerifyRunner {
 		return "ok"
 	}

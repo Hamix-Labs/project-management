@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 )
 
 // RunTicker starts a background goroutine: on each tick, optionally runs lifecycle simulation,
@@ -16,7 +16,7 @@ import (
 // The goroutine exits when ctx is cancelled, so the caller controls its lifetime.
 // A nil ctx is treated as context.Background() for backward compatibility, but in that case
 // the goroutine will run until process exit; pass a cancelable ctx to avoid leaks.
-func RunTicker(ctx context.Context, st *store.Store, every time.Duration, opts Options, publish func(ChangeKind, string)) {
+func RunTicker(ctx context.Context, st *composition.API, every time.Duration, opts Options, publish func(ChangeKind, string)) {
 	if st == nil || every < time.Second || publish == nil {
 		return
 	}

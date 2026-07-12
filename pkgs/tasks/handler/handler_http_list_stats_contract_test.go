@@ -10,7 +10,7 @@ import (
 
 // listResponseRaw mirrors the documented `GET /tasks` envelope keys without
 // importing the handler's internal struct so a future field rename in
-// taskStatsResponse / listResponse fails this test in the same PR as the doc.
+// taskcorehandler.TaskStatsResponse / taskcorehandler.ListResponse fails this test in the same PR as the doc.
 type listResponseRaw struct {
 	Tasks   []json.RawMessage `json:"tasks"`
 	Limit   int               `json:"limit"`

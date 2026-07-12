@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 type fakeAgentControl struct {
@@ -59,9 +59,9 @@ func (f *fakeAgentControl) ProbeRunner(_ context.Context, runnerID, binaryPath s
 	return "", resolved, nil
 }
 
-func settingsTestServer(t *testing.T) (*httptest.Server, *store.Store, *SSEHub, *fakeAgentControl) {
+func settingsTestServer(t *testing.T) (*httptest.Server, *composition.API, *SSEHub, *fakeAgentControl) {
 	t.Helper()
-	st := store.NewStore(tasktestdb.OpenSQLite(t))
+	st := composition.NewAPI(tasktestdb.OpenSQLite(t))
 	hub := NewSSEHub()
 	ctrl := &fakeAgentControl{}
 	h := NewHandler(st, hub, nil, WithAgentWorkerControl(ctrl))

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 	"io"
 	"net/http"
 	"strings"
@@ -157,6 +158,6 @@ func TestHTTP_deleteTask_publishesTaskDeleted(t *testing.T) {
 		}
 		got := summarize(drainSSE(t, ch, 1, 2*time.Second))
 		mustEqualEvents(t, "DELETE /tasks/{id}", got,
-			[]string{string(TaskDeleted) + ":" + id})
+			[]string{string(realtime.TaskDeleted) + ":" + id})
 	})
 }

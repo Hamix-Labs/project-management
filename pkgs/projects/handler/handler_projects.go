@@ -2,6 +2,7 @@ package handler
 
 import (
 	"fmt"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
 	"log/slog"
 	"net/http"
 
@@ -16,8 +17,8 @@ func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
 	const op = "projects.create"
 	r = calltrace.WithRequestRoot(r, op)
 	var body projectCreateJSON
-	if err := decodeJSON(r.Context(), r.Body, &body); err != nil {
-		writeError(w, r, op, err, http.StatusBadRequest)
+	if err := handlerhttp.DecodeJSON(r.Context(), r.Body, &body); err != nil {
+		handlerhttp.WriteError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
 	project, err := h.store.CreateProject(r.Context(), contract.CreateProjectInput{
@@ -32,7 +33,7 @@ func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.notifyChange(realtime.ProjectCreated, project.ID)
-	writeJSON(w, r, op, http.StatusCreated, project)
+	handlerhttp.WriteJSON(w, r, op, http.StatusCreated, project)
 }
 
 func (h *Handler) listProjects(w http.ResponseWriter, r *http.Request) {
@@ -49,7 +50,7 @@ func (h *Handler) listProjects(w http.ResponseWriter, r *http.Request) {
 		writeStoreError(w, r, op, err)
 		return
 	}
-	writeJSONWithETag(w, r, op, http.StatusOK, projectsListResponse{Projects: projects, Limit: limit})
+	handlerhttp.WriteJSONWithETag(w, r, op, http.StatusOK, projectsListResponse{Projects: projects, Limit: limit})
 }
 
 func (h *Handler) getProject(w http.ResponseWriter, r *http.Request) {
@@ -66,7 +67,7 @@ func (h *Handler) getProject(w http.ResponseWriter, r *http.Request) {
 		writeStoreError(w, r, op, err)
 		return
 	}
-	writeJSONWithETag(w, r, op, http.StatusOK, project)
+	handlerhttp.WriteJSONWithETag(w, r, op, http.StatusOK, project)
 }
 
 func (h *Handler) patchProject(w http.ResponseWriter, r *http.Request) {
@@ -79,8 +80,8 @@ func (h *Handler) patchProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var body projectPatchJSON
-	if err := decodeJSON(r.Context(), r.Body, &body); err != nil {
-		writeError(w, r, op, err, http.StatusBadRequest)
+	if err := handlerhttp.DecodeJSON(r.Context(), r.Body, &body); err != nil {
+		handlerhttp.WriteError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
 	if body.isEmpty() {
@@ -98,7 +99,7 @@ func (h *Handler) patchProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.notifyChange(realtime.ProjectUpdated, project.ID)
-	writeJSON(w, r, op, http.StatusOK, project)
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, project)
 }
 
 func (h *Handler) deleteProject(w http.ResponseWriter, r *http.Request) {
@@ -128,8 +129,8 @@ func (h *Handler) createProjectContext(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var body projectContextCreateJSON
-	if err := decodeJSON(r.Context(), r.Body, &body); err != nil {
-		writeError(w, r, op, err, http.StatusBadRequest)
+	if err := handlerhttp.DecodeJSON(r.Context(), r.Body, &body); err != nil {
+		handlerhttp.WriteError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
 	item, err := h.store.CreateProjectContext(r.Context(), projectID, contract.CreateProjectContextInput{
@@ -139,7 +140,7 @@ func (h *Handler) createProjectContext(w http.ResponseWriter, r *http.Request) {
 		Body:          body.Body,
 		SourceTaskID:  body.SourceTaskID,
 		SourceCycleID: body.SourceCycleID,
-		CreatedBy:     actorFromRequest(r),
+		CreatedBy:     domain.Actor(handlerhttp.ActorFromRequest(r)),
 		Pinned:        body.Pinned,
 	})
 	if err != nil {
@@ -147,7 +148,7 @@ func (h *Handler) createProjectContext(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.notifyChange(realtime.ProjectContextChanged, projectID)
-	writeJSON(w, r, op, http.StatusCreated, item)
+	handlerhttp.WriteJSON(w, r, op, http.StatusCreated, item)
 }
 
 func (h *Handler) listProjectContext(w http.ResponseWriter, r *http.Request) {
@@ -178,7 +179,7 @@ func (h *Handler) listProjectContext(w http.ResponseWriter, r *http.Request) {
 		writeStoreError(w, r, op, err)
 		return
 	}
-	writeJSONWithETag(w, r, op, http.StatusOK, projectContextListResponse{Items: items, Edges: edges, Limit: limit})
+	handlerhttp.WriteJSONWithETag(w, r, op, http.StatusOK, projectContextListResponse{Items: items, Edges: edges, Limit: limit})
 }
 
 func (h *Handler) createProjectContextEdge(w http.ResponseWriter, r *http.Request) {
@@ -191,8 +192,8 @@ func (h *Handler) createProjectContextEdge(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	var body projectContextEdgeCreateJSON
-	if err := decodeJSON(r.Context(), r.Body, &body); err != nil {
-		writeError(w, r, op, err, http.StatusBadRequest)
+	if err := handlerhttp.DecodeJSON(r.Context(), r.Body, &body); err != nil {
+		handlerhttp.WriteError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
 	edge, err := h.store.CreateProjectContextEdge(r.Context(), projectID, contract.CreateProjectContextEdgeInput{
@@ -208,7 +209,7 @@ func (h *Handler) createProjectContextEdge(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	h.notifyChange(realtime.ProjectContextChanged, projectID)
-	writeJSON(w, r, op, http.StatusCreated, edge)
+	handlerhttp.WriteJSON(w, r, op, http.StatusCreated, edge)
 }
 
 func (h *Handler) patchProjectContextEdge(w http.ResponseWriter, r *http.Request) {
@@ -221,8 +222,8 @@ func (h *Handler) patchProjectContextEdge(w http.ResponseWriter, r *http.Request
 		return
 	}
 	var body projectContextEdgePatchJSON
-	if err := decodeJSON(r.Context(), r.Body, &body); err != nil {
-		writeError(w, r, op, err, http.StatusBadRequest)
+	if err := handlerhttp.DecodeJSON(r.Context(), r.Body, &body); err != nil {
+		handlerhttp.WriteError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
 	if body.isEmpty() {
@@ -239,7 +240,7 @@ func (h *Handler) patchProjectContextEdge(w http.ResponseWriter, r *http.Request
 		return
 	}
 	h.notifyChange(realtime.ProjectContextChanged, projectID)
-	writeJSON(w, r, op, http.StatusOK, edge)
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, edge)
 }
 
 func (h *Handler) deleteProjectContextEdge(w http.ResponseWriter, r *http.Request) {
@@ -269,8 +270,8 @@ func (h *Handler) patchProjectContext(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var body projectContextPatchJSON
-	if err := decodeJSON(r.Context(), r.Body, &body); err != nil {
-		writeError(w, r, op, err, http.StatusBadRequest)
+	if err := handlerhttp.DecodeJSON(r.Context(), r.Body, &body); err != nil {
+		handlerhttp.WriteError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
 	if body.isEmpty() {
@@ -288,7 +289,7 @@ func (h *Handler) patchProjectContext(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.notifyChange(realtime.ProjectContextChanged, projectID)
-	writeJSON(w, r, op, http.StatusOK, item)
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, item)
 }
 
 func (h *Handler) deleteProjectContext(w http.ResponseWriter, r *http.Request) {

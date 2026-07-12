@@ -121,7 +121,7 @@ type taskStatsResponse struct {
 	Total    int64 `json:"total"`
 	Ready    int64 `json:"ready"`
 	Critical int64 `json:"critical"`
-	// Scheduled mirrors store.TaskStats.Scheduled — the count of
+	// Scheduled mirrors taskcorestore.TaskStats.Scheduled — the count of
 	// status='ready' tasks deferred via pickup_not_before > now.
 	// Always present (0 on a fresh database) so the wire shape
 	// stays stable; the SPA distinguishes "0 ready, 12 scheduled"

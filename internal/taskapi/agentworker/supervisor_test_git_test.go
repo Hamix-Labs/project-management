@@ -2,12 +2,12 @@ package agentworker_test
 
 import (
 	"context"
+	gitinventorystore "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store"
 	"os/exec"
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 func (rig *supervisorTestRig) seedGitRepository(t *testing.T, dir string) {
@@ -28,7 +28,7 @@ func (rig *supervisorTestRig) seedGitRepository(t *testing.T, dir string) {
 	}
 	_ = exec.Command("git", "-C", dir, "commit", "-m", "init", "--allow-empty").Run()
 	ctx := context.Background()
-	if _, err := rig.store.CreateGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, store.CreateGitRepositoryInput{
+	if _, err := rig.store.CreateGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, gitinventorystore.CreateGitRepositoryInput{
 		Path: dir,
 	}, gitwork.New()); err != nil {
 		t.Fatalf("CreateGitRepository: %v", err)

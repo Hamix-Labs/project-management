@@ -4,12 +4,12 @@ import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 import (
 	"context"
 	"fmt"
+	cyclescontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/contract"
 	"log/slog"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/reports"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 // PhaseCallbacks notify harness when verify phase rows open and close.
@@ -27,6 +27,7 @@ func (s *Service) RunPipeline(
 	verifyAttempt int,
 	previouslyPassed map[string]Verdict,
 	feedback string,
+	mirrorDegradedIn bool,
 	phaseCB PhaseCallbacks,
 ) ([]Verdict, string, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.verify.RunPipeline",
@@ -67,9 +68,14 @@ func (s *Service) RunPipeline(
 	}
 
 	attemptSeq := int64(verifyAttempt) + 1
-	verdicts, feedbackOut, verifyErr := s.runVerifyChecks(parentCtx, task, cycle, phase.PhaseSeq, runCorrelationID, attemptSeq, snap, previouslyPassed, feedback)
+	verdicts, feedbackOut, mirrorDegraded, verifyErr := s.runVerifyChecks(parentCtx, task, cycle, phase.PhaseSeq, runCorrelationID, attemptSeq, snap, previouslyPassed, feedback, mirrorDegradedIn)
 
 	tampered, tamperReason := s.checkIntegrity(parentCtx, cycle.ID, pre, preErr)
+
+	detailsOpts := PhaseDetailsOpts{
+		MirrorDegraded:   mirrorDegraded,
+		VerifyRetryCount: verifyAttempt,
+	}
 
 	phaseStatus := cyclesdomain.PhaseStatusSucceeded
 	summary := FormatPhaseSummary(snap.Criteria, verdicts, true)
@@ -81,11 +87,11 @@ func (s *Service) RunPipeline(
 	} else if verifyErr != nil {
 		phaseStatus = cyclesdomain.PhaseStatusFailed
 		summary = FormatPhaseSummary(snap.Criteria, verdicts, false)
-		details = EncodePhaseDetails(attemptSeq, snap.Criteria, verdicts)
+		details = EncodePhaseDetails(attemptSeq, snap.Criteria, verdicts, detailsOpts)
 	} else {
-		details = EncodePhaseDetails(attemptSeq, snap.Criteria, verdicts)
+		details = EncodePhaseDetails(attemptSeq, snap.Criteria, verdicts, detailsOpts)
 	}
-	if _, err := s.store.CompletePhase(parentCtx, store.CompletePhaseInput{
+	if _, err := s.store.CompletePhase(parentCtx, cyclescontract.CompletePhaseInput{
 		CycleID:  cycle.ID,
 		PhaseSeq: phase.PhaseSeq,
 		Status:   phaseStatus,

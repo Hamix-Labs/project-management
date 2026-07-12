@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
 	"io"
 	"log/slog"
 	"net/http"
@@ -54,7 +55,7 @@ func (h *Handler) listRunners(w http.ResponseWriter, r *http.Request) {
 		}
 		out = append(out, wire)
 	}
-	writeJSON(w, r, op, http.StatusOK, out)
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, out)
 }
 
 // ---------------------------------------------------------------------------
@@ -77,7 +78,7 @@ func (h *Handler) probeRunner(w http.ResponseWriter, r *http.Request) {
 
 	runnerID := r.PathValue("id")
 	if runnerID == "" {
-		writeJSONError(w, r, op, http.StatusBadRequest, "runner id required")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusBadRequest, "runner id required")
 		return
 	}
 
@@ -85,9 +86,9 @@ func (h *Handler) probeRunner(w http.ResponseWriter, r *http.Request) {
 		BinaryPath string `json:"binary_path,omitempty"`
 	}
 	if r.ContentLength != 0 {
-		if err := decodeJSON(r.Context(), r.Body, &body); err != nil {
+		if err := handlerhttp.DecodeJSON(r.Context(), r.Body, &body); err != nil {
 			if !errors.Is(err, io.EOF) {
-				writeError(w, r, op, err, http.StatusBadRequest)
+				handlerhttp.WriteError(w, r, op, err, http.StatusBadRequest)
 				return
 			}
 		}
@@ -97,7 +98,7 @@ func (h *Handler) probeRunner(w http.ResponseWriter, r *http.Request) {
 	if body.BinaryPath == "" {
 		cfg, err := h.settings.GetSettings(r.Context())
 		if err != nil {
-			writeStoreError(w, r, op, err)
+			handlerhttp.WriteStoreError(w, r, op, err)
 			return
 		}
 		if runnerID == registry.CursorRunnerID {
@@ -111,19 +112,19 @@ func (h *Handler) probeRunner(w http.ResponseWriter, r *http.Request) {
 		resp.OK = false
 		resp.Error = err.Error()
 		if errors.Is(err, registry.ErrUnknownRunner) {
-			writeJSON(w, r, op, http.StatusNotFound, resp)
+			handlerhttp.WriteJSON(w, r, op, http.StatusNotFound, resp)
 			return
 		}
 		if errors.Is(err, runner.ErrCapabilityNotSupported) {
-			writeJSON(w, r, op, http.StatusNotImplemented, resp)
+			handlerhttp.WriteJSON(w, r, op, http.StatusNotImplemented, resp)
 			return
 		}
-		writeJSON(w, r, op, http.StatusOK, resp)
+		handlerhttp.WriteJSON(w, r, op, http.StatusOK, resp)
 		return
 	}
 	resp.OK = true
 	resp.Version = version
-	writeJSON(w, r, op, http.StatusOK, resp)
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, resp)
 }
 
 // ---------------------------------------------------------------------------
@@ -146,7 +147,7 @@ func (h *Handler) listRunnerModels(w http.ResponseWriter, r *http.Request) {
 
 	runnerID := r.PathValue("id")
 	if runnerID == "" {
-		writeJSONError(w, r, op, http.StatusBadRequest, "runner id required")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusBadRequest, "runner id required")
 		return
 	}
 
@@ -154,9 +155,9 @@ func (h *Handler) listRunnerModels(w http.ResponseWriter, r *http.Request) {
 		BinaryPath string `json:"binary_path,omitempty"`
 	}
 	if r.ContentLength != 0 {
-		if err := decodeJSON(r.Context(), r.Body, &body); err != nil {
+		if err := handlerhttp.DecodeJSON(r.Context(), r.Body, &body); err != nil {
 			if !errors.Is(err, io.EOF) {
-				writeError(w, r, op, err, http.StatusBadRequest)
+				handlerhttp.WriteError(w, r, op, err, http.StatusBadRequest)
 				return
 			}
 		}
@@ -166,7 +167,7 @@ func (h *Handler) listRunnerModels(w http.ResponseWriter, r *http.Request) {
 	if body.BinaryPath == "" {
 		cfg, err := h.settings.GetSettings(r.Context())
 		if err != nil {
-			writeStoreError(w, r, op, err)
+			handlerhttp.WriteStoreError(w, r, op, err)
 			return
 		}
 		if runnerID == registry.CursorRunnerID {
@@ -180,19 +181,19 @@ func (h *Handler) listRunnerModels(w http.ResponseWriter, r *http.Request) {
 		resp.OK = false
 		resp.Error = err.Error()
 		if errors.Is(err, registry.ErrUnknownRunner) {
-			writeJSON(w, r, op, http.StatusNotFound, resp)
+			handlerhttp.WriteJSON(w, r, op, http.StatusNotFound, resp)
 			return
 		}
 		if errors.Is(err, runner.ErrCapabilityNotSupported) {
-			writeJSON(w, r, op, http.StatusNotImplemented, resp)
+			handlerhttp.WriteJSON(w, r, op, http.StatusNotImplemented, resp)
 			return
 		}
-		writeJSON(w, r, op, http.StatusOK, resp)
+		handlerhttp.WriteJSON(w, r, op, http.StatusOK, resp)
 		return
 	}
 	resp.OK = true
 	resp.Models = models
-	writeJSON(w, r, op, http.StatusOK, resp)
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, resp)
 }
 
 // ---------------------------------------------------------------------------
@@ -207,27 +208,27 @@ func (h *Handler) runnerConfigSchema(w http.ResponseWriter, r *http.Request) {
 
 	runnerID := r.PathValue("id")
 	if runnerID == "" {
-		writeJSONError(w, r, op, http.StatusBadRequest, "runner id required")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusBadRequest, "runner id required")
 		return
 	}
 
 	built, err := registry.Build(runnerID, registry.BuildOptions{})
 	if err != nil {
 		if errors.Is(err, registry.ErrUnknownRunner) {
-			writeJSONError(w, r, op, http.StatusNotFound, "unknown runner")
+			handlerhttp.WriteJSONError(w, r, op, http.StatusNotFound, "unknown runner")
 			return
 		}
 		slog.ErrorContext(r.Context(), "runner registry build failed",
 			"cmd", calltrace.LogCmd, "operation", op, "runner_id", runnerID, "err", err)
-		writeJSONError(w, r, op, http.StatusInternalServerError, "failed to load runner")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusInternalServerError, "failed to load runner")
 		return
 	}
 	csp, ok := built.(runner.ConfigSchemaProvider)
 	if !ok {
-		writeJSONError(w, r, op, http.StatusNotImplemented, "runner does not expose a config schema")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusNotImplemented, "runner does not expose a config schema")
 		return
 	}
-	writeJSON(w, r, op, http.StatusOK, csp.ConfigSchema())
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, csp.ConfigSchema())
 }
 
 // ---------------------------------------------------------------------------
@@ -242,38 +243,38 @@ func (h *Handler) validateRunnerConfig(w http.ResponseWriter, r *http.Request) {
 
 	runnerID := r.PathValue("id")
 	if runnerID == "" {
-		writeJSONError(w, r, op, http.StatusBadRequest, "runner id required")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusBadRequest, "runner id required")
 		return
 	}
 
 	built, err := registry.Build(runnerID, registry.BuildOptions{})
 	if err != nil {
 		if errors.Is(err, registry.ErrUnknownRunner) {
-			writeJSONError(w, r, op, http.StatusNotFound, "unknown runner")
+			handlerhttp.WriteJSONError(w, r, op, http.StatusNotFound, "unknown runner")
 			return
 		}
 		slog.ErrorContext(r.Context(), "runner registry build failed",
 			"cmd", calltrace.LogCmd, "operation", op, "runner_id", runnerID, "err", err)
-		writeJSONError(w, r, op, http.StatusInternalServerError, "failed to load runner")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusInternalServerError, "failed to load runner")
 		return
 	}
 	cv, ok := built.(runner.ConfigValidator)
 	if !ok {
-		writeJSONError(w, r, op, http.StatusNotImplemented, "runner does not support config validation")
+		handlerhttp.WriteJSONError(w, r, op, http.StatusNotImplemented, "runner does not support config validation")
 		return
 	}
 
 	var blob json.RawMessage
-	if err := decodeJSON(r.Context(), r.Body, &blob); err != nil {
-		writeError(w, r, op, err, http.StatusBadRequest)
+	if err := handlerhttp.DecodeJSON(r.Context(), r.Body, &blob); err != nil {
+		handlerhttp.WriteError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
 	if err := cv.ValidateConfig(blob); err != nil {
-		writeJSON(w, r, op, http.StatusUnprocessableEntity, map[string]any{
+		handlerhttp.WriteJSON(w, r, op, http.StatusUnprocessableEntity, map[string]any{
 			"valid": false,
 			"error": err.Error(),
 		})
 		return
 	}
-	writeJSON(w, r, op, http.StatusOK, map[string]any{"valid": true})
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, map[string]any{"valid": true})
 }

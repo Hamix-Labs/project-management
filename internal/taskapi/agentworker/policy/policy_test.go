@@ -2,10 +2,10 @@ package policy_test
 
 import (
 	"context"
+	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi/agentworker/policy"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 func TestDecideIdle(t *testing.T) {
@@ -23,35 +23,35 @@ func TestDecideIdle(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		cfg    store.AppSettings
+		cfg    settingsdomain.AppSettings
 		check  policy.GitRegistrationChecker
 		idle   bool
 		reason string
 	}{
 		{
 			name:   "paused",
-			cfg:    store.AppSettings{AgentPaused: true},
+			cfg:    settingsdomain.AppSettings{AgentPaused: true},
 			check:  okGit,
 			idle:   true,
 			reason: "paused_by_operator",
 		},
 		{
 			name:   "no repositories",
-			cfg:    store.AppSettings{},
+			cfg:    settingsdomain.AppSettings{},
 			check:  noRepos,
 			idle:   true,
 			reason: "no_repository_registered",
 		},
 		{
 			name:   "all worktrees invalid",
-			cfg:    store.AppSettings{},
+			cfg:    settingsdomain.AppSettings{},
 			check:  allInvalid,
 			idle:   true,
 			reason: "all_worktrees_invalid",
 		},
 		{
 			name:   "configured",
-			cfg:    store.AppSettings{Runner: "cursor"},
+			cfg:    settingsdomain.AppSettings{Runner: "cursor"},
 			check:  okGit,
 			idle:   false,
 			reason: "",
@@ -83,7 +83,7 @@ func TestDecideSchedulingIdleHint(t *testing.T) {
 
 func TestInstanceMatchesSettings(t *testing.T) {
 	t.Parallel()
-	base := store.AppSettings{
+	base := settingsdomain.AppSettings{
 		Runner:                "cursor",
 		CursorBin:             "/bin/cursor",
 		CursorModel:           "gpt",
@@ -111,7 +111,7 @@ func TestInstanceMatchesSettings(t *testing.T) {
 
 func TestVerifyRunnerStatus(t *testing.T) {
 	t.Parallel()
-	cfg := store.AppSettings{Runner: "cursor", VerifyRunnerName: "cursor"}
+	cfg := settingsdomain.AppSettings{Runner: "cursor", VerifyRunnerName: "cursor"}
 	if got := policy.VerifyRunnerStatus(false, cfg); got != "reuse_execute_runner" {
 		t.Fatalf("got %q", got)
 	}

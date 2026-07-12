@@ -32,13 +32,13 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi"
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/agentsmoke"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/cursor"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/worker"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 
@@ -106,8 +106,8 @@ func (n *hubCycleNotifier) PublishCycleChange(taskID, cycleID string) {
 	if n == nil || n.hub == nil || taskID == "" {
 		return
 	}
-	n.hub.Publish(handler.TaskChangeEvent{
-		Type:    handler.TaskCycleChanged,
+	n.hub.Publish(realtime.Event{
+		Type:    realtime.TaskCycleChanged,
 		ID:      taskID,
 		CycleID: cycleID,
 	})
@@ -142,7 +142,7 @@ func TestAgentE2E_RealCursor_taskFromHTTPReachesDoneWithFileWritten(t *testing.T
 	rootCtx, rootCancel := context.WithCancel(context.Background())
 	defer rootCancel()
 
-	st := store.NewStore(tasktestdb.OpenSQLite(t))
+	st := composition.NewAPI(tasktestdb.OpenSQLite(t))
 	hub := handler.NewSSEHub()
 	q := agents.NewMemoryQueue(4)
 	st.SetReadyTaskNotifier(q)
@@ -327,7 +327,7 @@ func TestAgentE2E_RealCursor_cancelMidRunMarksCycleCancelledByOperator(t *testin
 	rootCtx, rootCancel := context.WithCancel(context.Background())
 	defer rootCancel()
 
-	st := store.NewStore(tasktestdb.OpenSQLite(t))
+	st := composition.NewAPI(tasktestdb.OpenSQLite(t))
 	hub := handler.NewSSEHub()
 	q := agents.NewMemoryQueue(4)
 	st.SetReadyTaskNotifier(q)
@@ -488,7 +488,7 @@ func TestAgentE2E_RealCursor_cancelMidRunMarksCycleCancelledByOperator(t *testin
 // timeout. Used by the cancel-mid-run e2e to ensure CancelCurrentRun
 // fires only after runner.Run is genuinely in flight (otherwise the
 // worker has nothing to cancel and the test would race the queue).
-func waitExecutePhaseRunning(t *testing.T, ctx context.Context, st *store.Store, taskID string, timeout, interval time.Duration) string {
+func waitExecutePhaseRunning(t *testing.T, ctx context.Context, st *composition.API, taskID string, timeout, interval time.Duration) string {
 	t.Helper()
 	deadline := time.Now().Add(timeout)
 	for time.Now().Before(deadline) {
@@ -543,7 +543,7 @@ func postTaskAndReturnID(t *testing.T, baseURL, body string) string {
 // Returns the last observed status (which may be a non-terminal value
 // on timeout — the caller should treat anything != Done as a failure
 // and dump context).
-func waitTaskTerminalE2E(t *testing.T, ctx context.Context, st *store.Store, taskID string, timeout, interval time.Duration) taskcoredomain.Status {
+func waitTaskTerminalE2E(t *testing.T, ctx context.Context, st *composition.API, taskID string, timeout, interval time.Duration) taskcoredomain.Status {
 	t.Helper()
 	deadline := time.Now().Add(timeout)
 	var last taskcoredomain.Status
@@ -579,7 +579,7 @@ func isTerminalTaskStatus(s taskcoredomain.Status) bool {
 // crack open the SQLite file to debug. RawOutput on the execute phase
 // is already redacted by the cursor adapter; we truncate the tail to
 // keep the failure message readable.
-func dumpFailedTaskContext(t *testing.T, ctx context.Context, st *store.Store, taskID string) {
+func dumpFailedTaskContext(t *testing.T, ctx context.Context, st *composition.API, taskID string) {
 	t.Helper()
 	tsk, err := st.Get(ctx, taskID)
 	if err != nil {
@@ -646,11 +646,11 @@ func drainSSEUntilCycleChanged(t *testing.T, ch <-chan string, taskID, cycleID s
 			if !ok {
 				return false
 			}
-			var ev handler.TaskChangeEvent
+			var ev realtime.Event
 			if err := json.Unmarshal([]byte(s), &ev); err != nil {
 				continue
 			}
-			if ev.Type == handler.TaskCycleChanged && ev.ID == taskID && ev.CycleID == cycleID {
+			if ev.Type == realtime.TaskCycleChanged && ev.ID == taskID && ev.CycleID == cycleID {
 				return true
 			}
 		case <-deadline:

@@ -4,11 +4,11 @@ import (
 	"context"
 	"log/slog"
 
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/taskapiconfig"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
-func maybeRunGitReconcileOnStartup(ctx context.Context, taskStore *store.Store) {
+func maybeRunGitReconcileOnStartup(ctx context.Context, taskStore *composition.API) {
 	mode := taskapiconfig.GitReconcileOnStartupMode()
 	if mode == "" {
 		return

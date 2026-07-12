@@ -11,7 +11,7 @@
 //	db, err := postgres.Open(dsn, nil)
 //	if err != nil { ... }
 //	if err := postgres.Migrate(ctx, db); err != nil { ... }
-//	s := store.NewStore(db)
+//	s := composition.NewAPI(db)
 //	hub := handler.NewSSEHub()
 //	http.Handler = handler.NewHandler(s, hub, repoRootOrNil)
 package tasks

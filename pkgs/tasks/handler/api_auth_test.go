@@ -3,6 +3,7 @@ package handler
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -16,29 +17,29 @@ import (
 
 func TestAPIAuthEnabled(t *testing.T) {
 	t.Setenv("HAMIX_API_TOKEN", "")
-	if APIAuthEnabled() {
+	if middleware.APIAuthEnabled() {
 		t.Fatal("expected auth disabled")
 	}
 	t.Setenv("HAMIX_API_TOKEN", "secret")
-	if !APIAuthEnabled() {
+	if !middleware.APIAuthEnabled() {
 		t.Fatal("expected auth enabled")
 	}
 }
 
 func TestHasValidBearerToken(t *testing.T) {
-	if HasValidBearerToken("", "secret") {
+	if middleware.HasValidBearerToken("", "secret") {
 		t.Fatal("empty header should fail")
 	}
-	if HasValidBearerToken("secret", "secret") {
+	if middleware.HasValidBearerToken("secret", "secret") {
 		t.Fatal("missing bearer prefix should fail")
 	}
-	if HasValidBearerToken("Bearer ", "secret") {
+	if middleware.HasValidBearerToken("Bearer ", "secret") {
 		t.Fatal("empty bearer should fail")
 	}
-	if HasValidBearerToken("Bearer nope", "secret") {
+	if middleware.HasValidBearerToken("Bearer nope", "secret") {
 		t.Fatal("wrong token should fail")
 	}
-	if !HasValidBearerToken("Bearer secret", "secret") {
+	if !middleware.HasValidBearerToken("Bearer secret", "secret") {
 		t.Fatal("valid token should pass")
 	}
 }
@@ -56,7 +57,7 @@ func TestWithAccessLog_apiAuthDenied_logIncludesRequestID(t *testing.T) {
 	inner := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
-	h := WithAccessLog(WithAPIAuth(inner))
+	h := middleware.WithAccessLog(middleware.WithAPIAuth(inner), calltrace.Path)
 
 	req := httptest.NewRequest(http.MethodPost, "/tasks", nil)
 	req.Header.Set("X-Request-ID", "rid-api-auth-deny")
@@ -93,7 +94,7 @@ func TestWithAPIAuth_unauthorized_without_token(t *testing.T) {
 	inner := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
-	h := WithAPIAuth(inner)
+	h := middleware.WithAPIAuth(inner)
 
 	req := httptest.NewRequest(http.MethodPost, "/tasks", nil)
 	rec := httptest.NewRecorder()
@@ -108,7 +109,7 @@ func TestWithAPIAuth_authorized_with_bearer_token(t *testing.T) {
 	inner := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
-	h := WithAPIAuth(inner)
+	h := middleware.WithAPIAuth(inner)
 
 	req := httptest.NewRequest(http.MethodPost, "/tasks", nil)
 	req.Header.Set(middleware.AuthorizationHeader, "Bearer secret")
@@ -119,7 +120,7 @@ func TestWithAPIAuth_authorized_with_bearer_token(t *testing.T) {
 	}
 }
 
-// TestHasValidBearerToken_caseInsensitiveScheme pins RFC 7235 § 2.1:
+// Testmiddleware.HasValidBearerToken_caseInsensitiveScheme pins RFC 7235 § 2.1:
 // the auth-scheme name is case-insensitive. curl, Postman, and several
 // proxies normalize the scheme to lowercase ("bearer ..."), and other
 // stacks emit ALL-CAPS. The historical strings.HasPrefix(rawAuth,
@@ -128,11 +129,11 @@ func TestWithAPIAuth_authorized_with_bearer_token(t *testing.T) {
 // the scheme name.
 func TestHasValidBearerToken_caseInsensitiveScheme(t *testing.T) {
 	for _, scheme := range []string{"bearer", "BEARER", "Bearer", "BeArEr"} {
-		if !HasValidBearerToken(scheme+" secret", "secret") {
+		if !middleware.HasValidBearerToken(scheme+" secret", "secret") {
 			t.Errorf("scheme %q should be accepted (RFC 7235 §2.1: scheme names are case-insensitive); got reject", scheme)
 		}
 	}
-	if HasValidBearerToken("Basic secret", "secret") {
+	if middleware.HasValidBearerToken("Basic secret", "secret") {
 		t.Error("Basic scheme must still be rejected even when the credential matches; got accept")
 	}
 }
@@ -142,7 +143,7 @@ func TestWithAPIAuth_authorized_with_lowercase_bearer_scheme(t *testing.T) {
 	inner := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
-	h := WithAPIAuth(inner)
+	h := middleware.WithAPIAuth(inner)
 
 	req := httptest.NewRequest(http.MethodPost, "/tasks", nil)
 	req.Header.Set(middleware.AuthorizationHeader, "bearer secret")
@@ -158,7 +159,7 @@ func TestWithAPIAuth_exempts_health_and_metrics(t *testing.T) {
 	inner := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
-	h := WithAPIAuth(inner)
+	h := middleware.WithAPIAuth(inner)
 
 	for _, path := range []string{"/health", "/health/live", "/health/ready", "/metrics"} {
 		req := httptest.NewRequest(http.MethodGet, path, nil)

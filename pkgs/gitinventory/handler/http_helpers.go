@@ -24,7 +24,10 @@ type jsonCodedErrorBody struct {
 	RequestID string `json:"request_id,omitempty"`
 }
 
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+// Gitinventory cannot import pkgs/tasks/handlerhttp (handlerhttp delegates git
+// store errors back here). These thin helpers mirror handlerhttp JSON behavior.
+
+//funclogmeasure:skip category=hot-path reason="JSON helper mirroring handlerhttp; HTTP handlers emit operation traces."
 func decodeJSON(ctx context.Context, r io.Reader, dst any) error {
 	dec := json.NewDecoder(r)
 	dec.DisallowUnknownFields()
@@ -40,7 +43,7 @@ func decodeJSON(ctx context.Context, r io.Reader, dst any) error {
 	return fmt.Errorf("%w: json trailing data", taskcoredomain.ErrInvalidInput)
 }
 
-//funclogmeasure:skip category=delegate-already-logs reason="JSON response helper; HTTP handler chokepoint emits trace."
+//funclogmeasure:skip category=hot-path reason="JSON helper mirroring handlerhttp; HTTP handlers emit operation traces."
 func writeJSON(w http.ResponseWriter, r *http.Request, op string, code int, v any) {
 	apijson.ApplySecurityHeaders(w)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -57,12 +60,12 @@ func writeJSON(w http.ResponseWriter, r *http.Request, op string, code int, v an
 	_, _ = w.Write([]byte("\n"))
 }
 
-//funclogmeasure:skip category=delegate-already-logs reason="Error response helper; HTTP handler chokepoint emits trace."
+//funclogmeasure:skip category=hot-path reason="JSON helper mirroring handlerhttp; HTTP handlers emit operation traces."
 func writeJSONError(w http.ResponseWriter, r *http.Request, op string, code int, msg string) {
 	apijson.WriteJSONError(w, r, op, code, msg, calltrace.Path)
 }
 
-//funclogmeasure:skip category=delegate-already-logs reason="Error response helper; HTTP handler chokepoint emits trace."
+//funclogmeasure:skip category=hot-path reason="JSON helper mirroring handlerhttp; HTTP handlers emit operation traces."
 func writeError(w http.ResponseWriter, r *http.Request, op string, err error, code int) {
 	msg := http.StatusText(code)
 	if code == http.StatusBadRequest {
@@ -93,7 +96,7 @@ func conflictDetail(err error) string {
 
 // GitErrHTTP maps git and domain store errors to HTTP status, code, and message.
 //
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+//funclogmeasure:skip category=hot-path reason="Pure error mapper; HTTP handlers emit operation traces."
 func GitErrHTTP(err error) (status int, code, msg string) {
 	status = http.StatusInternalServerError
 	msg = "internal server error"
@@ -130,21 +133,17 @@ func GitErrHTTP(err error) (status int, code, msg string) {
 
 // WriteGitStoreError writes a git-aware JSON error response.
 //
-//funclogmeasure:skip category=delegate-already-logs reason="Error response helper; HTTP handler chokepoint emits trace."
+//funclogmeasure:skip category=hot-path reason="JSON helper mirroring handlerhttp; HTTP handlers emit operation traces."
 func WriteGitStoreError(w http.ResponseWriter, r *http.Request, op string, err error) {
 	status, code, msg := GitErrHTTP(err)
 	if code != "" {
 		writeJSONCodedError(w, r, op, status, code, msg)
 		return
 	}
-	if status >= 500 {
-		writeJSONError(w, r, op, status, msg)
-		return
-	}
 	writeJSONError(w, r, op, status, msg)
 }
 
-//funclogmeasure:skip category=delegate-already-logs reason="Error response helper; HTTP handler chokepoint emits trace."
+//funclogmeasure:skip category=hot-path reason="JSON helper mirroring handlerhttp; HTTP handlers emit operation traces."
 func writeJSONCodedError(w http.ResponseWriter, r *http.Request, op string, status int, code, msg string) {
 	apijson.ApplySecurityHeaders(w)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")

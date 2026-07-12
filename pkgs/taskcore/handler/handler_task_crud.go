@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"fmt"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -39,12 +40,12 @@ func (h *Handler) create(w http.ResponseWriter, r *http.Request) {
 	const op = "tasks.create"
 	r = calltrace.WithRequestRoot(r, op)
 	var body taskCreateJSON
-	if err := decodeJSON(r.Context(), r.Body, &body); err != nil {
+	if err := handlerhttp.DecodeJSON(r.Context(), r.Body, &body); err != nil {
 		debugHTTPRequest(r, op, "json_decode_failed", true)
-		writeError(w, r, op, err, http.StatusBadRequest)
+		handlerhttp.WriteError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
-	by := actorFromRequest(r)
+	by := handlerhttp.ActorFromRequest(r)
 	debugHTTPRequest(r, op, taskCreateInputFields(&body, string(by))...)
 	task, err := h.CreateTaskFromComposeJSON(r.Context(), r, op, taskCreateJSONToCompose(body), CreateTaskComposeOpts{
 		ID:      body.ID,
@@ -52,10 +53,10 @@ func (h *Handler) create(w http.ResponseWriter, r *http.Request) {
 		Gate:    body.Gate,
 	}, by)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
-	writeJSON(w, r, op, http.StatusCreated, task)
+	handlerhttp.WriteJSON(w, r, op, http.StatusCreated, task)
 }
 
 func (h *Handler) get(w http.ResponseWriter, r *http.Request) {
@@ -64,16 +65,16 @@ func (h *Handler) get(w http.ResponseWriter, r *http.Request) {
 	r = calltrace.WithRequestRoot(r, op)
 	id, err := parseTaskPathID(r.PathValue("id"))
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	debugHTTPRequest(r, op, "task_id", id)
 	t, err := h.tasks.Get(r.Context(), id)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
-	writeJSONWithETag(w, r, op, http.StatusOK, t)
+	handlerhttp.WriteJSONWithETag(w, r, op, http.StatusOK, t)
 }
 
 // list serves GET /tasks — the hottest read path in taskapi (SPA initial load
@@ -97,7 +98,7 @@ func (h *Handler) list(w http.ResponseWriter, r *http.Request) {
 	limit, offset, afterID, err := parseListParams(r.Context(), q)
 	if err != nil {
 		debugHTTPRequest(r, op, "list_params_invalid", true)
-		writeStoreError(w, r, op, err,
+		handlerhttp.WriteStoreError(w, r, op, err,
 			"failure_stage", "parse_list_params",
 			"limit_q", q.Get("limit"),
 			"offset_q", q.Get("offset"),
@@ -119,7 +120,7 @@ func (h *Handler) list(w http.ResponseWriter, r *http.Request) {
 		if afterID != "" {
 			mode = "keyset"
 		}
-		writeStoreError(w, r, op, err,
+		handlerhttp.WriteStoreError(w, r, op, err,
 			"failure_stage", "store_list",
 			"limit", limit,
 			"offset", offset,
@@ -128,7 +129,7 @@ func (h *Handler) list(w http.ResponseWriter, r *http.Request) {
 		)
 		return
 	}
-	writeJSONWithETag(w, r, op, http.StatusOK, buildListResponse(tasks, limit, offset, hasMore))
+	handlerhttp.WriteJSONWithETag(w, r, op, http.StatusOK, buildListResponse(tasks, limit, offset, hasMore))
 }
 
 func (h *Handler) stats(w http.ResponseWriter, r *http.Request) {
@@ -138,10 +139,10 @@ func (h *Handler) stats(w http.ResponseWriter, r *http.Request) {
 	debugHTTPRequest(r, op)
 	stats, err := h.tasks.TaskStats(r.Context())
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
-	writeJSONWithETag(w, r, op, http.StatusOK, taskStatsResponseFromStore(stats))
+	handlerhttp.WriteJSONWithETag(w, r, op, http.StatusOK, taskStatsResponseFromStore(stats))
 }
 
 func (h *Handler) patch(w http.ResponseWriter, r *http.Request) {
@@ -150,13 +151,13 @@ func (h *Handler) patch(w http.ResponseWriter, r *http.Request) {
 	r = calltrace.WithRequestRoot(r, op)
 	id, err := parseTaskPathID(r.PathValue("id"))
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	var body taskPatchJSON
-	if err := decodeJSON(r.Context(), r.Body, &body); err != nil {
+	if err := handlerhttp.DecodeJSON(r.Context(), r.Body, &body); err != nil {
 		debugHTTPRequest(r, op, "task_id", id, "json_decode_failed", true)
-		writeError(w, r, op, err, http.StatusBadRequest)
+		handlerhttp.WriteError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
 	debugHTTPRequest(r, op, append(append([]any{}, "task_id", id), taskPatchInputFields(&body)...)...)
@@ -182,7 +183,7 @@ func (h *Handler) patch(w http.ResponseWriter, r *http.Request) {
 	if body.InitialPrompt != nil {
 		cur, getErr := h.tasks.Get(r.Context(), id)
 		if getErr != nil {
-			writeStoreError(w, r, op, getErr)
+			handlerhttp.WriteStoreError(w, r, op, getErr)
 			return
 		}
 		wt := body.WorktreeID
@@ -190,14 +191,14 @@ func (h *Handler) patch(w http.ResponseWriter, r *http.Request) {
 			wt = cur.WorktreeID
 		}
 		if err := h.gitCompose.ValidatePromptMentionsForWorktree(r.Context(), wt, *body.InitialPrompt); err != nil {
-			writeStoreError(w, r, op, err)
+			handlerhttp.WriteStoreError(w, r, op, err)
 			return
 		}
 	}
 	if body.WorktreeID != nil {
 		cur, getErr := h.tasks.Get(r.Context(), id)
 		if getErr != nil {
-			writeStoreError(w, r, op, getErr)
+			handlerhttp.WriteStoreError(w, r, op, getErr)
 			return
 		}
 		projectID := cur.ProjectID
@@ -209,19 +210,19 @@ func (h *Handler) patch(w http.ResponseWriter, r *http.Request) {
 			wt = body.WorktreeID
 		}
 		if err := h.gitCompose.ValidateTaskGitBindingV2(r.Context(), projectID, wt); err != nil {
-			writeStoreError(w, r, op, err)
+			handlerhttp.WriteStoreError(w, r, op, err)
 			return
 		}
 	}
-	by := actorFromRequest(r)
+	by := handlerhttp.ActorFromRequest(r)
 	_, err = h.tasks.Update(r.Context(), id, in, by)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	task, err := h.tasks.Get(r.Context(), id)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	h.notifyTaskChangedSafe(realtime.TaskUpdated, id, task)
@@ -232,7 +233,7 @@ func (h *Handler) patch(w http.ResponseWriter, r *http.Request) {
 		h.notifyChangeSafe(realtime.TaskDependencyChanged, id)
 	}
 	taskapiDomainTasksUpdatedTotal.Inc()
-	writeJSON(w, r, op, http.StatusOK, task)
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, task)
 }
 
 func (h *Handler) delete(w http.ResponseWriter, r *http.Request) {
@@ -241,14 +242,14 @@ func (h *Handler) delete(w http.ResponseWriter, r *http.Request) {
 	r = calltrace.WithRequestRoot(r, op)
 	id, err := parseTaskPathID(r.PathValue("id"))
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	debugHTTPRequest(r, op, "task_id", id)
-	by := actorFromRequest(r)
+	by := handlerhttp.ActorFromRequest(r)
 	deletedIDs, err := h.tasks.Delete(r.Context(), id, by)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	for _, deletedID := range deletedIDs {

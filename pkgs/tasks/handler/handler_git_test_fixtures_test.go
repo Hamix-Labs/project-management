@@ -11,8 +11,8 @@ import (
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/internal/gittest"
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 )
 
 var (
@@ -68,7 +68,7 @@ func handlerGitBindingForURL(baseURL string) (handlerGitBinding, bool) {
 	return v.(handlerGitBinding), true
 }
 
-func setHandlerTestGitBinding(t *testing.T, st *store.Store, worktreeID string) handlerGitBinding {
+func setHandlerTestGitBinding(t *testing.T, st *composition.API, worktreeID string) handlerGitBinding {
 	t.Helper()
 	ctx := context.Background()
 	wt, err := st.GetGitWorktreeByID(ctx, worktreeID)
@@ -86,7 +86,7 @@ func setHandlerTestGitBinding(t *testing.T, st *store.Store, worktreeID string) 
 	}
 }
 
-func seedHandlerTestGitRepo(t *testing.T, st *store.Store) handlerGitBinding {
+func seedHandlerTestGitRepo(t *testing.T, st *composition.API) handlerGitBinding {
 	t.Helper()
 	dir := handlerSharedGitRepoDir(t)
 	wtID, _ := gittest.SeedWorktree(t, st, dir)
@@ -170,10 +170,10 @@ func withCreateTaskDefaults(baseURL, jsonBody string) string {
 
 const directHandlerTestURL = "http://handler-direct.test"
 
-func newBoundTaskServer(t *testing.T, build func(st *store.Store) http.Handler) *httptest.Server {
+func newBoundTaskServer(t *testing.T, build func(st *composition.API) http.Handler) *httptest.Server {
 	t.Helper()
 	db := tasktestdb.OpenSQLite(t)
-	st := store.NewStore(db)
+	st := composition.NewAPI(db)
 	binding := seedHandlerTestGitRepo(t, st)
 	srv := httptest.NewServer(build(st))
 	registerHandlerGitBinding(t, srv.URL, binding)
@@ -181,10 +181,10 @@ func newBoundTaskServer(t *testing.T, build func(st *store.Store) http.Handler) 
 	return srv
 }
 
-func newDirectBoundHandler(t *testing.T, build func(st *store.Store) http.Handler) http.Handler {
+func newDirectBoundHandler(t *testing.T, build func(st *composition.API) http.Handler) http.Handler {
 	t.Helper()
 	db := tasktestdb.OpenSQLite(t)
-	st := store.NewStore(db)
+	st := composition.NewAPI(db)
 	binding := seedHandlerTestGitRepo(t, st)
 	registerHandlerGitBinding(t, directHandlerTestURL, binding)
 	return build(st)
@@ -199,7 +199,7 @@ func mustHandlerGitBinding(t *testing.T, baseURL string) handlerGitBinding {
 	return binding
 }
 
-func boundTaskHandler(st *store.Store, opts ...HandlerOption) http.Handler {
+func boundTaskHandler(st *composition.API, opts ...HandlerOption) http.Handler {
 	base := []HandlerOption{WithRepoProvider(NewSettingsRepoProvider(st))}
 	return NewHandler(st, NewSSEHub(), nil, append(base, opts...)...)
 }

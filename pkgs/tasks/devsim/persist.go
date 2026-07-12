@@ -5,9 +5,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/store"
 	"log/slog"
 )
 
@@ -56,7 +56,7 @@ func nextEventTypeFromCount(n int64) taskeventsdomain.EventType {
 	return EventCycle[idx]
 }
 
-func persistSampleEvent(ctx context.Context, st *store.Store, t *taskcoredomain.Task, opts Options, publish func(ChangeKind, string)) error {
+func persistSampleEvent(ctx context.Context, st *composition.API, t *taskcoredomain.Task, opts Options, publish func(ChangeKind, string)) error {
 	if st == nil || t == nil {
 		return errors.New("store or task nil")
 	}
@@ -104,7 +104,7 @@ func persistSampleEvent(ctx context.Context, st *store.Store, t *taskcoredomain.
 
 // PersistAllTasks walks every task using store.ListFlat (id ASC, paginated), same data as flat list.
 // For each task it appends up to opts.EventsPerTick sample audit events and invokes publish after each successful cycle.
-func PersistAllTasks(ctx context.Context, st *store.Store, opts Options, publish func(ChangeKind, string)) {
+func PersistAllTasks(ctx context.Context, st *composition.API, opts Options, publish func(ChangeKind, string)) {
 	if st == nil || publish == nil {
 		return
 	}

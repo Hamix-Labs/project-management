@@ -65,7 +65,7 @@ func (s *Service) LoadContinuationBundle(ctx context.Context, parentCycleID stri
 		bundle.Entry = routeResumeEntry(phases, lastExecute, lastPhase, cycle, len(bundle.Commits) > 0)
 	}
 
-	previouslyPassed, _, verifyFeedback, err := s.loadVerifyCheckpointData(ctx, parentCycleID)
+	previouslyPassed, _, verifyFeedback, _, err := s.loadVerifyCheckpointData(ctx, parentCycleID, phases)
 	if err != nil {
 		return bundle, err
 	}
