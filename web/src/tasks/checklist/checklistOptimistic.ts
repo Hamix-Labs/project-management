@@ -6,6 +6,7 @@ import {
 } from "@/observability";
 import { taskQueryKeys } from "@/tasks/task-query";
 import type { TaskChecklistResponse } from "@/types";
+import { invalidateTaskCacheAsync } from "@/tasks/mutations/invalidateTaskCache";
 
 export interface ChecklistOptimisticContext {
   prev: TaskChecklistResponse | undefined;
@@ -56,12 +57,7 @@ export async function invalidateTaskChecklistQueries(
   queryClient: QueryClient,
   taskId: string,
 ): Promise<void> {
-  await queryClient.invalidateQueries({
-    queryKey: taskQueryKeys.checklist(taskId),
-  });
-  await queryClient.invalidateQueries({
-    queryKey: taskQueryKeys.detail(taskId),
-  });
+  await invalidateTaskCacheAsync(queryClient, { scope: "checklist", taskId });
 }
 
 export function handleGuardedChecklistMutationError(

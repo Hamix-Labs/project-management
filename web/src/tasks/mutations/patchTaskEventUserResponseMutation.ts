@@ -3,6 +3,7 @@ import { patchTaskEventUserResponse } from "@/api";
 import type { TaskEventDetail } from "@/types";
 import { taskQueryKeys } from "../task-query";
 import { beginGuardedTaskWrite, endGuardedTaskWrite } from "./guardedTaskWrite";
+import { invalidateTaskCache } from "./invalidateTaskCache";
 
 export function buildPatchTaskEventUserResponseMutationOptions(deps: {
   taskId: string;
@@ -27,7 +28,7 @@ export function buildPatchTaskEventUserResponseMutationOptions(deps: {
     onSuccess: (updated) => {
       queryClient.setQueryData(eventDetailKey, updated);
       onDraftCleared?.();
-      void queryClient.invalidateQueries({ queryKey: taskQueryKeys.eventsRoot(taskId) });
+      invalidateTaskCache(queryClient, { scope: "events", taskId });
     },
     onSettled: (_data, _err, _vars, context) => {
       if (context?.guarded) endGuardedTaskWrite(taskId);

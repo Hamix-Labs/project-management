@@ -14,3 +14,11 @@ export type ProjectInvalidationScope =
 export type GitInvalidationScope =
   | { scope: "repositories" }
   | { scope: "repository"; repositoryId: string };
+
+export type TaskInvalidationScope =
+  | { scope: "listStats" }
+  | { scope: "detail"; taskId: string }
+  | { scope: "checklist"; taskId: string }
+  | { scope: "events"; taskId: string }
+  | { scope: "drafts" }
+  | { scope: "templates" };

@@ -14,6 +14,7 @@ import {
   beginGuardedTaskWrite,
   cancelQueriesForKeys,
   endGuardedTaskWrite,
+  invalidateTaskCacheAsync,
   mergePatchIntoTask,
   patchTaskInList,
   recordOptimisticApplied,
@@ -185,8 +186,7 @@ export function useTaskPatchFlow(opts: {
     },
     onSuccess: async (_, variables, context) => {
       const patchedId = variables.id;
-      await queryClient.invalidateQueries({ queryKey: taskQueryKeys.all });
-      await queryClient.invalidateQueries({ queryKey: taskQueryKeys.stats() });
+      await invalidateTaskCacheAsync(queryClient, { scope: "listStats" });
       onPatched?.(patchedId);
       if (context) {
         rumMutationSettled(

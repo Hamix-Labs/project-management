@@ -40,14 +40,9 @@
 
 ## Findings (ranked)
 
-### 1. Task invalidation catalog missing — ROI 9/10 (High) — **Status: open**
+### 1. Task invalidation catalog missing — ROI 9/10 (High) — **Status: done (2026-07-12)**
 
-- **Location:** Inline `invalidateQueries` in `web/src/tasks/hooks/useTaskPatchFlow.ts`, `useTaskDetailMutations.ts`, `useTaskDeleteFlow.ts`; `web/src/tasks/checklist/checklistOptimistic.ts`; `web/src/tasks/mutations/patchTaskEventUserResponseMutation.ts`. Partial helpers `invalidateTaskListCoherence.ts`, `invalidateTaskDetailCoherence.ts` — not a full scope catalog.
-- **Issue:** Project/git invalidation has `decideProjectInvalidationKeys` / `decideGitInvalidationKeys` (ADR-0044) with CI enforcement; task vertical does not. Handoff engineer must grep hooks to learn cache effects.
-- **Proposed change:** Add `decideTaskInvalidationKeys` in `web/src/lib/queryInvalidation/`; migrate callers; extend `check-code-standards.ps1` for `tasks/` (allow `tasks/mutations/`, `tasks/sync/`, `lib/queryInvalidation/`). ADR-0080.
-- **Effort / risk:** 2–3 days; medium (mutation coherence); ~12 production call sites.
-- **Evidence:** `rg invalidateQueries web/src/tasks` (production, non-test); CI gate in `scripts/check-code-standards.ps1` L165–186 lists only projects/worktrees.
-- **Success signal:** CI fails on new inline `invalidateQueries` in `tasks/hooks/`; table-driven tests mirror project catalog pattern.
+- **PR:** ADR-0080, `decideTaskInvalidationKeys`, `invalidateTaskCache`, CI gate for `tasks/`.
 
 ### 2. Read limits scattered — ROI 8/10 (High) — **Status: open**
 
@@ -67,14 +62,9 @@
 - **Evidence:** `rg writepolicy\. pkgs/` → handlers/tests only, not `sse_notify.go`.
 - **Success signal:** Choke-path tests; `docs/domain/sse-hub.md` points at writepolicy table.
 
-### 4. Mutation post-success invalidation inconsistent — ROI 7/10 (Medium) — **Status: open**
+### 4. Mutation post-success invalidation inconsistent — ROI 7/10 (Medium) — **Status: done (2026-07-12)**
 
-- **Location:** `useTaskPatchFlow.ts` / `useTaskDetailMutations.ts` `onSuccess` → `taskQueryKeys.all` + `stats()`; `invalidateTaskListCoherence.ts` → `listRoot()` + `stats()` only.
-- **Issue:** Over-invalidation on patch hides intended narrow contract; inconsistent with ADR-0025 list coherence goals.
-- **Proposed change:** Resolve in PR #2 via `decideTaskInvalidationKeys` scopes (`listStats`, `detail`, etc.).
-- **Effort / risk:** Bundled with #1; low incremental.
-- **Evidence:** Diff hook `onSuccess` blocks vs `invalidateTaskListAndStats`.
-- **Success signal:** All task mutations use catalog scopes; tests lock per mutation kind.
+- **Resolution:** Hooks use `listStats` scope via `invalidateTaskCache` (ADR-0080).
 
 ### 5. Sync invalidation logic overlap — ROI 6/10 (Medium) — **Status: open**
 
@@ -85,7 +75,7 @@
 - **Evidence:** `decideFlushBatch` and `applySyncEffects` both push `taskQueryKeys.listRoot()` / `stats()`.
 - **Success signal:** Single source for flush keys; `decideSyncFrame.test.ts` green.
 
-### 6. CI policy gates incomplete — ROI 8/10 (High) — **Status: open**
+### 6. CI policy gates incomplete — ROI 8/10 (High) — **Status: partial (tasks gate done 2026-07-12; read-limit parity in PR #3)**
 
 - **Location:** `scripts/check-code-standards.ps1` — tasks vertical not gated; no Go ↔ TS read-limit parity test.
 - **Issue:** Regressions reintroduce inline invalidation or limit drift without CI failure.

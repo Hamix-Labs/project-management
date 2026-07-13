@@ -13,6 +13,7 @@ import {
   beginGuardedTaskWrite,
   cancelQueriesForKeys,
   endGuardedTaskWrite,
+  invalidateTaskCacheAsync,
   recordOptimisticApplied,
 } from "@/tasks/mutations";
 import type { Task, TaskListResponse } from "@/types";
@@ -169,10 +170,7 @@ export function useTaskDeleteFlow(opts: {
     onSuccess: async (_, variables, context) => {
       const deletedId = variables.id;
       setDeleteTarget((prev) => (prev?.id === deletedId ? null : prev));
-      await queryClient.invalidateQueries({
-        queryKey: taskQueryKeys.listRoot(),
-      });
-      await queryClient.invalidateQueries({ queryKey: taskQueryKeys.stats() });
+      await invalidateTaskCacheAsync(queryClient, { scope: "listStats" });
       onDeleted?.(deletedId);
       if (context) {
         rumMutationSettled(

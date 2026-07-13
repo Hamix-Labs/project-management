@@ -20,6 +20,7 @@ import {
   applyCreatedTasksToCache,
   beginGuardedTaskWrite,
   endGuardedTaskWrite,
+  invalidateTaskCacheAsync,
   invalidateTaskListAndStats,
 } from "@/tasks/mutations";
 import {
@@ -27,7 +28,6 @@ import {
   endBulkTaskMutationGuard,
 } from "@/tasks/sync";
 import { normalizeChecklistItems } from "../../task-compose/checklistRequirement";
-import { taskQueryKeys } from "../../task-query";
 import { buildComposePayloadFromForm } from "../composePayload";
 import type { CreateTaskMutationInput, TaskCreateFormFields } from "../types";
 
@@ -87,7 +87,7 @@ export function useTaskCreateMutations(input: {
       try {
         applyCreatedTaskToCache(input.queryClient, result.task);
         await invalidateTaskListAndStats(input.queryClient);
-        await input.queryClient.invalidateQueries({ queryKey: taskQueryKeys.drafts() });
+        await invalidateTaskCacheAsync(input.queryClient, { scope: "drafts" });
         rumMutationSettled("task_create", performance.now() - guard.startedAtMs, 201);
       } finally {
         if (guard.guarded) {
@@ -116,7 +116,7 @@ export function useTaskCreateMutations(input: {
     onSuccess: async (saved, variables) => {
       // I2 — baseline stamp only when save response matches active draft ref.
       if (input.newDraftIDRef.current !== saved.id) {
-        await input.queryClient.invalidateQueries({ queryKey: taskQueryKeys.drafts() });
+        await invalidateTaskCacheAsync(input.queryClient, { scope: "drafts" });
         return;
       }
       if (saved.id !== input.newDraftID) {
@@ -125,14 +125,14 @@ export function useTaskCreateMutations(input: {
       input.setDraftAutosaveBaseline(variables.signature);
       input.setDraftAutosaveBaselineID(saved.id);
       input.setLastDraftSavedAt(Date.now());
-      await input.queryClient.invalidateQueries({ queryKey: taskQueryKeys.drafts() });
+      await invalidateTaskCacheAsync(input.queryClient, { scope: "drafts" });
     },
   });
 
   const deleteDraftMutation = useMutation({
     mutationFn: (id: string) => apiDeleteDraft(id),
     onSuccess: async () => {
-      await input.queryClient.invalidateQueries({ queryKey: taskQueryKeys.drafts() });
+      await invalidateTaskCacheAsync(input.queryClient, { scope: "drafts" });
     },
   });
 
@@ -153,7 +153,7 @@ export function useTaskCreateMutations(input: {
       }),
     onSuccess: async () => {
       input.closeCreateModal();
-      await input.queryClient.invalidateQueries({ queryKey: taskQueryKeys.templates() });
+      await invalidateTaskCacheAsync(input.queryClient, { scope: "templates" });
     },
   });
 
@@ -167,7 +167,7 @@ export function useTaskCreateMutations(input: {
       if (input.editingTemplateId === variables.id) {
         input.closeCreateModal();
       }
-      await input.queryClient.invalidateQueries({ queryKey: taskQueryKeys.templates() });
+      await invalidateTaskCacheAsync(input.queryClient, { scope: "templates" });
     },
   });
 
@@ -178,7 +178,7 @@ export function useTaskCreateMutations(input: {
   const deleteTemplateMutation = useMutation({
     mutationFn: (id: string) => apiDeleteTemplate(id),
     onSuccess: async () => {
-      await input.queryClient.invalidateQueries({ queryKey: taskQueryKeys.templates() });
+      await invalidateTaskCacheAsync(input.queryClient, { scope: "templates" });
     },
   });
 

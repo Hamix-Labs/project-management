@@ -162,24 +162,29 @@ foreach ($feat in $featureDirs) {
     }
 }
 
-# TypeScript: project/worktree production code must not call invalidateQueries outside mutations/.
+# TypeScript: vertical production code must not call invalidateQueries outside allowed subdirs.
 $verticals = @(
-    @{ Name = "projects"; Path = (Join-Path $srcRoot "projects") },
-    @{ Name = "worktrees"; Path = (Join-Path $srcRoot "worktrees") }
+    @{ Name = "projects"; Path = (Join-Path $srcRoot "projects"); AllowSubdirs = @("mutations") },
+    @{ Name = "worktrees"; Path = (Join-Path $srcRoot "worktrees"); AllowSubdirs = @("mutations") },
+    @{ Name = "tasks"; Path = (Join-Path $srcRoot "tasks"); AllowSubdirs = @("mutations", "sync") }
 )
 $invalidatePat = 'invalidateQueries'
 foreach ($vertical in $verticals) {
     if (-not (Test-Path $vertical.Path)) { continue }
+    $allowSubdirs = $vertical.AllowSubdirs
     $verticalFiles = Get-ChildItem -Path $vertical.Path -Recurse -Include *.ts, *.tsx -File |
-        Where-Object {
-            $_.Name -notmatch '\.test\.(ts|tsx)$' -and
-            ($_.FullName.Replace('\', '/') -notmatch '/mutations/')
-        }
+        Where-Object { $_.Name -notmatch '\.test\.(ts|tsx)$' }
     foreach ($f in $verticalFiles) {
+        $normalized = $f.FullName.Replace('\', '/')
+        $allowed = $false
+        foreach ($subdir in $allowSubdirs) {
+            if ($normalized -match "/$subdir/") { $allowed = $true; break }
+        }
+        if ($allowed) { continue }
         $text = Get-Content -LiteralPath $f.FullName -Raw
         if ($null -eq $text) { continue }
         if ($text -match $invalidatePat) {
-            Write-Host "VIOLATION: invalidateQueries outside $($vertical.Name)/mutations/: $($f.FullName)" -ForegroundColor Red
+            Write-Host "VIOLATION: invalidateQueries outside allowed paths in $($vertical.Name)/: $($f.FullName)" -ForegroundColor Red
             $failed = $true
         }
     }

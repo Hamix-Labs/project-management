@@ -10,6 +10,7 @@ import { useRolloutFlags } from "@/settings";
 import {
   beginGuardedTaskWrite,
   endGuardedTaskWrite,
+  invalidateTaskCacheAsync,
   recordOptimisticApplied,
 } from "@/tasks/mutations";
 import type { Task } from "@/types";
@@ -68,8 +69,7 @@ function useTaskDetailRetryMutation(
     },
     onSuccess: async (_data, _vars, context) => {
       onRetryConfirmed();
-      await queryClient.invalidateQueries({ queryKey: taskQueryKeys.all });
-      await queryClient.invalidateQueries({ queryKey: taskQueryKeys.stats() });
+      await invalidateTaskCacheAsync(queryClient, { scope: "listStats" });
       if (context) {
         rumMutationSettled(
           "task_retry",
@@ -139,8 +139,7 @@ function useTaskDetailAutonomyMutation(
       toast.error("Couldn't update autonomy — reverted.");
     },
     onSuccess: async (_data, _vars, context) => {
-      await queryClient.invalidateQueries({ queryKey: taskQueryKeys.all });
-      await queryClient.invalidateQueries({ queryKey: taskQueryKeys.stats() });
+      await invalidateTaskCacheAsync(queryClient, { scope: "listStats" });
       onAutonomyConfirmed();
       if (context) {
         rumMutationSettled(
