@@ -1,7 +1,7 @@
 {
   "core": 30,
-  "tasks": 42,
+  "tasks": 27,
   "agents": 62,
   "harness": 56,
-  "notes": "Statement coverage floors (percent). Ratchet quarterly (+1–2% per group)."
+  "notes": "Statement coverage floors (percent). Ratchet quarterly (+1–2% per group). tasks floor recalibrated after Tier-4 BC extraction (taskcore, taskchecklist, taskcycles, taskevents) joined the tasks group."
 }

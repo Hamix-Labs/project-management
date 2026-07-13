@@ -77,6 +77,8 @@ func (h *Handler) notifyScopelessChange(typ realtime.ChangeType) {
 
 // publishPolicyEvent is the runtime choke for handler SSE publishes. It strips
 // Data from hint-only types and preserves enriched / cycle-specific frames.
+//
+//funclogmeasure:skip category=delegate-already-logs reason="SSE publish choke; operation trace is emitted by notify* callers."
 func (h *Handler) publishPolicyEvent(ev realtime.Event) {
 	if h.hub == nil {
 		return

@@ -1,6 +1,6 @@
 # Policy centralization audit — ROI-ranked findings
 
-> Read-only audit (2026-07-12). No code changed in the audit PR. Implementation: [policy-roi PR train](policy-roi.md#suggested-implementation-order) via `docs/cleanup-order.md` Phase 3.
+> Read-only audit (2026-07-12). **Phase 3 complete** (2026-07-13): implementation landed [#198](https://github.com/AlexsanderHamir/Hamix/pull/198)–[#203](https://github.com/AlexsanderHamir/Hamix/pull/203).
 
 **Handoff goal:** One choke point per invariant so a new engineer or agent finds policy in catalog modules and CI gates — not scattered hooks and magic numbers.
 
@@ -34,6 +34,9 @@
 | SSE sync orchestration | `web/src/tasks/sync/` (`decideSyncFrame`, `taskSyncCoordinator`) | ADR-0022 |
 | Mutation guard | `web/src/tasks/sync/mutationGuard.ts` + `web/src/tasks/mutations/guardedTaskWrite.ts` | ADR-0025 M1–M2 |
 | writepolicy package purity | `scripts/check-code-standards.ps1` (readpolicy/writepolicy import gate) | ADR-0026 |
+| SSE publish runtime choke | `pkgs/tasks/handler/sse_notify.go` (`publishPolicyEvent` + `writepolicy`) | [#202](https://github.com/AlexsanderHamir/Hamix/pull/202) |
+| Task invalidation catalog | `web/src/lib/queryInvalidation/decideTaskInvalidationKeys.ts` + `invalidateTaskCache` | ADR-0080 |
+| Sync flush invalidation | `decideFlushBatch.ts` / `applySyncEffects.ts` share catalog `listStats` scope | [#203](https://github.com/AlexsanderHamir/Hamix/pull/203) |
 | invalidateQueries CI (partial) | same script — **projects/**, **worktrees/**, **tasks/** (`mutations/`, `sync/` allowed) | ADR-0044, ADR-0080 |
 
 ---
@@ -53,7 +56,7 @@
 - **Evidence:** `rg 'limit = 50|defaultCycleListLimit|maxCycleListLimit' pkgs/`; `readpolicy.go` has 3 bootstrap constants only.
 - **Success signal:** Migrated handlers have zero magic limit literals; parity test locks bootstrap + events + cycles.
 
-### 3. SSE publish policy not enforced at runtime — ROI 7/10 (Medium) — **Status: open**
+### 3. SSE publish policy not enforced at runtime — ROI 7/10 (Medium) — **Status: done** ([#202](https://github.com/AlexsanderHamir/Hamix/pull/202))
 
 - **Location:** `pkgs/tasks/handler/writepolicy/publish_policy.go` (classification); `pkgs/tasks/handler/sse_notify.go` (actual `hub.Publish`); BC handlers inject `Notify` callbacks (`projects/handler`, `settings/handler`, `taskcore/handler`).
 - **Issue:** `IsHintOnly` / `EnrichedTaskChangeEvent` used in tests only (`handler_writepolicy_test.go`, `publish_policy_test.go`). Publish path does not consult writepolicy — handoff cannot trust one table.
@@ -66,7 +69,7 @@
 
 - **Resolution:** Hooks use `listStats` scope via `invalidateTaskCache` (ADR-0080).
 
-### 5. Sync invalidation logic overlap — ROI 6/10 (Medium) — **Status: open**
+### 5. Sync invalidation logic overlap — ROI 6/10 (Medium) — **Status: done** ([#203](https://github.com/AlexsanderHamir/Hamix/pull/203))
 
 - **Location:** `web/src/tasks/sync/decideFlushBatch.ts`, `applySyncEffects.ts` (duplicate list/stats keys); `decideSyncFrame.ts` inline keys for `task_event`, `resync`, `settings`.
 - **Issue:** Three modules encode overlapping invalidation key lists; flush vs mutation paths can diverge.
@@ -92,15 +95,15 @@
 
 ## Suggested implementation order
 
-| PR | Slice | Findings |
-| --- | --- | --- |
-| 1 | This audit doc | — |
-| 2 | Task invalidation catalog + CI gate | #1, #4, #6 (tasks) |
-| 3 | Read limits catalog + parity | #2, #7, #6 (read) |
-| 4 | SSE publish choke | #3 |
-| 5 | Sync invalidation dedup | #5 (after #2 merged) |
+| PR | Slice | Findings | Status |
+| --- | --- | --- | --- |
+| 1 | This audit doc | — | merged [#198](https://github.com/AlexsanderHamir/Hamix/pull/198) |
+| 2 | Task invalidation catalog + CI gate | #1, #4, #6 (tasks) | merged [#199](https://github.com/AlexsanderHamir/Hamix/pull/199) |
+| 3 | Read limits catalog + parity | #2, #7, #6 (read) | merged [#201](https://github.com/AlexsanderHamir/Hamix/pull/201) |
+| 4 | SSE publish choke | #3 | merged [#202](https://github.com/AlexsanderHamir/Hamix/pull/202) |
+| 5 | Sync invalidation dedup | #5 | merged [#203](https://github.com/AlexsanderHamir/Hamix/pull/203) |
 
-See [cleanup-order.md](../cleanup-order.md) Phase 3.
+Phase 3 closed — see [cleanup-order.md](../cleanup-order.md).
 
 ---
 

@@ -13,7 +13,9 @@ group_packages() {
       go list ./cmd/... ./internal/... ./pkgs/repo/... ./pkgs/gitcore/... ./pkgs/gitexec/... ./pkgs/gitwork/...
       ;;
     tasks)
-      go list ./pkgs/tasks/... ./pkgs/projects/... ./pkgs/gitinventory/... ./pkgs/settings/... ./pkgs/taskcompose/... | grep -Ev '/agentreconcile$'
+      go list ./pkgs/tasks/... ./pkgs/projects/... ./pkgs/gitinventory/... ./pkgs/settings/... ./pkgs/taskcompose/... \
+        ./pkgs/taskcore/... ./pkgs/taskchecklist/... ./pkgs/taskcycles/... ./pkgs/taskevents/... \
+        ./pkgs/runners/handler ./pkgs/storekernel/... | grep -Ev '/agentreconcile$'
       ;;
     agents)
       go list ./pkgs/agents/... ./pkgs/tasks/agentreconcile/... | grep -Ev '/harness'

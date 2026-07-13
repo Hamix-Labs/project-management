@@ -13,7 +13,9 @@ function Get-GroupPackages {
             go list ./cmd/... ./internal/... ./pkgs/repo/... ./pkgs/gitcore/... ./pkgs/gitexec/... ./pkgs/gitwork/...
         }
         'tasks' {
-            go list ./pkgs/tasks/... ./pkgs/projects/... ./pkgs/gitinventory/... ./pkgs/settings/... | Where-Object { $_ -notmatch '/agentreconcile$' }
+            go list ./pkgs/tasks/... ./pkgs/projects/... ./pkgs/gitinventory/... ./pkgs/settings/... ./pkgs/taskcompose/... `
+                ./pkgs/taskcore/... ./pkgs/taskchecklist/... ./pkgs/taskcycles/... ./pkgs/taskevents/... `
+                ./pkgs/runners/handler ./pkgs/storekernel/... | Where-Object { $_ -notmatch '/agentreconcile$' }
         }
         'agents' {
             go list ./pkgs/agents/... ./pkgs/tasks/agentreconcile/... | Where-Object { $_ -notmatch '/harness' }

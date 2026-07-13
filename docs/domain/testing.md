@@ -39,7 +39,7 @@ Package lists are defined in [`scripts/test-groups.sh`](../../scripts/test-group
 | Group | Owns | Examples |
 | --- | --- | --- |
 | `core` | Binaries, `internal/`, repo/git helpers | `cmd/taskapi`, `internal/taskapi`, `pkgs/repo` |
-| `tasks` | Task domain (except agentreconcile) | `pkgs/tasks/handler`, `store`, `scheduling` |
+| `tasks` | Task domain BCs (except agentreconcile) | `pkgs/tasks/handler`, `pkgs/taskcore`, `pkgs/taskcycles`, `pkgs/settings` |
 | `agents` | Agent worker, runner, queue | `pkgs/agents/worker`, `runner` |
 | `harness` | Agent harness only | `pkgs/agents/harness/...` |
 
@@ -52,7 +52,7 @@ After tests pass, each group job runs the **coverage gate** (`scripts/coverage-g
 | Group | Floor (statement %) |
 | --- | ---: |
 | `core` | 30 |
-| `tasks` | 39 |
+| `tasks` | 27 |
 | `agents` | 62 |
 | `harness` | 56 |
 
