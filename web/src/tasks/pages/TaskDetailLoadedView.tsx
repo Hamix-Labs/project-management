@@ -1,29 +1,17 @@
-import { errorMessage } from "@/lib/errorMessage";
 import { isUiFeatureOmitted } from "@/launch/omittedFeatures";
 import type { Task, TaskChecklistResponse } from "@/types";
 import type { UseQueryResult } from "@tanstack/react-query";
-import {
-  TaskCyclesPanel,
-  TaskCommitsPanel,
-  TaskDetailChecklistSection,
-  TaskDetailToolbarActions,
-  TaskDetailHeader,
-  TaskDetailPromptSection,
-  TaskDetailSchedule,
-  TaskDependenciesPanel,
-  TaskGatePanel,
-  TaskModelConfigModal,
-} from "../components/task-detail";
-import { AutonomyConfirmDialog, TaskRetryConfirmDialog } from "../components/dialogs";
+import { TaskDetailHeader } from "../components/task-detail";
 import type { TaskRetryMode } from "../components/dialogs/TaskRetryConfirmDialog";
 import { sanitizePromptHtml } from "@/lib/promptFormat";
-import { canEditTask } from "../task-display/canEditTask";
-import { canMutateTaskCriteria } from "../task-display/canMutateTaskCriteria";
 import { useTaskDetailChecklist } from "../checklist/hooks/useTaskDetailChecklist";
 import { useTaskDetailMutations } from "../hooks/useTaskDetailMutations";
 import { useTaskDetailScheduling } from "../hooks/useTaskDetailScheduling";
 import { resolveTaskDependencySummaries } from "../task-query";
 import { useTasksAppModals } from "../app/TasksAppProvider";
+import { TaskDetailLoadedDialogs } from "./TaskDetailLoadedDialogs";
+import { TaskDetailLoadedSections } from "./TaskDetailLoadedSections";
+import { TaskDetailLoadedToolbar } from "./TaskDetailLoadedToolbar";
 
 export type AutonomyMode = "hidden" | "ready" | "on_hold";
 
@@ -84,7 +72,6 @@ export function TaskDetailLoadedView({
   const checklistItems = checklistQuery.data?.items ?? [];
   const { doneCount, totalCount } = countChecklistProgress(checklistItems);
   const sanitizedInitialPrompt = sanitizePromptHtml(task.initial_prompt);
-  const autonomyEnable = autonomyMode === "on_hold";
   const dependenciesUiEnabled = !isUiFeatureOmitted("tagsAndDependencies");
   const releaseGatesUiEnabled = !isUiFeatureOmitted("releaseGates");
 
@@ -92,150 +79,48 @@ export function TaskDetailLoadedView({
     <section className="panel task-detail-panel task-detail-content--enter">
       <TaskDetailHeader task={task} />
 
-      <div className="task-detail-toolbar">
-        <TaskDetailSchedule task={task} />
-        <TaskDetailToolbarActions
-          saving={saving}
-          canEdit={canEditTask(task.status)}
-          onEdit={() => modals.openEdit(task)}
-          onDelete={() => modals.requestDelete(task)}
-          onRetryFresh={
-            task.status === "failed"
-              ? () => setRetryConfirmMode("fresh")
-              : undefined
-          }
-          onRetryResume={
-            task.status === "failed"
-              ? () => setRetryConfirmMode("resume")
-              : undefined
-          }
-          retryPending={retryMutation.isPending}
-          onConfigureModel={() => setModelConfigOpen(true)}
-          showModelConfig={task.status === "failed"}
-          autonomyMode={autonomyMode}
-          onToggleAutonomy={
-            autonomyMode !== "hidden"
-              ? () => setAutonomyConfirmOpen(true)
-              : undefined
-          }
-          autonomyPending={autonomyMutation.isPending}
-        />
-      </div>
-
-      {autonomyConfirmOpen && autonomyMode !== "hidden" ? (
-        <AutonomyConfirmDialog
-          enable={autonomyEnable}
-          taskTitle={task.title}
-          saving={saving}
-          pending={autonomyMutation.isPending}
-          error={
-            autonomyMutation.isError
-              ? errorMessage(
-                  autonomyMutation.error,
-                  autonomyEnable
-                    ? "Couldn't resume autonomous execution."
-                    : "Couldn't put this task on hold.",
-                )
-              : null
-          }
-          onCancel={() => {
-            setAutonomyConfirmOpen(false);
-            if (autonomyMutation.isError) autonomyMutation.reset();
-          }}
-          onConfirm={() =>
-            autonomyMutation.mutate(autonomyEnable ? "ready" : "on_hold")
-          }
-        />
-      ) : null}
-
-      {retryConfirmMode ? (
-        <TaskRetryConfirmDialog
-          mode={retryConfirmMode}
-          taskTitle={task.title}
-          saving={saving}
-          pending={retryMutation.isPending}
-          error={
-            retryMutation.isError
-              ? errorMessage(
-                  retryMutation.error,
-                  retryConfirmMode === "fresh"
-                    ? "Couldn't start over."
-                    : "Couldn't resume from failure.",
-                )
-              : null
-          }
-          onCancel={() => {
-            setRetryConfirmMode(null);
-            if (retryMutation.isError) retryMutation.reset();
-          }}
-          onConfirm={() => retryMutation.mutate(retryConfirmMode)}
-        />
-      ) : null}
-
-      {modelConfigOpen ? (
-        <TaskModelConfigModal
-          taskTitle={task.title}
-          saving={saving}
-          onChangeModel={() => modals.openChangeModel(task)}
-          onClose={() => setModelConfigOpen(false)}
-        />
-      ) : null}
-
-      {dependenciesUiEnabled ? (
-        <TaskDependenciesPanel dependencies={dependencySummaries} />
-      ) : null}
-
-      {releaseGatesUiEnabled ? (
-        <TaskGatePanel
-          gate={task.gate}
-          editable
-          onAction={(action) => scheduling.gateMutation.mutate(action)}
-          actionPending={scheduling.gateMutation.isPending}
-          error={scheduling.gateMutation.error ? scheduling.schedulingError : null}
-        />
-      ) : null}
-
-      <TaskDetailChecklistSection
+      <TaskDetailLoadedToolbar
+        task={task}
         saving={saving}
-        canAddCriterion={canMutateTaskCriteria(task.status)}
-        taskStatus={task.status}
+        modals={modals}
+        autonomyMode={autonomyMode}
+        setAutonomyConfirmOpen={setAutonomyConfirmOpen}
+        setRetryConfirmMode={setRetryConfirmMode}
+        setModelConfigOpen={setModelConfigOpen}
+        retryMutation={retryMutation}
+        autonomyMutation={autonomyMutation}
+      />
+
+      <TaskDetailLoadedDialogs
+        task={task}
+        saving={saving}
+        modals={modals}
+        autonomyMode={autonomyMode}
+        autonomyConfirmOpen={autonomyConfirmOpen}
+        setAutonomyConfirmOpen={setAutonomyConfirmOpen}
+        autonomyMutation={autonomyMutation}
+        retryConfirmMode={retryConfirmMode}
+        setRetryConfirmMode={setRetryConfirmMode}
+        retryMutation={retryMutation}
+        modelConfigOpen={modelConfigOpen}
+        setModelConfigOpen={setModelConfigOpen}
+      />
+
+      <TaskDetailLoadedSections
+        task={task}
+        taskId={taskId}
+        taskQuerySuccess={taskQuerySuccess}
+        saving={saving}
         checklistQuery={checklistQuery}
+        checklistState={checklistState}
+        dependencySummaries={dependencySummaries}
+        scheduling={scheduling}
         doneCount={doneCount}
         totalCount={totalCount}
-        modalOpen={checklistState.checklistModalOpen}
-        newCriterionText={checklistState.newChecklistText}
-        onNewCriterionTextChange={checklistState.setNewChecklistText}
-        newCriterionVerifyCommands={checklistState.newChecklistVerifyCommands}
-        onNewCriterionVerifyCommandsChange={checklistState.setNewChecklistVerifyCommands}
-        onOpenAddModal={checklistState.openChecklistModal}
-        onCloseAddModal={checklistState.closeChecklistModal}
-        onSubmitNewCriterion={checklistState.submitNewChecklistCriterion}
-        addCriterionPending={checklistState.addChecklistMutation.isPending}
-        editModalOpen={checklistState.editCriterionModalOpen}
-        editingItemId={checklistState.editingChecklistItemId}
-        editCriterionText={checklistState.editChecklistText}
-        onEditCriterionTextChange={checklistState.setEditChecklistText}
-        editCriterionVerifyCommands={checklistState.editChecklistVerifyCommands}
-        onEditCriterionVerifyCommandsChange={checklistState.setEditChecklistVerifyCommands}
-        onOpenEditCriterionModal={checklistState.openEditCriterionModal}
-        onCloseEditCriterionModal={checklistState.closeEditCriterionModal}
-        onSubmitEditCriterion={checklistState.submitEditChecklistCriterion}
-        editCriterionPending={checklistState.updateChecklistTextMutation.isPending}
-        onRemoveChecklistItem={(id) => checklistState.deleteChecklistMutation.mutate(id)}
-        removeItemPending={checklistState.deleteChecklistMutation.isPending}
-        addCriterionError={checklistState.addChecklistMutation.error}
-        editCriterionError={checklistState.updateChecklistTextMutation.error}
-        removeItemError={checklistState.deleteChecklistMutation.error}
-      />
-
-      <TaskDetailPromptSection
-        initialPrompt={task.initial_prompt}
         sanitizedInitialPrompt={sanitizedInitialPrompt}
+        dependenciesUiEnabled={dependenciesUiEnabled}
+        releaseGatesUiEnabled={releaseGatesUiEnabled}
       />
-
-      <TaskCyclesPanel taskId={taskId} enabled={taskQuerySuccess} />
-
-      <TaskCommitsPanel taskId={taskId} enabled={taskQuerySuccess} />
     </section>
   );
 }

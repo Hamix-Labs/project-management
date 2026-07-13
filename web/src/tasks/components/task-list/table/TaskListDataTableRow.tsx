@@ -1,4 +1,3 @@
-import type { LegacyRef, RefObject } from "react";
 import { Link } from "react-router-dom";
 import type { Task } from "@/types";
 import type { DeleteTargetInput } from "../../../hooks/useTaskDeleteFlow";
@@ -9,28 +8,12 @@ import {
 } from "../../../task-display";
 import { TaskListDeleteGlyph, TaskListEditGlyph } from "./TaskListRowActionIcons";
 import { taskListRowSubtitle } from "./taskListRowSubtitle";
-import type {
-  TaskListSortDir,
-  TaskListSortKey,
-} from "../filters/taskListSort";
 import { previewTextFromPrompt } from "@/lib/promptFormat";
 import { formatInAppTimezone, useAppTimezone } from "@/shared/time/appTimezone";
 import { formatRelativeTime } from "@/shared/time/relativeTime";
 import { useNow } from "@/shared/useNow";
-import {
-  EmptyState,
-  EmptyStateFilterGlyph,
-  type EmptyStateAction,
-} from "@/shared/EmptyState";
 import type { TaskListRowRenderState } from "./taskListRowAnimations";
-
-export type BulkSelectionProps = {
-  isSelected: (id: string) => boolean;
-  onRowToggle: (id: string) => void;
-  allVisibleSelected: boolean;
-  someVisibleSelected: boolean;
-  onToggleAllVisible: () => void;
-};
+import type { BulkSelectionProps } from "./taskListTableSelection";
 
 export type TaskListDataTableRowProps = {
   row: TaskListRowRenderState;
@@ -49,209 +32,6 @@ function isTaskListRowNavExcluded(target: EventTarget | null): boolean {
   if (!(target instanceof Element)) return true;
   return Boolean(
     target.closest("a, button, input, select, textarea, label, [role='combobox']"),
-  );
-}
-
-function sortAriaValue(
-  key: TaskListSortKey,
-  activeKey: TaskListSortKey | undefined,
-  dir: TaskListSortDir | undefined,
-): "none" | "ascending" | "descending" {
-  if (activeKey !== key) return "none";
-  return dir === "asc" ? "ascending" : "descending";
-}
-
-export function TaskListTableSortHeader({
-  label,
-  sortKey,
-  activeSortKey,
-  sortDir,
-  onSortChange,
-}: {
-  label: string;
-  sortKey: TaskListSortKey;
-  activeSortKey?: TaskListSortKey;
-  sortDir?: TaskListSortDir;
-  onSortChange?: (key: TaskListSortKey) => void;
-}) {
-  if (!onSortChange) {
-    return <th scope="col">{label}</th>;
-  }
-  const active = activeSortKey === sortKey;
-  const icon = !active ? "↕" : sortDir === "asc" ? "↑" : "↓";
-  return (
-    <th scope="col">
-      <button
-        type="button"
-        className="task-list-table-sort-btn"
-        aria-sort={sortAriaValue(sortKey, activeSortKey, sortDir)}
-        onClick={() => onSortChange(sortKey)}
-      >
-        {label}
-        <span className="task-list-sort-icon" aria-hidden="true">
-          {icon}
-        </span>
-      </button>
-    </th>
-  );
-}
-
-export function TaskListTableHeader({
-  showSelectionCol,
-  showProjectColumn,
-  selection,
-  headerCheckboxRef,
-  filteredTasksLength,
-  sortKey,
-  sortDir,
-  onSortChange,
-}: {
-  showSelectionCol: boolean;
-  showProjectColumn: boolean;
-  selection: BulkSelectionProps | undefined;
-  headerCheckboxRef: RefObject<HTMLInputElement | null>;
-  filteredTasksLength: number;
-  sortKey?: TaskListSortKey;
-  sortDir?: TaskListSortDir;
-  onSortChange?: (key: TaskListSortKey) => void;
-}) {
-  return (
-    <thead>
-      <tr>
-        {showSelectionCol && selection ? (
-          <th scope="col" className="task-list-select-col">
-            <input
-              ref={headerCheckboxRef as LegacyRef<HTMLInputElement>}
-              type="checkbox"
-              className="task-list-select-checkbox"
-              aria-label={
-                selection.allVisibleSelected
-                  ? "Deselect all visible tasks"
-                  : "Select all visible tasks"
-              }
-              checked={selection.allVisibleSelected}
-              onChange={selection.onToggleAllVisible}
-              data-testid="task-list-select-all"
-              disabled={filteredTasksLength === 0}
-            />
-          </th>
-        ) : null}
-        <TaskListTableSortHeader
-          label="Title"
-          sortKey="title"
-          activeSortKey={sortKey}
-          sortDir={sortDir}
-          onSortChange={onSortChange}
-        />
-        <TaskListTableSortHeader
-          label="Status"
-          sortKey="status"
-          activeSortKey={sortKey}
-          sortDir={sortDir}
-          onSortChange={onSortChange}
-        />
-        <TaskListTableSortHeader
-          label="Priority"
-          sortKey="priority"
-          activeSortKey={sortKey}
-          sortDir={sortDir}
-          onSortChange={onSortChange}
-        />
-        <TaskListTableSortHeader
-          label="Created"
-          sortKey="created_at"
-          activeSortKey={sortKey}
-          sortDir={sortDir}
-          onSortChange={onSortChange}
-        />
-        {showProjectColumn ? (
-          <TaskListTableSortHeader
-            label="Project"
-            sortKey="project"
-            activeSortKey={sortKey}
-            sortDir={sortDir}
-            onSortChange={onSortChange}
-          />
-        ) : null}
-        <th scope="col">Actions</th>
-      </tr>
-    </thead>
-  );
-}
-
-export function TaskListTableBody({
-  tasksLength,
-  rowsToRender,
-  colSpan,
-  emptyListAction,
-  showSelectionCol,
-  showProjectColumn,
-  selection,
-  projectNameById,
-  saving,
-  onEdit,
-  onRequestDelete,
-  prefetchTaskDetail,
-  navigate,
-}: {
-  tasksLength: number;
-  rowsToRender: TaskListRowRenderState[];
-  colSpan: number;
-  emptyListAction?: EmptyStateAction;
-  showSelectionCol: boolean;
-  showProjectColumn: boolean;
-  selection: BulkSelectionProps | undefined;
-  projectNameById: Record<string, string>;
-  saving: boolean;
-  onEdit: (t: Task) => void;
-  onRequestDelete: (t: DeleteTargetInput) => void;
-  prefetchTaskDetail: (id: string) => void;
-  navigate: (path: string) => void;
-}) {
-  return (
-    <tbody className="task-list-tbody">
-      {tasksLength === 0 ? (
-        <tr className="task-list-empty-row">
-          <td colSpan={colSpan} className="task-list-empty-cell">
-            <EmptyState
-              className="empty-state--in-table empty-state--task-list-fresh"
-              title="No tasks yet"
-              description=""
-              hideIcon
-              action={emptyListAction}
-            />
-          </td>
-        </tr>
-      ) : rowsToRender.length === 0 ? (
-        <tr className="task-list-empty-row">
-          <td colSpan={colSpan} className="task-list-empty-cell">
-            <EmptyState
-              className="empty-state--in-table"
-              icon={<EmptyStateFilterGlyph />}
-              title="No matching tasks"
-              description=""
-              hideIcon={false}
-            />
-          </td>
-        </tr>
-      ) : (
-        rowsToRender.map((row) => (
-          <TaskListDataTableRow
-            key={row.task.id}
-            row={row}
-            showSelectionCol={showSelectionCol}
-            showProjectColumn={showProjectColumn}
-            selection={selection}
-            projectNameById={projectNameById}
-            saving={saving}
-            onEdit={onEdit}
-            onRequestDelete={onRequestDelete}
-            prefetchTaskDetail={prefetchTaskDetail}
-            navigate={navigate}
-          />
-        ))
-      )}
-    </tbody>
   );
 }
 
@@ -400,12 +180,4 @@ export function TaskListDataTableRow({
       </td>
     </tr>
   );
-}
-
-export function syncHeaderCheckboxIndeterminate(
-  selection: BulkSelectionProps | undefined,
-  headerCheckboxRef: RefObject<HTMLInputElement | null>,
-): void {
-  if (!selection || !headerCheckboxRef.current) return;
-  headerCheckboxRef.current.indeterminate = selection.someVisibleSelected;
 }

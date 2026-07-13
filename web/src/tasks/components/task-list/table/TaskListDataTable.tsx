@@ -9,12 +9,12 @@ import type {
   TaskListSortKey,
 } from "../filters/taskListSort";
 import type { EmptyStateAction } from "@/shared/EmptyState";
+import { TaskListTableBody } from "./TaskListTableBody";
+import { TaskListTableHeader } from "./TaskListTableHeader";
 import {
   syncHeaderCheckboxIndeterminate,
-  TaskListTableBody,
-  TaskListTableHeader,
   type BulkSelectionProps,
-} from "./TaskListDataTableRow";
+} from "./taskListTableSelection";
 import { useTaskListRowAnimations } from "./taskListRowAnimations";
 
 type Props = {
