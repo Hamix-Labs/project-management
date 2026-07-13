@@ -1,5 +1,5 @@
 // Package readpolicy holds shared read-side limits for handler aggregates.
-// Constants mirror the SPA query policy in web/src/tasks/queryPolicy.ts and
+// Constants mirror the SPA query policy in web/src/lib/readLimits.ts and
 // useTasksApp so bootstrap and optional shell routes stay aligned with the
 // client without importing HTTP or database packages.
 package readpolicy
@@ -17,4 +17,29 @@ const (
 	// ShellChecklistIncluded documents that GET /v1/tasks/{id}/shell (when
 	// shipped) embeds checklist items alongside the task row.
 	ShellChecklistIncluded = true
+
+	// TaskListDefaultLimit is GET /tasks default when ?limit= is omitted.
+	// The SPA always sends BootstrapListLimit (20) explicitly.
+	TaskListDefaultLimit = 50
+
+	// TaskListMaxLimit caps GET /tasks ?limit=.
+	TaskListMaxLimit = 200
+
+	// TaskEventsDefaultLimit is GET /tasks/{id}/events default page size.
+	TaskEventsDefaultLimit = 50
+
+	// TaskEventsMaxLimit caps GET /tasks/{id}/events ?limit=.
+	TaskEventsMaxLimit = 200
+
+	// CycleListDefaultLimit is GET /tasks/{id}/cycles default page size.
+	CycleListDefaultLimit = 50
+
+	// CycleListMaxLimit caps GET /tasks/{id}/cycles ?limit=.
+	CycleListMaxLimit = 200
+
+	// CycleStreamDefaultLimit is GET /tasks/{id}/cycles/{cycleId}/stream default.
+	CycleStreamDefaultLimit = 100
+
+	// CycleStreamMaxLimit caps cycle stream ?limit=.
+	CycleStreamMaxLimit = 500
 )

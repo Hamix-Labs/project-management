@@ -13,6 +13,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler/readpolicy"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 	"github.com/google/uuid"
 )
@@ -293,7 +294,7 @@ func parseListParams(ctx context.Context, q url.Values) (limit, offset int, afte
 	defer func() {
 		calltrace.HelperIOOut(ctx, "parseListParams", "limit", limit, "offset", offset, "after_id", afterID, "err", err)
 	}()
-	limit = 50
+	limit = readpolicy.TaskListDefaultLimit
 	offset = 0
 	afterID = strings.TrimSpace(q.Get("after_id"))
 	if afterID != "" && len(afterID) > maxListAfterIDParamBytes {
@@ -312,13 +313,13 @@ func parseListParams(ctx context.Context, q url.Values) (limit, offset int, afte
 			return 0, 0, "", fmt.Errorf("%w: limit value too long", domain.ErrInvalidInput)
 		}
 		n, e := strconv.Atoi(v)
-		if e != nil || n < 0 || n > 200 {
-			return 0, 0, "", fmt.Errorf("%w: limit must be integer 0..200", domain.ErrInvalidInput)
+		if e != nil || n < 0 || n > readpolicy.TaskListMaxLimit {
+			return 0, 0, "", fmt.Errorf("%w: limit must be integer 0..%d", domain.ErrInvalidInput, readpolicy.TaskListMaxLimit)
 		}
 		limit = n
 	}
 	if limit <= 0 {
-		limit = 50
+		limit = readpolicy.TaskListDefaultLimit
 	}
 	if v := q.Get("offset"); v != "" {
 		if len(v) > maxListIntQueryParamBytes {

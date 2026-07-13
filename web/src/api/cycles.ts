@@ -26,13 +26,13 @@ import {
   assertPositiveSeq,
   assertTaskPathId,
 } from "./taskRequestBounds";
+import { READ_LIMITS } from "@/lib/readLimits";
 
 /**
- * Server-side `maxTaskCyclesListLimit` from `pkgs/tasks/handler/handler_cycles.go`.
- * Mirrors the `400` validation contract documented in `docs/api.md`.
+ * Server-side cycle list/stream caps from `readpolicy` (see `docs/api.md`).
  */
-export const maxTaskCyclesListLimit = 200;
-export const maxTaskCycleStreamLimit = 500;
+export const maxTaskCyclesListLimit = READ_LIMITS.cycleListMaxLimit;
+export const maxTaskCycleStreamLimit = READ_LIMITS.cycleStreamMaxLimit;
 
 function actorHeader(actor?: "user" | "agent"): Record<string, string> {
   if (actor === "agent") return { "X-Actor": "agent" };

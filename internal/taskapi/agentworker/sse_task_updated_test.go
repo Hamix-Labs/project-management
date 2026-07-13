@@ -123,30 +123,43 @@ func (slowTaskGetter) Get(context.Context, string) (*taskcoredomain.Task, error)
 }
 
 func TestTaskUpdatedSSEAdapter_dropsWhenQueueFull(t *testing.T) {
-	t.Parallel()
 	pub := &recordingPublisher{}
 	metrics := &fakeNotifierMetrics{}
 	block := make(chan struct{})
-	getter := &blockingTaskGetter{block: block}
+	started := make(chan struct{})
+	getter := &blockingTaskGetter{block: block, started: started}
 	adapter := newTaskUpdatedSSEAdapter(pub, getter, metrics)
 
 	adapter.PublishTaskUpdated("task-1")
+	<-started
 	for i := 0; i < taskUpdatedQueueDepth; i++ {
 		adapter.PublishTaskUpdated("task-fill")
 	}
-	adapter.PublishTaskUpdated("task-overflow")
 
-	if metrics.dropped != 1 {
-		t.Fatalf("dropped = %d, want 1", metrics.dropped)
+	beforeOverflow := metrics.dropped
+	overflowStart := time.Now()
+	adapter.PublishTaskUpdated("task-overflow")
+	if elapsed := time.Since(overflowStart); elapsed > 100*time.Millisecond {
+		t.Fatalf("PublishTaskUpdated blocked for %v, want <100ms", elapsed)
+	}
+	if metrics.dropped <= beforeOverflow {
+		t.Fatal("overflow publish should drop when queue is full")
 	}
 	close(block)
 }
 
 type blockingTaskGetter struct {
-	block chan struct{}
+	block   chan struct{}
+	started chan struct{}
+	once    sync.Once
 }
 
 func (g *blockingTaskGetter) Get(context.Context, string) (*taskcoredomain.Task, error) {
+	g.once.Do(func() {
+		if g.started != nil {
+			close(g.started)
+		}
+	})
 	<-g.block
 	return &taskcoredomain.Task{ID: "task-1", Status: taskcoredomain.StatusReady}, nil
 }

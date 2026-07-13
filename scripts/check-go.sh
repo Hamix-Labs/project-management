@@ -543,10 +543,12 @@ step_tasks_wire_handler_api() {
   if [[ ! -f pkgs/tasks/wire/handler_api.go ]]; then
     hits="pkgs/tasks/wire/handler_api.go must exist (ADR-0067)"
   fi
-  if ! rg -q 'type HandlerStore = wire\.HandlerAPI' pkgs/tasks/handler/handler_store.go 2>/dev/null; then
+  # grep (not inverted rg): when rg is absent, `! rg -q` false-fails even if files are correct.
+  if [[ ! -f pkgs/tasks/handler/handler_store.go ]] \
+     || ! grep -Fq 'type HandlerStore = wire.HandlerAPI' pkgs/tasks/handler/handler_store.go 2>/dev/null; then
     hits+=$'\n'"handler_store.go must alias wire.HandlerAPI"
   fi
-  if ! rg -q 'var _ wire\.HandlerAPI = \(\*API\)\(nil\)' internal/taskapi/composition/ 2>/dev/null; then
+  if ! grep -rqF 'var _ wire.HandlerAPI = (*API)(nil)' internal/taskapi/composition/ 2>/dev/null; then
     hits+=$'\n'"composition.API must implement wire.HandlerAPI (ADR-0079)"
   fi
   if rg -q '^type HandlerAPI interface' pkgs/tasks/handler/ 2>/dev/null; then

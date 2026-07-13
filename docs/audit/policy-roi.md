@@ -29,12 +29,12 @@
 | Concern | Choke point | ADR |
 | --- | --- | --- |
 | Query staleTime tiers | `web/src/lib/queryPolicy.ts` | ADR-0025 |
-| Bootstrap read limits | `pkgs/tasks/handler/readpolicy/readpolicy.go` + `web/src/tasks/task-paging/paging.ts` (`TASK_LIST_PAGE_SIZE === 20`) | ADR-0026 |
+| Bootstrap read limits | `pkgs/tasks/handler/readpolicy/readpolicy.go` + `web/src/lib/readLimits.ts` (`TASK_LIST_PAGE_SIZE === BootstrapListLimit`) | ADR-0026 |
 | Project/git invalidation | `web/src/lib/queryInvalidation/` + `projects/mutations/`, `worktrees/mutations/` | ADR-0044 |
 | SSE sync orchestration | `web/src/tasks/sync/` (`decideSyncFrame`, `taskSyncCoordinator`) | ADR-0022 |
 | Mutation guard | `web/src/tasks/sync/mutationGuard.ts` + `web/src/tasks/mutations/guardedTaskWrite.ts` | ADR-0025 M1–M2 |
 | writepolicy package purity | `scripts/check-code-standards.ps1` (readpolicy/writepolicy import gate) | ADR-0026 |
-| invalidateQueries CI (partial) | same script — **projects/** and **worktrees/** only | ADR-0044 |
+| invalidateQueries CI (partial) | same script — **projects/**, **worktrees/**, **tasks/** (`mutations/`, `sync/` allowed) | ADR-0044, ADR-0080 |
 
 ---
 
@@ -44,7 +44,7 @@
 
 - **PR:** ADR-0080, `decideTaskInvalidationKeys`, `invalidateTaskCache`, CI gate for `tasks/`.
 
-### 2. Read limits scattered — ROI 8/10 (High) — **Status: open**
+### 2. Read limits scattered — ROI 8/10 (High) — **Status: done** (PR #201)
 
 - **Location:** `readpolicy` has bootstrap limits only. Duplicates: `pkgs/taskcore/handler/handler_task_crud.go` (`limit=50`, max 200), `pkgs/taskcycles/handler/handler_cycles_query.go` (50/200, stream 100/500), `pkgs/taskevents/handler/handler_events.go` (50/200), `pkgs/taskcore/store/internal/stats/list_cycle_failures.go`. Web: `web/src/api/cycles.ts`, `web/src/constants/tasks.ts`, `useTaskCycleDetailPageState.ts`.
 - **Issue:** Backend/frontend caps drift without a single module; only bootstrap list limit is documented in ADR-0026.
@@ -75,16 +75,11 @@
 - **Evidence:** `decideFlushBatch` and `applySyncEffects` both push `taskQueryKeys.listRoot()` / `stats()`.
 - **Success signal:** Single source for flush keys; `decideSyncFrame.test.ts` green.
 
-### 6. CI policy gates incomplete — ROI 8/10 (High) — **Status: partial (tasks gate done 2026-07-12; read-limit parity in PR #3)**
+### 6. CI policy gates incomplete — ROI 8/10 (High) — **Status: done (2026-07-12)**
 
-- **Location:** `scripts/check-code-standards.ps1` — tasks vertical not gated; no Go ↔ TS read-limit parity test.
-- **Issue:** Regressions reintroduce inline invalidation or limit drift without CI failure.
-- **Proposed change:** Ship gates in same PRs as migrations (#1 tasks gate, #2 parity test) — not a standalone “enable gate later” PR.
-- **Effort / risk:** ≤1 day each; low.
-- **Evidence:** CI script verticals array = projects, worktrees only.
-- **Success signal:** `check-code-standards.ps1` fails on violation; parity test in readpolicy PR.
+- **Resolution:** Tasks vertical gate (ADR-0080) and Go ↔ TS read-limit parity test (`testdata/readlimits.json`) shipped in policy PR train #2 and #201.
 
-### 7. Handler default vs SPA explicit limit drift — ROI 5/10 (Low) — **Status: open**
+### 7. Handler default vs SPA explicit limit drift — ROI 5/10 (Low) — **Status: done** (PR #201)
 
 - **Location:** `parseListParams` default `limit=50` in `handler_task_crud.go`; SPA always sends `limit=20` (`TASK_LIST_PAGE_SIZE`); `readpolicy.BootstrapListLimit = 20`.
 - **Issue:** Not a runtime bug (SPA passes explicit limit) but confusing for API consumers and handoff docs.

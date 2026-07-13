@@ -19,6 +19,7 @@ import (
 	taskeventsstore "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/apijson"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler/readpolicy"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/logctx"
 )
 
@@ -497,22 +498,22 @@ func parseTaskEventsLimit(ctx context.Context, q url.Values) (limit int, err err
 	ctx = calltrace.Push(ctx, "parseTaskEventsLimit")
 	calltrace.HelperIOIn(ctx, "parseTaskEventsLimit", "limit_q", q.Get("limit"), "before_seq_q", q.Get("before_seq"), "after_seq_q", q.Get("after_seq"))
 	defer func() { calltrace.HelperIOOut(ctx, "parseTaskEventsLimit", "limit", limit, "err", err) }()
-	limit = 50
+	limit = readpolicy.TaskEventsDefaultLimit
 	if v := q.Get("limit"); v != "" {
 		if len(v) > maxTaskEventSeqParamBytes {
 			return 0, fmt.Errorf("%w: limit too long", taskcoredomain.ErrInvalidInput)
 		}
 		n, e := strconv.Atoi(v)
-		if e != nil || n < 0 || n > 200 {
-			return 0, fmt.Errorf("%w: limit must be integer 0..200", taskcoredomain.ErrInvalidInput)
+		if e != nil || n < 0 || n > readpolicy.TaskEventsMaxLimit {
+			return 0, fmt.Errorf("%w: limit must be integer 0..%d", taskcoredomain.ErrInvalidInput, readpolicy.TaskEventsMaxLimit)
 		}
 		limit = n
 	}
 	if limit <= 0 {
-		limit = 50
+		limit = readpolicy.TaskEventsDefaultLimit
 	}
-	if limit > 200 {
-		limit = 200
+	if limit > readpolicy.TaskEventsMaxLimit {
+		limit = readpolicy.TaskEventsMaxLimit
 	}
 	return limit, nil
 }
