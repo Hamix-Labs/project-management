@@ -93,3 +93,31 @@ When adding a **new** route or middleware file, extend this README in the same P
 ## Scaling this package
 
 `handler` stays a **single package** (one directory in Go). To avoid an unmaintainable mix of routes and tests over time, follow the **When a file feels too large** section below — what already lives in `middleware`, `calltrace`, and `internal/middlewaretest`, conventions for **whitebox vs black-box** tests, and **ordered next extractions** (e.g. task JSON types).
+
+## When a file feels too large
+
+Line counts are a **reviewability signal** (not a target). Limits and naming live in [`.cursor/rules/CODE_STANDARDS.mdc`](../../../.cursor/rules/CODE_STANDARDS.mdc). CI runs a **warn-only** scan via `scripts/check-code-standards.ps1` (yellow/red files print; exit code stays 0).
+
+### Symptoms → split (handler / store / tests)
+
+| Symptom | Split |
+| --- | --- |
+| One `handler_*.go` covers multiple resources | One file per resource group (`handler_cycles.go`, `handler_cycles_json.go`, …) |
+| JSON DTOs dominate a handler file | `handler_<resource>_json.go` beside routes |
+| Store internal mixes reads and writes | `*_read.go` / `*_write.go` under `store/internal/` |
+| `storefake` stubs for many BCs in one file | `storefake_unimplemented_<bc>.go` per bounded context |
+| Contract / SSE test file past red zone | By HTTP verb, route group, or SSE surface; shared setup in `*_test_helpers_test.go` |
+| Composition route table only | Keep `handler_routes.go` thin; BC logic stays in `pkgs/<bc>/handler/` |
+
+**Do not split** if it creates circular imports, files under ~30 lines, or arbitrary mid-function cuts. **Move-only** first; behavior change in a follow-up PR.
+
+### Where tests live
+
+| Style | Location | Use when |
+| --- | --- | --- |
+| Black-box HTTP | [`internal/handlertest`](../../internal/handlertest/) | New route contracts against exported `NewHandler` |
+| Whitebox contract | `pkgs/tasks/handler/handler_http_*_contract_test.go` | Per-route JSON/SSE wire pins beside the BC |
+| Shared test server | `handler_http_testserver_test.go`, `handler_http_test_helpers_test.go` | Reused by multiple contract files in this package |
+| BC handler tests | `pkgs/<bc>/handler/*_test.go` | BC-only routes (cycles, checklist, events) |
+
+When a handler file enters the **yellow** zone (301–500 lines for `handler_*.go`), plan the split in the same sprint — do not wait for red.

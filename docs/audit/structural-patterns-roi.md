@@ -1,6 +1,6 @@
 # Structural patterns audit — ROI-ranked findings
 
-> Read-only audit (2026-07-12). **Phase 5 in progress:** god-file splits across web production, Go handlers/store, and test suites. Implementation train PR1–PR10 — this doc is PR1.
+> Read-only audit (2026-07-12). **Phase 5 complete** (PR1–PR10 merged). God-file splits across web production, Go handlers/store, and test suites landed in the structural PR train.
 
 **Handoff goal:** A new engineer or agent finds **where files are too large**, **how to split them**, and **which PR to land first** — without re-scanning the repo.
 
@@ -33,13 +33,13 @@
 | BC route registration | `pkgs/tasks/handler/handler_routes.go` + `*.Register(m, Deps)` | Each BC owns routes; composition shell stays thin |
 | Task detail page shell | `web/src/tasks/pages/TaskDetailPage.tsx` | 101 lines — yellow but acceptable; panels already modular under `task-detail/` |
 | Create modal shell | `web/src/tasks/components/task-create-modal/TaskCreateModal.tsx` | 145 lines — yellow; field sections already extracted under `fields/` |
-| Handler split guide (existing) | `pkgs/tasks/handler/README.md` route table | Documents BC `Register` map; **missing** file-size split section (finding #14) |
+| Handler split guide | `pkgs/tasks/handler/README.md` §When a file feels too large | BC `Register` map + split table; warn-only size gate in `check-code-standards.ps1` |
 
 ---
 
 ## Findings (ranked)
 
-### 1. `taskevents` handler god-file — ROI 9/10 (High) — **Status: open**
+### 1. `taskevents` handler god-file — ROI 9/10 (High) — **Status: done** ([#207](https://github.com/AlexsanderHamir/Hamix/pull/207))
 
 - **Location:** `pkgs/taskevents/handler/handler_events.go` (489 lines).
 - **Issue:** Red zone (>500) production handler; mixes route wiring, query parsing, JSON DTOs, and local HTTP helpers. Highest line count among BC handlers.
@@ -49,7 +49,7 @@
 - **Success signal:** No file in `taskevents/handler` >300 lines; existing HTTP contract tests green.
 - **PR:** #6 `refactor/go-handler-splits`
 
-### 2. Task list table monolith — ROI 9/10 (High) — **Status: open**
+### 2. Task list table monolith — ROI 9/10 (High) — **Status: done** ([#209](https://github.com/AlexsanderHamir/Hamix/pull/209))
 
 - **Location:** `web/src/tasks/components/task-list/table/TaskListDataTableRow.tsx` (401 lines).
 - **Issue:** Five exports (`TaskListTableSortHeader`, `TaskListTableHeader`, `TaskListTableBody`, `TaskListDataTableRow`, `syncHeaderCheckboxIndeterminate`) in one red-zone file; list UI is high-traffic.
@@ -59,7 +59,7 @@
 - **Success signal:** Each table component ≤150 lines; list section tests green.
 - **PR:** #4 `refactor/web-task-detail-splits`
 
-### 3. Cycle attempt activity section — ROI 9/10 (High) — **Status: open**
+### 3. Cycle attempt activity section — ROI 9/10 (High) — **Status: done** ([#206](https://github.com/AlexsanderHamir/Hamix/pull/206))
 
 - **Location:** `web/src/tasks/components/task-detail/attempt/AttemptActivitySection.tsx` (373 lines).
 - **Issue:** Red container; mixes Cursor activity, audit timeline, and stream event row rendering in one file.
@@ -69,7 +69,7 @@
 - **Success signal:** `AttemptActivitySection.tsx` ≤150 lines; children ≤250 each.
 - **PR:** #2 `refactor/web-cycle-attempt-splits`
 
-### 4. Web test god-files (top 4) — ROI 8/10 (High) — **Status: open**
+### 4. Web test god-files (top 4) — ROI 8/10 (High) — **Status: done** ([#211](https://github.com/AlexsanderHamir/Hamix/pull/211))
 
 - **Location:** `TaskListSection.test.tsx` (935), `TaskCyclesPanel.test.tsx` (705), `useTasksApp.test.tsx` (569), `useTaskEventStream.test.tsx` (513).
 - **Issue:** All exceed web-testing-bar red threshold (>500 lines); slow to navigate and review.
@@ -79,7 +79,7 @@
 - **Success signal:** All four files ≤500 lines; full web test suite green.
 - **PR:** #5 `refactor/web-test-splits`
 
-### 5. Agents test god-files — ROI 8/10 (High) — **Status: open**
+### 5. Agents test god-files — ROI 8/10 (High) — **Status: done** ([#214](https://github.com/AlexsanderHamir/Hamix/pull/214))
 
 - **Location:** `pkgs/agents/runner/cursor/cursor_test.go` (1058), `pkgs/agents/worker/worker_test.go` (944), `pkgs/agents/runner/runner_test.go` (526).
 - **Issue:** Cursor and worker tests far past Go test red zone (>600); runner test in yellow/red border.
@@ -89,7 +89,7 @@
 - **Success signal:** Each file ≤600 lines; `go-tests (agents)` green.
 - **PR:** #9 `refactor/agents-test-splits`
 
-### 6. Cycle attempt phases section — ROI 7/10 (Medium) — **Status: open**
+### 6. Cycle attempt phases section — ROI 7/10 (Medium) — **Status: done** ([#206](https://github.com/AlexsanderHamir/Hamix/pull/206))
 
 - **Location:** `web/src/tasks/components/task-detail/attempt/AttemptPhasesSection.tsx` (283 lines).
 - **Issue:** Red container; phase list presentation mixed with container state.
@@ -99,7 +99,7 @@
 - **Success signal:** Container ≤150 lines; cycle detail tests green.
 - **PR:** #2 `refactor/web-cycle-attempt-splits`
 
-### 7. `storefake` unimplemented stubs — ROI 7/10 (High) — **Status: open**
+### 7. `storefake` unimplemented stubs — ROI 7/10 (High) — **Status: done** ([#212](https://github.com/AlexsanderHamir/Hamix/pull/212))
 
 - **Location:** `pkgs/tasks/handler/storefake/handler_store.go` (371 lines).
 - **Issue:** Red zone; all BC unimplemented store stubs in one file — hard to see which BC a test fake covers.
@@ -109,7 +109,7 @@
 - **Success signal:** `handler_store.go` ≤200 lines; handler contract tests green.
 - **PR:** #7 `refactor/go-store-splits`
 
-### 8. Cycles store `phases` internal — ROI 7/10 (High) — **Status: open**
+### 8. Cycles store `phases` internal — ROI 7/10 (High) — **Status: done** ([#212](https://github.com/AlexsanderHamir/Hamix/pull/212))
 
 - **Location:** `pkgs/taskcycles/store/internal/cycles/phases.go` (448 lines).
 - **Issue:** Red zone store internal; read and write paths colocated.
@@ -119,7 +119,7 @@
 - **Success signal:** Each file ≤300 lines; `go-tests (tasks)` green.
 - **PR:** #7 `refactor/go-store-splits`
 
-### 9. Checklist store internal — ROI 7/10 (Medium) — **Status: open**
+### 9. Checklist store internal — ROI 7/10 (Medium) — **Status: done** ([#212](https://github.com/AlexsanderHamir/Hamix/pull/212))
 
 - **Location:** `pkgs/taskchecklist/store/internal/checklist/checklist.go` (415 lines).
 - **Issue:** Red zone; same read/write colocation pattern as phases.
@@ -129,7 +129,7 @@
 - **Success signal:** Each file ≤300 lines.
 - **PR:** #7 `refactor/go-store-splits`
 
-### 10. Create modal cluster — ROI 7/10 (Medium) — **Status: open**
+### 10. Create modal cluster — ROI 7/10 (Medium) — **Status: done** ([#210](https://github.com/AlexsanderHamir/Hamix/pull/210))
 
 - **Location:** `TaskCreateModalFormBody.tsx` (220), `fields/TaskCreateModalAgentSection.tsx` (236), `create/hooks/useTaskCreateMutations.ts` (226), `useTaskCreateEntryActions.ts` (207).
 - **Issue:** Form body and agent section in red/yellow border; hooks mix mutation vs entry-routing concerns.
@@ -139,7 +139,7 @@
 - **Success signal:** No file in create-modal cluster in red zone.
 - **PR:** #3 `refactor/web-create-modal-splits`
 
-### 11. Task detail loaded view layout — ROI 7/10 (Medium) — **Status: open**
+### 11. Task detail loaded view layout — ROI 7/10 (Medium) — **Status: done** ([#209](https://github.com/AlexsanderHamir/Hamix/pull/209))
 
 - **Location:** `web/src/tasks/pages/TaskDetailLoadedView.tsx` (224 lines).
 - **Issue:** Red container; composes existing panels but layout wiring dominates the file.
@@ -149,7 +149,7 @@
 - **Success signal:** `TaskDetailLoadedView.tsx` ≤120 lines.
 - **PR:** #4 `refactor/web-task-detail-splits`
 
-### 12. Handler / SSE contract test god-files — ROI 6/10 (Medium) — **Status: open**
+### 12. Handler / SSE contract test god-files — ROI 6/10 (Medium) — **Status: done** ([#213](https://github.com/AlexsanderHamir/Hamix/pull/213))
 
 - **Location:** `handler_http_checklist_contract_test.go` (642), `handler_http_cycles_contract_test.go` (579), `sse_trigger_surface_test.go` (521), `sse_lossless_test.go` (447).
 - **Issue:** Contract harness files past Go test red (>600) or yellow; shared server setup duplicated.
@@ -159,7 +159,7 @@
 - **Success signal:** Priority four files ≤600 lines; `go-tests (tasks)` green.
 - **PR:** #8 `refactor/go-handler-test-splits`
 
-### 13. `taskcore` / `taskcycles` handler yellow zone — ROI 6/10 (Medium) — **Status: open**
+### 13. `taskcore` / `taskcycles` handler yellow zone — ROI 6/10 (Medium) — **Status: done** ([#207](https://github.com/AlexsanderHamir/Hamix/pull/207))
 
 - **Location:** `pkgs/taskcore/handler/handler_task_crud.go` (320), `pkgs/taskcycles/handler/handler_cycles.go` (318).
 - **Issue:** Yellow zone (301–500); patch logic and phases/stream routes add review burden.
@@ -169,15 +169,11 @@
 - **Success signal:** No scoped handler file >300 lines.
 - **PR:** #6 `refactor/go-handler-splits`
 
-### 14. Handler README split guide + CI warn gate — ROI 5/10 (Low) — **Status: open**
+### 14. Handler README split guide + CI warn gate — ROI 5/10 (Low) — **Status: done** ([#215](https://github.com/AlexsanderHamir/Hamix/pull/215))
 
-- **Location:** `pkgs/tasks/handler/README.md` (no **When a file feels too large** section); `scripts/check-code-standards.ps1` (no file-size warn).
-- **Issue:** Handoff doc lists BC routes but not split patterns; no automated regression signal when files re-enter red zone.
-- **Proposed change:** README section (symptoms, split table from CODE_STANDARDS, test placement); warn-only line-count check in CI scripts (exit 0).
-- **Effort / risk:** ≤1 day; low.
-- **Evidence:** README ends at route table; no size scan in `check-code-standards.ps1`.
-- **Success signal:** README section exists; warn-only gate runs in check pipeline; Phase 5 marked done in cleanup-order.
-- **PR:** #10 `chore/structural-ci-readme`
+- **Location:** `pkgs/tasks/handler/README.md` §When a file feels too large; `scripts/check-code-standards.ps1` warn-only size scan.
+- **Issue:** Handoff doc listed BC routes but not split patterns; no automated regression signal when files re-enter red zone.
+- **Resolution:** README split table + test placement; warn-only line-count check in `check-code-standards.ps1` (exit 0); Phase 5 marked done in [cleanup-order.md](../cleanup-order.md).
 
 ---
 
@@ -194,11 +190,11 @@
 | 7 | `refactor/go-store-splits` | storefake + store internal | #7, #8, #9 | Full check + `go-tests (tasks)` green |
 | 8 | `refactor/go-handler-test-splits` | Handler/SSE contract tests | #12 | Full check + `go-tests (tasks)` green |
 | 9 | `refactor/agents-test-splits` | Agents test god-files | #5 | Full check + `go-tests (agents)` green |
-| 10 | `chore/structural-ci-readme` | README + CI warn gate | #14 | Full check + all jobs green — close Phase 5 |
+| 10 | `chore/structural-ci-readme` | README + CI warn gate | #14 | Full check + all jobs green — **Phase 5 closed** |
 
 **Train rule:** Do not branch the next PR until the current PR's CI is **fully green** (`go-lint`, four `go-tests` groups, `web`). Triage: `gh run view <RUN_ID> --repo AlexsanderHamir/Hamix --log-failed`.
 
-Phase 5 remains **in progress** until PR10 merges — see [cleanup-order.md](../cleanup-order.md).
+Phase 5 is **complete** — see [cleanup-order.md](../cleanup-order.md).
 
 ---
 

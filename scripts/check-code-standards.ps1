@@ -190,8 +190,113 @@ foreach ($vertical in $verticals) {
     }
 }
 
+# Warn-only file-size scan (CODE_STANDARDS.mdc). Yellow/red prints; exit stays 0.
+$sizeWarnCount = 0
+
+function Get-CodeStandardsSizeZone {
+    param([string]$RelPath, [string]$FileName)
+    $n = $RelPath.Replace('\', '/').ToLowerInvariant()
+    $fn = $FileName.ToLowerInvariant()
+
+    if ($fn -match '_test\.go$') {
+        return @{ Zone = 'Go *_test.go'; Green = 400; Red = 600 }
+    }
+    if ($n -match '/cmd/[^/]+/main\.go$') {
+        return @{ Zone = 'Go cmd/main.go'; Green = 80; Red = 120 }
+    }
+    if ($n -match '/domain/') {
+        return @{ Zone = 'Go domain'; Green = 200; Red = 350 }
+    }
+    if ($n -match '/store/internal/' -or $fn -match '^store_') {
+        return @{ Zone = 'Go store'; Green = 300; Red = 500 }
+    }
+    if ($fn -match '^handler_.*\.go$') {
+        return @{ Zone = 'Go handler_*.go'; Green = 300; Red = 500 }
+    }
+    if ($fn -match '_json\.go$') {
+        return @{ Zone = 'Go *_json.go'; Green = 200; Red = 350 }
+    }
+    if ($n -match '/middleware/') {
+        return @{ Zone = 'Go middleware'; Green = 150; Red = 250 }
+    }
+    if ($fn -match '\.go$') {
+        return @{ Zone = 'Go general'; Green = 400; Red = 800 }
+    }
+    if ($fn -match 'page\.tsx$') {
+        return @{ Zone = 'TS *Page.tsx'; Green = 80; Red = 150 }
+    }
+    if ($fn -match '^use.+\.ts$') {
+        return @{ Zone = 'TS use*.ts hook'; Green = 80; Red = 150 }
+    }
+    if ($n -match '/web/src/api/') {
+        return @{ Zone = 'TS api/*.ts'; Green = 200; Red = 350 }
+    }
+    if ($n -match '/utils/') {
+        return @{ Zone = 'TS utils/*.ts'; Green = 150; Red = 250 }
+    }
+    if ($fn -match '\.test\.tsx$') {
+        return @{ Zone = 'TS *.test.tsx'; Green = 300; Red = 500 }
+    }
+    if ($fn -match '\.css$' -and $n -notmatch '/web/src/app/styles/tokens/') {
+        return @{ Zone = 'TS component CSS'; Green = 200; Red = 350 }
+    }
+    if ($fn -match '(section|panel|view|layout)\.tsx$') {
+        return @{ Zone = 'TS container component'; Green = 120; Red = 200 }
+    }
+    if ($fn -match '\.tsx$') {
+        return @{ Zone = 'TS presentational component'; Green = 150; Red = 250 }
+    }
+    if ($fn -match '\.ts$') {
+        return @{ Zone = 'TS general'; Green = 200; Red = 400 }
+    }
+    return $null
+}
+
+function Test-IsGeneratedGo {
+    param([string]$Text)
+    return ($null -ne $Text) -and ($Text -match '(?m)^// Code generated\b')
+}
+
+$sizeScanRoots = @(
+    (Join-Path $root "pkgs"),
+    (Join-Path $root "cmd"),
+    (Join-Path $root "internal")
+)
+$goSizeFiles = @()
+foreach ($scanRoot in $sizeScanRoots) {
+    if (-not (Test-Path $scanRoot)) { continue }
+    $goSizeFiles += Get-ChildItem -Path $scanRoot -Recurse -Filter *.go -File
+}
+if (Test-Path $srcRoot) {
+    $goSizeFiles += Get-ChildItem -Path $srcRoot -Recurse -Include *.ts, *.tsx, *.css -File |
+        Where-Object { $_.FullName.Replace('\', '/') -notmatch '/node_modules/|/dist/' }
+}
+
+foreach ($f in $goSizeFiles) {
+    $rel = $f.FullName.Substring($root.Length).TrimStart('\', '/')
+    $zone = Get-CodeStandardsSizeZone -RelPath $rel -FileName $f.Name
+    if ($null -eq $zone) { continue }
+
+    $text = Get-Content -LiteralPath $f.FullName -Raw
+    if ($f.Extension -eq '.go' -and (Test-IsGeneratedGo $text)) { continue }
+
+    $lines = (Get-Content -LiteralPath $f.FullName | Measure-Object -Line).Lines
+    if ($lines -le $zone.Green) { continue }
+
+    $sizeWarnCount++
+    if ($lines -gt $zone.Red) {
+        Write-Host "SIZE (red): $lines lines [$($zone.Zone)] $rel" -ForegroundColor Red
+    } else {
+        Write-Host "SIZE (yellow): $lines lines [$($zone.Zone)] $rel" -ForegroundColor Yellow
+    }
+}
+
 if ($failed) {
     exit 1
 }
-Write-Host "check-code-standards: OK" -ForegroundColor Green
+if ($sizeWarnCount -gt 0) {
+    Write-Host "check-code-standards: OK ($sizeWarnCount file-size warning(s); warn-only)" -ForegroundColor Green
+} else {
+    Write-Host "check-code-standards: OK" -ForegroundColor Green
+}
 exit 0
