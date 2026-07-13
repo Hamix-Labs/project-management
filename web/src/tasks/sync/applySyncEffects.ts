@@ -1,5 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { parseTask, parseTaskCycleDetail } from "@/api/parseTaskApi";
+import { decideTaskInvalidationKeys } from "@/lib/queryInvalidation";
 import { rumSSEResyncReceived } from "@/observability";
 import { bustQueryPersistCache } from "@/lib/queryPersist";
 import { taskQueryKeys } from "../task-query";
@@ -65,8 +66,9 @@ export function applySyncEffects(
         queryClient.setQueryData(taskQueryKeys.detail(effect.taskId), parsed);
         enrichmentMarks.markTaskEnriched = effect.taskId;
         if (isTerminalTaskStatus(parsed.status)) {
-          void queryClient.invalidateQueries({ queryKey: taskQueryKeys.listRoot() });
-          void queryClient.invalidateQueries({ queryKey: taskQueryKeys.stats() });
+          for (const queryKey of decideTaskInvalidationKeys({ scope: "listStats" })) {
+            void queryClient.invalidateQueries({ queryKey });
+          }
         }
       } catch {
         /* fall back to invalidate-and-refetch on flush */

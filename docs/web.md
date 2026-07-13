@@ -48,7 +48,9 @@ Live task UI cache policy lives in [`web/src/tasks/sync/`](../../web/src/tasks/s
 3. `decideFlushBatch.ts` — debounced invalidation targets
 4. `taskSyncCoordinator.ts` — pending state + debounce wiring consumed by `useTaskEventStream`
 
-Enriched `task_updated` with terminal status (`done`, `failed`) patches task detail via `setQueryData` and **immediately** invalidates the home list and stats queries (`terminalTaskStatus.ts` + `applySyncEffects.ts`) so status badges update without waiting for the debounced cycle flush.
+Enriched `task_updated` with terminal status (`done`, `failed`) patches task detail via `setQueryData` and **immediately** invalidates list + stats via `decideTaskInvalidationKeys({ scope: "listStats" })` (`terminalTaskStatus.ts` + `applySyncEffects.ts`) so status badges update without waiting for the debounced cycle flush.
+
+**Sync-owned vs catalog-owned invalidation:** mutation hooks and guarded writes use [`decideTaskInvalidationKeys`](../web/src/lib/queryInvalidation/decideTaskInvalidationKeys.ts) (ADR-0080). SSE sync keeps frame orchestration in `decideSyncFrame.ts` (per-type effects, suppression, enrichment) and debounced flush targets in `decideFlushBatch.ts`, which reuses the catalog for `listStats` keys via `syncListStatsInvalidationKeys()`. Empty pending flush still invalidates `taskQueryKeys.all` (broad resync) — that scope stays sync-owned, not in the mutation catalog.
 
 Wire decode stays in `web/src/tasks/task-query/sseInvalidate.ts`. Event catalog and operator tuning: [domain/sse-hub.md](./domain/sse-hub.md).
 

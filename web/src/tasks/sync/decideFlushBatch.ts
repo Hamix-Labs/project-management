@@ -1,9 +1,15 @@
+import { decideTaskInvalidationKeys } from "@/lib/queryInvalidation";
 import { taskQueryKeys } from "../task-query";
 import {
   cycleEnrichmentKey,
   type PendingInvalidations,
 } from "./syncConstants";
 import type { SyncFlushDecision } from "./syncTypes";
+
+/** List + stats keys shared with mutation invalidation catalog (ADR-0080). */
+export function syncListStatsInvalidationKeys() {
+  return decideTaskInvalidationKeys({ scope: "listStats" });
+}
 
 export function decideFlushBatch(pending: PendingInvalidations): SyncFlushDecision {
   const taskIds = [...pending.tasks];
@@ -22,7 +28,6 @@ export function decideFlushBatch(pending: PendingInvalidations): SyncFlushDecisi
   }
 
   if (taskIds.length > 0) {
-    keys.push(taskQueryKeys.listRoot());
     const allTasksEnriched = taskIds.every((id) => enrichedTaskIds.has(id));
     if (!allTasksEnriched) {
       keys.push(taskQueryKeys.detailRoot());
@@ -49,7 +54,7 @@ export function decideFlushBatch(pending: PendingInvalidations): SyncFlushDecisi
     keys.push(taskQueryKeys.commits(taskId));
   }
 
-  keys.push(taskQueryKeys.stats(), taskQueryKeys.cycleFailuresRoot());
+  keys.push(...syncListStatsInvalidationKeys(), taskQueryKeys.cycleFailuresRoot());
 
   return { invalidateKeys: keys };
 }
