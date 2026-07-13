@@ -10,6 +10,7 @@
 | --- | --- |
 | [audit/README.md](./audit/README.md) | Active structural themes |
 | [audit/policy-roi.md](./audit/policy-roi.md) | Phase 3 policy centralization (complete) |
+| [audit/structural-patterns-roi.md](./audit/structural-patterns-roi.md) | Phase 5 god-files, handler/store splits (in progress) |
 | [adr/](./adr/) | Cross-package ADRs |
 
 ---
@@ -25,7 +26,7 @@ Work top-to-bottom. Weights = share of total cleanup effort (phase **0** and **�
 | **2** | Simplify / delete | **25%** | done |
 | **3** | Centralize policy | **20%** | done ([#198](https://github.com/AlexsanderHamir/Hamix/pull/198)–[#203](https://github.com/AlexsanderHamir/Hamix/pull/203); [policy-roi](./audit/policy-roi.md)) |
 | **4** | Targeted deduplication (3rd occurrence) | **10%** | not started |
-| **5** | Structural patterns (god-files, handler/store splits) | **35%** | in progress |
+| **5** | Structural patterns (god-files, handler/store splits) | **35%** | in progress ([structural-patterns-roi](./audit/structural-patterns-roi.md) PR train) |
 | **6** | Abstractions (≥2 real impls) | **10%** | not started |
 | **∞** | Docs (focused doc + ADR per PR) | — | ongoing |
 
@@ -39,9 +40,9 @@ Phase 3 policy centralization (**20%**) is complete. Remaining slices:
 
 | # | Slice | Weight | Source |
 | --- | --- | --- | --- |
-| **1** | Web god-file splits | **40%** | [audit/README.md](./audit/README.md) |
-| **2** | Go handler / store file splits (CODE_STANDARDS red zone) | **25%** | [CODE_STANDARDS](../.cursor/rules/CODE_STANDARDS.mdc), [handler README](../pkgs/tasks/handler/README.md) |
-| **3** | Handler test consolidation + fakes | **10%** | [audit/README.md](./audit/README.md) |
+| **1** | Web god-file splits | **40%** | [structural-patterns-roi.md](./audit/structural-patterns-roi.md) PR2–4 |
+| **2** | Go handler / store file splits (CODE_STANDARDS red zone) | **25%** | [structural-patterns-roi.md](./audit/structural-patterns-roi.md) PR6–7 |
+| **3** | Handler test consolidation + fakes | **10%** | [structural-patterns-roi.md](./audit/structural-patterns-roi.md) PR5, PR8–9 |
 | **4** | Third-occurrence DRY + late abstractions | **5%** | Phases 4 + 6 |
 
 ---
