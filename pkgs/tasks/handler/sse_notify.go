@@ -4,6 +4,7 @@ import (
 	"log/slog"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler/writepolicy"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 )
 
@@ -12,7 +13,11 @@ func (h *Handler) notifyChange(typ realtime.ChangeType, id string) {
 	if h.hub == nil || id == "" {
 		return
 	}
-	h.hub.Publish(realtime.Event{Type: typ, ID: id})
+	if writepolicy.EnrichedTaskChangeEvent(typ) {
+		slog.Warn("notifyChange called for enriched SSE type; publishing id-only hint",
+			"change_type", typ, "task_id", id)
+	}
+	h.publishPolicyEvent(realtime.Event{Type: typ, ID: id})
 }
 
 func (h *Handler) notifyTaskChanged(typ realtime.ChangeType, id string, data any) {
@@ -20,7 +25,15 @@ func (h *Handler) notifyTaskChanged(typ realtime.ChangeType, id string, data any
 	if h.hub == nil || id == "" {
 		return
 	}
-	h.hub.Publish(realtime.Event{Type: typ, ID: id, Data: data})
+	ev := realtime.Event{Type: typ, ID: id}
+	if writepolicy.EnrichedTaskChangeEvent(typ) {
+		if data != nil {
+			ev.Data = data
+		}
+	} else if !writepolicy.IsHintOnly(typ) && data != nil {
+		ev.Data = data
+	}
+	h.publishPolicyEvent(ev)
 }
 
 func (h *Handler) notifyCycleChange(taskID, cycleID string) {
@@ -28,7 +41,7 @@ func (h *Handler) notifyCycleChange(taskID, cycleID string) {
 	if h.hub == nil || taskID == "" || cycleID == "" {
 		return
 	}
-	h.hub.Publish(realtime.Event{Type: realtime.TaskCycleChanged, ID: taskID, CycleID: cycleID})
+	h.publishPolicyEvent(realtime.Event{Type: realtime.TaskCycleChanged, ID: taskID, CycleID: cycleID})
 }
 
 func (h *Handler) notifyCycleChanged(taskID, cycleID string, data any) {
@@ -36,7 +49,11 @@ func (h *Handler) notifyCycleChanged(taskID, cycleID string, data any) {
 	if h.hub == nil || taskID == "" || cycleID == "" {
 		return
 	}
-	h.hub.Publish(realtime.Event{Type: realtime.TaskCycleChanged, ID: taskID, CycleID: cycleID, Data: data})
+	ev := realtime.Event{Type: realtime.TaskCycleChanged, ID: taskID, CycleID: cycleID}
+	if data != nil {
+		ev.Data = data
+	}
+	h.publishPolicyEvent(ev)
 }
 
 func (h *Handler) notifyTaskEventChanged(taskID string, eventSeq int64) {
@@ -44,7 +61,7 @@ func (h *Handler) notifyTaskEventChanged(taskID string, eventSeq int64) {
 	if h.hub == nil || taskID == "" || eventSeq < 1 {
 		return
 	}
-	h.hub.Publish(realtime.Event{Type: realtime.TaskEventChanged, ID: taskID, EventSeq: eventSeq})
+	h.publishPolicyEvent(realtime.Event{Type: realtime.TaskEventChanged, ID: taskID, EventSeq: eventSeq})
 }
 
 func (h *Handler) notifyScopelessChange(typ realtime.ChangeType) {
@@ -52,5 +69,20 @@ func (h *Handler) notifyScopelessChange(typ realtime.ChangeType) {
 	if h.hub == nil {
 		return
 	}
-	h.hub.Publish(realtime.Event{Type: typ})
+	if !writepolicy.IsScopelessHint(typ) {
+		slog.Warn("notifyScopelessChange called for scoped SSE type", "change_type", typ)
+	}
+	h.publishPolicyEvent(realtime.Event{Type: typ})
+}
+
+// publishPolicyEvent is the runtime choke for handler SSE publishes. It strips
+// Data from hint-only types and preserves enriched / cycle-specific frames.
+func (h *Handler) publishPolicyEvent(ev realtime.Event) {
+	if h.hub == nil {
+		return
+	}
+	if ev.ID != "" && writepolicy.IsHintOnly(ev.Type) {
+		ev.Data = nil
+	}
+	h.hub.Publish(ev)
 }
