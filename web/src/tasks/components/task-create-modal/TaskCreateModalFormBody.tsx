@@ -1,13 +1,11 @@
-import { useCallback, useRef, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import type { ChecklistItemDraft, PriorityChoice, Status } from "@/types";
 import type { RichPromptEditorProjectContextProps } from "@/components/rich-prompt";
-import { TaskCreateModalAdvancedOptions } from "./TaskCreateModalAdvancedOptions";
-import { TaskCreateModalAutonomyToggle } from "./fields/TaskCreateModalAutonomyToggle";
-import { TaskCreateModalCriteriaFields } from "./fields/TaskCreateModalCriteriaFields";
-import { TaskCreateModalEssentialsFields } from "./fields/TaskCreateModalEssentialsFields";
-import { TaskCreateModalPromptFields } from "./fields/TaskCreateModalPromptFields";
-import { TaskCreateModalSection } from "./fields/TaskCreateModalSection";
-import { TaskCreateModalTemplateCategoryField } from "./fields/TaskCreateModalTemplateCategoryField";
+import { TaskCreateModalCriteriaSection } from "./TaskCreateModalCriteriaSection";
+import { TaskCreateModalEssentialsSection } from "./TaskCreateModalEssentialsSection";
+import { TaskCreateModalExecutionSection } from "./TaskCreateModalExecutionSection";
+import { TaskCreateModalProjectSection } from "./TaskCreateModalProjectSection";
+import { TaskCreateModalPromptSection } from "./TaskCreateModalPromptSection";
 import type { TaskCreateModalPresentation } from "./taskCreateModalPresentation";
 
 type Props = {
@@ -95,10 +93,6 @@ export function TaskCreateModalFormBody(props: Props) {
     onDependsOnChange,
   } = props;
 
-  const openNewCriterionRef = useRef<(() => void) | null>(null);
-  const registerOpenNew = useCallback((open: (() => void) | null) => {
-    openNewCriterionRef.current = open;
-  }, []);
   const editorKey = presentation.isTaskEdit
     ? editingTaskId ?? "edit-prompt-modal"
     : presentation.isTemplateMode
@@ -108,122 +102,67 @@ export function TaskCreateModalFormBody(props: Props) {
 
   return (
     <div className="task-create-modal-scroll">
-      <TaskCreateModalSection
-        variant="essentials"
-        title="Essentials"
-        lede="What to do, how urgent it is, and how success is judged."
-      >
-        <TaskCreateModalEssentialsFields
-          idsPrefix={presentation.idsPrefix}
-          title={title}
-          priority={priority}
-          repositoryId={repositoryId}
-          projectId={projectId}
-          worktreeId={worktreeId}
-          disabled={presentation.disabled}
-          showWorktree={!presentation.isTaskEdit}
-          onTitleChange={onTitleChange}
-          onPriorityChange={onPriorityChange}
-          onRepositoryChange={onRepositoryChange}
-          onProjectChange={onProjectChange}
-          onWorktreeChange={onWorktreeChange}
-          onProjectContextClear={onProjectContextClear}
-        />
-      </TaskCreateModalSection>
+      <TaskCreateModalEssentialsSection
+        presentation={presentation}
+        title={title}
+        priority={priority}
+        repositoryId={repositoryId}
+        projectId={projectId}
+        worktreeId={worktreeId}
+        onTitleChange={onTitleChange}
+        onPriorityChange={onPriorityChange}
+        onRepositoryChange={onRepositoryChange}
+        onProjectChange={onProjectChange}
+        onWorktreeChange={onWorktreeChange}
+        onProjectContextClear={onProjectContextClear}
+      />
 
-      <TaskCreateModalSection
-        variant="prompt"
-        title="Initial prompt"
-        lede="The full brief the agent starts from. Supports Markdown."
-      >
-        <TaskCreateModalPromptFields
-          idsPrefix={presentation.idsPrefix}
-          editorKey={editorKey}
-          prompt={prompt}
-          disabled={presentation.disabled}
-          onPromptChange={onPromptChange}
-          projectContext={promptProjectContext}
-          worktreeId={worktreeId.trim() || undefined}
-        />
-      </TaskCreateModalSection>
+      <TaskCreateModalPromptSection
+        presentation={presentation}
+        editorKey={editorKey}
+        prompt={prompt}
+        worktreeId={worktreeId}
+        onPromptChange={onPromptChange}
+        promptProjectContext={promptProjectContext}
+      />
 
-      <TaskCreateModalSection
-        variant="criteria"
-        title="Done criteria"
-        lede="Clear, checkable conditions that define when this task is complete."
-        requirement={checklistRequirement}
-        action={
-          <button
-            type="button"
-            className="task-detail-add-checklist-btn"
-            disabled={presentation.disabled || presentation.isTaskEdit}
-            onClick={() => openNewCriterionRef.current?.()}
-          >
-            New criterion
-          </button>
-        }
-      >
-        <TaskCreateModalCriteriaFields
-          checklistItems={checklistItems}
-          checklistRequirement={checklistRequirement}
-          checklistDisabled={presentation.isTaskEdit}
-          disabled={presentation.disabled}
-          onAppendChecklistCriterion={onAppendChecklistCriterion}
-          onUpdateChecklistRow={onUpdateChecklistRow}
-          onRemoveChecklistRow={onRemoveChecklistRow}
-          registerOpenNew={registerOpenNew}
-        />
-        {presentation.isTemplateMode ? (
-          <TaskCreateModalTemplateCategoryField
-            idsPrefix={presentation.idsPrefix}
-            tagsCsv={tagsCsv}
-            disabled={presentation.disabled}
-            onTagsCsvChange={onTagsCsvChange}
-          />
-        ) : null}
-      </TaskCreateModalSection>
+      <TaskCreateModalCriteriaSection
+        presentation={presentation}
+        checklistItems={checklistItems}
+        checklistRequirement={checklistRequirement}
+        tagsCsv={tagsCsv}
+        onAppendChecklistCriterion={onAppendChecklistCriterion}
+        onUpdateChecklistRow={onUpdateChecklistRow}
+        onRemoveChecklistRow={onRemoveChecklistRow}
+        onTagsCsvChange={onTagsCsvChange}
+      />
 
       {projectAssignment ? (
-        <TaskCreateModalSection
-          variant="context"
-          title="Project"
-          lede="Scope this task to a project and attach context the agent can reference."
-        >
-          {projectAssignment}
-        </TaskCreateModalSection>
+        <TaskCreateModalProjectSection projectAssignment={projectAssignment} />
       ) : null}
 
-      <TaskCreateModalSection
-        variant="execution"
-        title="Execution"
-        lede="Choose whether the agent should start on its own and which runner to use."
-      >
-        <TaskCreateModalAutonomyToggle
-          enabled={autonomyEnabled}
-          disabled={presentation.disabled || autonomyDisabled}
-          onChange={onAutonomyChange}
-        />
-
-        <TaskCreateModalAdvancedOptions
-          presentation={presentation}
-          editingTaskRunner={editingTaskRunner}
-          taskRunner={taskRunner}
-          taskCursorModel={taskCursorModel}
-          onTaskRunnerChange={onTaskRunnerChange}
-          onTaskCursorModelChange={onTaskCursorModelChange}
-          onComposeStatusChange={onComposeStatusChange}
-          schedule={schedule}
-          onScheduleChange={onScheduleChange}
-          appTimezone={appTimezone}
-          tagsCsv={tagsCsv}
-          milestone={milestone}
-          projectId={projectId}
-          dependsOn={dependsOn}
-          onTagsCsvChange={onTagsCsvChange}
-          onMilestoneChange={onMilestoneChange}
-          onDependsOnChange={onDependsOnChange}
-        />
-      </TaskCreateModalSection>
+      <TaskCreateModalExecutionSection
+        presentation={presentation}
+        editingTaskRunner={editingTaskRunner}
+        autonomyEnabled={autonomyEnabled}
+        autonomyDisabled={autonomyDisabled}
+        onAutonomyChange={onAutonomyChange}
+        taskRunner={taskRunner}
+        taskCursorModel={taskCursorModel}
+        onTaskRunnerChange={onTaskRunnerChange}
+        onTaskCursorModelChange={onTaskCursorModelChange}
+        onComposeStatusChange={onComposeStatusChange}
+        schedule={schedule}
+        onScheduleChange={onScheduleChange}
+        appTimezone={appTimezone}
+        tagsCsv={tagsCsv}
+        milestone={milestone}
+        projectId={projectId}
+        dependsOn={dependsOn}
+        onTagsCsvChange={onTagsCsvChange}
+        onMilestoneChange={onMilestoneChange}
+        onDependsOnChange={onDependsOnChange}
+      />
     </div>
   );
 }
