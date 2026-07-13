@@ -37,11 +37,10 @@ Project and git write paths each called `queryClient.invalidateQueries` inline w
 
 ### Negative / trade-offs
 
-- Legacy git stack still exists until [dead-code ROI #1](./../audit/dead-code-roi.md); catalog exposes `legacy*` scopes until deletion
-- Task create/bulk invalidation remains separate (boundaries ROI #2)
+- `legacy*` git scopes remain in the catalog until callers are removed (legacy stack deleted in [#155](https://github.com/AlexsanderHamir/Hamix/pull/155) / [#156](https://github.com/AlexsanderHamir/Hamix/pull/156))
+- Task create/bulk invalidation remains separate ([ADR-0025](./ADR-0025-frontend-data-coherence.md))
 
 ## See also
 
 - [docs/web.md](../web.md) §Project/worktree mutation invalidation
-- [boundaries-roi.md](../audit/boundaries-roi.md) finding #3
-- [cleanup-order.md](../cleanup-order.md) §3
+- [cleanup-order.md](../cleanup-order.md) — Phase 3
