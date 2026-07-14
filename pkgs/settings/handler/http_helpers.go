@@ -14,8 +14,6 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/logctx"
 )
 
-const maxHTTPLogQueryBytes = 1024
-
 func writeStoreError(w http.ResponseWriter, r *http.Request, op string, err error) {
 	code := http.StatusInternalServerError
 	switch {
@@ -40,13 +38,15 @@ func writeStoreError(w http.ResponseWriter, r *http.Request, op string, err erro
 	}
 }
 
+// debugHTTPRequest preserves the settings-specific slog message "http request"
+// (not "http.io") while sharing query-byte truncation with handlerhttp.
 func debugHTTPRequest(r *http.Request, op string, extra ...any) {
 	if r == nil || !slog.Default().Enabled(r.Context(), slog.LevelDebug) {
 		return
 	}
 	q := r.URL.RawQuery
-	if len(q) > maxHTTPLogQueryBytes {
-		q = apijson.TruncateUTF8ByBytes(q, maxHTTPLogQueryBytes)
+	if len(q) > handlerhttp.MaxHTTPLogQueryBytes {
+		q = apijson.TruncateUTF8ByBytes(q, handlerhttp.MaxHTTPLogQueryBytes)
 	}
 	args := []any{
 		"cmd", calltrace.LogCmd,
@@ -65,16 +65,9 @@ func debugHTTPRequest(r *http.Request, op string, extra ...any) {
 	slog.Debug("http request", args...)
 }
 
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+//funclogmeasure:skip category=hot-path reason="Thin re-export of handlerhttp.TruncateRunes; operation trace is emitted by the calling chokepoint."
 func truncateRunes(s string, maxRunes int) string {
-	if maxRunes <= 0 {
-		return ""
-	}
-	runes := []rune(s)
-	if len(runes) <= maxRunes {
-		return s
-	}
-	return string(runes[:maxRunes]) + "…"
+	return handlerhttp.TruncateRunes(s, maxRunes)
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."

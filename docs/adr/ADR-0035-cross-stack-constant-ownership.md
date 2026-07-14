@@ -18,7 +18,7 @@ Hardcoded wire values and observability field strings had drifted across Go and 
 | --- | --- | --- | --- |
 | slog `cmd` for taskapi HTTP/store/agent traces | [`pkgs/tasks/calltrace/const.go`](../../pkgs/tasks/calltrace/const.go) `LogCmd` | — | `logctx.TraceCmd` aliases `calltrace.LogCmd` |
 | helper.io `obs_category` / `phase` | [`pkgs/tasks/calltrace/const.go`](../../pkgs/tasks/calltrace/const.go) | — | `pkgs/tasks/calltrace/observe_test.go` |
-| http_io observability | [`pkgs/tasks/handler/httplog_io.go`](../../pkgs/tasks/handler/httplog_io.go) | — | handler observability tests |
+| http_io observability | [`pkgs/tasks/handlerhttp/httplog.go`](../../pkgs/tasks/handlerhttp/httplog.go) | — | handler observability tests |
 | SSE `change` types | [`pkgs/tasks/realtime/wire.go`](../../pkgs/tasks/realtime/wire.go) | [`web/src/types/task.ts`](../../web/src/types/task.ts) `SSE_CHANGE_TYPES` | `pkgs/tasks/realtime/wire_test.go`, `web/src/types/contractManifest.test.ts` |
 | Audit / task event types | [`pkgs/tasks/domain/enums.go`](../../pkgs/tasks/domain/enums.go) | [`web/src/types/task.ts`](../../web/src/types/task.ts) `TASK_EVENT_TYPES` | `pkgs/tasks/domain/event_types_manifest_test.go`, `contractManifest.test.ts` |
 | RUM promoted types | [`pkgs/tasks/handler/handler_rum.go`](../../pkgs/tasks/handler/handler_rum.go) `validRUMTypes` | [`web/src/api/rum.ts`](../../web/src/api/rum.ts) `RUM_PROMOTED_TYPES` | handler RUM tests |

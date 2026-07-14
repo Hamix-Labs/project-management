@@ -2,90 +2,18 @@ package handler
 
 import (
 	"context"
-	taskcorehandler "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/handler"
-	"log/slog"
 	"net/http"
 	"strings"
 	"time"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/apijson"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	taskcorehandler "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/handler"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
 )
 
 const (
-	maxHTTPLogQueryBytes       = 1024
-	maxHTTPLogJSONPreviewBytes = 16384
-	maxHTTPLogTitleRunes       = 160
-	maxHTTPLogPromptRunes      = 400
-	maxHTTPLogTextRunes        = 240
+	maxHTTPLogTitleRunes  = 160
+	maxHTTPLogPromptRunes = 400
 )
-
-// debugHTTPRequest logs structured request context (method, path, query, headers safe for logs).
-// Skips work when Debug is disabled for ctx.
-func debugHTTPRequest(r *http.Request, op string, extra ...any) {
-	if r == nil || !slog.Default().Enabled(r.Context(), slog.LevelDebug) {
-		return
-	}
-	q := r.URL.RawQuery
-	if len(q) > maxHTTPLogQueryBytes {
-		q = apijson.TruncateUTF8ByBytes(q, maxHTTPLogQueryBytes)
-	}
-	args := []any{
-		"cmd", calltrace.LogCmd,
-		"obs_category", "http_io",
-		"operation", op,
-		"call_path", calltrace.Path(r.Context()),
-		"phase", "in",
-		"method", r.Method,
-		"path", r.URL.Path,
-		"route_pattern", r.Pattern,
-		"query", q,
-		"content_length", r.ContentLength,
-		"x_actor", strings.TrimSpace(r.Header.Get("X-Actor")),
-	}
-	args = append(args, extra...)
-	slog.Log(r.Context(), slog.LevelDebug, "http.io", args...)
-}
-
-// debugHTTPOut logs a non-JSON outcome (e.g. 204) at Debug.
-func debugHTTPOut(ctx context.Context, op string, httpStatus int, extra ...any) {
-	if ctx == nil || !slog.Default().Enabled(ctx, slog.LevelDebug) {
-		return
-	}
-	args := []any{
-		"cmd", calltrace.LogCmd,
-		"obs_category", "http_io",
-		"operation", op,
-		"call_path", calltrace.Path(ctx),
-		"phase", "out",
-		"http_status", httpStatus,
-	}
-	args = append(args, extra...)
-	slog.Log(ctx, slog.LevelDebug, "http.io", args...)
-}
-
-// truncateRunes is a pure helper called only from taskCreateInputFields /
-// taskPatchInputFields, which themselves only run inside the
-// debugHTTPRequest gate. Skip-listed in cmd/funclogmeasure/analyze.go
-// rather than logging per-call (would emit per-trace-line per truncation).
-//
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func truncateRunes(s string, maxRunes int) string {
-	if maxRunes <= 0 {
-		return ""
-	}
-	var b strings.Builder
-	n := 0
-	for _, r := range s {
-		if n >= maxRunes {
-			b.WriteString("…")
-			break
-		}
-		b.WriteRune(r)
-		n++
-	}
-	return b.String()
-}
 
 // taskCreateInputFields builds the body_* slog attribute slice for the
 // debugHTTPRequest http.io trace. Pure transformation; the trace itself
@@ -103,9 +31,9 @@ func taskCreateInputFields(body *taskcorehandler.TaskCreateJSON, actor string) [
 		"body_status", string(body.Status),
 		"body_priority", string(body.Priority),
 		"body_title_len", len(body.Title),
-		"body_title_preview", truncateRunes(body.Title, maxHTTPLogTitleRunes),
+		"body_title_preview", handlerhttp.TruncateRunes(body.Title, maxHTTPLogTitleRunes),
 		"body_initial_prompt_len", len(body.InitialPrompt),
-		"body_initial_prompt_preview", truncateRunes(body.InitialPrompt, maxHTTPLogPromptRunes),
+		"body_initial_prompt_preview", handlerhttp.TruncateRunes(body.InitialPrompt, maxHTTPLogPromptRunes),
 		"body_project_id_set", body.ProjectID != nil,
 		"actor", actor,
 	}
@@ -132,11 +60,11 @@ func taskPatchInputFields(body *taskcorehandler.TaskPatchJSON) []any {
 	}
 	out := []any{}
 	if body.Title != nil {
-		out = append(out, "patch_title", true, "patch_title_len", len(*body.Title), "patch_title_preview", truncateRunes(*body.Title, maxHTTPLogTitleRunes))
+		out = append(out, "patch_title", true, "patch_title_len", len(*body.Title), "patch_title_preview", handlerhttp.TruncateRunes(*body.Title, maxHTTPLogTitleRunes))
 	}
 	if body.InitialPrompt != nil {
 		out = append(out, "patch_initial_prompt", true, "patch_initial_prompt_len", len(*body.InitialPrompt),
-			"patch_initial_prompt_preview", truncateRunes(*body.InitialPrompt, maxHTTPLogPromptRunes))
+			"patch_initial_prompt_preview", handlerhttp.TruncateRunes(*body.InitialPrompt, maxHTTPLogPromptRunes))
 	}
 	if body.Status != nil {
 		out = append(out, "patch_status", string(*body.Status))
@@ -162,4 +90,14 @@ func taskPatchInputFields(body *taskcorehandler.TaskPatchJSON) []any {
 		out = append(out, "patch_cursor_model", true, "patch_cursor_model_len", len(strings.TrimSpace(*body.CursorModel)))
 	}
 	return out
+}
+
+//funclogmeasure:skip category=hot-path reason="Thin re-export of handlerhttp.DebugHTTPRequest; shared package emits the http.io trace."
+func debugHTTPRequest(r *http.Request, op string, extra ...any) {
+	handlerhttp.DebugHTTPRequest(r, op, extra...)
+}
+
+//funclogmeasure:skip category=hot-path reason="Thin re-export of handlerhttp.DebugHTTPOut; shared package emits the http.io trace."
+func debugHTTPOut(ctx context.Context, op string, httpStatus int, extra ...any) {
+	handlerhttp.DebugHTTPOut(ctx, op, httpStatus, extra...)
 }
