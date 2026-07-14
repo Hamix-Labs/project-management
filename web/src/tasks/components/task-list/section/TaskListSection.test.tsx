@@ -59,7 +59,7 @@ describe("TaskListSection", () => {
     );
     // Title stays "No tasks yet" (precise, used as a page-ready sentinel
     // by App.test.tsx integration tests). Description copy is one short line
-    // per frontend_bar.mdc — assert on the new phrase so a future copy regression
+    // per frontend/components.mdc — assert on the new phrase so a future copy regression
     // is caught here.
     expect(screen.getByText(/no tasks yet/i)).toBeInTheDocument();
     expect(

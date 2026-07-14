@@ -1,0 +1,46 @@
+---
+description: >-
+  When scaffolding or restructuring a *Page.tsx (or major view) under web/ —
+  primary action, hierarchy, loading/empty/error, responsive behavior, keyboard.
+  Thin pages; containers vs presentational per frontend/react.mdc and web-layout.
+globs:
+  - "web/**/*Page.tsx"
+  - "web/**/pages/**/*.tsx"
+alwaysApply: false
+---
+
+# Page scaffold
+
+**When:** adding or restructuring a route page / major view under `web/`.
+
+Keep `*Page.tsx` thin (see `CODE_STANDARDS.mdc` size limits). Data/state patterns → `frontend/react.mdc`. Layout/folders → `web-layout.mdc`.
+
+---
+
+## Checklist
+
+Before calling a page done, verify:
+
+1. **Primary action** — one clear primary CTA for the page's job (or an intentional empty/read-only state).
+2. **Hierarchy** — title / key content / secondary actions ordered so the eye lands on the job first; ≤3 type sizes.
+3. **Loading** — pending UI at the right boundary (skeleton or local spinner), not a blank flash.
+4. **Empty** — designed empty state with next step (not a raw empty table/list).
+5. **Error** — recoverable error UI (retry, message, or boundary) — no silent failure.
+6. **Responsive** — works at mobile and desktop; multi-column collapses below `--bp-md`; tables scroll or card-ify; modals → sheets on small screens where the product already does.
+7. **Keyboard** — tab order sane; skip link / landmarks intact; no keyboard traps outside modals.
+
+---
+
+## Structure prefs
+
+- Page owns params + queries/mutations; push chrome into components.
+- Match shell gutters / `--layout-max-width` / existing page patterns before inventing a new frame.
+- Hover-only actions: provide a non-hover path on touch (`@media (hover: hover)`).
+
+---
+
+## Do not
+
+- Cram multiple unrelated jobs into one first viewport
+- Ship a page with no empty or error path for its primary data
+- Bypass the shell's layout tokens for one-off full-bleed experiments without product need

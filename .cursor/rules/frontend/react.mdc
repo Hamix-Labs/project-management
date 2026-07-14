@@ -1,0 +1,59 @@
+---
+description: >-
+  When structuring React UI in web/ — controlled vs uncontrolled inputs, where
+  state lives, presentation vs data-fetching, optimistic updates, loading and
+  error boundaries, list render performance. Not file placement (web-layout) or
+  visual tokens (frontend/tokens).
+globs:
+  - "web/**/*.tsx"
+  - "web/**/*.ts"
+alwaysApply: false
+---
+
+# React UI architecture
+
+**When:** designing component state, data flow, or interactive React patterns under `web/`.
+
+File placement and vertical boundaries → `web-layout.mdc`. Visual quality → sibling `frontend/*.mdc` rules.
+
+---
+
+## State ownership
+
+- **Controlled vs uncontrolled:** Form inputs that participate in submit/validation should be **controlled** (value + onChange from parent or form state). Uncontrolled/`defaultValue` only for truly local, ephemeral fields with no cross-field logic.
+- **State close to use:** Keep state in the nearest component that needs it. Lift only when siblings share it — avoid parking everything in a page container.
+- Prefer existing hooks (`use*` under verticals / `hooks/`) and React Query patterns already in the app over ad-hoc `useEffect` fetching.
+
+---
+
+## Presentation vs fetching
+
+- **Pages / containers** own routing params, queries, mutations, and wire data → presentational children.
+- **Presentational components** receive props and callbacks; they should not call `fetch` (all HTTP lives in `web/src/api/` — see `web-layout.mdc`).
+- Colocate loading UI with the data boundary that knows the query status.
+
+---
+
+## Async UX
+
+- **Optimistic updates** where the product already does (e.g. guarded task mutations): update UI immediately; roll back on error; keep server as source of truth after settle.
+- **Loading:** skeletons or inline spinners at the right granularity; don't block the whole app for a panel fetch.
+- **Errors:** surface at the boundary (inline, banner, or error boundary) with recovery — don't swallow in empty `catch`.
+- Prefer shared error-boundary / toast patterns in `web/src/shared/` and feedback components over one-off alerts.
+
+---
+
+## Lists & render performance
+
+- Avoid **inline lambdas / object literals** in hot list item props when they cause pointless child re-renders and the child is memoized or expensive — extract stable handlers or pass primitives.
+- Don't add `useMemo` / `useCallback` by default; follow existing repo React patterns. Use them when profiling or list scale shows a real need.
+- Keys: stable ids from the server — never array index for reorderable lists.
+
+---
+
+## Do not
+
+- Fetch inside deeply nested presentational chrome
+- Duplicate server state in local `useState` without a sync strategy
+- Leave optimistic UI without an error rollback path
+- Block the entire tree on a single leaf query when a local pending state suffices

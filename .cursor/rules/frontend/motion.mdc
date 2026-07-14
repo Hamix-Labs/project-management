@@ -1,0 +1,70 @@
+---
+description: >-
+  When adding or tuning animation, transitions, skeletons, or enter/exit
+  motion in web/ — timing tokens, what to animate, reduced-motion. Prefer
+  --ease-* / --duration-* from web/src/app/styles/tokens/.
+globs:
+  - "web/**/*.tsx"
+  - "web/**/*.css"
+  - "web/src/app/styles/**"
+alwaysApply: false
+---
+
+# Motion & animation
+
+**When:** adding transitions, loaders, enter/exit, or press/hover motion under `web/`.
+
+Prefer existing tokens in `app-design-tokens-foundation.css` (`--ease-*`, `--duration-*`). Values below are **fallback when no token exists**.
+
+Motion communicates state — never decoration. Also honor a11y rules in `frontend/accessibility.mdc`.
+
+---
+
+## Tokens (preferred)
+
+Use from foundation when present:
+
+- Easing: `--ease-default`, `--ease-out`, `--ease-in`, `--ease-in-out`, `--ease-ui`, `--ease-linear`, `--ease-bounce` (sparingly)
+- Duration: `--duration-instant` … `--duration-slower`, plus `--duration-toast`, `--duration-skeleton`, `--duration-ui-phase`, `--duration-spinner`
+
+### Fallback timing (when no token exists)
+
+```css
+--ease-default: cubic-bezier(0.16, 1, 0.3, 1);
+--ease-out:     cubic-bezier(0, 0, 0.2, 1);
+--ease-in:      cubic-bezier(0.4, 0, 1, 1);
+--duration-fast:   100ms;
+--duration-normal: 150ms;
+--duration-moderate: 250ms;
+--duration-slow:   350ms;
+```
+
+---
+
+## Motion rules
+
+- Hover color/border: ~`150ms` / `--duration-normal`
+- Press scale: `transform: scale(0.97–0.98)` over ~`100ms`
+- Dropdowns: fade + translate `8px → 0` over ~`200ms` ease-out
+- Modals: backdrop fade ~`200ms`; content scale `0.96 → 1` + fade ~`250ms`
+- Toasts: slide in ~`300ms` / `--duration-toast`
+- Page transitions: max ~`400ms`; prefer fade or subtle slide
+- Skeletons: `--duration-skeleton` (~`1.5s`) pulse, ease-in-out, infinite
+- **Always** add `@media (prefers-reduced-motion: reduce)` — disable or minimize animations
+- **Never animate `width` / `height` / `top` / `left` / `right` / `bottom` directly** — use `transform`, `opacity`, or careful `max-height` with overflow hidden
+
+### Animate these
+
+`opacity`, `transform`, `box-shadow`, `background-color`, `border-color`.
+
+### Not these
+
+`top`, `left`, `width`, `height` (layout-thrashing properties).
+
+---
+
+## Do not
+
+- Animate layout properties when transform/opacity suffice
+- Skip reduced-motion handling
+- Use bounce easing for critical productivity chrome

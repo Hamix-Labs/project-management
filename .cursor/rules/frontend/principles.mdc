@@ -1,0 +1,39 @@
+---
+description: >-
+  When judging overall UI quality for web/ — clarity, restraint, systems over
+  one-offs, polish, purposeful motion. Visual philosophy only; tokens →
+  frontend/tokens.mdc; components → frontend/components.mdc; layout/where files
+  live → web-layout.mdc.
+globs:
+  - "web/**/*.tsx"
+  - "web/**/*.css"
+alwaysApply: false
+---
+
+# UI principles
+
+**When:** choosing how a UI under `web/` should look and feel at a high level.
+
+These rules define the product's visual philosophy. Prefer existing design tokens and components before inventing new patterns. When a choice is ambiguous, prefer clarity, consistency, and accessibility over novelty.
+
+**Repo context:** For `web/`, also follow `web-layout.mdc`, `CODE_STANDARDS.mdc`, `web-testing-bar.mdc`, sibling `frontend/*.mdc` rules, and `docs/web.md`.
+
+---
+
+## Principles
+
+- **Clarity over cleverness.** Every element must earn its place. If it doesn't communicate, remove it.
+- **Intentional restraint.** Whitespace is not empty space — it is structure, emphasis, and breathing room.
+- **Functional over decorative.** Aesthetics should serve user goals.
+- **Systematic thinking.** Design in systems, not one-off solutions. Every component should feel like it belongs to the same family.
+- **Trust through polish.** Users trust products that feel finished. Unresolved edges, inconsistent spacing, and unclear hierarchy destroy confidence.
+- **Motion with purpose.** Animation should communicate state changes and guide attention — never decorate.
+- **Match existing first.** Open `web/src/app/styles/tokens/` and reuse components already in `web/` before inventing new styles or chrome.
+
+---
+
+## Do not
+
+- Invent a parallel design language when tokens/components already cover the need.
+- Optimize for novelty when clarity and consistency would serve users better.
+- Treat decorative flourishes as substitutes for hierarchy or affordance.

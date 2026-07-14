@@ -20,7 +20,7 @@ alwaysApply: false
 
 Hamix is a Go + TypeScript monorepo. **Where packages live** → `backend/go/layout.mdc`, `web-layout.mdc`, [docs/agent-map.md](../../docs/agent-map.md).
 
-This file wins on **file size and naming**; layout rules win on directory placement; `backend/go/*.mdc` and `frontend_bar.mdc` win on quality within a file.
+This file wins on **file size and naming**; layout rules win on directory placement; `backend/go/*.mdc` and `frontend/*.mdc` win on quality within a file.
 
 ---
 
@@ -161,4 +161,5 @@ ADR format: Context → Decision → Consequences → Alternatives. See existing
 - Paths by subsystem → [docs/agent-map.md](../../docs/agent-map.md)
 - Go BC layout → `backend/go/layout.mdc`
 - Web verticals → `web-layout.mdc`
+- Web UI quality → `frontend/*.mdc`
 - Verify before PR → `ci-verification.mdc`

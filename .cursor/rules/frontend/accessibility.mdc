@@ -1,0 +1,58 @@
+---
+description: >-
+  When implementing or reviewing accessibility for web/ UI — WCAG, keyboard,
+  focus, labels, live regions, touch targets, color-not-alone, custom widgets
+  (roles, focus traps). Motion reduction: also see frontend/motion.mdc.
+globs:
+  - "web/**/*.tsx"
+  - "web/**/*.css"
+alwaysApply: false
+---
+
+# Accessibility
+
+**When:** shipping or changing interactive UI under `web/` that users perceive or operate.
+
+**WCAG 2.1 AA** is the minimum for shipped UI.
+
+---
+
+## Required
+
+- All interactive elements reachable and operable via **keyboard**.
+- Focus indicators: visible, ≥`3px` outline or `box-shadow: var(--shadow-focus)`. Never `outline: none` without a replacement.
+- Images: meaningful `alt`; decorative: `alt=""`.
+- Form inputs: associated `<label>` via `for`/`id` or `aria-label`.
+- Error messages: linked via `aria-describedby`; persistently visible (not tooltip-only).
+- Dynamic content: `aria-live="polite"` for non-critical; `assertive` for critical.
+- **Color alone never conveys meaning** — pair with icon, text, or pattern.
+- Touch targets: minimum `--touch-target-min` / **44×44px** (prefer **48×48px** where Material guidance applies).
+- Reduced motion: honor `prefers-reduced-motion` — disable or minimize animation (details in `frontend/motion.mdc`).
+- Semantic HTML first: `<button>` not `<div onClick>`; use `<nav>`, `<main>`, `<aside>`, landmarks.
+
+---
+
+## Custom components
+
+When building widgets that are not native controls:
+
+- Expose the correct **role** (`dialog`, `listbox`, `menu`, `tablist`, …) and required states (`aria-expanded`, `aria-selected`, `aria-checked`, …).
+- Implement **keyboard model** expected for that pattern (arrows, Home/End, Enter/Space, Escape).
+- **Focus trap** in modal/drawer overlays; restore focus to the invoker on close.
+- Prefer established primitives (e.g. Radix-style behavior) over hand-rolled a11y when available in-repo.
+
+---
+
+## Contrast (reminder)
+
+- Body text: **4.5:1**; large text: **3:1**; UI components and focus: **3:1**.
+
+---
+
+## Do not
+
+- Strip focus outlines without a visible replacement
+- Rely on color alone for state or meaning
+- Put the only copy of an error inside a tooltip
+- Auto-play video/audio without consent
+- Ship custom scrollbars that break OS conventions

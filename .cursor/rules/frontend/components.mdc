@@ -1,0 +1,176 @@
+---
+description: >-
+  When building or restyling interactive UI chrome in web/ — buttons, forms,
+  nav, tables, cards, metrics, toasts, loading/empty/error, modals, microcopy.
+  Prefer extending existing controls over new variants.
+globs:
+  - "web/**/*.tsx"
+  - "web/**/*.css"
+  - "web/src/components/**"
+alwaysApply: false
+---
+
+# Components & composition
+
+**When:** creating or restyling buttons, forms, navigation, tables, cards, feedback, or modals under `web/`.
+
+Use token variables (`frontend/tokens.mdc`) for color, type, space, radius, and motion. Prefer existing components in `web/src/components/` and vertical UI before adding a new primitive.
+
+---
+
+## Composition
+
+- Prefer **small composable pieces** over one mega-component with many boolean props.
+- **Extend the closest existing control** (Button, Input, Modal, …) before inventing a new visual variant.
+- Every interactive component needs: default, hover, focus, active, disabled, loading, and error as applicable.
+- One icon library; consistent stroke. Naming: predictable and token-aligned.
+
+---
+
+## Buttons
+
+- Minimum touch target: **`--touch-target-min`** / **44×44px**.
+- Heights: compact ~`36px`, default ~`40px`, large ~`48px` (match existing classes).
+- **One primary button** per view/section.
+- Labels: sentence case, verb-first ("Save changes", "Get started").
+- Loading: spinner replaces label; keep dimensions stable.
+- Destructive: error styling only after confirmation.
+
+Style with token vars (`--color-*`, `--radius-md`, `--text-sm`, duration/ease tokens). Example shape (illustrative — prefer shared Button classes):
+
+```css
+.btn-primary {
+  background: var(--color-brand);
+  color: var(--color-text-inverse, #fff);
+  padding: 10px 20px;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  transition: background var(--duration-normal) var(--ease-default),
+    transform var(--duration-fast) var(--ease-default);
+}
+.btn-primary:hover { background: var(--color-brand-hover); }
+.btn-primary:active { transform: scale(0.98); }
+.btn-primary:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+.btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+```
+
+---
+
+## Inputs & forms
+
+- Always pair inputs with **visible labels** — never placeholder-only.
+- Error text below the field, linked for a11y (`aria-describedby`); specific copy.
+- Helper text tertiary; labels secondary, ~13px / `font-weight: 500`.
+- Group related fields under a section header; mark required with `*` and explain once.
+- Submit: right-aligned or full-width on desktop — not left-aligned alone.
+- Validate format on blur; required on submit.
+
+---
+
+## Navigation
+
+### Top bar
+
+- Height ~`56px–64px`; sticky; subtle blur/border per existing shell CSS.
+- Logo left; primary nav center/left; account/CTA right.
+- Active item: weight + brand underline or pill.
+- Mobile: hamburger → drawer / full-screen.
+
+### Sidebar
+
+- Width ~`240px–260px` (collapsed ~`64px–72px`).
+- Section headers: small caps / tertiary (`--data-caps-*` / `--section-caps-*` tokens).
+- Items ~`36px` tall, `--radius-md`; active uses brand-subtle + brand text.
+- Icons ~`18px`; outline inactive, filled active when that pattern exists.
+
+---
+
+## Data display
+
+### Tables
+
+- Header: small caps, secondary color (`--data-caps-*`).
+- Row height ~`48px–56px`; cell padding from `--table-cell-padding-*`.
+- Row dividers only; avoid column dividers unless dense.
+- Hover: subtle bg; sticky header on long tables; no striped rows by default.
+- Empty: illustration/icon + headline + subtext + CTA — never a blank table.
+
+### Cards
+
+- Surface + **border or shadow — not both** (product chrome: border).
+- Padding ≥ `--space-6` (~24px) when possible; radius `--radius-lg` / `--radius-xl`.
+- Interactive hover: strengthen border or elevation token, ~`150ms`.
+
+### Metrics
+
+- Value large + semibold; label smaller secondary; deltas use semantic colors.
+- Sparklines minimal: no axes, single color.
+
+---
+
+## Feedback & status
+
+### Toasts
+
+- Desktop bottom-right; mobile bottom-center; width ~`320–400px`.
+- Auto-dismiss: info/success shorter; warning longer; errors manual.
+- Always a close control; stack newest on top.
+
+### Loading
+
+- Prefer **skeletons** over spinners for content regions.
+- Button loading: in-place spinner, disabled, same size.
+- Full-page spinner: delay ~`300ms` to avoid flash.
+- Progress bar for ops >2s.
+
+### Empty & error
+
+- Empty: icon + title + one-line description + primary CTA.
+- Inline field errors: red border + persistent message (not tooltip-only).
+- Page errors: banner; 404/500 friendly with home/back — no raw technical codes.
+
+---
+
+## Modals & overlays
+
+```
+Backdrop → container (max-width small/default/large) → header + body + footer
+Body scrollable; max-height ~70vh; footer actions right-aligned, primary rightmost
+```
+
+- **One modal at a time** — no stacks.
+- Focus trap while open; `Escape` closes; backdrop dismiss unless destructive confirm.
+- Mobile: bottom sheet with top radius only.
+- Destructive confirm: explicit named action (not vague "OK").
+
+---
+
+## Microcopy
+
+- **Sentence case** in UI (not Title Case / ALL CAPS except small labels).
+- Errors: what went wrong **and** how to fix.
+- Confirmations: describe the consequence.
+- Placeholders: examples, not instructions.
+- Loading: specific ("Loading transactions…" not "Loading…").
+- Avoid "Click here", context-free "Learn more", bare "Submit", passive voice.
+
+---
+
+## Perception
+
+- Optimistic UI where safe; revert on error.
+- Instant feedback within ~`100ms` of tap.
+- Reserve space for async content (avoid CLS).
+- Lazy-load below-fold media; modern image formats when adding assets.
+
+---
+
+## Do not (UI chrome)
+
+- More than one primary CTA per view
+- Placeholder as the only input label
+- Error messages only inside tooltips
+- Modals for non-critical info (prefer inline / toast)
+- Generic clipart icons — use the product icon set
+- Boolean-prop explosion on a single Button / Field component

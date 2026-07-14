@@ -1,0 +1,176 @@
+---
+description: >-
+  When adding or changing design tokens, CSS custom properties, typography,
+  color, spacing, radius, shadow, dark-mode, or breakpoint values in web/ —
+  prefer files under web/src/app/styles/tokens/; invent only when none fit.
+globs:
+  - "web/src/app/styles/**"
+  - "web/**/*.css"
+alwaysApply: false
+---
+
+# Design tokens
+
+**When:** introducing or changing visual variables (type, color, space, radius, shadow, breakpoints, dark theme) under `web/`.
+
+## Precedence (required)
+
+1. **Use existing CSS custom properties** from `web/src/app/styles/tokens/`:
+   - `app-design-tokens-foundation.css` — spacing, type ramp, motion, breakpoints, layout, z-index
+   - `app-design-tokens-light.css` — light surfaces, borders, text, brand, semantic colors, shadows
+   - `app-design-tokens-dark.css` — dark theme overrides
+2. **Prefer composition** of current components / classes already in `web/`.
+3. **Only then** use numeric/CSS defaults below — labeled **fallback when no token exists**. Never hardcode a hex/`rgba` in component CSS if a `--*` token already exists. Invent a new token only when none fit; add it in the tokens files, not inline.
+
+Repo chrome already defines product colors, type ramp (capped sizes), spacing, radius, shadows, and motion. Do not re-author a rival Stripe-ish palette that fights foundation/light/dark.
+
+---
+
+## Typography
+
+### Hierarchy
+
+- Use a **maximum of 3 type sizes** per view (product ramp is capped further in foundation tokens).
+- Establish clear hierarchy: **Display → Heading → Body → Caption/Label**
+- Never let body text compete with headings visually.
+
+### Rules
+
+- Prefer product fonts from tokens (`--font-sans`, `--font-mono`) over inventing stacks.
+- **Never use more than 2 typefaces** in a single product.
+- Body text minimum: `15px` equivalent (check `--text-*`); caption never below `12px` / `--text-xs` floor in CI.
+- Line length: prefer `--layout-readable-max` / ~`60–75ch` for prose. Never let prose stretch full-width.
+- Avoid center-aligned body text. Left-align for readability.
+- Headings: `font-weight: 600–700`. Body: `400–450`. Labels: `500`.
+- Use `rem` for typography — not raw `px`.
+
+### Fallback type scale (when no token exists)
+
+```css
+--text-xs:    0.75rem;   /* 12px */
+--text-sm:    0.875rem;  /* 14px */
+--text-base:  0.9375rem; /* 15px */
+--text-md:    1rem;      /* 16px */
+--text-lg:    1.125rem;  /* 18px */
+--text-xl:    1.25rem;   /* 20px */
+--text-2xl:   1.5rem;    /* 24px */
+```
+
+Prefer foundation aliases (`--text-sm`, `--text-md`, `--text-title-app`, …) over inventing new steps.
+
+---
+
+## Color
+
+- Color communicates **meaning**, not decoration.
+- One primary action color; semantic colors for status — never repurpose brand for errors/success.
+- Interactive elements: consistent color that signals clickability.
+- Backgrounds: subtle tonal shifts via tokens, not hard borders alone.
+- **Never use pure `#000000` or `#ffffff`** for body text/bg when near-black/warm-white tokens exist.
+- Contrast: body **4.5:1** (AA); large text **3:1**; UI/focus **3:1**; aim **7:1** where possible.
+
+### Fallback palette (when no token exists)
+
+Only if foundation/light/dark have no suitable `--color-*`. Prefer adding to light/dark token files over pasting these hexes into components.
+
+```css
+--color-bg:             #ffffff;
+--color-bg-subtle:      #f6f8fa;
+--color-border:         rgba(0, 0, 0, 0.08);
+--color-text-primary:   #0a0a0a;
+--color-text-secondary: #4b5563;
+--color-success:        #00a96e;
+--color-warning:        #f59e0b;
+--color-error:          #ef4444;
+--color-info:           #3b82f6;
+```
+
+---
+
+## Spacing & layout
+
+- All spacing multiples of **4px** / tokens `--space-*`.
+- Max content: prefer `--layout-max-width`; prose/forms often tighter (`--layout-readable-max`).
+- Group related elements closer than unrelated ones (Gestalt proximity).
+- **Never center a layout that should be left-aligned** (forms, settings, text).
+- Use **12-column** mental grid at desktop, **4-column** at mobile; collapse multi-column below `--bp-md`.
+
+### Fallback spacing (when no token exists)
+
+```css
+--space-1: 0.25rem; /* 4px */  --space-2: 0.5rem;  --space-3: 0.75rem;
+--space-4: 1rem;    --space-6: 1.5rem; --space-8: 2rem;
+--space-12: 3rem;   --space-16: 4rem;
+```
+
+---
+
+## Border radius
+
+Use `--radius-*` from tokens. Consistency is critical: pick the scale and do not deviate.
+
+| Use | Token (preferred) | Fallback if missing |
+| --- | --- | --- |
+| Inputs, tags | `--radius-sm` / `--radius-md` | `4px` / `8px` |
+| Buttons | `--radius-md` | `8px` (not fully round unless pill) |
+| Cards, panels | `--radius-lg` / `--radius-xl` | `12px` / `16px` |
+| Modals | `--radius-xl` | `16px` |
+| Pills, avatars | `--radius-full` | `9999px` |
+
+---
+
+## Shadows & elevation
+
+Prefer light/dark shadow tokens. Cards in this product often use **border, not shadow** — match existing chrome.
+
+| Level | Role |
+| --- | --- |
+| 0 | Flat — base page, sidebars |
+| 1 | Cards / row hover (`shadow-sm`) when elevation is used |
+| 2 | Dropdowns, popovers |
+| 3 | Modals, drawers |
+| 4 | Floating actions / command palette |
+
+Never mix elevation levels in the same component cluster. Focus: `var(--shadow-focus)` or equivalent — never bare `outline: none`.
+
+### Fallback shadows (when no token exists)
+
+```css
+--shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+--shadow-md: 0 4px 6px -1px rgba(0,0,0,0.06), 0 2px 4px -1px rgba(0,0,0,0.04);
+--shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.07), 0 4px 6px -2px rgba(0,0,0,0.04);
+--shadow-focus: 0 0 0 3px rgba(99,91,255,0.35); /* replace with brand token tint */
+```
+
+---
+
+## Dark mode & responsive tokens
+
+- Support `prefers-color-scheme` / `[data-theme="dark"]` patterns already in token files — do not invent a second theme map.
+- Never simply invert colors; redesign luminance and borders for dark context.
+- Shadows are weaker in dark mode — prefer border / subtle glow tokens already defined.
+- Breakpoints: use `--bp-*` from foundation. **Mobile-first.**
+
+### Fallback breakpoints (when no token exists)
+
+```css
+--bp-sm: 640px; --bp-md: 768px; --bp-lg: 1024px; --bp-xl: 1280px;
+```
+
+---
+
+## Consistency
+
+- **Color:** only design-token variables in components — no hardcoded hex.
+- **Spacing:** 4px grid via `--space-*`.
+- **Icons:** one icon set; default ~`18px`/`20px`.
+- **Density:** compact / default / spacious — pick one per context.
+
+---
+
+## Do not
+
+- Duplicate a second brand palette alongside `tokens/*`.
+- Hardcode hex in component CSS when a `--*` exists.
+- Use `px` for type scale in new rules — use `rem` / tokens.
+- Mix border + shadow as the same card affordance — pick one (product prefers border).
