@@ -101,7 +101,7 @@ Composition leftovers that **aggregate** BC contracts stay in this package (or t
 | Task git-binding / compose normalize | Cross-BC validation (`gitinventory` + `gitwork` + taskcore) |
 | Platform kernels (`scheduling`, `apijson`, `calltrace`, `logctx`, `handlerhttp`, `wire`) | Already appropriately sized shared packages |
 
-A BC needs domain types, owned persistence or contract, a cohesive HTTP resource group, and CI import gates. See [docs/audit/tasks-shell-roi.md](../../../docs/audit/tasks-shell-roi.md).
+A BC needs domain types, owned persistence or contract, a cohesive HTTP resource group, and CI import gates. See [`.cursor/rules/go-layout.mdc`](../../../.cursor/rules/go-layout.mdc).
 
 ## Scaling this package
 
