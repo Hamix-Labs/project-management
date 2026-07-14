@@ -70,8 +70,7 @@ Commit-Tier3 "refactor(tasks/contract): alias GitReadStore and GitWriteStore" @(
     "pkgs/tasks/contract/git_read.go"
 )
 Commit-Tier3 "chore(ci): gitinventory contract boundary + docs" @(
-    "scripts/check-go.sh",
-    "docs/cleanup-order.md"
+    "scripts/check-go.sh"
 )
 git branch -f refactor/gitinventory-contract HEAD
 
@@ -244,8 +243,7 @@ Commit-Tier3 "refactor(tasks): remove remaining cycle model files" @(
 )
 Commit-Tier3 "chore(ci): taskcycles domain boundary + README" @(
     "scripts/check-go.sh",
-    "docs/agent-map.md",
-    "docs/cleanup-order.md"
+    "docs/agent-map.md"
 )
 git branch -f refactor/taskcycles-model-artifacts HEAD
 
@@ -394,8 +392,7 @@ Commit-Tier3 "chore(ci): taskcore boundary + docs + schema revision" @(
     "pkgs/tasks/store/model/",
     "pkgs/projects/handler/",
     "pkgs/runners/handler/",
-    "docs/agent-map.md",
-    "docs/cleanup-order.md"
+    "docs/agent-map.md"
 )
 git branch -f refactor/taskcore-wire HEAD
 

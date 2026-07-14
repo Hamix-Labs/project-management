@@ -28,4 +28,4 @@
 
 ## See also
 
-- Tier 5A PR1 — [cleanup-order.md](../cleanup-order.md)
+- Tier 5A PR1 ([#191](https://github.com/AlexsanderHamir/Hamix/pull/191)); later Phase 4 DRY — [#218](https://github.com/AlexsanderHamir/Hamix/pull/218)–[#222](https://github.com/AlexsanderHamir/Hamix/pull/222)

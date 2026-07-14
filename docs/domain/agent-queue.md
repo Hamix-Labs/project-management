@@ -134,7 +134,7 @@ Sentinel errors ([`notify.go`](../../pkgs/agents/notify.go)): `ErrQueueFull`, `E
 
 ## Deferred pickup
 
-[`PickupWakeScheduler`](../../pkgs/agents/pickup_wake.go) implements `store.PickupWake`:
+[`PickupWakeScheduler`](../../pkgs/agents/pickup_wake.go) implements `taskcore/store.PickupWake`:
 
 | Method | Role |
 | --- | --- |

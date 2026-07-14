@@ -44,4 +44,4 @@
 ## See also
 
 - [ADR-0044](./ADR-0044-query-invalidation-catalog.md), [ADR-0025](./ADR-0025-frontend-data-coherence.md)
-- [policy-roi.md](../audit/policy-roi.md) findings #1, #4
+- Phase 3 policy train — [#198](https://github.com/AlexsanderHamir/Hamix/pull/198)–[#203](https://github.com/AlexsanderHamir/Hamix/pull/203)

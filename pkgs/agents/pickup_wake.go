@@ -13,7 +13,7 @@ import (
 	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 )
 
-// PickupWakeScheduler implements storehooks.PickupWake: a min-heap of
+// PickupWakeScheduler implements taskcorestore.PickupWake: a min-heap of
 // (pickup_not_before, task_id) with one timer for the earliest deadline.
 // On fire it loads the task and enqueues when ShouldNotifyReadyNow holds.
 type PickupWakeScheduler struct {
@@ -26,6 +26,8 @@ type PickupWakeScheduler struct {
 	timer   *time.Timer
 	stopped bool
 }
+
+var _ taskcorestore.PickupWake = (*PickupWakeScheduler)(nil)
 
 type wakeItem struct {
 	taskID    string
@@ -98,7 +100,7 @@ func (w *PickupWakeScheduler) Hydrate(ctx context.Context) error {
 	return nil
 }
 
-// Schedule implements store.PickupWake.
+// Schedule implements taskcorestore.PickupWake.
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (w *PickupWakeScheduler) Schedule(ctx context.Context, taskID string, notBefore time.Time) {
@@ -121,7 +123,7 @@ func (w *PickupWakeScheduler) Schedule(ctx context.Context, taskID string, notBe
 	w.resetTimerLocked()
 }
 
-// Cancel implements store.PickupWake.
+// Cancel implements taskcorestore.PickupWake.
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (w *PickupWakeScheduler) Cancel(taskID string) {
@@ -142,7 +144,7 @@ func (w *PickupWakeScheduler) Cancel(taskID string) {
 	w.resetTimerLocked()
 }
 
-// Stop implements store.PickupWake.
+// Stop implements taskcorestore.PickupWake.
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (w *PickupWakeScheduler) Stop() {

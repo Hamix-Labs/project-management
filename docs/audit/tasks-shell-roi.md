@@ -37,7 +37,7 @@
 | Projects / git / settings / repo / runners | Sibling `pkgs/*` | ADR-0045–0049, ADR-0052 |
 | Store facade retired | `internal/taskapi/composition` | ADR-0079 — no `pkgs/tasks/store` |
 | Domain / contract hubs retired | BC packages own types | ADR-0060, ADR-0062 |
-| HTTP helper DRY (in flight) | `pkgs/tasks/handlerhttp` | ADR-0077 + [remaining-cleanup-roi.md](./remaining-cleanup-roi.md) Phase 4 |
+| HTTP helper DRY (done) | `pkgs/tasks/handlerhttp` | ADR-0077 + Phase 4 train [#218](https://github.com/AlexsanderHamir/Hamix/pull/218)–[#222](https://github.com/AlexsanderHamir/Hamix/pull/222) |
 | Middleware already extracted | `pkgs/tasks/middleware/` | 16 `.go` files; README maps stack |
 | Scheduling already extracted | `pkgs/tasks/scheduling/` | 10 `.go` files; domain docs |
 | Policy packages nested | `handler/readpolicy/`, `handler/writepolicy/` | ADR-0026 |
@@ -152,7 +152,7 @@ Sibling BC sizes for comparison: `taskcompose` ~25, `taskchecklist` ~34, `taskev
 
 ### 9. Scheduling / apijson / calltrace / logctx / handlerhttp / wire — ROI n/a — **verified clean**
 
-Already appropriately sized platform packages. Continue Phase 4 DRY **into** `handlerhttp` / `apijson` ([remaining-cleanup-roi.md](./remaining-cleanup-roi.md)); do not re-home them as domain BCs.
+Already appropriately sized platform packages. Phase 4 DRY into `handlerhttp` / `apijson` shipped ([#218](https://github.com/AlexsanderHamir/Hamix/pull/218)–[#222](https://github.com/AlexsanderHamir/Hamix/pull/222)); do not re-home them as domain BCs.
 
 ---
 
@@ -180,20 +180,20 @@ Already appropriately sized platform packages. Continue Phase 4 DRY **into** `ha
 | **5** | `refactor/realtime-hub-extract` | SSE hub/stream → `realtime`; thin handler glue | #2 |
 | **6** | `chore/agentreconcile-internal` | Move e2e package under `internal/` | #4 |
 
-**Train rule:** Do not start PR5 until PR3–PR4 land (SSE tests are easier to move once black-box suites have a stable handlertest home). Phase 4/6 DRY ([remaining-cleanup-roi.md](./remaining-cleanup-roi.md)) can proceed **in parallel** — it shrinks helpers, this train shrinks **directory shape**.
+**Train rule:** Do not start PR5 until PR3–PR4 land (SSE tests are easier to move once black-box suites have a stable handlertest home). Phase 4/6 DRY ([#217](https://github.com/AlexsanderHamir/Hamix/pull/217)–[#228](https://github.com/AlexsanderHamir/Hamix/pull/228)) ran in parallel and is closed — it shrunk helpers; this train shrinks **directory shape**.
 
 ---
 
 ## Relationship to prior audits
 
-| Audit | Overlap | Diff |
+| Train | Overlap | Diff |
 | --- | --- | --- |
-| [structural-patterns-roi.md](./structural-patterns-roi.md) | God-file **line** splits (done) | This audit targets **file-count / package placement**, not LOC within one file |
-| [remaining-cleanup-roi.md](./remaining-cleanup-roi.md) | `handlerhttp` DRY | This audit does not re-rank path-ID / httplog extracts |
-| [policy-roi.md](./policy-roi.md) | readpolicy / writepolicy | Policy choke points stay nested under handler — no move |
+| Structural patterns ([#205](https://github.com/AlexsanderHamir/Hamix/pull/205)–[#215](https://github.com/AlexsanderHamir/Hamix/pull/215)) | God-file **line** splits (done) | This audit targets **file-count / package placement**, not LOC within one file |
+| Remaining cleanup Phase 4/6 ([#217](https://github.com/AlexsanderHamir/Hamix/pull/217)–[#228](https://github.com/AlexsanderHamir/Hamix/pull/228)) | `handlerhttp` DRY + late abstractions | This audit does not re-rank path-ID / httplog extracts |
+| Policy choke points ([#198](https://github.com/AlexsanderHamir/Hamix/pull/198)–[#203](https://github.com/AlexsanderHamir/Hamix/pull/203)) | readpolicy / writepolicy | Policy choke points stay nested under handler — no move |
 
 ---
 
 ## See also
 
-[cleanup-order.md](../cleanup-order.md) · [audit/README.md](./README.md) · [ADR-0070](../adr/ADR-0070-taskapi-shell-ownership.md) · [ADR-0079](../adr/ADR-0079-facade-deletion.md) · [ADR-0020](../adr/ADR-0020-realtime-sse-layout.md) · [pkgs/taskchecklist/README.md](../../pkgs/taskchecklist/README.md) · [pkgs/tasks/handler/README.md](../../pkgs/tasks/handler/README.md)
+[ADR-0070](../adr/ADR-0070-taskapi-shell-ownership.md) · [ADR-0079](../adr/ADR-0079-facade-deletion.md) · [ADR-0020](../adr/ADR-0020-realtime-sse-layout.md) · [pkgs/taskchecklist/README.md](../../pkgs/taskchecklist/README.md) · [pkgs/tasks/handler/README.md](../../pkgs/tasks/handler/README.md)

@@ -7,9 +7,9 @@ import (
 
 // PickupWake schedules in-process wakeups for ready tasks whose
 // pickup_not_before is in the future. Implementations live outside this
-// package (typically pkgs/agents); the store holds an optional hook and
-// calls Schedule/Cancel from CRUD paths. See docs/data-model.md and
-// docs/architecture.md.
+// package (typically pkgs/agents); composition registers the hook via
+// internal/taskapi/storehooks and calls Schedule/Cancel from CRUD paths.
+// See docs/data-model.md and docs/architecture.md.
 type PickupWake interface {
 	// Schedule registers (or replaces) a wake at notBefore UTC for taskID.
 	Schedule(ctx context.Context, taskID string, notBefore time.Time)

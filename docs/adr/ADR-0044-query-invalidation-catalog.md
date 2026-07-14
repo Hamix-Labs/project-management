@@ -43,4 +43,4 @@ Project and git write paths each called `queryClient.invalidateQueries` inline w
 ## See also
 
 - [docs/web.md](../web.md) §Project/worktree mutation invalidation
-- [cleanup-order.md](../cleanup-order.md) — Phase 3
+- Phase 3 policy centralization — [#198](https://github.com/AlexsanderHamir/Hamix/pull/198)–[#203](https://github.com/AlexsanderHamir/Hamix/pull/203)

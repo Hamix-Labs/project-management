@@ -4,15 +4,14 @@ import (
 	"context"
 	"sync"
 	"time"
+
+	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 )
 
-// PickupWake schedules in-process wakeups for ready tasks whose
-// pickup_not_before is in the future.
-type PickupWake interface {
-	Schedule(ctx context.Context, taskID string, notBefore time.Time)
-	Cancel(taskID string)
-	Stop()
-}
+// PickupWake aliases the canonical taskcore/store hook interface so
+// composition registries and (*composition.API).SetPickupWake stay typed
+// against one definition.
+type PickupWake = taskcorestore.PickupWake
 
 // PickupWakeRegistry holds an optional PickupWake hook for task CRUD paths.
 type PickupWakeRegistry struct {
