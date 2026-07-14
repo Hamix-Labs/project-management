@@ -12,7 +12,7 @@ func (h *Handler) listTaskDrafts(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.listTaskDrafts")
 	const op = "task_drafts.list"
 	r = calltrace.WithRequestRoot(r, op)
-	limit, err := parseBoundedLimit(r.URL.Query(), 50, 100)
+	limit, err := handlerhttp.ParseBoundedLimit(r.URL.Query(), 50, 100)
 	if err != nil {
 		handlerhttp.WriteStoreError(w, r, op, err)
 		return

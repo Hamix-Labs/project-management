@@ -16,7 +16,7 @@ func (h *Handler) listTaskTemplates(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcompose.handler.listTaskTemplates")
 	const op = "task_templates.list"
 	r = calltrace.WithRequestRoot(r, op)
-	limit, err := parseBoundedLimit(r.URL.Query(), 50, 100)
+	limit, err := handlerhttp.ParseBoundedLimit(r.URL.Query(), 50, 100)
 	if err != nil {
 		handlerhttp.WriteStoreError(w, r, op, err)
 		return

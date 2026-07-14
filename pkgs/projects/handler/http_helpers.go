@@ -21,7 +21,7 @@ func writeStoreError(w http.ResponseWriter, r *http.Request, op string, err erro
 	switch {
 	case errors.Is(err, domain.ErrNotFound):
 		code = http.StatusNotFound
-	case errors.Is(err, domain.ErrInvalidInput):
+	case errors.Is(err, domain.ErrInvalidInput), errors.Is(err, taskcoredomain.ErrInvalidInput):
 		code = http.StatusBadRequest
 	case errors.Is(err, domain.ErrConflict):
 		code = http.StatusConflict
