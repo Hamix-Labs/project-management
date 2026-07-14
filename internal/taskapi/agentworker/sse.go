@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
-	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	taskcorecontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 )
@@ -17,10 +17,6 @@ const (
 	taskUpdatedPublishTimeout = 5 * time.Second
 	taskUpdatedQueueDepth     = 32
 )
-
-type taskGetter interface {
-	Get(ctx context.Context, id string) (*taskcoredomain.Task, error)
-}
 
 type cycleChangeSSEAdapter struct {
 	pub     realtime.Publisher
@@ -48,14 +44,14 @@ func (a *cycleChangeSSEAdapter) PublishCycleChange(taskID, cycleID string) {
 
 type taskUpdatedSSEAdapter struct {
 	pub     realtime.Publisher
-	store   taskGetter
+	store   taskcorecontract.TaskGetter
 	metrics NotifierMetrics
 
 	startOnce sync.Once
 	jobs      chan string
 }
 
-func newTaskUpdatedSSEAdapter(pub realtime.Publisher, store taskGetter, metrics NotifierMetrics) *taskUpdatedSSEAdapter {
+func newTaskUpdatedSSEAdapter(pub realtime.Publisher, store taskcorecontract.TaskGetter, metrics NotifierMetrics) *taskUpdatedSSEAdapter {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskapi.newTaskUpdatedSSEAdapter")
 	a := &taskUpdatedSSEAdapter{
 		pub:     pub,

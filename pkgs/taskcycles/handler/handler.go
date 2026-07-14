@@ -6,18 +6,12 @@ import (
 	"net/http"
 
 	taskscontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
-	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/contract"
 )
 
 // NotifyCycleChangedFunc publishes a cycle_changed SSE frame after cycle mutations.
 // When data is non-nil it is the enriched cycle detail payload; nil means hint-only.
 type NotifyCycleChangedFunc func(ctx context.Context, taskID, cycleID string, data any)
-
-// TaskReader is the narrow task lookup surface commits handlers use to preflight task existence.
-type TaskReader interface {
-	Get(ctx context.Context, id string) (*taskcoredomain.Task, error)
-}
 
 // CycleFailuresStore lists paginated cycle failure mirror rows for GET /tasks/cycle-failures.
 type CycleFailuresStore interface {
@@ -27,7 +21,7 @@ type CycleFailuresStore interface {
 // Deps wires cycle HTTP handlers into the taskapi mux.
 type Deps struct {
 	Cycles             contract.CycleStore
-	Tasks              TaskReader
+	Tasks              taskscontract.TaskGetter
 	CycleFailures      CycleFailuresStore
 	NotifyCycleChanged NotifyCycleChangedFunc
 }
@@ -35,7 +29,7 @@ type Deps struct {
 // Handler serves execution cycle, commit, and cycle-failure REST routes.
 type Handler struct {
 	cycles             contract.CycleStore
-	tasks              TaskReader
+	tasks              taskscontract.TaskGetter
 	failures           CycleFailuresStore
 	notifyCycleChanged NotifyCycleChangedFunc
 }

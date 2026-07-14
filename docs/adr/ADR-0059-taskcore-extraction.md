@@ -18,7 +18,7 @@ Harness and the SPA still import `pkgs/tasks/domain` aliases during the migratio
 
 3. **Composition shell** — `pkgs/tasks/store` embeds `*taskcore/store.Store` and retains notify/pickup-wake wiring. `pkgs/tasks/handler` registers `taskcore/handler.Register` and keeps SSE, bootstrap, writepolicy, readpolicy.
 
-4. **Contract hub** — `pkgs/tasks/contract` aliases `TaskCRUDStore`, stats, and health types from `pkgs/taskcore/contract`.
+4. **Contract hub** — `pkgs/tasks/contract` aliases `TaskCRUDStore`, stats, and health types from `pkgs/taskcore/contract`. Narrow read-only lookup is `taskcore/contract.TaskGetter` (`Get(ctx, id) (*Task, error)`); sibling BCs and agentworker alias or import it rather than redefining identical interfaces.
 
 5. **Migrate hub** — `pkgs/tasks/store/model/migrate_models.go` registers `taskcore/store/model` task tables in FK-safe order.
 

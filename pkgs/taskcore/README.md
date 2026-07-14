@@ -7,7 +7,7 @@ Task CRUD bounded context: domain types, persistence, and `/tasks*` core HTTP ro
 | Path | Role |
 | --- | --- |
 | `domain/` | `Task`, `TaskDependency`, `TaskGate`, `Status`, `Priority`, `Actor`, retry payloads |
-| `contract/` | `TaskCRUDStore`, stats types, health wire interfaces |
+| `contract/` | `TaskCRUDStore`, `TaskGetter`, stats types, health wire interfaces |
 | `store/` | GORM CRUD, ready queue, stats, dev-mirror, health; `store/model/` for task tables |
 | `handler/` | `Register(m, Deps)` — POST/GET/PATCH/DELETE `/tasks`, stats, gate, dependencies, retry |
 

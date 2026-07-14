@@ -3,7 +3,7 @@ package contract
 import (
 	"context"
 
-	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	taskcorecontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
 	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 )
 
@@ -16,7 +16,5 @@ type TaskEventStore interface {
 	AppendTaskEventResponseMessage(ctx context.Context, taskID string, seq int64, text string, by taskeventsdomain.Actor) error
 }
 
-// TaskGetter loads a task row for route guards (404 when missing).
-type TaskGetter interface {
-	Get(ctx context.Context, id string) (*taskcoredomain.Task, error)
-}
+// TaskGetter aliases the shared taskcore lookup contract (route guards).
+type TaskGetter = taskcorecontract.TaskGetter
