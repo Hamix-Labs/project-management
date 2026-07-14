@@ -218,7 +218,7 @@ func StoreErrorClientMessage(err error) string {
 		}
 		return "task id already exists"
 	case errors.Is(err, taskcoredomain.ErrInvalidInput):
-		if d := invalidInputDetail(err); d != "" {
+		if d := InvalidInputDetail(err); d != "" {
 			return d
 		}
 		return "bad request"
@@ -227,14 +227,12 @@ func StoreErrorClientMessage(err error) string {
 	}
 }
 
-func invalidInputDetail(err error) string {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handlerhttp.invalidInputDetail")
-	s := err.Error()
-	const mark = "tasks: invalid input: "
-	if i := strings.Index(s, mark); i >= 0 {
-		return strings.TrimSpace(s[i+len(mark):])
-	}
-	return ""
+// InvalidInputDetail extracts the client-facing suffix after
+// "tasks: invalid input: ". Implementation lives in apijson so gitinventory
+// can share it without importing this package (import-cycle exception).
+func InvalidInputDetail(err error) string {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handlerhttp.InvalidInputDetail")
+	return apijson.InvalidInputDetail(err, apijson.TasksInvalidInputMark)
 }
 
 func conflictDetail(err error) string {

@@ -26,6 +26,7 @@ type jsonCodedErrorBody struct {
 
 // Gitinventory cannot import pkgs/tasks/handlerhttp (handlerhttp delegates git
 // store errors back here). These thin helpers mirror handlerhttp JSON behavior.
+// InvalidInputDetail is shared via pkgs/tasks/apijson (cycle-safe).
 
 //funclogmeasure:skip category=hot-path reason="JSON helper mirroring handlerhttp; HTTP handlers emit operation traces."
 func decodeJSON(ctx context.Context, r io.Reader, dst any) error {
@@ -75,16 +76,6 @@ func writeError(w http.ResponseWriter, r *http.Request, op string, err error, co
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func invalidInputDetail(err error) string {
-	s := err.Error()
-	const mark = "tasks: invalid input: "
-	if i := strings.Index(s, mark); i >= 0 {
-		return strings.TrimSpace(s[i+len(mark):])
-	}
-	return ""
-}
-
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func conflictDetail(err error) string {
 	s := err.Error()
 	const mark = "tasks: conflict: "
@@ -123,7 +114,7 @@ func GitErrHTTP(err error) (status int, code, msg string) {
 	case errors.Is(err, taskcoredomain.ErrNotFound):
 		return http.StatusNotFound, "", "not found"
 	case errors.Is(err, taskcoredomain.ErrInvalidInput):
-		return http.StatusBadRequest, "", invalidInputDetail(err)
+		return http.StatusBadRequest, "", apijson.InvalidInputDetail(err, apijson.TasksInvalidInputMark)
 	case errors.Is(err, taskcoredomain.ErrConflict):
 		return http.StatusConflict, "", conflictDetail(err)
 	default:

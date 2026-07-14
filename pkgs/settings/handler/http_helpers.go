@@ -22,7 +22,7 @@ func writeStoreError(w http.ResponseWriter, r *http.Request, op string, err erro
 	}
 	msg := "internal server error"
 	if code != http.StatusInternalServerError {
-		if d := invalidInputDetail(err); d != "" {
+		if d := apijson.InvalidInputDetail(err, apijson.SettingsInvalidInputMark, apijson.TasksInvalidInputMark); d != "" {
 			msg = d
 		} else {
 			msg = err.Error()
@@ -70,20 +70,9 @@ func truncateRunes(s string, maxRunes int) string {
 	return handlerhttp.TruncateRunes(s, maxRunes)
 }
 
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func invalidInputDetail(err error) string {
-	s := err.Error()
-	for _, mark := range []string{"settings: invalid input: ", "tasks: invalid input: "} {
-		if i := strings.Index(s, mark); i >= 0 {
-			return strings.TrimSpace(s[i+len(mark):])
-		}
-	}
-	return ""
-}
-
 func repoErrUserMessage(err error) string {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "settings.handler.repoErrUserMessage")
-	if d := invalidInputDetail(err); d != "" {
+	if d := apijson.InvalidInputDetail(err, apijson.SettingsInvalidInputMark, apijson.TasksInvalidInputMark); d != "" {
 		return d
 	}
 	return err.Error()
