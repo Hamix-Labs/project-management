@@ -1,15 +1,15 @@
-import { useQuery } from "@tanstack/react-query";
 import { getGlobalGitRepository } from "@/api/gitGlobal";
 import { gitQueryKeys } from "@/lib/gitQueryKeys";
+import { useRepoScopedQuery } from "@/hooks/useRepoScopedQuery";
 
 export function useGlobalRepository(
   repositoryId: string,
   options?: { enabled?: boolean },
 ) {
-  const enabled = options?.enabled !== false && repositoryId.trim() !== "";
-  return useQuery({
+  return useRepoScopedQuery({
+    repositoryId,
     queryKey: gitQueryKeys.globalRepository(repositoryId),
     queryFn: ({ signal }) => getGlobalGitRepository(repositoryId, { signal }),
-    enabled,
+    options,
   });
 }

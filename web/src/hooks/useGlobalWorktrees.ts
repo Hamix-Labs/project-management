@@ -1,14 +1,15 @@
-import { useQuery } from "@tanstack/react-query";
 import { listGlobalGitWorktrees } from "@/api/gitGlobal";
 import { gitQueryKeys } from "@/lib/gitQueryKeys";
+import { useRepoScopedQuery } from "@/hooks/useRepoScopedQuery";
 
 export function useGlobalWorktrees(
   repositoryId: string,
   options?: { enabled?: boolean },
 ) {
-  return useQuery({
+  return useRepoScopedQuery({
+    repositoryId,
     queryKey: gitQueryKeys.globalWorktrees(repositoryId),
     queryFn: ({ signal }) => listGlobalGitWorktrees(repositoryId, { signal }),
-    enabled: options?.enabled !== false && repositoryId.trim() !== "",
+    options,
   });
 }
