@@ -1,6 +1,7 @@
 package handlertest
 
 import (
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -17,7 +18,7 @@ func buildHandler(st *composition.API, workspace *repo.Root) http.Handler {
 	if workspace != nil {
 		opts = append(opts, handler.WithRepoProvider(handler.NewSettingsRepoProvider(st)))
 	}
-	return handler.NewHandler(st, handler.NewSSEHub(), workspace, opts...)
+	return handler.NewHandler(st, realtime.NewSSEHub(), workspace, opts...)
 }
 
 // NewServer returns an httptest.Server wrapping handler.NewHandler with SQLite,

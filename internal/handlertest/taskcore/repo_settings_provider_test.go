@@ -2,6 +2,7 @@ package taskcore_test
 
 import (
 	"encoding/json"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -21,7 +22,7 @@ import (
 func TestHTTP_repoRoutes_requireWorktreeID(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
 	st := composition.NewAPI(db)
-	h := handler.NewHandler(st, handler.NewSSEHub(), nil, handler.WithRepoProvider(handler.NewSettingsRepoProvider(st)))
+	h := handler.NewHandler(st, realtime.NewSSEHub(), nil, handler.WithRepoProvider(handler.NewSettingsRepoProvider(st)))
 	srv := httptest.NewServer(h)
 	defer srv.Close()
 
@@ -57,7 +58,7 @@ func TestHTTP_repoRoutes_followRegisteredWorktree(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
 	st := composition.NewAPI(db)
 	worktreeID, _ := handlertest.SeedGitWorktree(t, st, dir)
-	h := handler.NewHandler(st, handler.NewSSEHub(), nil, handler.WithRepoProvider(handler.NewSettingsRepoProvider(st)))
+	h := handler.NewHandler(st, realtime.NewSSEHub(), nil, handler.WithRepoProvider(handler.NewSettingsRepoProvider(st)))
 	srv := httptest.NewServer(h)
 	defer srv.Close()
 
@@ -121,7 +122,7 @@ func ptrString(s string) *string { return &s }
 func TestHTTP_repoRoutes_unknownWorktree_returns404(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
 	st := composition.NewAPI(db)
-	h := handler.NewHandler(st, handler.NewSSEHub(), nil, handler.WithRepoProvider(handler.NewSettingsRepoProvider(st)))
+	h := handler.NewHandler(st, realtime.NewSSEHub(), nil, handler.WithRepoProvider(handler.NewSettingsRepoProvider(st)))
 	srv := httptest.NewServer(h)
 	defer srv.Close()
 

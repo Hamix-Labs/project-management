@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/middleware"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 	"io"
 	"log/slog"
 	"net/http"
@@ -30,7 +31,7 @@ func TestWithAccessLog_maxBodyOverLimit_logIncludesRequestID(t *testing.T) {
 	slog.SetDefault(slog.New(logctx.WrapSlogHandlerWithLogSequence(base, &processSeq)))
 
 	db := tasktestdb.OpenSQLite(t)
-	h := middleware.WithAccessLog(middleware.WithMaxRequestBody(handler.NewHandler(composition.NewAPI(db), handler.NewSSEHub(), nil)), calltrace.Path)
+	h := middleware.WithAccessLog(middleware.WithMaxRequestBody(handler.NewHandler(composition.NewAPI(db), realtime.NewSSEHub(), nil)), calltrace.Path)
 
 	body := `{"title":"` + strings.Repeat("h", 40) + `","priority":"medium"}`
 	if len(body) <= 50 {
@@ -70,7 +71,7 @@ func TestWithAccessLog_maxBodyOverLimit_logIncludesRequestID(t *testing.T) {
 func TestHTTP_max_body_rejects_content_length_over_limit(t *testing.T) {
 	t.Setenv("HAMIX_MAX_REQUEST_BODY_BYTES", "50")
 	db := tasktestdb.OpenSQLite(t)
-	srv := httptest.NewServer(middleware.WithMaxRequestBody(handler.NewHandler(composition.NewAPI(db), handler.NewSSEHub(), nil)))
+	srv := httptest.NewServer(middleware.WithMaxRequestBody(handler.NewHandler(composition.NewAPI(db), realtime.NewSSEHub(), nil)))
 	t.Cleanup(srv.Close)
 
 	body := `{"title":"` + strings.Repeat("h", 40) + `","priority":"medium"}`

@@ -45,12 +45,12 @@ func NewCreateServerWithStore(t *testing.T) (*httptest.Server, *composition.API)
 // SSEHub so tests can Subscribe and assert publish triggers.
 //
 //funclogmeasure:skip category=tool-required-noop reason="Test-only HTTP/SSE wiring; not part of production trace paths."
-func NewSSETriggerServer(t *testing.T) (*httptest.Server, *composition.API, *handler.SSEHub) {
+func NewSSETriggerServer(t *testing.T) (*httptest.Server, *composition.API, *realtime.SSEHub) {
 	t.Helper()
 	db := tasktestdb.OpenSQLite(t)
 	st := composition.NewAPI(db)
 	binding := htSeedGitRepo(t, st)
-	hub := handler.NewSSEHub()
+	hub := realtime.NewSSEHub()
 	srv := httptest.NewServer(handler.NewHandler(st, hub, nil, handler.WithRepoProvider(handler.NewSettingsRepoProvider(st))))
 	RegisterGitBinding(t, srv.URL, binding)
 	t.Cleanup(srv.Close)
@@ -100,6 +100,19 @@ func WithComposeChecklistForURL(baseURL, jsonBody string) string {
 	}
 	out := jsonBody[:len(jsonBody)-1] + `,"checklist_items":[{"text":"` + TestCriterionText + `"}]}`
 	return WithComposeGitBinding(baseURL, out)
+}
+
+// NewCreateServerFromStore seeds git binding on an existing store and returns
+// a create-capable httptest server registered under its URL.
+//
+//funclogmeasure:skip category=tool-required-noop reason="Test-only HTTP server; not part of production trace paths."
+func NewCreateServerFromStore(t *testing.T, st *composition.API) *httptest.Server {
+	t.Helper()
+	binding := htSeedGitRepo(t, st)
+	srv := httptest.NewServer(BoundTaskHandler(st))
+	RegisterGitBinding(t, srv.URL, binding)
+	t.Cleanup(srv.Close)
+	return srv
 }
 
 // MustCreateTask POSTs jsonBody to /tasks (with checklist + git binding) and

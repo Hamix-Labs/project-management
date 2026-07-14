@@ -2,6 +2,7 @@ package taskcore_test
 
 import (
 	"encoding/json"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -77,7 +78,7 @@ type systemHealthAgentRaw struct {
 func newSystemHealthTestServer(t *testing.T, g systemhealth.Gather) *httptest.Server {
 	t.Helper()
 	db := tasktestdb.OpenSQLite(t)
-	h := handler.NewHandler(composition.NewAPI(db), handler.NewSSEHub(), nil, handler.WithSystemHealthGatherer(g))
+	h := handler.NewHandler(composition.NewAPI(db), realtime.NewSSEHub(), nil, handler.WithSystemHealthGatherer(g))
 	return httptest.NewServer(h)
 }
 
@@ -181,7 +182,7 @@ func TestHTTP_systemHealth_populated(t *testing.T) {
 func TestHTTP_systemHealth_agentPaused(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
 	s := composition.NewAPI(db)
-	h := handler.NewHandler(s, handler.NewSSEHub(), nil, handler.WithSystemHealthGatherer(prometheus.NewPedanticRegistry()))
+	h := handler.NewHandler(s, realtime.NewSSEHub(), nil, handler.WithSystemHealthGatherer(prometheus.NewPedanticRegistry()))
 	srv := httptest.NewServer(h)
 	defer srv.Close()
 
@@ -231,7 +232,7 @@ func TestHTTP_systemHealth_methodNotAllowed(t *testing.T) {
 // loop forever (poll → invalidate → poll).
 func TestHTTP_systemHealth_doesNotPublishSSE(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
-	hub := handler.NewSSEHub()
+	hub := realtime.NewSSEHub()
 	h := handler.NewHandler(composition.NewAPI(db), hub, nil, handler.WithSystemHealthGatherer(prometheus.NewPedanticRegistry()))
 	srv := httptest.NewServer(h)
 	defer srv.Close()

@@ -5,13 +5,14 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
-	gormlogger "gorm.io/gorm/logger"
 	"log/slog"
 	"strings"
 	"time"
+
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/postgres/migrate"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+	gormlogger "gorm.io/gorm/logger"
 )
 
 const (
@@ -73,185 +74,17 @@ func Migrate(ctx context.Context, db *gorm.DB) error {
 			ParameterizedQueries:      true,
 		}),
 	})
-	if db.Dialector != nil && db.Dialector.Name() == "postgres" {
-		if err := db.WithContext(ctx).Exec(`ALTER TABLE project_context_items DROP CONSTRAINT IF EXISTS chk_project_context_kind`).Error; err != nil {
-			return fmt.Errorf("drop project context kind constraint: %w", err)
-		}
-	}
-	if err := migrateExpandFixedWorktreeBranch(ctx, db); err != nil {
-		return fmt.Errorf("expand fixed worktree branch: %w", err)
-	}
-	if err := autoMigrateStoreModels(db.WithContext(ctx)); err != nil {
-		return fmt.Errorf("automigrate store models: %w", err)
-	}
-	if err := db.WithContext(ctx).AutoMigrate(&SchemaMeta{}); err != nil {
-		return fmt.Errorf("automigrate schema meta: %w", err)
-	}
-	if err := migrateRemoveSubtasks(ctx, db); err != nil {
-		return fmt.Errorf("migrate remove subtasks: %w", err)
-	}
-	if err := migrateRemoveTaskType(ctx, db); err != nil {
-		return fmt.Errorf("migrate remove task type: %w", err)
-	}
-	if err := migrateRemoveDraftEvaluations(ctx, db); err != nil {
-		return fmt.Errorf("migrate remove draft evaluations: %w", err)
-	}
-	if err := backfillLegacyChecklistCompletions(ctx, db); err != nil {
-		return fmt.Errorf("backfill checklist completions: %w", err)
-	}
-	if err := migrateChecklistCheckToText(ctx, db); err != nil {
-		return fmt.Errorf("migrate checklist check column: %w", err)
-	}
-	if err := migrateDropPromptAutomations(ctx, db); err != nil {
-		return fmt.Errorf("migrate drop prompt automations: %w", err)
-	}
-	if err := dropLegacyGoalStepTables(ctx, db); err != nil {
-		return fmt.Errorf("drop legacy goal/step tables: %w", err)
-	}
-	if err := migrateRepoRootToGitRepository(ctx, db); err != nil {
-		return fmt.Errorf("migrate repo_root to git repository: %w", err)
-	}
-	if err := migrateDropRepoRootColumn(ctx, db); err != nil {
-		return fmt.Errorf("drop app_settings.repo_root: %w", err)
-	}
-	if err := migrateSeedWorktreeBranchTree(ctx, db); err != nil {
-		return fmt.Errorf("seed worktree-branch tree: %w", err)
-	}
-	if err := migrateContractGitTree(ctx, db); err != nil {
-		return fmt.Errorf("contract git tree: %w", err)
-	}
-	if err := migrateFixedWorktreeBranch(ctx, db); err != nil {
-		return fmt.Errorf("fixed worktree branch: %w", err)
-	}
-	if err := migrateGitCommonDir(ctx, db); err != nil {
-		return fmt.Errorf("git common dir: %w", err)
-	}
-	if err := migrateRepoDefaultProjects(ctx, db); err != nil {
-		return fmt.Errorf("repo default projects: %w", err)
-	}
-	if err := migrateComposePayloadWorktree(ctx, db); err != nil {
-		return fmt.Errorf("compose payload worktree: %w", err)
+	if err := migrate.Run(ctx, db, migrate.Deps{
+		AutoMigrateSchemaMeta: func(ctx context.Context, db *gorm.DB) error {
+			return db.WithContext(ctx).AutoMigrate(&SchemaMeta{})
+		},
+	}); err != nil {
+		return err
 	}
 	if err := RecordSchemaRevision(ctx, db, time.Now().UTC()); err != nil {
 		return fmt.Errorf("record schema revision: %w", err)
 	}
 	return nil
-}
-
-// dropLegacyGoalStepTables removes project_goals and project_steps after the
-// flat task hierarchy migration. Idempotent — safe on fresh and upgraded DBs.
-func dropLegacyGoalStepTables(ctx context.Context, db *gorm.DB) error {
-	slog.Debug("trace", "operation", "postgres.dropLegacyGoalStepTables")
-	if db.Dialector != nil && db.Dialector.Name() == "postgres" {
-		if err := db.WithContext(ctx).Exec(`DROP TABLE IF EXISTS project_steps CASCADE`).Error; err != nil {
-			return fmt.Errorf("drop project_steps: %w", err)
-		}
-		if err := db.WithContext(ctx).Exec(`DROP TABLE IF EXISTS project_goals CASCADE`).Error; err != nil {
-			return fmt.Errorf("drop project_goals: %w", err)
-		}
-		if err := db.WithContext(ctx).Exec(`ALTER TABLE tasks DROP COLUMN IF EXISTS project_step_id`).Error; err != nil {
-			return fmt.Errorf("drop tasks.project_step_id: %w", err)
-		}
-		return nil
-	}
-	if err := db.WithContext(ctx).Exec(`DROP TABLE IF EXISTS project_steps`).Error; err != nil {
-		return fmt.Errorf("drop project_steps: %w", err)
-	}
-	if err := db.WithContext(ctx).Exec(`DROP TABLE IF EXISTS project_goals`).Error; err != nil {
-		return fmt.Errorf("drop project_goals: %w", err)
-	}
-	return nil
-}
-
-// backfillLegacyChecklistCompletions marks pre-V1.1 completion rows so
-// ValidateCanMarkDoneInTx continues to accept them after evidence columns ship.
-func backfillLegacyChecklistCompletions(ctx context.Context, db *gorm.DB) error {
-	slog.Debug("trace", "operation", "postgres.backfillLegacyChecklistCompletions")
-	res := db.WithContext(ctx).Exec(`
-UPDATE task_checklist_completions
-   SET verified_by = ?
- WHERE (verified_by IS NULL OR verified_by = '')
-   AND (evidence IS NULL OR evidence = '')`,
-		string(checklistdomain.VerifierLegacy),
-	)
-	if res.Error != nil {
-		return res.Error
-	}
-	return nil
-}
-
-// migrateChecklistCheckToText merges legacy shell-check commands into criterion
-// text, then drops the check column and app_settings.check_command_timeout_seconds.
-// Postgres only; SQLite test DBs rely on AutoMigrate after the domain field removal.
-// Idempotent: skips the merge when the column was already dropped on a prior boot.
-func migrateChecklistCheckToText(ctx context.Context, db *gorm.DB) error {
-	slog.Debug("trace", "operation", "postgres.migrateChecklistCheckToText")
-	if db.Dialector == nil || db.Dialector.Name() != "postgres" {
-		return nil
-	}
-	hasCheck, err := postgresTableHasColumn(ctx, db, "task_checklist_items", "check")
-	if err != nil {
-		return fmt.Errorf("probe task_checklist_items.check: %w", err)
-	}
-	if hasCheck {
-		if err := db.WithContext(ctx).Exec(`
-UPDATE task_checklist_items
-   SET text = text || ' (verification: ' || trim("check") || ')'
- WHERE trim("check") != ''
-   AND text NOT LIKE '%(verification:%'`).Error; err != nil {
-			return fmt.Errorf("merge checklist check into text: %w", err)
-		}
-		if err := db.WithContext(ctx).Exec(`ALTER TABLE task_checklist_items DROP COLUMN IF EXISTS "check"`).Error; err != nil {
-			return fmt.Errorf("drop task_checklist_items.check: %w", err)
-		}
-	}
-	if err := db.WithContext(ctx).Exec(`ALTER TABLE app_settings DROP CONSTRAINT IF EXISTS chk_app_settings_check_timeout`).Error; err != nil {
-		return fmt.Errorf("drop app_settings check timeout constraint: %w", err)
-	}
-	if err := db.WithContext(ctx).Exec(`ALTER TABLE app_settings DROP COLUMN IF EXISTS check_command_timeout_seconds`).Error; err != nil {
-		return fmt.Errorf("drop app_settings.check_command_timeout_seconds: %w", err)
-	}
-	return nil
-}
-
-// migrateDropPromptAutomations removes the prompt-automations feature schema.
-// Postgres only; SQLite test DBs rely on AutoMigrate after domain field removal.
-// Idempotent: safe on fresh and upgraded DBs.
-func migrateDropPromptAutomations(ctx context.Context, db *gorm.DB) error {
-	slog.Debug("trace", "operation", "postgres.migrateDropPromptAutomations")
-	if db.Dialector == nil || db.Dialector.Name() != "postgres" {
-		return nil
-	}
-	if err := db.WithContext(ctx).Exec(`ALTER TABLE tasks DROP COLUMN IF EXISTS automation_selections`).Error; err != nil {
-		return fmt.Errorf("drop tasks.automation_selections: %w", err)
-	}
-	if err := db.WithContext(ctx).Exec(`DROP TABLE IF EXISTS automations`).Error; err != nil {
-		return fmt.Errorf("drop automations table: %w", err)
-	}
-	return nil
-}
-
-func postgresTableHasColumn(ctx context.Context, db *gorm.DB, table, column string) (bool, error) {
-	slog.Debug("trace", "operation", "postgres.postgresTableHasColumn", "table", table, "column", column)
-	var n int64
-	err := db.WithContext(ctx).Raw(`
-SELECT COUNT(*) FROM information_schema.columns
- WHERE table_schema = CURRENT_SCHEMA()
-   AND table_name = ?
-   AND column_name = ?`, table, column).Scan(&n).Error
-	if err != nil {
-		return false, err
-	}
-	return n > 0, nil
-}
-
-// tableHasColumnPortable checks for a column using GORM's Migrator, works
-// with both Postgres and SQLite. Used by backfill migrations that must
-// become no-ops after contract columns are dropped.
-//
-//funclogmeasure:skip category=hot-path reason="Schema introspection helper; called at boot in Migrate."
-func tableHasColumnPortable(db *gorm.DB, table, column string) bool {
-	return db.Migrator().HasColumn(table, column)
 }
 
 var errEmptyDSN = errors.New("database DSN is empty")

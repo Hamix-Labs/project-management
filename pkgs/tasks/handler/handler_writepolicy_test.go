@@ -2,8 +2,10 @@ package handler
 
 import (
 	"context"
-	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 	"testing"
+
+	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
+
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
@@ -13,11 +15,11 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 )
 
-func newWritepolicyTestHandler(t *testing.T) (*Handler, *composition.API, *SSEHub) {
+func newWritepolicyTestHandler(t *testing.T) (*Handler, *composition.API, *realtime.SSEHub) {
 	t.Helper()
 	db := tasktestdb.OpenSQLite(t)
 	st := composition.NewAPI(db)
-	hub := NewSSEHub()
+	hub := realtime.NewSSEHub()
 	return &Handler{store: st, hub: hub, repoProv: NewStaticRepoProvider(nil)}, st, hub
 }
 

@@ -3,6 +3,7 @@ package taskcore_test
 import (
 	"context"
 	"encoding/json"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -60,7 +61,7 @@ type runnerListModelsResponse struct {
 func runnersTestServer(t *testing.T) *httptest.Server {
 	t.Helper()
 	st := composition.NewAPI(tasktestdb.OpenSQLite(t))
-	hub := handler.NewSSEHub()
+	hub := realtime.NewSSEHub()
 	ctrl := &fakeAgentControl{}
 	h := handler.NewHandler(st, hub, nil, handler.WithAgentWorkerControl(ctrl))
 	srv := httptest.NewServer(h)

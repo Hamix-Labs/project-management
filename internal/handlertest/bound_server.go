@@ -137,7 +137,7 @@ func htGitBindingFromWorktree(t *testing.T, st *composition.API, worktreeID stri
 //funclogmeasure:skip category=tool-required-noop reason="Test-only handler wiring; not part of production trace paths."
 func BoundTaskHandler(st *composition.API, opts ...handler.HandlerOption) http.Handler {
 	base := []handler.HandlerOption{handler.WithRepoProvider(handler.NewSettingsRepoProvider(st))}
-	return handler.NewHandler(st, handler.NewSSEHub(), nil, append(base, opts...)...)
+	return handler.NewHandler(st, realtime.NewSSEHub(), nil, append(base, opts...)...)
 }
 
 // NewBoundServer returns an httptest.Server backed by BoundTaskHandler with a

@@ -3,6 +3,7 @@ package handlertest
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -76,7 +77,7 @@ func TestHTTP_health_ready_ok(t *testing.T) {
 func TestHTTP_health_ready_git_unavailable(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
 	st := composition.NewAPI(db)
-	h := handler.NewHandler(st, handler.NewSSEHub(), nil,
+	h := handler.NewHandler(st, realtime.NewSSEHub(), nil,
 		handler.WithPathMap(&handler.PathMap{}),
 		handler.WithGitAvailable(false),
 	)
@@ -105,7 +106,7 @@ func TestHTTP_health_ready_git_unavailable(t *testing.T) {
 
 func TestHTTP_metrics_scrape(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
-	api := middleware.WithRecovery(middleware.WithHTTPMetrics(middleware.WithAccessLog(handler.NewHandler(composition.NewAPI(db), handler.NewSSEHub(), nil), calltrace.Path)))
+	api := middleware.WithRecovery(middleware.WithHTTPMetrics(middleware.WithAccessLog(handler.NewHandler(composition.NewAPI(db), realtime.NewSSEHub(), nil), calltrace.Path)))
 	mux := http.NewServeMux()
 	mux.Handle("GET /metrics", handler.WrapPrometheusHandler(promhttp.Handler()))
 	mux.Handle("/", api)
@@ -139,7 +140,7 @@ func TestHTTP_metrics_scrape(t *testing.T) {
 func TestHTTP_health_ready_degraded_when_db_closed(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
 	st := composition.NewAPI(db)
-	srv := httptest.NewServer(handler.NewHandler(st, handler.NewSSEHub(), nil))
+	srv := httptest.NewServer(handler.NewHandler(st, realtime.NewSSEHub(), nil))
 	defer srv.Close()
 
 	sqlDB, err := db.DB()

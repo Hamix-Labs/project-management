@@ -1,0 +1,374 @@
+package sse_test
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"testing"
+	"time"
+
+	"github.com/AlexsanderHamir/Hamix/internal/handlertest"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+)
+
+func TestHTTP_SSE_triggerSurface(t *testing.T) {
+	t.Run("POST /tasks (no parent) emits task_created", func(t *testing.T) {
+		srv, _, hub := handlertest.NewSSETriggerServer(t)
+		defer srv.Close()
+		ch, cancel := hub.Subscribe()
+		defer cancel()
+
+		created := postTaskJSON(t, srv, `{"title":"root","priority":"medium"}`, http.StatusCreated)
+		got := handlertest.SummarizeSSEEvents(handlertest.DrainSSE(t, ch, 1, 2*time.Second))
+		handlertest.MustEqualEvents(t, "POST /tasks", got, []string{"task_created:" + created.ID})
+	})
+
+	t.Run("PATCH /tasks/{id} emits task_updated", func(t *testing.T) {
+		srv, _, hub := handlertest.NewSSETriggerServer(t)
+		defer srv.Close()
+		task := postTaskJSON(t, srv, `{"title":"a","priority":"medium"}`, http.StatusCreated)
+		ch, cancel := hub.Subscribe()
+		defer cancel()
+
+		patchTaskJSON(t, srv, task.ID, `{"title":"b"}`, http.StatusOK)
+		got := handlertest.SummarizeSSEEvents(handlertest.DrainSSE(t, ch, 1, 2*time.Second))
+		handlertest.MustEqualEvents(t, "PATCH /tasks/{id}", got, []string{"task_updated:" + task.ID})
+	})
+
+	t.Run("POST /tasks/{id}/checklist/items emits task_updated", func(t *testing.T) {
+		srv, _, hub := handlertest.NewSSETriggerServer(t)
+		defer srv.Close()
+		task := postTaskJSON(t, srv, `{"title":"a","priority":"medium"}`, http.StatusCreated)
+		ch, cancel := hub.Subscribe()
+		defer cancel()
+
+		mustDoJSON(t, http.MethodPost, srv.URL+"/tasks/"+task.ID+"/checklist/items",
+			`{"text":"alpha"}`, "", http.StatusCreated)
+		got := handlertest.SummarizeSSEEvents(handlertest.DrainSSE(t, ch, 1, 2*time.Second))
+		handlertest.MustEqualEvents(t, "POST /tasks/{id}/checklist/items", got, []string{"task_updated:" + task.ID})
+	})
+
+	t.Run("PATCH /tasks/{id}/checklist/items/{itemId} emits task_updated", func(t *testing.T) {
+		srv, st, hub := handlertest.NewSSETriggerServer(t)
+		defer srv.Close()
+		task := postTaskJSON(t, srv, `{"title":"a","priority":"medium"}`, http.StatusCreated)
+		it, err := st.AddChecklistItem(context.Background(), task.ID, "alpha", nil, taskcoredomain.ActorUser)
+		if err != nil {
+			t.Fatal(err)
+		}
+		ch, cancel := hub.Subscribe()
+		defer cancel()
+
+		mustDoJSON(t, http.MethodPatch, srv.URL+"/tasks/"+task.ID+"/checklist/items/"+it.ID,
+			`{"text":"beta"}`, "", http.StatusOK)
+		got := handlertest.SummarizeSSEEvents(handlertest.DrainSSE(t, ch, 1, 2*time.Second))
+		handlertest.MustEqualEvents(t, "PATCH /tasks/{id}/checklist/items/{itemId}", got, []string{"task_updated:" + task.ID})
+	})
+
+	t.Run("DELETE /tasks/{id}/checklist/items/{itemId} emits task_updated", func(t *testing.T) {
+		srv, st, hub := handlertest.NewSSETriggerServer(t)
+		defer srv.Close()
+		task := postTaskJSON(t, srv, `{"title":"a","priority":"medium"}`, http.StatusCreated)
+		it, err := st.AddChecklistItem(context.Background(), task.ID, "alpha", nil, taskcoredomain.ActorUser)
+		if err != nil {
+			t.Fatal(err)
+		}
+		ch, cancel := hub.Subscribe()
+		defer cancel()
+
+		mustDoJSON(t, http.MethodDelete, srv.URL+"/tasks/"+task.ID+"/checklist/items/"+it.ID,
+			"", "", http.StatusNoContent)
+		got := handlertest.SummarizeSSEEvents(handlertest.DrainSSE(t, ch, 1, 2*time.Second))
+		handlertest.MustEqualEvents(t, "DELETE /tasks/{id}/checklist/items/{itemId}", got, []string{"task_updated:" + task.ID})
+	})
+
+	t.Run("PATCH /tasks/{id}/events/{seq} user response emits task_event_changed", func(t *testing.T) {
+		srv, st, hub := handlertest.NewSSETriggerServer(t)
+		defer srv.Close()
+		task := postTaskJSON(t, srv, `{"title":"a","priority":"medium"}`, http.StatusCreated)
+		approvalSeq := handlertest.AppendApprovalRequestedEvent(t, st, context.Background(), task.ID)
+		ch, cancel := hub.Subscribe()
+		defer cancel()
+
+		mustDoJSON(t, http.MethodPatch, srv.URL+"/tasks/"+task.ID+"/events/"+handlertest.FormatEventSeq(approvalSeq),
+			`{"user_response":"ok"}`, "agent", http.StatusOK)
+		got := handlertest.SummarizeSSEEvents(handlertest.DrainSSE(t, ch, 1, 2*time.Second))
+		handlertest.MustEqualEvents(t, "PATCH /tasks/{id}/events/{seq}", got, []string{fmt.Sprintf("task_event_changed:%s/%d", task.ID, approvalSeq)})
+	})
+
+	t.Run("DELETE /tasks/{id} (no parent) emits task_deleted", func(t *testing.T) {
+		srv, _, hub := handlertest.NewSSETriggerServer(t)
+		defer srv.Close()
+		task := postTaskJSON(t, srv, `{"title":"a","priority":"medium"}`, http.StatusCreated)
+		ch, cancel := hub.Subscribe()
+		defer cancel()
+
+		mustDoJSON(t, http.MethodDelete, srv.URL+"/tasks/"+task.ID, "", "", http.StatusNoContent)
+		got := handlertest.SummarizeSSEEvents(handlertest.DrainSSE(t, ch, 1, 2*time.Second))
+		handlertest.MustEqualEvents(t, "DELETE /tasks/{id}", got, []string{"task_deleted:" + task.ID})
+	})
+
+	t.Run("POST /tasks/{id}/cycles emits task_cycle_changed", func(t *testing.T) {
+		srv, _, hub := handlertest.NewSSETriggerServer(t)
+		defer srv.Close()
+		task := postTaskJSON(t, srv, `{"title":"a","priority":"medium"}`, http.StatusCreated)
+		ch, cancel := hub.Subscribe()
+		defer cancel()
+
+		cycleID := postCycleJSON(t, srv, task.ID, `{}`, http.StatusCreated)
+		got := handlertest.SummarizeSSEEvents(handlertest.DrainSSE(t, ch, 1, 2*time.Second))
+		handlertest.MustEqualEvents(t, "POST /tasks/{id}/cycles", got, []string{
+			"task_cycle_changed:" + task.ID + "/" + cycleID,
+		})
+	})
+
+	t.Run("PATCH /tasks/{id}/cycles/{cycleId} emits task_cycle_changed", func(t *testing.T) {
+		srv, _, hub := handlertest.NewSSETriggerServer(t)
+		defer srv.Close()
+		task := postTaskJSON(t, srv, `{"title":"a","priority":"medium"}`, http.StatusCreated)
+		cycleID := postCycleJSON(t, srv, task.ID, `{}`, http.StatusCreated)
+		ch, cancel := hub.Subscribe()
+		defer cancel()
+
+		mustDoJSON(t, http.MethodPatch, srv.URL+"/tasks/"+task.ID+"/cycles/"+cycleID,
+			`{"status":"succeeded"}`, "agent", http.StatusOK)
+		got := handlertest.SummarizeSSEEvents(handlertest.DrainSSE(t, ch, 1, 2*time.Second))
+		handlertest.MustEqualEvents(t, "PATCH /tasks/{id}/cycles/{cycleId}", got, []string{
+			"task_cycle_changed:" + task.ID + "/" + cycleID,
+		})
+	})
+
+	t.Run("POST /tasks/{id}/cycles/{cycleId}/phases emits task_cycle_changed", func(t *testing.T) {
+		srv, _, hub := handlertest.NewSSETriggerServer(t)
+		defer srv.Close()
+		task := postTaskJSON(t, srv, `{"title":"a","priority":"medium"}`, http.StatusCreated)
+		cycleID := postCycleJSON(t, srv, task.ID, `{}`, http.StatusCreated)
+		ch, cancel := hub.Subscribe()
+		defer cancel()
+
+		mustDoJSON(t, http.MethodPost, srv.URL+"/tasks/"+task.ID+"/cycles/"+cycleID+"/phases",
+			`{"phase":"execute"}`, "agent", http.StatusCreated)
+		got := handlertest.SummarizeSSEEvents(handlertest.DrainSSE(t, ch, 1, 2*time.Second))
+		handlertest.MustEqualEvents(t, "POST /tasks/{id}/cycles/{cycleId}/phases", got, []string{
+			"task_cycle_changed:" + task.ID + "/" + cycleID,
+		})
+	})
+
+	t.Run("PATCH /tasks/{id}/cycles/{cycleId}/phases/{phaseSeq} emits task_cycle_changed", func(t *testing.T) {
+		srv, _, hub := handlertest.NewSSETriggerServer(t)
+		defer srv.Close()
+		task := postTaskJSON(t, srv, `{"title":"a","priority":"medium"}`, http.StatusCreated)
+		cycleID := postCycleJSON(t, srv, task.ID, `{}`, http.StatusCreated)
+		mustDoJSON(t, http.MethodPost, srv.URL+"/tasks/"+task.ID+"/cycles/"+cycleID+"/phases",
+			`{"phase":"execute"}`, "agent", http.StatusCreated)
+		ch, cancel := hub.Subscribe()
+		defer cancel()
+
+		mustDoJSON(t, http.MethodPatch, srv.URL+"/tasks/"+task.ID+"/cycles/"+cycleID+"/phases/1",
+			`{"status":"succeeded"}`, "agent", http.StatusOK)
+		got := handlertest.SummarizeSSEEvents(handlertest.DrainSSE(t, ch, 1, 2*time.Second))
+		handlertest.MustEqualEvents(t, "PATCH /tasks/{id}/cycles/{cycleId}/phases/{phaseSeq}", got, []string{
+			"task_cycle_changed:" + task.ID + "/" + cycleID,
+		})
+	})
+
+	t.Run("PATCH /settings emits settings_changed", func(t *testing.T) {
+		// Settings write surface — the supervisor-aware fixture is
+		// required because PATCH /settings without WithAgentWorkerControl
+		// returns 503 (handler.go::NewHandler "GET /settings still works
+		// without it" contract). handlertest.NewSettingsTestServer wires fakeAgentControl
+		// so the Reload call succeeds and the publish below fires. The
+		// per-route pin in handler_http_settings_contract_test.go
+		// (TestHTTP_PatchSettings_persistsAndReloads) asserts the same
+		// settings_changed:[empty-id] event; this row is the cross-route
+		// trigger surface guarantee that catches a global middleware
+		// regression that would route PATCH /settings around the publish.
+		// Both settings_changed and agent_run_cancelled are id-less per
+		// docs/api.md "id-less notifications" — summarize formats them
+		// as "type:" with an empty ID portion (the same format the
+		// per-route settings test uses on the want-side).
+		srv, _, hub, _ := handlertest.NewSettingsTestServer(t)
+		ch, cancel := hub.Subscribe()
+		defer cancel()
+
+		handlertest.MustSettingsHTTP(t, http.MethodPatch, srv.URL+"/settings",
+			`{"cursor_bin":"/tmp/sse-trigger"}`, http.StatusOK)
+		got := handlertest.SummarizeSSEEvents(handlertest.DrainSSE(t, ch, 1, 2*time.Second))
+		handlertest.MustEqualEvents(t, "PATCH /settings", got, []string{"settings_changed:"})
+	})
+
+	t.Run("POST /settings/cancel-current-run emits agent_run_cancelled when a run was cancelled", func(t *testing.T) {
+		// Mirrors the PATCH /settings rationale above — the per-route pin
+		// in handler_http_settings_contract_test.go
+		// (TestHTTP_CancelCurrentRun_publishesSSEWhenCancelled) asserts the
+		// same event; this is the cross-route trigger surface guarantee.
+		// The negative branch (no run to cancel) is covered in the
+		// "non-publishing write routes" subtest below alongside probe-cursor
+		// and probe-cursor so all documented non-publishing settings paths
+		// settings paths share one drain-and-assert-empty fixture.
+		srv, _, hub, ctrl := handlertest.NewSettingsTestServer(t)
+		ctrl.CancelResult.Store(true)
+		ch, cancel := hub.Subscribe()
+		defer cancel()
+
+		handlertest.MustSettingsHTTP(t, http.MethodPost, srv.URL+"/settings/cancel-current-run",
+			"", http.StatusOK)
+		got := handlertest.SummarizeSSEEvents(handlertest.DrainSSE(t, ch, 1, 2*time.Second))
+		handlertest.MustEqualEvents(t, "POST /settings/cancel-current-run", got,
+			[]string{"agent_run_cancelled:"})
+	})
+
+	t.Run("non-publishing write routes", func(t *testing.T) {
+		// Cross-route pin for the documented "write but never publish"
+		// routes. docs/api.md trigger table omits these by design (the
+		// trailing prose at the bottom of docs/api.md spells it out for
+		// /task-drafts/* and POST /settings/probe-cursor). Per-route SSE
+		// pins exist for each in their own contract files — this row
+		// catches a global middleware regression that would route around
+		// the per-route silence:
+		//
+		//   POST /settings/probe-cursor       — tested per-route in
+		//                                       handler_http_settings_contract_test.go
+		//                                       (no SSE assertion until this row)
+		//   POST /settings/cancel-current-run — TestHTTP_CancelCurrentRun_noopReturnsFalseAndNoSSE
+		//                                       (per-route, ctrl.cancelResult=false branch)
+		//
+		// All three hit the same single subscription; we drain once with
+		// want=1 and assert zero events. Mirrors the read-only block's
+		// drain pattern. Probe-cursor exercises both happy (probeVersion
+		// set) and failure (probeErr set) branches because the failure
+		// branch returns 200 with ok=false (not a 4xx/5xx — see
+		// TestHTTP_ProbeCursor_failureReturnsOKfalseNot500); a future
+		// regression that fired SSE only on the failure response path
+		// would slip past a happy-only assertion.
+		srv, _, hub, ctrl := handlertest.NewSettingsTestServer(t)
+		ch, cancel := hub.Subscribe()
+		defer cancel()
+
+		v := "cursor 1.0"
+		ctrl.ProbeVersion.Store(&v)
+		handlertest.MustSettingsHTTP(t, http.MethodPost, srv.URL+"/settings/probe-cursor",
+			`{"runner":"cursor","binary_path":"/usr/bin/cursor"}`, http.StatusOK)
+
+		probeErr := errors.New("synthetic probe failure")
+		ctrl.ProbeErr.Store(&probeErr)
+		handlertest.MustSettingsHTTP(t, http.MethodPost, srv.URL+"/settings/probe-cursor",
+			`{"runner":"cursor","binary_path":"/usr/bin/cursor"}`, http.StatusOK)
+
+		ctrl.CancelResult.Store(false)
+		handlertest.MustSettingsHTTP(t, http.MethodPost, srv.URL+"/settings/cancel-current-run",
+			"", http.StatusOK)
+
+		got := handlertest.SummarizeSSEEvents(handlertest.DrainSSE(t, ch, 1, 200*time.Millisecond))
+		if len(got) != 0 {
+			t.Fatalf("non-publishing write routes published unexpectedly: %v", got)
+		}
+	})
+
+	t.Run("read-only routes do not publish", func(t *testing.T) {
+		srv, _, hub := handlertest.NewSSETriggerServer(t)
+		defer srv.Close()
+		task := postTaskJSON(t, srv, `{"title":"a","priority":"medium"}`, http.StatusCreated)
+		cycleID := postCycleJSON(t, srv, task.ID, `{}`, http.StatusCreated)
+		ch, cancel := hub.Subscribe()
+		defer cancel()
+
+		readOnly := []struct {
+			method, url string
+		}{
+			{http.MethodGet, srv.URL + "/tasks"},
+			{http.MethodGet, srv.URL + "/tasks/stats"},
+			{http.MethodGet, srv.URL + "/tasks/" + task.ID},
+			{http.MethodGet, srv.URL + "/tasks/" + task.ID + "/checklist"},
+			{http.MethodGet, srv.URL + "/tasks/" + task.ID + "/events"},
+			{http.MethodGet, srv.URL + "/tasks/" + task.ID + "/cycles"},
+			{http.MethodGet, srv.URL + "/tasks/" + task.ID + "/cycles/" + cycleID},
+			// Session 30 keyset pagination variants on GET /tasks/{id}/cycles —
+			// pin the cursor branch follows the same read-only contract as
+			// the un-cursored branch on both happy (?before_attempt_seq=2)
+			// and 400-validation paths (?before_attempt_seq=0, =abc, =-1).
+			// A future refactor that wired any side effect into the cursor
+			// branch (eg. recording the cursor for replay) would silently
+			// publish without breaking any other test before this row.
+			{http.MethodGet, srv.URL + "/tasks/" + task.ID + "/cycles?before_attempt_seq=2"},
+			{http.MethodGet, srv.URL + "/tasks/" + task.ID + "/cycles?before_attempt_seq=0"},
+			{http.MethodGet, srv.URL + "/tasks/" + task.ID + "/cycles?before_attempt_seq=abc"},
+			{http.MethodGet, srv.URL + "/tasks/" + task.ID + "/cycles?before_attempt_seq=-1"},
+			// GET /settings is the read-only side of the app-settings surface
+			// added by the agent worker UI plan. handler_settings.go::getSettings
+			// is a pure DB read; the SSE channel for settings is fed by the
+			// PATCH /settings handler (settings_changed event). A future
+			// refactor that mistakenly fired settings_changed on every GET
+			// (eg. as part of a "subscribe to current value" feature) would
+			// silently flood subscribers without breaking any other test.
+			// handlertest.NewSSETriggerServer wires the route via NewHandler(_, _, nil) —
+			// the agent worker arg is nil but GET /settings tolerates that
+			// per the explicit "GET /settings still works without it" contract
+			// in handler.go::NewHandler.
+			{http.MethodGet, srv.URL + "/settings"},
+			// Health probes — no business logic but the routes are bound on
+			// the same mux that publishes SSE, so a future global middleware
+			// that fired SSE on every request (audit shim, request counter
+			// notifier, etc.) would catch these without breaking any other
+			// test before this row.
+			{http.MethodGet, srv.URL + "/health"},
+			{http.MethodGet, srv.URL + "/health/live"},
+			{http.MethodGet, srv.URL + "/health/ready"},
+			// GET /system/health — operator-facing observability snapshot.
+			// Pure read over the in-process Prometheus registry; must not
+			// publish or the SPA's react-query SSE invalidation would
+			// loop (poll → invalidate → poll).
+			{http.MethodGet, srv.URL + "/system/health"},
+			// GET /tasks/{id}/events/{seq} (single-event get) — Session 21
+			// pinned this route's read-only invariant inside its own
+			// contract file (TestHTTP_getEvent_neverPublishesSSE +
+			// TestHTTP_getEvent_errorPathsNeverPublish), but the cross-route
+			// table never exercised it. Adding both happy (seq=1, the
+			// task_created event from postTaskJSON above) and error (seq=0,
+			// invalid; seq=999, not-found) variants here protects the same
+			// invariant against a global middleware regression that the
+			// per-route file would not catch.
+			{http.MethodGet, srv.URL + "/tasks/" + task.ID + "/events/1"},
+			{http.MethodGet, srv.URL + "/tasks/" + task.ID + "/events/0"},
+			{http.MethodGet, srv.URL + "/tasks/" + task.ID + "/events/999"},
+			// GET /task-drafts (empty list — no drafts seeded). The list
+			// route is read-only and the SSE channel for drafts is fed by
+			// POST/DELETE /task-drafts. A future cache-warming refactor
+			// that re-emitted draft_saved on list could silently leak.
+			{http.MethodGet, srv.URL + "/task-drafts"},
+			// GET /repo/* routes return 409 here because handlertest.NewSSETriggerServer
+			// does not configure a repo root (RepoProvider yields
+			// ErrRepoRootNotConfigured). Treat the 409 path as the
+			// read-only-equivalent: a route that fails before reaching any
+			// store mutation must also stay silent on SSE. The 409 wire
+			// shape itself is pinned by handler_http_repo_settings_provider_test.go;
+			// what this row protects against is a future middleware that
+			// would publish on the failure path.
+			{http.MethodGet, srv.URL + "/repo/search?q=foo"},
+			{http.MethodGet, srv.URL + "/repo/file?path=README.md"},
+			{http.MethodGet, srv.URL + "/repo/validate-range?path=README.md&start=1&end=1"},
+			{http.MethodGet, srv.URL + "/repo/diff?sha=abc1234"},
+		}
+		for _, r := range readOnly {
+			req, err := http.NewRequest(r.method, r.url, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			res, err := http.DefaultClient.Do(req)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, _ = io.Copy(io.Discard, res.Body)
+			_ = res.Body.Close()
+		}
+		got := handlertest.SummarizeSSEEvents(handlertest.DrainSSE(t, ch, 1, 200*time.Millisecond))
+		if len(got) != 0 {
+			t.Fatalf("read-only routes published unexpectedly: %v", got)
+		}
+	})
+}
+
+// postCycleJSON issues POST /tasks/{taskID}/cycles with X-Actor: agent and
+// returns the assigned cycle id. Mirrors postTaskJSON for the cycles surface.

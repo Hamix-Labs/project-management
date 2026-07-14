@@ -33,7 +33,10 @@ import (
 //
 // Rev 9 (ADR-0079): delete pkgs/tasks/store facade; postgres.Migrate calls
 // BC store models via migrate_models.go. No SQL or post-AutoMigrate change.
-const SchemaRevision = 9
+//
+// Rev 10: peel one-shot migrate steps into pkgs/tasks/postgres/migrate.
+// No SQL or post-AutoMigrate behavior change.
+const SchemaRevision = 10
 
 const schemaMetaRowID = 1
 

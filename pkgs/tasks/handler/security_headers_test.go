@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -13,7 +14,7 @@ import (
 
 func TestStreamEvents_sets_security_headers(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
-	h := &Handler{store: composition.NewAPI(db), hub: NewSSEHub(), repoProv: NewStaticRepoProvider(nil)}
+	h := &Handler{store: composition.NewAPI(db), hub: realtime.NewSSEHub(), repoProv: NewStaticRepoProvider(nil)}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	req := httptest.NewRequest(http.MethodGet, "/events", nil).WithContext(ctx)

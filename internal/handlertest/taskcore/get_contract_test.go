@@ -2,6 +2,7 @@ package taskcore_test
 
 import (
 	"encoding/json"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -80,7 +81,7 @@ func TestHTTP_getTask_pathSegmentGuard(t *testing.T) {
 func TestHTTP_getTask_unknownIDIs404(t *testing.T) {
 	st := storefake.NewHandlerStore()
 	st.FailGet(taskcoredomain.ErrNotFound)
-	srv := httptest.NewServer(handler.NewHandler(st, handler.NewSSEHub(), nil))
+	srv := httptest.NewServer(handler.NewHandler(st, realtime.NewSSEHub(), nil))
 	t.Cleanup(srv.Close)
 
 	taskID := "11111111-1111-4111-8111-111111111111"

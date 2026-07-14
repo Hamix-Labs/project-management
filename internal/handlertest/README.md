@@ -29,7 +29,7 @@ Additional helpers used by BC contract themes under this package:
 | Symbol | Purpose |
 |--------|---------|
 | `NewCreateServer` / `NewCreateServerWithStore` | Bound create-capable server (git + checklist defaults). |
-| `NewSSETriggerServer` | Same wiring with an explicit `*handler.SSEHub` for publish pins. |
+| `NewSSETriggerServer` | Same wiring with an explicit `*realtime.SSEHub` for publish pins. |
 | `WithComposeChecklistForURL` | Injects checklist + `repository_id`/`project_id`/`worktree_id` for compose payloads. |
 | `MustCreateTask` / `MustCreateChecklistTask` | POST `/tasks` helpers for contract setup. |
 | `MustEqualEvents` / `MustHaveTaskUpdatedData` | SSE publish assertions. |
@@ -44,3 +44,9 @@ Additional helpers used by BC contract themes under this package:
 | Taskcore | [`taskcore/`](./taskcore/) | Task CRUD + bootstrap/projects/repo/runners/system health/git binding |
 
 Also see [`http_helpers.go`](./http_helpers.go) for create/patch/SSE/event-seed helpers used across themes.
+
+## Theme packages
+
+| Package | Role |
+| --- | --- |
+| sse/ (package sse_test) | Blackbox SSE HTTP suites drained from pkgs/tasks/handler |

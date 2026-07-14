@@ -19,6 +19,6 @@
 //	if err != nil { ... }
 //	if err := postgres.Migrate(ctx, db); err != nil { ... }
 //	s := composition.NewAPI(db)
-//	hub := handler.NewSSEHub()
+//	hub := realtime.NewSSEHub()
 //	http.Handler = handler.NewHandler(s, hub, repoRootOrNil)
 package tasks

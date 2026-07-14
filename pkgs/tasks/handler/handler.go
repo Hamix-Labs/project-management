@@ -10,6 +10,7 @@ import (
 	settingscontract "github.com/AlexsanderHamir/Hamix/pkgs/settings/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/postgres"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 )
 
 // Task routes: see README.md (handler_task_*.go). /repo: pkgs/repo/handler. SSE: sse.go.
@@ -28,7 +29,7 @@ type AgentWorkerControl = settingscontract.AgentWorkerControl
 // is not usable.
 type Handler struct {
 	store          HandlerStore
-	hub            *SSEHub
+	hub            *realtime.SSEHub
 	repoProv       RepoProvider
 	agent          AgentWorkerControl
 	systemHealthFn systemHealthSnapshotter
@@ -49,7 +50,7 @@ type Handler struct {
 // agent is optional: when nil, settings-control endpoints (PATCH /settings,
 // POST /settings/probe-cursor, POST /settings/cancel-current-run) respond 503.
 // GET /settings still works without it (read-only).
-func NewHandler(s HandlerStore, hub *SSEHub, rep *repo.Root, opts ...HandlerOption) http.Handler {
+func NewHandler(s HandlerStore, hub *realtime.SSEHub, rep *repo.Root, opts ...HandlerOption) http.Handler {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.NewHandler")
 	_, gitErr := exec.LookPath("git")
 	h := &Handler{
