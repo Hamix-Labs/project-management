@@ -1,6 +1,8 @@
 package agentworker_test
 
 import (
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
+
 	"context"
 	"errors"
 	settingscontract "github.com/AlexsanderHamir/Hamix/pkgs/settings/contract"
@@ -17,13 +19,12 @@ import (
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler"
 )
 
 type supervisorTestRig struct {
 	store *composition.API
 	queue *agents.MemoryQueue
-	hub   *handler.SSEHub
+	hub   *realtime.SSEHub
 	sup   *agentworker.Supervisor
 }
 
@@ -32,7 +33,7 @@ func newSupervisorTestRig(t *testing.T, ctx context.Context, probeFn func(ctx co
 	st := composition.NewAPI(tasktestdb.OpenSQLite(t))
 	q := agents.NewMemoryQueue(8)
 	st.SetReadyTaskNotifier(q)
-	hub := handler.NewSSEHub()
+	hub := realtime.NewSSEHub()
 	sup := agentworker.New(ctx, st, q, hub)
 	if probeFn != nil {
 		sup.SetProbeForTest(probeFn)

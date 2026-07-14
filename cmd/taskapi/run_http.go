@@ -27,7 +27,7 @@ import (
 // graceful Serve+Shutdown loop. Split off run_helpers.go per
 // backend/go/layout.mdc (split by responsibility).
 
-func mountTaskAPIMux(ctx context.Context, api http.Handler, hub *handler.SSEHub, taskStore *composition.API, agentQueue *agents.MemoryQueue) *http.ServeMux {
+func mountTaskAPIMux(ctx context.Context, api http.Handler, hub *realtime.SSEHub, taskStore *composition.API, agentQueue *agents.MemoryQueue) *http.ServeMux {
 	taskapi.RegisterDefaultPrometheusCollectors()
 	taskapi.RegisterBuildInfoGauge()
 	taskapi.RegisterAgentQueueMetrics(agentQueue)
@@ -42,7 +42,7 @@ func mountTaskAPIMux(ctx context.Context, api http.Handler, hub *handler.SSEHub,
 	return mux
 }
 
-func maybeRunSSEDevTicker(ctx context.Context, taskStore *composition.API, hub *handler.SSEHub) {
+func maybeRunSSEDevTicker(ctx context.Context, taskStore *composition.API, hub *realtime.SSEHub) {
 	d := taskapiconfig.SSETestTickerInterval()
 	if d < time.Second {
 		slog.Info("sse dev env on, ticker off", "cmd", cmdName, "operation", "taskapi.sse_dev",

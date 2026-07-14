@@ -13,7 +13,7 @@ After Tier 4 BC extraction, `cmd/taskapi` and `internal/taskapi` remain the perm
 1. **`cmd/taskapi`** wires config, Postgres, `*store.Store`, agent worker supervisor, and HTTP listen/shutdown only.
 2. **`internal/taskapi`** owns `NewHTTPHandler` — middleware stack + `handler.NewHandler` options (repo provider, schema drift, agent control).
 3. **`pkgs/tasks/handler`** is the REST/SSE mux; routes live in `handler_routes.go` and BC-delegating handlers — not a growing god package.
-4. Realtime (SSE hub) stays in `pkgs/tasks/handler` for Tier 5; optional `pkgs/tasks/realtime` extract deferred until a second consumer exists.
+4. Realtime SSE hub lives in `pkgs/tasks/realtime` ([ADR-0080](ADR-0080-sse-hub-realtime-ownership.md)); handler keeps HTTP stream + notify glue.
 
 ## Consequences
 
@@ -24,7 +24,7 @@ After Tier 4 BC extraction, `cmd/taskapi` and `internal/taskapi` remain the perm
 
 ### Negative / Trade-offs
 
-- SSE hub still colocated with HTTP handlers until realtime extract PR.
+- Composition shell ownership matches post–Tier 4 layout; SSE hub ownership is documented in ADR-0080.
 
 ## See also
 

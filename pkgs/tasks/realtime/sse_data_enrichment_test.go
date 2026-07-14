@@ -1,8 +1,7 @@
-package handler
+package realtime
 
 import (
 	"encoding/json"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 	"testing"
 	"time"
 )
@@ -18,7 +17,7 @@ func TestSSEHub_Publish_carries_data_payload(t *testing.T) {
 	}
 	tree := fakeTaskTree{ID: "abc", Title: "renamed"}
 
-	h.Publish(realtime.Event{Type: realtime.TaskUpdated, ID: "abc", Data: tree})
+	h.Publish(Event{Type: TaskUpdated, ID: "abc", Data: tree})
 
 	select {
 	case line := <-ch:
@@ -51,8 +50,8 @@ func TestSSEHub_DataBearingEvents_are_not_coalesced(t *testing.T) {
 	ch, cancel := h.Subscribe()
 	defer cancel()
 
-	h.Publish(realtime.Event{Type: realtime.TaskUpdated, ID: "abc", Data: map[string]string{"v": "1"}})
-	h.Publish(realtime.Event{Type: realtime.TaskUpdated, ID: "abc", Data: map[string]string{"v": "2"}})
+	h.Publish(Event{Type: TaskUpdated, ID: "abc", Data: map[string]string{"v": "1"}})
+	h.Publish(Event{Type: TaskUpdated, ID: "abc", Data: map[string]string{"v": "2"}})
 
 	received := 0
 	deadline := time.After(500 * time.Millisecond)
@@ -76,8 +75,8 @@ func TestSSEHub_HintEvents_still_coalesce_within_window(t *testing.T) {
 	ch, cancel := h.Subscribe()
 	defer cancel()
 
-	h.Publish(realtime.Event{Type: realtime.TaskUpdated, ID: "abc"})
-	h.Publish(realtime.Event{Type: realtime.TaskUpdated, ID: "abc"})
+	h.Publish(Event{Type: TaskUpdated, ID: "abc"})
+	h.Publish(Event{Type: TaskUpdated, ID: "abc"})
 
 	received := 0
 	deadline := time.After(150 * time.Millisecond)

@@ -1,4 +1,4 @@
-package handler
+package realtime
 
 import (
 	"encoding/json"
@@ -9,19 +9,18 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/middleware"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 )
 
-type bufferedEvent struct {
-	id   uint64
-	line string
-	at   time.Time
+type BufferedEvent struct {
+	ID   uint64
+	Line string
+	At   time.Time
 }
 
-type subscriber struct {
-	ch     chan bufferedEvent
-	legacy chan string
-	cancel chan struct{}
+type Subscriber struct {
+	Events    chan BufferedEvent
+	legacy    chan string
+	Cancelled chan struct{}
 }
 
 // SSEHub fans out task change notifications to all connected SSE clients.
@@ -45,8 +44,8 @@ type subscriber struct {
 // coalesced.
 type SSEHub struct {
 	mu              sync.Mutex
-	subs            map[*subscriber]struct{}
-	ring            []bufferedEvent
+	subs            map[*Subscriber]struct{}
+	ring            []BufferedEvent
 	ringHead        int
 	ringFilled      bool
 	nextID          atomic.Uint64
@@ -92,7 +91,7 @@ func DefaultSSEHubOptions() SSEHubOptions {
 // `NewSSEHubWith(DefaultSSEHubOptions())`. It is safe for concurrent
 // use.
 func NewSSEHub() *SSEHub {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.NewSSEHub")
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "realtime.NewSSEHub")
 	opts := DefaultSSEHubOptions()
 	opts.CoalesceWindow = 0
 	return NewSSEHubWith(opts)
@@ -118,8 +117,8 @@ func NewSSEHubWith(opts SSEHubOptions) *SSEHub {
 		opts.HeartbeatPeriod = 0
 	}
 	return &SSEHub{
-		subs:            make(map[*subscriber]struct{}),
-		ring:            make([]bufferedEvent, opts.RingSize),
+		subs:            make(map[*Subscriber]struct{}),
+		ring:            make([]BufferedEvent, opts.RingSize),
 		coalesceWindow:  opts.CoalesceWindow,
 		lastEmitted:     make(map[string]coalesceEntry),
 		subBuf:          opts.SubscriberBuffer,
@@ -127,11 +126,13 @@ func NewSSEHubWith(opts SSEHubOptions) *SSEHub {
 	}
 }
 
-func (h *SSEHub) subscribe(sinceID uint64) (sub *subscriber, replay []bufferedEvent, hadGap bool, cancel func()) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.SSEHub.subscribe", "since_id", sinceID)
-	sub = &subscriber{
-		ch:     make(chan bufferedEvent, h.subBuf),
-		cancel: make(chan struct{}),
+// SubscribeSince registers a live subscriber and optionally returns ring
+// replay since sinceID. HadGap means the client must resync via REST.
+func (h *SSEHub) SubscribeSince(sinceID uint64) (sub *Subscriber, replay []BufferedEvent, hadGap bool, cancel func()) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "realtime.SSEHub.SubscribeSince", "since_id", sinceID)
+	sub = &Subscriber{
+		Events:    make(chan BufferedEvent, h.subBuf),
+		Cancelled: make(chan struct{}),
 	}
 	h.mu.Lock()
 	if sinceID > 0 {
@@ -152,7 +153,7 @@ func (h *SSEHub) subscribe(sinceID uint64) (sub *subscriber, replay []bufferedEv
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func (h *SSEHub) snapshotSinceLocked(sinceID uint64) (out []bufferedEvent, hadGap bool) {
+func (h *SSEHub) snapshotSinceLocked(sinceID uint64) (out []BufferedEvent, hadGap bool) {
 	if !h.ringFilled && h.ringHead == 0 {
 		return nil, false
 	}
@@ -163,14 +164,14 @@ func (h *SSEHub) snapshotSinceLocked(sinceID uint64) (out []bufferedEvent, hadGa
 		start = h.ringHead
 		count = size
 	}
-	out = make([]bufferedEvent, 0, count)
+	out = make([]BufferedEvent, 0, count)
 	var oldestID uint64
 	for i := 0; i < count; i++ {
 		e := h.ring[(start+i)%size]
 		if i == 0 {
-			oldestID = e.id
+			oldestID = e.ID
 		}
-		if e.id > sinceID {
+		if e.ID > sinceID {
 			out = append(out, e)
 		}
 	}
@@ -181,7 +182,7 @@ func (h *SSEHub) snapshotSinceLocked(sinceID uint64) (out []bufferedEvent, hadGa
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func (h *SSEHub) appendRingLocked(ev bufferedEvent) {
+func (h *SSEHub) appendRingLocked(ev BufferedEvent) {
 	h.ring[h.ringHead] = ev
 	h.ringHead++
 	if h.ringHead == len(h.ring) {
@@ -191,13 +192,13 @@ func (h *SSEHub) appendRingLocked(ev bufferedEvent) {
 }
 
 // Publish delivers one JSON-encoded event to all current subscribers.
-func (h *SSEHub) Publish(ev realtime.Event) {
+func (h *SSEHub) Publish(ev Event) {
 	if h == nil {
 		return
 	}
 	now := time.Now()
 	if h.coalesceWindow > 0 {
-		key := realtime.CoalesceKey(ev)
+		key := CoalesceKey(ev)
 		if key != "" {
 			h.mu.Lock()
 			last, seen := h.lastEmitted[key]
@@ -221,17 +222,17 @@ func (h *SSEHub) Publish(ev realtime.Event) {
 	}
 	middleware.RecordSSEPublish()
 	id := h.nextID.Add(1)
-	be := bufferedEvent{id: id, line: string(b), at: now}
+	be := BufferedEvent{ID: id, Line: string(b), At: now}
 
 	h.mu.Lock()
 	h.appendRingLocked(be)
-	out := make([]*subscriber, 0, len(h.subs))
+	out := make([]*Subscriber, 0, len(h.subs))
 	for s := range h.subs {
 		out = append(out, s)
 	}
 	var ringOldestAge time.Duration
 	if len(h.ring) > 0 {
-		if age := now.Sub(h.ring[0].at); age > 0 {
+		if age := now.Sub(h.ring[0].At); age > 0 {
 			ringOldestAge = age
 		}
 	}
@@ -242,15 +243,15 @@ func (h *SSEHub) Publish(ev realtime.Event) {
 	for _, s := range out {
 		if s.legacy != nil {
 			select {
-			case s.legacy <- be.line:
+			case s.legacy <- be.Line:
 			default:
 				dropped++
 			}
 			continue
 		}
 		select {
-		case s.ch <- be:
-			if len(s.ch) <= 1 {
+		case s.Events <- be:
+			if len(s.Events) <= 1 {
 				middleware.RecordSSESubscriberLag(0)
 			}
 		default:
@@ -280,11 +281,11 @@ func (h *SSEHub) Publish(ev realtime.Event) {
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func (h *SSEHub) evictSubscriber(s *subscriber) {
+func (h *SSEHub) evictSubscriber(s *Subscriber) {
 	h.mu.Lock()
 	if _, ok := h.subs[s]; ok {
 		delete(h.subs, s)
-		close(s.cancel)
+		close(s.Cancelled)
 	}
 	n := len(h.subs)
 	h.mu.Unlock()
@@ -306,10 +307,10 @@ const legacySubscribeBuffer = 32
 // Subscribe is retained for in-process callers (tests and anything that
 // wants the raw event stream without going through HTTP).
 func (h *SSEHub) Subscribe() (<-chan string, func()) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.SSEHub.Subscribe")
-	sub := &subscriber{
-		legacy: make(chan string, legacySubscribeBuffer),
-		cancel: make(chan struct{}),
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "realtime.SSEHub.Subscribe")
+	sub := &Subscriber{
+		legacy:    make(chan string, legacySubscribeBuffer),
+		Cancelled: make(chan struct{}),
 	}
 	h.mu.Lock()
 	h.subs[sub] = struct{}{}
@@ -329,4 +330,14 @@ func (h *SSEHub) Subscribe() (<-chan string, func()) {
 	return sub.legacy, cancel
 }
 
-var _ realtime.Publisher = (*SSEHub)(nil)
+var _ Publisher = (*SSEHub)(nil)
+
+// HeartbeatPeriod returns the configured SSE comment heartbeat interval.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func (h *SSEHub) HeartbeatPeriod() time.Duration {
+	if h == nil {
+		return 0
+	}
+	return h.heartbeatPeriod
+}

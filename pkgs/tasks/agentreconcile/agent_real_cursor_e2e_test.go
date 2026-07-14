@@ -21,6 +21,8 @@
 package agentreconcile
 
 import (
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
+
 	"context"
 	"encoding/json"
 	"fmt"
@@ -91,7 +93,7 @@ const e2eRealCursorRunTimeout = 90 * time.Second
 // from the existing fake-runner Stage 6 e2e.
 const e2eRealCursorPostDoneSettle = 250 * time.Millisecond
 
-// hubCycleNotifier adapts handler.SSEHub to worker.CycleChangeNotifier
+// hubCycleNotifier adapts realtime.SSEHub to worker.CycleChangeNotifier
 // without dragging in the cmd/taskapi cycleChangeSSEAdapter (which
 // lives in package main and cannot be imported). Mirrors that
 // adapter's behaviour exactly: nil-safe, blank-id-safe, single
@@ -99,7 +101,7 @@ const e2eRealCursorPostDoneSettle = 250 * time.Millisecond
 // this test-local adapter exists only because Go forbids importing
 // from main packages.
 type hubCycleNotifier struct {
-	hub *handler.SSEHub
+	hub *realtime.SSEHub
 }
 
 func (n *hubCycleNotifier) PublishCycleChange(taskID, cycleID string) {
@@ -143,7 +145,7 @@ func TestAgentE2E_RealCursor_taskFromHTTPReachesDoneWithFileWritten(t *testing.T
 	defer rootCancel()
 
 	st := composition.NewAPI(tasktestdb.OpenSQLite(t))
-	hub := handler.NewSSEHub()
+	hub := realtime.NewSSEHub()
 	q := agents.NewMemoryQueue(4)
 	st.SetReadyTaskNotifier(q)
 
@@ -328,7 +330,7 @@ func TestAgentE2E_RealCursor_cancelMidRunMarksCycleCancelledByOperator(t *testin
 	defer rootCancel()
 
 	st := composition.NewAPI(tasktestdb.OpenSQLite(t))
-	hub := handler.NewSSEHub()
+	hub := realtime.NewSSEHub()
 	q := agents.NewMemoryQueue(4)
 	st.SetReadyTaskNotifier(q)
 

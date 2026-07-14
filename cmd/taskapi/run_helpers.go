@@ -1,6 +1,8 @@
 package main
 
 import (
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
+
 	"context"
 	"fmt"
 	"log/slog"
@@ -12,7 +14,6 @@ import (
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/taskapiconfig"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/middleware"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/postgres"
 	"gorm.io/gorm"
@@ -66,7 +67,7 @@ func logHandlerMiddlewareConfig() {
 
 type taskAPIApp struct {
 	taskStore   *composition.API
-	hub         *handler.SSEHub
+	hub         *realtime.SSEHub
 	agentQueue  *agents.MemoryQueue
 	agentWorker *agentworker.Supervisor
 	schemaDrift postgres.SchemaDriftReport
@@ -81,7 +82,7 @@ func buildTaskAPIApp(ctx context.Context, db *gorm.DB) (*taskAPIApp, context.Can
 	// coalescing). Tests construct via NewSSEHub(), which keeps the
 	// loss-prevention machinery enabled but disables coalescing so
 	// back-to-back distinct ops never collide on the 50ms window.
-	hub := handler.NewSSEHubWith(handler.DefaultSSEHubOptions())
+	hub := realtime.NewSSEHubWith(realtime.DefaultSSEHubOptions())
 	logHandlerMiddlewareConfig()
 	cancel, q, aw, err := startReadyTaskAgents(ctx, taskStore, hub)
 	if err != nil {

@@ -1,6 +1,8 @@
 package taskapi_test
 
 import (
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
+
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -9,7 +11,6 @@ import (
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi"
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/postgres"
 )
 
@@ -18,7 +19,7 @@ import (
 func TestNewHTTPHandler_healthAndBootstrap(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
 	st := composition.NewAPI(db)
-	hub := handler.NewSSEHub()
+	hub := realtime.NewSSEHub()
 	api := taskapi.NewHTTPHandler(st, hub, nil, nil, postgres.SchemaDriftReport{
 		Status:       postgres.SchemaDriftOK,
 		CodeRevision: postgres.SchemaRevision,

@@ -14,25 +14,25 @@ The SSE hub lived in a single red-zone file [`pkgs/tasks/handler/sse.go`](../../
 
 ## Decision
 
-Introduce **`pkgs/tasks/realtime`** as the stable import surface for wire types, coalesce policy, and the `Publisher` port. Split handler transport across focused files; keep hub implementation in `handler` (HTTP stack owns `GET /events`).
+Introduce **`pkgs/tasks/realtime`** as the stable import surface for wire types, coalesce policy, and the `Publisher` port. Split handler transport across focused files; **hub implementation initially stayed in `handler`** — later moved to `realtime` per [ADR-0080](ADR-0080-sse-hub-realtime-ownership.md).
 
 | Package / file | Responsibility |
 |----------------|----------------|
-| `pkgs/tasks/realtime` | `ChangeType`, `Event`, `RunProgressPayload`, `CoalesceKey`, `Publisher` interface |
+| `pkgs/tasks/realtime` | `ChangeType`, `Event`, `RunProgressPayload`, `CoalesceKey`, `Publisher`, **`SSEHub`** (ADR-0080) |
 | `handler/sse_types.go` | Type aliases to `realtime` for backward-compatible handler API |
-| `handler/sse_hub.go` | `SSEHub`, ring buffer, publish fanout, eviction, legacy `Subscribe` |
+| `handler/sse_hub_alias.go` | Thin aliases to `realtime.SSEHub` constructors |
 | `handler/sse_stream.go` | `streamEvents`, frame writers, reconnect replay |
 | `handler/sse_notify.go` | Handler `notify*` helpers + store hydration |
 
-**`internal/taskapi/agentworker`** accepts `realtime.Publisher` instead of `*handler.SSEHub`. Production wiring still constructs `handler.NewSSEHubWith(...)` in `cmd/taskapi/run_helpers.go`.
+**`internal/taskapi/agentworker`** accepts `realtime.Publisher` instead of a concrete hub. Production wiring constructs `realtime.NewSSEHubWith(...)` in `cmd/taskapi/run_helpers.go`.
 
 ### Dependency rules
 
 ```
-realtime     → stdlib only
+realtime     → stdlib + middleware (SSE metrics) + calltrace   (amended ADR-0080)
 handler      → realtime, middleware, calltrace
 agentworker  → realtime (Publisher), not handler for publish paths
-cmd/taskapi  → handler (concrete hub), agentworker
+cmd/taskapi  → realtime (concrete hub), handler (HTTP)
 ```
 
 **Forbidden:** `realtime` importing `handler`. **Deferred:** store-origin change notifier (publish after commit from store facade).

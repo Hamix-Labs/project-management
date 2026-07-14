@@ -1,4 +1,4 @@
-package handler
+package realtime
 
 import (
 	"fmt"
@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/middleware"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 )
 
@@ -15,7 +14,7 @@ func TestSSEHub_Publish_assignsMonotonicIDs(t *testing.T) {
 	h := NewSSEHubWith(SSEHubOptions{RingSize: 16, SubscriberBuffer: 16})
 	const n = 50
 	for i := 0; i < n; i++ {
-		h.Publish(realtime.Event{Type: realtime.TaskUpdated, ID: fmt.Sprintf("t-%d", i)})
+		h.Publish(Event{Type: TaskUpdated, ID: fmt.Sprintf("t-%d", i)})
 	}
 	if got, want := h.LastEventID(), uint64(n); got != want {
 		t.Fatalf("LastEventID=%d want %d", got, want)
@@ -32,10 +31,10 @@ func TestSSEHub_Publish_assignsMonotonicIDs(t *testing.T) {
 func TestSSEHub_Publish_replayFromLastEventID(t *testing.T) {
 	h := NewSSEHubWith(SSEHubOptions{RingSize: 16, SubscriberBuffer: 16})
 	for i := 1; i <= 5; i++ {
-		h.Publish(realtime.Event{Type: realtime.TaskUpdated, ID: fmt.Sprintf("t-%d", i)})
+		h.Publish(Event{Type: TaskUpdated, ID: fmt.Sprintf("t-%d", i)})
 	}
 
-	sub, replay, hadGap, cancel := h.subscribe(2)
+	sub, replay, hadGap, cancel := h.SubscribeSince(2)
 	defer cancel()
 
 	if hadGap {
@@ -44,8 +43,8 @@ func TestSSEHub_Publish_replayFromLastEventID(t *testing.T) {
 	if got := len(replay); got != 3 {
 		t.Fatalf("replay length=%d want 3 (events 3,4,5)", got)
 	}
-	if replay[0].id != 3 || replay[1].id != 4 || replay[2].id != 5 {
-		t.Fatalf("replay ids=[%d %d %d] want [3 4 5]", replay[0].id, replay[1].id, replay[2].id)
+	if replay[0].ID != 3 || replay[1].ID != 4 || replay[2].ID != 5 {
+		t.Fatalf("replay ids=[%d %d %d] want [3 4 5]", replay[0].ID, replay[1].ID, replay[2].ID)
 	}
 
 	// The new subscriber's live channel must NOT also receive the
@@ -53,8 +52,8 @@ func TestSSEHub_Publish_replayFromLastEventID(t *testing.T) {
 	// snapshot return value, so the writer can flush them in order
 	// before entering the heartbeat/live select.
 	select {
-	case ev := <-sub.ch:
-		t.Fatalf("subscriber got unexpected live event during replay: id=%d line=%s", ev.id, ev.line)
+	case ev := <-sub.Events:
+		t.Fatalf("subscriber got unexpected live event during replay: id=%d line=%s", ev.ID, ev.Line)
 	case <-time.After(50 * time.Millisecond):
 	}
 }
@@ -71,16 +70,16 @@ func TestSSEHub_Publish_gapDetectionForOldLastEventID(t *testing.T) {
 	// 6 publishes into a 4-entry ring → oldest retained id is 3,
 	// ids 1 and 2 are evicted.
 	for i := 1; i <= 6; i++ {
-		h.Publish(realtime.Event{Type: realtime.TaskUpdated, ID: fmt.Sprintf("t-%d", i)})
+		h.Publish(Event{Type: TaskUpdated, ID: fmt.Sprintf("t-%d", i)})
 	}
 
-	_, _, hadGap, cancel := h.subscribe(1) // client says it last saw id=1
+	_, _, hadGap, cancel := h.SubscribeSince(1) // client says it last saw id=1
 	defer cancel()
 	if !hadGap {
 		t.Fatalf("expected hadGap=true (sinceID=1 is older than oldest retained id=3)")
 	}
 
-	_, _, hadGapInside, cancel2 := h.subscribe(3) // client says it last saw id=3 (still in ring)
+	_, _, hadGapInside, cancel2 := h.SubscribeSince(3) // client says it last saw id=3 (still in ring)
 	defer cancel2()
 	if hadGapInside {
 		t.Fatalf("expected hadGap=false (sinceID=3 is the oldest retained id)")
@@ -106,7 +105,7 @@ func TestSSEHub_Publish_coalescesIdenticalFrames(t *testing.T) {
 	defer cancel()
 
 	for i := 0; i < 10; i++ {
-		h.Publish(realtime.Event{Type: realtime.TaskUpdated, ID: "foo"})
+		h.Publish(Event{Type: TaskUpdated, ID: "foo"})
 	}
 
 	// Drain everything that landed within 100ms — only the first
@@ -146,9 +145,9 @@ func TestSSEHub_Publish_doesNotCoalesceCycleFrames(t *testing.T) {
 	ch, cancel := h.Subscribe()
 	defer cancel()
 
-	h.Publish(realtime.Event{Type: realtime.TaskCycleChanged, ID: "task-1", CycleID: "c-1"})
-	h.Publish(realtime.Event{Type: realtime.TaskCycleChanged, ID: "task-1", CycleID: "c-1"})
-	h.Publish(realtime.Event{Type: realtime.TaskCycleChanged, ID: "task-1", CycleID: "c-1"})
+	h.Publish(Event{Type: TaskCycleChanged, ID: "task-1", CycleID: "c-1"})
+	h.Publish(Event{Type: TaskCycleChanged, ID: "task-1", CycleID: "c-1"})
+	h.Publish(Event{Type: TaskCycleChanged, ID: "task-1", CycleID: "c-1"})
 
 	delivered := 0
 	timeout := time.After(100 * time.Millisecond)
@@ -181,21 +180,21 @@ func TestSSEHub_Publish_evictsSlowConsumer(t *testing.T) {
 		RingSize:         128,
 		SubscriberBuffer: 4,
 	})
-	sub, _, _, cancel := h.subscribe(0)
+	sub, _, _, cancel := h.SubscribeSince(0)
 	defer cancel()
 
 	// First 4 publishes fill the per-subscriber buffer (no overflow).
 	for i := 0; i < 4; i++ {
-		h.Publish(realtime.Event{Type: realtime.TaskUpdated, ID: fmt.Sprintf("t-%d", i)})
+		h.Publish(Event{Type: TaskUpdated, ID: fmt.Sprintf("t-%d", i)})
 	}
 	// Next publish overflows → eviction.
-	h.Publish(realtime.Event{Type: realtime.TaskUpdated, ID: "overflow"})
+	h.Publish(Event{Type: TaskUpdated, ID: "overflow"})
 
 	select {
-	case <-sub.cancel:
+	case <-sub.Cancelled:
 		// Expected: the hub closed our cancel channel as part of eviction.
 	case <-time.After(200 * time.Millisecond):
-		t.Fatalf("expected sub.cancel to be closed after overflow")
+		t.Fatalf("expected sub.Cancelled to be closed after overflow")
 	}
 	if got, want := testutil.ToFloat64(c), base+1; got != want {
 		t.Fatalf("eviction counter=%v want %v", got, want)
@@ -244,8 +243,8 @@ func TestSSEHub_Publish_concurrentSafetyUnderLoad(t *testing.T) {
 		go func(idx int) {
 			defer pub.Done()
 			for i := 0; i < eventsPerPublisher; i++ {
-				h.Publish(realtime.Event{
-					Type: realtime.TaskUpdated,
+				h.Publish(Event{
+					Type: TaskUpdated,
 					ID:   fmt.Sprintf("p%d-%d", idx, i),
 				})
 			}
