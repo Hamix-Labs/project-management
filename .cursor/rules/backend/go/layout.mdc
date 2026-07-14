@@ -22,7 +22,7 @@ Hamix backend packages live under `pkgs/`. Each **bounded context (BC)** owns `d
 - `cmd/*/main.go` — parse config, wire deps, start server (≤ 80 lines).
 - `internal/` — not importable outside the binary; server assembly lives here.
 - No `utils/` or `helpers/` packages — name packages by what they provide.
-- `domain/` — stdlib only (no GORM, no HTTP). New types go in each BC's `domain/`, not under `pkgs/tasks/domain/` (compat shim only).
+- `domain/` — stdlib only (no GORM, no HTTP). New types go in each BC's `domain/` — there is no live `pkgs/tasks/domain/` (retired ADR-0060).
 - `store/` — SQL/GORM + map to domain; translate errors to domain sentinels.
 - `handler/` — HTTP + domain + `contract` interfaces; no DB drivers.
 - One handler file per resource group; one store group per entity.
@@ -70,18 +70,19 @@ Hamix backend packages live under `pkgs/`. Each **bounded context (BC)** owns `d
 
 ### Composition shell — `pkgs/tasks/`
 
-Not a single domain anymore. It **wires** BCs for `taskapi`:
+Not a single domain anymore. It **wires** BCs for `taskapi`. Persistence composition lives in **`internal/taskapi/composition`** (ADR-0079) — there is no `pkgs/tasks/store/` facade.
 
 | Subtree | Role |
 | --- | --- |
 | `pkgs/tasks/handler/` | Route registration, SSE hub, bootstrap, writepolicy, readpolicy — delegates resource handlers to BC packages |
-| `pkgs/tasks/store/` | GORM facade composing BC stores + `internal/notify/` |
-| `pkgs/tasks/store/model/` | Schema registry + parity tests (migrate hub) |
-| `pkgs/tasks/domain/` | **Compat aliases** to BC domains — retiring in Tier 4; do not add new types here |
-| `pkgs/tasks/contract/` | **Hub re-exports** of BC contracts for `HandlerStore` — retiring in Tier 4 |
-| `pkgs/tasks/postgres/` | AutoMigrate orchestration |
+| `pkgs/tasks/wire/` | `HandlerAPI` — composed BC contracts for the HTTP edge |
+| `pkgs/tasks/postgres/` | GORM open + AutoMigrate orchestration (BC `store/model` lists) |
+| `pkgs/tasks/realtime/` | SSE wire types, coalesce, `Publisher` |
 | `pkgs/tasks/scheduling/` | Worker readiness predicates |
 | `pkgs/tasks/middleware/` | HTTP middleware stack |
+| `pkgs/tasks/handlerhttp/` | Shared HTTP JSON / path / limit helpers |
+| `pkgs/tasks/apijson/`, `calltrace/`, `logctx/` | JSON errors and observability kernels |
+| `pkgs/tasks/service/` | HTTP-agnostic bootstrap/git/retry helpers |
 
 **Agents:** `pkgs/agents/` (harness, worker, runner adapters) — orchestration, not task HTTP.
 
@@ -116,19 +117,18 @@ pkgs/<bc>/
 
 ```
 cmd/*
+  └── internal/taskapi/composition   (wires BC stores; implements wire.HandlerAPI)
   └── internal/*
         └── pkgs/*/handler
               └── pkgs/*/contract, pkgs/*/domain
-        └── pkgs/tasks/handler   (composition — registers BC handlers)
-        └── pkgs/tasks/store     (facade — embeds BC stores)
-              └── pkgs/*/store
-                    └── pkgs/*/domain
+        └── pkgs/tasks/handler   (composition mux — registers BC handlers)
+        └── pkgs/*/store
+              └── pkgs/*/domain
 ```
 
-- BCs do **not** import `pkgs/tasks/handler` or `pkgs/tasks/store/internal`.
-- `pkgs/tasks/domain` imports BC domains (shim only) — new code imports BC domains directly.
-- Shared cross-BC primitives: `pkgs/storekernel/`, and `taskcore/domain` for `Actor` until Tier 4 completes.
-- Harness: `pkgs/agents/harness/internal/contract` composes persistence; migrating to BC contracts (ADR-0061).
+- BCs do **not** import `pkgs/tasks/handler`.
+- Shared cross-BC primitives: `pkgs/storekernel/`, and `taskcore/domain` for `Actor`.
+- Harness: `pkgs/agents/harness/internal/contract` composes BC persistence contracts (ADR-0061).
 
 ### CI checks
 
@@ -141,7 +141,7 @@ cmd/*
 1. Add `docs/adr/ADR-NNNN-<slug>.md` before cross-package structure lands.
 2. Create `pkgs/<name>/{domain,contract,store,handler}/` using the layout above.
 3. Register routes from `pkgs/tasks/handler/handler_routes.go` (or a dedicated binary if split later).
-4. Add migrate models to `pkgs/tasks/store/model/` parity registry if new tables.
+4. Register new GORM models in the BC's `store/model` and ensure `pkgs/tasks/postgres` migrate orchestration includes them (FK-safe order).
 5. Update [docs/agent-map.md](../../../docs/agent-map.md) and [docs/api.md](../../../docs/api.md).
 
 ---
@@ -154,7 +154,7 @@ Task HTTP                  → pkgs/taskcore/handler/ (registered via tasks/hand
 Cycles domain              → pkgs/taskcycles/domain/
 Checklist domain           → pkgs/taskchecklist/domain/
 Events domain              → pkgs/taskevents/domain/
-Persistence facade         → pkgs/tasks/store/ (delegates to BC stores)
+Persistence composition    → internal/taskapi/composition (BC stores)
 SSE / bootstrap / policy   → pkgs/tasks/handler/
 Server assembly            → internal/taskapi/
 main()                     → cmd/taskapi/main.go

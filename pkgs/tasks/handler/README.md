@@ -90,6 +90,19 @@ Core `/tasks*` handlers live in [`pkgs/taskcore/handler`](../../taskcore/handler
 
 When adding a **new** route or middleware file, extend this README in the same PR. Prefer **`internal/handlertest`** for new black-box HTTP tests.
 
+## Do not extract shell glue as a new BC
+
+Composition leftovers that **aggregate** BC contracts stay in this package (or thin `pkgs/tasks/service`). Do **not** invent sibling BCs for:
+
+| Surface | Why it stays in the shell |
+| --- | --- |
+| Bootstrap (`handler_bootstrap.go`) | Aggregates many BC stores for SPA cold start (ADR-0066) |
+| Health / system health / RUM | Process/operator endpoints — no owned persistence quartet |
+| Task git-binding / compose normalize | Cross-BC validation (`gitinventory` + `gitwork` + taskcore) |
+| Platform kernels (`scheduling`, `apijson`, `calltrace`, `logctx`, `handlerhttp`, `wire`) | Already appropriately sized shared packages |
+
+A BC needs domain types, owned persistence or contract, a cohesive HTTP resource group, and CI import gates. See [docs/audit/tasks-shell-roi.md](../../../docs/audit/tasks-shell-roi.md).
+
 ## Scaling this package
 
 `handler` stays a **single package** (one directory in Go). To avoid an unmaintainable mix of routes and tests over time, follow the **When a file feels too large** section below — what already lives in `middleware`, `calltrace`, and `internal/middlewaretest`, conventions for **whitebox vs black-box** tests, and **ordered next extractions** (e.g. task JSON types).

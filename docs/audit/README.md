@@ -18,6 +18,10 @@ Audit: [structural-patterns-roi.md](./structural-patterns-roi.md). Shipped [#205
 
 Audit: [remaining-cleanup-roi.md](./remaining-cleanup-roi.md) (Phase 6 section). Repo-scoped query factory, TaskGetter unify, AgentWorkerControl, notify/PathMap, PickupWake — same PR train as Phase 4.
 
+## Phase 7 — `pkgs/tasks/` shell shape (handoff)
+
+Audit: [tasks-shell-roi.md](./tasks-shell-roi.md). Domain BC extraction is complete; remaining ROI is folder hygiene (handlertest relocation, SSE hub finish, middleware test repatriation) — not new sibling BCs.
+
 ## Structural themes
 
 | Theme | Status | Reference |
@@ -28,5 +32,6 @@ Audit: [remaining-cleanup-roi.md](./remaining-cleanup-roi.md) (Phase 6 section).
 | **Handler test consolidation** | done | [structural-patterns-roi.md](./structural-patterns-roi.md) — web + handler + agents test splits |
 | **Third-occurrence DRY** | in progress | [remaining-cleanup-roi.md](./remaining-cleanup-roi.md) — Phase 4 |
 | **Late abstractions** | in progress | [remaining-cleanup-roi.md](./remaining-cleanup-roi.md) — Phase 6 |
+| **`pkgs/tasks/` shell shape** | handoff | [tasks-shell-roi.md](./tasks-shell-roi.md) — contract tests → handlertest, realtime hub, no new domain BCs |
 
 Completed themes (no active backlog): git vertical cleanup, web vertical boundaries, frontend mutation policy, store/handler DIP, select/widget unification.

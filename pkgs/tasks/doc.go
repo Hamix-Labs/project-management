@@ -1,10 +1,17 @@
-// Package tasks is the root import path for the task subsystem. Implementations are split into
-// subpackages:
+// Package tasks is the root import path for the taskapi composition shell.
+// Domain CRUD lives in sibling bounded contexts (taskcore, taskcycles, …).
+// Subpackages under this path:
 //
-//   - domain — models, enums, errors, SQL enum scanning
-//   - postgres — GORM PostgreSQL open and schema migration (Migrate also used with SQLite in tests)
-//   - store — CRUD and append-only task_events audit log
-//   - handler — REST JSON API on net/http
+//   - handler — REST/SSE mux; registers BC routes; bootstrap, health, RUM, writepolicy/readpolicy
+//   - handlerhttp — shared HTTP JSON/path/limit helpers for BC handlers
+//   - middleware — outer HTTP stack (auth, rate limit, idempotency, …)
+//   - postgres — GORM open + AutoMigrate orchestration (BC models registered here)
+//   - realtime — SSE wire types, Publisher, coalesce (hub transport ownership evolving)
+//   - scheduling — worker readiness / pickup predicates
+//   - apijson, calltrace, logctx — JSON errors and observability kernels
+//   - service — HTTP-agnostic bootstrap/git/retry orchestration used by the shell
+//   - wire — HandlerAPI composition interface (implemented by internal/taskapi/composition)
+//   - devsim — HAMIX_SSE_TEST synthetic events
 //
 // Typical wiring (see cmd/taskapi):
 //

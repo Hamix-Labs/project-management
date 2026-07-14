@@ -12,6 +12,7 @@
 | [audit/policy-roi.md](./audit/policy-roi.md) | Phase 3 policy centralization (complete) |
 | [audit/structural-patterns-roi.md](./audit/structural-patterns-roi.md) | Phase 5 god-files, handler/store splits (complete) |
 | [audit/remaining-cleanup-roi.md](./audit/remaining-cleanup-roi.md) | Phase 4 DRY + Phase 6 abstractions (in progress) |
+| [audit/tasks-shell-roi.md](./audit/tasks-shell-roi.md) | Phase 7 `pkgs/tasks/` shell shape (handoff — after Phase 4/6) |
 | [adr/](./adr/) | Cross-package ADRs |
 
 ---
@@ -35,14 +36,15 @@ Tier 5 + post–Tier 5 handoff ([#191](https://github.com/AlexsanderHamir/Hamix/
 
 ---
 
-## Next queue (remaining ~20%)
+## Next queue (remaining ~20% + shell shape)
 
-Phases 3 (**20%**) and 5 (**35%**) are complete. Phase 4 + 6 **in progress** — ranked handoff: [remaining-cleanup-roi.md](./audit/remaining-cleanup-roi.md).
+Phases 3 (**20%**) and 5 (**35%**) are complete. Phase 4 + 6 **in progress** — ranked handoff: [remaining-cleanup-roi.md](./audit/remaining-cleanup-roi.md). After that (or in parallel on directory shape only): [tasks-shell-roi.md](./audit/tasks-shell-roi.md).
 
 | # | Slice | Weight | Source |
 | --- | --- | --- | --- |
 | **1** | Third-occurrence DRY (PR2–PR5) | **10%** | Phase 4 — [remaining-cleanup-roi](./audit/remaining-cleanup-roi.md) |
 | **2** | Late abstractions ≥2 impls (PR6–PR10) | **10%** | Phase 6 — [remaining-cleanup-roi](./audit/remaining-cleanup-roi.md) |
+| **3** | `pkgs/tasks/` shell shape (handlertest / realtime hub) | follow-on | Phase 7 — [tasks-shell-roi](./audit/tasks-shell-roi.md) |
 
 ---
 
