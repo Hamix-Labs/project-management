@@ -2,41 +2,21 @@ package handler
 
 import (
 	"context"
-	"fmt"
 	"net/http"
-	"strings"
 
-	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
 )
 
-const (
-	maxPathIDBytes      = 128
-	maxHTTPLogTextRunes = 240
-)
+const maxHTTPLogTextRunes = 240
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func parseTaskPathID(id string) (string, error) {
-	id = strings.TrimSpace(id)
-	if id == "" {
-		return "", fmt.Errorf("%w: id", taskcoredomain.ErrInvalidInput)
-	}
-	if len(id) > maxPathIDBytes {
-		return "", fmt.Errorf("%w: id too long", taskcoredomain.ErrInvalidInput)
-	}
-	return id, nil
+	return handlerhttp.ParseBoundedPathID("taskchecklist.handler.parseTaskPathID", id, "id")
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func parseTaskPathItemID(id string) (string, error) {
-	id = strings.TrimSpace(id)
-	if id == "" {
-		return "", fmt.Errorf("%w: item id", taskcoredomain.ErrInvalidInput)
-	}
-	if len(id) > maxPathIDBytes {
-		return "", fmt.Errorf("%w: item id too long", taskcoredomain.ErrInvalidInput)
-	}
-	return id, nil
+	return handlerhttp.ParseBoundedPathID("taskchecklist.handler.parseTaskPathItemID", id, "item id")
 }
 
 //funclogmeasure:skip category=hot-path reason="Thin re-export of handlerhttp.DebugHTTPRequest; shared package emits the http.io trace."

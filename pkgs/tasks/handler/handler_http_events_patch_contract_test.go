@@ -7,6 +7,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -125,7 +126,7 @@ func TestHTTP_patchEvent_pathSegmentGuard(t *testing.T) {
 		want   string
 	}{
 		{"whitespaceID", "%20%20%20", "2", "id"},
-		{"overlongID", strings.Repeat("a", maxTaskPathIDBytes+1), "2", "id too long"},
+		{"overlongID", strings.Repeat("a", handlerhttp.MaxPathIDBytes+1), "2", "id too long"},
 		{"overlongSeq", id, strings.Repeat("9", maxTaskEventSeqParamBytes+1), "seq too long"},
 		{"seqZero", id, "0", "seq must be a positive integer"},
 		{"seqNegative", id, "-1", "seq must be a positive integer"},

@@ -14,32 +14,19 @@ import (
 )
 
 const (
-	maxPathIDBytes            = 128
 	maxPhaseSeqParamBytes     = 32
 	maxListIntQueryParamBytes = 32
 	maxHTTPLogTextRunes       = 240
 )
 
-func parseBoundedPathID(op, raw, field string) (string, error) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", op)
-	id := strings.TrimSpace(raw)
-	if id == "" {
-		return "", fmt.Errorf("%w: %s", taskcoredomain.ErrInvalidInput, field)
-	}
-	if len(id) > maxPathIDBytes {
-		return "", fmt.Errorf("%w: %s too long", taskcoredomain.ErrInvalidInput, field)
-	}
-	return id, nil
-}
-
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func parseTaskPathID(id string) (string, error) {
-	return parseBoundedPathID("taskcycles.handler.parseTaskPathID", id, "id")
+	return handlerhttp.ParseBoundedPathID("taskcycles.handler.parseTaskPathID", id, "id")
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func parseTaskPathCycleID(id string) (string, error) {
-	return parseBoundedPathID("taskcycles.handler.parseTaskPathCycleID", id, "cycle id")
+	return handlerhttp.ParseBoundedPathID("taskcycles.handler.parseTaskPathCycleID", id, "cycle id")
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."

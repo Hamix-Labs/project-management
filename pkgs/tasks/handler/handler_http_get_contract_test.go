@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler/storefake"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -65,7 +66,7 @@ func TestHTTP_getTask_pathSegmentGuard(t *testing.T) {
 		want string
 	}{
 		{"whitespaceOnlyID", "%20%20%20", "id"},
-		{"overlongID", strings.Repeat("a", maxTaskPathIDBytes+1), "id too long"},
+		{"overlongID", strings.Repeat("a", handlerhttp.MaxPathIDBytes+1), "id too long"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
