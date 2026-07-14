@@ -22,11 +22,11 @@ type ComposeGitValidator interface {
 	ValidatePromptMentionsForWorktree(ctx context.Context, worktreeID *string, prompt string) error
 }
 
-// NotifyChangeFunc publishes a hint-only SSE frame after task mutations.
-type NotifyChangeFunc func(typ realtime.ChangeType, id string)
+// NotifyChangeFunc aliases the shared hint-with-id SSE notify type.
+type NotifyChangeFunc = realtime.NotifyChangeFunc
 
-// NotifyTaskChangedFunc publishes an enriched task SSE frame.
-type NotifyTaskChangedFunc func(typ realtime.ChangeType, id string, data any)
+// NotifyTaskChangedFunc aliases the shared enriched-task SSE notify type.
+type NotifyTaskChangedFunc = realtime.NotifyTaskChangedFunc
 
 // Deps wires taskcore HTTP handlers into the taskapi mux.
 type Deps struct {

@@ -8,8 +8,8 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 )
 
-// NotifyFunc publishes a project SSE change event.
-type NotifyFunc func(typ realtime.ChangeType, id string)
+// NotifyFunc aliases the shared hint-with-id SSE notify type.
+type NotifyFunc = realtime.NotifyFunc
 
 // Deps wires project HTTP handlers into the taskapi mux.
 type Deps struct {

@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 
+	gitinventoryhandler "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/handler"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 )
 
@@ -16,6 +17,11 @@ import (
 type PathMap struct {
 	pairs []pathMapPair
 }
+
+// Compile-time check that PathMap satisfies gitinventory's HostPathMapper
+// (JSON host_path fields). Left here rather than colocated: moving PathMap
+// into gitinventory would pull env loading across the BC boundary.
+var _ gitinventoryhandler.HostPathMapper = (*PathMap)(nil)
 
 type pathMapPair struct {
 	container string
