@@ -1,72 +1,75 @@
 ---
-description: Verify locally with check scripts (CI parity); use gh for CI log triage when local check passed
-alwaysApply: true
+description: >-
+  When finishing code changes (before push/PR), choosing how to run local
+  checks, narrowing a failed check, or diagnosing GitHub Actions after local
+  check already passed. Prefer check.ps1/check.sh over gh run watch. Not for
+  writing tests (backend/go/testing.mdc) or browsing CI YAML casually.
+globs:
+  - "scripts/check*"
+  - "scripts/check-go*"
+  - "scripts/check-web*"
+  - ".github/workflows/**"
+alwaysApply: false
 ---
 
 # CI and verification
 
-## Primary loop — local check (not Actions polling)
+**When:** about to finish/push a code change, or triaging a failed check / Actions run.
 
-CI ([`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)) runs the same scripts as local dev:
+CI ([`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)) runs the same scripts as local:
 
 - `./scripts/check-go.sh --lint-only --verbose`
 - `./scripts/check-go.sh --tests-only --group=<core|tasks|agents|harness> --verbose`
 - `./scripts/check-web.sh --install --verbose`
 
-Wrapped by **`scripts/check.sh`** (Unix) and **`scripts/check.ps1`** (Windows).
-
-### Do
-
-- Before finishing or pushing: **`./scripts/check.sh`** or **`.\scripts\check.ps1`** from repo root.
-- First web run or lockfile change: **`--install`** / **`-Install`**.
-- Scoped iteration: **`--go-only`** / **`-GoOnly`**, **`--web-only`** / **`-WebOnly`**.
-- No local Go/Node: **`docker compose run --rm dev ./scripts/check.sh --install`** ([docs/docker.md](../../docs/docker.md)).
-- Fix failures from check output; re-run until green.
-- Narrow failures **after** check failed: e.g. `./scripts/check-go.sh --tests-only --group=harness --verbose`.
-
-### Do not
-
-- Use **`gh run watch`** or poll Actions as the primary verification loop.
-- Re-run ad hoc `go test ./...` / `npm test` unless narrowing a check failure or the user asked.
-- Skip check because "CI will catch it."
-
-| Platform | Full bar | Go only |
-| --- | --- | --- |
-| Unix / Git Bash / Docker | `./scripts/check.sh` | `./scripts/check.sh --go-only` |
-| Windows PowerShell | `.\scripts\check.ps1` | `.\scripts\check.ps1 -GoOnly` |
-
-Details: [CONTRIBUTING.md](../../CONTRIBUTING.md#before-you-open-a-pr), [AGENTS.md](../../AGENTS.md).
+Wrappers: **`scripts/check.sh`** (Unix) and **`scripts/check.ps1`** (Windows).
 
 ---
 
-## When CI fails but local check passed
+## Local bar (primary loop)
 
-The Actions job page may not expose full logs to agents. **Fetch with `gh`**, not the web UI alone.
+| Platform | Full bar | Go only | Web only |
+| --- | --- | --- | --- |
+| Unix / Git Bash / Docker | `./scripts/check.sh` | `./scripts/check.sh --go-only` | `./scripts/check.sh --web-only` |
+| Windows PowerShell | `.\scripts\check.ps1` | `.\scripts\check.ps1 -GoOnly` | `.\scripts\check.ps1 -WebOnly` |
 
-1. Re-run scoped local check first (match failing matrix cell: `group=harness`, web job, etc.).
-2. Extract **run ID** from `/actions/runs/<RUN_ID>/...`.
-3. Pull failed-step output:
+- Run from **repo root** before finishing or pushing. Fix until green.
+- Lockfile / first web run: add `--install` / `-Install`.
+- No local Go/Node: `docker compose run --rm dev ./scripts/check.sh --install` ([docs/docker.md](../../docs/docker.md)).
+- After a failure: re-run scoped (e.g. `./scripts/check-go.sh --tests-only --group=harness --verbose`) — do not start with ad hoc `go test ./...` / `npm test` unless narrowing further or the user asked.
+
+### Do not
+
+- Use **`gh run watch`** or poll Actions as the verification loop.
+- Skip check because “CI will catch it.”
+
+Details: [CONTRIBUTING.md](../../CONTRIBUTING.md#before-you-open-a-pr).
+
+---
+
+## Actions failed but local check passed
+
+Prefer `gh` over the job UI alone for full failed-step logs.
+
+1. Re-run the matching **local** scoped check first (`group=harness`, web job, etc.).
+2. Take **run ID** from `/actions/runs/<RUN_ID>/...`.
+3. Pull failed output:
 
 ```bash
 gh run view <RUN_ID> --repo AlexsanderHamir/Hamix --json conclusion,status,displayTitle,headSha,jobs
 gh run view <RUN_ID> --repo AlexsanderHamir/Hamix --log-failed
 ```
 
-PowerShell (tail large logs):
-
 ```powershell
 gh run view <RUN_ID> --repo AlexsanderHamir/Hamix --log-failed 2>&1 | Select-Object -Last 120
 ```
 
-4. Report: which job/matrix cell failed, package/test names, last error lines — not just exit code 1.
+4. Report job/matrix cell, package/test names, and last error lines — not only exit code 1.
 
-### Do not
-
-- Claim CI is opaque without trying `gh run view --log-failed`.
-- Use `gh run watch` as the fix loop (use local check instead).
+Do not claim CI is opaque without trying `--log-failed`, and do not use `gh run watch` as the fix loop.
 
 ---
 
-## Common harness CI failure pattern
+## Harness matrix pitfall
 
-Harness tests seed tasks without git binding → worker logs `task missing git binding; deferring pickup` → tasks stuck `ready`. Fix: seed `worktree_id` / `branch_id` on tasks (see `pkgs/tasks/agentreconcile/` test helpers).
+Harness tests that seed tasks **without** git binding → worker logs `task missing git binding; deferring pickup` → tasks stuck `ready`. Seed `worktree_id` / `branch_id` (see `pkgs/tasks/agentreconcile/` test helpers).

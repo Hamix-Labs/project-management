@@ -1,4 +1,4 @@
-# Layout guardrails (see .cursor/rules/web-layout.mdc and go-layout.mdc).
+# Layout guardrails (see .cursor/rules/web-layout.mdc and backend/go/layout.mdc).
 # Exit 0 when clean; exit 1 when a rule is violated.
 # Run from repository root: pwsh -File scripts/check-code-standards.ps1
 

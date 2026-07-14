@@ -22,7 +22,7 @@ import (
 // taskAPIApp aggregate, buildTaskAPIApp wiring, runTaskAPIService
 // (the cmd.Run body), and a handful of small startup-config log
 // helpers that don't fit another concern. Per
-// backend-engineering-bar.mdc §2 / §16 the lifecycle subsystems
+// backend/go/layout.mdc the lifecycle subsystems
 // (logging, db, agent worker, http) live in sibling run_*.go files.
 
 func logHTTPTimeoutsAndShutdown() {

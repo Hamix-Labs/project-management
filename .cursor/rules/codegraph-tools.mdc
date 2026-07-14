@@ -1,9 +1,19 @@
 ---
-description: Use Codegraph MCP tools for symbol lookup, source reads, and call-graph traversal before Grep/Read loops
-alwaysApply: true
+description: >-
+  When exploring or editing indexed source (Go/TS/etc.) — how X works, where a
+  symbol lives, call graph, blast radius, or reading code before a change.
+  Prefer Codegraph MCP (codegraph_explore first) over Grep/Read loops. Not for
+  markdown, YAML, CI, or docs-only work.
+globs:
+  - "**/*.go"
+  - "**/*.ts"
+  - "**/*.tsx"
+alwaysApply: false
 ---
 
 # Codegraph MCP — agent guide
+
+**When:** navigating or changing indexed source — not configs, docs, or git/docs chores.
 
 Codegraph is a per-project SQLite index of symbols, call edges, and file metadata under `.codegraph/`. All tools on the `user-codegraph` server read from that index — faster and more structured than ad-hoc Grep and Read loops.
 

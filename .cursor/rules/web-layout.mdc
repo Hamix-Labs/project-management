@@ -139,4 +139,4 @@ Task pages                 → web/src/tasks/pages/
 MSW handlers               → web/src/test/handlers/
 ```
 
-Details: [docs/web.md](../../docs/web.md), [AGENTS.md](../../AGENTS.md) web rows.
+Details: [docs/web.md](../../docs/web.md), [docs/agent-map.md](../../docs/agent-map.md) web rows.

@@ -1,0 +1,86 @@
+---
+description: >-
+  When writing Go tests (*_test.go) — table-driven cases, mocks, unit vs
+  integration scope, parallelism, or error-path coverage. One question: how
+  should this test be structured?
+globs:
+  - "**/*_test.go"
+alwaysApply: false
+---
+
+# Testing
+
+**When:** adding or fixing `*_test.go`, handler/store tests, or choosing unit vs integration.
+
+Default suite must not require real Postgres, real outbound network, or a running `taskapi`.
+
+---
+
+## Pattern
+
+```go
+func TestUserService_Create(t *testing.T) {
+    tests := []struct {
+        name    string
+        input   CreateUserInput
+        mock    func(*mockUserStore)
+        wantErr error
+    }{
+        {
+            name:  "valid user",
+            input: CreateUserInput{Email: "a@b.com"},
+            mock:  func(m *mockUserStore) { m.On("Create", mock.Anything, mock.Anything).Return(nil) },
+        },
+        {
+            name:    "duplicate email",
+            input:   CreateUserInput{Email: "a@b.com"},
+            mock:    func(m *mockUserStore) { m.On("Create", mock.Anything, mock.Anything).Return(domain.ErrConflict) },
+            wantErr: domain.ErrConflict,
+        },
+    }
+
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            store := &mockUserStore{}
+            tt.mock(store)
+            svc := NewUserService(store)
+            _, err := svc.Create(context.Background(), tt.input)
+            if !errors.Is(err, tt.wantErr) {
+                t.Errorf("got %v, want %v", err, tt.wantErr)
+            }
+        })
+    }
+}
+```
+
+---
+
+## Layers
+
+| Layer | What | Tools |
+| --- | --- | --- |
+| Unit | Service/domain logic, mocks | fast, no I/O |
+| Integration | Store vs sqlite/test DB | `internal/tasktestdb/`, build tags when needed |
+| Handler | HTTP surface | `httptest.NewRecorder` / `NewServer` |
+| E2E | Thin smoke against a running env | sparingly |
+
+---
+
+## Rules
+
+- Test **behavior**, not private implementation details.
+- Every test independent — no shared mutable state, no ordering deps.
+- `t.Parallel()` in unit tests when safe; integration: `t.Cleanup`.
+- Files: `foo_test.go`; heavy integration: `foo_integration_test.go` + build tag.
+- Always `t.Run` for table rows.
+- Always cover error paths.
+- Prefer existing helpers (`internal/tasktestdb/`, `internal/handlertest/`).
+- Prefer `testify` when neighbors already use it.
+- Oversized test files: extract fixtures/builders — never copy production logic into tests.
+
+---
+
+## Do not
+
+- Depend on execution order or package-level mutable fixtures.
+- Hit real external network or production DB in default CI tests.

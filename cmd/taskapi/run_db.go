@@ -18,7 +18,7 @@ import (
 // run_db.go owns the database lifecycle for taskapi: env load, GORM
 // open, migrate (with timeout), pool-collector registration, and the
 // designated close+log site. Split off run_helpers.go per
-// backend-engineering-bar.mdc §2 / §16.
+// backend/go/layout.mdc (split by responsibility).
 
 type dbStartupResult struct {
 	db          *gorm.DB

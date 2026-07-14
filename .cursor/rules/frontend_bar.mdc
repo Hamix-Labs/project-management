@@ -1,8 +1,18 @@
 ---
-description: UI/UX standards for web/ — apply when building, styling, or polishing React   UI (typography, color, spacing, motion, buttons, forms, modals, tables,   accessibility, dark mode). Complements CODE_STANDARDS (structure) and   web-testing-bar (tests).
+description: >-
+  When building, styling, or polishing React UI in web/ — typography, color,
+  spacing, motion, buttons, forms, modals, tables, a11y, dark mode. Visual and
+  interaction quality only; not layout/where files live (web-layout) or tests
+  (web-testing-bar) or file-size limits (CODE_STANDARDS).
+globs:
+  - "web/**/*.tsx"
+  - "web/**/*.css"
+  - "web/src/app/styles/**"
 alwaysApply: false
 ---
 # UI/UX Design Standards
+
+**When:** changing look-and-feel or interaction of UI under `web/`.
 
 These rules define how UI in `web/` should look and behave. Use design tokens and existing patterns before adding one-off styles. When a choice is ambiguous, prefer clarity, consistency, and accessibility over novelty.
 

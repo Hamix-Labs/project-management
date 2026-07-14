@@ -51,7 +51,7 @@ Phases 3 (**20%**) and 5 (**35%**) are complete. Phase 4 + 6 **in progress** —
 | # | Do | Don't |
 | --- | --- | --- |
 | **0** | Extend existing tests on every move | Rename without test touch |
-| **1** | Fix dependency direction (`.cursor/rules/go-layout.mdc`, `web-layout.mdc`) | New repository/UoW layers |
+| **1** | Fix dependency direction (`.cursor/rules/backend/go/layout.mdc`, `web-layout.mdc`) | New repository/UoW layers |
 | **2** | Delete dead code; split red-zone files | Wrap code you should delete |
 | **3** | One choke point per invariant (`readpolicy/`, `writepolicy/`, `tasks/sync/`, `queryInvalidation/`) | Generic policy frameworks |
 | **4** | Extract on 3rd same-shape occurrence | DRY two call sites |
@@ -72,4 +72,4 @@ Phases 3 (**20%**) and 5 (**35%**) are complete. Phase 4 + 6 **in progress** —
 
 ## See also
 
-[guide.md](./guide.md) · [AGENTS.md](../AGENTS.md) · [CONTRIBUTING.md](../CONTRIBUTING.md)
+[guide.md](./guide.md) · [agent-map.md](./agent-map.md) · [CONTRIBUTING.md](../CONTRIBUTING.md)

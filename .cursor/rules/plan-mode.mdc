@@ -1,10 +1,13 @@
 ---
-description: Plan mode — ask single vs parent/child plans; structure before CreatePlan
+description: >-
+  When plan mode is active — before CreatePlan, ask single vs parent/child
+  plans, then structure the plan file(s). Ignore entirely outside plan mode
+  (do not ask plan-structure questions during implementation).
 alwaysApply: false
 ---
 # Plan mode workflow
 
-**Scope gate:** Apply this rule only when the system reminder says **plan mode is active**. Otherwise ignore this file entirely — do not ask plan-structure questions during implementation.
+**When:** system reminder says plan mode is active. Otherwise ignore this file entirely — do not ask plan-structure questions during implementation.
 
 ## First step (required)
 

@@ -250,7 +250,7 @@ Plans are ordered by dependency. Each plan should be implementable as its own PR
 **Outputs**
 
 - Remove `repo_root` from [`app_settings`](pkgs/tasks/domain/app_settings.go) after migration window (or keep read-only shim one release).
-- Update operator docs: [`docs/execute-and-verify.md`](docs/execute-and-verify.md), [`AGENTS.md`](AGENTS.md), [`docs/configuration.md`](docs/configuration.md).
+- Update operator docs: [`docs/execute-and-verify.md`](docs/execute-and-verify.md), [`docs/agent-map.md`](docs/agent-map.md), [`docs/configuration.md`](docs/configuration.md).
 - Close/supersede HARNESS item 8 (per-cycle worktree) — replaced by persistent worktree model.
 - Stub hooks: `on_task_done` event payload includes `worktree`, `branch`, `commits[]` for future `gh pr create` automation (no UI yet).
 

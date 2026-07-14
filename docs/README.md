@@ -6,7 +6,7 @@
 | --- | --- |
 | **Applies to** | Finding the right doc when you know your topic |
 | **Audience** | Contributors and agents after [guide.md](./guide.md) |
-| **Prerequisite** | [guide.md](./guide.md) for learning paths; [AGENTS.md](../AGENTS.md) for code edits |
+| **Prerequisite** | [guide.md](./guide.md) for learning paths; [agent-map.md](./agent-map.md) for code paths |
 
 ## In this article
 
@@ -20,7 +20,7 @@
 
 Use [guide.md](./guide.md) to pick a learning path by goal. Use the tables below when you already know what you need.
 
-> **Tip** — Agents: scoped paths and code locations live in [AGENTS.md](../AGENTS.md) and [agent-map.md](./agent-map.md).
+> **Tip** — Agents: code locations live in [agent-map.md](./agent-map.md).
 
 ## Navigation
 
@@ -54,5 +54,5 @@ Use [guide.md](./guide.md) to pick a learning path by goal. Use the tables below
 ## See also
 
 - [guide.md](./guide.md) — documentation layers and learning paths
-- [AGENTS.md](../AGENTS.md) — scoped paths and code lookups
-- [CONTRIBUTING.md](../CONTRIBUTING.md) — setup, PR checklist, routing to docs and AGENTS
+- [agent-map.md](./agent-map.md) — subsystem code paths
+- [CONTRIBUTING.md](../CONTRIBUTING.md) — setup and PR checklist

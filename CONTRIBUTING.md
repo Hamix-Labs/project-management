@@ -114,7 +114,7 @@ Also:
 - [ ] New behavior → add or update a test — see [docs/domain/testing.md](docs/domain/testing.md)
 - [ ] User-visible change → update the relevant doc
 
-Coding conventions (where to put API calls, how the live UI updates, etc.): [AGENTS.md](AGENTS.md).
+Coding conventions (where to put API calls, how the live UI updates, etc.): [docs/agent-map.md](docs/agent-map.md), [docs/web.md](docs/web.md).
 
 ## Where to go next
 
@@ -124,13 +124,11 @@ Pick **one** row. Do not read the whole tree.
 | --- | --- |
 | **Learn the project** — how docs fit together | [docs/guide.md](docs/guide.md) |
 | **Use Hamix** — create tasks, write checklist criteria | [docs/execute-and-verify.md](docs/execute-and-verify.md) |
-| **Edit code** — find a file or doc for a specific task | [AGENTS.md](AGENTS.md) § [Where to find X](AGENTS.md#where-to-find-x) |
-| **Edit code** — pick reading order for my kind of change | [AGENTS.md](AGENTS.md) § [Scoped paths](AGENTS.md#scoped-paths) |
+| **Edit code** — find a subsystem path | [docs/agent-map.md](docs/agent-map.md) |
 | **Look up routes, schema, or env vars** | [docs/api.md](docs/api.md), [docs/data-model.md](docs/data-model.md), [docs/configuration.md](docs/configuration.md) |
 | **Find any doc by topic** | [docs/README.md](docs/README.md) |
-| **Subsystem code paths** | [docs/agent-map.md](docs/agent-map.md) |
 
-Vertical slice (domain → store → handler → optional web): follow [AGENTS.md](AGENTS.md) scoped paths, then `pkgs/tasks/handler/README.md` and [docs/domain/persistence.md](docs/domain/persistence.md).
+Vertical slice (domain → store → handler → optional web): [docs/agent-map.md](docs/agent-map.md), then `pkgs/tasks/handler/README.md` and [docs/domain/persistence.md](docs/domain/persistence.md).
 
 ## Stuck?
 
@@ -144,8 +142,6 @@ Vertical slice (domain → store → handler → optional web): follow [AGENTS.m
 | Match API error to logs | `request_id` in JSON body / `X-Request-ID` header on access logs |
 | Still failing local checks | Use scoped groups: `.\scripts\check-go.ps1 -TestsOnly -Group <core\|tasks\|agents\|harness>` (same as CI). Full bar: `.\scripts\check.ps1 -GoOnly`. Avoid `go test ./...` — it pulls in `web/node_modules` test packages and can flake on parallel SQLite. |
 
-More edit lookups: [AGENTS.md](AGENTS.md#where-to-find-x).
-
 ## Security
 
 For **undisclosed vulnerabilities**, use [SECURITY.md](SECURITY.md) (private GitHub advisory, not a public issue).
@@ -154,4 +150,4 @@ For **undisclosed vulnerabilities**, use [SECURITY.md](SECURITY.md) (private Git
 
 - [README.md](README.md) — product overview and quick start
 - [docs/guide.md](docs/guide.md) — documentation map and learning paths
-- [AGENTS.md](AGENTS.md) — scoped paths, Where to find X, verify commands
+- [docs/agent-map.md](docs/agent-map.md) — subsystem code paths

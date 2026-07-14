@@ -32,7 +32,7 @@ Operators and agents debug attempts using task id, cycle id, and phase_seq acros
 ### Positive
 
 - One log query isolates a single execute or verify invocation.
-- Agents and humans share documented URL + field names ([AGENTS.md](../../AGENTS.md)).
+- Agents and humans share documented URL + field names ([docs/api.md](../api.md), [docs/agent-map.md](../agent-map.md)).
 - No new tables; additive JSON and SSE fields.
 
 ### Negative / trade-offs

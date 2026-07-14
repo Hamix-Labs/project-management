@@ -1,6 +1,6 @@
 # `pkgs/tasks/handler`
 
-HTTP surface for `taskapi`: REST + optional `/repo` + `GET /events` (SSE). **Contracts:** [docs/api.md](../../docs/api.md). **How to extend:** [CONTRIBUTING.md](../../CONTRIBUTING.md), [AGENTS.md](../../AGENTS.md).
+HTTP surface for `taskapi`: REST + optional `/repo` + `GET /events` (SSE). **Contracts:** [docs/api.md](../../docs/api.md). **How to extend:** [CONTRIBUTING.md](../../CONTRIBUTING.md), [docs/agent-map.md](../../docs/agent-map.md).
 
 The returned `http.Handler` from `NewHandler` is the **inner mux** (routes only). `cmd/taskapi` mounts it behind **`middleware.Stack(..., calltrace.Path)`** from **`internal/taskapi.NewHTTPHandler`**. Wiring order and devsim live in **`cmd/taskapi/run.go`**. Taskapi-only env parsing lives in **`internal/taskapiconfig`**.
 

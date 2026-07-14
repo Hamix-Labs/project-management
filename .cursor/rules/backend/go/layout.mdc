@@ -1,16 +1,31 @@
 ---
-description: Go monorepo layout — bounded contexts, composition shell, package boundaries. Apply when creating or moving Go packages.
+description: >-
+  When creating, moving, or renaming Go packages; placing domain vs store vs
+  handler; wiring cmd/internal; or deciding where a new bounded-context file
+  belongs. One question: where does this Go code live?
 globs:
   - "**/*.go"
   - "**/go.mod"
 alwaysApply: false
 ---
 
-# Go layout — bounded contexts
+# Layout — bounded contexts
 
-Hamix backend packages live under `pkgs/`. Each **bounded context (BC)** owns `domain/`, `store/`, `handler/`, and `contract/` where it exposes HTTP or persistence seams. See [docs/agent-map.md](../../docs/agent-map.md) for the live index.
+**When:** creating or moving Go packages, or deciding domain / store / handler / `cmd` placement.
 
-**Companion:** file-size limits and splitting patterns live in `CODE_STANDARDS.mdc`. Go quality bar: `backend-engineering-bar.mdc`.
+Hamix backend packages live under `pkgs/`. Each **bounded context (BC)** owns `domain/`, `store/`, `handler/`, and `contract/` where it exposes HTTP or persistence seams. Live index: [docs/agent-map.md](../../../docs/agent-map.md). File-size limits: `CODE_STANDARDS.mdc`.
+
+---
+
+## Entry rules
+
+- `cmd/*/main.go` — parse config, wire deps, start server (≤ 80 lines).
+- `internal/` — not importable outside the binary; server assembly lives here.
+- No `utils/` or `helpers/` packages — name packages by what they provide.
+- `domain/` — stdlib only (no GORM, no HTTP). New types go in each BC's `domain/`, not under `pkgs/tasks/domain/` (compat shim only).
+- `store/` — SQL/GORM + map to domain; translate errors to domain sentinels.
+- `handler/` — HTTP + domain + `contract` interfaces; no DB drivers.
+- One handler file per resource group; one store group per entity.
 
 ---
 
@@ -88,12 +103,12 @@ pkgs/<bc>/
 
 ### Package rules
 
-- `domain/` — stdlib only. No GORM tags, no `net/http`, no DB drivers. (Compat `pkgs/tasks/domain` is temporary.)
+- `domain/` — stdlib only. No GORM tags, no `net/http`, no DB drivers.
 - `store/` — GORM/SQL + map to `domain/`. Translate driver errors to domain sentinels.
 - `handler/` — HTTP + domain types + `contract` interfaces. No DB drivers.
 - `contract/` — small interfaces; BC handlers and composition shell depend on these, not on store internals.
 - One `handler_*.go` per resource group; one store file group per entity.
-- When a BC outgrows reviewability, split store by read/write or handler by route group — not by line count alone.
+- When a BC outgrows reviewability, split store by read/write or handler by route group.
 
 ---
 
@@ -117,7 +132,7 @@ cmd/*
 
 ### CI checks
 
-`scripts/check-go.sh` runs boundary steps per BC (`step_taskcore_boundary`, `step_taskcycles_boundary`, …). `scripts/check-code-standards.ps1` guards handler DB imports and policy package purity.
+`scripts/check-go.sh` runs boundary steps per BC. `scripts/check-code-standards.ps1` guards handler DB imports and policy package purity.
 
 ---
 
@@ -127,7 +142,7 @@ cmd/*
 2. Create `pkgs/<name>/{domain,contract,store,handler}/` using the layout above.
 3. Register routes from `pkgs/tasks/handler/handler_routes.go` (or a dedicated binary if split later).
 4. Add migrate models to `pkgs/tasks/store/model/` parity registry if new tables.
-5. Update [docs/agent-map.md](../../docs/agent-map.md) and [docs/api.md](../../docs/api.md).
+5. Update [docs/agent-map.md](../../../docs/agent-map.md) and [docs/api.md](../../../docs/api.md).
 
 ---
 
@@ -146,4 +161,4 @@ main()                     → cmd/taskapi/main.go
 Harness orchestration      → pkgs/agents/harness/
 ```
 
-Full map: [docs/agent-map.md](../../docs/agent-map.md).
+Full map: [docs/agent-map.md](../../../docs/agent-map.md).

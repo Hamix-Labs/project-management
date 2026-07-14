@@ -1,0 +1,70 @@
+---
+description: >-
+  When adding Go logs, metrics, health/ready probes, or deciding what to log
+  vs return as an error. One question: how should this code be observed in
+  production?
+globs:
+  - "**/*.go"
+alwaysApply: false
+---
+
+# Observability
+
+**When:** adding `slog`/logging, Prometheus metrics, `/healthz`/`/readyz`, or request/ops fields.
+
+Prefer `log/slog` or the package’s existing logger.
+
+---
+
+## Structured logging
+
+```go
+slog.InfoContext(ctx, "user created",
+    slog.String("user_id", user.ID.String()),
+    slog.Duration("duration", time.Since(start)),
+)
+```
+
+| Level | Use for |
+| --- | --- |
+| DEBUG | Bodies / internal state (off in prod by default) |
+| INFO | Lifecycle: started, completed, significant actions |
+| WARN | Recoverable / degraded / retries |
+| ERROR | Failed ops needing attention — always include `err` |
+
+- Structured only — never `fmt.Println` / `log.Printf` in production paths.
+- Log at boundaries (handler, worker entry), not inside hot loops.
+- Include when available: request ID, actor/user ID, operation, duration, `err`.
+- Never log secrets, tokens, passwords, or unnecessary PII.
+- Log errors at the **handling** site — never log and return the same error.
+
+---
+
+## Metrics
+
+When the binary is operated in production, expose Prometheus `/metrics` for:
+
+- Request count by route, method, status
+- Latency histograms
+- DB pool / query duration
+- Error rates and domain counters operators care about
+
+---
+
+## Health checks
+
+```go
+// GET /healthz — liveness (process up)
+// GET /readyz  — readiness (can serve; e.g. DB ping)
+func handleReadyz(db *sql.DB) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        if err := db.PingContext(r.Context()); err != nil {
+            respondError(w, http.StatusServiceUnavailable, "database unavailable")
+            return
+        }
+        respond(w, http.StatusOK, map[string]string{"status": "ok"})
+    }
+}
+```
+
+Keep liveness cheap; readiness may check dependencies.

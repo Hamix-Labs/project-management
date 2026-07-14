@@ -1,0 +1,58 @@
+---
+description: >-
+  When adding Go workers, background loops, parallel fan-out, mutexes,
+  channels, or any go func(). One question: how should this concurrent work
+  be owned and cancelled?
+globs:
+  - "**/*.go"
+alwaysApply: false
+---
+
+# Concurrency — context and goroutines
+
+**When:** introducing or changing goroutines, `errgroup`, locks, channels, or cancelation.
+
+---
+
+## Patterns
+
+```go
+// ctx is always the first argument — never store Context on structs
+func (s *OrderService) Create(ctx context.Context, order *Order) error { ... }
+
+func (w *Worker) Start(ctx context.Context) error {
+    g, ctx := errgroup.WithContext(ctx)
+    g.Go(func() error { return w.processLoop(ctx) })
+    g.Go(func() error { return w.cleanupLoop(ctx) })
+    return g.Wait()
+}
+
+jobs := make(chan Job, 100) // buffer when sender must not block
+
+type Cache struct {
+    mu    sync.RWMutex // guards items
+    items map[string]Item
+}
+```
+
+---
+
+## Rules
+
+- `ctx` is always the **first** parameter; never store `context.Context` in a struct.
+- Never start a goroutine without ownership and a shutdown story.
+- Prefer `errgroup` when any failure should cancel siblings; `WaitGroup` only when errors need not propagate.
+- Mutexes live on the struct they protect; comment what they guard when non-obvious.
+- Channels: close on the **sender** side only.
+- Every blocking goroutine must respect `ctx.Done()`.
+- No `time.Sleep` in hot paths — use ticker/timer with `ctx.Done()`.
+- Never copy a `sync.Mutex` — pass by pointer / keep embedded.
+- Inject clocks when business logic needs controllable time in tests.
+
+---
+
+## Do not
+
+- Fire-and-forget `go func()` without cancel/cleanup.
+- Use `context.Background()` inside request handlers — use `r.Context()`.
+- Leak goroutines across worker restart / supervisor cycles.

@@ -30,17 +30,17 @@ describe("RepoFileMention", () => {
     editor.commands.insertContentAt(1, [
       {
         type: "repoFileMention",
-        attrs: { path: "AGENTS.md", lineStart: 1, lineEnd: 5 },
+        attrs: { path: "README.md", lineStart: 1, lineEnd: 5 },
       },
       { type: "text", text: " " },
     ]);
     const html = editor.getHTML();
     expect(html).toContain('data-repo-file="true"');
-    expect(html).toContain('data-path="AGENTS.md"');
+    expect(html).toContain('data-path="README.md"');
     expect(html).toContain('data-line-start="1"');
     expect(html).toContain('data-line-end="5"');
     expect(html).toContain("repo-file-chip");
-    expect(html).toContain("@AGENTS.md(1-5)");
+    expect(html).toContain("@README.md(1-5)");
     editor.destroy();
   });
 });

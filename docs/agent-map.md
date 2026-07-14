@@ -5,8 +5,8 @@ Repository paths grouped by subsystem. Read only the rows relevant to your task.
 | | |
 | --- | --- |
 | **Applies to** | Locating code when editing the repo |
-| **Audience** | Contributors and agents (after [AGENTS.md](../AGENTS.md) scoped path) |
-| **Prerequisite** | Pick a scoped path in [AGENTS.md](../AGENTS.md) first |
+| **Audience** | Contributors and agents locating code to edit |
+| **Prerequisite** | [guide.md](./guide.md) for learning paths; [CONTRIBUTING.md](../CONTRIBUTING.md) for setup |
 
 ## In this article
 
@@ -90,5 +90,4 @@ Repository paths grouped by subsystem. Read only the rows relevant to your task.
 
 - [guide.md](./guide.md) — documentation layers and learning paths
 - [README.md](./README.md) — doc index by topic
-- [AGENTS.md](../AGENTS.md) — scoped paths when editing
-- [AGENTS.md](../AGENTS.md) §Where to find X — intent-based lookup (route, harness, sync, …)
+- [CONTRIBUTING.md](../CONTRIBUTING.md) — setup and PR checklist

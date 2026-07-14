@@ -1,8 +1,9 @@
 ---
 description: >-
-  File-size limits, naming, splitting, and documentation rules for this Go +
-  TypeScript monorepo. Layout details: go-layout.mdc (Go BCs), web-layout.mdc
-  (SPA verticals).
+  When creating, growing, renaming, or splitting source files — file-size
+  limits (green/yellow/red), naming, split patterns, and ADR/doc update
+  triggers. Not for docs-only or layout “where does the package live?”
+  questions (use backend/go/layout.mdc, web-layout.mdc, docs/agent-map.md).
 globs:
   - "**/*.go"
   - "**/*.ts"
@@ -10,17 +11,16 @@ globs:
   - "**/*.css"
   - "**/go.mod"
   - "**/package.json"
-alwaysApply: true
+alwaysApply: false
 ---
 
 # Project structure — size, naming, and splits
 
-Hamix is a Go + TypeScript monorepo. **Where files live** is documented in:
+**When:** editing Go/TS/CSS source and you need size limits, naming, how to split a file, or whether an ADR/doc must land in the same PR.
 
-- **Go BCs and composition shell** → `go-layout.mdc`
-- **Web vertical modules and inner ring** → `web-layout.mdc`
+Hamix is a Go + TypeScript monorepo. **Where packages live** → `backend/go/layout.mdc`, `web-layout.mdc`, [docs/agent-map.md](../../docs/agent-map.md).
 
-This file wins on **file size and naming**; `go-layout.mdc` / `web-layout.mdc` win on directory layout; `backend-engineering-bar.mdc` and `frontend_bar.mdc` win on quality within a file.
+This file wins on **file size and naming**; layout rules win on directory placement; `backend/go/*.mdc` and `frontend_bar.mdc` win on quality within a file.
 
 ---
 
@@ -126,7 +126,7 @@ ADR format: Context → Decision → Consequences → Alternatives. See existing
 
 | Trigger | Action |
 | --- | --- |
-| New BC package | ADR + full `{domain,contract,store,handler}` subtree — see `go-layout.mdc` |
+| New BC package | ADR + full `{domain,contract,store,handler}` subtree — see `backend/go/layout.mdc` |
 | Second binary | `internal/<binary>/` assembly; shared logic stays in `pkgs/` |
 | Web vertical count > 5 | Audit cross-vertical imports; document in `docs/web.md` |
 | API routes > 20 | One handler file per resource; consider OpenAPI diff in CI |
@@ -156,23 +156,9 @@ ADR format: Context → Decision → Consequences → Alternatives. See existing
 
 ---
 
-## Quick reference
+## See also
 
-```
-WHERE DOES X LIVE?
-──────────────────────────────────────────────────────────────────────
-Go layout / BC map              → go-layout.mdc, docs/agent-map.md
-Web layout / verticals        → web-layout.mdc, docs/web.md
-Task domain (canonical)       → pkgs/taskcore/domain/
-Cycles / checklist / events   → pkgs/taskcycles|taskchecklist|taskevents/domain/
-HTTP composition + SSE        → pkgs/tasks/handler/
-Store facade                  → pkgs/tasks/store/
-fetch() + API parsers         → web/src/api/
-Task sync / mutations         → web/src/tasks/sync/, tasks/mutations/
-Shared web inner ring         → web/src/lib/, web/src/hooks/
-Go quality bar                → backend-engineering-bar.mdc
-Web UI bar                    → frontend_bar.mdc
-Web test bar                  → web-testing-bar.mdc
-Verify before PR              → ci-verification.mdc
-──────────────────────────────────────────────────────────────────────
-```
+- Paths by subsystem → [docs/agent-map.md](../../docs/agent-map.md)
+- Go BC layout → `backend/go/layout.mdc`
+- Web verticals → `web-layout.mdc`
+- Verify before PR → `ci-verification.mdc`

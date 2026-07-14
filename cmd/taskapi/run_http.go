@@ -25,7 +25,7 @@ import (
 // run_http.go owns the HTTP server lifecycle for taskapi: mux mount
 // (incl. /metrics + optional SSE dev ticker), listener bind, and the
 // graceful Serve+Shutdown loop. Split off run_helpers.go per
-// backend-engineering-bar.mdc §2 / §16.
+// backend/go/layout.mdc (split by responsibility).
 
 func mountTaskAPIMux(ctx context.Context, api http.Handler, hub *handler.SSEHub, taskStore *composition.API, agentQueue *agents.MemoryQueue) *http.ServeMux {
 	taskapi.RegisterDefaultPrometheusCollectors()

@@ -1,0 +1,65 @@
+---
+description: >-
+  When writing or reviewing Go store/persistence code — SQL/GORM queries,
+  transactions, connection pools, migrations, or mapping sql.ErrNoRows to
+  domain sentinels. One question: how should this store talk to the database?
+globs:
+  - "**/store/**/*.go"
+  - "**/postgres/**/*.go"
+  - "**/*migrate*"
+alwaysApply: false
+---
+
+# Store — database access
+
+**When:** editing `store/` packages, SQL/GORM, transactions, pools, or migrate paths.
+
+Stores own SQL/GORM, map rows to domain types, and translate driver errors to domain sentinels. Handlers never import DB drivers.
+
+---
+
+## Shape
+
+Define interfaces for callers (often in `contract/`); implement in `store/`.
+
+```go
+type UserStore interface {
+    Create(ctx context.Context, user *User) error
+    GetByID(ctx context.Context, id uuid.UUID) (*User, error)
+}
+
+func (s *PostgresUserStore) GetByID(ctx context.Context, id uuid.UUID) (*User, error) {
+    const q = `SELECT id, email, created_at FROM users WHERE id = $1`
+
+    var u domain.User
+    err := s.db.QueryRowContext(ctx, q, id).Scan(&u.ID, &u.Email, &u.CreatedAt)
+    if errors.Is(err, sql.ErrNoRows) {
+        return nil, domain.ErrNotFound
+    }
+    if err != nil {
+        return nil, fmt.Errorf("get user by id: %w", err)
+    }
+    return &u, nil
+}
+```
+
+---
+
+## Rules
+
+- Prefer **raw SQL** / explicit queries; avoid opaque ORM magic that hides N+1.
+- **Parameterized queries only** — never interpolate untrusted input into SQL.
+- Translate `sql.ErrNoRows` → `domain.ErrNotFound` at the store boundary.
+- Every query takes `ctx`: `QueryRowContext`, `QueryContext`, `ExecContext`.
+- Scan inside the store; return domain types — never `*sql.Rows` to callers.
+- Transactions: `BeginTx`, `defer tx.Rollback()`, explicit `Commit()`.
+- Configure pool: `SetMaxOpenConns`, `SetMaxIdleConns`, `SetConnMaxLifetime`.
+- No HTTP in `store/`; no SQL in `handler/`.
+
+---
+
+## Do not
+
+- Mix HTTP into store methods.
+- Leak driver/GORM errors when a domain sentinel exists.
+- Build SQL with `fmt.Sprintf` of user input.

@@ -23,7 +23,7 @@ Hamix docs are grouped by **purpose**, not by a single reading order. Reference 
 
 > **Note** — Read one [learning path](#choose-a-learning-path) below. Open additional articles only when your task requires them.
 
-> **Important** — For code changes, use [AGENTS.md](../AGENTS.md) for scoped paths and [agent-map.md](./agent-map.md) for repository locations. Setup and PR checklist: [CONTRIBUTING.md](../CONTRIBUTING.md).
+> **Important** — For code changes, use [agent-map.md](./agent-map.md) for repository locations. Setup and PR checklist: [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 ## Documentation types
 
@@ -62,11 +62,11 @@ Pick **one** row. Follow links left to right. Stop when you have enough context 
 | --- | --- |
 | **Use Hamix** — create tasks and write criteria | 1. [execute-and-verify.md](./execute-and-verify.md) → 2. [done-criteria.md](./domain/done-criteria.md) (optional) |
 | **Understand the system** | 1. [architecture.md](./architecture.md) → 2. [data-model.md](./data-model.md) → 3. [api.md](./api.md) (skim routes) |
-| **Work on the API or store** | 1. Understand the system (above) → 2. [AGENTS.md](../AGENTS.md) scoped paths → 3. [persistence.md](./domain/persistence.md) as needed |
+| **Work on the API or store** | 1. Understand the system (above) → 2. [agent-map.md](./agent-map.md) → 3. [persistence.md](./domain/persistence.md) as needed |
 | **Work on the web UI** | 1. [web.md](./web.md) → 2. [architecture.md](./architecture.md) — SSE / live updates only |
 | **Work on agents or harness** | 1. [architecture.md](./architecture.md) → 2. [harness.md](./domain/harness.md) → 3. [execute-agent.md](./domain/execute-agent.md) and/or [verify-agent.md](./domain/verify-agent.md) |
 | **Work on tests / CI** | 1. [domain/testing.md](./domain/testing.md) → 2. [harness-testing.md](./domain/harness-testing.md) (harness only) → 3. [CONTRIBUTING.md](../CONTRIBUTING.md) § Before you open a PR |
-| **Edit code (human or AI)** | 1. [AGENTS.md](../AGENTS.md) → 2. [agent-map.md](./agent-map.md) for paths |
+| **Edit code (human or AI)** | 1. [agent-map.md](./agent-map.md) → 2. relevant domain / reference docs |
 
 ## When to read domain articles and ADRs
 
@@ -83,15 +83,13 @@ Open [adr/](./adr/) when you need the historical **why** behind a design, not fo
 | Every doc by topic | [Documentation index](./README.md) |
 | Domain deep dives | [domain/README.md](./domain/README.md) |
 | Repository paths | [agent-map.md](./agent-map.md) |
-| Scoped paths when editing | [AGENTS.md](../AGENTS.md) |
-| Specific edit task (route, harness, sync…) | [AGENTS.md](../AGENTS.md) §Where to find X |
 | Setup and PR checklist | [CONTRIBUTING.md](../CONTRIBUTING.md) |
 
 ## See also
 
 - [Documentation index](./README.md) — “Read when” table for all docs under `docs/`
 - [domain/README.md](./domain/README.md) — domain article index and writing template
-- [AGENTS.md](../AGENTS.md) — agent and contributor orientation for code changes
+- [agent-map.md](./agent-map.md) — subsystem code paths
 - [CONTRIBUTING.md](../CONTRIBUTING.md) — setup, PR checklist, where to go next
 
 New articles under `docs/` should follow the template in [domain/README.md](./domain/README.md) § Article template (metadata table, **In this article**, **See also**).

@@ -1,0 +1,65 @@
+---
+description: >-
+  When loading Go app config, adding HAMIX_*/env vars, or changing go.mod
+  dependencies. One question: how should configuration and modules be managed?
+globs:
+  - "**/*.go"
+  - "**/go.mod"
+  - "internal/envload/**"
+alwaysApply: false
+---
+
+# Config and modules
+
+**When:** editing config structs, env parsing, `.env` loading near `main`, or adding/updating module deps.
+
+---
+
+## Configuration
+
+```go
+type HTTPConfig struct {
+    Addr            string        `env:"HTTP_ADDR,default=:8080"`
+    ReadTimeout     time.Duration `env:"HTTP_READ_TIMEOUT,default=5s"`
+    WriteTimeout    time.Duration `env:"HTTP_WRITE_TIMEOUT,default=10s"`
+    IdleTimeout     time.Duration `env:"HTTP_IDLE_TIMEOUT,default=120s"`
+    ShutdownTimeout time.Duration `env:"HTTP_SHUTDOWN_TIMEOUT,default=30s"`
+}
+
+func Load() (*Config, error) {
+    var cfg Config
+    if err := env.Parse(&cfg); err != nil {
+        return nil, fmt.Errorf("parse config: %w", err)
+    }
+    if err := cfg.Validate(); err != nil {
+        return nil, fmt.Errorf("invalid config: %w", err)
+    }
+    return &cfg, nil
+}
+```
+
+- Production config via **environment variables** — no committed secret files.
+- Structured parse (`envconfig` / `caarlos0/env`) — no scattered `os.Getenv` in libraries.
+- Validate at startup; missing required values → do not serve.
+- Defaults for optional values; document every new env var in configuration docs.
+- `.env` via `godotenv` / `internal/envload` only near `main`, not deep in `pkgs/`.
+- Timeouts as `time.Duration` — never raw int literals.
+
+---
+
+## Dependency management
+
+- Keep `go.mod` / `go.sum` tidy before merge.
+- Prefer stdlib; add a dep only when owning the code costs more.
+- Check license, activity, and API stability before adopting.
+- Pin major versions; avoid production `replace` directives.
+- Run `govulncheck ./...` in CI.
+
+| Category | Preferred |
+| --- | --- |
+| HTTP router | `chi`, `gorilla/mux`, or stdlib |
+| SQL | `database/sql` + `pgx` / existing GORM paths |
+| Config | `envconfig` / `caarlos0/env` |
+| Logging | `log/slog` |
+| Testing | `testify` |
+| Errors | stdlib `errors` + `fmt.Errorf("%w")` |

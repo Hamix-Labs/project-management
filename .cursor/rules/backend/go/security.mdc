@@ -1,0 +1,39 @@
+---
+description: >-
+  When touching Go auth, public endpoints, request parsing, secrets/env, CORS,
+  rate limits, body size limits, or dependency vulnerability concerns. One
+  question: how should this change stay safe?
+globs:
+  - "**/*.go"
+alwaysApply: false
+---
+
+# Security
+
+**When:** changing auth, inbound validation, secrets handling, CORS, rate limits, or vuln-sensitive deps.
+
+Never trust user input. Prefer maintained libraries over custom crypto.
+
+---
+
+## Rules
+
+- **Validate and sanitize** all inbound data before use.
+- **SQL injection:** parameterized queries only — no exceptions.
+- **Authentication:** validate tokens in **middleware**. Never roll your own crypto. Handlers read identity from context.
+- **Secrets:** env / secret managers only — never commit secrets. Redact in logs.
+- **TLS:** inter-service traffic over TLS; terminate at LB/mesh as appropriate.
+- **Rate limiting:** public endpoints — per-IP default; per-user when authenticated.
+- **Body size:** `http.MaxBytesReader` on all request bodies.
+- **CORS:** allowlist origins — never `*` in production for authenticated APIs.
+- **Dependencies:** run `govulncheck`; pin majors; avoid shady transitive history.
+- **Least privilege:** app DB roles only what stores need — no superuser from app code.
+
+---
+
+## Do not
+
+- Parse auth inside individual handlers when middleware exists.
+- Log tokens, passwords, or raw credentials.
+- Disable TLS verification in production paths.
+- Accept unbounded request bodies.

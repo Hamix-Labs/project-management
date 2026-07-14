@@ -1,0 +1,90 @@
+---
+description: >-
+  When writing or reviewing Go code for naming, package identifiers, sentinel
+  errors, error wrapping (%w), or whether to panic / log / return. One question:
+  how should this Go code name things and handle failures?
+globs:
+  - "**/*.go"
+alwaysApply: false
+---
+
+# Principles — naming and errors
+
+**When:** editing any Go production code and you need naming or error-handling rules.
+
+Follow the [Go spec](https://go.dev/ref/spec) and [Effective Go](https://go.dev/doc/effective_go).
+
+---
+
+## Principles
+
+- **Explicit over implicit.** Important behavior must be visible in the code.
+- **Errors are values.** Never ignore, swallow, or paper over them.
+- **Simplicity is the goal.** If you need a comment to explain what the code does, refactor.
+- **Interfaces are contracts.** Keep them small. Accept interfaces, return concrete types.
+- **Composition over inheritance.** Embed, wrap, and decorate.
+- **Design for the operator.** Debuggable and deployable by someone who did not write it.
+- **Fail loudly at startup, gracefully at runtime.** Invalid config fails at boot.
+
+---
+
+## Naming
+
+Package name is part of the name — prefer short identifiers.
+
+```go
+// Good
+user.Store
+user.New()
+
+// Bad
+userStore.UserStore
+helpers.CreateUserHelper()
+```
+
+- **Packages:** lowercase, single word, no underscores (`store`, `domain`, `config`).
+- **Exported:** `PascalCase`. Unexported: `camelCase`.
+- **Interfaces:** behavior nouns (`Reader`, `UserStore`) — not `IUserStore`.
+- **Constructors:** `New(deps) *Type` or `NewType(deps) *Type` when the package has multiple types.
+- **Errors:** `ErrNotFound`, `ErrConflict` — prefix `Err`.
+- **Context param:** always first, always named `ctx`.
+- **Avoid stutter:** `user.ID` not `user.UserID`; `store.Config` not `store.StoreConfig`.
+- **Acronyms:** `userID`, `httpClient`, `urlPath` — not `userId`, `HttpClient`.
+
+---
+
+## Error handling
+
+```go
+if err := store.CreateUser(ctx, user); err != nil {
+    return fmt.Errorf("create user %s: %w", user.Email, err)
+}
+
+var (
+    ErrNotFound = errors.New("not found")
+    ErrConflict = errors.New("conflict")
+)
+
+if errors.Is(err, domain.ErrNotFound) {
+    return http.StatusNotFound
+}
+```
+
+- Never discard errors with `_`.
+- Wrap with `fmt.Errorf("context: %w", err)` when crossing package boundaries.
+- **Never log AND return** the same error — pick one.
+- Sentinel errors live in **domain**; HTTP status mapping lives in **handler**.
+- `errors.Is` for sentinels; `errors.As` for typed errors. Never string-match.
+- Panic only for programming errors — never for I/O or user input.
+- Never return `nil, nil` when success vs no-op is ambiguous.
+
+---
+
+## Do not
+
+- Use `init()` (order is invisible).
+- Use globals except `var ErrFoo = errors.New(...)`.
+- Prefer generics over `any` / `interface{}` when a type parameter fits.
+- Ignore `error` returns, including in `defer`.
+- Use `panic` for expected failures.
+- Use `log.Fatal` outside `main.go`.

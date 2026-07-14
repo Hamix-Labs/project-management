@@ -1,8 +1,19 @@
 ---
-description: Comment standards for Go, TypeScript, React, CSS, and SQL — apply when adding,   editing, or reviewing comments or godoc/JSDoc. Comments explain why, not what;   required for non-obvious logic, edge cases, and exported APIs; omit on   self-explanatory code.
+description: >-
+  When writing, editing, or reviewing comments / godoc / JSDoc / SQL migration
+  headers — why-not-what, when comments are required vs noise, TODO/FIXME format.
+  Not for unrelated refactors with no comment decisions.
+globs:
+  - "**/*.go"
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.css"
+  - "**/*.sql"
 alwaysApply: false
 ---
 # Code Commenting Standards
+
+**When:** deciding whether to add/change a comment, or reviewing comment quality.
 
 Comments are not decoration. They are not a sign of thoroughness. They are a last resort — used only when the code itself cannot communicate the full truth. A comment that describes what the code does is a failure. A comment that explains why the code does it that way, or warns about a non-obvious consequence, is invaluable.
 

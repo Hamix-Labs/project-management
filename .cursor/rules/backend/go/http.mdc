@@ -1,0 +1,108 @@
+---
+description: >-
+  When modifying Go HTTP handlers, routes, middleware, JSON request/response
+  shapes, status codes, or http.Server graceful shutdown. One question: how
+  should this HTTP surface behave?
+globs:
+  - "**/handler/**/*.go"
+  - "**/middleware/**/*.go"
+  - "cmd/**/*.go"
+  - "internal/**/*.go"
+alwaysApply: false
+---
+
+# HTTP — handlers, middleware, shutdown
+
+**When:** adding or changing routes, handlers, middleware, REST JSON, or server lifecycle.
+
+---
+
+## Handler shape
+
+Accept deps via closure (or struct), not globals. Use `r.Context()`. Map domain errors to HTTP status — never leak internals to clients.
+
+```go
+func handleCreateUser(svc UserService) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        ctx := r.Context()
+
+        var req CreateUserRequest
+        if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+            respondError(w, http.StatusBadRequest, "invalid request body")
+            return
+        }
+        if err := req.Validate(); err != nil {
+            respondError(w, http.StatusUnprocessableEntity, err.Error())
+            return
+        }
+
+        user, err := svc.CreateUser(ctx, req)
+        if err != nil {
+            handleServiceError(w, err)
+            return
+        }
+        respond(w, http.StatusCreated, user)
+    }
+}
+```
+
+| Method | Path | Meaning |
+| --- | --- | --- |
+| GET | `/resources` | list (paginated) |
+| POST | `/resources` | create |
+| GET | `/resources/{id}` | get |
+| PUT | `/resources/{id}` | full replace |
+| PATCH | `/resources/{id}` | partial update |
+| DELETE | `/resources/{id}` | delete |
+
+- Always `Content-Type: application/json`.
+- Errors: `{"error": "human-readable message"}` — no stack traces.
+- Validation → **422**; duplicates → **409**; never `200` with an error body.
+- Version via URL (`/v1/`), not headers.
+- Mutations idempotent where possible.
+- Set `ReadTimeout`, `WriteTimeout`, `IdleTimeout` on every `http.Server`.
+- Wrap bodies with `http.MaxBytesReader`.
+- Never `context.Background()` in a handler — use `r.Context()`.
+- No SQL in handlers; depend on `contract` interfaces only.
+
+---
+
+## Middleware
+
+One concern each. Order (outer → inner): Recover → RequestID → Logger → Auth → RateLimit → Handler.
+
+```go
+func withRequestID(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        id := r.Header.Get("X-Request-ID")
+        if id == "" {
+            id = uuid.New().String()
+        }
+        ctx := context.WithValue(r.Context(), requestIDKey{}, id)
+        w.Header().Set("X-Request-ID", id)
+        next.ServeHTTP(w, r.WithContext(ctx))
+    })
+}
+```
+
+- Context keys: unexported types, never strings.
+- Call `next.ServeHTTP` **or** write a response — never both after writing.
+- Auth sets identity in context; handlers read it — do not parse tokens in handlers.
+- Recovery logs panic + stack before 500.
+
+---
+
+## Graceful shutdown
+
+```go
+<-ctx.Done() // SIGTERM / SIGINT via signal.NotifyContext
+
+shutdownCtx, cancel := context.WithTimeout(context.Background(), cfg.HTTP.ShutdownTimeout)
+defer cancel()
+return srv.Shutdown(shutdownCtx)
+```
+
+- Timeout ≥ **15s**, prefer **30s**.
+- Close DB and other resources **after** server shutdown.
+- Log the shutdown sequence.
+- Shared `*http.Client`: always set timeouts — never the default client.

@@ -14,7 +14,7 @@ import (
 // run_logging.go owns slog/log-file setup for taskapi: opening the
 // daily JSON log file, wrapping the slog handler with request and
 // per-process sequence context, and the deferred sync+close site.
-// Split off run_helpers.go per backend-engineering-bar.mdc §2 / §16
+// Split off run_helpers.go per backend/go/layout.mdc
 // (do not grow a single file into a junk drawer of unrelated concerns).
 
 func emitTaskAPIFileLoggingConfig(minLevel slog.Level) {

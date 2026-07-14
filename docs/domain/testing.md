@@ -110,5 +110,5 @@ Taskapi assembly smoke: `internal/taskapi/server_smoke_test.go` (`NewHTTPHandler
 
 - [harness-testing.md](harness-testing.md) — harness tiers and `harness.Run` recipe
 - [CONTRIBUTING.md](../../CONTRIBUTING.md) — PR checklist and Stuck section
-- [AGENTS.md](../../AGENTS.md) — scoped paths and Where to find X
+- [agent-map.md](../agent-map.md) — subsystem code paths
 - [ADR-0026](adr/ADR-0026-backend-data-coherence.md) — SSE / bootstrap coherence

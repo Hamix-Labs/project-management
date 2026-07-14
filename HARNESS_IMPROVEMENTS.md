@@ -2,7 +2,7 @@
 
 **Snapshot:** June 2026
 
-Ranked investment backlog for Hamix’s **outer harness** (`pkgs/agents/harness`). Read [HARNESS_LANDSCAPE.md](HARNESS_LANDSCAPE.md) first for industry context; read [docs/domain/harness.md](docs/domain/harness.md) for operational behavior. Implement via ADR + vertical slice per [CONTRIBUTING.md](CONTRIBUTING.md) and [AGENTS.md](AGENTS.md).
+Ranked investment backlog for Hamix’s **outer harness** (`pkgs/agents/harness`). Read [HARNESS_LANDSCAPE.md](HARNESS_LANDSCAPE.md) first for industry context; read [docs/domain/harness.md](docs/domain/harness.md) for operational behavior. Implement via ADR + vertical slice per [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/agent-map.md](docs/agent-map.md).
 
 > **How to use this doc** — Pick from the top when planning harness work. Re-score when product priorities shift. Each item includes effort, evidence, and a measurable success signal.
 >

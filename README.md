@@ -55,7 +55,7 @@ See [docs/execute-and-verify.md](docs/execute-and-verify.md) for details.
 
 - [docs/guide.md](docs/guide.md) — how documentation fits together
 - [CONTRIBUTING.md](CONTRIBUTING.md) — setup and PR checklist
-- [AGENTS.md](AGENTS.md) — code paths when editing the repo
+- [docs/agent-map.md](docs/agent-map.md) — code paths when editing the repo
 
 ## License
 

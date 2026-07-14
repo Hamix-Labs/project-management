@@ -10,7 +10,7 @@
 // the seq counter, may set status to terminal values without going
 // through the usual transitions). Keeping the dev-only code in its
 // own package makes that asymmetry obvious to readers and to the
-// "no production import" guard expected by AGENTS.md.
+// "no production import" guard expected by layout / CODE_STANDARDS.
 //
 // ApplyTaskRowMirror returns the reloaded task and the previous
 // status so the caller (the public store facade) can decide whether
