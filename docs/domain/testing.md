@@ -40,7 +40,7 @@ Package lists are defined in [`scripts/test-groups.sh`](../../scripts/test-group
 | --- | --- | --- |
 | `core` | Binaries, `internal/`, repo/git helpers | `cmd/taskapi`, `internal/taskapi`, `pkgs/repo` |
 | `tasks` | Task domain BCs (except agentreconcile) | `pkgs/tasks/handler`, `pkgs/taskcore`, `pkgs/taskcycles`, `pkgs/settings` |
-| `agents` | Agent worker, runner, queue | `pkgs/agents/worker`, `runner` |
+| `agents` | Agent worker, runner, queue, reconcile e2e | `pkgs/agents/worker`, `runner`, `internal/taskapi/agentreconcile` |
 | `harness` | Agent harness only | `pkgs/agents/harness/...` |
 
 CI runs `go-tests` as a **matrix** — one job per group. Failures name the group in the workflow log.

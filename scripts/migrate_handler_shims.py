@@ -111,7 +111,7 @@ def main() -> None:
         "cmd/taskapi/run_helpers.go",
         "cmd/taskapi/run_http.go",
         "internal/handlertest/health_test.go",
-        "pkgs/tasks/agentreconcile/agent_real_cursor_e2e_test.go",
+        "internal/taskapi/agentreconcile/agent_real_cursor_e2e_test.go",
         "internal/taskapi/agentworker/sse.go",
     ]:
         p = ROOT / rel

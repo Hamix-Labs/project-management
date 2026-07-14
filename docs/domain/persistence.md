@@ -403,7 +403,7 @@ flowchart TD
 | Verdict upserts | `facade_reports_test.go` | Idempotent `(cycle, attempt, criterion)` keys |
 | Ready notify wiring | `facade_tasks_test.go` (`spyReadyNotifier`) | Facade fires notify on correct transitions |
 | Internal white-box | `internal/<domain>/*_test.go` | Payload shape, edge validators |
-| Agent integration | `pkgs/tasks/agentreconcile/` | Store + queue + worker (not imported by production) |
+| Agent integration | `internal/taskapi/agentreconcile/` | Store + queue + worker (not imported by production) |
 
 Default CI: `go test ./...` with in-memory SQLite — no Postgres required ([CONTRIBUTING.md](../CONTRIBUTING.md)).
 

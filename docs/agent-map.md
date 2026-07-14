@@ -84,7 +84,7 @@ Repository paths grouped by subsystem. Read only the rows relevant to your task.
 | Middleware tests | `internal/middlewaretest/` | Black-box tests for middleware stack | [middleware/README.md](../pkgs/tasks/middleware/README.md) |
 | Handler tests | `internal/handlertest/` | Black-box HTTP tests for exported handler API | — |
 | Security header tests | `internal/httpsecurityexpect/` | Shared baseline header assertions | — |
-| Agent reconcile tests | `pkgs/tasks/agentreconcile/` | SQLite integration tests; not production code | — |
+| Agent reconcile tests | `internal/taskapi/agentreconcile/` | SQLite integration tests; not production code | — |
 
 ## See also
 

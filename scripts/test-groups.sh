@@ -11,15 +11,15 @@ group_packages() {
   case "$group" in
     core)
       go list ./cmd/... ./internal/... ./pkgs/repo/... ./pkgs/gitcore/... ./pkgs/gitexec/... ./pkgs/gitwork/... \
-        | grep -Ev '/handlertest(/|$)'
+        | grep -Ev '/(handlertest|agentreconcile)(/|$)'
       ;;
     tasks)
       go list ./pkgs/tasks/... ./pkgs/projects/... ./pkgs/gitinventory/... ./pkgs/settings/... ./pkgs/taskcompose/... \
         ./pkgs/taskcore/... ./pkgs/taskchecklist/... ./pkgs/taskcycles/... ./pkgs/taskevents/... \
-        ./pkgs/runners/handler ./pkgs/storekernel/... ./internal/handlertest/... | grep -Ev '/agentreconcile$'
+        ./pkgs/runners/handler ./pkgs/storekernel/... ./internal/handlertest/...
       ;;
     agents)
-      go list ./pkgs/agents/... ./pkgs/tasks/agentreconcile/... | grep -Ev '/harness'
+      go list ./pkgs/agents/... ./internal/taskapi/agentreconcile/... | grep -Ev '/harness'
       ;;
     harness)
       go list ./pkgs/agents/harness/...

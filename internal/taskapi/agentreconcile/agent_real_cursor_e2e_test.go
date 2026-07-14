@@ -12,7 +12,7 @@
 //
 //	$env:HAMIX_TEST_REAL_CURSOR='1'
 //	$env:HAMIX_TEST_CURSOR_BIN='C:\path\to\cursor-agent.cmd' # optional override
-//	go test -tags=cursor_real -run TestAgentE2E_RealCursor -race ./pkgs/tasks/agentreconcile/... -count=1
+//	go test -tags=cursor_real -run TestAgentE2E_RealCursor -race ./internal/taskapi/agentreconcile/... -count=1
 //
 // Prerequisites: cursor-agent on PATH (or the env override) and
 // Cursor logged in. The test owns a fresh tempdir and a fresh

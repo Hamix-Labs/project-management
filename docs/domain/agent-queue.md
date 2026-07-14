@@ -260,7 +260,7 @@ Worker enabled when `app_settings.repo_root` is set and agent not paused — sup
 | Queue unit tests | `memory_queue_test.go` |
 | Reconcile | `reconcile` tests in `pkgs/agents/` |
 | Store notifier | `facade_tasks_test.go` (`spyReadyNotifier`) |
-| Integration | `pkgs/tasks/agentreconcile/` (SQLite + worker) |
+| Integration | `internal/taskapi/agentreconcile/` (SQLite + worker) |
 | Worker admission | `worker_test.go`, harness tests with `runnerfake` |
 
 Default CI does not require a running agent binary.

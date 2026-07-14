@@ -370,7 +370,7 @@ Worker process enabled when at least one git repository is registered with a val
 | Worker admission defer | [`admission.go`](../../pkgs/agents/worker/admission.go) — logs `failed_predicate` at Debug |
 | `on_hold` contract | [`handler_http_on_hold_contract_test.go`](../../pkgs/tasks/handler/handler_http_on_hold_contract_test.go) |
 | Worker admission | [`worker_test.go`](../../pkgs/agents/worker/) with harness + `runnerfake` |
-| Integration | [`pkgs/tasks/agentreconcile/`](../../pkgs/tasks/agentreconcile/) |
+| Integration | [`internal/taskapi/agentreconcile/`](../../internal/taskapi/agentreconcile/) |
 
 When adding a new readiness predicate, update **Go** (`scheduling/predicates.go`), **SQL** (`applyDequeuableTaskPredicates`), **`store/scheduling_parity_test.go`**, [data-model.md](../data-model.md), and this article in the same change.
 
