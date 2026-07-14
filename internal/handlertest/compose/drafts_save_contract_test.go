@@ -1,12 +1,13 @@
-package handler
+package compose_test
 
 // POST /task-drafts contract pins. Split out of
 // handler_http_drafts_contract_test.go in Session 35 (P6 — file size). Cross-route
-// helpers (assertBareError, equalStringSlices) and the SSE no-publish invariant
+// helpers (handlertest.AssertBareError, handlertest.EqualStringSlices) and the SSE no-publish invariant
 // remain in the central drafts contract file.
 
 import (
 	"encoding/json"
+	"github.com/AlexsanderHamir/Hamix/internal/handlertest"
 	"io"
 	"net/http"
 	"sort"
@@ -35,7 +36,7 @@ func saveDraft(t *testing.T, baseURL, body string) (*http.Response, []byte) {
 // (or any extra field) would silently break the doc claim and double the
 // list-page weight.
 func TestHTTP_saveDraft_201Envelope(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := handlertest.NewServer(t)
 	defer srv.Close()
 
 	res, raw := saveDraft(t, srv.URL, `{"name":"my draft","payload":{"title":"hi","priority":"medium"}}`)
@@ -54,7 +55,7 @@ func TestHTTP_saveDraft_201Envelope(t *testing.T) {
 	}
 	sort.Strings(gotKeys)
 	sort.Strings(wantKeys)
-	if !equalStringSlices(gotKeys, wantKeys) {
+	if !handlertest.EqualStringSlices(gotKeys, wantKeys) {
 		t.Fatalf("envelope keys=%v want %v (docs/api.md POST /task-drafts row pins {id,name,created_at,updated_at} with no payload echo)", gotKeys, wantKeys)
 	}
 
@@ -74,7 +75,7 @@ func TestHTTP_saveDraft_201Envelope(t *testing.T) {
 // behavior: omitted, empty, or whitespace-only `id` produces a server-assigned
 // UUID. Three sub-cases keep the assertions explicit.
 func TestHTTP_saveDraft_serverAssignsID(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := handlertest.NewServer(t)
 	defer srv.Close()
 
 	cases := []struct {
@@ -109,7 +110,7 @@ func TestHTTP_saveDraft_serverAssignsID(t *testing.T) {
 // `updated_at`, and **preserves** `created_at` from the first save. This is
 // the contract clients rely on for autosave + manual save coexistence.
 func TestHTTP_saveDraft_isUpsert(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := handlertest.NewServer(t)
 	defer srv.Close()
 
 	const id = "draft-upsert-001"
@@ -176,7 +177,7 @@ func TestHTTP_saveDraft_isUpsert(t *testing.T) {
 // future refactor that changes the store/handler/encoding-json wording breaks
 // loudly here.
 func TestHTTP_saveDraft_400ErrorStrings(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := handlertest.NewServer(t)
 	defer srv.Close()
 
 	cases := []struct {
@@ -196,7 +197,7 @@ func TestHTTP_saveDraft_400ErrorStrings(t *testing.T) {
 			if res.StatusCode != http.StatusBadRequest {
 				t.Fatalf("status %d (want 400) body=%s", res.StatusCode, raw)
 			}
-			var errBody jsonErrorBody
+			var errBody handlertest.JSONErrorBody
 			if err := json.Unmarshal(raw, &errBody); err != nil {
 				t.Fatalf("decode: %v body=%s", err, raw)
 			}
@@ -211,7 +212,7 @@ func TestHTTP_saveDraft_400ErrorStrings(t *testing.T) {
 // or null payload silently coerced to {}" semantic. Two sub-cases (null and
 // omitted) both round-trip through GET and assert the wire-level "{}".
 func TestHTTP_saveDraft_emptyPayloadCoercedToObject(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := handlertest.NewServer(t)
 	defer srv.Close()
 
 	cases := []struct{ name, body string }{

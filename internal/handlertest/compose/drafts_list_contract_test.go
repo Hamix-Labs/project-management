@@ -1,10 +1,11 @@
-package handler
+package compose_test
 
 // GET /task-drafts (list) contract pins. Split out of
 // handler_http_drafts_contract_test.go in Session 35 (P6 — file size).
 
 import (
 	"encoding/json"
+	"github.com/AlexsanderHamir/Hamix/internal/handlertest"
 	"io"
 	"net/http"
 	"sort"
@@ -35,7 +36,7 @@ func listDrafts(t *testing.T, baseURL, query string) (*http.Response, []byte) {
 // when empty, never null/omitted), each row exact key set without payload,
 // ordering is updated_at DESC.
 func TestHTTP_listDrafts_envelope(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := handlertest.NewServer(t)
 	defer srv.Close()
 
 	t.Run("emptyDB_returnsEmptyArray", func(t *testing.T) {
@@ -92,7 +93,7 @@ func TestHTTP_listDrafts_envelope(t *testing.T) {
 				gotKeys = append(gotKeys, k)
 			}
 			sort.Strings(gotKeys)
-			if !equalStringSlices(gotKeys, wantKeys) {
+			if !handlertest.EqualStringSlices(gotKeys, wantKeys) {
 				t.Fatalf("drafts[%d] keys=%v want %v (no payload on summary view)", i, gotKeys, wantKeys)
 			}
 		}
@@ -118,7 +119,7 @@ func TestHTTP_listDrafts_envelope(t *testing.T) {
 // the limit query parameter. The handler emits its own messages here (not
 // the store's invalidInputDetail path), so the wording is asserted verbatim.
 func TestHTTP_listDrafts_400Limit(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := handlertest.NewServer(t)
 	defer srv.Close()
 
 	cases := []struct {
@@ -137,7 +138,7 @@ func TestHTTP_listDrafts_400Limit(t *testing.T) {
 			if res.StatusCode != http.StatusBadRequest {
 				t.Fatalf("status %d (want 400) body=%s", res.StatusCode, raw)
 			}
-			var errBody jsonErrorBody
+			var errBody handlertest.JSONErrorBody
 			if err := json.Unmarshal(raw, &errBody); err != nil {
 				t.Fatalf("decode: %v body=%s", err, raw)
 			}

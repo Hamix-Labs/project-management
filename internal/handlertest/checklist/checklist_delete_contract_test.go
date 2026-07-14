@@ -1,8 +1,9 @@
-package handler
+package checklist_test
 
 import (
 	"context"
 	"encoding/json"
+	"github.com/AlexsanderHamir/Hamix/internal/handlertest"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"io"
 	"net/http"
@@ -11,9 +12,9 @@ import (
 )
 
 func TestHTTP_deleteChecklistItem_204ThenGone(t *testing.T) {
-	srv, st := newTaskCreateTestServerWithStore(t)
+	srv, st := handlertest.NewCreateServerWithStore(t)
 	defer srv.Close()
-	taskID := mustCreateChecklistTask(t, srv, "chk-del")
+	taskID := handlertest.MustCreateChecklistTask(t, srv, "chk-del")
 	it, err := st.AddChecklistItem(context.Background(), taskID, "remove me", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
@@ -63,9 +64,9 @@ func TestHTTP_deleteChecklistItem_204ThenGone(t *testing.T) {
 // TestHTTP_checklist_404OnUnknownTask pins the documented 404 mapping across
 // the three checklist write routes when the task id does not exist.
 func TestHTTP_deleteChecklistItem_publishesTaskUpdated(t *testing.T) {
-	srv, st, hub := newSSETriggerServer(t)
+	srv, st, hub := handlertest.NewSSETriggerServer(t)
 	defer srv.Close()
-	taskID := mustCreateChecklistTask(t, srv, "chk-sse-del")
+	taskID := handlertest.MustCreateChecklistTask(t, srv, "chk-sse-del")
 	it, err := st.AddChecklistItem(context.Background(), taskID, "remove", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
@@ -89,19 +90,19 @@ func TestHTTP_deleteChecklistItem_publishesTaskUpdated(t *testing.T) {
 		t.Fatalf("status %d (want 204) body=%s", res.StatusCode, raw)
 	}
 
-	events := drainSSE(t, ch, 1, 2*time.Second)
-	got := summarize(events)
-	mustEqualEvents(t, "DELETE /tasks/{id}/checklist/items/{itemId}", got, []string{"task_updated:" + taskID})
-	mustHaveTaskUpdatedData(t, "DELETE /tasks/{id}/checklist/items/{itemId}", events, taskID)
+	events := handlertest.DrainSSE(t, ch, 1, 2*time.Second)
+	got := handlertest.SummarizeSSEEvents(events)
+	handlertest.MustEqualEvents(t, "DELETE /tasks/{id}/checklist/items/{itemId}", got, []string{"task_updated:" + taskID})
+	handlertest.MustHaveTaskUpdatedData(t, "DELETE /tasks/{id}/checklist/items/{itemId}", events, taskID)
 }
 
 // TestHTTP_deleteChecklistItem_errorPathsNeverPublish pins the negative-side
 // SSE invariant: 400 (inheriting child) and 404 (unknown task, unknown item)
 // must never publish.
 func TestHTTP_deleteChecklistItem_errorPathsNeverPublish(t *testing.T) {
-	srv, st, hub := newSSETriggerServer(t)
+	srv, st, hub := handlertest.NewSSETriggerServer(t)
 	defer srv.Close()
-	parentID := mustCreateChecklistTask(t, srv, "chk-sse-del-par")
+	parentID := handlertest.MustCreateChecklistTask(t, srv, "chk-sse-del-par")
 	it, err := st.AddChecklistItem(context.Background(), parentID, "owned", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
@@ -131,7 +132,7 @@ func TestHTTP_deleteChecklistItem_errorPathsNeverPublish(t *testing.T) {
 	doDelete("unknownTask", "11111111-1111-4111-8111-111111111111", it.ID, http.StatusNotFound)
 	doDelete("unknownItem", parentID, "22222222-2222-4222-8222-222222222222", http.StatusNotFound)
 
-	got := summarize(drainSSE(t, ch, 0, 200*time.Millisecond))
+	got := handlertest.SummarizeSSEEvents(handlertest.DrainSSE(t, ch, 0, 200*time.Millisecond))
 	if len(got) != 0 {
 		t.Fatalf("drained SSE events %v after DELETE checklist error round-trips; want zero (400/404 paths must never publish)", got)
 	}

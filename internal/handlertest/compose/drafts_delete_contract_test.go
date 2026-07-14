@@ -1,10 +1,11 @@
-package handler
+package compose_test
 
 // DELETE /task-drafts/{id} contract pins. Split out of
 // handler_http_drafts_contract_test.go in Session 35 (P6 — file size).
 
 import (
 	"encoding/json"
+	"github.com/AlexsanderHamir/Hamix/internal/handlertest"
 	"io"
 	"net/http"
 	"testing"
@@ -28,7 +29,7 @@ func deleteDraft(t *testing.T, baseURL, id string) (*http.Response, []byte) {
 // TestHTTP_deleteDraft_204AndIdempotent404 pins the 204 + empty-body success
 // contract and the documented "re-DELETE returns 404" behavior.
 func TestHTTP_deleteDraft_204AndIdempotent404(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := handlertest.NewServer(t)
 	defer srv.Close()
 
 	resSave, rawSave := saveDraft(t, srv.URL, `{"name":"to-delete","payload":{}}`)
@@ -52,7 +53,7 @@ func TestHTTP_deleteDraft_204AndIdempotent404(t *testing.T) {
 	if res2.StatusCode != http.StatusNotFound {
 		t.Fatalf("re-delete status %d (want 404) body=%s", res2.StatusCode, raw2)
 	}
-	var errBody jsonErrorBody
+	var errBody handlertest.JSONErrorBody
 	if err := json.Unmarshal(raw2, &errBody); err != nil {
 		t.Fatalf("decode: %v body=%s", err, raw2)
 	}

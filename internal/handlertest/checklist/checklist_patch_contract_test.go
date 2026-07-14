@@ -1,8 +1,9 @@
-package handler
+package checklist_test
 
 import (
 	"context"
 	"encoding/json"
+	"github.com/AlexsanderHamir/Hamix/internal/handlertest"
 	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"io"
@@ -13,9 +14,9 @@ import (
 )
 
 func TestHTTP_patchChecklistItem_doneAgentReturnsItemsView(t *testing.T) {
-	srv, st := newTaskCreateTestServerWithStore(t)
+	srv, st := handlertest.NewCreateServerWithStore(t)
 	defer srv.Close()
-	taskID := mustCreateChecklistTask(t, srv, "chk-done")
+	taskID := handlertest.MustCreateChecklistTask(t, srv, "chk-done")
 	it, err := st.AddChecklistItem(context.Background(), taskID, "review", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
@@ -87,10 +88,10 @@ func TestHTTP_patchChecklistItem_doneAgentReturnsItemsView(t *testing.T) {
 // TestHTTP_deleteChecklistItem_204ThenGone pins the documented DELETE happy
 // path: 204 with empty body and the row vanishing from a follow-up GET.
 func TestHTTP_patchChecklistItem_textBranch400Strings(t *testing.T) {
-	srv := newTaskCreateTestServer(t)
+	srv := handlertest.NewCreateServer(t)
 	defer srv.Close()
 
-	parentID := mustCreateChecklistTask(t, srv, "chk-text-400-parent")
+	parentID := handlertest.MustCreateChecklistTask(t, srv, "chk-text-400-parent")
 	defRes, err := http.Post(srv.URL+"/tasks/"+parentID+"/checklist/items",
 		"application/json", strings.NewReader(`{"text":"owned"}`))
 	if err != nil {
@@ -163,7 +164,7 @@ func TestHTTP_patchChecklistItem_textBranch400Strings(t *testing.T) {
 			if code != http.StatusBadRequest {
 				t.Fatalf("status %d (want 400) body=%s — case rationale: %s", code, raw, tc.commentaryReason)
 			}
-			var errBody jsonErrorBody
+			var errBody handlertest.JSONErrorBody
 			if err := json.Unmarshal([]byte(raw), &errBody); err != nil {
 				t.Fatalf("decode: %v body=%s", err, raw)
 			}
@@ -178,9 +179,9 @@ func TestHTTP_patchChecklistItem_textBranch400Strings(t *testing.T) {
 // positive invariant for PATCH: a successful done-toggle publishes exactly
 // `task_updated:{id}`.
 func TestHTTP_patchChecklistItem_publishesTaskUpdated(t *testing.T) {
-	srv, st, hub := newSSETriggerServer(t)
+	srv, st, hub := handlertest.NewSSETriggerServer(t)
 	defer srv.Close()
-	taskID := mustCreateChecklistTask(t, srv, "chk-sse-patch")
+	taskID := handlertest.MustCreateChecklistTask(t, srv, "chk-sse-patch")
 	it, err := st.AddChecklistItem(context.Background(), taskID, "review", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
@@ -207,19 +208,19 @@ func TestHTTP_patchChecklistItem_publishesTaskUpdated(t *testing.T) {
 		t.Fatalf("status %d (want 200) body=%s", res.StatusCode, raw)
 	}
 
-	events := drainSSE(t, ch, 1, 2*time.Second)
-	got := summarize(events)
-	mustEqualEvents(t, "PATCH /tasks/{id}/checklist/items/{itemId}", got, []string{"task_updated:" + taskID})
-	mustHaveTaskUpdatedData(t, "PATCH /tasks/{id}/checklist/items/{itemId}", events, taskID)
+	events := handlertest.DrainSSE(t, ch, 1, 2*time.Second)
+	got := handlertest.SummarizeSSEEvents(events)
+	handlertest.MustEqualEvents(t, "PATCH /tasks/{id}/checklist/items/{itemId}", got, []string{"task_updated:" + taskID})
+	handlertest.MustHaveTaskUpdatedData(t, "PATCH /tasks/{id}/checklist/items/{itemId}", events, taskID)
 }
 
 // TestHTTP_patchChecklistItem_errorPathsNeverPublish pins the negative-side SSE
 // invariant: 400 (done by user actor, unknown done value) and 404 (unknown
 // task, unknown item) must never publish.
 func TestHTTP_patchChecklistItem_errorPathsNeverPublish(t *testing.T) {
-	srv, st, hub := newSSETriggerServer(t)
+	srv, st, hub := handlertest.NewSSETriggerServer(t)
 	defer srv.Close()
-	taskID := mustCreateChecklistTask(t, srv, "chk-sse-patch-neg")
+	taskID := handlertest.MustCreateChecklistTask(t, srv, "chk-sse-patch-neg")
 	it, err := st.AddChecklistItem(context.Background(), taskID, "neg", nil, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
@@ -256,7 +257,7 @@ func TestHTTP_patchChecklistItem_errorPathsNeverPublish(t *testing.T) {
 	doPatch("unknownTask", "11111111-1111-4111-8111-111111111111", it.ID, `{"text":"x"}`, "", http.StatusNotFound)
 	doPatch("unknownItem", taskID, "22222222-2222-4222-8222-222222222222", `{"text":"x"}`, "", http.StatusNotFound)
 
-	got := summarize(drainSSE(t, ch, 0, 200*time.Millisecond))
+	got := handlertest.SummarizeSSEEvents(handlertest.DrainSSE(t, ch, 0, 200*time.Millisecond))
 	if len(got) != 0 {
 		t.Fatalf("drained SSE events %v after PATCH checklist error round-trips; want zero (400/404 paths must never publish)", got)
 	}

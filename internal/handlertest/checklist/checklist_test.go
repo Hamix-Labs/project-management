@@ -1,8 +1,9 @@
-package handler
+package checklist_test
 
 import (
 	"context"
 	"encoding/json"
+	"github.com/AlexsanderHamir/Hamix/internal/handlertest"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"io"
 	"net/http"
@@ -11,11 +12,11 @@ import (
 )
 
 func TestHTTP_patch_checklist_item_text_updates_and_returns_items(t *testing.T) {
-	srv, st := newTaskCreateTestServerWithStore(t)
+	srv, st := handlertest.NewCreateServerWithStore(t)
 	defer srv.Close()
 	ctx := context.Background()
 
-	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklistForURL(srv.URL, `{"title":"chk","priority":"medium"}`)))
+	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(handlertest.WithCreateChecklistForURL(srv.URL, `{"title":"chk","priority":"medium"}`)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,11 +75,11 @@ func TestHTTP_patch_checklist_item_text_updates_and_returns_items(t *testing.T) 
 }
 
 func TestHTTP_patch_checklist_item_done_rejects_default_user_actor(t *testing.T) {
-	srv, st := newTaskCreateTestServerWithStore(t)
+	srv, st := handlertest.NewCreateServerWithStore(t)
 	defer srv.Close()
 	ctx := context.Background()
 
-	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklistForURL(srv.URL, `{"title":"chk","priority":"medium"}`)))
+	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(handlertest.WithCreateChecklistForURL(srv.URL, `{"title":"chk","priority":"medium"}`)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -120,7 +121,7 @@ func TestHTTP_patch_checklist_item_done_rejects_default_user_actor(t *testing.T)
 	if err != nil {
 		t.Fatal(err)
 	}
-	var errOut jsonErrorBody
+	var errOut handlertest.JSONErrorBody
 	if err := json.Unmarshal(patchBody, &errOut); err != nil {
 		t.Fatal(err)
 	}
@@ -130,11 +131,11 @@ func TestHTTP_patch_checklist_item_done_rejects_default_user_actor(t *testing.T)
 }
 
 func TestHTTP_patch_checklist_item_rejects_text_and_done_together(t *testing.T) {
-	srv, st := newTaskCreateTestServerWithStore(t)
+	srv, st := handlertest.NewCreateServerWithStore(t)
 	defer srv.Close()
 	ctx := context.Background()
 
-	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklistForURL(srv.URL, `{"title":"chk","priority":"medium"}`)))
+	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(handlertest.WithCreateChecklistForURL(srv.URL, `{"title":"chk","priority":"medium"}`)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -176,7 +177,7 @@ func TestHTTP_patch_checklist_item_rejects_text_and_done_together(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	var errOut jsonErrorBody
+	var errOut handlertest.JSONErrorBody
 	if err := json.Unmarshal(patchBody, &errOut); err != nil {
 		t.Fatal(err)
 	}
@@ -186,11 +187,11 @@ func TestHTTP_patch_checklist_item_rejects_text_and_done_together(t *testing.T) 
 }
 
 func TestHTTP_patch_checklist_item_rejects_empty_trimmed_text(t *testing.T) {
-	srv, st := newTaskCreateTestServerWithStore(t)
+	srv, st := handlertest.NewCreateServerWithStore(t)
 	defer srv.Close()
 	ctx := context.Background()
 
-	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(withCreateChecklistForURL(srv.URL, `{"title":"chk","priority":"medium"}`)))
+	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(handlertest.WithCreateChecklistForURL(srv.URL, `{"title":"chk","priority":"medium"}`)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -232,7 +233,7 @@ func TestHTTP_patch_checklist_item_rejects_empty_trimmed_text(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var errOut jsonErrorBody
+	var errOut handlertest.JSONErrorBody
 	if err := json.Unmarshal(patchBody, &errOut); err != nil {
 		t.Fatal(err)
 	}

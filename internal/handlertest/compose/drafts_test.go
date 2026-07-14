@@ -1,8 +1,9 @@
-package handler
+package compose_test
 
 import (
 	"context"
 	"encoding/json"
+	"github.com/AlexsanderHamir/Hamix/internal/handlertest"
 	taskcorehandler "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/handler"
 	"io"
 	"net/http"
@@ -12,7 +13,7 @@ import (
 )
 
 func TestHTTP_task_drafts_crud(t *testing.T) {
-	srv := newTaskCreateTestServer(t)
+	srv := handlertest.NewCreateServer(t)
 	defer srv.Close()
 
 	saveRes, err := http.Post(srv.URL+"/task-drafts", "application/json", strings.NewReader(`{
@@ -68,7 +69,7 @@ func TestHTTP_task_drafts_crud(t *testing.T) {
 }
 
 func TestHTTP_task_drafts_list_limit_zero_coerces_to_default(t *testing.T) {
-	srv, st := newTaskCreateTestServerWithStore(t)
+	srv, st := handlertest.NewCreateServerWithStore(t)
 	defer srv.Close()
 	ctx := context.Background()
 	for i := 0; i < 55; i++ {
@@ -97,7 +98,7 @@ func TestHTTP_task_drafts_list_limit_zero_coerces_to_default(t *testing.T) {
 }
 
 func TestHTTP_task_drafts_list_overlong_limit(t *testing.T) {
-	srv := newTaskCreateTestServer(t)
+	srv := handlertest.NewCreateServer(t)
 	defer srv.Close()
 
 	long := strings.Repeat("1", taskcorehandler.MaxListIntQueryParamBytes+1)
@@ -112,11 +113,11 @@ func TestHTTP_task_drafts_list_overlong_limit(t *testing.T) {
 }
 
 func TestHTTP_create_duplicate_client_id_returns_409(t *testing.T) {
-	srv := newTaskCreateTestServer(t)
+	srv := handlertest.NewCreateServer(t)
 	defer srv.Close()
 	id := "30000000-0000-4000-8000-000000000099"
 	res1, err := http.Post(srv.URL+"/tasks", "application/json",
-		strings.NewReader(withCreateChecklistForURL(srv.URL, `{"id":"`+id+`","title":"first","priority":"medium"}`)))
+		strings.NewReader(handlertest.WithCreateChecklistForURL(srv.URL, `{"id":"`+id+`","title":"first","priority":"medium"}`)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -125,7 +126,7 @@ func TestHTTP_create_duplicate_client_id_returns_409(t *testing.T) {
 		t.Fatalf("first create status %d", res1.StatusCode)
 	}
 	res2, err := http.Post(srv.URL+"/tasks", "application/json",
-		strings.NewReader(withCreateChecklistForURL(srv.URL, `{"id":"`+id+`","title":"second","priority":"medium"}`)))
+		strings.NewReader(handlertest.WithCreateChecklistForURL(srv.URL, `{"id":"`+id+`","title":"second","priority":"medium"}`)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -134,7 +135,7 @@ func TestHTTP_create_duplicate_client_id_returns_409(t *testing.T) {
 		b, _ := io.ReadAll(res2.Body)
 		t.Fatalf("status %d body %s", res2.StatusCode, b)
 	}
-	var errBody jsonErrorBody
+	var errBody handlertest.JSONErrorBody
 	if err := json.NewDecoder(res2.Body).Decode(&errBody); err != nil {
 		t.Fatal(err)
 	}

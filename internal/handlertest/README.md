@@ -21,3 +21,23 @@ Re-usable test infrastructure for `package middleware_test` files and any future
 | `GitBindingForURL(url)` | Looks up the registered binding for a base URL. |
 | `DrainSSE(t, ch, want, timeout)` | Collects up to `want` SSE events from a string channel within a deadline. |
 | `SummarizeSSEEvents(events)` | Collapses `[]realtime.Event` into a stable sorted `[]string` for comparison. |
+
+## Theme suites ([`create_server.go`](./create_server.go))
+
+Additional helpers used by BC contract themes under this package:
+
+| Symbol | Purpose |
+|--------|---------|
+| `NewCreateServer` / `NewCreateServerWithStore` | Bound create-capable server (git + checklist defaults). |
+| `NewSSETriggerServer` | Same wiring with an explicit `*handler.SSEHub` for publish pins. |
+| `WithComposeChecklistForURL` | Injects checklist + `repository_id`/`project_id`/`worktree_id` for compose payloads. |
+| `MustCreateTask` / `MustCreateChecklistTask` | POST `/tasks` helpers for contract setup. |
+| `MustEqualEvents` / `MustHaveTaskUpdatedData` | SSE publish assertions. |
+| `StartContractServer` / `AssertBareError` / `EqualStringSlices` | Shared contract pin helpers. |
+
+| Theme | Path | Coverage |
+|-------|------|----------|
+| Checklist | [`checklist/`](./checklist/) | `/tasks/{id}/checklist*` contracts |
+| Compose | [`compose/`](./compose/) | `/task-drafts*` and `/task-templates*` contracts |
+
+Further themes (cycles, events, taskcore) land in follow-up PRs.

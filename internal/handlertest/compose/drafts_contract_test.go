@@ -1,4 +1,4 @@
-package handler
+package compose_test
 
 // /task-drafts cross-route contract pins + shared helpers.
 //
@@ -14,13 +14,14 @@ package handler
 // This file keeps two cross-route pins (the path-segment guard that fires for
 // both GET and DELETE through `parseTaskPathID`, and the SSE no-publish
 // invariant that spans all four verbs) plus the two helpers that are reused
-// across contract files in this package: `equalStringSlices` (shared with the
+// across contract files in this package: `handlertest.EqualStringSlices` (shared with the
 // events / get / events-patch contract suites — same package, same helper) and
-// `assertBareError` (local to drafts but kept here so the path-segment guard
+// `handlertest.AssertBareError` (local to drafts but kept here so the path-segment guard
 // can stay on its own file without dragging the SSE no-publish pin out of
 // view).
 
 import (
+	"github.com/AlexsanderHamir/Hamix/internal/handlertest"
 	"net/http"
 	"strings"
 	"testing"
@@ -31,7 +32,7 @@ import (
 // GET-detail and DELETE routes (the same `parseTaskPathID` guard covered by
 // Session 14's DELETE /tasks/{id} contract). Two sub-tests cover both verbs.
 func TestHTTP_draftsPathSegmentGuard(t *testing.T) {
-	srv := startContractServer(t)
+	srv := handlertest.StartContractServer(t)
 
 	cases := []struct {
 		name string
@@ -46,7 +47,7 @@ func TestHTTP_draftsPathSegmentGuard(t *testing.T) {
 		for _, tc := range cases {
 			t.Run(tc.name, func(t *testing.T) {
 				res, raw := getDraft(t, srv.URL, tc.path)
-				assertBareError(t, res, raw, http.StatusBadRequest, tc.want)
+				handlertest.AssertBareError(t, res, raw, http.StatusBadRequest, tc.want)
 			})
 		}
 	})
@@ -54,7 +55,7 @@ func TestHTTP_draftsPathSegmentGuard(t *testing.T) {
 		for _, tc := range cases {
 			t.Run(tc.name, func(t *testing.T) {
 				res, raw := deleteDraft(t, srv.URL, tc.path)
-				assertBareError(t, res, raw, http.StatusBadRequest, tc.want)
+				handlertest.AssertBareError(t, res, raw, http.StatusBadRequest, tc.want)
 			})
 		}
 	})
@@ -67,7 +68,7 @@ func TestHTTP_draftsPathSegmentGuard(t *testing.T) {
 // regression that adds a `notifyChange` call to e.g. saveTaskDraft breaks
 // loudly here.
 func TestHTTP_drafts_neverPublishOnSSE(t *testing.T) {
-	srv, _, hub := newSSETriggerServer(t)
+	srv, _, hub := handlertest.NewSSETriggerServer(t)
 	defer srv.Close()
 
 	ch, unsub := hub.Subscribe()
@@ -90,7 +91,7 @@ func TestHTTP_drafts_neverPublishOnSSE(t *testing.T) {
 
 	// Drain with want=0 returns whatever showed up inside the timeout — for
 	// the no-publish invariant we just want "nothing arrived".
-	got := summarize(drainSSE(t, ch, 0, 200*time.Millisecond))
+	got := handlertest.SummarizeSSEEvents(handlertest.DrainSSE(t, ch, 0, 200*time.Millisecond))
 	if len(got) != 0 {
 		t.Fatalf("drained SSE events %v after /task-drafts/* round-trip; want zero (docs/api.md: /task-drafts/* is not part of the SSE surface)", got)
 	}

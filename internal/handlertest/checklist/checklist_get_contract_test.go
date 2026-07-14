@@ -1,8 +1,9 @@
-package handler
+package checklist_test
 
 import (
 	"context"
 	"encoding/json"
+	"github.com/AlexsanderHamir/Hamix/internal/handlertest"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 	"io"
@@ -15,9 +16,9 @@ import (
 // only the `items` key at top level, each item exactly `{id, sort_order, text, done}`.
 // `done` is a JSON boolean (not a string or number) and `sort_order` is a JSON number.
 func TestHTTP_getChecklist_envelopeShape(t *testing.T) {
-	srv, st := newTaskCreateTestServerWithStore(t)
+	srv, st := handlertest.NewCreateServerWithStore(t)
 	defer srv.Close()
-	taskID := mustCreateChecklistTask(t, srv, "chk-get-shape")
+	taskID := handlertest.MustCreateChecklistTask(t, srv, "chk-get-shape")
 	if _, err := st.AddChecklistItem(context.Background(), taskID, "alpha", nil, taskcoredomain.ActorUser); err != nil {
 		t.Fatal(err)
 	}
@@ -95,7 +96,7 @@ func TestHTTP_getChecklist_envelopeShape(t *testing.T) {
 // We assert directly on the raw JSON so a future change to `var items []…` (which
 // marshals to `null`) would fail loudly.
 func TestHTTP_getChecklist_emptyItemsIsArrayNotNull(t *testing.T) {
-	srv, st := newTaskCreateTestServerWithStore(t)
+	srv, st := handlertest.NewCreateServerWithStore(t)
 	defer srv.Close()
 	ctx := context.Background()
 	created, err := st.Create(ctx, taskcorestore.CreateTaskInput{
@@ -136,9 +137,9 @@ func TestHTTP_getChecklist_emptyItemsIsArrayNotNull(t *testing.T) {
 // returned order matches their insertion order (since AddChecklistItem assigns
 // `MAX(sort_order)+1`, insertion order == sort_order order).
 func TestHTTP_getChecklist_orderIsSortOrderAscThenIDAsc(t *testing.T) {
-	srv, st := newTaskCreateTestServerWithStore(t)
+	srv, st := handlertest.NewCreateServerWithStore(t)
 	defer srv.Close()
-	taskID := mustCreateChecklistTask(t, srv, "chk-order")
+	taskID := handlertest.MustCreateChecklistTask(t, srv, "chk-order")
 	ctx := context.Background()
 	wantTexts := []string{"first", "second", "third"}
 	wantIDs := make([]string, 0, len(wantTexts))
@@ -149,7 +150,7 @@ func TestHTTP_getChecklist_orderIsSortOrderAscThenIDAsc(t *testing.T) {
 		}
 		wantIDs = append(wantIDs, it.ID)
 	}
-	expectedTexts := append([]string{testCriterionText}, wantTexts...)
+	expectedTexts := append([]string{handlertest.TestCriterionText}, wantTexts...)
 
 	res, err := http.Get(srv.URL + "/tasks/" + taskID + "/checklist")
 	if err != nil {
@@ -191,7 +192,7 @@ func TestHTTP_getChecklist_orderIsSortOrderAscThenIDAsc(t *testing.T) {
 // This route is read-only and, unlike the write surface, did not previously
 // have a dedicated HTTP-level test pinning the missing-task response code.
 func TestHTTP_getChecklist_404OnUnknownTask(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := handlertest.NewServer(t)
 	defer srv.Close()
 
 	const ghost = "11111111-1111-4111-8111-111111111111"

@@ -1,8 +1,9 @@
-package handler
+package compose_test
 
 import (
 	"context"
 	"encoding/json"
+	"github.com/AlexsanderHamir/Hamix/internal/handlertest"
 	"io"
 	"net/http"
 	"strings"
@@ -11,11 +12,11 @@ import (
 )
 
 func templateSaveBody(baseURL, title string) string {
-	return `{"name":"` + title + `","payload":` + withComposeChecklistForURL(baseURL, `{"title":"`+title+`","priority":"medium"}`) + `}`
+	return `{"name":"` + title + `","payload":` + handlertest.WithComposeChecklistForURL(baseURL, `{"title":"`+title+`","priority":"medium"}`) + `}`
 }
 
 func TestHTTP_task_templates_crud(t *testing.T) {
-	srv := newTaskCreateTestServer(t)
+	srv := handlertest.NewCreateServer(t)
 	defer srv.Close()
 
 	saveRes, err := http.Post(srv.URL+"/task-templates", "application/json", strings.NewReader(templateSaveBody(srv.URL, "Template one")))
@@ -84,7 +85,7 @@ func TestHTTP_task_templates_crud(t *testing.T) {
 }
 
 func TestHTTP_task_templates_patch_full_payload(t *testing.T) {
-	srv := newTaskCreateTestServer(t)
+	srv := handlertest.NewCreateServer(t)
 	defer srv.Close()
 
 	saveRes, err := http.Post(srv.URL+"/task-templates", "application/json", strings.NewReader(templateSaveBody(srv.URL, "Patch payload template")))
@@ -103,7 +104,7 @@ func TestHTTP_task_templates_patch_full_payload(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	patchPayload := withComposeChecklistForURL(srv.URL, `{
+	patchPayload := handlertest.WithComposeChecklistForURL(srv.URL, `{
 		"title":"Patch payload template",
 		"priority":"high",
 		"status":"ready",
@@ -124,14 +125,14 @@ func TestHTTP_task_templates_patch_full_payload(t *testing.T) {
 }
 
 func TestHTTP_task_templates_save_requires_repository_id(t *testing.T) {
-	srv := newTaskCreateTestServer(t)
+	srv := handlertest.NewCreateServer(t)
 	defer srv.Close()
-	binding, ok := handlerGitBindingForURL(srv.URL)
+	binding, ok := handlertest.GitBindingForURL(srv.URL)
 	if !ok {
 		t.Fatal("missing git binding")
 	}
 	res, err := http.Post(srv.URL+"/task-templates", "application/json",
-		strings.NewReader(`{"name":"Missing repo","payload":{"title":"Missing repo","priority":"medium","project_id":"`+binding.projectID+`","worktree_id":"`+binding.worktreeID+`","checklist_items":[{"text":"`+testCriterionText+`"}]}}`))
+		strings.NewReader(`{"name":"Missing repo","payload":{"title":"Missing repo","priority":"medium","project_id":"`+binding.ProjectID+`","worktree_id":"`+binding.WorktreeID+`","checklist_items":[{"text":"`+handlertest.TestCriterionText+`"}]}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -143,14 +144,14 @@ func TestHTTP_task_templates_save_requires_repository_id(t *testing.T) {
 }
 
 func TestHTTP_task_templates_search_q(t *testing.T) {
-	srv, st := newTaskCreateTestServerWithStore(t)
+	srv, st := handlertest.NewCreateServerWithStore(t)
 	defer srv.Close()
 	ctx := context.Background()
-	payload := []byte(withComposeChecklistForURL(srv.URL, `{"title":"Alpha task","priority":"medium"}`))
+	payload := []byte(handlertest.WithComposeChecklistForURL(srv.URL, `{"title":"Alpha task","priority":"medium"}`))
 	if _, err := st.SaveTemplate(ctx, "", "Alpha task", payload); err != nil {
 		t.Fatal(err)
 	}
-	payload2 := []byte(withComposeChecklistForURL(srv.URL, `{"title":"Beta task","priority":"medium"}`))
+	payload2 := []byte(handlertest.WithComposeChecklistForURL(srv.URL, `{"title":"Beta task","priority":"medium"}`))
 	if _, err := st.SaveTemplate(ctx, "", "Beta task", payload2); err != nil {
 		t.Fatal(err)
 	}
@@ -180,11 +181,11 @@ func TestHTTP_task_templates_search_q(t *testing.T) {
 }
 
 func TestHTTP_task_templates_instantiate(t *testing.T) {
-	srv, st := newTaskCreateTestServerWithStore(t)
+	srv, st := handlertest.NewCreateServerWithStore(t)
 	defer srv.Close()
 	ctx := context.Background()
 	past := time.Now().UTC().Add(-24 * time.Hour).Format(time.RFC3339)
-	payload := []byte(withComposeChecklistForURL(srv.URL, `{
+	payload := []byte(handlertest.WithComposeChecklistForURL(srv.URL, `{
 		"title":"From template",
 		"priority":"medium",
 		"pickup_not_before":"`+past+`",
@@ -233,7 +234,7 @@ func TestHTTP_task_templates_instantiate(t *testing.T) {
 }
 
 func TestHTTP_task_templates_instantiate_empty_ids(t *testing.T) {
-	srv := newTaskCreateTestServer(t)
+	srv := handlertest.NewCreateServer(t)
 	defer srv.Close()
 	res, err := http.Post(srv.URL+"/task-templates/instantiate", "application/json",
 		strings.NewReader(`{"template_ids":[]}`))
@@ -247,10 +248,10 @@ func TestHTTP_task_templates_instantiate_empty_ids(t *testing.T) {
 }
 
 func TestHTTP_task_templates_instantiate_count(t *testing.T) {
-	srv, st := newTaskCreateTestServerWithStore(t)
+	srv, st := handlertest.NewCreateServerWithStore(t)
 	defer srv.Close()
 	ctx := context.Background()
-	payload := []byte(withComposeChecklistForURL(srv.URL, `{"title":"Repeated template","priority":"medium"}`))
+	payload := []byte(handlertest.WithComposeChecklistForURL(srv.URL, `{"title":"Repeated template","priority":"medium"}`))
 	tmpl, err := st.SaveTemplate(ctx, "", "Repeated template", payload)
 	if err != nil {
 		t.Fatal(err)
@@ -289,15 +290,15 @@ func TestHTTP_task_templates_instantiate_count(t *testing.T) {
 }
 
 func TestHTTP_task_templates_instantiate_items_mixed_counts(t *testing.T) {
-	srv, st := newTaskCreateTestServerWithStore(t)
+	srv, st := handlertest.NewCreateServerWithStore(t)
 	defer srv.Close()
 	ctx := context.Background()
-	payloadA := []byte(withComposeChecklistForURL(srv.URL, `{"title":"Template A","priority":"medium"}`))
+	payloadA := []byte(handlertest.WithComposeChecklistForURL(srv.URL, `{"title":"Template A","priority":"medium"}`))
 	tmplA, err := st.SaveTemplate(ctx, "", "Template A", payloadA)
 	if err != nil {
 		t.Fatal(err)
 	}
-	payloadB := []byte(withComposeChecklistForURL(srv.URL, `{"title":"Template B","priority":"medium"}`))
+	payloadB := []byte(handlertest.WithComposeChecklistForURL(srv.URL, `{"title":"Template B","priority":"medium"}`))
 	tmplB, err := st.SaveTemplate(ctx, "", "Template B", payloadB)
 	if err != nil {
 		t.Fatal(err)
@@ -333,10 +334,10 @@ func TestHTTP_task_templates_instantiate_items_mixed_counts(t *testing.T) {
 }
 
 func TestHTTP_task_templates_instantiate_invalid_count(t *testing.T) {
-	srv, st := newTaskCreateTestServerWithStore(t)
+	srv, st := handlertest.NewCreateServerWithStore(t)
 	defer srv.Close()
 	ctx := context.Background()
-	payload := []byte(withComposeChecklistForURL(srv.URL, `{"title":"T","priority":"medium"}`))
+	payload := []byte(handlertest.WithComposeChecklistForURL(srv.URL, `{"title":"T","priority":"medium"}`))
 	tmpl, err := st.SaveTemplate(ctx, "", "T", payload)
 	if err != nil {
 		t.Fatal(err)
@@ -358,10 +359,10 @@ func TestHTTP_task_templates_instantiate_invalid_count(t *testing.T) {
 }
 
 func TestHTTP_task_templates_instantiate_total_cap_exceeded(t *testing.T) {
-	srv, st := newTaskCreateTestServerWithStore(t)
+	srv, st := handlertest.NewCreateServerWithStore(t)
 	defer srv.Close()
 	ctx := context.Background()
-	payload := []byte(withComposeChecklistForURL(srv.URL, `{"title":"T","priority":"medium"}`))
+	payload := []byte(handlertest.WithComposeChecklistForURL(srv.URL, `{"title":"T","priority":"medium"}`))
 	tmpl, err := st.SaveTemplate(ctx, "", "T", payload)
 	if err != nil {
 		t.Fatal(err)
@@ -379,10 +380,10 @@ func TestHTTP_task_templates_instantiate_total_cap_exceeded(t *testing.T) {
 }
 
 func TestHTTP_task_templates_instantiate_duplicate_items(t *testing.T) {
-	srv, st := newTaskCreateTestServerWithStore(t)
+	srv, st := handlertest.NewCreateServerWithStore(t)
 	defer srv.Close()
 	ctx := context.Background()
-	payload := []byte(withComposeChecklistForURL(srv.URL, `{"title":"T","priority":"medium"}`))
+	payload := []byte(handlertest.WithComposeChecklistForURL(srv.URL, `{"title":"T","priority":"medium"}`))
 	tmpl, err := st.SaveTemplate(ctx, "", "T", payload)
 	if err != nil {
 		t.Fatal(err)
@@ -400,7 +401,7 @@ func TestHTTP_task_templates_instantiate_duplicate_items(t *testing.T) {
 }
 
 func TestHTTP_task_templates_save_requires_valid_payload(t *testing.T) {
-	srv := newTaskCreateTestServer(t)
+	srv := handlertest.NewCreateServer(t)
 	defer srv.Close()
 	res, err := http.Post(srv.URL+"/task-templates", "application/json",
 		strings.NewReader(`{"payload":{"title":"   ","priority":"medium","checklist_items":[{"text":"x"}]}}`))
@@ -415,10 +416,10 @@ func TestHTTP_task_templates_save_requires_valid_payload(t *testing.T) {
 }
 
 func TestHTTP_task_templates_list_primary_tag(t *testing.T) {
-	srv, st := newTaskCreateTestServerWithStore(t)
+	srv, st := handlertest.NewCreateServerWithStore(t)
 	defer srv.Close()
 	ctx := context.Background()
-	payload := []byte(withComposeChecklistForURL(srv.URL, `{"title":"Tagged","priority":"medium","tags":["Refactor","Docs"]}`))
+	payload := []byte(handlertest.WithComposeChecklistForURL(srv.URL, `{"title":"Tagged","priority":"medium","tags":["Refactor","Docs"]}`))
 	if _, err := st.SaveTemplate(ctx, "", "Tagged", payload); err != nil {
 		t.Fatal(err)
 	}
@@ -452,11 +453,11 @@ func TestHTTP_task_templates_list_primary_tag(t *testing.T) {
 }
 
 func TestHTTP_task_templates_list_sort_by_name(t *testing.T) {
-	srv, st := newTaskCreateTestServerWithStore(t)
+	srv, st := handlertest.NewCreateServerWithStore(t)
 	defer srv.Close()
 	ctx := context.Background()
 	for _, name := range []string{"Zebra tpl", "Alpha tpl"} {
-		payload := []byte(withComposeChecklistForURL(srv.URL, `{"title":"`+name+`","priority":"medium"}`))
+		payload := []byte(handlertest.WithComposeChecklistForURL(srv.URL, `{"title":"`+name+`","priority":"medium"}`))
 		if _, err := st.SaveTemplate(ctx, "", name, payload); err != nil {
 			t.Fatal(err)
 		}
@@ -487,14 +488,14 @@ func TestHTTP_task_templates_list_sort_by_name(t *testing.T) {
 }
 
 func TestHTTP_task_templates_list_tag_filter(t *testing.T) {
-	srv, st := newTaskCreateTestServerWithStore(t)
+	srv, st := handlertest.NewCreateServerWithStore(t)
 	defer srv.Close()
 	ctx := context.Background()
-	refactorPayload := []byte(withComposeChecklistForURL(srv.URL, `{"title":"Refactor task","priority":"medium","tags":["Refactor"]}`))
+	refactorPayload := []byte(handlertest.WithComposeChecklistForURL(srv.URL, `{"title":"Refactor task","priority":"medium","tags":["Refactor"]}`))
 	if _, err := st.SaveTemplate(ctx, "", "Refactor task", refactorPayload); err != nil {
 		t.Fatal(err)
 	}
-	bugPayload := []byte(withComposeChecklistForURL(srv.URL, `{"title":"Bug task","priority":"medium","tags":["Bugfix"]}`))
+	bugPayload := []byte(handlertest.WithComposeChecklistForURL(srv.URL, `{"title":"Bug task","priority":"medium","tags":["Bugfix"]}`))
 	if _, err := st.SaveTemplate(ctx, "", "Bug task", bugPayload); err != nil {
 		t.Fatal(err)
 	}
@@ -524,7 +525,7 @@ func TestHTTP_task_templates_list_tag_filter(t *testing.T) {
 }
 
 func TestHTTP_task_templates_list_invalid_sort(t *testing.T) {
-	srv := newTaskCreateTestServer(t)
+	srv := handlertest.NewCreateServer(t)
 	defer srv.Close()
 	res, err := http.Get(srv.URL + "/task-templates?sort=title")
 	if err != nil {
@@ -537,10 +538,10 @@ func TestHTTP_task_templates_list_invalid_sort(t *testing.T) {
 }
 
 func TestHTTP_task_templates_instantiate_count_increment(t *testing.T) {
-	srv, st := newTaskCreateTestServerWithStore(t)
+	srv, st := handlertest.NewCreateServerWithStore(t)
 	defer srv.Close()
 	ctx := context.Background()
-	payload := []byte(withComposeChecklistForURL(srv.URL, `{"title":"Counter tpl","priority":"medium"}`))
+	payload := []byte(handlertest.WithComposeChecklistForURL(srv.URL, `{"title":"Counter tpl","priority":"medium"}`))
 	tmpl, err := st.SaveTemplate(ctx, "", "Counter tpl", payload)
 	if err != nil {
 		t.Fatal(err)

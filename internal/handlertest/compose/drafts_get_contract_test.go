@@ -1,10 +1,11 @@
-package handler
+package compose_test
 
 // GET /task-drafts/{id} contract pins. Split out of
 // handler_http_drafts_contract_test.go in Session 35 (P6 — file size).
 
 import (
 	"encoding/json"
+	"github.com/AlexsanderHamir/Hamix/internal/handlertest"
 	"io"
 	"net/http"
 	"sort"
@@ -25,7 +26,7 @@ func getDraft(t *testing.T, baseURL, id string) (*http.Response, []byte) {
 // TestHTTP_getDraft_envelope pins the GET /task-drafts/{id} 200 envelope
 // shape (exact five keys) and the always-present payload invariant.
 func TestHTTP_getDraft_envelope(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := handlertest.NewServer(t)
 	defer srv.Close()
 
 	resSave, rawSave := saveDraft(t, srv.URL, `{"name":"detail","payload":{"k":"v"}}`)
@@ -52,7 +53,7 @@ func TestHTTP_getDraft_envelope(t *testing.T) {
 	}
 	sort.Strings(gotKeys)
 	sort.Strings(wantKeys)
-	if !equalStringSlices(gotKeys, wantKeys) {
+	if !handlertest.EqualStringSlices(gotKeys, wantKeys) {
 		t.Fatalf("envelope keys=%v want %v (docs/api.md GET /task-drafts/{id} pins {id,name,payload,created_at,updated_at})", gotKeys, wantKeys)
 	}
 	if string(top["payload"]) == "" || string(top["payload"]) == "null" {
@@ -62,14 +63,14 @@ func TestHTTP_getDraft_envelope(t *testing.T) {
 
 // TestHTTP_getDraft_404 pins the documented 404 mapping for an unknown id.
 func TestHTTP_getDraft_404(t *testing.T) {
-	srv := newTaskTestServer(t)
+	srv := handlertest.NewServer(t)
 	defer srv.Close()
 
 	res, raw := getDraft(t, srv.URL, "no-such-draft-9999")
 	if res.StatusCode != http.StatusNotFound {
 		t.Fatalf("status %d (want 404) body=%s", res.StatusCode, raw)
 	}
-	var errBody jsonErrorBody
+	var errBody handlertest.JSONErrorBody
 	if err := json.Unmarshal(raw, &errBody); err != nil {
 		t.Fatalf("decode: %v body=%s", err, raw)
 	}
