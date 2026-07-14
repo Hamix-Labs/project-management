@@ -1,10 +1,8 @@
-package handler
+package middleware_test
 
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/middleware"
 	"io"
 	"log/slog"
 	"net/http"
@@ -13,8 +11,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/internal/handlertest"
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/logctx"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/middleware"
 	"github.com/google/uuid"
 )
 
@@ -76,14 +77,14 @@ func TestWithAccessLog_idempotencyCacheEviction_logIncludesRequestID(t *testing.
 	base := logctx.WrapSlogHandlerWithRequestContext(slog.NewJSONHandler(&buf, &slog.HandlerOptions{Level: slog.LevelWarn}))
 	slog.SetDefault(slog.New(logctx.WrapSlogHandlerWithLogSequence(base, &processSeq)))
 
-	srv := newBoundTaskServer(t, func(st *composition.API) http.Handler {
-		return middleware.WithAccessLog(middleware.WithIdempotency(boundTaskHandler(st)), calltrace.Path)
+	srv := handlertest.NewBoundServer(t, func(st *composition.API) http.Handler {
+		return middleware.WithAccessLog(middleware.WithIdempotency(handlertest.BoundTaskHandler(st)), calltrace.Path)
 	})
 
 	const rid = "rid-idem-cache-evict"
 	post := func(key, title string) {
 		t.Helper()
-		body := withCreateChecklistForURL(srv.URL, `{"title":"`+title+`","priority":"medium"}`)
+		body := handlertest.WithCreateChecklistForURL(srv.URL, `{"title":"`+title+`","priority":"medium"}`)
 		req, err := http.NewRequest(http.MethodPost, srv.URL+"/tasks", strings.NewReader(body))
 		if err != nil {
 			t.Fatal(err)

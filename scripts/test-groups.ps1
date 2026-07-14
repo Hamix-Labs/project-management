@@ -10,12 +10,14 @@ function Get-GroupPackages {
 
     switch ($Group) {
         'core' {
-            go list ./cmd/... ./internal/... ./pkgs/repo/... ./pkgs/gitcore/... ./pkgs/gitexec/... ./pkgs/gitwork/...
+            go list ./cmd/... ./internal/... ./pkgs/repo/... ./pkgs/gitcore/... ./pkgs/gitexec/... ./pkgs/gitwork/... |
+                Where-Object { $_ -notmatch '/handlertest(/|$)' }
         }
         'tasks' {
             go list ./pkgs/tasks/... ./pkgs/projects/... ./pkgs/gitinventory/... ./pkgs/settings/... ./pkgs/taskcompose/... `
                 ./pkgs/taskcore/... ./pkgs/taskchecklist/... ./pkgs/taskcycles/... ./pkgs/taskevents/... `
-                ./pkgs/runners/handler ./pkgs/storekernel/... | Where-Object { $_ -notmatch '/agentreconcile$' }
+                ./pkgs/runners/handler ./pkgs/storekernel/... ./internal/handlertest/... |
+                Where-Object { $_ -notmatch '/agentreconcile$' }
         }
         'agents' {
             go list ./pkgs/agents/... ./pkgs/tasks/agentreconcile/... | Where-Object { $_ -notmatch '/harness' }

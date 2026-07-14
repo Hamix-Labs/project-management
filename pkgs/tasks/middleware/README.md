@@ -54,9 +54,12 @@ Taskapi-only knobs (listen address, log level, agent intervals, etc.) are **not*
 
 | Location | What belongs there |
 |----------|-------------------|
-| This directory (`package middleware`) | Whitebox tests that need unexported symbols (e.g. rate-limit IP parsing, idempotency cache internals, Prometheus vec handles). |
-| [`internal/middlewaretest`](../../internal/middlewaretest/) (`package middlewaretest`) | Black-box tests that only use the exported `middleware` API (recovery, request timeout, max-body env parsing). |
-| [`pkgs/tasks/handler`](../handler/) | Integration tests that compose `middleware.With*` directly (e.g. `middleware.WithAccessLog(h, calltrace.Path)`). |
+| This directory (`package middleware`) | Whitebox tests that need unexported symbols (e.g. rate-limit IP parsing, idempotency cache internals, Prometheus vec handles) and stack/auth/access-log integration that only uses exported `With*` APIs. |
+| This directory (`package middleware_test`) | Black-box HTTP suites that need a full task handler + git binding via [`internal/handlertest`](../../internal/handlertest/) (idempotency + max-body create paths). |
+| [`internal/middlewaretest`](../../internal/middlewaretest/) (`package middlewaretest`) | Narrow black-box tests that only use the exported `middleware` API (recovery, request timeout, max-body env parsing). |
+| [`pkgs/tasks/handler`](../handler/) | Whitebox keepers only (e.g. `security_headers_test.go`, SSE `logSSEWriteError` tests). Prefer new black-box middleware coverage under this package or `handlertest`. |
+
+Relocated from `handler/` (Phase 7): `api_auth_test.go`, `stack_test.go`, `rate_limit_accesslog_test.go`, `accesslog_server_test.go`, `idempotency_test.go`, `idempotency_config_test.go`, `max_body_test.go`.
 
 `go test ./...` from the repo root runs both trees.
 

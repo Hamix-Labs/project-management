@@ -1,8 +1,9 @@
-package handler
+package middleware_test
 
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/AlexsanderHamir/Hamix/internal/handlertest"
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
@@ -24,12 +25,12 @@ func TestHTTP_idempotency_post_second_replays_from_cache(t *testing.T) {
 	t.Setenv("HAMIX_IDEMPOTENCY_TTL", "1h")
 
 	var st *composition.API
-	srv := newBoundTaskServer(t, func(s *composition.API) http.Handler {
+	srv := handlertest.NewBoundServer(t, func(s *composition.API) http.Handler {
 		st = s
-		return middleware.WithIdempotency(boundTaskHandler(s))
+		return middleware.WithIdempotency(handlertest.BoundTaskHandler(s))
 	})
 
-	body := withCreateChecklistForURL(srv.URL, `{"title":"idem-cache","priority":"medium"}`)
+	body := handlertest.WithCreateChecklistForURL(srv.URL, `{"title":"idem-cache","priority":"medium"}`)
 	key := "idem-" + uuid.NewString()
 
 	do := func() *http.Response {
@@ -99,12 +100,12 @@ func TestHTTP_idempotency_disabled_allows_duplicate_post(t *testing.T) {
 	t.Setenv("HAMIX_IDEMPOTENCY_TTL", "0")
 
 	var st *composition.API
-	srv := newBoundTaskServer(t, func(s *composition.API) http.Handler {
+	srv := handlertest.NewBoundServer(t, func(s *composition.API) http.Handler {
 		st = s
-		return middleware.WithIdempotency(boundTaskHandler(s))
+		return middleware.WithIdempotency(handlertest.BoundTaskHandler(s))
 	})
 
-	body := withCreateChecklistForURL(srv.URL, `{"title":"idem-off","priority":"medium"}`)
+	body := handlertest.WithCreateChecklistForURL(srv.URL, `{"title":"idem-off","priority":"medium"}`)
 	key := "idem-off-" + uuid.NewString()
 
 	do := func() int {
@@ -152,16 +153,16 @@ func TestHTTP_idempotency_different_body_same_key_creates_two(t *testing.T) {
 	t.Setenv("HAMIX_IDEMPOTENCY_TTL", "1h")
 
 	var st *composition.API
-	srv := newBoundTaskServer(t, func(s *composition.API) http.Handler {
+	srv := handlertest.NewBoundServer(t, func(s *composition.API) http.Handler {
 		st = s
-		return middleware.WithIdempotency(boundTaskHandler(s))
+		return middleware.WithIdempotency(handlertest.BoundTaskHandler(s))
 	})
 
 	key := "idem-body-" + uuid.NewString()
 
 	post := func(title string) {
 		t.Helper()
-		body := withCreateChecklistForURL(srv.URL, `{"title":"`+title+`","priority":"medium"}`)
+		body := handlertest.WithCreateChecklistForURL(srv.URL, `{"title":"`+title+`","priority":"medium"}`)
 		req, err := http.NewRequest(http.MethodPost, srv.URL+"/tasks", strings.NewReader(body))
 		if err != nil {
 			t.Fatal(err)
@@ -200,12 +201,12 @@ func TestHTTP_idempotency_concurrent_post_single_row(t *testing.T) {
 	t.Setenv("HAMIX_IDEMPOTENCY_TTL", "1h")
 
 	var st *composition.API
-	srv := newBoundTaskServer(t, func(s *composition.API) http.Handler {
+	srv := handlertest.NewBoundServer(t, func(s *composition.API) http.Handler {
 		st = s
-		return middleware.WithIdempotency(boundTaskHandler(s))
+		return middleware.WithIdempotency(handlertest.BoundTaskHandler(s))
 	})
 
-	body := withCreateChecklistForURL(srv.URL, `{"title":"idem-concurrent","priority":"medium"}`)
+	body := handlertest.WithCreateChecklistForURL(srv.URL, `{"title":"idem-concurrent","priority":"medium"}`)
 	key := "idem-conc-" + uuid.NewString()
 
 	var wg sync.WaitGroup
@@ -263,12 +264,12 @@ func TestWithAccessLog_idempotencyKeyTooLong_logIncludesRequestID(t *testing.T) 
 	base := logctx.WrapSlogHandlerWithRequestContext(slog.NewJSONHandler(&buf, &slog.HandlerOptions{Level: slog.LevelWarn}))
 	slog.SetDefault(slog.New(logctx.WrapSlogHandlerWithLogSequence(base, &processSeq)))
 
-	h := newDirectBoundHandler(t, func(st *composition.API) http.Handler {
-		return middleware.WithAccessLog(middleware.WithIdempotency(boundTaskHandler(st)), calltrace.Path)
+	h := handlertest.NewDirectBoundHandler(t, func(st *composition.API) http.Handler {
+		return middleware.WithAccessLog(middleware.WithIdempotency(handlertest.BoundTaskHandler(st)), calltrace.Path)
 	})
 
 	longKey := strings.Repeat("k", 128+1)
-	req := httptest.NewRequest(http.MethodPost, "/tasks", strings.NewReader(withCreateChecklistForURL(directHandlerTestURL, `{"title":"x","priority":"medium"}`)))
+	req := httptest.NewRequest(http.MethodPost, "/tasks", strings.NewReader(handlertest.WithCreateChecklistForURL(handlertest.DirectHandlerTestURL, `{"title":"x","priority":"medium"}`)))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Idempotency-Key", longKey)
 	req.Header.Set("X-Request-ID", "rid-idem-key-long")
@@ -304,12 +305,12 @@ func TestHTTP_idempotency_rejects_overlength_key(t *testing.T) {
 	t.Cleanup(middleware.ClearIdempotencyStateForTest)
 	t.Setenv("HAMIX_IDEMPOTENCY_TTL", "1h")
 
-	srv := newBoundTaskServer(t, func(st *composition.API) http.Handler {
-		return middleware.WithIdempotency(boundTaskHandler(st))
+	srv := handlertest.NewBoundServer(t, func(st *composition.API) http.Handler {
+		return middleware.WithIdempotency(handlertest.BoundTaskHandler(st))
 	})
 
 	longKey := strings.Repeat("k", 128+1)
-	req, err := http.NewRequest(http.MethodPost, srv.URL+"/tasks", strings.NewReader(withCreateChecklistForURL(srv.URL, `{"title":"idem-long","priority":"medium"}`)))
+	req, err := http.NewRequest(http.MethodPost, srv.URL+"/tasks", strings.NewReader(handlertest.WithCreateChecklistForURL(srv.URL, `{"title":"idem-long","priority":"medium"}`)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -324,7 +325,7 @@ func TestHTTP_idempotency_rejects_overlength_key(t *testing.T) {
 		b, _ := io.ReadAll(res.Body)
 		t.Fatalf("status %d body %s", res.StatusCode, b)
 	}
-	var out jsonErrorBody
+	var out handlertest.JSONErrorBody
 	if err := json.NewDecoder(res.Body).Decode(&out); err != nil {
 		t.Fatal(err)
 	}
@@ -337,12 +338,12 @@ func TestHTTP_idempotency_accepts_boundary_key_length(t *testing.T) {
 	t.Cleanup(middleware.ClearIdempotencyStateForTest)
 	t.Setenv("HAMIX_IDEMPOTENCY_TTL", "1h")
 
-	srv := newBoundTaskServer(t, func(st *composition.API) http.Handler {
-		return middleware.WithIdempotency(boundTaskHandler(st))
+	srv := handlertest.NewBoundServer(t, func(st *composition.API) http.Handler {
+		return middleware.WithIdempotency(handlertest.BoundTaskHandler(st))
 	})
 
 	key := strings.Repeat("k", 128)
-	body := withCreateChecklistForURL(srv.URL, `{"title":"idem-boundary","priority":"medium"}`)
+	body := handlertest.WithCreateChecklistForURL(srv.URL, `{"title":"idem-boundary","priority":"medium"}`)
 
 	do := func() (int, string) {
 		req, err := http.NewRequest(http.MethodPost, srv.URL+"/tasks", strings.NewReader(body))
@@ -377,11 +378,11 @@ func TestHTTP_idempotency_rejects_unknown_content_length(t *testing.T) {
 	t.Cleanup(middleware.ClearIdempotencyStateForTest)
 	t.Setenv("HAMIX_IDEMPOTENCY_TTL", "1h")
 
-	h := newDirectBoundHandler(t, func(st *composition.API) http.Handler {
-		return middleware.WithIdempotency(boundTaskHandler(st))
+	h := handlertest.NewDirectBoundHandler(t, func(st *composition.API) http.Handler {
+		return middleware.WithIdempotency(handlertest.BoundTaskHandler(st))
 	})
 
-	req := httptest.NewRequest(http.MethodPost, "/tasks", io.NopCloser(strings.NewReader(withCreateChecklistForURL(directHandlerTestURL, `{"title":"idem-unknown","priority":"medium"}`))))
+	req := httptest.NewRequest(http.MethodPost, "/tasks", io.NopCloser(strings.NewReader(handlertest.WithCreateChecklistForURL(handlertest.DirectHandlerTestURL, `{"title":"idem-unknown","priority":"medium"}`))))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Idempotency-Key", "idem-unknown-len")
 	req.ContentLength = -1
@@ -391,7 +392,7 @@ func TestHTTP_idempotency_rejects_unknown_content_length(t *testing.T) {
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("status %d body %s", rec.Code, rec.Body.String())
 	}
-	var out jsonErrorBody
+	var out handlertest.JSONErrorBody
 	if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
 		t.Fatal(err)
 	}
@@ -404,11 +405,11 @@ func TestHTTP_idempotency_rejects_large_content_length(t *testing.T) {
 	t.Cleanup(middleware.ClearIdempotencyStateForTest)
 	t.Setenv("HAMIX_IDEMPOTENCY_TTL", "1h")
 
-	h := newDirectBoundHandler(t, func(st *composition.API) http.Handler {
-		return middleware.WithIdempotency(boundTaskHandler(st))
+	h := handlertest.NewDirectBoundHandler(t, func(st *composition.API) http.Handler {
+		return middleware.WithIdempotency(handlertest.BoundTaskHandler(st))
 	})
 
-	req := httptest.NewRequest(http.MethodPost, "/tasks", strings.NewReader(withCreateChecklistForURL(directHandlerTestURL, `{"title":"idem-large","priority":"medium"}`)))
+	req := httptest.NewRequest(http.MethodPost, "/tasks", strings.NewReader(handlertest.WithCreateChecklistForURL(handlertest.DirectHandlerTestURL, `{"title":"idem-large","priority":"medium"}`)))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Idempotency-Key", "idem-large-len")
 	req.ContentLength = (1 << 20) + 1
@@ -418,7 +419,7 @@ func TestHTTP_idempotency_rejects_large_content_length(t *testing.T) {
 	if rec.Code != http.StatusRequestEntityTooLarge {
 		t.Fatalf("status %d body %s", rec.Code, rec.Body.String())
 	}
-	var out jsonErrorBody
+	var out handlertest.JSONErrorBody
 	if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
 		t.Fatal(err)
 	}

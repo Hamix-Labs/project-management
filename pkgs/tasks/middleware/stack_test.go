@@ -1,4 +1,4 @@
-package handler
+package middleware
 
 import (
 	"encoding/json"
@@ -9,10 +9,9 @@ import (
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/middleware"
 )
 
-// middleware.Stack with calltrace.Path is the production chain for taskapi; these tests pin critical
+// Stack with calltrace.Path is the production chain for taskapi; these tests pin critical
 // behavior without requiring a real store or Postgres. Do not use t.Parallel with
 // t.Setenv here.
 func TestMiddlewareStack_innerPanic_returnsJSON500(t *testing.T) {
@@ -27,7 +26,7 @@ func TestMiddlewareStack_innerPanic_returnsJSON500(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/__middleware_stack_test__/panic", nil)
 	req.RemoteAddr = "127.0.0.1:12345"
 
-	middleware.Stack(inner, calltrace.Path).ServeHTTP(rec, req)
+	Stack(inner, calltrace.Path).ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusInternalServerError {
 		t.Fatalf("status: got %d, want %d", rec.Code, http.StatusInternalServerError)
@@ -63,7 +62,7 @@ func TestMiddlewareStack_innerOK(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/__middleware_stack_test__/ok", nil)
 	req.RemoteAddr = "127.0.0.1:12346"
 
-	middleware.Stack(inner, calltrace.Path).ServeHTTP(rec, req)
+	Stack(inner, calltrace.Path).ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusTeapot {
 		t.Fatalf("status: got %d, want %d", rec.Code, http.StatusTeapot)
