@@ -67,7 +67,7 @@ Configuration is **DB-driven**, not env-driven for worker behavior. Legacy `HAMI
 | **Idle (hard)** | No worker goroutine; from `decideIdle` or execute probe/build failure |
 | **Scheduling hint** | Diagnostic `idle_reason` on logs when worker is **running** but queue is empty only because tasks are deferred — does **not** stop the worker |
 | **`applyMu`** | Serializes full `applySettings` (probe + build + spawn); separate from `s.mu` so `CancelCurrentRun` stays fast |
-| **`AgentWorkerControl`** | Handler interface: `Reload`, `CancelCurrentRun`, `ProbeRunner` ([`handler.go`](../../pkgs/tasks/handler/handler.go)) |
+| **`AgentWorkerControl`** | Handler interface: `Reload`, `CancelCurrentRun`, `ProbeRunner` ([`agent_worker_control.go`](../../pkgs/settings/contract/agent_worker_control.go)) |
 
 ### Actors and trust
 
@@ -359,7 +359,7 @@ Drain deadline matches `stopWorkerInstance` (per-run cap + 10s grace, or 5m when
 | POST | `/settings/probe-cursor` | `ProbeRunner` (same probe fn as supervisor) |
 | POST | `/runners/{id}/probe` | Registry probe via handler; supervisor uses identical `registry.Probe` at reload |
 
-Handler interface: [`AgentWorkerControl`](../../pkgs/tasks/handler/handler.go).
+Handler interface: [`AgentWorkerControl`](../../pkgs/settings/contract/agent_worker_control.go).
 
 ### SSE events (supervisor-related)
 

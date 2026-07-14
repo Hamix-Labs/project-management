@@ -12,7 +12,10 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
+	settingscontract "github.com/AlexsanderHamir/Hamix/pkgs/settings/contract"
 )
+
+var _ settingscontract.AgentWorkerControl = (*fakeAgentControl)(nil)
 
 type fakeAgentControl struct {
 	cancelResult  atomic.Bool

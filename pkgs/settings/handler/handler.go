@@ -2,23 +2,13 @@
 package handler
 
 import (
-	"context"
 	"net/http"
-	"time"
 
 	gitcontract "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	"github.com/AlexsanderHamir/Hamix/pkgs/settings/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 )
-
-// AgentWorkerControl is the narrow surface settings handlers use to drive
-// the in-process agent worker without importing pkgs/tasks/handler.
-type AgentWorkerControl interface {
-	CancelCurrentRun() bool
-	Reload(ctx context.Context) error
-	ProbeRunner(ctx context.Context, runnerID, binaryPath string, timeout time.Duration) (version, resolvedBin string, err error)
-}
 
 // NotifyFunc publishes a scopeless SSE change event (settings_changed, agent_run_cancelled).
 type NotifyFunc func(typ realtime.ChangeType)
@@ -27,7 +17,7 @@ type NotifyFunc func(typ realtime.ChangeType)
 type Deps struct {
 	Settings contract.SettingsStore
 	GitRead  gitcontract.GitReadStore
-	Agent    AgentWorkerControl
+	Agent    contract.AgentWorkerControl
 	Git      gitwork.Service
 	Notify   NotifyFunc
 }
@@ -36,7 +26,7 @@ type Deps struct {
 type Handler struct {
 	settings contract.SettingsStore
 	gitRead  gitcontract.GitReadStore
-	agent    AgentWorkerControl
+	agent    contract.AgentWorkerControl
 	git      gitwork.Service
 	notify   NotifyFunc
 }

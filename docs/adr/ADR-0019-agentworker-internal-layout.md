@@ -23,7 +23,7 @@ Extract supervisor implementation into **`internal/taskapi/agentworker/`** with 
 | `internal/taskapi/agentworker/policy` | Pure idle gating, scheduling hint, material-change comparison, verify-runner status labels |
 | `internal/taskapi/agentworker` | `Supervisor`, apply pipeline, instance lifecycle, runner build, SSE adapters, path guards |
 
-**Public API:** `agentworker.Supervisor`, `New`, `Start`, `Reload`, `Drain`, `CancelCurrentRun`, `ProbeRunner`. Satisfies [`handler.AgentWorkerControl`](../../pkgs/tasks/handler/handler.go) via implicit interface compliance. `cmd/taskapi` injects the concrete supervisor into `internal/taskapi.NewHTTPHandler`.
+**Public API:** `agentworker.Supervisor`, `New`, `Start`, `Reload`, `Drain`, `CancelCurrentRun`, `ProbeRunner`. Satisfies [`settings/contract.AgentWorkerControl`](../../pkgs/settings/contract/agent_worker_control.go) via implicit interface compliance (`tasks/handler` re-exports the same type for composition). `cmd/taskapi` injects the concrete supervisor into `internal/taskapi.NewHTTPHandler`.
 
 **Stays in `cmd/taskapi`:** `startReadyTaskAgents` — queue cap, pickup wake, reconcile loop, then `agentworker.New` + `Start`. Reconcile always runs; the supervisor only gates the worker goroutine.
 

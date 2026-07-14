@@ -1,14 +1,13 @@
 package handler
 
 import (
-	"context"
 	"log/slog"
 	"net/http"
 	"os/exec"
-	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	"github.com/AlexsanderHamir/Hamix/pkgs/repo"
+	settingscontract "github.com/AlexsanderHamir/Hamix/pkgs/settings/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/postgres"
 )
@@ -20,23 +19,9 @@ import (
 // POST /runners/{id}/probe, POST /runners/{id}/list-models,
 // POST /runners/{id}/validate-config).
 
-// AgentWorkerControl is the narrow surface the /settings handlers use
-// to drive the in-process agent worker. The cmd/taskapi supervisor
-// implements it; tests can stub it out (or pass nil to disable the
-// supervisor-aware endpoints — they then return 503).
-//
-// Reload is invoked after PATCH /settings persists so the worker
-// picks up the new config without a process restart. CancelCurrentRun
-// is the explicit "stop the runaway run" knob exposed at
-// POST /settings/cancel-current-run; it returns true when there was
-// an in-flight run to cancel. ProbeRunner is invoked from POST
-// /settings/probe-cursor so the SPA can validate a binary path
-// against the configured runner before saving.
-type AgentWorkerControl interface {
-	CancelCurrentRun() bool
-	Reload(ctx context.Context) error
-	ProbeRunner(ctx context.Context, runnerID, binaryPath string, timeout time.Duration) (version, resolvedBin string, err error)
-}
+// AgentWorkerControl aliases the shared settings/contract surface for
+// composition and tests that still reference handler.AgentWorkerControl.
+type AgentWorkerControl = settingscontract.AgentWorkerControl
 
 // Handler carries dependencies for the mounted REST routes, SSE stream, repo
 // helpers, and optional agent worker control. Use NewHandler; the zero value

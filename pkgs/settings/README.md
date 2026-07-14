@@ -9,7 +9,7 @@ HTTP routes (`/settings`, `/settings/workspace-roots`, …) and JSON shapes are 
 | Package | Path | Responsibility |
 | --- | --- | --- |
 | Domain | [`domain/`](./domain/) | `AppSettings`, defaults, validation, sentinel errors — stdlib only |
-| Contract | [`contract/`](./contract/) | `SettingsStore` interface + `SettingsPatch` |
+| Contract | [`contract/`](./contract/) | `SettingsStore`, `SettingsPatch`, `AgentWorkerControl` |
 | Store | [`store/`](./store/) | GORM persistence facade; `internal/settings/` holds CRUD; `model/` holds GORM rows + mappers |
 | Handler | [`handler/`](./handler/) | `/settings*` REST handlers and wire DTOs |
 
@@ -17,7 +17,7 @@ HTTP routes (`/settings`, `/settings/workspace-roots`, …) and JSON shapes are 
 
 - **`cmd/taskapi`** still constructs `pkgs/tasks/store.Store` as the composition root.
 - `tasks/store.Store` holds `*settingsstore.Store` and implements `contract.SettingsStore` via delegation ([`facade_settings.go`](../tasks/store/facade_settings.go)).
-- Supervisor reload/probe/cancel is injected as `settingshandler.AgentWorkerControl` from `handler_routes.go` (same supervisor type as before, without importing `pkgs/tasks/handler` from settings).
+- Supervisor reload/probe/cancel is injected as `settings/contract.AgentWorkerControl` from `handler_routes.go` (same supervisor type as before, without importing `pkgs/tasks/handler` from settings).
 
 ## Dependency rules
 
@@ -43,3 +43,4 @@ Contract coverage for `/settings*` lives in [`handler/handler_http_settings_cont
 - [docs/api.md](../../docs/api.md) — `/settings*` contract
 - [docs/configuration.md](../../docs/configuration.md) — env vars and `app_settings` columns
 - [pkgs/settings/contract/settings.go](./contract/settings.go) — `SettingsStore` interface
+- [pkgs/settings/contract/agent_worker_control.go](./contract/agent_worker_control.go) — `AgentWorkerControl`

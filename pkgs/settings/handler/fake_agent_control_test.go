@@ -4,7 +4,11 @@ import (
 	"context"
 	"sync/atomic"
 	"time"
+
+	"github.com/AlexsanderHamir/Hamix/pkgs/settings/contract"
 )
+
+var _ contract.AgentWorkerControl = (*fakeAgentControl)(nil)
 
 type fakeAgentControl struct {
 	cancelResult  atomic.Bool

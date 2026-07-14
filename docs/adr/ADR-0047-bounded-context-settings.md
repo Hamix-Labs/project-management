@@ -20,7 +20,7 @@ Supervisor, harness, and bootstrap still read settings through the composed task
 
 4. **Contract kernel** — `pkgs/tasks/contract` keeps `SettingsStore` and `SettingsPatch`. Handlers depend on contract interfaces, not the tasks store facade.
 
-5. **Agent worker control** — `pkgs/settings/handler` defines a narrow `AgentWorkerControl` interface (cancel, reload, probe). `cmd/taskapi` passes the supervisor implementation at registration time; settings handler does not import `pkgs/tasks/handler`.
+5. **Agent worker control** — `pkgs/settings/contract` owns the narrow `AgentWorkerControl` interface (cancel, reload, probe). Handlers and `cmd/taskapi` use that contract; settings handler does not import `pkgs/tasks/handler`.
 
 6. **Cross-context reads** — Workspace roots listing uses `contract.GitReadStore` injected at registration (registered repositories from git inventory).
 

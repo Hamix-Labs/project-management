@@ -19,6 +19,6 @@ In-process agent worker supervisor: settings-driven boot and hot reload, runner 
 
 ## Wiring
 
-`cmd/taskapi/run_agentworker.go` calls `agentworker.New` + `Start` after queue/reconcile boot, passing `handler.NewSSEHubWith(...)` as `realtime.Publisher`. The handler receives the supervisor as `handler.AgentWorkerControl`.
+`cmd/taskapi/run_agentworker.go` calls `agentworker.New` + `Start` after queue/reconcile boot, passing `handler.NewSSEHubWith(...)` as `realtime.Publisher`. The handler receives the supervisor as `settings/contract.AgentWorkerControl` (aliased as `handler.AgentWorkerControl` in the composition shell).
 
 Metrics registration stays in [`../agent_worker_metrics.go`](../agent_worker_metrics.go) and is injected at `New`.
