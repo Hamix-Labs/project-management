@@ -1,0 +1,179 @@
+package taskcore_test
+
+import (
+	"encoding/json"
+	"io"
+	"net/http"
+	"strings"
+	"testing"
+
+	"github.com/AlexsanderHamir/Hamix/internal/handlertest"
+	taskcorehandler "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/handler"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
+)
+
+func TestHTTP_create_rejects_unknown_field(t *testing.T) {
+	srv := handlertest.NewCreateServer(t)
+	defer srv.Close()
+
+	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(handlertest.WithCreateChecklistForURL(srv.URL, `{"title":"x","nope":1,"priority":"medium"}`)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusBadRequest {
+		t.Fatalf("status %d", res.StatusCode)
+	}
+	b, err := io.ReadAll(res.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out handlertest.JSONErrorBody
+	if err := json.Unmarshal(b, &out); err != nil {
+		t.Fatalf("decode: %v body=%s", err, b)
+	}
+	const want = `json: unknown field "nope"`
+	if out.Error != want {
+		t.Fatalf("error %q want %q (userFacingJSONError strips json decode: prefix)", out.Error, want)
+	}
+}
+
+func TestHTTP_list_bad_limit(t *testing.T) {
+	srv := handlertest.NewCreateServer(t)
+	defer srv.Close()
+
+	res, err := http.Get(srv.URL + "/tasks?limit=999")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusBadRequest {
+		t.Fatalf("status %d", res.StatusCode)
+	}
+	b, err := io.ReadAll(res.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out handlertest.JSONErrorBody
+	if err := json.Unmarshal(b, &out); err != nil {
+		t.Fatal(err)
+	}
+	if out.Error != "limit must be integer 0..200" {
+		t.Fatalf("error %q", out.Error)
+	}
+}
+
+func TestHTTP_get_task_rejects_overlong_path_id(t *testing.T) {
+	srv := handlertest.NewCreateServer(t)
+	defer srv.Close()
+
+	long := strings.Repeat("a", handlerhttp.MaxPathIDBytes+1)
+	res, err := http.Get(srv.URL + "/tasks/" + long)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusBadRequest {
+		t.Fatalf("overlong id: status %d want %d", res.StatusCode, http.StatusBadRequest)
+	}
+}
+
+func TestHTTP_list_query_validation_error_messages(t *testing.T) {
+	srv := handlertest.NewCreateServer(t)
+	defer srv.Close()
+
+	getErr := func(rawURL string) string {
+		t.Helper()
+		res, err := http.Get(rawURL)
+		if err != nil {
+			t.Fatal(err)
+		}
+		b, err := io.ReadAll(res.Body)
+		if cerr := res.Body.Close(); cerr != nil {
+			t.Fatal(cerr)
+		}
+		if err != nil {
+			t.Fatal(err)
+		}
+		if res.StatusCode != http.StatusBadRequest {
+			t.Fatalf("%s: status %d body %s", rawURL, res.StatusCode, b)
+		}
+		var out handlertest.JSONErrorBody
+		if err := json.Unmarshal(b, &out); err != nil {
+			t.Fatal(err)
+		}
+		return out.Error
+	}
+
+	base := srv.URL + "/tasks"
+	if got := getErr(base + "?limit=999"); got != "limit must be integer 0..200" {
+		t.Fatalf("limit 999: %q", got)
+	}
+	if got := getErr(base + "?limit=nope"); got != "limit must be integer 0..200" {
+		t.Fatalf("limit nope: %q", got)
+	}
+	if got := getErr(base + "?offset=-1"); got != "offset must be non-negative integer" {
+		t.Fatalf("offset -1: %q", got)
+	}
+	id := "11111111-1111-4111-8111-111111111111"
+	if got := getErr(base + "?after_id=" + id + "&offset=0"); got != "offset cannot be used with after_id" {
+		t.Fatalf("after_id+offset: %q", got)
+	}
+	if got := getErr(base + "?after_id=not-a-uuid"); got != "after_id must be a UUID" {
+		t.Fatalf("bad uuid: %q", got)
+	}
+	long := strings.Repeat("1", taskcorehandler.MaxListIntQueryParamBytes+1)
+	if got := getErr(base + "?limit=" + long); got != "limit value too long" {
+		t.Fatalf("long limit: %q", got)
+	}
+	if got := getErr(base + "?offset=" + long); got != "offset value too long" {
+		t.Fatalf("long offset: %q", got)
+	}
+	longAfter := strings.Repeat("a", taskcorehandler.MaxListAfterIDParamBytes+1)
+	if got := getErr(base + "?after_id=" + longAfter); got != "after_id too long" {
+		t.Fatalf("long after_id: %q", got)
+	}
+}
+
+func TestHTTP_create_rejects_empty_title(t *testing.T) {
+	srv := handlertest.NewCreateServer(t)
+	defer srv.Close()
+
+	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(handlertest.WithCreateChecklistForURL(srv.URL, `{"title":"   ","priority":"medium"}`)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusBadRequest {
+		t.Fatalf("status %d", res.StatusCode)
+	}
+}
+
+func TestHTTP_create_rejects_invalid_status(t *testing.T) {
+	srv := handlertest.NewCreateServer(t)
+	defer srv.Close()
+
+	body := `{"title":"ok","status":"not_a_real_status","priority":"medium"}`
+	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(body))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusBadRequest {
+		t.Fatalf("status %d", res.StatusCode)
+	}
+}
+
+func TestHTTP_create_rejects_missing_priority(t *testing.T) {
+	srv := handlertest.NewCreateServer(t)
+	defer srv.Close()
+
+	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(handlertest.WithCreateChecklistForURL(srv.URL, `{"title":"ok"}`)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusBadRequest {
+		t.Fatalf("status %d", res.StatusCode)
+	}
+}

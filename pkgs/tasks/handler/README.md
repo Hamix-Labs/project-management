@@ -128,11 +128,13 @@ Line counts are a **reviewability signal** (not a target). Limits and naming liv
 
 | Style | Location | Use when |
 | --- | --- | --- |
-| Black-box HTTP | [`internal/handlertest`](../../internal/handlertest/) | New route contracts against exported `NewHandler` |
-| Checklist contracts | [`internal/handlertest/checklist`](../../internal/handlertest/checklist/) | `/tasks/{id}/checklist*` HTTP wire pins |
-| Compose contracts | [`internal/handlertest/compose`](../../internal/handlertest/compose/) | `/task-drafts*` and `/task-templates*` HTTP wire pins |
-| Whitebox contract | `pkgs/tasks/handler/handler_http_*_contract_test.go` | Cycles / events / taskcore pins still in this package (handlertest themes follow) |
-| Shared test server | `handler_http_testserver_test.go`, `handler_http_test_helpers_test.go` | Reused by remaining whitebox suites in this package |
-| BC handler tests | `pkgs/<bc>/handler/*_test.go` | BC-only unit tests next to BC handlers |
+| Black-box HTTP | [`internal/handlertest`](../../internal/handlertest/) | Shared helpers + theme packages against exported `NewHandler` |
+| Checklist | [`internal/handlertest/checklist`](../../internal/handlertest/checklist/) | `/tasks/{id}/checklist*` |
+| Compose | [`internal/handlertest/compose`](../../internal/handlertest/compose/) | `/task-drafts*` / `/task-templates*` |
+| Cycles | [`internal/handlertest/cycles`](../../internal/handlertest/cycles/) | `/tasks/{id}/cycles*` |
+| Events | [`internal/handlertest/events`](../../internal/handlertest/events/) | `/tasks/{id}/events*` |
+| Taskcore / cross | [`internal/handlertest/taskcore`](../../internal/handlertest/taskcore/) | CRUD, bootstrap, projects, repo, runners, system health, git binding |
+| Whitebox | `pkgs/tasks/handler/*_test.go` | Unexported helpers, SSE hub/stream/notify, security headers, storefake |
+| Shared test server | `handler_http_testserver_test.go`, `handler_http_test_helpers_test.go` | Remaining whitebox suites in this package |
 
 When a handler file enters the **yellow** zone (301–500 lines for `handler_*.go`), plan the split in the same sprint — do not wait for red.

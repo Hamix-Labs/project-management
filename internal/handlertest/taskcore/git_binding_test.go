@@ -1,0 +1,158 @@
+package taskcore_test
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"os/exec"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"github.com/AlexsanderHamir/Hamix/internal/handlertest"
+	gitinventorystore "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store"
+	projectsstore "github.com/AlexsanderHamir/Hamix/pkgs/projects/store"
+
+	"github.com/AlexsanderHamir/Hamix/internal/gittest"
+	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
+)
+
+func TestHTTP_createTask_branchBoundToWorktree_returns409(t *testing.T) {
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git not on PATH")
+	}
+	dir := t.TempDir()
+	srv, st, _, _ := handlertest.NewBoundRepoServerWithStore(t, dir)
+	t.Cleanup(srv.Close)
+
+	ctx := context.Background()
+	gitSvc := gitwork.New()
+	repos, err := st.ListAllGitRepositories(ctx)
+	if err != nil || len(repos) == 0 {
+		t.Fatalf("ListAllGitRepositories: %v len=%d", err, len(repos))
+	}
+	wt2Path := filepath.Join(filepath.Dir(dir), "wt-bound-test")
+	_, err = st.CreateGitWorktreeForRepo(ctx, repos[0].ID, gitinventorystore.CreateGitWorktreeInput{
+		Path:         wt2Path,
+		Branch:       "feature-bound",
+		CreateBranch: true,
+	}, gitSvc)
+	if err != nil {
+		t.Fatalf("CreateGitWorktreeForRepo first: %v", err)
+	}
+	wt3Path := filepath.Join(filepath.Dir(dir), "wt-bound-dup")
+	_, err = st.CreateGitWorktreeForRepo(ctx, repos[0].ID, gitinventorystore.CreateGitWorktreeInput{
+		Path:         wt3Path,
+		Branch:       "feature-bound",
+		CreateBranch: true,
+	}, gitSvc)
+	if domain.GitErrCode(err) != domain.GitCodeBranchBoundToWorktree {
+		t.Fatalf("CreateGitWorktreeForRepo duplicate branch: got %v want branch_bound_to_worktree", err)
+	}
+}
+
+func TestHTTP_createTask_projectRepoMismatch_returns409(t *testing.T) {
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git not on PATH")
+	}
+	dir := t.TempDir()
+	srv, st, worktreeID, _ := handlertest.NewBoundRepoServerWithStore(t, dir)
+	t.Cleanup(srv.Close)
+
+	ctx := context.Background()
+	gitSvc := gitwork.New()
+	otherDir := t.TempDir()
+	gittest.EnsureMain(t, otherDir)
+	otherRepo, err := st.CreateGlobalGitRepository(ctx, gitinventorystore.CreateGitRepositoryInput{Path: otherDir}, gitSvc)
+	if err != nil {
+		t.Fatalf("CreateGlobalGitRepository: %v", err)
+	}
+	otherRepoID := otherRepo.ID
+	otherProj, err := st.CreateProject(ctx, projectsstore.CreateProjectInput{
+		Name:         "wrong-repo overlay",
+		RepositoryID: &otherRepoID,
+	})
+	if err != nil {
+		t.Fatalf("CreateProject: %v", err)
+	}
+
+	body := fmt.Sprintf(
+		`{"title":"mismatch","priority":"medium","project_id":%q,"worktree_id":%q}`,
+		otherProj.ID, worktreeID,
+	)
+	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(body))
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw, _ := io.ReadAll(res.Body)
+	_ = res.Body.Close()
+	if res.StatusCode != http.StatusConflict {
+		t.Fatalf("status %d body=%s want 409 project_repo_mismatch", res.StatusCode, raw)
+	}
+	var errBody struct {
+		Error string `json:"error"`
+		Code  string `json:"code,omitempty"`
+	}
+	if err := json.Unmarshal(raw, &errBody); err != nil {
+		t.Fatalf("decode: %v body=%s", err, raw)
+	}
+	if errBody.Code != domain.GitCodeProjectRepoMismatch {
+		t.Fatalf("code=%q want %q", errBody.Code, domain.GitCodeProjectRepoMismatch)
+	}
+}
+
+func TestHTTP_createTask_withRepoDefault_returns201(t *testing.T) {
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git not on PATH")
+	}
+	dir := t.TempDir()
+	srv, st, worktreeID, _ := handlertest.NewBoundRepoServerWithStore(t, dir)
+	t.Cleanup(srv.Close)
+
+	ctx := context.Background()
+	repos, err := st.ListAllGitRepositories(ctx)
+	if err != nil || len(repos) == 0 {
+		t.Fatalf("ListAllGitRepositories: %v len=%d", err, len(repos))
+	}
+	defaultProj, err := st.GetDefaultProjectForRepository(ctx, repos[0].ID)
+	if err != nil {
+		t.Fatalf("GetDefaultProjectForRepository: %v", err)
+	}
+
+	body := fmt.Sprintf(
+		`{"title":"default binding","priority":"medium","project_id":%q,"worktree_id":%q,"checklist_items":[{"text":"done"}]}`,
+		defaultProj.ID, worktreeID,
+	)
+	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(body))
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw, _ := io.ReadAll(res.Body)
+	_ = res.Body.Close()
+	if res.StatusCode != http.StatusCreated {
+		t.Fatalf("status %d body=%s want 201", res.StatusCode, raw)
+	}
+}
+
+func TestHTTP_createTask_missingProjectID_returns422(t *testing.T) {
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git not on PATH")
+	}
+	dir := t.TempDir()
+	srv, _, worktreeID, _ := handlertest.NewBoundRepoServerWithStore(t, dir)
+	t.Cleanup(srv.Close)
+
+	body := fmt.Sprintf(`{"title":"no project","priority":"medium","worktree_id":%q,"checklist_items":[{"text":"done"}]}`, worktreeID)
+	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(body))
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw, _ := io.ReadAll(res.Body)
+	_ = res.Body.Close()
+	if res.StatusCode != http.StatusBadRequest {
+		t.Fatalf("status %d body=%s want 400", res.StatusCode, raw)
+	}
+}

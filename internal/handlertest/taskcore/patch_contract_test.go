@@ -1,0 +1,297 @@
+package taskcore_test
+
+import (
+	"context"
+	"encoding/json"
+	"net/http"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/AlexsanderHamir/Hamix/internal/handlertest"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
+)
+
+func TestHTTP_patchTask_cursorModel(t *testing.T) {
+	srv := handlertest.NewCreateServer(t)
+	defer srv.Close()
+
+	id := handlertest.MustCreateTask(t, srv.URL,
+		`{"title":"m","priority":"medium","cursor_model":"old-model"}`)
+	res, raw := handlertest.PatchTask(t, srv.URL, id, `{"cursor_model":"new-model"}`)
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("status %d body=%s", res.StatusCode, raw)
+	}
+	var got taskcoredomain.Task
+	if err := json.Unmarshal(raw, &got); err != nil {
+		t.Fatal(err)
+	}
+	if got.CursorModel != "new-model" {
+		t.Fatalf("cursor_model=%q want new-model", got.CursorModel)
+	}
+
+	res2, raw2 := handlertest.PatchTask(t, srv.URL, id, `{"cursor_model":""}`)
+	if res2.StatusCode != http.StatusOK {
+		t.Fatalf("clear status %d body=%s", res2.StatusCode, raw2)
+	}
+	var got2 taskcoredomain.Task
+	if err := json.Unmarshal(raw2, &got2); err != nil {
+		t.Fatal(err)
+	}
+	if got2.CursorModel != "" {
+		t.Fatalf("cursor_model=%q want empty", got2.CursorModel)
+	}
+}
+
+func TestHTTP_patchTask_cursorModelTooLong(t *testing.T) {
+	srv := handlertest.NewCreateServer(t)
+	defer srv.Close()
+
+	id := handlertest.MustCreateTask(t, srv.URL, `{"title":"m","priority":"medium"}`)
+	long := strings.Repeat("x", 257)
+	bodyBytes, err := json.Marshal(map[string]string{"cursor_model": long})
+	if err != nil {
+		t.Fatal(err)
+	}
+	res, raw := handlertest.PatchTask(t, srv.URL, id, string(bodyBytes))
+	if res.StatusCode != http.StatusBadRequest {
+		t.Fatalf("status %d (want 400) body=%s", res.StatusCode, raw)
+	}
+	var errBody handlertest.JSONErrorBody
+	if err := json.Unmarshal(raw, &errBody); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(errBody.Error, "cursor_model") {
+		t.Fatalf("error=%q want substring cursor_model", errBody.Error)
+	}
+}
+
+// patchTaskHelper centralizes the documented PATCH /tasks/{id} round-trip so
+// the table-driven 400 string subtests stay focused on the assertion side.
+
+// TestHTTP_patchTask_400ErrorStrings pins every documented PATCH /tasks/{id}
+// 400 string from docs/api.md against the live handler. Each subtest
+// drives a distinct rejection path so a future refactor that changes the
+// store/handler wording breaks loudly here, in lockstep with the doc.
+func TestHTTP_patchTask_400ErrorStrings(t *testing.T) {
+	srv := handlertest.NewCreateServer(t)
+	defer srv.Close()
+
+	id := handlertest.MustCreateTask(t, srv.URL, `{"title":"base","priority":"medium"}`)
+
+	cases := []struct {
+		name string
+		body string
+		want string
+	}{
+		{"noFields_emptyObject", `{}`, "no fields to update"},
+		{"noFields_allNulls", `{"status":null,"priority":null,"title":null,"initial_prompt":null}`, "no fields to update"},
+		{"emptyTitle", `{"title":"   "}`, "title"},
+		{"invalidPriority", `{"priority":"nope"}`, "priority"},
+		{"invalidStatus", `{"status":"nope"}`, "status"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			res, raw := handlertest.PatchTask(t, srv.URL, id, tc.body)
+			if res.StatusCode != http.StatusBadRequest {
+				t.Fatalf("status %d (want 400) body=%s", res.StatusCode, raw)
+			}
+			var errBody handlertest.JSONErrorBody
+			if err := json.Unmarshal(raw, &errBody); err != nil {
+				t.Fatalf("decode: %v body=%s", err, raw)
+			}
+			if errBody.Error != tc.want {
+				t.Fatalf("error=%q want %q (docs/api.md)", errBody.Error, tc.want)
+			}
+		})
+	}
+}
+
+// TestHTTP_patchTask_doneBlockedByIncompleteChecklist pins the checklist-must-
+// be-complete precondition string. Adds a checklist item directly via the store
+// (so we don't depend on POST /tasks/{id}/checklist/items wiring), leaves it
+// uncompleted, and asserts the bare 400 phrase from
+// validateChecklistCompleteTx propagates.
+func TestHTTP_patchTask_doneBlockedByIncompleteChecklist(t *testing.T) {
+	srv, st := handlertest.NewCreateServerWithStore(t)
+	defer srv.Close()
+
+	id := handlertest.MustCreateTask(t, srv.URL, `{"title":"t","priority":"medium"}`)
+	if _, err := st.AddChecklistItem(context.Background(), id, "not done yet", nil, taskcoredomain.ActorUser); err != nil {
+		t.Fatal(err)
+	}
+
+	res, raw := handlertest.PatchTask(t, srv.URL, id, `{"status":"done"}`)
+	if res.StatusCode != http.StatusBadRequest {
+		t.Fatalf("status %d (want 400) body=%s", res.StatusCode, raw)
+	}
+	var errBody handlertest.JSONErrorBody
+	if err := json.Unmarshal(raw, &errBody); err != nil {
+		t.Fatal(err)
+	}
+	const want = "all checklist items must be done before marking this task done"
+	if errBody.Error != want {
+		t.Fatalf("error=%q want %q (docs/api.md)", errBody.Error, want)
+	}
+}
+
+// TestHTTP_patchTask_setsPickupNotBefore pins the Stage 2 happy path: a PATCH
+// with an RFC3339 `pickup_not_before` mutates the column and surfaces the new
+// time on the response envelope (UTC, second-precision).
+func TestHTTP_patchTask_setsPickupNotBefore(t *testing.T) {
+	srv := handlertest.NewCreateServer(t)
+	defer srv.Close()
+
+	id := handlertest.MustCreateTask(t, srv.URL, `{"title":"sched","priority":"medium"}`)
+	want := time.Now().UTC().Add(2 * time.Hour).Truncate(time.Second)
+	res, raw := handlertest.PatchTask(t, srv.URL, id, `{"pickup_not_before":"`+want.Format(time.RFC3339)+`"}`)
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("status %d body=%s", res.StatusCode, raw)
+	}
+	var got taskcoredomain.Task
+	if err := json.Unmarshal(raw, &got); err != nil {
+		t.Fatalf("decode: %v body=%s", err, raw)
+	}
+	if got.PickupNotBefore == nil || !got.PickupNotBefore.Equal(want) {
+		t.Fatalf("pickup_not_before=%v want %s", got.PickupNotBefore, want.Format(time.RFC3339))
+	}
+}
+
+// TestHTTP_patchTask_clearsPickupNotBefore pins the two documented "clear the
+// schedule" wire shapes: explicit JSON null AND explicit empty string. Both
+// must result in NULL on the column. The empty-string path is what the
+// SchedulePicker emits when the operator hits "Clear" in Stages 3+ — we keep
+// it symmetric with the null path so SPA code never needs to special-case
+// either.
+func TestHTTP_patchTask_clearsPickupNotBefore(t *testing.T) {
+	srv, st := handlertest.NewCreateServerWithStore(t)
+	defer srv.Close()
+
+	cases := []struct {
+		name string
+		body string
+	}{
+		{"jsonNull", `{"pickup_not_before":null}`},
+		{"emptyString", `{"pickup_not_before":""}`},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			id := handlertest.MustCreateTask(t, srv.URL, `{"title":"clear","priority":"medium"}`)
+			seed := time.Now().UTC().Add(3 * time.Hour).Truncate(time.Second)
+			if _, err := st.Update(context.Background(), id,
+				taskcorestore.UpdateTaskInput{PickupNotBefore: &taskcorestore.PickupNotBeforePatch{At: seed}},
+				taskcoredomain.ActorUser); err != nil {
+				t.Fatalf("seed pickup: %v", err)
+			}
+			res, raw := handlertest.PatchTask(t, srv.URL, id, tc.body)
+			if res.StatusCode != http.StatusOK {
+				t.Fatalf("status %d body=%s", res.StatusCode, raw)
+			}
+			var got taskcoredomain.Task
+			if err := json.Unmarshal(raw, &got); err != nil {
+				t.Fatalf("decode: %v body=%s", err, raw)
+			}
+			if got.PickupNotBefore != nil {
+				t.Fatalf("pickup_not_before=%s want nil after clear", got.PickupNotBefore.UTC().Format(time.RFC3339))
+			}
+		})
+	}
+}
+
+// TestHTTP_patchTask_rejectsBadPickupNotBefore pins the per-stage 400 strings
+// for malformed scheduling input on PATCH. The malformed-string path goes
+// through decodeJSON's `json decode:` envelope so the visible message is the
+// patchPickupNotBeforeField error verbatim. The pre-2000 sentinel path also
+// surfaces the bare error string because the same UnmarshalJSON gate fires
+// before the store layer ever sees the value.
+func TestHTTP_patchTask_rejectsBadPickupNotBefore(t *testing.T) {
+	srv := handlertest.NewCreateServer(t)
+	defer srv.Close()
+
+	id := handlertest.MustCreateTask(t, srv.URL, `{"title":"x","priority":"medium"}`)
+	cases := []struct {
+		name       string
+		body       string
+		wantSubstr string
+	}{
+		{"malformed", `{"pickup_not_before":"yesterday"}`, "pickup_not_before must be RFC3339"},
+		{"pre2000", `{"pickup_not_before":"1999-12-31T23:59:59Z"}`, "pickup_not_before must be on or after 2000-01-01"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			res, raw := handlertest.PatchTask(t, srv.URL, id, tc.body)
+			if res.StatusCode != http.StatusBadRequest {
+				t.Fatalf("status %d (want 400) body=%s", res.StatusCode, raw)
+			}
+			var errBody handlertest.JSONErrorBody
+			if err := json.Unmarshal(raw, &errBody); err != nil {
+				t.Fatalf("decode: %v body=%s", err, raw)
+			}
+			if !strings.Contains(errBody.Error, tc.wantSubstr) {
+				t.Fatalf("error=%q want substring %q", errBody.Error, tc.wantSubstr)
+			}
+		})
+	}
+}
+
+// TestHTTP_patchTask_pickupNotBeforeAloneCounts pins the "no fields to update"
+// guard's awareness of the new field: a PATCH carrying ONLY pickup_not_before
+// (no title/status/etc.) must succeed, NOT 400 with "no fields to update". The
+// internal/tasks.Update guard was extended in Stage 2 to include
+// in.PickupNotBefore; this regression test fails on an upstream that forgets
+// to add the new field to that guard.
+func TestHTTP_patchTask_pickupNotBeforeAloneCounts(t *testing.T) {
+	srv := handlertest.NewCreateServer(t)
+	defer srv.Close()
+
+	id := handlertest.MustCreateTask(t, srv.URL, `{"title":"alone","priority":"medium"}`)
+	want := time.Now().UTC().Add(15 * time.Minute).Truncate(time.Second)
+	res, raw := handlertest.PatchTask(t, srv.URL, id, `{"pickup_not_before":"`+want.Format(time.RFC3339)+`"}`)
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("status %d (want 200; pickup_not_before alone counts as a field) body=%s", res.StatusCode, raw)
+	}
+}
+
+// TestHTTP_patchTask_emitsTaskUpdatedSSE_onScheduleChange pins the documented
+// SSE side-effect for a schedule-only PATCH. The reuse of the existing
+// task_updated frame is decision D6 in the plan ("no new event type") — this
+// test is the regression gate for that reuse.
+func TestHTTP_patchTask_emitsTaskUpdatedSSE_onScheduleChange(t *testing.T) {
+	srv, _, hub := handlertest.NewSSETriggerServer(t)
+	defer srv.Close()
+
+	id := handlertest.MustCreateTask(t, srv.URL, `{"title":"sse","priority":"medium"}`)
+	ch, unsub := hub.Subscribe()
+	defer unsub()
+
+	want := time.Now().UTC().Add(10 * time.Minute).Truncate(time.Second)
+	res, raw := handlertest.PatchTask(t, srv.URL, id, `{"pickup_not_before":"`+want.Format(time.RFC3339)+`"}`)
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("status %d body=%s", res.StatusCode, raw)
+	}
+	got := handlertest.SummarizeSSEEvents(handlertest.DrainSSE(t, ch, 1, 2*time.Second))
+	handlertest.MustEqualEvents(t, "PATCH /tasks/{id} pickup_not_before", got, []string{string(realtime.TaskUpdated) + ":" + id})
+}
+
+// TestHTTP_patchTask_publishesTaskUpdated pins the documented SSE side effect:
+// every successful PATCH /tasks/{id} fans out exactly one `task_updated` for
+// `{id}` (no extra `task_created` / `task_deleted`). Sessions 4 covered this in
+// the trigger surface table; this is the row-level cross reference for the
+// PATCH contract spec.
+func TestHTTP_patchTask_publishesTaskUpdated(t *testing.T) {
+	srv, _, hub := handlertest.NewSSETriggerServer(t)
+	defer srv.Close()
+
+	id := handlertest.MustCreateTask(t, srv.URL, `{"title":"t","priority":"medium"}`)
+	ch, unsub := hub.Subscribe()
+	defer unsub()
+
+	res, raw := handlertest.PatchTask(t, srv.URL, id, `{"status":"running"}`)
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("PATCH status %d body=%s", res.StatusCode, raw)
+	}
+	got := handlertest.SummarizeSSEEvents(handlertest.DrainSSE(t, ch, 1, 2*time.Second))
+	handlertest.MustEqualEvents(t, "PATCH /tasks/{id}", got, []string{string(realtime.TaskUpdated) + ":" + id})
+}

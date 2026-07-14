@@ -39,5 +39,8 @@ Additional helpers used by BC contract themes under this package:
 |-------|------|----------|
 | Checklist | [`checklist/`](./checklist/) | `/tasks/{id}/checklist*` contracts |
 | Compose | [`compose/`](./compose/) | `/task-drafts*` and `/task-templates*` contracts |
+| Cycles | [`cycles/`](./cycles/) | `/tasks/{id}/cycles*` contracts |
+| Events | [`events/`](./events/) | `/tasks/{id}/events*` contracts |
+| Taskcore | [`taskcore/`](./taskcore/) | Task CRUD + bootstrap/projects/repo/runners/system health/git binding |
 
-Further themes (cycles, events, taskcore) land in follow-up PRs.
+Also see [`http_helpers.go`](./http_helpers.go) for create/patch/SSE/event-seed helpers used across themes.

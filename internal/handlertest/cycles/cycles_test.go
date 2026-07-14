@@ -1,0 +1,420 @@
+package cycles_test
+
+import (
+	"context"
+	"encoding/json"
+	"net/http"
+	"strconv"
+	"strings"
+	"testing"
+
+	"github.com/AlexsanderHamir/Hamix/internal/handlertest"
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclescontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/contract"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
+	cyclesstore "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store"
+	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
+)
+
+func TestHTTP_postTaskCycle_creates_running_cycle(t *testing.T) {
+	srv := handlertest.NewCreateServer(t)
+	defer srv.Close()
+	taskID := handlertest.MustCreateTaskForCycles(t, srv.URL)
+
+	res, raw := handlertest.DoCyclesRequest(t, http.MethodPost, srv.URL+"/tasks/"+taskID+"/cycles", `{"meta":{"runner":"cursor-cli"}}`)
+	if res.StatusCode != http.StatusCreated {
+		t.Fatalf("status %d body=%s", res.StatusCode, raw)
+	}
+	if ct := res.Header.Get("Content-Type"); !strings.HasPrefix(ct, "application/json") {
+		t.Fatalf("content type %q", ct)
+	}
+	var got taskCycleResponse
+	if err := json.Unmarshal(raw, &got); err != nil {
+		t.Fatalf("decode: %v body=%s", err, raw)
+	}
+	if got.ID == "" || got.TaskID != taskID {
+		t.Fatalf("identity got=%#v", got)
+	}
+	if got.AttemptSeq != 1 {
+		t.Fatalf("attempt_seq=%d want 1", got.AttemptSeq)
+	}
+	if got.Status != cyclesdomain.CycleStatusRunning {
+		t.Fatalf("status=%s want running", got.Status)
+	}
+	if got.TriggeredBy != taskcoredomain.ActorAgent {
+		t.Fatalf("triggered_by=%s want agent (X-Actor header)", got.TriggeredBy)
+	}
+	if got.EndedAt != nil {
+		t.Fatalf("ended_at should be nil for a running cycle, got %v", got.EndedAt)
+	}
+	var meta map[string]any
+	if err := json.Unmarshal(got.Meta, &meta); err != nil {
+		t.Fatalf("decode meta: %v raw=%s", err, got.Meta)
+	}
+	if meta["runner"] != "cursor-cli" {
+		t.Fatalf("meta.runner=%v", meta["runner"])
+	}
+}
+
+func TestHTTP_getTaskCycles_lists_in_attempt_desc(t *testing.T) {
+	srv := handlertest.NewCreateServer(t)
+	defer srv.Close()
+	taskID := handlertest.MustCreateTaskForCycles(t, srv.URL)
+
+	for i := 0; i < 3; i++ {
+		res, raw := handlertest.DoCyclesRequest(t, http.MethodPost, srv.URL+"/tasks/"+taskID+"/cycles", `{}`)
+		if res.StatusCode != http.StatusCreated {
+			t.Fatalf("seed cycle %d: status %d body=%s", i, res.StatusCode, raw)
+		}
+		var c taskCycleResponse
+		if err := json.Unmarshal(raw, &c); err != nil {
+			t.Fatal(err)
+		}
+		_, term := handlertest.DoCyclesRequest(t, http.MethodPatch, srv.URL+"/tasks/"+taskID+"/cycles/"+c.ID, `{"status":"succeeded"}`)
+		if !json.Valid(term) {
+			t.Fatalf("terminate %d body invalid: %s", i, term)
+		}
+	}
+
+	res, raw := handlertest.DoCyclesRequest(t, http.MethodGet, srv.URL+"/tasks/"+taskID+"/cycles", "")
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("list status %d body=%s", res.StatusCode, raw)
+	}
+	var got taskCyclesListResponse
+	if err := json.Unmarshal(raw, &got); err != nil {
+		t.Fatalf("decode: %v body=%s", err, raw)
+	}
+	if got.TaskID != taskID {
+		t.Fatalf("task_id=%q want %q", got.TaskID, taskID)
+	}
+	if got.Limit != defaultCycleListLimit {
+		t.Fatalf("limit=%d want %d (default echo)", got.Limit, defaultCycleListLimit)
+	}
+	if got.HasMore {
+		t.Fatalf("has_more=true with only 3 cycles and default limit")
+	}
+	if len(got.Cycles) != 3 {
+		t.Fatalf("got %d cycles want 3", len(got.Cycles))
+	}
+	if got.Cycles[0].AttemptSeq != 3 || got.Cycles[1].AttemptSeq != 2 || got.Cycles[2].AttemptSeq != 1 {
+		t.Fatalf("attempt order = [%d,%d,%d] want [3,2,1]", got.Cycles[0].AttemptSeq, got.Cycles[1].AttemptSeq, got.Cycles[2].AttemptSeq)
+	}
+}
+
+func TestHTTP_getTaskCycleStream_listsPersistedEvents(t *testing.T) {
+	srv, st := handlertest.NewCreateServerWithStore(t)
+	defer srv.Close()
+	taskID := handlertest.MustCreateTaskForCycles(t, srv.URL)
+	cycle, phase := mustCreateCycleWithExecutePhase(t, st, context.Background(), taskID)
+
+	for i := 0; i < 2; i++ {
+		if _, err := st.AppendCycleStreamEvent(context.Background(), cyclesstore.AppendCycleStreamEventInput{
+			TaskID:   taskID,
+			CycleID:  cycle.ID,
+			PhaseSeq: phase.PhaseSeq,
+			Source:   "cursor",
+			Kind:     "message",
+			Message:  "stream event " + strconv.Itoa(i+1),
+			Payload:  []byte(`{"kind":"message"}`),
+		}); err != nil {
+			t.Fatalf("append stream event: %v", err)
+		}
+	}
+
+	res, raw := handlertest.DoCyclesRequest(t, http.MethodGet, srv.URL+"/tasks/"+taskID+"/cycles/"+cycle.ID+"/stream?limit=1", "")
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("status %d body=%s", res.StatusCode, raw)
+	}
+	var got taskCycleStreamListResponse
+	if err := json.Unmarshal(raw, &got); err != nil {
+		t.Fatalf("decode: %v body=%s", err, raw)
+	}
+	if got.TaskID != taskID || got.CycleID != cycle.ID {
+		t.Fatalf("identity got=%#v", got)
+	}
+	if !got.HasMore || got.NextAfterSeq == nil || *got.NextAfterSeq != 1 {
+		t.Fatalf("paging got has_more=%v next=%v", got.HasMore, got.NextAfterSeq)
+	}
+	if len(got.Events) != 1 || got.Events[0].StreamSeq != 1 || got.Events[0].Message != "stream event 1" {
+		t.Fatalf("events=%#v", got.Events)
+	}
+}
+
+func TestHTTP_getTaskCycleStream_crossTaskCycleIsNotFound(t *testing.T) {
+	srv, st := handlertest.NewCreateServerWithStore(t)
+	defer srv.Close()
+	taskA := handlertest.MustCreateTaskForCycles(t, srv.URL)
+	taskB := handlertest.MustCreateTaskForCycles(t, srv.URL)
+	cycle, _ := mustCreateCycleWithExecutePhase(t, st, context.Background(), taskA)
+
+	res, raw := handlertest.DoCyclesRequest(t, http.MethodGet, srv.URL+"/tasks/"+taskB+"/cycles/"+cycle.ID+"/stream", "")
+	if res.StatusCode != http.StatusNotFound {
+		t.Fatalf("status %d body=%s", res.StatusCode, raw)
+	}
+}
+
+func mustCreateCycleWithExecutePhase(t *testing.T, st *composition.API, ctx context.Context, taskID string) (*cyclesdomain.TaskCycle, *cyclesdomain.TaskCyclePhase) {
+	t.Helper()
+	cycle, err := st.StartCycle(ctx, cyclescontract.StartCycleInput{TaskID: taskID, TriggeredBy: taskcoredomain.ActorAgent})
+	if err != nil {
+		t.Fatalf("start cycle: %v", err)
+	}
+	phase, err := st.StartPhase(ctx, cycle.ID, cyclesdomain.PhaseExecute, taskcoredomain.ActorAgent)
+	if err != nil {
+		t.Fatalf("start execute: %v", err)
+	}
+	return cycle, phase
+}
+
+func TestHTTP_getTaskCycles_has_more_when_overflow(t *testing.T) {
+	srv := handlertest.NewCreateServer(t)
+	defer srv.Close()
+	taskID := handlertest.MustCreateTaskForCycles(t, srv.URL)
+	for i := 0; i < 3; i++ {
+		res, raw := handlertest.DoCyclesRequest(t, http.MethodPost, srv.URL+"/tasks/"+taskID+"/cycles", `{}`)
+		if res.StatusCode != http.StatusCreated {
+			t.Fatalf("seed cycle %d: %d %s", i, res.StatusCode, raw)
+		}
+		var c taskCycleResponse
+		if err := json.Unmarshal(raw, &c); err != nil {
+			t.Fatal(err)
+		}
+		handlertest.DoCyclesRequest(t, http.MethodPatch, srv.URL+"/tasks/"+taskID+"/cycles/"+c.ID, `{"status":"succeeded"}`)
+	}
+
+	res, raw := handlertest.DoCyclesRequest(t, http.MethodGet, srv.URL+"/tasks/"+taskID+"/cycles?limit=2", "")
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("status %d body=%s", res.StatusCode, raw)
+	}
+	var got taskCyclesListResponse
+	if err := json.Unmarshal(raw, &got); err != nil {
+		t.Fatal(err)
+	}
+	if got.Limit != 2 || !got.HasMore || len(got.Cycles) != 2 {
+		t.Fatalf("paging got limit=%d has_more=%v cycles=%d body=%s", got.Limit, got.HasMore, len(got.Cycles), raw)
+	}
+}
+
+func TestHTTP_getTaskCycle_embeds_phases(t *testing.T) {
+	srv := handlertest.NewCreateServer(t)
+	defer srv.Close()
+	taskID := handlertest.MustCreateTaskForCycles(t, srv.URL)
+
+	_, createdRaw := handlertest.DoCyclesRequest(t, http.MethodPost, srv.URL+"/tasks/"+taskID+"/cycles", `{}`)
+	var cycle taskCycleResponse
+	if err := json.Unmarshal(createdRaw, &cycle); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, p := range []string{"execute", "verify"} {
+		res, raw := handlertest.DoCyclesRequest(t, http.MethodPost,
+			srv.URL+"/tasks/"+taskID+"/cycles/"+cycle.ID+"/phases", `{"phase":"`+p+`"}`)
+		if res.StatusCode != http.StatusCreated {
+			t.Fatalf("start phase %s: %d %s", p, res.StatusCode, raw)
+		}
+		var ph taskCyclePhaseResponse
+		if err := json.Unmarshal(raw, &ph); err != nil {
+			t.Fatal(err)
+		}
+		patchBody := `{"status":"succeeded","summary":"ok"}`
+		_, prRaw := handlertest.DoCyclesRequest(t, http.MethodPatch,
+			srv.URL+"/tasks/"+taskID+"/cycles/"+cycle.ID+"/phases/"+strItoa(ph.PhaseSeq), patchBody)
+		if !json.Valid(prRaw) {
+			t.Fatalf("phase patch body invalid: %s", prRaw)
+		}
+	}
+
+	res, raw := handlertest.DoCyclesRequest(t, http.MethodGet, srv.URL+"/tasks/"+taskID+"/cycles/"+cycle.ID, "")
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("status %d body=%s", res.StatusCode, raw)
+	}
+	var got taskCycleDetailResponse
+	if err := json.Unmarshal(raw, &got); err != nil {
+		t.Fatalf("decode: %v body=%s", err, raw)
+	}
+	if got.ID != cycle.ID || got.TaskID != taskID {
+		t.Fatalf("identity got=%#v", got)
+	}
+	if len(got.Phases) != 2 {
+		t.Fatalf("phases=%d want 2 body=%s", len(got.Phases), raw)
+	}
+	if got.Phases[0].Phase != cyclesdomain.PhaseExecute || got.Phases[0].PhaseSeq != 1 {
+		t.Fatalf("phases[0] %#v want execute seq 1", got.Phases[0])
+	}
+	if got.Phases[1].Phase != cyclesdomain.PhaseVerify || got.Phases[1].PhaseSeq != 2 {
+		t.Fatalf("phases[1] %#v want verify seq 2", got.Phases[1])
+	}
+	if got.Phases[0].Status != cyclesdomain.PhaseStatusSucceeded || got.Phases[0].Summary == nil || *got.Phases[0].Summary != "ok" {
+		t.Fatalf("phases[0] terminal state %#v", got.Phases[0])
+	}
+	if got.Phases[0].EventSeq == nil || got.Phases[1].EventSeq == nil {
+		t.Fatalf("event_seq backlinks must be populated, got %v / %v", got.Phases[0].EventSeq, got.Phases[1].EventSeq)
+	}
+}
+
+func TestHTTP_patchTaskCycle_terminates_and_returns_terminal_state(t *testing.T) {
+	srv := handlertest.NewCreateServer(t)
+	defer srv.Close()
+	taskID := handlertest.MustCreateTaskForCycles(t, srv.URL)
+	_, createdRaw := handlertest.DoCyclesRequest(t, http.MethodPost, srv.URL+"/tasks/"+taskID+"/cycles", `{}`)
+	var cycle taskCycleResponse
+	if err := json.Unmarshal(createdRaw, &cycle); err != nil {
+		t.Fatal(err)
+	}
+
+	res, raw := handlertest.DoCyclesRequest(t, http.MethodPatch,
+		srv.URL+"/tasks/"+taskID+"/cycles/"+cycle.ID, `{"status":"failed","reason":"timeout in execute"}`)
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("status %d body=%s", res.StatusCode, raw)
+	}
+	var got taskCycleResponse
+	if err := json.Unmarshal(raw, &got); err != nil {
+		t.Fatal(err)
+	}
+	if got.Status != cyclesdomain.CycleStatusFailed {
+		t.Fatalf("status=%s want failed", got.Status)
+	}
+	if got.EndedAt == nil {
+		t.Fatalf("ended_at should be set on terminal cycle")
+	}
+}
+
+func TestHTTP_postTaskCyclePhase_starts_running_phase(t *testing.T) {
+	srv := handlertest.NewCreateServer(t)
+	defer srv.Close()
+	taskID := handlertest.MustCreateTaskForCycles(t, srv.URL)
+	_, createdRaw := handlertest.DoCyclesRequest(t, http.MethodPost, srv.URL+"/tasks/"+taskID+"/cycles", `{}`)
+	var cycle taskCycleResponse
+	if err := json.Unmarshal(createdRaw, &cycle); err != nil {
+		t.Fatal(err)
+	}
+	res, raw := handlertest.DoCyclesRequest(t, http.MethodPost,
+		srv.URL+"/tasks/"+taskID+"/cycles/"+cycle.ID+"/phases", `{"phase":"execute"}`)
+	if res.StatusCode != http.StatusCreated {
+		t.Fatalf("status %d body=%s", res.StatusCode, raw)
+	}
+	var got taskCyclePhaseResponse
+	if err := json.Unmarshal(raw, &got); err != nil {
+		t.Fatal(err)
+	}
+	if got.Phase != cyclesdomain.PhaseExecute || got.PhaseSeq != 1 || got.Status != cyclesdomain.PhaseStatusRunning {
+		t.Fatalf("phase create %#v", got)
+	}
+	if got.EndedAt != nil {
+		t.Fatalf("ended_at should be nil for running phase")
+	}
+	if got.EventSeq == nil {
+		t.Fatalf("event_seq must be backfilled at start")
+	}
+}
+
+func TestHTTP_patchTaskCyclePhase_completes_with_summary_and_details(t *testing.T) {
+	srv := handlertest.NewCreateServer(t)
+	defer srv.Close()
+	taskID := handlertest.MustCreateTaskForCycles(t, srv.URL)
+	_, createdRaw := handlertest.DoCyclesRequest(t, http.MethodPost, srv.URL+"/tasks/"+taskID+"/cycles", `{}`)
+	var cycle taskCycleResponse
+	if err := json.Unmarshal(createdRaw, &cycle); err != nil {
+		t.Fatal(err)
+	}
+	_, phRaw := handlertest.DoCyclesRequest(t, http.MethodPost,
+		srv.URL+"/tasks/"+taskID+"/cycles/"+cycle.ID+"/phases", `{"phase":"execute"}`)
+	var ph taskCyclePhaseResponse
+	if err := json.Unmarshal(phRaw, &ph); err != nil {
+		t.Fatal(err)
+	}
+	startEventSeq := ph.EventSeq
+
+	body := `{"status":"succeeded","summary":"applied the change","details":{"file":"a.go","line":42}}`
+	res, raw := handlertest.DoCyclesRequest(t, http.MethodPatch,
+		srv.URL+"/tasks/"+taskID+"/cycles/"+cycle.ID+"/phases/"+strItoa(ph.PhaseSeq), body)
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("status %d body=%s", res.StatusCode, raw)
+	}
+	var got taskCyclePhaseResponse
+	if err := json.Unmarshal(raw, &got); err != nil {
+		t.Fatal(err)
+	}
+	if got.Status != cyclesdomain.PhaseStatusSucceeded {
+		t.Fatalf("status=%s want succeeded", got.Status)
+	}
+	if got.Summary == nil || *got.Summary != "applied the change" {
+		t.Fatalf("summary=%v", got.Summary)
+	}
+	if got.EventSeq == nil || startEventSeq == nil || *got.EventSeq <= *startEventSeq {
+		t.Fatalf("event_seq must advance past start: start=%v end=%v", startEventSeq, got.EventSeq)
+	}
+	var details map[string]any
+	if err := json.Unmarshal(got.Details, &details); err != nil {
+		t.Fatalf("decode details: %v raw=%s", err, got.Details)
+	}
+	if details["file"] != "a.go" || details["line"].(float64) != 42 {
+		t.Fatalf("details=%v", details)
+	}
+}
+
+// TestHTTP_cycle_routes_appendMirrorEvents_into_audit_log proves the dual-write
+// promise from Stage 3 still holds when the writes are issued via HTTP: each
+// cycle/phase mutation must produce a matching task_events row visible from
+// GET /tasks/{id}/events.
+func TestHTTP_cycle_routes_appendMirrorEvents_into_audit_log(t *testing.T) {
+	srv := handlertest.NewCreateServer(t)
+	defer srv.Close()
+	taskID := handlertest.MustCreateTaskForCycles(t, srv.URL)
+
+	_, createdRaw := handlertest.DoCyclesRequest(t, http.MethodPost, srv.URL+"/tasks/"+taskID+"/cycles", `{}`)
+	var cycle taskCycleResponse
+	if err := json.Unmarshal(createdRaw, &cycle); err != nil {
+		t.Fatal(err)
+	}
+	_, phRaw := handlertest.DoCyclesRequest(t, http.MethodPost,
+		srv.URL+"/tasks/"+taskID+"/cycles/"+cycle.ID+"/phases", `{"phase":"execute"}`)
+	var ph taskCyclePhaseResponse
+	if err := json.Unmarshal(phRaw, &ph); err != nil {
+		t.Fatal(err)
+	}
+	handlertest.DoCyclesRequest(t, http.MethodPatch,
+		srv.URL+"/tasks/"+taskID+"/cycles/"+cycle.ID+"/phases/"+strItoa(ph.PhaseSeq),
+		`{"status":"succeeded"}`)
+	handlertest.DoCyclesRequest(t, http.MethodPatch, srv.URL+"/tasks/"+taskID+"/cycles/"+cycle.ID, `{"status":"succeeded"}`)
+
+	res, raw := handlertest.DoCyclesRequest(t, http.MethodGet, srv.URL+"/tasks/"+taskID+"/events", "")
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("events status %d body=%s", res.StatusCode, raw)
+	}
+	type httpTaskEventsResponse struct {
+		Events []struct {
+			Type taskeventsdomain.EventType `json:"type"`
+		} `json:"events"`
+	}
+	var got httpTaskEventsResponse
+	if err := json.Unmarshal(raw, &got); err != nil {
+		t.Fatalf("decode events: %v body=%s", err, raw)
+	}
+	wantTypes := []taskeventsdomain.EventType{
+		taskeventsdomain.EventTaskCreated,
+		taskeventsdomain.EventChecklistItemAdded,
+		taskeventsdomain.EventCycleStarted,
+		taskeventsdomain.EventPhaseStarted,
+		taskeventsdomain.EventPhaseCompleted,
+		taskeventsdomain.EventCycleCompleted,
+	}
+	if len(got.Events) != len(wantTypes) {
+		t.Fatalf("events=%d want %d body=%s", len(got.Events), len(wantTypes), raw)
+	}
+	for i, want := range wantTypes {
+		if got.Events[i].Type != want {
+			gotTypes := make([]taskeventsdomain.EventType, len(got.Events))
+			for j, e := range got.Events {
+				gotTypes[j] = e.Type
+			}
+			t.Fatalf("events[%d].type=%s want %s (full=%v)", i, got.Events[i].Type, want, gotTypes)
+		}
+	}
+}
+
+// strItoa is a tiny int64→string helper for path segments.
+func strItoa(n int64) string {
+	return strconv.FormatInt(n, 10)
+}
