@@ -1,73 +1,40 @@
 ---
 description: >-
   When plan mode is active — before CreatePlan, ask single vs parent/child
-  plans, then structure the plan file(s). Ignore entirely outside plan mode
-  (do not ask plan-structure questions during implementation).
+  plans, then structure the plan file(s). Ignore entirely outside plan mode.
 alwaysApply: false
 ---
 # Plan mode workflow
 
-**When:** system reminder says plan mode is active. Otherwise ignore this file entirely — do not ask plan-structure questions during implementation.
+**When:** plan mode is active. Otherwise ignore this file — do not ask plan-structure questions during implementation.
 
-## First step (required)
+## 1. Ask structure first
 
-Before researching or calling `CreatePlan`, use **AskQuestion** to confirm structure:
+Before research or `CreatePlan`, **AskQuestion** unless the user already chose:
 
 | Option | Label |
 | --- | --- |
-| `single` | **Single plan** — one PR-sized scope; one executable plan file |
-| `parent_child` | **Parent + child plans** — umbrella index + separate executable child plans |
+| `single` | One PR-sized scope; one executable plan |
+| `parent_child` | Umbrella index + separate executable child plans |
 
-Do not skip this question unless the user already stated their preference in the same thread (e.g. "split into child plans").
+**Recommend `single`** (default) when: one PR/domain, ≲8 files or one package, no parallel executors.  
+**Recommend `parent_child`** when: multiple ordered PRs, cross-stack landings, parallel executors after a shared prerequisite, or one plan would exceed ~200 lines / mix exit criteria.
 
-## When to recommend each
+State the recommendation briefly, then proceed. Quality bar: smallest sufficient design; one named abstraction per concern; **deletion list** when removing behavior; defer v2 unless asked.
 
-**Single plan** — default when most of these are true:
+## 2. File layout
 
-- One review boundary / one PR
-- One primary domain (backend *or* web *or* docs)
-- Fewer than ~8 touched files or one cohesive package
-- No parallel agent sessions needed
-
-**Parent + child** — recommend when any of these apply:
-
-- Multiple PRs with a strict dependency order
-- Cross-stack work (e.g. schema → API → web → worker) that should land separately
-- Distinct executors can run in parallel after a shared prerequisite
-- Large scope where one plan would exceed ~200 lines or mix unrelated exit criteria
-
-State your recommendation briefly after the user answers, then proceed.
-
-## Plan quality bar
-
-- **Simplicity** — smallest model/API that satisfies the request
-- **Elegance** — one clear abstraction per concern; name it
-- **No redundancy** — explicit **deletion list** when removing behavior
-- **Clever, not over-engineered** — defer v2 (multi-replica, fair queues, auto-tuning) unless asked
-
-## File layout
-
-| Role | Location | Naming |
+| Role | Path | Naming |
 | --- | --- | --- |
-| Umbrella (index only) | `.cursor/plans/` | `{topic}_*.plan.md` via `CreatePlan` |
-| Child (executable) | `.cursor/plans/` | `{topic}_{phase}.plan.md` — sibling links from parent |
+| Umbrella (index) | `.cursor/plans/` | `{topic}_*.plan.md` via `CreatePlan` |
+| Child (executable) | `.cursor/plans/` | `{topic}_{phase}.plan.md` |
 
-**Umbrella plan contains:** problem, locked decisions, deletion inventory, dependency diagram, links to children, out-of-scope.
+**Umbrella:** problem, locked decisions, deletion inventory, dependency diagram, links to children, out-of-scope.  
+**Child:** goal, non-goals, file map, commit sequence, exit criteria, verify with `.\scripts\check.ps1`. Each child must run alone without re-reading the umbrella.
 
-**Child plan contains:** goal, non-goals, file map, commit sequence, exit criteria, verification command (`.\scripts\check.ps1`).
+Parent overview links: `[Plan 1 — Title](./child_file.plan.md)`.
 
-Each child must be **runnable alone** in one agent session without re-reading the whole umbrella.
-
-## CreatePlan workflow
-
-1. AskQuestion (single vs parent/child)
-2. Research (readonly) — scoped to the task
-3. If **single:** one `CreatePlan` with actionable todos
-4. If **parent/child:** `CreatePlan` for umbrella first, then **write child `.plan.md` files** with `Write` (full executable content + frontmatter todos)
-5. Do **not** implement until the user explicitly asks to execute
-
-## Child plan frontmatter template
-
+Child frontmatter:
 ```yaml
 ---
 name: Short phase name
@@ -80,16 +47,18 @@ isProject: false
 ---
 ```
 
-Parent overview must link each child: `[Plan 1 — Title](./child_file.plan.md)`.
+## 3. Workflow
 
-## Example (this repo)
+1. AskQuestion → research (readonly)
+2. `single`: one `CreatePlan` with actionable todos
+3. `parent_child`: `CreatePlan` umbrella, then `Write` each child `.plan.md` (full content + frontmatter todos)
+4. Do not implement, migrate, commit, or poll CI until the user asks to execute
 
-Umbrella: `.cursor/plans/worktree_harness_refactor_3665a1bb.plan.md`  
-Children: `worktree_model_collapse.plan.md`, `worktree_web_align.plan.md`, `worktree_parallel_pool.plan.md`
+Reference shape: `.cursor/plans/worktree_harness_refactor_3665a1bb.plan.md` + its child plans.
 
-## Do not
+## 4. Delivery rules
 
-- Execute code, migrations, or commits in plan mode unless the user explicitly says to execute
-- Create one monolithic plan when the user chose parent/child
-- Create parent/child for trivial one-file changes
-- Poll CI or run check scripts during planning (readonly research only)
+1. **Commits** — break work into reviewable commits; never ship a single commit with ~2k+ lines of change.
+2. **PR order** — plan PRs and merge order so the human only reviews and merges (minimal manual conflict/rebase work).
+3. **Cleanup** — delete leftover artifacts (temp files, dead code, WIP branches/docs) once the plan is fully executed.
+4. **PR copy** — write descriptive titles and bodies (why, what’s in scope, how to verify).
