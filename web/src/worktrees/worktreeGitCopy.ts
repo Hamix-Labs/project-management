@@ -1,13 +1,9 @@
 export const worktreeGitCopy = {
   sectionTitle: "Worktrees",
-  addWorktree: "Add worktree",
   registerRepository: "Register repository",
-  registerWorktree: "Register worktree",
-  createWorktree: "Create worktree",
   reconcile: "Sync",
   reconciling: "Syncing…",
   reconcilingStatus: "Fetching origin and refreshing worktree metadata…",
-  inventoryRefreshStatus: "Refreshing worktree list…",
   staleWorktreeHint: "Idle for over 24 hours — safe to remove from disk.",
   removeStaleWorktree: "Remove from disk",
   inspectPath: "On disk",
@@ -63,46 +59,6 @@ export const worktreeGitCopy = {
   emptyWorktreesTitle: "No managed worktrees yet",
   emptyWorktreesDescription:
     "Create a task on this repository and Hamix will allocate a worktree automatically.",
-  registerModalTitle: "Register worktree",
-  registerModalLead:
-    "Link an existing git worktree directory and choose the branch Hamix should track.",
-  registerModalPathLabel: "Worktree path",
-  registerModalDisplayNameLabel: "Display name",
-  liveInventoryReconcileLead:
-    "Hamix can't read linked worktrees because the registered checkout path isn't available on disk. Sync refreshes paths from git so you can continue.",
-  liveInventoryReconcileAction: "Sync repository",
-  registerModalDisplayNamePlaceholder: "Optional",
-  registerModalSubmit: "Register worktree",
-  registerModalSubmitting: "Registering…",
-  createModalTitle: "Create worktree",
-  createModalLead:
-    "Git will create a new checkout folder on disk and link it to this repository. Pick where the folder should live and which branch it tracks.",
-  createModalStartFromLabel: "Branch starting point",
-  createModalStartFromMain: "Main repository checkout",
-  createModalStartFromReference: "Reference worktree",
-  createModalReferenceLabel: "Reference worktree",
-  createModalReferenceDetached:
-    "The selected worktree has a detached HEAD. Pick a worktree checked out on a branch.",
-  createModalLocationLabel: "Parent directory",
-  createModalLocationHint: "Where the worktree folder will be created on disk.",
-  createModalChooseParentFolder: "Choose parent folder",
-  createModalChangeParentFolder: "Change parent folder",
-  createModalParentSelectedPrefix: "Selected parent directory",
-  createModalFolderNameLabel: "Checkout folder name",
-  createModalFolderNameHint: "Directory Git creates on disk.",
-  createModalFolderNamePlaceholder: "e.g. Hamix-wt-feature",
-  createModalFullPathPrefix: "Full path:",
-  createModalPickerTitle: "Choose parent folder",
-  createModalPickerLead:
-    "Pick where the new checkout folder should be created. Browse from Home or Documents if you want a location outside this repository.",
-  createModalPickerSelectionLabel: "Parent folder",
-  createModalPickerConfirmLabel: "Use as parent folder",
-  createModalDisplayNameLabel: "Display name",
-  createModalDisplayNameHint:
-    "Label in the worktree list. Defaults to the checkout folder name if left blank.",
-  createModalDisplayNamePlaceholder: "Same as folder name",
-  createModalSubmit: "Create worktree",
-  createModalSubmitting: "Creating…",
   cancel: "Cancel",
   relocateModalTitle: "Relocate repository",
   relocateModalLead:
@@ -132,8 +88,4 @@ export function worktreeAriaLabel(displayName: string): string {
 
 export function unregisterWorktreeAriaLabel(displayName: string): string {
   return `Unregister worktree "${displayName}"`;
-}
-
-export function liveWorktreeOptionLabel(path: string, isMain: boolean): string {
-  return isMain ? `${path} (main worktree)` : path;
 }

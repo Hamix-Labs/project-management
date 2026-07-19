@@ -1,11 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   createGlobalGitRepository,
-  createGlobalGitWorktree,
   deleteGlobalGitRepository,
   deleteGlobalGitWorktreeFromDisk,
   unregisterGlobalGitWorktree,
-  registerGlobalGitWorktree,
   relocateGlobalGitRepository,
   syncGlobalGitRepository,
 } from "@/api/gitGlobal";
@@ -33,22 +31,6 @@ export function useGlobalGitMutations() {
     onSuccess: () => {
       invalidateGitCache(qc, { scope: "repositories" });
     },
-  });
-
-  const createWorktree = useMutation({
-    mutationFn: (vars: {
-      repositoryId: string;
-      input: Parameters<typeof createGlobalGitWorktree>[1];
-    }) => createGlobalGitWorktree(vars.repositoryId, vars.input),
-    onSuccess: (_data, vars) => invalidateRepo(vars.repositoryId),
-  });
-
-  const registerWorktree = useMutation({
-    mutationFn: (vars: {
-      repositoryId: string;
-      input: Parameters<typeof registerGlobalGitWorktree>[1];
-    }) => registerGlobalGitWorktree(vars.repositoryId, vars.input),
-    onSuccess: (_data, vars) => invalidateRepo(vars.repositoryId),
   });
 
   const unregisterWorktree = useMutation({
@@ -81,8 +63,6 @@ export function useGlobalGitMutations() {
   return {
     createRepository,
     deleteRepository,
-    createWorktree,
-    registerWorktree,
     unregisterWorktree,
     removeWorktreeFromDisk,
     reconcile,

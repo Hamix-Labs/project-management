@@ -91,31 +91,6 @@ func (h *Handler) serveListGitWorktrees(w http.ResponseWriter, r *http.Request, 
 	writeJSON(w, r, op, http.StatusOK, gitWorktreesListResponse{Worktrees: out})
 }
 
-func (h *Handler) serveCreateGitWorktree(w http.ResponseWriter, r *http.Request, op string) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", op)
-	r = calltrace.WithRequestRoot(r, op)
-	var body gitWorktreeCreateJSON
-	if err := decodeJSON(r.Context(), r.Body, &body); err != nil {
-		writeError(w, r, op, err, http.StatusBadRequest)
-		return
-	}
-	input := contract.CreateGitWorktreeInput{
-		Path:         body.Path,
-		Name:         body.Name,
-		Branch:       body.Branch,
-		CreateBranch: body.CreateBranch,
-		StartPoint:   body.StartPoint,
-		ForceRemove:  body.ForceRemove,
-	}
-	repoID := r.PathValue("repoId")
-	wt, err := h.write.CreateGitWorktreeForRepo(r.Context(), repoID, input, h.gitService())
-	if err != nil {
-		WriteGitStoreError(w, r, op, err)
-		return
-	}
-	writeJSON(w, r, op, http.StatusCreated, h.gitWorktreeJSON(wt))
-}
-
 func (h *Handler) serveDeleteGitWorktree(w http.ResponseWriter, r *http.Request, op string) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", op)
 	r = calltrace.WithRequestRoot(r, op)

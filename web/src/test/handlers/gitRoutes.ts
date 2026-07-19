@@ -1,7 +1,6 @@
 import type { JsonBodyType } from "msw";
 import {
   globalGitBranchesResponse,
-  globalGitLiveBranchesResponse,
   globalGitRepositoriesResponse,
   globalGitWorktreesResponse,
   gitBranchFactory,
@@ -16,10 +15,7 @@ export type GitRouteMatch =
   | { kind: "repositories-list" }
   | { kind: "repositories-create" }
   | { kind: "worktrees-list" }
-  | { kind: "worktrees-live" }
-  | { kind: "worktrees-probe"; path: string }
   | { kind: "branches-list" }
-  | { kind: "branches-live" }
   | { kind: "repo-projects" };
 
 export function matchGitRoute(
@@ -34,18 +30,8 @@ export function matchGitRoute(
   if (method !== "GET") return null;
 
   if (url.endsWith(`${base}/repositories`)) return { kind: "repositories-list" };
-  if (url.includes(`${base}/repositories/`) && url.endsWith("/worktrees/probe")) {
-    const probePath = new URL(url, "http://local").searchParams.get("path") ?? "";
-    return { kind: "worktrees-probe", path: probePath };
-  }
-  if (url.includes(`${base}/repositories/`) && url.endsWith("/worktrees/live")) {
-    return { kind: "worktrees-live" };
-  }
   if (url.includes(`${base}/repositories/`) && url.endsWith("/worktrees")) {
     return { kind: "worktrees-list" };
-  }
-  if (url.includes(`${base}/repositories/`) && url.endsWith("/branches/live")) {
-    return { kind: "branches-live" };
   }
   if (url.includes(`${base}/repositories/`) && url.endsWith("/branches")) {
     return { kind: "branches-list" };
@@ -73,34 +59,10 @@ export function gitRouteJsonBody(match: GitRouteMatch, scope: GitRouteScope): Js
       return scope === "global"
         ? globalGitWorktreesResponse()
         : { worktrees: [gitWorktreeFactory()] };
-    case "worktrees-live":
-      return {
-        worktrees: [
-          {
-            path: "/repo/main",
-            branch: "main",
-            is_main: true,
-            detached: false,
-            registered: false,
-          },
-        ],
-      };
-    case "worktrees-probe": {
-      const linked = match.path.includes("/repo/");
-      return {
-        path: match.path || "/repo/wt-feature",
-        linked,
-        is_main: false,
-        branch: linked ? "feature" : "",
-        registered: false,
-      };
-    }
     case "branches-list":
       return scope === "global"
         ? globalGitBranchesResponse()
         : { branches: [gitBranchFactory()] };
-    case "branches-live":
-      return globalGitLiveBranchesResponse();
     case "repo-projects":
       return { projects: [repoDefaultProjectFactory()], limit: 100 };
   }

@@ -29,36 +29,6 @@ export type GitBranch = {
   created_at: string;
 };
 
-/** Live ref from `GET /git/repositories/{repoId}/branches/live`. */
-export type GitLiveBranch = {
-  name: string;
-  head_sha: string;
-};
-
-/** Linked worktree from `GET /git/repositories/{repoId}/worktrees/live`. */
-export type GitLiveWorktree = {
-  path: string;
-  branch: string;
-  is_main: boolean;
-  detached: boolean;
-  registered: boolean;
-};
-
-export type GitWorktreeBranchBind = {
-  name: string;
-  create_branch?: boolean;
-  start_point?: string;
-};
-
-/** Probe result from `GET /git/repositories/{repoId}/worktrees/probe`. */
-export type GitWorktreeProbe = {
-  path: string;
-  linked: boolean;
-  is_main: boolean;
-  branch: string;
-  registered: boolean;
-};
-
 /** Checkout status from `GET /git/repositories/{repoId}/worktrees/checkout-status`. */
 export type GitWorktreeCheckoutStatus = {
   worktree_id: string;

@@ -3,7 +3,6 @@ package handler
 import (
 	"log/slog"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/contract"
@@ -33,35 +32,6 @@ func (h *Handler) deleteGlobalGitRepository(w http.ResponseWriter, r *http.Reque
 //funclogmeasure:skip category=delegate-already-logs reason="Global route wrapper; serve* emits operation trace."
 func (h *Handler) listGlobalGitWorktrees(w http.ResponseWriter, r *http.Request) {
 	h.serveListGitWorktrees(w, r, "git.worktrees.list_global")
-}
-
-func (h *Handler) listGlobalGitWorktreesLive(w http.ResponseWriter, r *http.Request) {
-	const op = "git.worktrees.list_live"
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.listGlobalGitWorktreesLive")
-	r = calltrace.WithRequestRoot(r, op)
-	repo, err := h.read.GetGitRepositoryByID(r.Context(), r.PathValue("repoId"))
-	if err != nil {
-		WriteGitStoreError(w, r, op, err)
-		return
-	}
-	inventory, err := h.write.RepoWorktreeInventory(r.Context(), repo, h.gitService())
-	if err != nil {
-		WriteGitStoreError(w, r, op, err)
-		return
-	}
-	out := make([]gitLiveWorktreeJSON, 0, len(inventory))
-	for _, wt := range inventory {
-		out = append(out, gitLiveWorktreeJSON{
-			Path:       wt.Path,
-			Branch:     wt.Branch,
-			IsMain:     wt.IsMain,
-			Detached:   wt.Detached,
-			Registered: wt.Registered,
-			Locked:     wt.Locked,
-			Prunable:   wt.Prunable,
-		})
-	}
-	writeJSON(w, r, op, http.StatusOK, gitLiveWorktreesListResponse{Worktrees: out})
 }
 
 func (h *Handler) listGlobalGitWorktreesCheckoutStatus(w http.ResponseWriter, r *http.Request) {
@@ -112,59 +82,6 @@ func gitWorktreeCheckoutStatusFromRow(row contract.WorktreeCheckoutStatusRow) gi
 	return j
 }
 
-func (h *Handler) probeGlobalGitWorktree(w http.ResponseWriter, r *http.Request) {
-	const op = "git.worktrees.probe"
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.probeGlobalGitWorktree")
-	r = calltrace.WithRequestRoot(r, op)
-	path := strings.TrimSpace(r.URL.Query().Get("path"))
-	if path == "" {
-		writeJSONError(w, r, op, http.StatusBadRequest, "path required")
-		return
-	}
-	result, err := h.write.ProbeGitWorktree(r.Context(), r.PathValue("repoId"), path, h.gitService())
-	if err != nil {
-		WriteGitStoreError(w, r, op, err)
-		return
-	}
-	writeJSON(w, r, op, http.StatusOK, gitWorktreeProbeResponse{
-		Path:       result.Path,
-		Linked:     result.Linked,
-		IsMain:     result.IsMain,
-		Branch:     result.Branch,
-		Registered: result.Registered,
-	})
-}
-
-//funclogmeasure:skip category=delegate-already-logs reason="Global route wrapper; serve* emits operation trace."
-func (h *Handler) createGlobalGitWorktree(w http.ResponseWriter, r *http.Request) {
-	h.serveCreateGitWorktree(w, r, "git.worktrees.create_global")
-}
-
-func (h *Handler) registerGlobalGitWorktree(w http.ResponseWriter, r *http.Request) {
-	const op = "git.worktrees.register_global"
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.registerGlobalGitWorktree")
-	r = calltrace.WithRequestRoot(r, op)
-	var body gitWorktreeRegisterJSON
-	if err := decodeJSON(r.Context(), r.Body, &body); err != nil {
-		writeError(w, r, op, err, http.StatusBadRequest)
-		return
-	}
-	var bind contract.BindBranchInput
-	if body.Branch != nil {
-		bind = contract.BindBranchInput{
-			Name:         body.Branch.Name,
-			CreateBranch: body.Branch.CreateBranch,
-			StartPoint:   body.Branch.StartPoint,
-		}
-	}
-	wt, err := h.write.RegisterExistingGitWorktree(r.Context(), r.PathValue("repoId"), body.Path, body.Name, bind, h.gitService())
-	if err != nil {
-		WriteGitStoreError(w, r, op, err)
-		return
-	}
-	writeJSON(w, r, op, http.StatusCreated, h.gitWorktreeJSON(wt))
-}
-
 //funclogmeasure:skip category=delegate-already-logs reason="Global route wrapper; serve* emits operation trace."
 func (h *Handler) deleteGlobalGitWorktree(w http.ResponseWriter, r *http.Request) {
 	h.serveDeleteGitWorktree(w, r, "git.worktrees.delete_global")
@@ -173,33 +90,6 @@ func (h *Handler) deleteGlobalGitWorktree(w http.ResponseWriter, r *http.Request
 //funclogmeasure:skip category=delegate-already-logs reason="Global route wrapper; serve* emits operation trace."
 func (h *Handler) listGlobalGitBranches(w http.ResponseWriter, r *http.Request) {
 	h.serveListGitBranches(w, r, "git.branches.list_global")
-}
-
-func (h *Handler) listGlobalGitBranchesLive(w http.ResponseWriter, r *http.Request) {
-	const op = "git.branches.list_live"
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.listGlobalGitBranchesLive")
-	r = calltrace.WithRequestRoot(r, op)
-	repo, err := h.read.GetGitRepositoryByID(r.Context(), r.PathValue("repoId"))
-	if err != nil {
-		WriteGitStoreError(w, r, op, err)
-		return
-	}
-	gitSvc := h.gitService()
-	opened, err := gitSvc.OpenRepository(r.Context(), repo.Path)
-	if err != nil {
-		WriteGitStoreError(w, r, op, err)
-		return
-	}
-	live, err := gitSvc.ListBranches(r.Context(), opened)
-	if err != nil {
-		WriteGitStoreError(w, r, op, err)
-		return
-	}
-	out := make([]gitLiveBranchJSON, 0, len(live))
-	for _, b := range live {
-		out = append(out, gitLiveBranchJSON{Name: b.Name, HeadSHA: b.HeadSHA})
-	}
-	writeJSON(w, r, op, http.StatusOK, gitLiveBranchesListResponse{Branches: out})
 }
 
 func (h *Handler) listRepoProjects(w http.ResponseWriter, r *http.Request) {

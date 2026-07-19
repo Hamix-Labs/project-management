@@ -11,9 +11,6 @@ export function globalGitApiHandlers() {
     http.get(new RegExp(`${base}/repositories/.+/worktrees`), () =>
       HttpResponse.json(gitRouteJsonBody({ kind: "worktrees-list" }, "global")),
     ),
-    http.get(new RegExp(`${base}/repositories/.+/branches/live`), () =>
-      HttpResponse.json(gitRouteJsonBody({ kind: "branches-live" }, "global")),
-    ),
     http.get(new RegExp(`${base}/repositories/.+/branches`), () =>
       HttpResponse.json(gitRouteJsonBody({ kind: "branches-list" }, "global")),
     ),

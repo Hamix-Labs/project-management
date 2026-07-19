@@ -64,7 +64,6 @@ Git context follows [ADR-0037](./adr/ADR-0037-global-repos-project-tree.md) (glo
 | POST | `/git/worktrees/{worktreeId}/relocate` | Manual path fix for one registered worktree. Body `{ path }`. **200** worktree JSON after probe + UPDATE. **409** `bootstrap_mismatch` when path belongs to a different repo. |
 | DELETE | `/git/worktrees/{worktreeId}` | Default: unregister from Hamix (**204**); checkout stays on disk. Query `?remove_from_disk=true` runs `git worktree remove` then deletes the row; optional `&force=true` for dirty trees. **409** `has_running_task`. **400** when target is the main worktree and `remove_from_disk=true`. |
 | GET | `/git/repositories/{repoId}/branches` | Registered branches `{ branches: [...] }`. |
-| GET | `/git/repositories/{repoId}/branches/live` | Live refs from `git branch` `{ branches: [{ name, head_sha }] }`. |
 | GET | `/git/repositories/{repoId}/projects` | Projects tied to this repo `{ projects, limit }`. |
 
 **Projects:** `POST /projects` accepts optional `repository_id` (repo must exist). Task create requires `repository_id` (+ `project_id`); the server allocates a managed worktree and sets `worktree_id`. Agents refuse main/`is_main` and the repository default branch.

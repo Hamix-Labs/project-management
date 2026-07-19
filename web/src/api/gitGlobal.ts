@@ -1,27 +1,18 @@
 import type {
   GitBranch,
-  GitLiveBranch,
-  GitLiveWorktree,
-  GitReconcileInput,
   GitReconcileResult,
   GitRepository,
   GitWorktree,
-  GitWorktreeBranchBind,
   GitWorktreeCheckoutStatus,
-  GitWorktreeProbe,
 } from "@/types/git";
 import type { ProjectListResponse } from "@/types/project";
 import { parseProjectListResponse } from "./projects";
 import {
   parseGitBranchList,
-  parseGitLiveBranchList,
-  parseGitLiveWorktreeList,
   parseGitRepository,
   parseGitRepositoryList,
-  parseGitWorktree,
-  parseGitWorktreeCheckoutStatusList,
   parseGitWorktreeList,
-  parseGitWorktreeProbe,
+  parseGitWorktreeCheckoutStatusList,
   parseGitReconcileResult,
 } from "./parseGitApi";
 import { assertTaskPathId } from "./taskRequestBounds";
@@ -93,40 +84,6 @@ export async function listGlobalGitWorktreeCheckoutStatus(
   return parseGitWorktreeCheckoutStatusList(raw);
 }
 
-export async function createGlobalGitWorktree(
-  repositoryId: string,
-  input: {
-    path: string;
-    name?: string;
-    branch: string;
-    create_branch?: boolean;
-    start_point?: string;
-  },
-): Promise<GitWorktree> {
-  const repoId = assertTaskPathId(repositoryId, "repository id");
-  const raw = await gitFetchJson(
-    `${gitRoot}/repositories/${encodeURIComponent(repoId)}/worktrees`,
-    gitJsonPostInit(input),
-  );
-  return parseGitWorktree(raw);
-}
-
-export async function registerGlobalGitWorktree(
-  repositoryId: string,
-  input: {
-    path: string;
-    name?: string;
-    branch?: GitWorktreeBranchBind;
-  },
-): Promise<GitWorktree> {
-  const repoId = assertTaskPathId(repositoryId, "repository id");
-  const raw = await gitFetchJson(
-    `${gitRoot}/repositories/${encodeURIComponent(repoId)}/worktrees/register`,
-    gitJsonPostInit(input),
-  );
-  return parseGitWorktree(raw);
-}
-
 export async function unregisterGlobalGitWorktree(worktreeId: string): Promise<void> {
   const wtId = assertTaskPathId(worktreeId, "worktree id");
   await gitFetchVoid(`${gitRoot}/worktrees/${encodeURIComponent(wtId)}`, gitDeleteInit());
@@ -157,57 +114,6 @@ export async function listGlobalGitBranches(
     gitJsonGetInit(options?.signal),
   );
   return parseGitBranchList(raw);
-}
-
-export async function listGlobalGitLiveWorktrees(
-  repositoryId: string,
-  options?: { signal?: AbortSignal },
-): Promise<GitLiveWorktree[]> {
-  const repoId = assertTaskPathId(repositoryId, "repository id");
-  const raw = await gitFetchJson(
-    `${gitRoot}/repositories/${encodeURIComponent(repoId)}/worktrees/live`,
-    gitJsonGetInit(options?.signal),
-  );
-  return parseGitLiveWorktreeList(raw);
-}
-
-export async function probeGlobalGitWorktree(
-  repositoryId: string,
-  path: string,
-  options?: { signal?: AbortSignal },
-): Promise<GitWorktreeProbe> {
-  const repoId = assertTaskPathId(repositoryId, "repository id");
-  const params = new URLSearchParams({ path });
-  const raw = await gitFetchJson(
-    `${gitRoot}/repositories/${encodeURIComponent(repoId)}/worktrees/probe?${params}`,
-    gitJsonGetInit(options?.signal),
-  );
-  return parseGitWorktreeProbe(raw);
-}
-
-export async function listGlobalGitLiveBranches(
-  repositoryId: string,
-  options?: { signal?: AbortSignal },
-): Promise<GitLiveBranch[]> {
-  const repoId = assertTaskPathId(repositoryId, "repository id");
-  const raw = await gitFetchJson(
-    `${gitRoot}/repositories/${encodeURIComponent(repoId)}/branches/live`,
-    gitJsonGetInit(options?.signal),
-  );
-  return parseGitLiveBranchList(raw);
-}
-
-export async function reconcileGlobalGitRepository(
-  repositoryId: string,
-  input?: GitReconcileInput,
-): Promise<GitReconcileResult> {
-  const repoId = assertTaskPathId(repositoryId, "repository id");
-  const body: GitReconcileInput = input ?? {};
-  const raw = await gitFetchJson(
-    `${gitRoot}/repositories/${encodeURIComponent(repoId)}/reconcile`,
-    gitJsonPostInit(body),
-  );
-  return parseGitReconcileResult(raw);
 }
 
 export async function syncGlobalGitRepository(

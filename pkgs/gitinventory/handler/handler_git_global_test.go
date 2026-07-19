@@ -99,7 +99,7 @@ func TestHandler_createGlobalGitWorktree_routeRemoved(t *testing.T) {
 	}
 }
 
-func TestHandler_listGlobalGitBranchesAndLive(t *testing.T) {
+func TestHandler_listGlobalGitBranches(t *testing.T) {
 	h, _, main := gitHandlerTest(t)
 	repoID := createGlobalGitRepo(t, h, main)
 
@@ -115,20 +115,6 @@ func TestHandler_listGlobalGitBranchesAndLive(t *testing.T) {
 	}
 	if len(branches.Branches) < 1 {
 		t.Fatal("expected at least main branch")
-	}
-
-	liveReq := httptest.NewRequest(http.MethodGet, "/git/repositories/"+repoID+"/branches/live", nil)
-	liveRec := httptest.NewRecorder()
-	h.ServeHTTP(liveRec, liveReq)
-	if liveRec.Code != http.StatusOK {
-		t.Fatalf("live branches status=%d body=%s", liveRec.Code, liveRec.Body.String())
-	}
-	var live gitLiveBranchesListResponse
-	if err := json.Unmarshal(liveRec.Body.Bytes(), &live); err != nil {
-		t.Fatal(err)
-	}
-	if len(live.Branches) < 1 {
-		t.Fatal("expected live branches")
 	}
 }
 
@@ -291,6 +277,7 @@ func TestHandler_operatorLiveProbeRegisterRoutesRemoved(t *testing.T) {
 		"/git/repositories/" + repoID + "/worktrees/live",
 		"/git/repositories/" + repoID + "/worktrees/probe?path=" + url.QueryEscape(main),
 		"/git/repositories/" + repoID + "/worktrees/register",
+		"/git/repositories/" + repoID + "/branches/live",
 	}
 	for _, p := range paths {
 		method := http.MethodGet

@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   parseGitBranch,
   parseGitBranchList,
-  parseGitLiveBranchList,
   parseGitRepository,
   parseGitRepositoryList,
   parseGitReconcileResult,
@@ -127,13 +126,6 @@ describe("parseGitApi", () => {
     expect(rows).toHaveLength(2);
     expect(rows[0]?.branch_id).toBeUndefined();
     expect(rows[1]?.branch_id).toBe("00000000-0000-4000-8000-000000000030");
-  });
-
-  it("parses live branch list", () => {
-    const rows = parseGitLiveBranchList({
-      branches: [{ name: "main", head_sha: "deadbeef" }],
-    });
-    expect(rows[0]?.name).toBe("main");
   });
 
   it("parses checkout status list", () => {

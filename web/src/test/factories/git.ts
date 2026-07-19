@@ -55,7 +55,3 @@ export function globalGitWorktreesResponse(): JsonBodyType {
 export function globalGitBranchesResponse(): JsonBodyType {
   return { branches: [gitBranchFactory()] };
 }
-
-export function globalGitLiveBranchesResponse(): JsonBodyType {
-  return { branches: [{ name: "main", head_sha: "abc123" }] };
-}
