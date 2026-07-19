@@ -22,7 +22,7 @@ That divergence caused missing `git_common_dir` on project-scoped creates, path-
 3. **Path compare** uses `gitwork.PathKey` / `PathKeyEqual` everywhere, including `BelongsToRepository`.
 4. **Reconcile** matches linked worktrees path-first, then by bound branch name; reports `branch_checkout_mismatch` when live checkout ≠ binding.
 5. **Repair pipeline** runs `git worktree repair` then `git worktree prune` when `RepairGit` is set.
-6. **Live inventory API** exposes `locked` and `prunable` from porcelain.
+6. **Checkout status / inspect** surfaces dirty and path metadata for managed worktrees (operator live/register routes removed in ADR-0081).
 
 ## Consequences
 

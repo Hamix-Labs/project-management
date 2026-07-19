@@ -1,7 +1,7 @@
 # ADR-0043: Compose git assignment model
 
 **Date:** 2026-07-07  
-**Status:** Accepted  
+**Status:** Accepted (superseded in part by [ADR-0081](./ADR-0081-hamix-managed-worktrees.md) — task create picks repository only; compose assignment may still carry `worktreeId` for templates/drafts until hydrated)  
 **Deciders:** Hamix maintainers
 
 ## Context

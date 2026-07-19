@@ -397,7 +397,7 @@ Repo-level refs.
 | `head_sha` | string | Cached tip SHA (reconcile refreshes). |
 | `created_at` | timestamptz | |
 
-Tasks reference `worktree_id` (FK -> `git_worktrees.id`, required for agent runs) and `project_id` (required when `worktree_id` is set). `project.repository_id` must equal the worktree's repo. Delete returns **409** `has_running_task` when a **running** task targets the repo, worktree, or branch; registering a worktree on a branch already bound elsewhere returns **409** `branch_bound_to_worktree`.
+Tasks reference `worktree_id` (FK -> `git_worktrees.id`, required for agent runs) and `project_id` (required when `worktree_id` is set). `project.repository_id` must equal the worktree's repo. Delete returns **409** `has_running_task` when a **running** task targets the repo, worktree, or branch; allocating a worktree on a branch already bound elsewhere returns **409** `branch_bound_to_worktree`.
 
 ### `projects` (git overlay fields)
 
