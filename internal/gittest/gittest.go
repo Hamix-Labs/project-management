@@ -8,6 +8,7 @@ import (
 	"context"
 	gitinventorystore "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store"
 	"os/exec"
+	"path/filepath"
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
@@ -119,14 +120,34 @@ func SeedWorktree(t *testing.T, st *composition.API, repoDir string) (worktreeID
 	return wts[0].ID, wts[0].BranchID
 }
 
-// SeedWorktreeTemp creates a temp git repo, registers it in the store,
-// and returns the worktree id and repo directory path.
+// SeedWorktreeTemp creates a temp git repo, registers it, and returns a
+// non-main linked worktree suitable for task binding (agents cannot run on main).
 //
 //funclogmeasure:skip category=tool-required-noop reason="Test-only git bootstrap; not part of production trace paths."
 func SeedWorktreeTemp(t *testing.T, st *composition.API) (worktreeID, workDir string) {
 	t.Helper()
 	dir := t.TempDir()
 	InitMain(t, dir)
-	wtID, _ := SeedWorktree(t, st, dir)
-	return wtID, dir
+	ctx := context.Background()
+	gitSvc := gitwork.New()
+	repoRow, err := st.CreateGlobalGitRepository(ctx, gitinventorystore.CreateGitRepositoryInput{
+		Path: dir,
+	}, gitSvc)
+	if err != nil {
+		t.Fatalf("CreateGlobalGitRepository: %v", err)
+	}
+	wtPath := filepath.Join(filepath.Dir(dir), "wt-task")
+	wt, err := st.CreateGitWorktreeForRepo(ctx, repoRow.ID, gitinventorystore.CreateGitWorktreeInput{
+		Path:         wtPath,
+		Branch:       "hamix/task-test",
+		CreateBranch: true,
+		StartPoint:   "main",
+	}, gitSvc)
+	if err != nil {
+		t.Fatalf("CreateGitWorktreeForRepo: %v", err)
+	}
+	if wt.IsMain {
+		t.Fatal("SeedWorktreeTemp must not return is_main worktree")
+	}
+	return wt.ID, wtPath
 }
