@@ -4,6 +4,7 @@ package git
 
 import (
 	"errors"
+	"os"
 	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
@@ -28,13 +29,18 @@ func MapGitworkBootstrapErr(err error) error {
 	return err
 }
 
-// FilterLiveWorktrees drops prunable rows from git worktree list output.
+// FilterLiveWorktrees keeps worktrees that are live for reconcile: not
+// prunable and whose Path still exists on disk. Missing paths (os.IsNotExist)
+// are treated as not live so vanished linked worktrees can be removed.
 //
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+//funclogmeasure:skip category=hot-path reason="Stat filter for reconcile; operation trace is emitted by the calling chokepoint."
 func FilterLiveWorktrees(live []gitwork.Worktree) []gitwork.Worktree {
 	out := make([]gitwork.Worktree, 0, len(live))
 	for _, wt := range live {
 		if wt.Prunable {
+			continue
+		}
+		if _, err := os.Stat(wt.Path); os.IsNotExist(err) {
 			continue
 		}
 		out = append(out, wt)
