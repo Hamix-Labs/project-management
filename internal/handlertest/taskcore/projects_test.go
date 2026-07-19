@@ -151,6 +151,38 @@ func TestHTTP_projectsCRUDAndContext(t *testing.T) {
 	}
 }
 
+func TestHTTP_projectContextListEmptyUsesJSONArrays(t *testing.T) {
+	srv := handlertest.NewCreateServer(t)
+	defer srv.Close()
+	git := handlertest.MustGitBinding(t, srv.URL)
+
+	project := postProjectJSON(t, srv, `{"name":"Empty context","repository_id":"`+git.RepositoryID+`"}`, http.StatusCreated)
+
+	listRes, err := http.Get(srv.URL + "/projects/" + project.ID + "/context")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer listRes.Body.Close()
+	body, err := io.ReadAll(listRes.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if listRes.StatusCode != http.StatusOK {
+		t.Fatalf("context list status %d body %s", listRes.StatusCode, body)
+	}
+
+	var top map[string]json.RawMessage
+	if err := json.Unmarshal(body, &top); err != nil {
+		t.Fatal(err)
+	}
+	if string(top["items"]) != "[]" {
+		t.Fatalf("items = %s, want []", top["items"])
+	}
+	if string(top["edges"]) != "[]" {
+		t.Fatalf("edges = %s, want []", top["edges"])
+	}
+}
+
 func TestHTTP_taskProjectIDCreatePatchAndClear(t *testing.T) {
 	srv := handlertest.NewCreateServer(t)
 	defer srv.Close()
