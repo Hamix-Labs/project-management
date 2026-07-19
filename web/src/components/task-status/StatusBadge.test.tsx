@@ -1,9 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { STATUSES } from "@/types";
-import { StatusBadge } from "./StatusBadge";
-import { STATUS_META } from "./statusMeta";
-import { statusListLabel } from "./statusListLabel";
+import { StatusBadge, STATUS_META, statusListLabel } from "./index";
 
 describe("StatusBadge", () => {
   it.each(STATUSES)("renders label for %s", (status) => {

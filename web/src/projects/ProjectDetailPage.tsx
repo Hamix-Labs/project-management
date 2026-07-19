@@ -65,7 +65,19 @@ export function ProjectDetailPage() {
 
       {project.data ? (
         <div className="pd__title-block">
-          <h1 className="pd__title">{project.data.name}</h1>
+          <div className="pd__title-row">
+            <h1 className="pd__title">{project.data.name}</h1>
+            <span
+              className={
+                project.data.status === "archived"
+                  ? "pd__badge pd__badge--muted"
+                  : "pd__badge pd__badge--live"
+              }
+            >
+              <span className="pd__badge-dot" aria-hidden="true" />
+              {project.data.status}
+            </span>
+          </div>
           {project.data.description ? (
             <p className="pd__subtitle">{project.data.description}</p>
           ) : null}
