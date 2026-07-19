@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -58,5 +59,43 @@ func TestProjectsStore_defaultProject_roundtrip(t *testing.T) {
 	}
 	if got.ID != defaultProj.ID {
 		t.Fatalf("got = %#v, want id %q", got, defaultProj.ID)
+	}
+}
+
+func TestProjectsStore_CreateContext_rejectsOversizeTitleAndBody(t *testing.T) {
+	s, db, ctx := newProjectStoreOnly(t)
+	_, project := seedRepoWithDefaultProject(t, db, ctx)
+
+	overTitle := strings.Repeat("t", domain.MaxProjectContextTitleChars+1)
+	_, err := s.CreateProjectContext(ctx, project.ID, CreateProjectContextInput{
+		Title: overTitle,
+		Body:  "ok",
+	})
+	if !errors.Is(err, domain.ErrInvalidInput) {
+		t.Fatalf("oversize title err = %v, want ErrInvalidInput", err)
+	}
+
+	overBody := strings.Repeat("b", domain.MaxProjectContextBodyBytes+1)
+	_, err = s.CreateProjectContext(ctx, project.ID, CreateProjectContextInput{
+		Title: "ok",
+		Body:  overBody,
+	})
+	if !errors.Is(err, domain.ErrInvalidInput) {
+		t.Fatalf("oversize body err = %v, want ErrInvalidInput", err)
+	}
+
+	item, err := s.CreateProjectContext(ctx, project.ID, CreateProjectContextInput{
+		Title: "alias",
+		Body:  "imported content",
+	})
+	if err != nil {
+		t.Fatalf("valid create: %v", err)
+	}
+
+	_, err = s.UpdateProjectContext(ctx, project.ID, item.ID, UpdateProjectContextInput{
+		Body: &overBody,
+	})
+	if !errors.Is(err, domain.ErrInvalidInput) {
+		t.Fatalf("oversize patch body err = %v, want ErrInvalidInput", err)
 	}
 }

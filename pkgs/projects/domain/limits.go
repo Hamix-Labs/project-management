@@ -1,0 +1,38 @@
+package domain
+
+import (
+	"fmt"
+	"unicode/utf8"
+)
+
+// Field size limits for project context items. Kept below the default HTTP
+// request body cap (1 MiB) so oversize titles/bodies fail with a clear 400
+// instead of a generic 413.
+const (
+	MaxProjectContextBodyBytes  = 512 << 10 // 512 KiB
+	MaxProjectContextTitleChars = 200
+)
+
+// ValidateProjectContextTitle reports ErrInvalidInput when title is empty or
+// longer than MaxProjectContextTitleChars (Unicode code points).
+func ValidateProjectContextTitle(title string) error {
+	if title == "" {
+		return fmt.Errorf("%w: context title required", ErrInvalidInput)
+	}
+	if utf8.RuneCountInString(title) > MaxProjectContextTitleChars {
+		return fmt.Errorf("%w: context title must be %d characters or fewer", ErrInvalidInput, MaxProjectContextTitleChars)
+	}
+	return nil
+}
+
+// ValidateProjectContextBody reports ErrInvalidInput when body is empty or
+// larger than MaxProjectContextBodyBytes (UTF-8 byte length).
+func ValidateProjectContextBody(body string) error {
+	if body == "" {
+		return fmt.Errorf("%w: context body required", ErrInvalidInput)
+	}
+	if len(body) > MaxProjectContextBodyBytes {
+		return fmt.Errorf("%w: context body must be %d bytes or smaller", ErrInvalidInput, MaxProjectContextBodyBytes)
+	}
+	return nil
+}

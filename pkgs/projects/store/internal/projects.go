@@ -195,13 +195,14 @@ func CreateContext(ctx context.Context, db *gorm.DB, projectID string, input Cre
 	if err := validateContextKind(kind); err != nil {
 		return domain.ProjectContextItem{}, err
 	}
-	title := strings.TrimSpace(input.Title)
-	if title == "" {
-		return domain.ProjectContextItem{}, fmt.Errorf("%w: context title required", domain.ErrInvalidInput)
-	}
-	if strings.TrimSpace(input.Body) == "" {
-		return domain.ProjectContextItem{}, fmt.Errorf("%w: context body required", domain.ErrInvalidInput)
-	}
+		title := strings.TrimSpace(input.Title)
+		if err := domain.ValidateProjectContextTitle(title); err != nil {
+			return domain.ProjectContextItem{}, err
+		}
+		body := strings.TrimSpace(input.Body)
+		if err := domain.ValidateProjectContextBody(body); err != nil {
+			return domain.ProjectContextItem{}, err
+		}
 	actor := input.CreatedBy
 	if actor == "" {
 		actor = domain.ActorUser
@@ -210,19 +211,19 @@ func CreateContext(ctx context.Context, db *gorm.DB, projectID string, input Cre
 		return domain.ProjectContextItem{}, err
 	}
 	now := time.Now().UTC()
-	drow := domain.ProjectContextItem{
-		ID:            id,
-		ProjectID:     projectID,
-		Kind:          kind,
-		Title:         title,
-		Body:          strings.TrimSpace(input.Body),
-		SourceTaskID:  trimOptional(input.SourceTaskID),
-		SourceCycleID: trimOptional(input.SourceCycleID),
-		CreatedBy:     actor,
-		Pinned:        input.Pinned,
-		CreatedAt:     now,
-		UpdatedAt:     now,
-	}
+		drow := domain.ProjectContextItem{
+			ID:            id,
+			ProjectID:     projectID,
+			Kind:          kind,
+			Title:         title,
+			Body:          body,
+			SourceTaskID:  trimOptional(input.SourceTaskID),
+			SourceCycleID: trimOptional(input.SourceCycleID),
+			CreatedBy:     actor,
+			Pinned:        input.Pinned,
+			CreatedAt:     now,
+			UpdatedAt:     now,
+		}
 	row := projectmodel.FromDomainProjectContextItem(drow)
 	if err := db.WithContext(ctx).Create(&row).Error; err != nil {
 		return domain.ProjectContextItem{}, storekernel.MapWriteError(err, "duplicate project row")
@@ -443,11 +444,15 @@ func validateContextPatch(input UpdateContextInput) error {
 			return err
 		}
 	}
-	if input.Title != nil && strings.TrimSpace(*input.Title) == "" {
-		return fmt.Errorf("%w: context title required", domain.ErrInvalidInput)
+	if input.Title != nil {
+		if err := domain.ValidateProjectContextTitle(strings.TrimSpace(*input.Title)); err != nil {
+			return err
+		}
 	}
-	if input.Body != nil && strings.TrimSpace(*input.Body) == "" {
-		return fmt.Errorf("%w: context body required", domain.ErrInvalidInput)
+	if input.Body != nil {
+		if err := domain.ValidateProjectContextBody(strings.TrimSpace(*input.Body)); err != nil {
+			return err
+		}
 	}
 	return nil
 }
