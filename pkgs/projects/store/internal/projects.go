@@ -195,14 +195,14 @@ func CreateContext(ctx context.Context, db *gorm.DB, projectID string, input Cre
 	if err := validateContextKind(kind); err != nil {
 		return domain.ProjectContextItem{}, err
 	}
-		title := strings.TrimSpace(input.Title)
-		if err := domain.ValidateProjectContextTitle(title); err != nil {
-			return domain.ProjectContextItem{}, err
-		}
-		body := strings.TrimSpace(input.Body)
-		if err := domain.ValidateProjectContextBody(body); err != nil {
-			return domain.ProjectContextItem{}, err
-		}
+	title := strings.TrimSpace(input.Title)
+	if err := domain.ValidateProjectContextTitle(title); err != nil {
+		return domain.ProjectContextItem{}, err
+	}
+	body := strings.TrimSpace(input.Body)
+	if err := domain.ValidateProjectContextBody(body); err != nil {
+		return domain.ProjectContextItem{}, err
+	}
 	actor := input.CreatedBy
 	if actor == "" {
 		actor = domain.ActorUser
@@ -211,19 +211,19 @@ func CreateContext(ctx context.Context, db *gorm.DB, projectID string, input Cre
 		return domain.ProjectContextItem{}, err
 	}
 	now := time.Now().UTC()
-		drow := domain.ProjectContextItem{
-			ID:            id,
-			ProjectID:     projectID,
-			Kind:          kind,
-			Title:         title,
-			Body:          body,
-			SourceTaskID:  trimOptional(input.SourceTaskID),
-			SourceCycleID: trimOptional(input.SourceCycleID),
-			CreatedBy:     actor,
-			Pinned:        input.Pinned,
-			CreatedAt:     now,
-			UpdatedAt:     now,
-		}
+	drow := domain.ProjectContextItem{
+		ID:            id,
+		ProjectID:     projectID,
+		Kind:          kind,
+		Title:         title,
+		Body:          body,
+		SourceTaskID:  trimOptional(input.SourceTaskID),
+		SourceCycleID: trimOptional(input.SourceCycleID),
+		CreatedBy:     actor,
+		Pinned:        input.Pinned,
+		CreatedAt:     now,
+		UpdatedAt:     now,
+	}
 	row := projectmodel.FromDomainProjectContextItem(drow)
 	if err := db.WithContext(ctx).Create(&row).Error; err != nil {
 		return domain.ProjectContextItem{}, storekernel.MapWriteError(err, "duplicate project row")
