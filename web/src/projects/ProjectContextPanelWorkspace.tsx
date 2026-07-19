@@ -1,14 +1,10 @@
 import { EmptyState } from "@/shared/EmptyState";
-import type { ProjectContextEdge, ProjectContextItem } from "@/types";
+import type { ProjectContextItem } from "@/types";
 import { ProjectContextListView } from "./ProjectContextListView";
-import { ProjectContextTreeView } from "./ProjectContextTreeView";
-import type { ContextView, ProjectContextMutations } from "./projectContextPanelHelpers";
+import type { ProjectContextMutations } from "./projectContextPanelHelpers";
 
 type Props = {
-  contextView: ContextView;
-  onContextViewChange: (view: ContextView) => void;
   items: ProjectContextItem[];
-  edges: ProjectContextEdge[];
   isLoading: boolean;
   error: Error | null;
   mutations: ProjectContextMutations;
@@ -17,10 +13,7 @@ type Props = {
 };
 
 export function ProjectContextPanelWorkspace({
-  contextView,
-  onContextViewChange,
   items,
-  edges,
   isLoading,
   error,
   mutations,
@@ -79,39 +72,17 @@ export function ProjectContextPanelWorkspace({
             </button>
           ) : null}
         </div>
-        <div className="pc__view-toggle" role="tablist" aria-label="Context view">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={contextView === "list"}
-            onClick={() => onContextViewChange("list")}
-          >
-            List
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={contextView === "tree"}
-            onClick={() => onContextViewChange("tree")}
-          >
-            Tree
-          </button>
-        </div>
       </div>
-      {contextView === "list" ? (
-        <ProjectContextListView
-          items={items}
-          nodeSaving={mutations.patchContextMutation.isPending}
-          nodeDeleting={mutations.deleteContextMutation.isPending}
-          onSaveNode={(id, patch) =>
-            mutations.patchContextMutation.mutate({ id, ...patch })
-          }
-          onDeleteNode={(id) => mutations.deleteContextMutation.mutate(id)}
-          onAddConnection={onAddEdge}
-        />
-      ) : (
-        <ProjectContextTreeView items={items} edges={edges} />
-      )}
+      <ProjectContextListView
+        items={items}
+        nodeSaving={mutations.patchContextMutation.isPending}
+        nodeDeleting={mutations.deleteContextMutation.isPending}
+        onSaveNode={(id, patch) =>
+          mutations.patchContextMutation.mutate({ id, ...patch })
+        }
+        onDeleteNode={(id) => mutations.deleteContextMutation.mutate(id)}
+        onAddConnection={onAddEdge}
+      />
     </>
   );
 }

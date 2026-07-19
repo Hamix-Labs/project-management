@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { ProjectContextEdge, ProjectContextItem } from "@/types";
+import type { ProjectContextItem } from "@/types";
 import { useProjectContext } from "./hooks";
 import { ProjectContextAddEdgeModal } from "./ProjectContextAddEdgeModal";
 import { ProjectContextImportMemoryModal } from "./ProjectContextImportMemoryModal";
@@ -18,7 +18,6 @@ type Props = {
 };
 
 const EMPTY_CONTEXT_ITEMS: ProjectContextItem[] = [];
-const EMPTY_CONTEXT_EDGES: ProjectContextEdge[] = [];
 
 export function ProjectContextPanel({ projectId }: Props) {
   const context = useProjectContext(projectId, { enabled: Boolean(projectId) });
@@ -27,7 +26,6 @@ export function ProjectContextPanel({ projectId }: Props) {
 
   const mutationError = firstProjectContextMutationError(mutations);
   const items = context.data?.items ?? EMPTY_CONTEXT_ITEMS;
-  const edges = context.data?.edges ?? EMPTY_CONTEXT_EDGES;
   const memoryOptions = useMemo(() => buildMemorySelectOptions(items), [items]);
   const relationOptions = useMemo(() => buildRelationSelectOptions(), []);
   const strengthOptions = useMemo(() => buildStrengthSelectOptions(), []);
@@ -40,11 +38,6 @@ export function ProjectContextPanel({ projectId }: Props) {
         isPending={mutations.createContextMutation.isPending}
         onImport={form.submitImport}
       />
-      {items.length < 2 ? (
-        <p className="pc__hint">
-          Add at least two memory nodes to start connecting them.
-        </p>
-      ) : null}
       <ProjectContextAddEdgeModal
         open={form.addEdgeOpen}
         onClose={() => form.setAddEdgeOpen(false)}
@@ -71,10 +64,7 @@ export function ProjectContextPanel({ projectId }: Props) {
         </div>
       ) : null}
       <ProjectContextPanelWorkspace
-        contextView={form.contextView}
-        onContextViewChange={form.setContextView}
         items={items}
-        edges={edges}
         isLoading={context.isLoading}
         error={context.error}
         mutations={mutations}

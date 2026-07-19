@@ -2,7 +2,6 @@ import { useCallback, useMemo, useState } from "react";
 import type { ProjectContextEdge, ProjectContextItem } from "@/types";
 import { Modal } from "@/shared/Modal";
 import { ProjectContextListView } from "@/projects/ProjectContextListView";
-import { ProjectContextTreeView } from "@/projects/ProjectContextTreeView";
 import { ProjectContextChoiceDialog } from "@/components/project-context";
 import {
   expandProjectContextSelection,
@@ -21,8 +20,6 @@ interface ProjectContextPickerProps {
   compact?: boolean;
   onChange: (ids: string[]) => void;
 }
-
-type ContextChooserView = "list" | "tree";
 
 const EMPTY_CONTEXT_ITEMS: ProjectContextItem[] = [];
 const EMPTY_CONTEXT_EDGES: ProjectContextEdge[] = [];
@@ -46,7 +43,6 @@ export function ProjectContextPicker({
   onChange,
 }: ProjectContextPickerProps) {
   const [chooserOpen, setChooserOpen] = useState(false);
-  const [contextView, setContextView] = useState<ContextChooserView>("list");
   const [pendingChoice, setPendingChoice] = useState<ProjectContextItem | null>(
     null,
   );
@@ -201,7 +197,7 @@ export function ProjectContextPicker({
           })}
         </ul>
       ) : (
-        <span>Open the chooser to search the list or inspect the tree.</span>
+        <span>Open the chooser to search the list.</span>
       )}
     </>
   );
@@ -267,9 +263,8 @@ export function ProjectContextPicker({
               <div>
                 <h2 id="task-context-chooser-title">Choose task context</h2>
                 <p id="task-context-chooser-desc" className="muted">
-                  Search project memory or inspect the tree. Picking a node
-                  asks whether to reference just that node or also include
-                  its children.
+                  Search project memory. Picking a node asks whether to
+                  reference just that node or also include its children.
                 </p>
               </div>
               <button
@@ -283,28 +278,6 @@ export function ProjectContextPicker({
 
             <div className="pc__action-bar project-context-chooser__bar">
               <span className="pc__count">{selectedCountLabel}</span>
-              <div
-                className="pc__view-toggle"
-                role="tablist"
-                aria-label="Context chooser view"
-              >
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={contextView === "list"}
-                  onClick={() => setContextView("list")}
-                >
-                  List
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={contextView === "tree"}
-                  onClick={() => setContextView("tree")}
-                >
-                  Tree
-                </button>
-              </div>
             </div>
 
             <div className="project-context-chooser__body">
@@ -323,20 +296,10 @@ export function ProjectContextPicker({
                     Import a memory file from the project context page first.
                   </span>
                 </div>
-              ) : contextView === "list" ? (
+              ) : (
                 <ProjectContextListView
                   items={items}
                   onAddConnection={() => undefined}
-                  selection={{
-                    selectedIds: selected,
-                    disabled,
-                    onToggle: handleToggle,
-                  }}
-                />
-              ) : (
-                <ProjectContextTreeView
-                  items={items}
-                  edges={edges}
                   selection={{
                     selectedIds: selected,
                     disabled,

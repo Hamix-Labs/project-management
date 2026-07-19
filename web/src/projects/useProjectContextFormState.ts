@@ -1,11 +1,10 @@
 import { useState, type FormEvent } from "react";
 import type { ProjectContextRelation } from "@/types";
-import type { ContextView, ProjectContextMutations } from "./projectContextPanelHelpers";
+import type { ProjectContextMutations } from "./projectContextPanelHelpers";
 
 export function useProjectContextFormState(
   mutations: ProjectContextMutations,
 ) {
-  const [contextView, setContextView] = useState<ContextView>("list");
   const [importOpen, setImportOpen] = useState(false);
   const [addEdgeOpen, setAddEdgeOpen] = useState(false);
   const [newEdgeSourceID, setNewEdgeSourceID] = useState("");
@@ -76,8 +75,6 @@ export function useProjectContextFormState(
   }
 
   return {
-    contextView,
-    setContextView,
     importOpen,
     setImportOpen,
     addEdgeOpen,
