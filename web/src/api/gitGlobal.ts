@@ -210,6 +210,17 @@ export async function reconcileGlobalGitRepository(
   return parseGitReconcileResult(raw);
 }
 
+export async function syncGlobalGitRepository(
+  repositoryId: string,
+): Promise<GitReconcileResult> {
+  const repoId = assertTaskPathId(repositoryId, "repository id");
+  const raw = await gitFetchJson(
+    `${gitRoot}/repositories/${encodeURIComponent(repoId)}/sync`,
+    gitJsonPostInit({}),
+  );
+  return parseGitReconcileResult(raw);
+}
+
 export async function relocateGlobalGitRepository(
   repositoryId: string,
   input: { path: string },

@@ -62,6 +62,9 @@ function parseGitWorktreeRow(value: unknown, path: string): GitWorktree {
   if (branchID) {
     row.branch_id = branchID;
   }
+  if (value.stale === true) {
+    row.stale = true;
+  }
   return row;
 }
 

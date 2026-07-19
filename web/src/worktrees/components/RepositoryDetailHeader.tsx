@@ -6,11 +6,9 @@ import { worktreeGitCopy } from "../worktreeGitCopy";
 import {
   WorktreesChevronLeftIcon,
   WorktreesFolderIcon,
-  WorktreesPlusIcon,
   WorktreesRefreshIcon,
   WorktreesTrashIcon,
 } from "./WorktreesIcons";
-import { WorktreesMenu, type WorktreesMenuItem } from "./WorktreesMenu";
 
 type Props = {
   repository: GitRepository;
@@ -18,8 +16,6 @@ type Props = {
   reconcilePending: boolean;
   onReconcile: () => void;
   onDeleteRepository: () => void;
-  addWorktreeMenuItems: WorktreesMenuItem[];
-  onAddMenuOpenChange: (open: boolean) => void;
 };
 
 export function RepositoryDetailHeader({
@@ -28,8 +24,6 @@ export function RepositoryDetailHeader({
   reconcilePending,
   onReconcile,
   onDeleteRepository,
-  addWorktreeMenuItems,
-  onAddMenuOpenChange,
 }: Props) {
   const displayName = repositoryDisplayName(repository.path);
 
@@ -65,34 +59,25 @@ export function RepositoryDetailHeader({
             <WorktreesTrashIcon className="repository-detail-card__action-icon" aria-hidden />
             {worktreeGitCopy.deleteRepository}
           </Button>
-          <WorktreesMenu
-            triggerLabel={worktreeGitCopy.addWorktree}
-            className="ui-btn ui-btn--primary repository-detail-card__add-btn"
-            menuClassName="repository-detail-card__add-menu"
-            icon={<WorktreesPlusIcon className="repository-detail-card__action-icon" aria-hidden />}
-            chevron
-            split
-            onOpenChange={onAddMenuOpenChange}
-            items={addWorktreeMenuItems}
-          />
         </div>
       </div>
 
       <div className="repository-detail-card__identity">
-        <h1 id={headingId} className="repository-detail-card__title">
-          {displayName}
-        </h1>
-        <p className="repository-detail-card__path" title={repository.path}>
-          <WorktreesFolderIcon className="repository-detail-card__path-icon" aria-hidden />
-          <span className="repository-detail-card__path-text">{repository.path}</span>
-        </p>
-        {repository.host_path.trim() !== "" &&
-        !repositoryPathsEquivalent(repository.path, repository.host_path) ? (
-          <p className="repository-detail-card__host-path">
-            <span className="worktrees-repo-row__meta-label">{worktreeGitCopy.hostPathLabel}</span>
-            <code>{repository.host_path}</code>
+        <WorktreesFolderIcon className="repository-detail-card__folder-icon" aria-hidden />
+        <div className="repository-detail-card__titles">
+          <h1 id={headingId} className="repository-detail-card__title">
+            {displayName}
+          </h1>
+          <p className="repository-detail-card__path" title={repository.path}>
+            {repository.path}
           </p>
-        ) : null}
+          {repository.host_path &&
+          !repositoryPathsEquivalent(repository.host_path, repository.path) ? (
+            <p className="repository-detail-card__host-path" title={repository.host_path}>
+              {worktreeGitCopy.hostPathLabel}: {repository.host_path}
+            </p>
+          ) : null}
+        </div>
       </div>
     </header>
   );

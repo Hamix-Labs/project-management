@@ -5,9 +5,9 @@ import {
   deleteGlobalGitRepository,
   deleteGlobalGitWorktreeFromDisk,
   unregisterGlobalGitWorktree,
-  reconcileGlobalGitRepository,
   registerGlobalGitWorktree,
   relocateGlobalGitRepository,
+  syncGlobalGitRepository,
 } from "@/api/gitGlobal";
 import type { GitReconcileInput } from "@/types/git";
 import {
@@ -68,7 +68,7 @@ export function useGlobalGitMutations() {
 
   const reconcile = useMutation({
     mutationFn: (vars: { repositoryId: string; input?: GitReconcileInput }) =>
-      reconcileGlobalGitRepository(vars.repositoryId, vars.input),
+      syncGlobalGitRepository(vars.repositoryId),
     onSuccess: (_data, vars) => invalidateRepo(vars.repositoryId),
   });
 

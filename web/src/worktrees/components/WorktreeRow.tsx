@@ -46,14 +46,18 @@ export function WorktreeRow({
   };
   const deleteMenuItem = {
     id: "delete-worktree",
-    label: worktreeGitCopy.deleteWorktree,
+    label: worktree.stale
+      ? worktreeGitCopy.removeStaleWorktree
+      : worktreeGitCopy.deleteWorktree,
     onSelect: onDeleteFromDisk,
     disabled: deleteBlocked,
     danger: true,
   };
   const menuItems = worktree.is_main
     ? [unregisterMenuItem]
-    : [unregisterMenuItem, deleteMenuItem];
+    : worktree.stale
+      ? [deleteMenuItem]
+      : [unregisterMenuItem, deleteMenuItem];
 
   const toggleExpanded = () => setExpanded((open) => !open);
 
@@ -97,6 +101,11 @@ export function WorktreeRow({
             {worktree.is_main ? (
               <span className="worktree-row__primary-badge" title={worktreeGitCopy.mainWorktreeHint}>
                 {worktreeGitCopy.primaryWorktreeBadge}
+              </span>
+            ) : null}
+            {worktree.stale ? (
+              <span className="worktree-row__stale-hint" title={worktreeGitCopy.staleWorktreeHint}>
+                {worktreeGitCopy.staleWorktreeHint}
               </span>
             ) : null}
           </div>

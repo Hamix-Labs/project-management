@@ -18,6 +18,7 @@ export type GitWorktree = {
   is_main: boolean;
   branch_id?: string;
   created_at: string;
+  stale?: boolean;
 };
 
 export type GitBranch = {

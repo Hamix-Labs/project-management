@@ -4,10 +4,13 @@ export const worktreeGitCopy = {
   registerRepository: "Register repository",
   registerWorktree: "Register worktree",
   createWorktree: "Create worktree",
-  reconcile: "Reconcile",
-  reconciling: "Reconciling…",
-  reconcilingStatus: "Syncing registered worktrees with git…",
+  reconcile: "Sync",
+  reconciling: "Syncing…",
+  reconcilingStatus: "Fetching origin and refreshing worktree metadata…",
   inventoryRefreshStatus: "Refreshing worktree list…",
+  staleWorktreeHint: "Idle for over 24 hours — safe to remove from disk.",
+  removeStaleWorktree: "Remove from disk",
+  inspectPath: "On disk",
   deleteRepository: "Delete",
   unregisterWorktree: "Unregister worktree",
   deleteWorktree: "Delete worktree",
@@ -30,7 +33,7 @@ export const worktreeGitCopy = {
   listColumnWorktreeCount: "Worktrees",
   searchRepositoriesPlaceholder: "Search by name or path…",
   repositoriesPageSubtitle:
-    "Register and manage the Git repositories powering your worktrees.",
+    "Register repositories; Hamix allocates worktrees when you create tasks.",
   repositoriesSearchCount: (filtered: number, total: number) => {
     const noun = total === 1 ? "repository" : "repositories";
     return `${filtered} of ${total} ${noun}`;
@@ -46,7 +49,7 @@ export const worktreeGitCopy = {
   mainWorktreeShortLabel: "main",
   mainWorktreeLabel: "main worktree",
   mainWorktreeHint:
-    "The primary checkout from git clone or git init. Unregistering removes Hamix tracking only — the checkout stays on disk.",
+    "The primary checkout from git clone or git init. Tasks never bind to this worktree.",
   statusUnavailable: "—",
   statusUnavailableTitle: "Worktree checkout status is not available yet",
   primaryWorktreeBadge: "Primary",
@@ -57,17 +60,17 @@ export const worktreeGitCopy = {
   locationLabel: "Location",
   detachedHead: "Detached HEAD",
   noMatchingWorktreesTitle: "No worktrees found",
-  emptyWorktreesTitle: "No worktrees yet",
+  emptyWorktreesTitle: "No managed worktrees yet",
   emptyWorktreesDescription:
-    "Register an existing linked directory or create a new one with git worktree add.",
+    "Create a task on this repository and Hamix will allocate a worktree automatically.",
   registerModalTitle: "Register worktree",
   registerModalLead:
     "Link an existing git worktree directory and choose the branch Hamix should track.",
   registerModalPathLabel: "Worktree path",
   registerModalDisplayNameLabel: "Display name",
   liveInventoryReconcileLead:
-    "Hamix can't read linked worktrees because the registered checkout path isn't available on disk. Reconcile refreshes paths from git so you can continue.",
-  liveInventoryReconcileAction: "Reconcile repository",
+    "Hamix can't read linked worktrees because the registered checkout path isn't available on disk. Sync refreshes paths from git so you can continue.",
+  liveInventoryReconcileAction: "Sync repository",
   registerModalDisplayNamePlaceholder: "Optional",
   registerModalSubmit: "Register worktree",
   registerModalSubmitting: "Registering…",
@@ -86,8 +89,7 @@ export const worktreeGitCopy = {
   createModalChangeParentFolder: "Change parent folder",
   createModalParentSelectedPrefix: "Selected parent directory",
   createModalFolderNameLabel: "Checkout folder name",
-  createModalFolderNameHint:
-    "Directory Git creates on disk.",
+  createModalFolderNameHint: "Directory Git creates on disk.",
   createModalFolderNamePlaceholder: "e.g. Hamix-wt-feature",
   createModalFullPathPrefix: "Full path:",
   createModalPickerTitle: "Choose parent folder",
@@ -110,9 +112,9 @@ export const worktreeGitCopy = {
   relocateModalChoosePath: "Choose folder",
   relocateModalSelectedPrefix: "Selected:",
   relocateModalNoPath: "No folder selected yet.",
-  relocateModalSubmit: "Relocate and reconcile",
+  relocateModalSubmit: "Relocate and sync",
   relocateModalSubmitting: "Relocating…",
-  reconcileErrorTitle: "Reconcile failed",
+  reconcileErrorTitle: "Sync failed",
 } as const;
 
 export function worktreeCountLabel(count: number): string {
