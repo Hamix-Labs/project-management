@@ -56,7 +56,6 @@ func resolveLiveWorktree(
 	branchByID map[string]gitdomain.GitBranch,
 	dbRows []model.GitWorktree,
 ) (liveWorktreeMatchResult, error) {
-	const reasonNotFound = "path_and_branch_not_found"
 	if wt, ok := liveByPath[worktreePathKey(row.Path)]; ok {
 		return liveWorktreeMatchResult{worktree: &wt}, nil
 	}
@@ -65,15 +64,11 @@ func resolveLiveWorktree(
 	}
 	br, ok := branchByID[row.BranchID]
 	if !ok {
-		return liveWorktreeMatchResult{
-			skip: &ReconcileSkippedWorktree{WorktreeID: row.ID, Reason: reasonNotFound},
-		}, nil
+		return liveWorktreeMatchResult{}, nil
 	}
 	wt, ok := liveByBranch[br.Name]
 	if !ok {
-		return liveWorktreeMatchResult{
-			skip: &ReconcileSkippedWorktree{WorktreeID: row.ID, Reason: reasonNotFound},
-		}, nil
+		return liveWorktreeMatchResult{}, nil
 	}
 	if git.CountBranchOwners(dbRows, br.Name, branchByID) > 1 {
 		return liveWorktreeMatchResult{}, fmt.Errorf("%w: duplicate worktree rows for branch %q", taskcoredomain.ErrInvalidInput, br.Name)
