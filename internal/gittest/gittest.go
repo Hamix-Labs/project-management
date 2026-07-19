@@ -72,7 +72,6 @@ func InitMain(t *testing.T, dir string) {
 	if out, err := exec.Command("git", "-C", dir, "commit", "-m", "init", "--allow-empty").CombinedOutput(); err != nil {
 		t.Fatalf("git commit: %v %s", err, out)
 	}
-	AttachOrigin(t, dir)
 }
 
 // EnsureMain ensures dir is a git repository on main without re-init when
