@@ -1,10 +1,8 @@
 import type {
   Project,
-  ProjectContextEdge,
   ProjectContextItem,
   ProjectContextKind,
   ProjectContextListResponse,
-  ProjectContextRelation,
   ProjectListResponse,
   ProjectStatus,
 } from "@/types";
@@ -23,14 +21,6 @@ import { assertListIntQuery, assertTaskPathId } from "./taskRequestBounds";
 
 const PROJECT_STATUSES = ["active", "archived"] as const;
 
-const PROJECT_CONTEXT_RELATIONS = [
-  "supports",
-  "blocks",
-  "refines",
-  "depends_on",
-  "related",
-] as const;
-
 function parseProjectStatus(value: unknown): ProjectStatus {
   if (
     typeof value !== "string" ||
@@ -46,16 +36,6 @@ function parseProjectContextKind(value: unknown): ProjectContextKind {
     throw new Error("Invalid API response: context kind must be a string");
   }
   return value;
-}
-
-function parseProjectContextRelation(value: unknown): ProjectContextRelation {
-  if (
-    typeof value !== "string" ||
-    !(PROJECT_CONTEXT_RELATIONS as readonly string[]).includes(value)
-  ) {
-    throw new Error("Invalid API response: context relation is unknown");
-  }
-  return value as ProjectContextRelation;
 }
 
 export function parseProject(value: unknown): Project {
@@ -114,33 +94,6 @@ export function parseProjectContextItem(value: unknown): ProjectContextItem {
   return item;
 }
 
-export function parseProjectContextEdge(value: unknown): ProjectContextEdge {
-  if (!isRecord(value)) {
-    throw new Error("Invalid API response: project context edge must be an object");
-  }
-  const strength = parseFiniteNumber(value.strength, "strength");
-  if (!Number.isInteger(strength) || strength < 1 || strength > 5) {
-    throw new Error("Invalid API response: context edge strength must be 1..5");
-  }
-  return {
-    id: parseNonEmptyString(value.id, "id"),
-    project_id: parseNonEmptyString(value.project_id, "project_id"),
-    source_context_id: parseNonEmptyString(
-      value.source_context_id,
-      "source_context_id",
-    ),
-    target_context_id: parseNonEmptyString(
-      value.target_context_id,
-      "target_context_id",
-    ),
-    relation: parseProjectContextRelation(value.relation),
-    strength,
-    note: parseString(value.note, "note"),
-    created_at: parseISO8601Required(value.created_at, "created_at"),
-    updated_at: parseISO8601Required(value.updated_at, "updated_at"),
-  };
-}
-
 export function parseProjectContextListResponse(
   value: unknown,
 ): ProjectContextListResponse {
@@ -152,13 +105,14 @@ export function parseProjectContextListResponse(
   if (!Array.isArray(raw)) {
     throw new Error("Invalid API response: items must be an array");
   }
+  // Edges are no longer used by the product; tolerate legacy payloads.
   const rawEdges = value.edges ?? [];
   if (!Array.isArray(rawEdges)) {
     throw new Error("Invalid API response: edges must be an array");
   }
   return {
     items: raw.map(parseProjectContextItem),
-    edges: rawEdges.map(parseProjectContextEdge),
+    edges: [],
     limit: parseFiniteNumber(value.limit, "limit"),
   };
 }
@@ -286,69 +240,6 @@ export async function createProjectContext(
   );
   if (!res.ok) throw await apiErrorFromResponse(res);
   return parseProjectContextItem((await res.json()) as unknown);
-}
-
-export async function createProjectContextEdge(
-  projectId: string,
-  input: {
-    id?: string;
-    source_context_id: string;
-    target_context_id: string;
-    relation?: ProjectContextRelation;
-    strength?: number;
-    note?: string;
-  },
-): Promise<ProjectContextEdge> {
-  const projectID = assertTaskPathId(projectId, "project id");
-  const res = await fetchWithTimeout(
-    `/projects/${encodeURIComponent(projectID)}/context/edges`,
-    {
-      method: "POST",
-      headers: jsonHeaders,
-      body: JSON.stringify(input),
-    },
-  );
-  if (!res.ok) throw await apiErrorFromResponse(res);
-  return parseProjectContextEdge((await res.json()) as unknown);
-}
-
-export async function patchProjectContextEdge(
-  projectId: string,
-  edgeId: string,
-  input: {
-    relation?: ProjectContextRelation;
-    strength?: number;
-    note?: string;
-  },
-): Promise<ProjectContextEdge> {
-  const projectID = assertTaskPathId(projectId, "project id");
-  const edgeID = assertTaskPathId(edgeId, "context edge id");
-  const res = await fetchWithTimeout(
-    `/projects/${encodeURIComponent(projectID)}/context/edges/${encodeURIComponent(edgeID)}`,
-    {
-      method: "PATCH",
-      headers: jsonHeaders,
-      body: JSON.stringify(input),
-    },
-  );
-  if (!res.ok) throw await apiErrorFromResponse(res);
-  return parseProjectContextEdge((await res.json()) as unknown);
-}
-
-export async function deleteProjectContextEdge(
-  projectId: string,
-  edgeId: string,
-): Promise<void> {
-  const projectID = assertTaskPathId(projectId, "project id");
-  const edgeID = assertTaskPathId(edgeId, "context edge id");
-  const res = await fetchWithTimeout(
-    `/projects/${encodeURIComponent(projectID)}/context/edges/${encodeURIComponent(edgeID)}`,
-    {
-      method: "DELETE",
-      headers: { Accept: "application/json" },
-    },
-  );
-  if (!res.ok) throw await apiErrorFromResponse(res);
 }
 
 export async function patchProjectContext(

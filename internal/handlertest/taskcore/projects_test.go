@@ -84,28 +84,6 @@ func TestHTTP_projectsCRUDAndContext(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	edgeRes, err := http.Post(srv.URL+"/projects/"+project.ID+"/context/edges", "application/json", strings.NewReader(`{"source_context_id":"`+item.ID+`","target_context_id":"`+secondItem.ID+`","relation":"supports","strength":4,"note":"Decision supports constraint"}`))
-	if err != nil {
-		t.Fatal(err)
-	}
-	edgeBytes, err := io.ReadAll(edgeRes.Body)
-	if cerr := edgeRes.Body.Close(); cerr != nil {
-		t.Fatal(cerr)
-	}
-	if err != nil {
-		t.Fatal(err)
-	}
-	if edgeRes.StatusCode != http.StatusCreated {
-		t.Fatalf("create edge status %d body %s", edgeRes.StatusCode, edgeBytes)
-	}
-	var edge projectsdomain.ProjectContextEdge
-	if err := json.Unmarshal(edgeBytes, &edge); err != nil {
-		t.Fatal(err)
-	}
-	if edge.ProjectID != project.ID || edge.Relation != projectsdomain.ProjectContextRelationSupports || edge.Strength != 4 {
-		t.Fatalf("edge = %#v", edge)
-	}
-
 	listRes, err := http.Get(srv.URL + "/projects/" + project.ID + "/context")
 	if err != nil {
 		t.Fatal(err)
@@ -121,11 +99,11 @@ func TestHTTP_projectsCRUDAndContext(t *testing.T) {
 	if err := json.NewDecoder(listRes.Body).Decode(&list); err != nil {
 		t.Fatal(err)
 	}
-	if len(list.Items) != 2 || list.Items[0].ID != item.ID {
+	if len(list.Items) != 2 || list.Items[0].ID != item.ID || list.Items[1].ID != secondItem.ID {
 		t.Fatalf("items = %#v", list.Items)
 	}
-	if len(list.Edges) != 1 || list.Edges[0].ID != edge.ID {
-		t.Fatalf("edges = %#v", list.Edges)
+	if list.Edges == nil || len(list.Edges) != 0 {
+		t.Fatalf("edges = %#v, want empty array", list.Edges)
 	}
 
 	req, err := http.NewRequest(http.MethodPatch, srv.URL+"/projects/"+project.ID, strings.NewReader(`{"status":"archived"}`))

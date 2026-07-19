@@ -1,15 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createProjectContext,
-  createProjectContextEdge,
   deleteProjectContext,
-  deleteProjectContextEdge,
   getProject,
   listProjectContext,
   listProjects,
   patchProject,
   patchProjectContext,
-  patchProjectContextEdge,
   parseProject,
   parseProjectContextListResponse,
 } from "./projects";
@@ -112,7 +109,8 @@ describe("project API parsers", () => {
     });
 
     expect(out.items[0].kind).toBe("risk");
-    expect(out.edges[0].relation).toBe("supports");
+    // Legacy edge payloads are ignored; the client always stores [].
+    expect(out.edges).toEqual([]);
   });
 
   it("defaults missing project context edges to an empty list", () => {
@@ -192,47 +190,4 @@ describe("project API parsers", () => {
     ]);
   });
 
-  it("creates, patches, and deletes project context edges", async () => {
-    const edgeWire = {
-      id: "33333333-3333-4333-8333-333333333333",
-      project_id: projectWire.id,
-      source_context_id: "11111111-1111-4111-8111-111111111111",
-      target_context_id: "22222222-2222-4222-8222-222222222222",
-      relation: "related",
-      strength: 3,
-      note: "",
-      created_at: "2026-04-26T00:00:00Z",
-      updated_at: "2026-04-26T00:00:00Z",
-    };
-    const spy = vi
-      .spyOn(globalThis, "fetch")
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify(edgeWire), {
-          status: 201,
-          headers: { "Content-Type": "application/json" },
-        }),
-      )
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ ...edgeWire, strength: 5 }), {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        }),
-      )
-      .mockResolvedValueOnce(new Response(null, { status: 204 }));
-
-    await createProjectContextEdge(projectWire.id, {
-      source_context_id: edgeWire.source_context_id,
-      target_context_id: edgeWire.target_context_id,
-      relation: "related",
-      strength: 3,
-    });
-    await patchProjectContextEdge(projectWire.id, edgeWire.id, { strength: 5 });
-    await deleteProjectContextEdge(projectWire.id, edgeWire.id);
-
-    expect(spy.mock.calls.map((call) => call[1]?.method)).toEqual([
-      "POST",
-      "PATCH",
-      "DELETE",
-    ]);
-  });
 });

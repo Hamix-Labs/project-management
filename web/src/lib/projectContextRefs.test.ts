@@ -1,26 +1,9 @@
 import { describe, expect, it } from "vitest";
-import type { ProjectContextEdge } from "@/types";
 import {
   MAX_SELECTED_PROJECT_CONTEXT_ITEMS,
-  expandProjectContextSelection,
-  hasProjectContextChildren,
   mergeProjectContextSelection,
   projectContextShortId,
 } from "./projectContextRefs";
-
-function edge(source: string, target: string): ProjectContextEdge {
-  return {
-    id: `${source}->${target}`,
-    project_id: "project-1",
-    source_context_id: source,
-    target_context_id: target,
-    relation: "supports",
-    strength: 3,
-    note: "",
-    created_at: "2026-04-29T00:00:00Z",
-    updated_at: "2026-04-29T00:00:00Z",
-  };
-}
 
 describe("projectContextShortId", () => {
   it("strips dashes and lowercases UUIDs to a 6-char prefix", () => {
@@ -38,42 +21,6 @@ describe("projectContextShortId", () => {
 
   it("preserves alphanumerics from arbitrary ids", () => {
     expect(projectContextShortId("ctx-risk")).toBe("ctxris");
-  });
-});
-
-describe("expandProjectContextSelection", () => {
-  it("returns just the node for nodeOnly mode", () => {
-    expect(
-      expandProjectContextSelection("a", "nodeOnly", [edge("a", "b")]),
-    ).toEqual(["a"]);
-  });
-
-  it("returns an empty list when nodeId is blank", () => {
-    expect(expandProjectContextSelection("", "withChildren", [])).toEqual([]);
-  });
-
-  it("walks outgoing edges in BFS order with cycle protection", () => {
-    const edges = [
-      edge("a", "b"),
-      edge("a", "c"),
-      edge("b", "d"),
-      edge("c", "d"),
-      edge("d", "a"),
-    ];
-    expect(
-      expandProjectContextSelection("a", "withChildren", edges),
-    ).toEqual(["a", "b", "c", "d"]);
-  });
-
-  it("ignores edges with empty source or target ids", () => {
-    const edges = [
-      edge("", "b"),
-      edge("a", ""),
-      edge("a", "c"),
-    ];
-    expect(
-      expandProjectContextSelection("a", "withChildren", edges),
-    ).toEqual(["a", "c"]);
   });
 });
 
@@ -105,15 +52,5 @@ describe("mergeProjectContextSelection", () => {
 
   it("trims incoming ids and skips empty strings", () => {
     expect(mergeProjectContextSelection([], [" a ", "", "  "])).toEqual(["a"]);
-  });
-});
-
-describe("hasProjectContextChildren", () => {
-  it("is true when there is an outgoing edge", () => {
-    expect(hasProjectContextChildren("a", [edge("a", "b")])).toBe(true);
-  });
-
-  it("is false when the node has no outgoing edges", () => {
-    expect(hasProjectContextChildren("a", [edge("b", "a")])).toBe(false);
   });
 });

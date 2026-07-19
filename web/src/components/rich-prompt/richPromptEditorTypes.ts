@@ -1,4 +1,4 @@
-import type { ProjectContextEdge, ProjectContextItem } from "@/types";
+import type { ProjectContextItem } from "@/types";
 
 export type RichPromptEditorProjectContextProps = {
   /**
@@ -7,12 +7,6 @@ export type RichPromptEditorProjectContextProps = {
    * of swallowing the trigger.
    */
   items: ProjectContextItem[];
-  /**
-   * Project context edges (`source -> target`). Used by the choice dialog to
-   * preview how many descendants would be added when the operator picks
-   * "Reference this node and its children".
-   */
-  edges: ProjectContextEdge[];
   /** IDs already on the task. The REFERENCES block renders one row per id. */
   selectedIds: string[];
   /**
@@ -31,8 +25,8 @@ export type RichPromptEditorProps = {
   /**
    * When provided, the editor wires the `#` project context suggestion plugin
    * and renders the read-only REFERENCES block above the editable content.
-   * Omit on surfaces where project context does not apply (e.g. project edge
-   * notes) so behaviour stays unchanged.
+   * Omit on surfaces where project context does not apply so behaviour stays
+   * unchanged.
    */
   projectContext?: RichPromptEditorProjectContextProps;
   /** When set, @-mention search is scoped to this worktree. */

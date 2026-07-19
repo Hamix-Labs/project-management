@@ -7,16 +7,12 @@ export { ProjectContextEntryCard } from "./ProjectContextEntryCard";
 // from "@/projects/<PageName>" in tests or lazy-loaders only.
 export { ProjectSelect } from "./ProjectSelect";
 export { ProjectContextPicker } from "./ProjectContextPicker";
-export { ProjectContextChoiceDialog } from "@/components/project-context";
 export {
   MAX_SELECTED_PROJECT_CONTEXT_ITEMS,
   PROJECT_CONTEXT_SHORT_ID_LENGTH,
-  expandProjectContextSelection,
-  hasProjectContextChildren,
   mergeProjectContextSelection,
   projectContextShortId,
   selectedProjectContextItems,
-  type ProjectContextAddMode,
 } from "@/lib/projectContextRefs";
 export { projectQueryKeys } from "./queryKeys";
 export {

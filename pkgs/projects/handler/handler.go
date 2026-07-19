@@ -35,9 +35,6 @@ func Register(m *http.ServeMux, deps Deps) {
 	m.Handle("DELETE /projects/{id}", http.HandlerFunc(h.deleteProject))
 	m.Handle("GET /projects/{id}/context", http.HandlerFunc(h.listProjectContext))
 	m.Handle("POST /projects/{id}/context", http.HandlerFunc(h.createProjectContext))
-	m.Handle("POST /projects/{id}/context/edges", http.HandlerFunc(h.createProjectContextEdge))
-	m.Handle("PATCH /projects/{id}/context/edges/{edgeId}", http.HandlerFunc(h.patchProjectContextEdge))
-	m.Handle("DELETE /projects/{id}/context/edges/{edgeId}", http.HandlerFunc(h.deleteProjectContextEdge))
 	m.Handle("PATCH /projects/{id}/context/{contextId}", http.HandlerFunc(h.patchProjectContext))
 	m.Handle("DELETE /projects/{id}/context/{contextId}", http.HandlerFunc(h.deleteProjectContext))
 }

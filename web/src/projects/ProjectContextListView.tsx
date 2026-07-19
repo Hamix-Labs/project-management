@@ -19,7 +19,6 @@ type Props = {
     },
   ) => void;
   onDeleteNode?: (id: string) => void;
-  onAddConnection: (sourceId: string) => void;
   selection?: {
     selectedIds: Set<string>;
     disabled?: boolean;
@@ -33,7 +32,6 @@ export function ProjectContextListView({
   nodeDeleting,
   onSaveNode,
   onDeleteNode,
-  onAddConnection,
   selection,
 }: Props) {
   const [nodeQuery, setNodeQuery] = useState("");
@@ -84,12 +82,10 @@ export function ProjectContextListView({
               index={i}
               saving={nodeSaving ?? false}
               deleting={nodeDeleting ?? false}
-              canAddConnection={!selection && items.length >= 2}
               selected={selection?.selectedIds.has(item.id) ?? false}
               selectionDisabled={selection?.disabled}
               onSave={onSaveNode ?? (() => undefined)}
               onDelete={onDeleteNode ?? (() => undefined)}
-              onAddConnection={onAddConnection}
               onToggleSelected={selection?.onToggle}
             />
           ))}

@@ -7,12 +7,10 @@ import {
   plainTextToInitialHtml,
 } from "@/lib/promptFormat";
 import {
-  expandProjectContextSelection,
   mergeProjectContextSelection,
   selectedProjectContextItems,
-  type ProjectContextAddMode,
 } from "@/lib/projectContextRefs";
-import type { ProjectContextEdge, ProjectContextItem } from "@/types";
+import type { ProjectContextItem } from "@/types";
 import type { ProjectContextPickedPayload } from "./extensions/projectContextSuggestion";
 import type { RepoFileSuggestionOptions } from "./extensions/repoFileSuggestion";
 import type { ProjectContextSuggestionOptions } from "./extensions/projectContextSuggestion";
@@ -22,13 +20,11 @@ import {
   insertProjectContextChipAt,
   insertRepoFileMentionAt,
   type PendingFileInsert,
-  type PendingProjectChoice,
 } from "./richPromptInsertHelpers";
 import { useRepoWorkspaceProbe } from "./useRepoWorkspaceProbe";
 import type { RichPromptEditorProps } from "./richPromptEditorTypes";
 
 const EMPTY_CONTEXT_ITEMS: ProjectContextItem[] = [];
-const EMPTY_CONTEXT_EDGES: ProjectContextEdge[] = [];
 const EMPTY_SELECTED_IDS: string[] = [];
 
 export function useRichPromptEditorController({
@@ -50,7 +46,6 @@ export function useRichPromptEditorController({
   const lastEmittedHtml = useRef<string | null>(null);
 
   const projectItems = projectContext?.items ?? EMPTY_CONTEXT_ITEMS;
-  const projectEdges = projectContext?.edges ?? EMPTY_CONTEXT_EDGES;
   const selectedProjectIds = projectContext?.selectedIds ?? EMPTY_SELECTED_IDS;
   const onProjectIdsChange = projectContext?.onSelectedIdsChange;
 
@@ -60,9 +55,6 @@ export function useRichPromptEditorController({
   useEffect(() => {
     projectItemsRef.current = projectContext != null ? projectItems : null;
   }, [projectContext, projectItems]);
-
-  const [pendingProjectChoice, setPendingProjectChoice] =
-    useState<PendingProjectChoice | null>(null);
 
   const onFilePicked = useCallback(
     (payload: { insertAt: number; path: string }) => {
@@ -94,12 +86,27 @@ export function useRichPromptEditorController({
 
   const projectContextEnabled = projectContext != null;
 
+  const editorRef = useRef<ReturnType<typeof useEditor>>(null);
+  const selectedProjectIdsRef = useRef(selectedProjectIds);
+  const onProjectIdsChangeRef = useRef(onProjectIdsChange);
+  useEffect(() => {
+    selectedProjectIdsRef.current = selectedProjectIds;
+  }, [selectedProjectIds]);
+  useEffect(() => {
+    onProjectIdsChangeRef.current = onProjectIdsChange;
+  }, [onProjectIdsChange]);
+
   const onProjectContextPicked = useCallback(
     (payload: ProjectContextPickedPayload) => {
-      setPendingProjectChoice({
-        item: payload.item,
-        insertAt: payload.insertAt,
-      });
+      const merged = mergeProjectContextSelection(
+        selectedProjectIdsRef.current,
+        [payload.item.id],
+      );
+      onProjectIdsChangeRef.current?.(merged);
+      const ed = editorRef.current;
+      if (ed) {
+        insertProjectContextChipAt(ed, payload.item, payload.insertAt);
+      }
     },
     [],
   );
@@ -137,6 +144,10 @@ export function useRichPromptEditorController({
   });
 
   useEffect(() => {
+    editorRef.current = editor;
+  }, [editor]);
+
+  useEffect(() => {
     editor?.setEditable(!disabled);
   }, [editor, disabled]);
 
@@ -149,7 +160,6 @@ export function useRichPromptEditorController({
     editor.commands.setContent(next, { emitUpdate: false });
     lastEmittedHtml.current = next;
     setPendingInsert(null);
-    setPendingProjectChoice(null);
   }, [editor, value]);
 
   const probeDone = workspaceProbe !== "pending";
@@ -201,44 +211,6 @@ export function useRichPromptEditorController({
     [editor, pendingInsert],
   );
 
-  const insertProjectContextChip = useCallback(
-    (item: ProjectContextItem, insertAt: number | null) => {
-      if (!editor) return;
-      insertProjectContextChipAt(editor, item, insertAt);
-    },
-    [editor],
-  );
-
-  const confirmProjectContextChoice = useCallback(
-    (mode: ProjectContextAddMode) => {
-      if (!pendingProjectChoice) return;
-      const { item, insertAt } = pendingProjectChoice;
-      const expanded = expandProjectContextSelection(
-        item.id,
-        mode,
-        projectEdges,
-      );
-      const merged = mergeProjectContextSelection(
-        selectedProjectIds,
-        expanded,
-      );
-      onProjectIdsChange?.(merged);
-      insertProjectContextChip(item, insertAt);
-      setPendingProjectChoice(null);
-    },
-    [
-      pendingProjectChoice,
-      projectEdges,
-      selectedProjectIds,
-      onProjectIdsChange,
-      insertProjectContextChip,
-    ],
-  );
-
-  const cancelProjectContextChoice = useCallback(() => {
-    setPendingProjectChoice(null);
-  }, []);
-
   const removeSelectedProjectId = useCallback(
     (contextId: string) => {
       if (!onProjectIdsChange) return;
@@ -272,11 +244,6 @@ export function useRichPromptEditorController({
     dismissPendingInsert,
     insertPathOnly,
     insertWithRange,
-    pendingProjectChoice,
-    projectEdges,
-    selectedProjectIds,
-    cancelProjectContextChoice,
-    confirmProjectContextChoice,
     repoHints,
   };
 }

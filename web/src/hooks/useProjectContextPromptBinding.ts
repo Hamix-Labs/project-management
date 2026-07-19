@@ -1,10 +1,9 @@
 import { useMemo } from "react";
-import type { ProjectContextEdge, ProjectContextItem } from "@/types";
+import type { ProjectContextItem } from "@/types";
 import { useProjectContext } from "@/projects/hooks";
 import type { RichPromptEditorProjectContextProps } from "@/components/rich-prompt";
 
 const EMPTY_CONTEXT_ITEMS: ProjectContextItem[] = [];
-const EMPTY_CONTEXT_EDGES: ProjectContextEdge[] = [];
 
 export type UseProjectContextPromptBindingOptions = {
   /**
@@ -42,14 +41,12 @@ export function useProjectContextPromptBinding(
     if (!enabled) return null;
     return {
       items: contextQuery.data?.items ?? EMPTY_CONTEXT_ITEMS,
-      edges: contextQuery.data?.edges ?? EMPTY_CONTEXT_EDGES,
       selectedIds,
       onSelectedIdsChange,
     };
   }, [
     enabled,
     contextQuery.data?.items,
-    contextQuery.data?.edges,
     selectedIds,
     onSelectedIdsChange,
   ]);

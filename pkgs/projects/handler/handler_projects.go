@@ -170,102 +170,17 @@ func (h *Handler) listProjectContext(w http.ResponseWriter, r *http.Request) {
 		writeStoreError(w, r, op, err)
 		return
 	}
-	itemIDs := make([]string, 0, len(items))
-	for _, item := range items {
-		itemIDs = append(itemIDs, item.ID)
-	}
-	edges, err := h.store.ListProjectContextEdges(r.Context(), projectID, itemIDs)
-	if err != nil {
-		writeStoreError(w, r, op, err)
-		return
-	}
 	// Empty store results are nil slices; JSON would encode them as null and
 	// break the SPA parser which requires items/edges arrays.
 	if items == nil {
 		items = []domain.ProjectContextItem{}
 	}
-	if edges == nil {
-		edges = []domain.ProjectContextEdge{}
-	}
-	handlerhttp.WriteJSONWithETag(w, r, op, http.StatusOK, projectContextListResponse{Items: items, Edges: edges, Limit: limit})
-}
-
-func (h *Handler) createProjectContextEdge(w http.ResponseWriter, r *http.Request) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.createProjectContextEdge")
-	const op = "projects.context.edges.create"
-	r = calltrace.WithRequestRoot(r, op)
-	projectID, err := parsePathID(r.PathValue("id"))
-	if err != nil {
-		writeStoreError(w, r, op, err)
-		return
-	}
-	var body projectContextEdgeCreateJSON
-	if err := handlerhttp.DecodeJSON(r.Context(), r.Body, &body); err != nil {
-		handlerhttp.WriteError(w, r, op, err, http.StatusBadRequest)
-		return
-	}
-	edge, err := h.store.CreateProjectContextEdge(r.Context(), projectID, contract.CreateProjectContextEdgeInput{
-		ID:              body.ID,
-		SourceContextID: body.SourceContextID,
-		TargetContextID: body.TargetContextID,
-		Relation:        body.Relation,
-		Strength:        body.Strength,
-		Note:            body.Note,
+	// Edges are no longer exposed; keep an empty array for JSON compat.
+	handlerhttp.WriteJSONWithETag(w, r, op, http.StatusOK, projectContextListResponse{
+		Items: items,
+		Edges: []domain.ProjectContextEdge{},
+		Limit: limit,
 	})
-	if err != nil {
-		writeStoreError(w, r, op, err)
-		return
-	}
-	h.notifyChange(realtime.ProjectContextChanged, projectID)
-	handlerhttp.WriteJSON(w, r, op, http.StatusCreated, edge)
-}
-
-func (h *Handler) patchProjectContextEdge(w http.ResponseWriter, r *http.Request) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.patchProjectContextEdge")
-	const op = "projects.context.edges.patch"
-	r = calltrace.WithRequestRoot(r, op)
-	projectID, edgeID, err := parseProjectContextEdgePath(r)
-	if err != nil {
-		writeStoreError(w, r, op, err)
-		return
-	}
-	var body projectContextEdgePatchJSON
-	if err := handlerhttp.DecodeJSON(r.Context(), r.Body, &body); err != nil {
-		handlerhttp.WriteError(w, r, op, err, http.StatusBadRequest)
-		return
-	}
-	if body.isEmpty() {
-		writeStoreError(w, r, op, fmt.Errorf("%w: no fields to update", domain.ErrInvalidInput))
-		return
-	}
-	edge, err := h.store.UpdateProjectContextEdge(r.Context(), projectID, edgeID, contract.UpdateProjectContextEdgeInput{
-		Relation: body.Relation,
-		Strength: body.Strength,
-		Note:     body.Note,
-	})
-	if err != nil {
-		writeStoreError(w, r, op, err)
-		return
-	}
-	h.notifyChange(realtime.ProjectContextChanged, projectID)
-	handlerhttp.WriteJSON(w, r, op, http.StatusOK, edge)
-}
-
-func (h *Handler) deleteProjectContextEdge(w http.ResponseWriter, r *http.Request) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.deleteProjectContextEdge")
-	const op = "projects.context.edges.delete"
-	r = calltrace.WithRequestRoot(r, op)
-	projectID, edgeID, err := parseProjectContextEdgePath(r)
-	if err != nil {
-		writeStoreError(w, r, op, err)
-		return
-	}
-	if err := h.store.DeleteProjectContextEdge(r.Context(), projectID, edgeID); err != nil {
-		writeStoreError(w, r, op, err)
-		return
-	}
-	h.notifyChange(realtime.ProjectContextChanged, projectID)
-	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *Handler) patchProjectContext(w http.ResponseWriter, r *http.Request) {

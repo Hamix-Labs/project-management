@@ -1,1 +1,1 @@
-export { ProjectContextChoiceDialog } from "./ProjectContextChoiceDialog";
+export { ProjectContextPicker } from "./ProjectContextPicker";

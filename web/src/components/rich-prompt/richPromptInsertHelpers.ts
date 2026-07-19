@@ -7,11 +7,6 @@ export type PendingFileInsert = {
   path: string;
 };
 
-export type PendingProjectChoice = {
-  item: ProjectContextItem;
-  insertAt: number | null;
-};
-
 export type RepoHintFlags = {
   showSelectWorktreeHint: boolean;
   showRepoMisconfigHint: boolean;
