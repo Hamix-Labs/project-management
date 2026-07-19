@@ -46,15 +46,15 @@ describe("gitWorktreeRegistration", () => {
     expect(isLinkedWorktreeForDisplay(incompleteMainStub)).toBe(false);
   });
 
-  it("includes primary checkout on repository detail page", () => {
+  it("excludes the primary checkout from the repository detail list", () => {
     expect(isDetailPageWorktree(linked)).toBe(true);
-    expect(isDetailPageWorktree(mainSeeded)).toBe(true);
+    expect(isDetailPageWorktree(mainSeeded)).toBe(false);
     expect(isDetailPageWorktree(incompleteMainStub)).toBe(false);
   });
 
-  it("prefers main checkout when picking default worktree", () => {
-    expect(pickDefaultWorktreeId([linked, mainSeeded])).toBe(mainSeeded.id);
+  it("picks a managed worktree, never the primary checkout", () => {
+    expect(pickDefaultWorktreeId([linked, mainSeeded])).toBe(linked.id);
     expect(pickDefaultWorktreeId([linked])).toBe(linked.id);
-    expect(pickDefaultWorktreeId([incompleteMainStub])).toBe("");
+    expect(pickDefaultWorktreeId([mainSeeded, incompleteMainStub])).toBe("");
   });
 });

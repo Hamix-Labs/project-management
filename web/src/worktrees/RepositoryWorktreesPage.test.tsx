@@ -173,20 +173,64 @@ describe("RepositoryWorktreesPage", () => {
     vi.unstubAllGlobals();
   });
 
-  it("renders repository title and worktree rows", async () => {
+  it("renders repository title and managed worktree rows only", async () => {
     mockRepositoryDetailFetch();
     renderDetailPage();
     expect(await screen.findByRole("heading", { level: 1, name: "main" })).toBeInTheDocument();
-    expect(await screen.findByText("main", { selector: ".worktree-row__label" })).toBeInTheDocument();
-    expect(screen.getByText(worktreeGitCopy.primaryWorktreeBadge)).toBeInTheDocument();
-    expect(screen.getByText("feature", { selector: ".worktree-row__label" })).toBeInTheDocument();
-    expect(screen.getByText("2 of 2 worktrees")).toBeInTheDocument();
-    expect(screen.getByText("2 branches checked out")).toBeInTheDocument();
+    expect(await screen.findByText("feature", { selector: ".worktree-row__label" })).toBeInTheDocument();
+    expect(screen.queryByText(worktreeGitCopy.primaryWorktreeBadge)).not.toBeInTheDocument();
+    expect(screen.queryByText("main", { selector: ".worktree-row__label" })).not.toBeInTheDocument();
+    expect(screen.getByText("1 of 1 worktree")).toBeInTheDocument();
+    expect(screen.getByText("1 branch checked out")).toBeInTheDocument();
     expect(screen.getByRole("navigation", { name: /repository navigation/i })).toBeInTheDocument();
     expect(screen.getByRole("search", { name: /search worktrees/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: worktreeGitCopy.reconcile })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: worktreeGitCopy.deleteRepository })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /add worktree/i })).not.toBeInTheDocument();
+  });
+
+  it("shows empty state when only the primary checkout exists", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = requestUrl(input);
+      const method = init?.method ?? "GET";
+      if (method === "GET" && url.endsWith(`/git/repositories/${repoId}`)) {
+        return jsonResponse({
+          id: repoId,
+          path: "/repo/main",
+          git_common_dir: "",
+          host_path: "",
+          default_branch: "main",
+          created_at: "2026-06-22T12:00:00Z",
+          updated_at: "2026-06-22T12:00:00Z",
+        });
+      }
+      if (method === "GET" && url.endsWith(`/git/repositories/${repoId}/worktrees/checkout-status`)) {
+        return jsonResponse({ worktrees: [] });
+      }
+      if (method === "GET" && url.endsWith(`/git/repositories/${repoId}/worktrees`)) {
+        return jsonResponse({
+          worktrees: [
+            {
+              id: wtMain,
+              repository_id: repoId,
+              path: "/repo/main",
+              name: "main",
+              is_main: true,
+              branch_id: mainBranchId,
+              created_at: "2026-06-22T12:00:00Z",
+            },
+          ],
+        });
+      }
+      if (method === "GET" && url.includes(`/git/repositories/${repoId}/branches`)) {
+        return jsonResponse(detailBranchesResponse());
+      }
+      return jsonResponse({ error: "not found" }, { status: 404 });
+    });
+    renderDetailPage();
+    expect(await screen.findByText(worktreeGitCopy.emptyWorktreesTitle)).toBeInTheDocument();
+    expect(screen.getByText(worktreeGitCopy.emptyWorktreesDescription)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Unregister worktree/i })).not.toBeInTheDocument();
   });
 
   it("filters worktrees by search query", async () => {

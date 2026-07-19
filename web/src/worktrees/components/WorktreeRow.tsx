@@ -53,8 +53,9 @@ export function WorktreeRow({
     disabled: deleteBlocked,
     danger: true,
   };
+  // Primary checkout is never listed; if it appears, expose no destructive actions.
   const menuItems = worktree.is_main
-    ? [unregisterMenuItem]
+    ? []
     : worktree.stale
       ? [deleteMenuItem]
       : [unregisterMenuItem, deleteMenuItem];
@@ -124,13 +125,15 @@ export function WorktreeRow({
         </div>
 
         <div className="worktree-row__actions">
-          <WorktreesMenu
-            triggerLabel={worktreeGitCopy.worktreeActions(displayName)}
-            className="worktree-row__menu-btn"
-            icon={<WorktreesMoreIcon />}
-            iconOnly
-            items={menuItems}
-          />
+          {menuItems.length > 0 ? (
+            <WorktreesMenu
+              triggerLabel={worktreeGitCopy.worktreeActions(displayName)}
+              className="worktree-row__menu-btn"
+              icon={<WorktreesMoreIcon />}
+              iconOnly
+              items={menuItems}
+            />
+          ) : null}
         </div>
       </div>
 
