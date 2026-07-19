@@ -2,7 +2,6 @@ package taskcore_test
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -27,13 +26,14 @@ func patchRepoTestSetup(t *testing.T) (srv *httptest.Server, dir, taskID, worktr
 	if err := os.MkdirAll(filepath.Join(dir, "subdir"), 0o755); err != nil {
 		t.Fatal(err)
 	}
+	if err := os.WriteFile(filepath.Join(dir, "subdir", ".gitkeep"), []byte(""), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	srv, worktreeID, _ = handlertest.NewBoundRepoServer(t, dir)
 	t.Cleanup(srv.Close)
 
 	res, err := http.Post(srv.URL+"/tasks", "application/json",
-		strings.NewReader(handlertest.WithCreateChecklistForURL(srv.URL, fmt.Sprintf(
-			`{"title":"seed","priority":"medium","worktree_id":%q}`,
-			worktreeID))))
+		strings.NewReader(handlertest.WithCreateChecklistForURL(srv.URL, `{"title":"seed","priority":"medium"}`)))
 	if err != nil {
 		t.Fatal(err)
 	}

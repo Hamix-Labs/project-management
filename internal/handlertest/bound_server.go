@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
@@ -36,7 +37,7 @@ type GitBinding struct {
 // DirectHandlerTestURL is the base URL used when exercising a handler directly
 // via httptest.NewRecorder (no real HTTP server). Tests must register a git
 // binding under this URL via NewDirectBoundHandler so WithCreateChecklistForURL
-// injects project_id and worktree_id.
+// injects repository_id and project_id.
 const DirectHandlerTestURL = "http://handler-direct.test"
 
 // TestCriterionText is the default non-empty done criterion injected by
@@ -50,35 +51,55 @@ type JSONErrorBody struct {
 }
 
 var (
-	htSharedGitDir   string
+	htSharedBareDir  string
 	htSharedGitReady bool
 	htSharedGitOnce  sync.Once
 	htGitBindings    sync.Map // baseURL → GitBinding
 )
 
-// htSharedGitRepoDir returns one git repo on disk shared across all tests in
-// the handlertest binary. Per-test SQLite DBs still get their own registered
-// worktree rows, but we avoid one git init per test.
+// htSharedBareRemote returns one bare origin shared across tests in this
+// package. Each test clones into its own workdir so allocate/worktree-add
+// does not race on a shared checkout.
 //
 //funclogmeasure:skip category=tool-required-noop reason="Test-only shared git fixture; not part of production trace paths."
-func htSharedGitRepoDir(t *testing.T) string {
+func htSharedBareRemote(t *testing.T) string {
 	t.Helper()
 	htSharedGitOnce.Do(func() {
 		if _, err := exec.LookPath("git"); err != nil {
 			return
 		}
-		dir, err := os.MkdirTemp("", "hamix-handlertest-shared-git-*")
+		bare, err := os.MkdirTemp("", "hamix-handlertest-bare-*")
 		if err != nil {
-			panic("handlertest shared git dir: " + err.Error())
+			panic("handlertest shared bare: " + err.Error())
 		}
-		gittest.EnsureMain(t, dir)
-		htSharedGitDir = dir
+		if out, err := exec.Command("git", "init", "--bare", "-b", "main", bare).CombinedOutput(); err != nil {
+			panic(fmt.Sprintf("git init --bare: %v %s", err, out))
+		}
+		seed, err := os.MkdirTemp("", "hamix-handlertest-seed-*")
+		if err != nil {
+			panic("handlertest seed dir: " + err.Error())
+		}
+		defer os.RemoveAll(seed)
+		if out, err := exec.Command("git", "clone", bare, seed).CombinedOutput(); err != nil {
+			panic(fmt.Sprintf("git clone bare: %v %s", err, out))
+		}
+		for _, args := range [][]string{
+			{"config", "user.email", "test@test.local"},
+			{"config", "user.name", "Test"},
+			{"commit", "--allow-empty", "-m", "init"},
+			{"push", "-u", "origin", "main"},
+		} {
+			if out, err := exec.Command("git", append([]string{"-C", seed}, args...)...).CombinedOutput(); err != nil {
+				panic(fmt.Sprintf("git %v: %v %s", args, err, out))
+			}
+		}
+		htSharedBareDir = bare
 		htSharedGitReady = true
 	})
 	if !htSharedGitReady {
 		t.Skip("git not on PATH")
 	}
-	return htSharedGitDir
+	return htSharedBareDir
 }
 
 // RegisterGitBinding records a GitBinding under baseURL and removes it when t
@@ -106,7 +127,20 @@ func GitBindingForURL(baseURL string) (GitBinding, bool) {
 //funclogmeasure:skip category=tool-required-noop reason="Test-only git seed helper; not part of production trace paths."
 func htSeedGitRepo(t *testing.T, st *composition.API) GitBinding {
 	t.Helper()
-	dir := htSharedGitRepoDir(t)
+	bare := htSharedBareRemote(t)
+	parent := t.TempDir()
+	dir := filepath.Join(parent, "main")
+	if out, err := exec.Command("git", "clone", bare, dir).CombinedOutput(); err != nil {
+		t.Fatalf("git clone: %v %s", err, out)
+	}
+	for _, args := range [][]string{
+		{"config", "user.email", "test@test.local"},
+		{"config", "user.name", "Test"},
+	} {
+		if out, err := exec.Command("git", append([]string{"-C", dir}, args...)...).CombinedOutput(); err != nil {
+			t.Fatalf("git %v: %v %s", args, err, out)
+		}
+	}
 	wtID, _ := gittest.SeedWorktree(t, st, dir)
 	return htGitBindingFromWorktree(t, st, wtID)
 }
@@ -171,7 +205,7 @@ func NewDirectBoundHandler(t *testing.T, build func(st *composition.API) http.Ha
 }
 
 // WithCreateChecklistForURL injects required checklist_items and, when a git
-// binding is registered under baseURL, also project_id and worktree_id into a
+// binding is registered under baseURL, also repository_id and project_id into a
 // POST /tasks JSON object. jsonBody must be a single JSON object literal.
 //
 //funclogmeasure:skip category=tool-required-noop reason="Test-only JSON body builder; not part of production trace paths."
@@ -198,12 +232,13 @@ func htWithCreateGitBinding(baseURL, jsonBody string) string {
 		return jsonBody
 	}
 	var extra []string
+	if !strings.Contains(jsonBody, "repository_id") {
+		extra = append(extra, `"repository_id":"`+binding.RepositoryID+`"`)
+	}
 	if !strings.Contains(jsonBody, "project_id") {
 		extra = append(extra, `"project_id":"`+binding.ProjectID+`"`)
 	}
-	if !strings.Contains(jsonBody, "worktree_id") {
-		extra = append(extra, `"worktree_id":"`+binding.WorktreeID+`"`)
-	}
+	// worktree_id is allocated server-side; do not inject a client worktree.
 	if len(extra) == 0 {
 		return jsonBody
 	}

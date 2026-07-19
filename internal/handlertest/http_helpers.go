@@ -18,7 +18,7 @@ import (
 // MaxTaskEventSeqParamBytes is the path-seg max for event seq query values.
 const MaxTaskEventSeqParamBytes = 32
 
-// WithCreateGitBinding injects project_id and worktree_id when a binding is registered.
+// WithCreateGitBinding injects repository_id and project_id when a binding is registered.
 //
 //funclogmeasure:skip category=tool-required-noop reason="Test-only JSON body mutator; not part of production trace paths."
 func WithCreateGitBinding(baseURL, jsonBody string) string {

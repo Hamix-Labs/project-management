@@ -2,7 +2,6 @@ package taskcore_test
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -53,9 +52,8 @@ func TestHTTP_repo_search_and_create_rejects_bad_file_mention(t *testing.T) {
 	}
 
 	res2, err := http.Post(srv.URL+"/tasks", "application/json",
-		strings.NewReader(handlertest.WithCreateChecklistForURL(srv.URL, fmt.Sprintf(
-			`{"title":"t","initial_prompt":"@nope.txt","priority":"medium","worktree_id":%q}`,
-			wtID))))
+		strings.NewReader(handlertest.WithCreateChecklistForURL(srv.URL,
+			`{"title":"t","initial_prompt":"@nope.txt","priority":"medium"}`)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -73,9 +71,8 @@ func TestHTTP_repo_search_and_create_rejects_bad_file_mention(t *testing.T) {
 	}
 
 	res3, err := http.Post(srv.URL+"/tasks", "application/json",
-		strings.NewReader(handlertest.WithCreateChecklistForURL(srv.URL, fmt.Sprintf(
-			`{"title":"t2","initial_prompt":"@note.txt(1-2)","priority":"medium","worktree_id":%q}`,
-			wtID))))
+		strings.NewReader(handlertest.WithCreateChecklistForURL(srv.URL,
+			`{"title":"t2","initial_prompt":"@note.txt(1-2)","priority":"medium"}`)))
 	if err != nil {
 		t.Fatal(err)
 	}

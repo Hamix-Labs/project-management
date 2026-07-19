@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -92,6 +93,15 @@ func (h *Handler) CreateTaskFromComposeJSON(
 		draftID = ""
 	}
 	taskID := storekernel.ResolveID(opts.ID)
+	if strings.TrimSpace(opts.ID) != "" {
+		existing, getErr := h.tasks.Get(ctx, taskID)
+		if getErr == nil && existing != nil {
+			return nil, fmt.Errorf("%w: task id already exists", domain.ErrConflict)
+		}
+		if getErr != nil && !errors.Is(getErr, domain.ErrNotFound) {
+			return nil, getErr
+		}
+	}
 	repoID := strings.TrimSpace(*payload.RepositoryID)
 	wtID, err := h.gitCompose.AllocateTaskWorktree(r.Context(), repoID, taskID)
 	if err != nil {

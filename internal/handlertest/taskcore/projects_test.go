@@ -167,7 +167,7 @@ func TestHTTP_taskProjectIDCreatePatchAndClear(t *testing.T) {
 	git := handlertest.MustGitBinding(t, srv.URL)
 
 	project := postProjectJSON(t, srv, `{"name":"Project owner","repository_id":"`+git.RepositoryID+`"}`, http.StatusCreated)
-	task := handlertest.PostTaskJSON(t, srv, `{"title":"linked","priority":"medium","project_id":"`+project.ID+`","worktree_id":"`+git.WorktreeID+`"}`, http.StatusCreated)
+	task := handlertest.PostTaskJSON(t, srv, `{"title":"linked","priority":"medium","project_id":"`+project.ID+`","repository_id":"`+git.RepositoryID+`"}`, http.StatusCreated)
 	if task.ProjectID == nil || *task.ProjectID != project.ID {
 		t.Fatalf("created task project_id = %#v, want %s", task.ProjectID, project.ID)
 	}

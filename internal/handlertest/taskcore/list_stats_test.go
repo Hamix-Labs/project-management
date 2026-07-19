@@ -15,9 +15,9 @@ import (
 func TestHTTP_list_keyset_after_id(t *testing.T) {
 	srv := handlertest.NewCreateServer(t)
 	defer srv.Close()
-	id1 := "20000000-0000-4000-8000-000000000001"
+	id1 := "10000000-0000-4000-8000-000000000001"
 	id2 := "20000000-0000-4000-8000-000000000002"
-	id3 := "20000000-0000-4000-8000-000000000003"
+	id3 := "30000000-0000-4000-8000-000000000003"
 	for _, id := range []string{id1, id2, id3} {
 		res, err := http.Post(srv.URL+"/tasks", "application/json",
 			strings.NewReader(handlertest.WithCreateChecklistForURL(srv.URL, `{"id":"`+id+`","title":"x","priority":"medium"}`)))
