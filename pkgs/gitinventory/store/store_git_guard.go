@@ -71,14 +71,3 @@ func guardNoRunningTask(ctx context.Context, db *gorm.DB, targetID string) error
 	}
 	return nil
 }
-
-//funclogmeasure:skip category=hot-path reason="DB read helper; operation trace is emitted by ReconcileGitRepository chokepoint."
-func hasAnyTaskOnWorktree(ctx context.Context, db *gorm.DB, worktreeID string) (bool, error) {
-	if worktreeID == "" {
-		return false, nil
-	}
-	var n int64
-	err := db.WithContext(ctx).Raw(`
-SELECT COUNT(*) FROM tasks WHERE worktree_id = ?`, worktreeID).Scan(&n).Error
-	return n > 0, err
-}
