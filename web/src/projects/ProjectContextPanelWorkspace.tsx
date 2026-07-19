@@ -12,7 +12,7 @@ type Props = {
   isLoading: boolean;
   error: Error | null;
   mutations: ProjectContextMutations;
-  onAddNode: () => void;
+  onImportMemory: () => void;
   onAddEdge: (sourceId?: string) => void;
 };
 
@@ -24,7 +24,7 @@ export function ProjectContextPanelWorkspace({
   isLoading,
   error,
   mutations,
-  onAddNode,
+  onImportMemory,
   onAddEdge,
 }: Props) {
   if (isLoading) {
@@ -46,11 +46,11 @@ export function ProjectContextPanelWorkspace({
   if (items.length === 0) {
     return (
       <EmptyState
-        title="No context nodes yet"
-        description="Add memory nodes and connect them as the work evolves."
+        title="No memory files yet"
+        description="Import a .txt or .md file to create a memory node agents can use on tasks."
         action={{
-          label: "Add memory",
-          onClick: onAddNode,
+          label: "Import memory file",
+          onClick: onImportMemory,
         }}
         density="compact"
         hideIcon
@@ -62,8 +62,12 @@ export function ProjectContextPanelWorkspace({
     <>
       <div className="pc__action-bar">
         <div className="pc__actions-left">
-          <button type="button" className="pc__btn-primary" onClick={onAddNode}>
-            Add memory
+          <button
+            type="button"
+            className="pc__btn-primary"
+            onClick={onImportMemory}
+          >
+            Import memory file
           </button>
           {items.length >= 2 ? (
             <button

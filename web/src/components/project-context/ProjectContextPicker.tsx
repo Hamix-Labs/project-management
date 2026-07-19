@@ -320,7 +320,7 @@ export function ProjectContextPicker({
                 <div className="pc__empty">
                   <p>No context nodes yet</p>
                   <span>
-                    Add project memory from the project context page first.
+                    Import a memory file from the project context page first.
                   </span>
                 </div>
               ) : contextView === "list" ? (

@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import type { ProjectContextEdge, ProjectContextItem } from "@/types";
 import { useProjectContext } from "./hooks";
 import { ProjectContextAddEdgeModal } from "./ProjectContextAddEdgeModal";
-import { ProjectContextAddNodeModal } from "./ProjectContextAddNodeModal";
+import { ProjectContextImportMemoryModal } from "./ProjectContextImportMemoryModal";
 import { ProjectContextPanelWorkspace } from "./ProjectContextPanelWorkspace";
 import {
   buildMemorySelectOptions,
@@ -34,14 +34,11 @@ export function ProjectContextPanel({ projectId }: Props) {
 
   return (
     <section className="pc__workspace">
-      <ProjectContextAddNodeModal
-        open={form.addNodeOpen}
-        onClose={() => form.setAddNodeOpen(false)}
+      <ProjectContextImportMemoryModal
+        open={form.importOpen}
+        onClose={() => form.setImportOpen(false)}
         isPending={mutations.createContextMutation.isPending}
-        newNodeBody={form.newNodeBody}
-        newNodeEditorKey={form.newNodeEditorKey}
-        onBodyChange={form.setNewNodeBody}
-        onSubmit={form.submitContext}
+        onImport={form.submitImport}
       />
       {items.length < 2 ? (
         <p className="pc__hint">
@@ -81,7 +78,7 @@ export function ProjectContextPanel({ projectId }: Props) {
         isLoading={context.isLoading}
         error={context.error}
         mutations={mutations}
-        onAddNode={() => form.setAddNodeOpen(true)}
+        onImportMemory={() => form.setImportOpen(true)}
         onAddEdge={form.openAddEdge}
       />
     </section>

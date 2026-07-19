@@ -1,16 +1,13 @@
 import { useState, type FormEvent } from "react";
-import { promptHasVisibleContent } from "@/lib/promptFormat";
-import type { ProjectContextKind, ProjectContextRelation } from "@/types";
+import type { ProjectContextRelation } from "@/types";
 import type { ContextView, ProjectContextMutations } from "./projectContextPanelHelpers";
 
 export function useProjectContextFormState(
   mutations: ProjectContextMutations,
 ) {
   const [contextView, setContextView] = useState<ContextView>("list");
-  const [addNodeOpen, setAddNodeOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [addEdgeOpen, setAddEdgeOpen] = useState(false);
-  const [newNodeBody, setNewNodeBody] = useState("");
-  const [newNodeEditorKey, setNewNodeEditorKey] = useState(0);
   const [newEdgeSourceID, setNewEdgeSourceID] = useState("");
   const [newEdgeTargetID, setNewEdgeTargetID] = useState("");
   const [newEdgeRelation, setNewEdgeRelation] =
@@ -19,26 +16,17 @@ export function useProjectContextFormState(
   const [newEdgeNote, setNewEdgeNote] = useState("");
   const [newEdgeEditorKey, setNewEdgeEditorKey] = useState(0);
 
-  function submitContext(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const title = String(form.get("title") ?? "").trim();
-    const body = newNodeBody.trim();
-    if (!title || !promptHasVisibleContent(body)) return;
-    const formEl = event.currentTarget;
+  function submitImport(input: { title: string; body: string }) {
     mutations.createContextMutation.mutate(
       {
-        kind: String(form.get("kind") ?? "note") as ProjectContextKind,
-        title,
-        body,
+        kind: "note",
+        title: input.title,
+        body: input.body,
         pinned: false,
       },
       {
         onSuccess: () => {
-          formEl.reset();
-          setNewNodeBody("");
-          setNewNodeEditorKey((value) => value + 1);
-          setAddNodeOpen(false);
+          setImportOpen(false);
         },
       },
     );
@@ -90,14 +78,10 @@ export function useProjectContextFormState(
   return {
     contextView,
     setContextView,
-    addNodeOpen,
-    setAddNodeOpen,
+    importOpen,
+    setImportOpen,
     addEdgeOpen,
     setAddEdgeOpen,
-    newNodeBody,
-    setNewNodeBody,
-    newNodeEditorKey,
-    setNewNodeEditorKey,
     newEdgeSourceID,
     setNewEdgeSourceID,
     newEdgeTargetID,
@@ -110,7 +94,7 @@ export function useProjectContextFormState(
     setNewEdgeNote,
     newEdgeEditorKey,
     setNewEdgeEditorKey,
-    submitContext,
+    submitImport,
     submitEdge,
     openAddEdge,
   };
