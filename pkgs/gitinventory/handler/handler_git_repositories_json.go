@@ -44,6 +44,7 @@ type gitWorktreeJSON struct {
 	IsMain       bool   `json:"is_main"`
 	BranchID     string `json:"branch_id"`
 	CreatedAt    string `json:"created_at"`
+	Stale        bool   `json:"stale,omitempty"`
 }
 
 type gitBranchCreateJSON struct {

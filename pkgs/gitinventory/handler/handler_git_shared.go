@@ -3,6 +3,7 @@ package handler
 import (
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
@@ -76,9 +77,16 @@ func (h *Handler) serveListGitWorktrees(w http.ResponseWriter, r *http.Request, 
 		WriteGitStoreError(w, r, op, err)
 		return
 	}
+	staleMap, err := h.read.WorktreeStaleMap(r.Context(), repoID, time.Now().UTC())
+	if err != nil {
+		WriteGitStoreError(w, r, op, err)
+		return
+	}
 	out := make([]gitWorktreeJSON, 0, len(rows))
 	for _, row := range rows {
-		out = append(out, h.gitWorktreeJSON(row))
+		j := h.gitWorktreeJSON(row)
+		j.Stale = staleMap[row.ID]
+		out = append(out, j)
 	}
 	writeJSON(w, r, op, http.StatusOK, gitWorktreesListResponse{Worktrees: out})
 }

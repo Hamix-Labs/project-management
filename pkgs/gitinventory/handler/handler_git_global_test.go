@@ -2,9 +2,8 @@ package handler
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
-	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
-	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -12,6 +11,12 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
+	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
+	gitinventorystore "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store"
+	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 )
 
 func createGlobalGitRepo(t *testing.T, h http.Handler, main string) string {
@@ -41,8 +46,24 @@ func addHandlerGitWorktree(t *testing.T, main, branch string) string {
 	return wtPath
 }
 
+func seedLinkedWorktreeViaStore(t *testing.T, st *composition.API, repoID, main, branch string) gitdomain.GitWorktree {
+	t.Helper()
+	wtPath := filepath.Join(filepath.Dir(main), "wt-"+branch)
+	wt, err := st.CreateGitWorktreeForRepo(context.Background(), repoID, gitinventorystore.CreateGitWorktreeInput{
+		Path:         wtPath,
+		Branch:       branch,
+		CreateBranch: true,
+		StartPoint:   "main",
+	}, gitwork.New())
+	if err != nil {
+		t.Fatalf("CreateGitWorktreeForRepo: %v", err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(wtPath) })
+	return wt
+}
+
 func TestHandler_getAndDeleteGlobalGitRepository(t *testing.T) {
-	h, main := gitHandlerTest(t)
+	h, _, main := gitHandlerTest(t)
 	repoID := createGlobalGitRepo(t, h, main)
 
 	getReq := httptest.NewRequest(http.MethodGet, "/git/repositories/"+repoID, nil)
@@ -67,33 +88,19 @@ func TestHandler_getAndDeleteGlobalGitRepository(t *testing.T) {
 	}
 }
 
-func TestHandler_createGlobalGitWorktree(t *testing.T) {
-	h, main := gitHandlerTest(t)
+func TestHandler_createGlobalGitWorktree_routeRemoved(t *testing.T) {
+	h, _, main := gitHandlerTest(t)
 	repoID := createGlobalGitRepo(t, h, main)
-	wtPath := filepath.Join(filepath.Dir(main), "wt-create-http")
-	body, _ := json.Marshal(gitWorktreeCreateJSON{
-		Path:         wtPath,
-		Name:         "created",
-		Branch:       "create-http",
-		CreateBranch: true,
-	})
-	req := httptest.NewRequest(http.MethodPost, "/git/repositories/"+repoID+"/worktrees", bytes.NewReader(body))
+	req := httptest.NewRequest(http.MethodPost, "/git/repositories/"+repoID+"/worktrees", bytes.NewReader([]byte(`{}`)))
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
-	if rec.Code != http.StatusCreated {
-		t.Fatalf("create status=%d body=%s", rec.Code, rec.Body.String())
-	}
-	var wt gitWorktreeJSON
-	if err := json.Unmarshal(rec.Body.Bytes(), &wt); err != nil {
-		t.Fatal(err)
-	}
-	if wt.BranchID == "" {
-		t.Fatal("expected branch_id")
+	if rec.Code != http.StatusMethodNotAllowed && rec.Code != http.StatusNotFound {
+		t.Fatalf("operator create should be gone: status=%d body=%s", rec.Code, rec.Body.String())
 	}
 }
 
 func TestHandler_listGlobalGitBranchesAndLive(t *testing.T) {
-	h, main := gitHandlerTest(t)
+	h, _, main := gitHandlerTest(t)
 	repoID := createGlobalGitRepo(t, h, main)
 
 	listReq := httptest.NewRequest(http.MethodGet, "/git/repositories/"+repoID+"/branches", nil)
@@ -126,7 +133,7 @@ func TestHandler_listGlobalGitBranchesAndLive(t *testing.T) {
 }
 
 func TestHandler_listRepoProjects(t *testing.T) {
-	h, main := gitHandlerTest(t)
+	h, _, main := gitHandlerTest(t)
 	repoID := createGlobalGitRepo(t, h, main)
 	req := httptest.NewRequest(http.MethodGet, "/git/repositories/"+repoID+"/projects", nil)
 	rec := httptest.NewRecorder()
@@ -137,28 +144,11 @@ func TestHandler_listRepoProjects(t *testing.T) {
 }
 
 func TestHandler_relocateGlobalGitWorktree(t *testing.T) {
-	h, main := gitHandlerTest(t)
+	h, st, main := gitHandlerTest(t)
 	repoID := createGlobalGitRepo(t, h, main)
-	wtPath := addHandlerGitWorktree(t, main, "relocate-wt")
-	regBody, _ := json.Marshal(gitWorktreeRegisterJSON{
-		Path: wtPath,
-		Name: "relocate",
-		Branch: &gitWorktreeBranchBindJSON{
-			Name: "relocate-wt",
-		},
-	})
-	regReq := httptest.NewRequest(http.MethodPost, "/git/repositories/"+repoID+"/worktrees/register", bytes.NewReader(regBody))
-	regRec := httptest.NewRecorder()
-	h.ServeHTTP(regRec, regReq)
-	if regRec.Code != http.StatusCreated {
-		t.Fatalf("register status=%d body=%s", regRec.Code, regRec.Body.String())
-	}
-	var wt gitWorktreeJSON
-	if err := json.Unmarshal(regRec.Body.Bytes(), &wt); err != nil {
-		t.Fatal(err)
-	}
+	wt := seedLinkedWorktreeViaStore(t, st, repoID, main, "relocate-wt")
 	movedPath := filepath.Join(filepath.Dir(main), "relocate-wt-moved")
-	runHandlerGit(t, main, "worktree", "move", wtPath, movedPath)
+	runHandlerGit(t, main, "worktree", "move", wt.Path, movedPath)
 	t.Cleanup(func() { _ = os.RemoveAll(movedPath) })
 
 	body, _ := json.Marshal(map[string]string{"path": movedPath})
@@ -178,7 +168,7 @@ func TestHandler_relocateGlobalGitWorktree(t *testing.T) {
 }
 
 func TestHandler_listGlobalGitRepositories_afterCreate(t *testing.T) {
-	h, main := gitHandlerTest(t)
+	h, _, main := gitHandlerTest(t)
 	createGlobalGitRepo(t, h, main)
 	req := httptest.NewRequest(http.MethodGet, "/git/repositories", nil)
 	rec := httptest.NewRecorder()
@@ -202,7 +192,7 @@ func TestHandler_listGlobalGitRepositories_afterCreate(t *testing.T) {
 }
 
 func TestHandler_listGlobalGitWorktrees_serializesBranchID(t *testing.T) {
-	h, main := gitHandlerTest(t)
+	h, _, main := gitHandlerTest(t)
 	repoID := createGlobalGitRepo(t, h, main)
 
 	req := httptest.NewRequest(http.MethodGet, "/git/repositories/"+repoID+"/worktrees", nil)
@@ -244,7 +234,7 @@ func TestHandler_gitErrHTTP_domainSentinels(t *testing.T) {
 }
 
 func TestHandler_listGlobalGitWorktreesCheckoutStatus(t *testing.T) {
-	h, main := gitHandlerTest(t)
+	h, _, main := gitHandlerTest(t)
 	repoID := createGlobalGitRepo(t, h, main)
 
 	req := httptest.NewRequest(http.MethodGet, "/git/repositories/"+repoID+"/worktrees/checkout-status", nil)
@@ -294,134 +284,46 @@ func TestHandler_listGlobalGitWorktreesCheckoutStatus(t *testing.T) {
 	}
 }
 
-func TestHandler_listGlobalGitWorktreesLive_registeredFlag(t *testing.T) {
-	h, main := gitHandlerTest(t)
+func TestHandler_operatorLiveProbeRegisterRoutesRemoved(t *testing.T) {
+	h, _, main := gitHandlerTest(t)
 	repoID := createGlobalGitRepo(t, h, main)
-	wtPath := addHandlerGitWorktree(t, main, "live-reg")
-
-	req := httptest.NewRequest(http.MethodGet, "/git/repositories/"+repoID+"/worktrees/live", nil)
-	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, req)
-	if rec.Code != http.StatusOK {
-		t.Fatalf("live status=%d body=%s", rec.Code, rec.Body.String())
+	paths := []string{
+		"/git/repositories/" + repoID + "/worktrees/live",
+		"/git/repositories/" + repoID + "/worktrees/probe?path=" + url.QueryEscape(main),
+		"/git/repositories/" + repoID + "/worktrees/register",
 	}
-	var live gitLiveWorktreesListResponse
-	if err := json.Unmarshal(rec.Body.Bytes(), &live); err != nil {
-		t.Fatal(err)
-	}
-	var mainRow, linkedRow *gitLiveWorktreeJSON
-	for i := range live.Worktrees {
-		switch {
-		case live.Worktrees[i].IsMain:
-			mainRow = &live.Worktrees[i]
-		case worktreePathKeyHandler(live.Worktrees[i].Path) == worktreePathKeyHandler(wtPath):
-			linkedRow = &live.Worktrees[i]
+	for _, p := range paths {
+		method := http.MethodGet
+		if strings.HasSuffix(p, "/register") {
+			method = http.MethodPost
 		}
-	}
-	if mainRow == nil || !mainRow.Registered {
-		t.Fatalf("main must be registered: %+v", live.Worktrees)
-	}
-	if linkedRow == nil || linkedRow.Registered {
-		t.Fatalf("unregistered linked worktree: %+v", live.Worktrees)
-	}
-}
-
-func TestHandler_probeGlobalGitWorktree(t *testing.T) {
-	h, main := gitHandlerTest(t)
-	repoID := createGlobalGitRepo(t, h, main)
-	wtPath := addHandlerGitWorktree(t, main, "probe-http")
-	foreign := initHandlerGitRepo(t)
-
-	probe := func(path string) gitWorktreeProbeResponse {
-		t.Helper()
-		q := url.Values{"path": {path}}
-		req := httptest.NewRequest(http.MethodGet, "/git/repositories/"+repoID+"/worktrees/probe?"+q.Encode(), nil)
+		req := httptest.NewRequest(method, p, strings.NewReader("{}"))
 		rec := httptest.NewRecorder()
 		h.ServeHTTP(rec, req)
-		if rec.Code != http.StatusOK {
-			t.Fatalf("probe %s status=%d body=%s", path, rec.Code, rec.Body.String())
+		if rec.Code != http.StatusNotFound && rec.Code != http.StatusMethodNotAllowed {
+			t.Fatalf("%s %s status=%d want 404/405 body=%s", method, p, rec.Code, rec.Body.String())
 		}
-		var out gitWorktreeProbeResponse
-		if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
-			t.Fatal(err)
-		}
-		return out
-	}
-	linked := probe(wtPath)
-	if !linked.Linked || linked.Registered {
-		t.Fatalf("linked unregistered: %+v", linked)
-	}
-	mainProbe := probe(main)
-	if !mainProbe.Linked || !mainProbe.Registered || !mainProbe.IsMain {
-		t.Fatalf("main: %+v", mainProbe)
-	}
-	unlinked := probe(foreign)
-	if unlinked.Linked {
-		t.Fatalf("foreign: %+v", unlinked)
 	}
 }
 
-func TestHandler_registerGlobalGitWorktree(t *testing.T) {
-	h, main := gitHandlerTest(t)
+func TestHandler_syncGlobalGitRepository(t *testing.T) {
+	h, st, main := gitHandlerTest(t)
 	repoID := createGlobalGitRepo(t, h, main)
-	wtPath := addHandlerGitWorktree(t, main, "register-http")
-
-	body, _ := json.Marshal(gitWorktreeRegisterJSON{
-		Path: wtPath,
-		Name: "feature",
-		Branch: &gitWorktreeBranchBindJSON{
-			Name: "register-http",
-		},
-	})
-	req := httptest.NewRequest(http.MethodPost, "/git/repositories/"+repoID+"/worktrees/register", bytes.NewReader(body))
+	_ = seedLinkedWorktreeViaStore(t, st, repoID, main, "sync-wt")
+	// Local-only repo has no origin; sync should fail closed with actionable error.
+	req := httptest.NewRequest(http.MethodPost, "/git/repositories/"+repoID+"/sync", strings.NewReader("{}"))
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
-	if rec.Code != http.StatusCreated {
-		t.Fatalf("register status=%d body=%s", rec.Code, rec.Body.String())
+	if rec.Code == http.StatusAccepted {
+		return
 	}
-	var wt gitWorktreeJSON
-	if err := json.Unmarshal(rec.Body.Bytes(), &wt); err != nil {
-		t.Fatal(err)
-	}
-	if wt.BranchID == "" || wt.Name != "feature" {
-		t.Fatalf("worktree=%+v", wt)
-	}
-}
-
-func TestHandler_registerGlobalGitWorktree_duplicatePath409(t *testing.T) {
-	h, main := gitHandlerTest(t)
-	repoID := createGlobalGitRepo(t, h, main)
-	wtPath := addHandlerGitWorktree(t, main, "dup-http")
-	registerBody, _ := json.Marshal(gitWorktreeRegisterJSON{
-		Path: wtPath,
-		Name: "first",
-		Branch: &gitWorktreeBranchBindJSON{
-			Name: "dup-http",
-		},
-	})
-	req := httptest.NewRequest(http.MethodPost, "/git/repositories/"+repoID+"/worktrees/register", bytes.NewReader(registerBody))
-	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, req)
-	if rec.Code != http.StatusCreated {
-		t.Fatalf("first register status=%d body=%s", rec.Code, rec.Body.String())
-	}
-	dupReq := httptest.NewRequest(http.MethodPost, "/git/repositories/"+repoID+"/worktrees/register", bytes.NewReader(registerBody))
-	dupRec := httptest.NewRecorder()
-	h.ServeHTTP(dupRec, dupReq)
-	if dupRec.Code != http.StatusConflict {
-		t.Fatalf("duplicate status=%d body=%s", dupRec.Code, dupRec.Body.String())
-	}
-	var errBody jsonCodedErrorBody
-	if err := json.Unmarshal(dupRec.Body.Bytes(), &errBody); err != nil {
-		t.Fatal(err)
-	}
-	if errBody.Code != gitdomain.GitCodePathExists {
-		t.Fatalf("code=%q want path_exists", errBody.Code)
+	if rec.Code != http.StatusBadRequest && rec.Code != http.StatusConflict {
+		t.Fatalf("sync status=%d body=%s", rec.Code, rec.Body.String())
 	}
 }
 
 func TestHandler_reconcileGlobalGitRepository(t *testing.T) {
-	h, main := gitHandlerTest(t)
+	h, _, main := gitHandlerTest(t)
 	repoID := createGlobalGitRepo(t, h, main)
 	renamed := filepath.Join(filepath.Dir(main), "reconcile-gone")
 	if err := os.Rename(main, renamed); err != nil {
@@ -447,7 +349,7 @@ func TestHandler_reconcileGlobalGitRepository(t *testing.T) {
 }
 
 func TestHandler_reconcileGlobalGitRepository_dryRunOK(t *testing.T) {
-	h, main := gitHandlerTest(t)
+	h, _, main := gitHandlerTest(t)
 	repoID := createGlobalGitRepo(t, h, main)
 	req := httptest.NewRequest(http.MethodPost, "/git/repositories/"+repoID+"/reconcile", strings.NewReader(`{"dry_run":true}`))
 	rec := httptest.NewRecorder()
@@ -465,7 +367,7 @@ func TestHandler_reconcileGlobalGitRepository_dryRunOK(t *testing.T) {
 }
 
 func TestHandler_relocateGlobalGitRepository(t *testing.T) {
-	h, main := gitHandlerTest(t)
+	h, _, main := gitHandlerTest(t)
 	repoID := createGlobalGitRepo(t, h, main)
 	renamed := filepath.Join(filepath.Dir(main), "relocate-http")
 	if err := os.Rename(main, renamed); err != nil {
@@ -490,26 +392,9 @@ func TestHandler_relocateGlobalGitRepository(t *testing.T) {
 }
 
 func TestHandler_deleteGlobalGitWorktree(t *testing.T) {
-	h, main := gitHandlerTest(t)
+	h, st, main := gitHandlerTest(t)
 	repoID := createGlobalGitRepo(t, h, main)
-	wtPath := addHandlerGitWorktree(t, main, "delete-http")
-	regBody, _ := json.Marshal(gitWorktreeRegisterJSON{
-		Path: wtPath,
-		Name: "delete-me",
-		Branch: &gitWorktreeBranchBindJSON{
-			Name: "delete-http",
-		},
-	})
-	regReq := httptest.NewRequest(http.MethodPost, "/git/repositories/"+repoID+"/worktrees/register", bytes.NewReader(regBody))
-	regRec := httptest.NewRecorder()
-	h.ServeHTTP(regRec, regReq)
-	if regRec.Code != http.StatusCreated {
-		t.Fatalf("register status=%d body=%s", regRec.Code, regRec.Body.String())
-	}
-	var wt gitWorktreeJSON
-	if err := json.Unmarshal(regRec.Body.Bytes(), &wt); err != nil {
-		t.Fatal(err)
-	}
+	wt := seedLinkedWorktreeViaStore(t, st, repoID, main, "delete-http")
 
 	delReq := httptest.NewRequest(http.MethodDelete, "/git/worktrees/"+wt.ID+"?force=true", nil)
 	delRec := httptest.NewRecorder()
@@ -575,16 +460,5 @@ func TestHandler_gitStoreErrorsReturnStableCode(t *testing.T) {
 				t.Fatalf("body code=%q want %q", body.Code, tt.code)
 			}
 		})
-	}
-}
-
-func TestHandler_probeGlobalGitWorktree_missingPath400(t *testing.T) {
-	h, main := gitHandlerTest(t)
-	repoID := createGlobalGitRepo(t, h, main)
-	req := httptest.NewRequest(http.MethodGet, "/git/repositories/"+repoID+"/worktrees/probe", nil)
-	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, req)
-	if rec.Code != http.StatusBadRequest {
-		t.Fatalf("status=%d body=%s", rec.Code, rec.Body.String())
 	}
 }

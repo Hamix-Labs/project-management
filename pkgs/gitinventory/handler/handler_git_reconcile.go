@@ -52,6 +52,18 @@ func (h *Handler) reconcileGlobalGitRepository(w http.ResponseWriter, r *http.Re
 	h.runGitReconcile(w, r, op, "", r.PathValue("repoId"))
 }
 
+func (h *Handler) syncGlobalGitRepository(w http.ResponseWriter, r *http.Request) {
+	const op = "git.repositories.sync_global"
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.syncGlobalGitRepository")
+	r = calltrace.WithRequestRoot(r, op)
+	out, err := h.write.SyncGitRepository(r.Context(), r.PathValue("repoId"), h.gitService())
+	if err != nil {
+		WriteGitStoreError(w, r, op, err)
+		return
+	}
+	writeJSON(w, r, op, http.StatusAccepted, toGitReconcileResponse(out))
+}
+
 func (h *Handler) relocateGlobalGitRepository(w http.ResponseWriter, r *http.Request) {
 	const op = "git.repositories.relocate_global"
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.relocateGlobalGitRepository")

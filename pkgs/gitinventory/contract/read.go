@@ -2,6 +2,7 @@ package contract
 
 import (
 	"context"
+	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 )
@@ -21,4 +22,6 @@ type GitReadStore interface {
 	UnregisterGitWorktree(ctx context.Context, projectID, worktreeID string) error
 	ListGitBranchesByRepo(ctx context.Context, repoID string) ([]domain.GitBranch, error)
 	ListGitBranches(ctx context.Context, projectID, repoID string) ([]domain.GitBranch, error)
+	// WorktreeStaleMap reports stale managed worktrees for a repository.
+	WorktreeStaleMap(ctx context.Context, repoID string, now time.Time) (map[string]bool, error)
 }

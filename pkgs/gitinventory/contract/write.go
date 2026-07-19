@@ -24,6 +24,8 @@ type GitWriteStore interface {
 	ProbeGitWorktree(ctx context.Context, repoID, path string, gitSvc gitwork.Service) (GitWorktreeProbeResult, error)
 	RegisterExistingGitWorktree(ctx context.Context, repoID, path, name string, bind BindBranchInput, gitSvc gitwork.Service) (domain.GitWorktree, error)
 	ReconcileGitRepository(ctx context.Context, projectID, repoID string, input ReconcileGitInput, gitSvc gitwork.Service) (ReconcileGitOutput, error)
+	// SyncGitRepository fetches origin and refreshes metadata without discover.
+	SyncGitRepository(ctx context.Context, repoID string, gitSvc gitwork.Service) (ReconcileGitOutput, error)
 	RelocateGitRepository(ctx context.Context, projectID, repoID, path string, gitSvc gitwork.Service) (ReconcileGitOutput, error)
 	RelocateGitWorktree(ctx context.Context, worktreeID, path string, gitSvc gitwork.Service) (domain.GitWorktree, error)
 }
