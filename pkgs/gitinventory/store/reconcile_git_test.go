@@ -501,3 +501,93 @@ func TestRelocateGitRepository_globalUpdatesRepoPath(t *testing.T) {
 		t.Fatalf("repo path=%q want %q", got.Path, renamed)
 	}
 }
+
+func assertNoObsoleteReconcileSkipReasons(t *testing.T, report ReconcileReport) {
+	t.Helper()
+	for _, skip := range report.WorktreesSkipped {
+		switch skip.Reason {
+		case "path_and_branch_not_found", "has_task_ref":
+			t.Fatalf("obsolete skip reason %q on worktree %q; report=%+v", skip.Reason, skip.WorktreeID, report)
+		}
+	}
+}
+
+func TestReconcileGitRepository_vanishedLinkedWorktree_removesRow(t *testing.T) {
+	s, ctx, gitSvc := gitTestStore(t)
+	main := initGitRepo(t)
+	repo, err := s.CreateGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, CreateGitRepositoryInput{Path: main}, gitSvc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wtPath := filepath.Join(filepath.Dir(main), "wt-vanished")
+	wt, err := s.CreateGitWorktree(ctx, projectsdomain.LegacyGlobalDefaultProjectID, repo.ID, CreateGitWorktreeInput{
+		Path:         wtPath,
+		Branch:       "feature-vanished",
+		CreateBranch: true,
+	}, gitSvc)
+	if err != nil {
+		t.Fatalf("CreateGitWorktree: %v", err)
+	}
+	if err := os.RemoveAll(wtPath); err != nil {
+		t.Fatalf("RemoveAll vanished path: %v", err)
+	}
+
+	out, err := s.ReconcileGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, repo.ID, ReconcileGitInput{
+		RepairGit:   true,
+		AllowRemove: true,
+	}, gitSvc)
+	if err != nil {
+		t.Fatalf("ReconcileGitRepository: %v", err)
+	}
+	assertNoObsoleteReconcileSkipReasons(t, out.Report)
+	if out.Report.WorktreesRemoved != 1 {
+		t.Fatalf("worktrees_removed=%d want 1 report=%+v", out.Report.WorktreesRemoved, out.Report)
+	}
+	if _, err := s.GetGitWorktree(ctx, projectsdomain.LegacyGlobalDefaultProjectID, wt.ID); err == nil {
+		t.Fatal("expected vanished worktree row to be gone")
+	}
+	rows, err := s.ListGitWorktrees(ctx, projectsdomain.LegacyGlobalDefaultProjectID, repo.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 1 || !rows[0].IsMain {
+		t.Fatalf("worktrees after reconcile=%+v want main only", rows)
+	}
+}
+
+func TestReconcileGitRepository_ghostPathInLiveList_removesRow(t *testing.T) {
+	s, ctx, gitSvc := gitTestStore(t)
+	main := initGitRepo(t)
+	repo, err := s.CreateGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, CreateGitRepositoryInput{Path: main}, gitSvc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wtPath := filepath.Join(filepath.Dir(main), "wt-ghost")
+	wt, err := s.CreateGitWorktree(ctx, projectsdomain.LegacyGlobalDefaultProjectID, repo.ID, CreateGitWorktreeInput{
+		Path:         wtPath,
+		Branch:       "feature-ghost",
+		CreateBranch: true,
+	}, gitSvc)
+	if err != nil {
+		t.Fatalf("CreateGitWorktree: %v", err)
+	}
+	if err := os.RemoveAll(wtPath); err != nil {
+		t.Fatalf("RemoveAll ghost path: %v", err)
+	}
+
+	// No RepairGit/prune: git still lists the missing path (often prunable); FilterLiveWorktrees must drop it.
+	out, err := s.ReconcileGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, repo.ID, ReconcileGitInput{
+		AllowRemove: true,
+	}, gitSvc)
+	if err != nil {
+		t.Fatalf("ReconcileGitRepository: %v", err)
+	}
+	assertNoObsoleteReconcileSkipReasons(t, out.Report)
+	if out.Report.WorktreesRemoved != 1 {
+		t.Fatalf("worktrees_removed=%d want 1 report=%+v", out.Report.WorktreesRemoved, out.Report)
+	}
+	if _, err := s.GetGitWorktree(ctx, projectsdomain.LegacyGlobalDefaultProjectID, wt.ID); err == nil {
+		t.Fatal("expected ghost worktree row to be gone")
+	}
+}
+
