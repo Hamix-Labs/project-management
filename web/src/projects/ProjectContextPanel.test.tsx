@@ -66,7 +66,7 @@ describe("ProjectContextPanel", () => {
     renderPanel();
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Add memory" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Import memory file" })).toBeInTheDocument();
     });
     expect(screen.getByText("API plan")).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "List" })).toHaveAttribute(

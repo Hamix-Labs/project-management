@@ -129,7 +129,7 @@ Operators maintain canonical memory via project APIs ([`handler_projects.go`](..
 
 1. **Create or pick a project** — `POST /projects` or use the seeded default project (`00000000-0000-4000-8000-000000000001`). See [`domain.DefaultProjectID`](../../pkgs/tasks/domain/project_defaults.go).
 
-2. **Add context items** — `POST /projects/{id}/context` with `kind`, `title`, `body`, optional `pinned`, `source_task_id`, `source_cycle_id`. Store requires non-empty title and body; title ≤ **200** Unicode characters; body ≤ **512 KiB** UTF-8 bytes (reject, never truncate). See [`ValidateProjectContextTitle`](../../pkgs/projects/domain/limits.go) / [`ValidateProjectContextBody`](../../pkgs/projects/domain/limits.go) and [`CreateContext`](../../pkgs/projects/store/internal/projects.go).
+2. **Add context items** — Import a local `.txt` or `.md` file from the project context page (alias = `title`, file text = `body`, `kind` = `note`), or call `POST /projects/{id}/context` with `kind`, `title`, `body`, optional `pinned`, `source_task_id`, `source_cycle_id`. Store requires non-empty title and body; title ≤ **200** Unicode characters; body ≤ **512 KiB** UTF-8 bytes (reject, never truncate). See [`ValidateProjectContextTitle`](../../pkgs/projects/domain/limits.go) / [`ValidateProjectContextBody`](../../pkgs/projects/domain/limits.go) and [`CreateContext`](../../pkgs/projects/store/internal/projects.go).
 
 3. **Link items (optional)** — `POST /projects/{id}/context/edges` with `source_context_id`, `target_context_id`, `relation`, `strength` (1–5), optional `note`. Both nodes must belong to the same project.
 
