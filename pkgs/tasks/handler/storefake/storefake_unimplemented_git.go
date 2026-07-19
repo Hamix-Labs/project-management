@@ -89,6 +89,11 @@ func (unimplementedHandlerStore) CreateGitWorktreeForRepo(context.Context, strin
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
+func (unimplementedHandlerStore) AllocateTaskWorktree(context.Context, string, string, gitwork.Service) (gitdomain.GitWorktree, error) {
+	return gitdomain.GitWorktree{}, errNotImplemented
+}
+
+//funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
 func (unimplementedHandlerStore) CreateGitWorktree(context.Context, string, string, gitcontract.CreateGitWorktreeInput, gitwork.Service) (gitdomain.GitWorktree, error) {
 	return gitdomain.GitWorktree{}, errNotImplemented
 }

@@ -103,6 +103,12 @@ func (a *API) CreateGitWorktreeForRepo(ctx context.Context, repoID string, input
 	return a.git.CreateGitWorktreeForRepo(ctx, repoID, input, gitSvc)
 }
 
+// AllocateTaskWorktree fetches origin and creates a Hamix-managed worktree for a task.
+func (a *API) AllocateTaskWorktree(ctx context.Context, repoID, taskID string, gitSvc gitwork.Service) (gitdomain.GitWorktree, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.AllocateTaskWorktree")
+	return a.git.AllocateTaskWorktree(ctx, repoID, taskID, gitSvc)
+}
+
 // CreateGitWorktree adds a worktree on disk and persists the row (project-scoped route compat).
 func (a *API) CreateGitWorktree(ctx context.Context, projectID, repoID string, input gitinventorystore.CreateGitWorktreeInput, gitSvc gitwork.Service) (gitdomain.GitWorktree, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.CreateGitWorktree")
