@@ -47,8 +47,8 @@ export function useTaskCreateTaskMutations(input: {
         ...(mutationInput.depends_on.length > 0
           ? { depends_on: mutationInput.depends_on }
           : {}),
-        ...(mutationInput.worktree_id
-          ? { worktree_id: mutationInput.worktree_id }
+        ...(mutationInput.repository_id
+          ? { repository_id: mutationInput.repository_id }
           : {}),
         checklist_items: normalizeChecklistItems(mutationInput.checklistItems),
       });

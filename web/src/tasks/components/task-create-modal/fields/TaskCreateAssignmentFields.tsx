@@ -1,10 +1,7 @@
 import { Link } from "react-router-dom";
 import { useCallback } from "react";
 import { CustomSelect } from "@/components/custom-select";
-import {
-  WorktreesBranchIcon,
-  WorktreesFolderGitIcon,
-} from "@/components/git/GitWorktreeIcons";
+import { WorktreesFolderGitIcon } from "@/components/git/GitWorktreeIcons";
 import { ProjectSelect } from "@/components/project/ProjectSelect";
 import { useComposeGitAssignment } from "@/hooks/useComposeGitAssignment";
 import type { ComposeGitAssignment } from "@/lib/composeGitAssignment";
@@ -77,27 +74,10 @@ export function TaskCreateAssignmentFields({
         onChange={git.selectProject}
       />
 
-      <CustomSelect
-        id={`${idsPrefix}-worktree`}
-        label="Worktree"
-        value={worktreeId}
-        options={git.worktreeOptions}
-        disabled={
-          disabled ||
-          repositoryId === "" ||
-          git.loading ||
-          git.worktreeOptions.length === 0
-        }
-        requirement="required"
-        leadingIcon={
-          <WorktreesBranchIcon className="worktrees-git-selector__icon" />
-        }
-        onChange={git.selectWorktree}
-      />
-
       <p className="worktrees-git-selector__manage">
+        Hamix allocates a worktree and branch when the task is created.{" "}
         <Link to="/worktrees" target="_blank" rel="noopener noreferrer">
-          Manage worktrees
+          Inspect repositories
         </Link>
       </p>
     </div>

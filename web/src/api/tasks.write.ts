@@ -72,6 +72,7 @@ export async function createTask(input: {
   milestone?: string;
   gate?: TaskGate;
   depends_on?: TaskDependencyEdge[];
+  repository_id?: string;
   worktree_id?: string;
   checklist_items: Array<{ text: string; verify_commands?: ChecklistVerifyCommandInput[] }>;
 }): Promise<Task> {
@@ -116,6 +117,10 @@ export async function createTask(input: {
   }
   if (input.depends_on !== undefined) {
     body.depends_on = input.depends_on;
+  }
+  const repositoryId = assertOptionalTaskPathId(input.repository_id, "repository_id");
+  if (repositoryId !== undefined) {
+    body.repository_id = repositoryId;
   }
   const worktreeId = assertOptionalTaskPathId(input.worktree_id, "worktree_id");
   if (worktreeId !== undefined) {

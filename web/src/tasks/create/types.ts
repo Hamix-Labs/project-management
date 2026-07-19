@@ -23,6 +23,7 @@ export type CreateTaskMutationInput = {
   pickup_not_before: string | null;
   project_id: string;
   project_context_item_ids: string[];
+  repository_id: string;
   worktree_id: string;
   tags: string[];
   milestone?: string;

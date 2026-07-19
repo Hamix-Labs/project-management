@@ -78,14 +78,18 @@ describe("composeGitAssignment", () => {
     ).toEqual({ repositoryId: REPO_B, projectId: "", worktreeId: "" });
   });
 
-  it("applyRepoScopedDefaults keeps a valid non-default worktree on hydrate", () => {
+  it("applyRepoScopedDefaults clears worktree (server allocates)", () => {
     const current = { repositoryId: REPO_A, projectId: PROJ_A, worktreeId: WT_FEATURE };
-    expect(applyRepoScopedDefaults(current, projects, worktrees)).toEqual(current);
+    expect(applyRepoScopedDefaults(current, projects, worktrees)).toEqual({
+      repositoryId: REPO_A,
+      projectId: PROJ_A,
+      worktreeId: "",
+    });
   });
 
-  it("applyRepoScopedDefaults picks main worktree when worktree is empty", () => {
-    const current = { repositoryId: REPO_A, projectId: PROJ_A, worktreeId: "" };
-    expect(applyRepoScopedDefaults(current, projects, worktrees).worktreeId).toBe(WT_MAIN);
+  it("applyRepoScopedDefaults picks default project when empty", () => {
+    const current = { repositoryId: REPO_A, projectId: "", worktreeId: "" };
+    expect(applyRepoScopedDefaults(current, projects, worktrees).projectId).toBe(PROJ_A);
   });
 
   it("isFreshAssignment detects an untouched compose form", () => {
