@@ -588,10 +588,17 @@
   margin-top: calc(-1 * var(--space-2));
 }
 
+.pd__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
 .pd__title {
   margin: 0;
   color: var(--text);
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   font-weight: 600;
   letter-spacing: -0.02em;
   line-height: 1.2;
@@ -601,8 +608,8 @@
   max-width: 52ch;
   margin: 0;
   color: var(--text-secondary);
-  font-size: 0.875rem;
-  line-height: 1.5;
+  font-size: 0.9375rem;
+  line-height: 1.55;
 }
 
 /* --- Badge --- */
@@ -649,16 +656,40 @@
 .pd__card {
   display: grid;
   gap: var(--space-4);
-  padding: var(--space-5) var(--space-6);
+  padding: 0;
   border: 1px solid var(--border-hairline);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   background: var(--bg-elevated);
+  overflow: hidden;
+}
+
+.pd__card-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.pd__card-title {
+  margin: 0;
+  color: var(--text);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+}
+
+.pd__card-desc {
+  margin: 0;
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+  line-height: 1.4;
 }
 
 /*
- * Small uppercase section eyebrow — replaces the icon+title chrome
- * that used to introduce each card. Visually quiet so the form/content
- * below carries the page weight.
+ * Legacy uppercase eyebrow — kept for any remaining call sites outside
+ * the redesigned detail cards.
  */
 .pd__card-eyebrow {
   margin: 0;
@@ -668,11 +699,6 @@
   letter-spacing: 0.08em;
   line-height: 1;
   text-transform: uppercase;
-}
-
-/* Legacy title/head selectors kept for transitional safety — unused. */
-.pd__card-head {
-  display: none;
 }
 
 /* --- Info note --- */
@@ -693,19 +719,8 @@
 .pd__settings-form {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
-}
-
-/*
- * Name + Status sit on one row at desktop; the row collapses to a stack
- * via the responsive rule below so the inputs never get smaller than the
- * minimum touch target.
- */
-.pd__settings-form-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(9rem, 0.3fr);
-  align-items: end;
-  gap: var(--space-3);
+  gap: var(--space-5);
+  padding: var(--space-6);
 }
 
 .pd__settings-form .field {
@@ -728,9 +743,8 @@
 }
 
 .pd__settings-form input,
-.pd__settings-form select,
 .pd__settings-form textarea {
-  min-height: 2.25rem;
+  min-height: 2.5rem;
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--border-hairline);
   border-radius: var(--radius-md);
@@ -753,44 +767,19 @@
 }
 
 .pd__settings-form input:hover,
-.pd__settings-form select:hover,
 .pd__settings-form textarea:hover {
   border-color: var(--border-strong);
 }
 
 .pd__settings-form input:focus,
-.pd__settings-form select:focus,
 .pd__settings-form textarea:focus {
   border-color: var(--accent, var(--brand));
   box-shadow: var(--shadow-focus);
   outline: none;
 }
 
-.pd__settings-form select {
-  padding-right: 1.75rem;
-}
-
-.pd__settings-form .custom-select-trigger {
-  min-height: 2.25rem;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--border-hairline);
-  border-radius: var(--radius-md);
-  background: var(--bg-elevated);
-  font-size: var(--text-sm);
-  font-weight: 450;
-}
-
-.pd__settings-form .custom-select-trigger:hover:not(:disabled) {
-  border-color: var(--border-strong);
-}
-
-.pd__settings-form .field--custom-select {
-  min-width: 8rem;
-}
-
 .pd__settings-form input:disabled,
-.pd__settings-form textarea:disabled,
-.pd__settings-form .custom-select-trigger:disabled {
+.pd__settings-form textarea:disabled {
   border-color: color-mix(in srgb, var(--border-hairline) 60%, transparent);
   background: color-mix(in srgb, var(--bg-subtle) 50%, var(--bg-elevated));
   color: var(--text-tertiary);
@@ -800,10 +789,13 @@
 
 .pd__settings-form-actions {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  gap: var(--space-3);
 }
 
-.pd__settings-form button[type="submit"] {
+.pd__settings-form button[type="submit"],
+.pd__settings-form button.secondary {
   min-width: 7rem;
   min-height: 2.25rem;
   padding: 0 var(--space-4);
@@ -812,11 +804,18 @@
   font-weight: 600;
 }
 
-.pd__settings-form button[type="submit"]:disabled {
+.pd__settings-form button[type="submit"]:disabled,
+.pd__settings-form button.secondary:disabled {
   border: 1px solid var(--border-hairline);
   background: var(--bg-subtle);
   color: var(--text-tertiary);
   box-shadow: none;
+}
+
+/* Notes / errors inside redesigned cards keep side padding. */
+.pd__card > .pd__note,
+.pd__card > .pd__inline-error {
+  margin-inline: var(--space-6);
 }
 
 /* --- Inline error --- */
@@ -3918,10 +3917,6 @@ a.pg__btn:focus-visible {
 
   .pl__stats {
     flex-wrap: wrap;
-  }
-
-  .pd__settings-form-row {
-    grid-template-columns: 1fr;
   }
 
   .pl__row {

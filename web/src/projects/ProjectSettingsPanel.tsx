@@ -1,13 +1,5 @@
-import { useMemo, useRef, useState, type FormEvent } from "react";
-import {
-  CustomSelect,
-  type CustomSelectOption,
-} from "@/components/custom-select";
-import {
-  PROJECT_STATUSES,
-  type Project,
-  type ProjectStatus,
-} from "@/types";
+import { useEffect, useState, type FormEvent } from "react";
+import type { Project } from "@/types";
 import { usePatchProjectMutation } from "./mutations";
 
 type Props = {
@@ -16,68 +8,58 @@ type Props = {
 
 export function ProjectSettingsPanel({ project }: Props) {
   const isDefaultProject = project.is_default;
-  const [status, setStatus] = useState<ProjectStatus>(project.status);
-  const formRef = useRef<HTMLFormElement>(null);
-
-  const statusOptions = useMemo<CustomSelectOption[]>(
-    () =>
-      PROJECT_STATUSES.map((s) => ({
-        value: s,
-        label: s.charAt(0).toUpperCase() + s.slice(1),
-      })),
-    [],
-  );
+  const [name, setName] = useState(project.name);
+  const [description, setDescription] = useState(project.description ?? "");
 
   const patchProjectMutation = usePatchProjectMutation(project);
+
+  useEffect(() => {
+    setName(project.name);
+    setDescription(project.description ?? "");
+  }, [project.id, project.name, project.description, project.updated_at]);
 
   function submitProject(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (isDefaultProject) return;
-    const form = new FormData(event.currentTarget);
     patchProjectMutation.mutate({
-      name: String(form.get("name") ?? "").trim(),
-      description: String(form.get("description") ?? "").trim(),
-      status,
+      name: name.trim(),
+      description: description.trim(),
     });
+  }
+
+  function cancelEdits() {
+    if (patchProjectMutation.isPending) return;
+    setName(project.name);
+    setDescription(project.description ?? "");
+    patchProjectMutation.reset();
   }
 
   return (
     <section className="pd__card" aria-labelledby="pd-settings-title">
-      <h2 id="pd-settings-title" className="pd__card-eyebrow">
-        Project settings
-      </h2>
+      <div className="pd__card-head">
+        <h2 id="pd-settings-title" className="pd__card-title">
+          Project settings
+        </h2>
+        <p className="pd__card-desc">Manage the core details for this project</p>
+      </div>
 
       {isDefaultProject ? (
         <p className="pd__note">
-          The default project is built in — its name and status are fixed.
+          The default project is built in — its name is fixed.
         </p>
       ) : null}
 
-      <form
-        ref={formRef}
-        className="pd__settings-form"
-        onSubmit={submitProject}
-      >
-        <div className="pd__settings-form-row">
-          <div className="field grow">
-            <label htmlFor="project-edit-name">Name</label>
-            <input
-              id="project-edit-name"
-              name="name"
-              defaultValue={project.name}
-              required
-              disabled={isDefaultProject}
-              autoComplete="off"
-            />
-          </div>
-          <CustomSelect
-            id="project-edit-status"
-            label="Status"
-            value={status}
-            options={statusOptions}
-            onChange={(v) => setStatus(v as ProjectStatus)}
-            compact
+      <form className="pd__settings-form" onSubmit={submitProject}>
+        <div className="field">
+          <label htmlFor="project-edit-name">Name</label>
+          <input
+            id="project-edit-name"
+            name="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
             disabled={isDefaultProject}
+            autoComplete="off"
           />
         </div>
 
@@ -89,7 +71,8 @@ export function ProjectSettingsPanel({ project }: Props) {
           <textarea
             id="project-edit-description"
             name="description"
-            defaultValue={project.description ?? ""}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
             placeholder="One line of context that helps your team and agents understand what this project is for."
             rows={3}
             disabled={isDefaultProject}
@@ -97,6 +80,14 @@ export function ProjectSettingsPanel({ project }: Props) {
         </div>
 
         <div className="pd__settings-form-actions">
+          <button
+            type="button"
+            className="secondary"
+            disabled={isDefaultProject || patchProjectMutation.isPending}
+            onClick={cancelEdits}
+          >
+            Cancel
+          </button>
           <button
             type="submit"
             disabled={isDefaultProject || patchProjectMutation.isPending}
