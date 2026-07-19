@@ -9,6 +9,7 @@ import (
 	"time"
 
 	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
 	taskcorecontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
@@ -32,6 +33,7 @@ func taskCreateJSONToCompose(body taskCreateJSON) taskComposePayloadJSON {
 		Status:                body.Status,
 		Priority:              body.Priority,
 		ProjectID:             body.ProjectID,
+		RepositoryID:          body.RepositoryID,
 		ProjectContextItemIDs: body.ProjectContextItemIDs,
 		Runner:                body.Runner,
 		CursorModel:           body.CursorModel,
@@ -57,7 +59,10 @@ func (h *Handler) CreateTaskFromComposeJSON(
 	if err != nil {
 		return nil, err
 	}
-	if err := h.validateTaskCreateComposePayload(r.Context(), payload, settings); err != nil {
+	if err := h.gitCompose.ValidateTaskRepositoryBinding(r.Context(), payload.ProjectID, payload.RepositoryID); err != nil {
+		return nil, err
+	}
+	if err := h.validateComposePayloadCommonWithoutMentions(r.Context(), payload, settings); err != nil {
 		return nil, err
 	}
 	runner, cursorModel, err := resolveRunnerModelFields(payload.Runner, payload.CursorModel, settings)
@@ -86,8 +91,21 @@ func (h *Handler) CreateTaskFromComposeJSON(
 	if opts.InstantiateFromTemplate {
 		draftID = ""
 	}
+	taskID := storekernel.ResolveID(opts.ID)
+	repoID := strings.TrimSpace(*payload.RepositoryID)
+	wtID, err := h.gitCompose.AllocateTaskWorktree(r.Context(), repoID, taskID)
+	if err != nil {
+		return nil, err
+	}
+	payload.WorktreeID = &wtID
+	if err := h.gitCompose.ValidateTaskGitBindingV2(r.Context(), payload.ProjectID, payload.WorktreeID); err != nil {
+		return nil, err
+	}
+	if err := h.gitCompose.ValidatePromptMentionsForWorktree(r.Context(), payload.WorktreeID, payload.InitialPrompt); err != nil {
+		return nil, err
+	}
 	t, err := h.tasks.Create(ctx, taskcorecontract.CreateTaskInput{
-		ID:                    opts.ID,
+		ID:                    taskID,
 		DraftID:               draftID,
 		Title:                 payload.Title,
 		InitialPrompt:         payload.InitialPrompt,
@@ -134,15 +152,15 @@ func (h *Handler) validateComposePayload(ctx context.Context, payload TaskCompos
 	if err := h.gitCompose.ValidateComposeGitBinding(ctx, payload.RepositoryID, payload.ProjectID, payload.WorktreeID); err != nil {
 		return err
 	}
-	return h.validateComposePayloadCommon(ctx, payload, settings)
+	return h.validateComposePayloadCommonWithoutMentions(ctx, payload, settings)
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (h *Handler) validateTaskCreateComposePayload(ctx context.Context, payload TaskComposePayloadJSON, settings settingsdomain.AppSettings) error {
-	if err := h.gitCompose.ValidateTaskGitBindingV2(ctx, payload.ProjectID, payload.WorktreeID); err != nil {
+	if err := h.gitCompose.ValidateTaskRepositoryBinding(ctx, payload.ProjectID, payload.RepositoryID); err != nil {
 		return err
 	}
-	return h.validateComposePayloadCommon(ctx, payload, settings)
+	return h.validateComposePayloadCommonWithoutMentions(ctx, payload, settings)
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
@@ -150,6 +168,11 @@ func (h *Handler) validateComposePayloadCommon(ctx context.Context, payload Task
 	if err := h.gitCompose.ValidatePromptMentionsForWorktree(ctx, payload.WorktreeID, payload.InitialPrompt); err != nil {
 		return err
 	}
+	return h.validateComposePayloadCommonWithoutMentions(ctx, payload, settings)
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func (h *Handler) validateComposePayloadCommonWithoutMentions(ctx context.Context, payload TaskComposePayloadJSON, settings settingsdomain.AppSettings) error {
 	if _, _, err := resolveRunnerModelFields(payload.Runner, payload.CursorModel, settings); err != nil {
 		return err
 	}

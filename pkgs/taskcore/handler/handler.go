@@ -19,6 +19,8 @@ type SettingsReader interface {
 type ComposeGitValidator interface {
 	ValidateTaskGitBindingV2(ctx context.Context, projectID *string, worktreeID *string) error
 	ValidateComposeGitBinding(ctx context.Context, repositoryID, projectID, worktreeID *string) error
+	ValidateTaskRepositoryBinding(ctx context.Context, projectID, repositoryID *string) error
+	AllocateTaskWorktree(ctx context.Context, repositoryID, taskID string) (worktreeID string, err error)
 	ValidatePromptMentionsForWorktree(ctx context.Context, worktreeID *string, prompt string) error
 }
 
