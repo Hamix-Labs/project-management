@@ -47,13 +47,14 @@ Hamix stores **absolute paths** for repositories and worktrees. Renaming or movi
 
 **What reconcile does:**
 
-- Updates main and linked worktree paths for **registered** rows when git reports the same branch at a new location (stable `worktree_id`).
-- Removes vanished registered rows when safe (no running tasks).
+- Treats a worktree as **live** only when git still lists it, it is not prunable, **and** its path exists on disk. Missing directories are not live, so the registered row becomes a vanish candidate.
+- Updates main and linked worktree paths for **registered** rows when git reports the same branch at a new **live** location (stable `worktree_id`).
+- Removes vanished registered rows when safe — same guard as **Unregister**: blocked only by a **running** task on that worktree or branch (`has_running_task`). Unmatched rows are remove candidates, not skips.
 - Refreshes branch `head_sha` from git.
 - Does **not** insert worktrees the operator has not registered — use **Register worktree** and live inventory for that.
 - Does **not** fix non-git paths (Cursor binary, worker scratch files, `HAMIX_PATH_MAP` display prefixes).
 
-**Live inventory:** `GET …/worktrees/live` includes `registered: false` for linked checkouts Hamix has not fully registered (no branch-bound worktree row). Registering a repository does not register its main worktree — use **Register worktree** for that. The register-worktree modal uses this list for path selection.
+**Live inventory:** `GET …/worktrees/live` includes `registered: false` for linked checkouts Hamix has not fully registered (no branch-bound worktree row). Paths must still exist on disk to appear as live. Registering a repository does not register its main worktree — use **Register worktree** for that. The register-worktree modal uses this list for path selection.
 
 See [ADR-0040](../adr/ADR-0040-git-reconcile-v2.md), [git-checkout-resolution.md](./git-checkout-resolution.md), and `HAMIX_GIT_RECONCILE_ON_STARTUP` in [configuration.md](../configuration.md) for optional startup sync.
 
