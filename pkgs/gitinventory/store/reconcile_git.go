@@ -88,14 +88,14 @@ func tryRemoveStaleWorktreeRow(
 	row model.GitWorktree,
 	report *ReconcileReport,
 ) error {
-	ref, err := hasAnyTaskOnWorktree(ctx, tx, row.ID)
+	ref, err := hasRunningTaskOnGitTarget(ctx, tx, row.ID)
 	if err != nil {
 		return err
 	}
 	if ref {
 		report.WorktreesSkipped = append(report.WorktreesSkipped, ReconcileSkippedWorktree{
 			WorktreeID: row.ID,
-			Reason:     "has_task_ref",
+			Reason:     "has_running_task",
 		})
 		return nil
 	}
