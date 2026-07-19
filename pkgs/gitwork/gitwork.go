@@ -54,13 +54,19 @@ type Service interface {
 	PruneWorktrees(ctx context.Context, repo *Repository) error
 	BranchHead(ctx context.Context, repo *Repository, branchName string) (string, error)
 
-	ListBranches(ctx context.Context, repo *Repository) ([]Branch, error)
-	CreateBranch(ctx context.Context, repo *Repository, name, startPoint string) (*Branch, error)
-	DeleteBranch(ctx context.Context, repo *Repository, name string, force bool) error
-	WorktreeCurrentBranch(ctx context.Context, worktreePath string) (string, error)
-	Checkout(ctx context.Context, worktreePath, branch string) error
-	CheckoutStatus(ctx context.Context, worktreePath string) (CheckoutStatus, error)
-}
+		ListBranches(ctx context.Context, repo *Repository) ([]Branch, error)
+		CreateBranch(ctx context.Context, repo *Repository, name, startPoint string) (*Branch, error)
+		DeleteBranch(ctx context.Context, repo *Repository, name string, force bool) error
+		WorktreeCurrentBranch(ctx context.Context, worktreePath string) (string, error)
+		Checkout(ctx context.Context, worktreePath, branch string) error
+		CheckoutStatus(ctx context.Context, worktreePath string) (CheckoutStatus, error)
+
+		// Fetch updates refs from remote (default "origin").
+		Fetch(ctx context.Context, repo *Repository, remote string) error
+		// ResolveDefaultBranch returns the remote default branch name after fetch
+		// (origin/HEAD, then common fallbacks).
+		ResolveDefaultBranch(ctx context.Context, repo *Repository, remote string) (string, error)
+	}
 
 var (
 	// ErrNotARepository is returned when the path is not inside a git repository.
