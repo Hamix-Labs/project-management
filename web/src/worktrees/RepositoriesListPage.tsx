@@ -150,7 +150,7 @@ export function RepositoriesListPage() {
                 <div className="repositories-card__empty-setup">
                   <EmptyState
                     title="Register a repository to get started"
-                    description="Hamix needs a git checkout before you can register worktrees, bind branches, and run agent tasks."
+                    description="Hamix needs a registered git checkout before you can create tasks and allocate managed worktrees."
                     hideIcon
                     className="empty-state--in-table empty-state--task-list-fresh"
                   />

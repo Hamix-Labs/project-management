@@ -75,7 +75,7 @@ describe("RepositoriesListPage", () => {
     renderListPage();
     expect(await screen.findByRole("heading", { name: /^repositories$/i })).toBeInTheDocument();
     expect(
-      await screen.findByText(/register and manage the git repositories/i),
+      await screen.findByText(/register repositories; hamix allocates worktrees/i),
     ).toBeInTheDocument();
     expect(
       await screen.findByText(/register a repository to get started/i),

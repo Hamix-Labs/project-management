@@ -6,7 +6,7 @@ import { useGlobalWorktrees } from "../hooks/useGlobalWorktrees";
 import { useWorktreeCheckoutStatus } from "../hooks/useWorktreeCheckoutStatus";
 import { worktreeMatchesSearchQuery } from "../repositoryDisplay";
 import { worktreeGitCopy } from "../worktreeGitCopy";
-import { isDetailPageWorktree, sortDetailPageWorktrees } from "../worktreeRegistration";
+import { isDetailPageWorktree, sortDetailPageWorktrees } from "@/lib/gitWorktreeRegistration";
 import { gitReconcileErrorMessage } from "../gitReconcileErrors";
 import { WorktreeListFooter } from "./WorktreeListFooter";
 import { WorktreeRow } from "./WorktreeRow";

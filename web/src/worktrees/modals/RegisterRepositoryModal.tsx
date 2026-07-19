@@ -48,8 +48,8 @@ export function RegisterRepositoryModal({
             <h2 id="register-repo-title">Register repository</h2>
             <p id="register-repo-lead" className="worktrees-form-modal__lead">
               Choose any checkout of the repository on disk. Hamix resolves the main worktree and
-              git identity automatically. After registering, add worktrees and bind branches from
-              the repository card.
+              git identity automatically. After registering, create a task on this repository and
+              Hamix allocates a managed worktree.
             </p>
           </header>
           <div className="worktrees-form-modal__picker">
