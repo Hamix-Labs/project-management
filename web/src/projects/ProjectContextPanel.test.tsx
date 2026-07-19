@@ -69,9 +69,7 @@ describe("ProjectContextPanel", () => {
       expect(screen.getByRole("button", { name: "Import memory file" })).toBeInTheDocument();
     });
     expect(screen.getByText("API plan")).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "List" })).toHaveAttribute(
-      "aria-selected",
-      "true",
-    );
+    expect(screen.queryByRole("tablist", { name: "Context view" })).not.toBeInTheDocument();
+    expect(screen.queryByText(/at least two memory nodes/i)).not.toBeInTheDocument();
   });
 });

@@ -33,8 +33,8 @@ export function projectContextShortId(rawId: string): string {
 
 /**
  * Outcome of a context-add gesture. `nodeOnly` adds just the chosen node;
- * `withChildren` follows outgoing project-context edges (same semantics as
- * `ProjectContextTreeView` — `source_context_id -> target_context_id`).
+ * `withChildren` follows outgoing project-context edges
+ * (`source_context_id -> target_context_id`).
  */
 export type ProjectContextAddMode = "nodeOnly" | "withChildren";
 

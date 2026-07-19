@@ -40,5 +40,3 @@ export function buildStrengthSelectOptions(): CustomSelectOption[] {
     label: String(strength),
   }));
 }
-
-export type ContextView = "list" | "tree";

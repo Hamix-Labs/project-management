@@ -184,15 +184,17 @@ describe("ProjectContextPicker", () => {
     expect(screen.getByRole("button", { name: /^choose$/i })).toBeInTheDocument();
   });
 
-  it("offers the same expandable tree view for choosing task context", async () => {
+  it("lists context nodes without a tree view toggle", async () => {
     const user = userEvent.setup();
     const { onChange } = renderPicker();
 
     await user.click(screen.getByRole("button", { name: /choose context/i }));
     const dialog = screen.getByRole("dialog", { name: /choose task context/i });
 
-    await user.click(within(dialog).getByRole("tab", { name: "Tree" }));
-    expect(within(dialog).getByText(/depends on/i)).toBeInTheDocument();
+    expect(
+      within(dialog).queryByRole("tablist", { name: /context chooser view/i }),
+    ).not.toBeInTheDocument();
+    expect(within(dialog).getByText("Decision node")).toBeInTheDocument();
 
     await user.click(
       within(dialog).getByRole("checkbox", { name: /select decision node/i }),
