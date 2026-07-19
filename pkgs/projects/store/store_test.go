@@ -10,6 +10,8 @@ import (
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
+	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -97,5 +99,30 @@ func TestProjectsStore_CreateContext_rejectsOversizeTitleAndBody(t *testing.T) {
 	})
 	if !errors.Is(err, domain.ErrInvalidInput) {
 		t.Fatalf("oversize patch body err = %v, want ErrInvalidInput", err)
+	}
+}
+
+func TestProjectsStore_DeleteProjectsForRepository_removesDefault(t *testing.T) {
+	s, db, ctx := newProjectStoreOnly(t)
+	repoID, defaultProj := seedRepoWithDefaultProject(t, db, ctx)
+	_, err := s.CreateProject(ctx, CreateProjectInput{
+		Name:         "Custom",
+		RepositoryID: &repoID,
+	})
+	if err != nil {
+		t.Fatalf("CreateProject: %v", err)
+	}
+	if err := DeleteProjectsForRepository(ctx, db, repoID); err != nil {
+		t.Fatalf("DeleteProjectsForRepository: %v", err)
+	}
+	var n int64
+	if err := db.WithContext(ctx).Model(&projectmodel.Project{}).Where("repository_id = ?", repoID).Count(&n).Error; err != nil {
+		t.Fatal(err)
+	}
+	if n != 0 {
+		t.Fatalf("remaining projects=%d", n)
+	}
+	if _, err := s.GetProject(ctx, defaultProj.ID); !errors.Is(err, taskcoredomain.ErrNotFound) {
+		t.Fatalf("GetProject after delete: %v", err)
 	}
 }

@@ -54,8 +54,8 @@ Git context follows [ADR-0037](./adr/ADR-0037-global-repos-project-tree.md) (glo
 |---|---|---|
 | GET | `/git/repositories` | `{ repositories: [...] }`. Each repository includes `main_branch_name` (branch checked out on the main worktree, when bound) and `linked_worktree_count` (non-main worktrees with a bound `branch_id`, matching the Repositories list UI). |
 | POST | `/git/repositories` | Register checkout. Body `{ path, host_path? }`. Resolves main worktree path and `git_common_dir`. **201**. Seeds the main worktree row and a **system default project** for the repo (`is_default: true`, name `"Default"`). Does not auto-create additional worktrees/branches. **409** `not_a_git_repository`, `duplicate` (same git object database). |
+| DELETE | `/git/repositories/{repoId}` | Deletes the repository inventory row, its worktrees/branches, and **all projects for that repo** (including the system default). **204**. **409** `has_running_task`. |
 | GET | `/git/repositories/{repoId}` | Single repository. **404** `repository_not_found`. |
-| DELETE | `/git/repositories/{repoId}` | **204**. **409** `has_running_task`. |
 | GET | `/git/repositories/{repoId}/worktrees` | `{ worktrees: [...] }` including optional `stale` (idle terminal tasks older than 24h). |
 | GET | `/git/repositories/{repoId}/worktrees/checkout-status` | Live git checkout state for **branch-bound** registered worktrees only: `{ worktrees: [{ worktree_id, available, reason?, dirty?, detached?, head_commit_at?, has_upstream?, ahead?, behind?, upstream? }] }`. |
 | POST | `/git/repositories/{repoId}/sync` | Fetch `origin` and refresh registered metadata without discovering operator worktrees. **202** `{ status, report }` (same shape as reconcile). **400** when fetch fails. |

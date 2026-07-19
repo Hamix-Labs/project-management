@@ -86,6 +86,24 @@ func TestHandler_getAndDeleteGlobalGitRepository(t *testing.T) {
 	if delRec.Code != http.StatusNoContent {
 		t.Fatalf("delete status=%d body=%s", delRec.Code, delRec.Body.String())
 	}
+
+	projReq := httptest.NewRequest(http.MethodGet, "/git/repositories/"+repoID+"/projects", nil)
+	projRec := httptest.NewRecorder()
+	h.ServeHTTP(projRec, projReq)
+	if projRec.Code != http.StatusNotFound && projRec.Code != http.StatusOK {
+		t.Fatalf("projects after delete status=%d body=%s", projRec.Code, projRec.Body.String())
+	}
+	if projRec.Code == http.StatusOK {
+		var body struct {
+			Projects []any `json:"projects"`
+		}
+		if err := json.Unmarshal(projRec.Body.Bytes(), &body); err != nil {
+			t.Fatal(err)
+		}
+		if len(body.Projects) != 0 {
+			t.Fatalf("expected no projects after repo delete, got %d", len(body.Projects))
+		}
+	}
 }
 
 func TestHandler_createGlobalGitWorktree_routeRemoved(t *testing.T) {

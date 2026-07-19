@@ -79,5 +79,8 @@ func Run(ctx context.Context, db *gorm.DB, deps Deps) error {
 	if err := migrateComposePayloadWorktree(ctx, db); err != nil {
 		return fmt.Errorf("compose payload worktree: %w", err)
 	}
+	if err := migrateOrphanRepoProjects(ctx, db); err != nil {
+		return fmt.Errorf("orphan repo projects: %w", err)
+	}
 	return nil
 }

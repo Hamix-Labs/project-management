@@ -575,3 +575,47 @@ func GetDefaultProjectForRepository(ctx context.Context, db *gorm.DB, repoID str
 	}
 	return projectmodel.ToDomainProject(row), nil
 }
+
+// DeleteProjectsForRepository removes every project tied to a repository,
+// including the system default. Used when the repository itself is deleted so
+// "Default" rows do not accumulate as orphans. Caller must pass an open
+// transaction when coordinating with git_repositories delete.
+func DeleteProjectsForRepository(ctx context.Context, db *gorm.DB, repoID string) error {
+	defer storekernel.DeferLatency(storekernel.OpDeleteProject)()
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.projects.DeleteProjectsForRepository")
+	repoID = strings.TrimSpace(repoID)
+	if repoID == "" {
+		return fmt.Errorf("%w: repository_id required", domain.ErrInvalidInput)
+	}
+	var ids []string
+	if err := db.WithContext(ctx).
+		Model(&projectmodel.Project{}).
+		Where("repository_id = ?", repoID).
+		Pluck("id", &ids).Error; err != nil {
+		return fmt.Errorf("list projects for repository: %w", err)
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	if err := db.WithContext(ctx).
+		Where("project_id IN ?", ids).
+		Delete(&projectmodel.ProjectContextEdge{}).Error; err != nil {
+		return fmt.Errorf("delete project context edges: %w", err)
+	}
+	if err := db.WithContext(ctx).
+		Where("project_id IN ?", ids).
+		Delete(&projectmodel.ProjectContextItem{}).Error; err != nil {
+		return fmt.Errorf("delete project context items: %w", err)
+	}
+	// Snapshots live in taskcore; delete by column without importing that model.
+	if err := db.WithContext(ctx).
+		Exec("DELETE FROM task_context_snapshots WHERE project_id IN ?", ids).Error; err != nil {
+		return fmt.Errorf("delete task context snapshots: %w", err)
+	}
+	if err := db.WithContext(ctx).
+		Where("id IN ?", ids).
+		Delete(&projectmodel.Project{}).Error; err != nil {
+		return fmt.Errorf("delete projects: %w", err)
+	}
+	return nil
+}

@@ -63,6 +63,13 @@ func CreateDefaultProjectForRepo(ctx context.Context, tx *gorm.DB, repoID string
 	return internal.CreateDefaultProjectForRepo(ctx, tx, repoID, now)
 }
 
+// DeleteProjectsForRepository removes all projects for a repository (including defaults).
+//
+//funclogmeasure:skip category=delegate-already-logs reason="Package-level forwarder; internal.DeleteProjectsForRepository emits trace at the store chokepoint."
+func DeleteProjectsForRepository(ctx context.Context, tx *gorm.DB, repoID string) error {
+	return internal.DeleteProjectsForRepository(ctx, tx, repoID)
+}
+
 // CreateProject inserts a new active project.
 func (s *Store) CreateProject(ctx context.Context, input CreateProjectInput) (domain.Project, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.CreateProject")
