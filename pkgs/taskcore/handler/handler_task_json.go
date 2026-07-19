@@ -34,6 +34,7 @@ type taskCreateJSON struct {
 	Gate            *domain.TaskGate                            `json:"gate,omitempty"`
 	DependsOn       dependsOnWire                               `json:"depends_on,omitempty"`
 	ChecklistItems  []taskcorecontract.CreateChecklistItemInput `json:"checklist_items"`
+	RepositoryID    *string                                     `json:"repository_id,omitempty"`
 	WorktreeID      *string                                     `json:"worktree_id,omitempty"`
 }
 

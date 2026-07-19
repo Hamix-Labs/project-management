@@ -60,6 +60,12 @@ type Service interface {
 	WorktreeCurrentBranch(ctx context.Context, worktreePath string) (string, error)
 	Checkout(ctx context.Context, worktreePath, branch string) error
 	CheckoutStatus(ctx context.Context, worktreePath string) (CheckoutStatus, error)
+
+	// Fetch updates refs from remote (default "origin").
+	Fetch(ctx context.Context, repo *Repository, remote string) error
+	// ResolveDefaultBranch returns the remote default branch name after fetch
+	// (origin/HEAD, then common fallbacks).
+	ResolveDefaultBranch(ctx context.Context, repo *Repository, remote string) (string, error)
 }
 
 var (

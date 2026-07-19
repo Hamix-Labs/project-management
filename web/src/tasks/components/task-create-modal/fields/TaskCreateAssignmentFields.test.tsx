@@ -6,17 +6,10 @@ import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 import {
   FACTORY_GIT_REPO_ID,
-  gitBranchFactory,
   gitRepositoryFactory,
-  gitWorktreeFactory,
 } from "@/test/factories/git";
 import { FACTORY_REPO_DEFAULT_PROJECT_ID, repoDefaultProjectFactory } from "@/test/factories/project";
 import { TaskCreateAssignmentFields } from "./TaskCreateAssignmentFields";
-
-const WT_TEST_1 = "00000000-0000-4000-8000-000000000021";
-const WT_TEST_2 = "00000000-0000-4000-8000-000000000022";
-const BRANCH_TEST_1 = "00000000-0000-4000-8000-000000000031";
-const BRANCH_TEST_2 = "00000000-0000-4000-8000-000000000032";
 
 function jsonResponse(body: unknown, init: ResponseInit = { status: 200 }): Response {
   return new Response(JSON.stringify(body), {
@@ -27,38 +20,12 @@ function jsonResponse(body: unknown, init: ResponseInit = { status: 200 }): Resp
 
 function mockGitFetch(onRequest?: (url: string) => void) {
   const repo = gitRepositoryFactory();
-  const worktrees = [
-    gitWorktreeFactory({
-      id: WT_TEST_2,
-      name: "test_2",
-      path: "/repo/test_2",
-      is_main: true,
-      branch_id: BRANCH_TEST_2,
-    }),
-    gitWorktreeFactory({
-      id: WT_TEST_1,
-      name: "test_1",
-      path: "/repo/test_1",
-      is_main: false,
-      branch_id: BRANCH_TEST_1,
-    }),
-  ];
-  const branches = [
-    gitBranchFactory({ id: BRANCH_TEST_2, name: "test_2" }),
-    gitBranchFactory({ id: BRANCH_TEST_1, name: "test_1" }),
-  ];
 
   return vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
     const url = String(input);
     onRequest?.(url);
     if (url.endsWith("/git/repositories")) {
       return jsonResponse({ repositories: [repo] });
-    }
-    if (url.includes(`/git/repositories/${FACTORY_GIT_REPO_ID}/worktrees`)) {
-      return jsonResponse({ worktrees });
-    }
-    if (url.includes(`/git/repositories/${FACTORY_GIT_REPO_ID}/branches`)) {
-      return jsonResponse({ branches });
     }
     if (url.includes(`/git/repositories/${FACTORY_GIT_REPO_ID}/projects`)) {
       return jsonResponse({
@@ -86,7 +53,7 @@ function renderFields(
           idsPrefix="task-template-edit"
           repositoryId=""
           projectId={FACTORY_REPO_DEFAULT_PROJECT_ID}
-          worktreeId={WT_TEST_1}
+          worktreeId=""
           onAssignmentChange={onAssignmentChange}
           onProjectContextClear={onProjectContextClear}
           {...props}
@@ -99,7 +66,7 @@ function renderFields(
 }
 
 describe("TaskCreateAssignmentFields", () => {
-  it("does not auto-select repository when project and worktree are already hydrated", async () => {
+  it("does not auto-select repository when project is already hydrated", async () => {
     const fetchMock = mockGitFetch();
     const { onAssignmentChange } = renderFields();
 
@@ -108,20 +75,20 @@ describe("TaskCreateAssignmentFields", () => {
     });
 
     expect(onAssignmentChange).not.toHaveBeenCalled();
+    expect(screen.queryByRole("combobox", { name: /worktree/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/Hamix allocates a worktree/i)).toBeInTheDocument();
 
     fetchMock.mockRestore();
   });
 
-  it("keeps a saved non-default worktree when repository id is already hydrated", async () => {
+  it("keeps a hydrated repository without emitting assignment changes", async () => {
     const fetchMock = mockGitFetch();
     const { onAssignmentChange } = renderFields({
       repositoryId: FACTORY_GIT_REPO_ID,
     });
 
     await waitFor(() => {
-      expect(screen.getByRole("combobox", { name: /worktree/i })).toHaveTextContent(
-        "test_1 (test_1)",
-      );
+      expect(screen.getByRole("combobox", { name: /repository/i })).not.toHaveTextContent(/^▾$/);
     });
 
     await waitFor(() => {
@@ -131,11 +98,11 @@ describe("TaskCreateAssignmentFields", () => {
     fetchMock.mockRestore();
   });
 
-  it("propagates single-repo auto-select on a fresh form without refetch loops", async () => {
-    let worktreeListCalls = 0;
+  it("propagates single-repo auto-select on a fresh form without worktree UI", async () => {
+    let projectListCalls = 0;
     const fetchMock = mockGitFetch((url) => {
-      if (url.includes("/worktrees") && !url.includes("/worktrees/live")) {
-        worktreeListCalls += 1;
+      if (url.includes("/projects")) {
+        projectListCalls += 1;
       }
     });
 
@@ -176,12 +143,11 @@ describe("TaskCreateAssignmentFields", () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByRole("combobox", { name: /worktree/i })).toHaveTextContent(
-        "test_2 (test_2)",
-      );
+      expect(screen.getByRole("combobox", { name: /project/i })).toBeInTheDocument();
     });
 
-    expect(worktreeListCalls).toBeLessThanOrEqual(2);
+    expect(screen.queryByRole("combobox", { name: /worktree/i })).not.toBeInTheDocument();
+    expect(projectListCalls).toBeGreaterThan(0);
 
     fetchMock.mockRestore();
   });

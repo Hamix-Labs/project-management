@@ -48,7 +48,18 @@ func (s *Store) registerGitRepository(ctx context.Context, input CreateGitReposi
 	}
 	defaultBranch := strings.TrimSpace(input.DefaultBranch)
 	if defaultBranch == "" {
-		defaultBranch = "main"
+		opened, openErr := gitSvc.OpenRepository(ctx, mainRoot)
+		if openErr != nil {
+			return gitdomain.GitRepository{}, fmt.Errorf("open repository for default branch: %w", openErr)
+		}
+		resolved, resolveErr := gitSvc.ResolveDefaultBranch(ctx, opened, "origin")
+		if resolveErr != nil {
+			return gitdomain.GitRepository{}, fmt.Errorf("resolve default branch: %w", resolveErr)
+		}
+		defaultBranch = strings.TrimSpace(resolved)
+		if defaultBranch == "" {
+			defaultBranch = "main"
+		}
 	}
 	now := time.Now().UTC()
 	repo := gitdomain.GitRepository{

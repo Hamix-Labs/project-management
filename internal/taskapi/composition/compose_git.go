@@ -3,6 +3,7 @@ package composition
 import (
 	"context"
 	"log/slog"
+	"time"
 
 	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	gitinventorystore "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store"
@@ -101,6 +102,25 @@ func (a *API) GetGitWorktreeByID(ctx context.Context, worktreeID string) (gitdom
 func (a *API) CreateGitWorktreeForRepo(ctx context.Context, repoID string, input gitinventorystore.CreateGitWorktreeInput, gitSvc gitwork.Service) (gitdomain.GitWorktree, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.CreateGitWorktreeForRepo")
 	return a.git.CreateGitWorktreeForRepo(ctx, repoID, input, gitSvc)
+}
+
+// AllocateTaskWorktree fetches origin and creates a Hamix-managed worktree for a task.
+func (a *API) AllocateTaskWorktree(ctx context.Context, repoID, taskID string, gitSvc gitwork.Service) (gitdomain.GitWorktree, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.AllocateTaskWorktree")
+	return a.git.AllocateTaskWorktree(ctx, repoID, taskID, gitSvc)
+}
+
+// SyncGitRepository fetches origin and refreshes metadata without discover.
+func (a *API) SyncGitRepository(ctx context.Context, repoID string, gitSvc gitwork.Service) (gitinventorystore.ReconcileGitOutput, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.SyncGitRepository")
+	return a.git.SyncGitRepository(ctx, repoID, gitSvc)
+}
+
+// WorktreeStaleMap reports stale managed worktrees for a repository.
+//
+//funclogmeasure:skip category=delegate-already-logs reason="Thin store facade; gitinventory.store.WorktreeStaleMap emits operation trace."
+func (a *API) WorktreeStaleMap(ctx context.Context, repoID string, now time.Time) (map[string]bool, error) {
+	return a.git.WorktreeStaleMap(ctx, repoID, now)
 }
 
 // CreateGitWorktree adds a worktree on disk and persists the row (project-scoped route compat).

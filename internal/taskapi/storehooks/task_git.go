@@ -33,11 +33,23 @@ func ValidateTaskWorktreeBinding(ctx context.Context, d GitDeps, projectID *stri
 	if err != nil {
 		return err
 	}
+	if wt.IsMain {
+		return fmt.Errorf("%w: cannot bind task to main worktree", taskcoredomain.ErrInvalidInput)
+	}
 	if strings.TrimSpace(wt.BranchID) == "" {
 		return fmt.Errorf("%w: worktree has no branch assigned", taskcoredomain.ErrInvalidInput)
 	}
-	if _, err := d.Git.GetGitBranchByID(ctx, wt.BranchID); err != nil {
+	br, err := d.Git.GetGitBranchByID(ctx, wt.BranchID)
+	if err != nil {
 		return err
+	}
+	repo, err := d.Git.GetGitRepositoryByID(ctx, wt.RepositoryID)
+	if err != nil {
+		return err
+	}
+	defaultBranch := strings.TrimSpace(repo.DefaultBranch)
+	if defaultBranch != "" && strings.EqualFold(strings.TrimSpace(br.Name), defaultBranch) {
+		return fmt.Errorf("%w: cannot bind task to default branch %q", taskcoredomain.ErrInvalidInput, defaultBranch)
 	}
 	if projectID == nil {
 		return nil

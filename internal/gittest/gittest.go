@@ -6,11 +6,13 @@ package gittest
 
 import (
 	"context"
-	gitinventorystore "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store"
 	"os/exec"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
+	gitinventorystore "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 )
 
@@ -95,12 +97,44 @@ func EnsureMain(t *testing.T, dir string) {
 	_ = exec.Command("git", "-C", dir, "commit", "-m", "init", "--allow-empty").Run()
 }
 
+// AttachOrigin creates a bare remote, adds it as origin, and pushes the current
+// branch. Call after EnsureMain/InitMain (and any file commits). Required for
+// AllocateTaskWorktree.
+//
+//funclogmeasure:skip category=tool-required-noop reason="Test-only git bootstrap; not part of production trace paths."
+func AttachOrigin(t *testing.T, dir string) {
+	t.Helper()
+	SkipIfNoGit(t)
+	bare := t.TempDir()
+	if out, err := exec.Command("git", "init", "--bare", "-b", "main", bare).CombinedOutput(); err != nil {
+		t.Fatalf("git init --bare: %v %s", err, out)
+	}
+	_ = exec.Command("git", "-C", dir, "remote", "remove", "origin").Run()
+	if out, err := exec.Command("git", "-C", dir, "remote", "add", "origin", bare).CombinedOutput(); err != nil {
+		t.Fatalf("git remote add: %v %s", err, out)
+	}
+	_ = exec.Command("git", "-C", dir, "add", "-A").Run()
+	_ = exec.Command("git", "-C", dir, "-c", "user.email=test@test.local", "-c", "user.name=Test", "commit", "-m", "seed", "--allow-empty").Run()
+	branchOut, err := exec.Command("git", "-C", dir, "rev-parse", "--abbrev-ref", "HEAD").CombinedOutput()
+	if err != nil {
+		t.Fatalf("git rev-parse HEAD: %v %s", err, branchOut)
+	}
+	branch := strings.TrimSpace(string(branchOut))
+	if branch == "" || branch == "HEAD" {
+		branch = "main"
+	}
+	if out, err := exec.Command("git", "-C", dir, "push", "-u", "origin", branch).CombinedOutput(); err != nil {
+		t.Fatalf("git push origin %s: %v %s", branch, err, out)
+	}
+}
+
 // SeedWorktree registers repoDir in the store and returns the main worktree id.
 //
 //funclogmeasure:skip category=tool-required-noop reason="Test-only git bootstrap; not part of production trace paths."
 func SeedWorktree(t *testing.T, st *composition.API, repoDir string) (worktreeID, branchID string) {
 	t.Helper()
 	EnsureMain(t, repoDir)
+	AttachOrigin(t, repoDir)
 	ctx := context.Background()
 	gitSvc := gitwork.New()
 	repoRow, err := st.CreateGlobalGitRepository(ctx, gitinventorystore.CreateGitRepositoryInput{
@@ -119,14 +153,34 @@ func SeedWorktree(t *testing.T, st *composition.API, repoDir string) (worktreeID
 	return wts[0].ID, wts[0].BranchID
 }
 
-// SeedWorktreeTemp creates a temp git repo, registers it in the store,
-// and returns the worktree id and repo directory path.
+// SeedWorktreeTemp creates a temp git repo, registers it, and returns a
+// non-main linked worktree suitable for task binding (agents cannot run on main).
 //
 //funclogmeasure:skip category=tool-required-noop reason="Test-only git bootstrap; not part of production trace paths."
 func SeedWorktreeTemp(t *testing.T, st *composition.API) (worktreeID, workDir string) {
 	t.Helper()
 	dir := t.TempDir()
 	InitMain(t, dir)
-	wtID, _ := SeedWorktree(t, st, dir)
-	return wtID, dir
+	ctx := context.Background()
+	gitSvc := gitwork.New()
+	repoRow, err := st.CreateGlobalGitRepository(ctx, gitinventorystore.CreateGitRepositoryInput{
+		Path: dir,
+	}, gitSvc)
+	if err != nil {
+		t.Fatalf("CreateGlobalGitRepository: %v", err)
+	}
+	wtPath := filepath.Join(filepath.Dir(dir), "wt-task")
+	wt, err := st.CreateGitWorktreeForRepo(ctx, repoRow.ID, gitinventorystore.CreateGitWorktreeInput{
+		Path:         wtPath,
+		Branch:       "hamix/task-test",
+		CreateBranch: true,
+		StartPoint:   "main",
+	}, gitSvc)
+	if err != nil {
+		t.Fatalf("CreateGitWorktreeForRepo: %v", err)
+	}
+	if wt.IsMain {
+		t.Fatal("SeedWorktreeTemp must not return is_main worktree")
+	}
+	return wt.ID, wtPath
 }

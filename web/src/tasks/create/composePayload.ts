@@ -24,7 +24,6 @@ export function buildComposePayloadFromForm(
     project_id: fields.newProjectID.trim(),
     repository_id: fields.newRepositoryID.trim(),
     project_context_item_ids: fields.newProjectContextItemIDs,
-    worktree_id: fields.newWorktreeID.trim(),
     pickup_not_before: fields.newSchedule ?? undefined,
     tags: parseTagsFromCsv(fields.newTagsCsv),
     milestone: fields.newMilestone.trim() || undefined,
@@ -65,8 +64,7 @@ export function hydrateFormFromComposePayload(
     typeof payload.project_id === "string" ? payload.project_id : "";
   const repositoryID =
     typeof payload.repository_id === "string" ? payload.repository_id : "";
-  const worktreeID =
-    typeof payload.worktree_id === "string" ? payload.worktree_id : "";
+  const worktreeID = "";
   const projectContextItemIDs = Array.isArray(payload.project_context_item_ids)
     ? payload.project_context_item_ids
     : [];

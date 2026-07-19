@@ -152,3 +152,9 @@ func (stubGitService) Checkout(context.Context, string, string) error {
 func (stubGitService) CheckoutStatus(context.Context, string) (gitwork.CheckoutStatus, error) {
 	panic("unexpected call")
 }
+func (stubGitService) Fetch(context.Context, *gitwork.Repository, string) error {
+	panic("unexpected call")
+}
+func (stubGitService) ResolveDefaultBranch(context.Context, *gitwork.Repository, string) (string, error) {
+	panic("unexpected call")
+}

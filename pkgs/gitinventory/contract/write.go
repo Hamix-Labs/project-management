@@ -13,6 +13,8 @@ type GitWriteStore interface {
 	CreateGitRepository(ctx context.Context, projectID string, input CreateGitRepositoryInput, gitSvc gitwork.Service) (domain.GitRepository, error)
 	CreateGitWorktreeForRepo(ctx context.Context, repoID string, input CreateGitWorktreeInput, gitSvc gitwork.Service) (domain.GitWorktree, error)
 	CreateGitWorktree(ctx context.Context, projectID, repoID string, input CreateGitWorktreeInput, gitSvc gitwork.Service) (domain.GitWorktree, error)
+	// AllocateTaskWorktree fetches origin and creates a Hamix-managed worktree+branch for a task.
+	AllocateTaskWorktree(ctx context.Context, repoID, taskID string, gitSvc gitwork.Service) (domain.GitWorktree, error)
 	RemoveGitWorktreeFromDiskByID(ctx context.Context, worktreeID string, force bool, gitSvc gitwork.Service) error
 	RemoveGitWorktreeFromDisk(ctx context.Context, projectID, worktreeID string, force bool, gitSvc gitwork.Service) error
 	CreateGitBranch(ctx context.Context, projectID, repoID string, input CreateGitBranchInput, gitSvc gitwork.Service) (domain.GitBranch, error)
@@ -22,6 +24,8 @@ type GitWriteStore interface {
 	ProbeGitWorktree(ctx context.Context, repoID, path string, gitSvc gitwork.Service) (GitWorktreeProbeResult, error)
 	RegisterExistingGitWorktree(ctx context.Context, repoID, path, name string, bind BindBranchInput, gitSvc gitwork.Service) (domain.GitWorktree, error)
 	ReconcileGitRepository(ctx context.Context, projectID, repoID string, input ReconcileGitInput, gitSvc gitwork.Service) (ReconcileGitOutput, error)
+	// SyncGitRepository fetches origin and refreshes metadata without discover.
+	SyncGitRepository(ctx context.Context, repoID string, gitSvc gitwork.Service) (ReconcileGitOutput, error)
 	RelocateGitRepository(ctx context.Context, projectID, repoID, path string, gitSvc gitwork.Service) (ReconcileGitOutput, error)
 	RelocateGitWorktree(ctx context.Context, worktreeID, path string, gitSvc gitwork.Service) (domain.GitWorktree, error)
 }

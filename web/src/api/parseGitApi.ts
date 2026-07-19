@@ -1,7 +1,5 @@
 import type {
   GitBranch,
-  GitLiveBranch,
-  GitLiveWorktree,
   GitRepository,
   GitReconcileNeedsBranchBind,
   GitReconcileReport,
@@ -9,7 +7,6 @@ import type {
   GitReconcileSkipped,
   GitWorktree,
   GitWorktreeCheckoutStatus,
-  GitWorktreeProbe,
 } from "@/types/git";
 import { isRecord, parseNonEmptyString, parseOptionalNonEmptyId, parseString } from "./parseTaskApiCore";
 
@@ -62,6 +59,9 @@ function parseGitWorktreeRow(value: unknown, path: string): GitWorktree {
   if (branchID) {
     row.branch_id = branchID;
   }
+  if (value.stale === true) {
+    row.stale = true;
+  }
   return row;
 }
 
@@ -75,16 +75,6 @@ function parseGitBranchRow(value: unknown, path: string): GitBranch {
     name: parseString(value.name, `${path}.name`),
     head_sha: parseString(value.head_sha, `${path}.head_sha`),
     created_at: parseString(value.created_at, `${path}.created_at`),
-  };
-}
-
-function parseGitLiveBranchRow(value: unknown, path: string): GitLiveBranch {
-  if (!isRecord(value)) {
-    throw new Error(`Invalid API response: ${path} must be object`);
-  }
-  return {
-    name: parseString(value.name, `${path}.name`),
-    head_sha: parseString(value.head_sha, `${path}.head_sha`),
   };
 }
 
@@ -131,54 +121,6 @@ export function parseGitBranchList(raw: unknown): GitBranch[] {
 
 export function parseGitBranch(raw: unknown): GitBranch {
   return parseGitBranchRow(raw, "branch");
-}
-
-export function parseGitLiveBranchList(raw: unknown): GitLiveBranch[] {
-  if (!isRecord(raw)) {
-    throw new Error("Invalid API response: body must be object");
-  }
-  const rows = raw.branches;
-  if (!Array.isArray(rows)) {
-    throw new Error("Invalid API response: branches must be array");
-  }
-  return rows.map((row, i) => parseGitLiveBranchRow(row, `branches[${i}]`));
-}
-
-function parseGitLiveWorktreeRow(value: unknown, path: string): GitLiveWorktree {
-  if (!isRecord(value)) {
-    throw new Error(`Invalid API response: ${path} must be object`);
-  }
-  return {
-    path: parseString(value.path, `${path}.path`),
-    branch: parseString(value.branch, `${path}.branch`),
-    is_main: Boolean(value.is_main),
-    detached: Boolean(value.detached),
-    registered: Boolean(value.registered),
-  };
-}
-
-export function parseGitLiveWorktreeList(raw: unknown): GitLiveWorktree[] {
-  if (!isRecord(raw)) {
-    throw new Error("Invalid API response: body must be object");
-  }
-  const rows = raw.worktrees;
-  if (!Array.isArray(rows)) {
-    throw new Error("Invalid API response: worktrees must be array");
-  }
-  return rows.map((row, i) => parseGitLiveWorktreeRow(row, `worktrees[${i}]`));
-}
-
-export function parseGitWorktreeProbe(raw: unknown): GitWorktreeProbe {
-  if (!isRecord(raw)) {
-    throw new Error("Invalid API response: body must be object");
-  }
-  return {
-    path: parseString(raw.path, "path"),
-    linked: Boolean(raw.linked),
-    is_main: Boolean(raw.is_main),
-    branch: parseString(raw.branch, "branch"),
-    registered: Boolean(raw.registered),
-  };
 }
 
 function parseOptionalInt(value: unknown, path: string): number | undefined {

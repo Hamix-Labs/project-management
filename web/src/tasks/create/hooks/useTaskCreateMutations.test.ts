@@ -83,6 +83,7 @@ describe("useTaskCreateMutations", () => {
         pickup_not_before: null,
         tags: [],
         depends_on: [],
+        repository_id: "repo-1",
         worktree_id: "",
         checklistItems: [],
       });

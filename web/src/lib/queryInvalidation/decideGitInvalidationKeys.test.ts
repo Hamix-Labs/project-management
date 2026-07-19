@@ -22,8 +22,6 @@ describe("decideGitInvalidationKeys", () => {
         gitQueryKeys.globalRepository("repo-1"),
         gitQueryKeys.globalWorktrees("repo-1"),
         gitQueryKeys.globalBranches("repo-1"),
-        gitQueryKeys.globalLiveBranches("repo-1"),
-        gitQueryKeys.globalLiveWorktrees("repo-1"),
         gitQueryKeys.globalWorktreeCheckoutStatus("repo-1"),
         gitQueryKeys.projectsByRepo("repo-1"),
       ],

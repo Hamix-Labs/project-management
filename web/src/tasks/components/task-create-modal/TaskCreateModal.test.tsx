@@ -229,7 +229,7 @@ describe("TaskCreateModal", () => {
     renderModal({
       title: "Reproduce me",
       checklistItems: [{ text: "Ship it" }],
-      worktreeId: "wt-1",
+      repositoryId: "repo-1",
       createError: new Error("boom"),
     });
     expect(screen.getByRole("button", { name: /^create task$/i })).not.toBeDisabled();

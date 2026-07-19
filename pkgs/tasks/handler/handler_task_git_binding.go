@@ -43,24 +43,19 @@ func (h *Handler) validateTaskGitBindingV2(
 	return h.store.ValidateTaskWorktreeBinding(ctx, projectID, wtID)
 }
 
-func (h *Handler) validateComposeGitBinding(
+func (h *Handler) validateTaskRepositoryBinding(
 	ctx context.Context,
-	repositoryID *string,
 	projectID *string,
-	worktreeID *string,
+	repositoryID *string,
 ) error {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.validateComposeGitBinding")
-	repoID := trimmedOptionalID(repositoryID)
-	if repoID == "" {
-		return fmt.Errorf("%w: repository_id required", taskcoredomain.ErrInvalidInput)
-	}
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.validateTaskRepositoryBinding")
 	pid := trimmedOptionalID(projectID)
 	if pid == "" {
 		return fmt.Errorf("%w: project_id required", taskcoredomain.ErrInvalidInput)
 	}
-	wtID := trimmedOptionalID(worktreeID)
-	if wtID == "" {
-		return fmt.Errorf("%w: worktree_id required", taskcoredomain.ErrInvalidInput)
+	repoID := trimmedOptionalID(repositoryID)
+	if repoID == "" {
+		return fmt.Errorf("%w: repository_id required", taskcoredomain.ErrInvalidInput)
 	}
 	proj, err := h.store.GetProject(ctx, pid)
 	if err != nil {
@@ -71,6 +66,35 @@ func (h *Handler) validateComposeGitBinding(
 	}
 	if strings.TrimSpace(*proj.RepositoryID) != repoID {
 		return fmt.Errorf("%w: repository_id does not match project", taskcoredomain.ErrInvalidInput)
+	}
+	if _, err := h.store.GetGitRepositoryByID(ctx, repoID); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (h *Handler) allocateTaskWorktree(ctx context.Context, repositoryID, taskID string) (string, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.allocateTaskWorktree")
+	wt, err := h.store.AllocateTaskWorktree(ctx, repositoryID, taskID, h.gitService())
+	if err != nil {
+		return "", err
+	}
+	return wt.ID, nil
+}
+
+func (h *Handler) validateComposeGitBinding(
+	ctx context.Context,
+	repositoryID *string,
+	projectID *string,
+	worktreeID *string,
+) error {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.validateComposeGitBinding")
+	if err := h.validateTaskRepositoryBinding(ctx, projectID, repositoryID); err != nil {
+		return err
+	}
+	wtID := trimmedOptionalID(worktreeID)
+	if wtID == "" {
+		return nil
 	}
 	return h.store.ValidateTaskWorktreeBinding(ctx, projectID, wtID)
 }

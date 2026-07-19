@@ -57,8 +57,9 @@ func NewSSETriggerServer(t *testing.T) (*httptest.Server, *composition.API, *rea
 	return srv, st, hub
 }
 
-// WithComposeGitBinding injects repository_id, project_id, and worktree_id
-// for compose/draft/template payloads when a binding is registered.
+// WithComposeGitBinding injects repository_id and project_id for compose/draft/
+// template payloads when a binding is registered. worktree_id is allocated on
+// task create/instantiate, so it is not injected here.
 //
 //funclogmeasure:skip category=tool-required-noop reason="Test-only JSON body mutator; not part of production trace paths."
 func WithComposeGitBinding(baseURL, jsonBody string) string {
@@ -76,9 +77,6 @@ func WithComposeGitBinding(baseURL, jsonBody string) string {
 	}
 	if !strings.Contains(jsonBody, "project_id") {
 		extra = append(extra, `"project_id":"`+binding.ProjectID+`"`)
-	}
-	if !strings.Contains(jsonBody, "worktree_id") {
-		extra = append(extra, `"worktree_id":"`+binding.WorktreeID+`"`)
 	}
 	if len(extra) == 0 {
 		return jsonBody

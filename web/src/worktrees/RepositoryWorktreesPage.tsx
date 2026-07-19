@@ -15,11 +15,8 @@ import { RepositoryDetailHeader } from "./components/RepositoryDetailHeader";
 import { RepositoryWorktreesSearch } from "./components/RepositoryWorktreesSearch";
 import { RepositoryWorktreesSection } from "./components/RepositoryWorktreesSection";
 import { DeleteConfirmDialog } from "./components/DeleteConfirmDialog";
-import { RegisterWorktreeModal } from "./modals/RegisterWorktreeModal";
-import { CreateWorktreeModal } from "./modals/CreateWorktreeModal";
 import { RelocateRepositoryModal } from "./modals/RelocateRepositoryModal";
 import { formatReconcileSuccess } from "./gitReconcileErrors";
-import { worktreeGitCopy } from "./worktreeGitCopy";
 
 const HEADING_ID = "repository-detail-heading";
 
@@ -73,21 +70,6 @@ export function RepositoryWorktreesPage() {
               reconcilePending={actions.manualReconcilePending}
               onReconcile={() => void actions.handleReconcile(repository)}
               onDeleteRepository={actions.openDeleteRepository}
-              addWorktreeMenuItems={[
-                {
-                  id: "register-worktree",
-                  label: worktreeGitCopy.registerWorktree,
-                  onSelect: () => void actions.openWorktreeModal("register-worktree"),
-                },
-                {
-                  id: "create-worktree",
-                  label: worktreeGitCopy.createWorktree,
-                  onSelect: () => void actions.openWorktreeModal("create-worktree"),
-                },
-              ]}
-              onAddMenuOpenChange={(open) => {
-                if (open) void actions.ensureInventoryFresh(repository);
-              }}
             />
             <RepositoryWorktreesSearch value={searchInput} onChange={setSearchInput} />
           </>
@@ -138,56 +120,6 @@ export function RepositoryWorktreesPage() {
         </div>
 
       </RepositoryDetailCard>
-
-      <RegisterWorktreeModal
-        open={actions.activeWorktreeModal === "register-worktree"}
-        pending={actions.mutations.registerWorktree.isPending}
-        error={actions.mutations.registerWorktree.error}
-        repositoryId={repository?.id ?? ""}
-        storedPath={repository?.path ?? ""}
-        reconcilePending={actions.reconcilePending}
-        inventoryRefreshPending={actions.inventoryRefreshPending}
-        reconcileError={actions.reconcileError}
-        reconcileBlocked={actions.reconcileBlocked}
-        onReconcile={() => {
-          if (repository != null) void actions.handleReconcile(repository);
-        }}
-        onClose={() => {
-          actions.setActiveWorktreeModal(null);
-          actions.mutations.registerWorktree.reset();
-        }}
-        onSubmit={(input) => {
-          if (!repository || actions.activeWorktreeModal !== "register-worktree") return;
-          void actions.mutations.registerWorktree
-            .mutateAsync({ repositoryId: repository.id, input })
-            .then(() => actions.setActiveWorktreeModal(null));
-        }}
-      />
-
-      <CreateWorktreeModal
-        open={actions.activeWorktreeModal === "create-worktree"}
-        pending={actions.mutations.createWorktree.isPending}
-        error={actions.mutations.createWorktree.error}
-        repositoryId={repository?.id ?? ""}
-        storedPath={repository?.path ?? ""}
-        reconcilePending={actions.reconcilePending}
-        inventoryRefreshPending={actions.inventoryRefreshPending}
-        reconcileError={actions.reconcileError}
-        reconcileBlocked={actions.reconcileBlocked}
-        onReconcile={() => {
-          if (repository != null) void actions.handleReconcile(repository);
-        }}
-        onClose={() => {
-          actions.setActiveWorktreeModal(null);
-          actions.mutations.createWorktree.reset();
-        }}
-        onSubmit={(input) => {
-          if (!repository || actions.activeWorktreeModal !== "create-worktree") return;
-          void actions.mutations.createWorktree
-            .mutateAsync({ repositoryId: repository.id, input })
-            .then(() => actions.setActiveWorktreeModal(null));
-        }}
-      />
 
       <DeleteConfirmDialog
         target={actions.deleteTarget}

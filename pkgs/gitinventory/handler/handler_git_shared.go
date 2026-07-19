@@ -3,6 +3,7 @@ package handler
 import (
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
@@ -76,36 +77,18 @@ func (h *Handler) serveListGitWorktrees(w http.ResponseWriter, r *http.Request, 
 		WriteGitStoreError(w, r, op, err)
 		return
 	}
-	out := make([]gitWorktreeJSON, 0, len(rows))
-	for _, row := range rows {
-		out = append(out, h.gitWorktreeJSON(row))
-	}
-	writeJSON(w, r, op, http.StatusOK, gitWorktreesListResponse{Worktrees: out})
-}
-
-func (h *Handler) serveCreateGitWorktree(w http.ResponseWriter, r *http.Request, op string) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", op)
-	r = calltrace.WithRequestRoot(r, op)
-	var body gitWorktreeCreateJSON
-	if err := decodeJSON(r.Context(), r.Body, &body); err != nil {
-		writeError(w, r, op, err, http.StatusBadRequest)
-		return
-	}
-	input := contract.CreateGitWorktreeInput{
-		Path:         body.Path,
-		Name:         body.Name,
-		Branch:       body.Branch,
-		CreateBranch: body.CreateBranch,
-		StartPoint:   body.StartPoint,
-		ForceRemove:  body.ForceRemove,
-	}
-	repoID := r.PathValue("repoId")
-	wt, err := h.write.CreateGitWorktreeForRepo(r.Context(), repoID, input, h.gitService())
+	staleMap, err := h.read.WorktreeStaleMap(r.Context(), repoID, time.Now().UTC())
 	if err != nil {
 		WriteGitStoreError(w, r, op, err)
 		return
 	}
-	writeJSON(w, r, op, http.StatusCreated, h.gitWorktreeJSON(wt))
+	out := make([]gitWorktreeJSON, 0, len(rows))
+	for _, row := range rows {
+		j := h.gitWorktreeJSON(row)
+		j.Stale = staleMap[row.ID]
+		out = append(out, j)
+	}
+	writeJSON(w, r, op, http.StatusOK, gitWorktreesListResponse{Worktrees: out})
 }
 
 func (h *Handler) serveDeleteGitWorktree(w http.ResponseWriter, r *http.Request, op string) {

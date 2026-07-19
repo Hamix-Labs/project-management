@@ -132,7 +132,7 @@ func TestHTTP_task_templates_save_requires_repository_id(t *testing.T) {
 		t.Fatal("missing git binding")
 	}
 	res, err := http.Post(srv.URL+"/task-templates", "application/json",
-		strings.NewReader(`{"name":"Missing repo","payload":{"title":"Missing repo","priority":"medium","project_id":"`+binding.ProjectID+`","worktree_id":"`+binding.WorktreeID+`","checklist_items":[{"text":"`+handlertest.TestCriterionText+`"}]}}`))
+		strings.NewReader(`{"name":"Missing repo","payload":{"title":"Missing repo","priority":"medium","project_id":"`+binding.ProjectID+`","checklist_items":[{"text":"`+handlertest.TestCriterionText+`"}]}}`))
 	if err != nil {
 		t.Fatal(err)
 	}

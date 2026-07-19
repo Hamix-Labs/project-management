@@ -58,14 +58,17 @@ func TestHTTP_createTask_projectRepoMismatch_returns409(t *testing.T) {
 	if _, err := exec.LookPath("git"); err != nil {
 		t.Skip("git not on PATH")
 	}
-	dir := t.TempDir()
-	srv, st, worktreeID, _ := handlertest.NewBoundRepoServerWithStore(t, dir)
-	t.Cleanup(srv.Close)
+	srv, st := handlertest.NewCreateServerWithStore(t)
+	binding, ok := handlertest.GitBindingForURL(srv.URL)
+	if !ok {
+		t.Fatal("expected git binding")
+	}
 
 	ctx := context.Background()
 	gitSvc := gitwork.New()
 	otherDir := t.TempDir()
-	gittest.EnsureMain(t, otherDir)
+	gittest.InitMain(t, otherDir)
+	gittest.AttachOrigin(t, otherDir)
 	otherRepo, err := st.CreateGlobalGitRepository(ctx, gitinventorystore.CreateGitRepositoryInput{Path: otherDir}, gitSvc)
 	if err != nil {
 		t.Fatalf("CreateGlobalGitRepository: %v", err)
@@ -80,8 +83,8 @@ func TestHTTP_createTask_projectRepoMismatch_returns409(t *testing.T) {
 	}
 
 	body := fmt.Sprintf(
-		`{"title":"mismatch","priority":"medium","project_id":%q,"worktree_id":%q}`,
-		otherProj.ID, worktreeID,
+		`{"title":"mismatch","priority":"medium","project_id":%q,"repository_id":%q,"checklist_items":[{"text":"done"}]}`,
+		otherProj.ID, binding.RepositoryID,
 	)
 	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(body))
 	if err != nil {
@@ -89,8 +92,8 @@ func TestHTTP_createTask_projectRepoMismatch_returns409(t *testing.T) {
 	}
 	raw, _ := io.ReadAll(res.Body)
 	_ = res.Body.Close()
-	if res.StatusCode != http.StatusConflict {
-		t.Fatalf("status %d body=%s want 409 project_repo_mismatch", res.StatusCode, raw)
+	if res.StatusCode != http.StatusBadRequest {
+		t.Fatalf("status %d body=%s want 400 repository/project mismatch", res.StatusCode, raw)
 	}
 	var errBody struct {
 		Error string `json:"error"`
@@ -99,8 +102,8 @@ func TestHTTP_createTask_projectRepoMismatch_returns409(t *testing.T) {
 	if err := json.Unmarshal(raw, &errBody); err != nil {
 		t.Fatalf("decode: %v body=%s", err, raw)
 	}
-	if errBody.Code != domain.GitCodeProjectRepoMismatch {
-		t.Fatalf("code=%q want %q", errBody.Code, domain.GitCodeProjectRepoMismatch)
+	if !strings.Contains(errBody.Error, "does not match project") {
+		t.Fatalf("error=%q want repository/project mismatch", errBody.Error)
 	}
 }
 
@@ -108,23 +111,15 @@ func TestHTTP_createTask_withRepoDefault_returns201(t *testing.T) {
 	if _, err := exec.LookPath("git"); err != nil {
 		t.Skip("git not on PATH")
 	}
-	dir := t.TempDir()
-	srv, st, worktreeID, _ := handlertest.NewBoundRepoServerWithStore(t, dir)
-	t.Cleanup(srv.Close)
-
-	ctx := context.Background()
-	repos, err := st.ListAllGitRepositories(ctx)
-	if err != nil || len(repos) == 0 {
-		t.Fatalf("ListAllGitRepositories: %v len=%d", err, len(repos))
-	}
-	defaultProj, err := st.GetDefaultProjectForRepository(ctx, repos[0].ID)
-	if err != nil {
-		t.Fatalf("GetDefaultProjectForRepository: %v", err)
+	srv := handlertest.NewCreateServer(t)
+	binding, ok := handlertest.GitBindingForURL(srv.URL)
+	if !ok {
+		t.Fatal("expected git binding")
 	}
 
 	body := fmt.Sprintf(
-		`{"title":"default binding","priority":"medium","project_id":%q,"worktree_id":%q,"checklist_items":[{"text":"done"}]}`,
-		defaultProj.ID, worktreeID,
+		`{"title":"default binding","priority":"medium","project_id":%q,"repository_id":%q,"checklist_items":[{"text":"done"}]}`,
+		binding.ProjectID, binding.RepositoryID,
 	)
 	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(body))
 	if err != nil {
@@ -141,11 +136,16 @@ func TestHTTP_createTask_missingProjectID_returns422(t *testing.T) {
 	if _, err := exec.LookPath("git"); err != nil {
 		t.Skip("git not on PATH")
 	}
-	dir := t.TempDir()
-	srv, _, worktreeID, _ := handlertest.NewBoundRepoServerWithStore(t, dir)
-	t.Cleanup(srv.Close)
+	srv := handlertest.NewCreateServer(t)
+	binding, ok := handlertest.GitBindingForURL(srv.URL)
+	if !ok {
+		t.Fatal("expected git binding")
+	}
 
-	body := fmt.Sprintf(`{"title":"no project","priority":"medium","worktree_id":%q,"checklist_items":[{"text":"done"}]}`, worktreeID)
+	body := fmt.Sprintf(
+		`{"title":"no project","priority":"medium","repository_id":%q,"checklist_items":[{"text":"done"}]}`,
+		binding.RepositoryID,
+	)
 	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(body))
 	if err != nil {
 		t.Fatal(err)

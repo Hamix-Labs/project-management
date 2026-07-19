@@ -149,9 +149,9 @@ func TestHTTP_listTasks_keysetClampsOffsetToZero(t *testing.T) {
 	srv := handlertest.NewCreateServer(t)
 	defer srv.Close()
 
-	id1 := "30000000-0000-4000-8000-000000000001"
-	id2 := "30000000-0000-4000-8000-000000000002"
-	id3 := "30000000-0000-4000-8000-000000000003"
+	id1 := "31000000-0000-4000-8000-000000000001"
+	id2 := "32000000-0000-4000-8000-000000000002"
+	id3 := "33000000-0000-4000-8000-000000000003"
 	for _, id := range []string{id1, id2, id3} {
 		handlertest.MustCreateTaskBody(t, srv.URL, `{"id":"`+id+`","title":"x","priority":"medium"}`)
 	}

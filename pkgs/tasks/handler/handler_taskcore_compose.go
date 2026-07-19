@@ -15,6 +15,14 @@ func (h *Handler) ValidateComposeGitBinding(ctx context.Context, repositoryID, p
 	return h.validateComposeGitBinding(ctx, repositoryID, projectID, worktreeID)
 }
 
+func (h *Handler) ValidateTaskRepositoryBinding(ctx context.Context, projectID, repositoryID *string) error {
+	return h.validateTaskRepositoryBinding(ctx, projectID, repositoryID)
+}
+
+func (h *Handler) AllocateTaskWorktree(ctx context.Context, repositoryID, taskID string) (string, error) {
+	return h.allocateTaskWorktree(ctx, repositoryID, taskID)
+}
+
 func (h *Handler) ValidatePromptMentionsForWorktree(ctx context.Context, worktreeID *string, prompt string) error {
 	return h.validatePromptMentionsForWorktree(ctx, worktreeID, prompt)
 }

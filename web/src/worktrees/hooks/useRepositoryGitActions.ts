@@ -5,7 +5,6 @@ import type { GitDeleteTarget } from "../gitDeleteErrors";
 import { formatReconcileSuccess } from "../gitReconcileErrors";
 import { useGlobalGitMutations } from "./useGlobalGitMutations";
 
-type ActiveWorktreeModal = "register-worktree" | "create-worktree" | null;
 type ReconcileFlowOutcome = "ok" | "needs_bootstrap" | "error";
 type ReconcileIntent = "manual" | "silent";
 
@@ -18,7 +17,6 @@ export function useRepositoryGitActions({ repository, onRepositoryDeleted }: Opt
   const mutations = useGlobalGitMutations();
   const toast = useOptionalToast();
 
-  const [activeWorktreeModal, setActiveWorktreeModal] = useState<ActiveWorktreeModal>(null);
   const [deleteTarget, setDeleteTarget] = useState<GitDeleteTarget | null>(null);
   const [deleteError, setDeleteError] = useState<unknown>(null);
   const [relocateRepository, setRelocateRepository] = useState<GitRepository | null>(null);
@@ -128,17 +126,6 @@ export function useRepositoryGitActions({ repository, onRepositoryDeleted }: Opt
     [handleReconcile],
   );
 
-  const openWorktreeModal = useCallback(
-    (modal: Exclude<ActiveWorktreeModal, null>) => {
-      if (!repository) return;
-      setActiveWorktreeModal(modal);
-      void ensureInventoryFresh(repository).then((outcome) => {
-        if (outcome === "needs_bootstrap") setActiveWorktreeModal(null);
-      });
-    },
-    [repository, ensureInventoryFresh],
-  );
-
   const closeRelocateModal = () => {
     setRelocateRepository(null);
     mutations.relocateRepository.reset();
@@ -186,8 +173,6 @@ export function useRepositoryGitActions({ repository, onRepositoryDeleted }: Opt
 
   return {
     mutations,
-    activeWorktreeModal,
-    setActiveWorktreeModal,
     deleteTarget,
     deleteError,
     deletePending,
@@ -202,7 +187,6 @@ export function useRepositoryGitActions({ repository, onRepositoryDeleted }: Opt
     closeRelocateModal,
     handleReconcile,
     ensureInventoryFresh,
-    openWorktreeModal,
     openDeleteRepository,
     openDeleteWorktree,
     openRemoveWorktreeFromDisk,

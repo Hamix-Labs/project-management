@@ -15,6 +15,8 @@ const (
 
 // ValidateProjectContextTitle reports ErrInvalidInput when title is empty or
 // longer than MaxProjectContextTitleChars (Unicode code points).
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func ValidateProjectContextTitle(title string) error {
 	if title == "" {
 		return fmt.Errorf("%w: context title required", ErrInvalidInput)
@@ -27,6 +29,8 @@ func ValidateProjectContextTitle(title string) error {
 
 // ValidateProjectContextBody reports ErrInvalidInput when body is empty or
 // larger than MaxProjectContextBodyBytes (UTF-8 byte length).
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func ValidateProjectContextBody(body string) error {
 	if body == "" {
 		return fmt.Errorf("%w: context body required", ErrInvalidInput)

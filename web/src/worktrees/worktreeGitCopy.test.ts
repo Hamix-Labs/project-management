@@ -1,26 +1,18 @@
 import { describe, expect, it } from "vitest";
 import {
   unregisterWorktreeAriaLabel,
-  liveWorktreeOptionLabel,
   worktreeAriaLabel,
-  worktreeGitCopy,
+  worktreeCountLabel,
 } from "./worktreeGitCopy";
 
-describe("worktreeGitCopy", () => {
-  it("uses git-standard row labels", () => {
-    expect(worktreeGitCopy.mainWorktreeLabel).toBe("main worktree");
-    expect(worktreeGitCopy.detachedHead).toBe("Detached HEAD");
+describe("worktreeGitCopy helpers", () => {
+  it("formats worktree counts", () => {
+    expect(worktreeCountLabel(1)).toBe("1 worktree");
+    expect(worktreeCountLabel(2)).toBe("2 worktrees");
   });
 
-  it("formats aria labels for worktree rows", () => {
+  it("formats aria labels", () => {
     expect(worktreeAriaLabel("feature")).toBe("Worktree: feature");
     expect(unregisterWorktreeAriaLabel("feature")).toBe('Unregister worktree "feature"');
-  });
-
-  it("labels live worktree options with main worktree hint", () => {
-    expect(liveWorktreeOptionLabel("/repo/main", true)).toBe(
-      "/repo/main (main worktree)",
-    );
-    expect(liveWorktreeOptionLabel("/repo/feature", false)).toBe("/repo/feature");
   });
 });

@@ -8,7 +8,7 @@ type Props = {
   title: string;
   priority: PriorityChoice;
   checklistItems: ChecklistItemDraft[];
-  worktreeId: string;
+  repositoryId: string;
   draftSaving: boolean;
   onClose: () => void;
   onSaveDraft: () => void;
@@ -19,7 +19,7 @@ export function TaskCreateModalActionFooter({
   title,
   priority,
   checklistItems,
-  worktreeId,
+  repositoryId,
   draftSaving,
   onClose,
   onSaveDraft,
@@ -42,7 +42,7 @@ export function TaskCreateModalActionFooter({
       title={title}
       priority={priority}
       checklistItems={checklistItems}
-      worktreeId={worktreeId}
+      repositoryId={repositoryId}
       requireGitBinding
       onClose={onClose}
       onSaveDraft={presentation.isTemplateMode ? undefined : onSaveDraft}

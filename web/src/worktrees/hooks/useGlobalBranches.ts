@@ -1,1 +1,1 @@
-export { useGlobalBranches, useGlobalLiveBranches } from "@/hooks/useGlobalBranches";
+export { useGlobalBranches } from "@/hooks/useGlobalBranches";

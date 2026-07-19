@@ -93,13 +93,13 @@ function stubGitFetch() {
 }
 
 describe("TaskCreateModal git binding", () => {
-  it("disables Create task until worktree is selected", async () => {
+  it("disables Create task until repository is selected", async () => {
     stubGitFetch();
-    renderModal({ worktreeId: "" });
+    renderModal({ repositoryId: "", worktreeId: "" });
     expect(screen.getByRole("button", { name: /Create task/i })).toBeDisabled();
   });
 
-  it("preselects when only one worktree exists", async () => {
+  it("preselects when only one repository exists", async () => {
     stubGitFetch();
 
     function Harness() {
@@ -170,9 +170,10 @@ describe("TaskCreateModal git binding", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByRole("combobox", { name: /worktree/i })).not.toHaveTextContent(
+      expect(screen.getByRole("combobox", { name: /repository/i })).not.toHaveTextContent(
         /^▾$/,
       );
     });
+    expect(screen.queryByRole("combobox", { name: /worktree/i })).not.toBeInTheDocument();
   });
 });

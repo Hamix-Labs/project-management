@@ -1,7 +1,7 @@
 # ADR-0042: Per-repository default projects
 
 **Date:** 2026-07-05  
-**Status:** Accepted  
+**Status:** Accepted (superseded in part by [ADR-0081](./ADR-0081-hamix-managed-worktrees.md) — task create uses `repository_id` + allocate; per-repo default projects remain)  
 **Deciders:** Hamix maintainers  
 **Supersedes:** [ADR-0037](./ADR-0037-global-repos-project-tree.md) §5 Case A (optional `project_id`) and §6 global default project
 
@@ -17,7 +17,7 @@ Hamix seeded a single global default project (`DEFAULT_PROJECT_ID`) with no `rep
 
 2. **Optional user projects** — `POST /projects` requires `repository_id` and creates **additional** projects only. `is_default` is not settable on the public API.
 
-3. **Mandatory task binding** — `POST /tasks` requires `project_id` and `worktree_id`. The repo default satisfies `project_id`. Server validates `project.repository_id == worktree.repository_id`.
+3. **Mandatory task binding** — `POST /tasks` requires `project_id` and `repository_id`; the server allocates a managed worktree and sets `worktree_id`. The repo default satisfies `project_id`. Server validates `project.repository_id` matches the allocated worktree's repo.
 
 4. **Remove global default** — Delete the global default project row, stop seeding it in `postgres.Migrate`, and remove `DefaultProjectID` / `DEFAULT_PROJECT_ID` constants. Repo-level defaults only.
 

@@ -14,7 +14,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 )
 
-func gitHandlerTest(t *testing.T) (http.Handler, string) {
+func gitHandlerTest(t *testing.T) (http.Handler, *composition.API, string) {
 	t.Helper()
 	if _, err := exec.LookPath("git"); err != nil {
 		t.Skip("git not on PATH")
@@ -28,7 +28,7 @@ func gitHandlerTest(t *testing.T) (http.Handler, string) {
 		Projects:   st,
 		GitService: gitwork.New(),
 	})
-	return mux, main
+	return mux, st, main
 }
 
 func initHandlerGitRepo(t *testing.T) string {
@@ -50,7 +50,7 @@ func runHandlerGit(t *testing.T, dir string, args ...string) {
 }
 
 func TestHandler_listGlobalGitRepositories(t *testing.T) {
-	h, main := gitHandlerTest(t)
+	h, _, main := gitHandlerTest(t)
 	createBody, _ := json.Marshal(map[string]string{"path": main})
 	create := httptest.NewRequest(http.MethodPost, "/git/repositories", bytes.NewReader(createBody))
 	createRec := httptest.NewRecorder()
@@ -67,7 +67,7 @@ func TestHandler_listGlobalGitRepositories(t *testing.T) {
 }
 
 func TestHandler_createGlobalGitRepository(t *testing.T) {
-	h, main := gitHandlerTest(t)
+	h, _, main := gitHandlerTest(t)
 	body, _ := json.Marshal(map[string]string{"path": main})
 	req := httptest.NewRequest(http.MethodPost, "/git/repositories", bytes.NewReader(body))
 	rec := httptest.NewRecorder()
@@ -78,7 +78,7 @@ func TestHandler_createGlobalGitRepository(t *testing.T) {
 }
 
 func TestHandler_createGlobalGitRepository_notGit(t *testing.T) {
-	h, _ := gitHandlerTest(t)
+	h, _, _ := gitHandlerTest(t)
 	dir := t.TempDir()
 	body, _ := json.Marshal(map[string]string{"path": dir})
 	req := httptest.NewRequest(http.MethodPost, "/git/repositories", bytes.NewReader(body))

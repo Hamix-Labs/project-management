@@ -117,72 +117,6 @@ function renderDetailPage() {
   );
 }
 
-function reconcileOkResponse(): Response {
-  return jsonResponse({
-    status: "ok",
-    report: {
-      repo_path_updated: false,
-      worktrees_path_updated: 0,
-      worktrees_added: 0,
-      worktrees_removed: 0,
-      branches_head_updated: 0,
-      worktrees_skipped: [],
-      needs_branch_bind: [],
-    },
-  });
-}
-
-function createDeferredReconcileFetch(options?: {
-  onRequest?: (method: string, url: string) => void;
-}) {
-  let resolveReconcile!: () => void;
-  const reconcileGate = new Promise<void>((resolve) => {
-    resolveReconcile = resolve;
-  });
-
-  vi.spyOn(globalThis, "fetch").mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
-    const url = requestUrl(input);
-    const method = init?.method ?? "GET";
-    options?.onRequest?.(method, url);
-    if (method === "POST" && url.endsWith(`/git/repositories/${repoId}/reconcile`)) {
-      await reconcileGate;
-      return reconcileOkResponse();
-    }
-    if (method === "GET" && url.endsWith(`/git/repositories/${repoId}`)) {
-      return jsonResponse({
-        id: repoId,
-        path: "/repo/main",
-        git_common_dir: "",
-        host_path: "",
-        default_branch: "main",
-        created_at: "2026-06-22T12:00:00Z",
-        updated_at: "2026-06-22T12:00:00Z",
-      });
-    }
-    if (method === "GET" && url.includes(`/git/repositories/${repoId}/worktrees/live`)) {
-      return jsonResponse({ worktrees: [] });
-    }
-    if (method === "GET" && url.endsWith(`/git/repositories/${repoId}/worktrees/checkout-status`)) {
-      return jsonResponse(detailCheckoutStatusResponse());
-    }
-    if (method === "GET" && url.endsWith(`/git/repositories/${repoId}/worktrees`)) {
-      return jsonResponse(detailWorktreesResponse());
-    }
-    if (method === "GET" && url.includes(`/git/repositories/${repoId}/branches`)) {
-      return jsonResponse(detailBranchesResponse());
-    }
-    if (method === "DELETE") {
-      return jsonResponse(
-        { error: "task still running", code: "has_running_task" },
-        { status: 409 },
-      );
-    }
-    return jsonResponse({ error: "not found" }, { status: 404 });
-  });
-
-  return { resolveReconcile };
-}
-
 function mockRepositoryDetailFetch(options?: {
   onRequest?: (method: string, url: string) => void;
 }) {
@@ -190,9 +124,6 @@ function mockRepositoryDetailFetch(options?: {
     const url = requestUrl(input);
     const method = init?.method ?? "GET";
     options?.onRequest?.(method, url);
-    if (method === "POST" && url.endsWith(`/git/repositories/${repoId}/reconcile`)) {
-      return reconcileOkResponse();
-    }
     if (method === "GET" && url.endsWith(`/git/repositories/${repoId}`)) {
       return jsonResponse({
         id: repoId,
@@ -204,9 +135,6 @@ function mockRepositoryDetailFetch(options?: {
         updated_at: "2026-06-22T12:00:00Z",
       });
     }
-    if (method === "GET" && url.includes(`/git/repositories/${repoId}/worktrees/live`)) {
-      return jsonResponse({ worktrees: [] });
-    }
     if (method === "GET" && url.endsWith(`/git/repositories/${repoId}/worktrees/checkout-status`)) {
       return jsonResponse(detailCheckoutStatusResponse());
     }
@@ -215,6 +143,20 @@ function mockRepositoryDetailFetch(options?: {
     }
     if (method === "GET" && url.includes(`/git/repositories/${repoId}/branches`)) {
       return jsonResponse(detailBranchesResponse());
+    }
+    if (method === "POST" && url.endsWith(`/git/repositories/${repoId}/sync`)) {
+      return jsonResponse({
+        status: "ok",
+        report: {
+          repo_path_updated: false,
+          worktrees_path_updated: 0,
+          worktrees_added: 0,
+          worktrees_removed: 0,
+          branches_head_updated: 0,
+          worktrees_skipped: [],
+          needs_branch_bind: [],
+        },
+      });
     }
     if (method === "DELETE") {
       return jsonResponse(
@@ -244,7 +186,7 @@ describe("RepositoryWorktreesPage", () => {
     expect(screen.getByRole("search", { name: /search worktrees/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: worktreeGitCopy.reconcile })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: worktreeGitCopy.deleteRepository })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: worktreeGitCopy.addWorktree })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /add worktree/i })).not.toBeInTheDocument();
   });
 
   it("filters worktrees by search query", async () => {
@@ -275,83 +217,18 @@ describe("RepositoryWorktreesPage", () => {
     expect(within(dialog).getByRole("button", { name: /^Unregister$/i })).toBeDisabled();
   });
 
-  it("reconciles when add-worktree menu opens and before register modal", async () => {
+  it("posts Sync to the sync endpoint", async () => {
     const calls: string[] = [];
     mockRepositoryDetailFetch({
       onRequest(method, url) {
-        if (method === "POST" && url.includes("/reconcile")) {
-          calls.push("reconcile");
-        }
-        if (method === "GET" && url.includes("/worktrees/live")) {
-          calls.push("live");
+        if (method === "POST" && url.includes("/sync")) {
+          calls.push("sync");
         }
       },
     });
     renderDetailPage();
     await screen.findByRole("heading", { level: 1, name: "main" });
-
-    await userEvent.click(screen.getByRole("button", { name: worktreeGitCopy.addWorktree }));
-    await waitFor(() => expect(calls).toContain("reconcile"));
-
-    await userEvent.click(screen.getByRole("menuitem", { name: worktreeGitCopy.registerWorktree }));
-    expect(
-      await screen.findByRole("heading", { name: worktreeGitCopy.registerModalTitle }),
-    ).toBeInTheDocument();
-
-    expect(calls.indexOf("live")).toBeGreaterThan(calls.indexOf("reconcile"));
-  });
-
-  it("keeps add-worktree trigger idle during silent prefetch", async () => {
-    let reconcileStarted = false;
-    const { resolveReconcile } = createDeferredReconcileFetch({
-      onRequest(method, url) {
-        if (method === "POST" && url.includes("/reconcile")) {
-          reconcileStarted = true;
-        }
-      },
-    });
-    renderDetailPage();
-    await screen.findByRole("heading", { level: 1, name: "main" });
-
-    const addButton = screen.getByRole("button", { name: worktreeGitCopy.addWorktree });
-    await userEvent.click(addButton);
-    await waitFor(() => expect(reconcileStarted).toBe(true));
-
-    expect(addButton).not.toHaveAttribute("aria-busy", "true");
-    expect(document.querySelector(".worktrees-menu-trigger__spinner")).toBeNull();
-    expect(screen.queryByText(worktreeGitCopy.reconcilingStatus)).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: worktreeGitCopy.reconcile })).toBeEnabled();
-    expect(screen.getByRole("button", { name: worktreeGitCopy.deleteRepository })).toBeEnabled();
-
-    resolveReconcile();
-    await waitFor(() => expect(addButton).not.toHaveAttribute("aria-busy", "true"));
-  });
-
-  it("opens register modal before reconcile finishes and shows sync status", async () => {
-    let reconcileStarted = false;
-    const { resolveReconcile } = createDeferredReconcileFetch({
-      onRequest(method, url) {
-        if (method === "POST" && url.includes("/reconcile")) {
-          reconcileStarted = true;
-        }
-      },
-    });
-    renderDetailPage();
-    await screen.findByRole("heading", { level: 1, name: "main" });
-
-    await userEvent.click(screen.getByRole("button", { name: worktreeGitCopy.addWorktree }));
-    await waitFor(() => expect(reconcileStarted).toBe(true));
-
-    await userEvent.click(screen.getByRole("menuitem", { name: worktreeGitCopy.registerWorktree }));
-    const dialog = await screen.findByRole("dialog");
-    expect(
-      within(dialog).getByRole("heading", { name: worktreeGitCopy.registerModalTitle }),
-    ).toBeInTheDocument();
-    expect(within(dialog).getByText(worktreeGitCopy.inventoryRefreshStatus)).toBeInTheDocument();
-
-    resolveReconcile();
-    await waitFor(() => {
-      expect(within(dialog).queryByText(worktreeGitCopy.inventoryRefreshStatus)).not.toBeInTheDocument();
-    });
+    await userEvent.click(screen.getByRole("button", { name: worktreeGitCopy.reconcile }));
+    await waitFor(() => expect(calls).toContain("sync"));
   });
 });

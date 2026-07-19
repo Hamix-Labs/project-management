@@ -61,17 +61,13 @@ func Register(m *http.ServeMux, deps Deps) {
 	m.Handle("GET /git/repositories/{repoId}", http.HandlerFunc(h.getGlobalGitRepository))
 	m.Handle("DELETE /git/repositories/{repoId}", http.HandlerFunc(h.deleteGlobalGitRepository))
 	m.Handle("GET /git/repositories/{repoId}/worktrees", http.HandlerFunc(h.listGlobalGitWorktrees))
-	m.Handle("GET /git/repositories/{repoId}/worktrees/live", http.HandlerFunc(h.listGlobalGitWorktreesLive))
 	m.Handle("GET /git/repositories/{repoId}/worktrees/checkout-status", http.HandlerFunc(h.listGlobalGitWorktreesCheckoutStatus))
-	m.Handle("GET /git/repositories/{repoId}/worktrees/probe", http.HandlerFunc(h.probeGlobalGitWorktree))
-	m.Handle("POST /git/repositories/{repoId}/worktrees", http.HandlerFunc(h.createGlobalGitWorktree))
-	m.Handle("POST /git/repositories/{repoId}/worktrees/register", http.HandlerFunc(h.registerGlobalGitWorktree))
+	m.Handle("POST /git/repositories/{repoId}/sync", http.HandlerFunc(h.syncGlobalGitRepository))
 	m.Handle("POST /git/repositories/{repoId}/reconcile", http.HandlerFunc(h.reconcileGlobalGitRepository))
 	m.Handle("POST /git/repositories/{repoId}/relocate", http.HandlerFunc(h.relocateGlobalGitRepository))
 	m.Handle("POST /git/worktrees/{worktreeId}/relocate", http.HandlerFunc(h.relocateGlobalGitWorktree))
 	m.Handle("DELETE /git/worktrees/{worktreeId}", http.HandlerFunc(h.deleteGlobalGitWorktree))
 	m.Handle("GET /git/repositories/{repoId}/branches", http.HandlerFunc(h.listGlobalGitBranches))
-	m.Handle("GET /git/repositories/{repoId}/branches/live", http.HandlerFunc(h.listGlobalGitBranchesLive))
 	m.Handle("GET /git/repositories/{repoId}/projects", http.HandlerFunc(h.listRepoProjects))
 }
 

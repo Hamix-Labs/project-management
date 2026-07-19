@@ -1,6 +1,3 @@
-import type { GitWorktree } from "@/types/git";
-import { pickDefaultWorktreeId } from "@/lib/gitWorktreeRegistration";
-
 export type ComposeGitAssignment = {
   repositoryId: string;
   projectId: string;
@@ -66,7 +63,6 @@ export function selectWorktree(current: ComposeGitAssignment, worktreeId: string
 export function applyRepoScopedDefaults(
   current: ComposeGitAssignment,
   projects: ComposeGitProjectOption[],
-  worktrees: GitWorktree[],
 ): ComposeGitAssignment {
   let next = current;
   const projectValid =
@@ -77,13 +73,9 @@ export function applyRepoScopedDefaults(
       next = { ...next, projectId };
     }
   }
-  const worktreeValid =
-    next.worktreeId !== "" && worktrees.some((wt) => wt.id === next.worktreeId);
-  if (!worktreeValid) {
-    const worktreeId = pickDefaultWorktreeId(worktrees);
-    if (worktreeId !== "" && worktreeId !== next.worktreeId) {
-      next = { ...next, worktreeId };
-    }
+  // Task create allocates worktrees server-side; do not default to main.
+  if (next.worktreeId !== "") {
+    next = { ...next, worktreeId: "" };
   }
   return next;
 }

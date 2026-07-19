@@ -86,7 +86,7 @@ export function useRichPromptEditorController({
 
   const projectContextEnabled = projectContext != null;
 
-  const editorRef = useRef<ReturnType<typeof useEditor>>(null);
+  const editorRef = useRef<ReturnType<typeof useEditor> | null>(null);
   const selectedProjectIdsRef = useRef(selectedProjectIds);
   const onProjectIdsChangeRef = useRef(onProjectIdsChange);
   useEffect(() => {

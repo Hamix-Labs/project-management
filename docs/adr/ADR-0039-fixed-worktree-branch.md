@@ -1,14 +1,14 @@
 # ADR-0039: Fixed branch per worktree, task binds worktree_id
 
 **Date:** 2026-06-27
-**Status:** Accepted (supersedes ADR-0037 §2–4 on multi-association and checkout switching)
+**Status:** Accepted (superseded in part by [ADR-0081](./ADR-0081-hamix-managed-worktrees.md) — task create allocates worktrees; fixed branch + `worktree_id` binding remain)
 **Deciders:** Hamix maintainers
 
 ## Context
 
 ADR-0037 modeled a worktree as a directory that could associate with **many** repo-level branches over time via `worktree_branches`, with the worker running `git checkout` before each agent run. Operators and product rules changed:
 
-- **One branch per worktree**, chosen at register/create time and immutable thereafter.
+- **One branch per worktree**, chosen at allocate/create time and immutable thereafter.
 - **No branch switching** at task pickup — the worktree must already be on its branch.
 - **Tasks bind `worktree_id`**; branch is derived from `git_worktrees.branch_id`.
 - **Execution:** sequential within a worktree, parallel across worktrees (in-process worker pool).
@@ -31,7 +31,7 @@ Drop table `worktree_branches`, column `tasks.worktree_branch_id`, column `git_w
 ### 3. API
 
 - Remove `GET/POST/DELETE /git/worktrees/{id}/branches`.
-- Task create/patch accept `worktree_id` (not `worktree_branch_id`).
+- Task create accepts `repository_id` and sets `worktree_id` via allocate (ADR-0081); rows still store `worktree_id`.
 
 ## Consequences
 
