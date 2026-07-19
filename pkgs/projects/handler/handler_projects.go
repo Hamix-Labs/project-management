@@ -179,6 +179,14 @@ func (h *Handler) listProjectContext(w http.ResponseWriter, r *http.Request) {
 		writeStoreError(w, r, op, err)
 		return
 	}
+	// Empty store results are nil slices; JSON would encode them as null and
+	// break the SPA parser which requires items/edges arrays.
+	if items == nil {
+		items = []domain.ProjectContextItem{}
+	}
+	if edges == nil {
+		edges = []domain.ProjectContextEdge{}
+	}
 	handlerhttp.WriteJSONWithETag(w, r, op, http.StatusOK, projectContextListResponse{Items: items, Edges: edges, Limit: limit})
 }
 

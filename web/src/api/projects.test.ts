@@ -124,6 +124,17 @@ describe("project API parsers", () => {
     expect(out.edges).toEqual([]);
   });
 
+  it("defaults null project context items and edges to empty lists", () => {
+    const out = parseProjectContextListResponse({
+      items: null,
+      edges: null,
+      limit: 50,
+    });
+
+    expect(out.items).toEqual([]);
+    expect(out.edges).toEqual([]);
+  });
+
   it("lists project context", async () => {
     const spy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(JSON.stringify({ items: [], edges: [], limit: 5 }), {

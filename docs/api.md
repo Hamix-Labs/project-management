@@ -36,7 +36,7 @@ Data model semantics: [data-model.md](./data-model.md). Configuration: [configur
 | GET | `/projects/{id}` | Single project. |
 | PATCH | `/projects/{id}` | Partial. At least one of `name`, `description`, `status`, `context_summary`. Default project (`00000000-0000-4000-8000-000000000001`) cannot be renamed / archived (409). Publishes `project_updated`. |
 | DELETE | `/projects/{id}` | `204`. Blocked while tasks reference it (409). Default project cannot be deleted. Publishes `project_deleted`. |
-| GET | `/projects/{id}/context` | List context items + edges. `?limit`, `?pinned_only=true`. |
+| GET | `/projects/{id}/context` | List context items + edges (`{ items, edges, limit }`; empty lists are `[]`, never `null`). `?limit`, `?pinned_only=true`. |
 | POST | `/projects/{id}/context` | Create context item. Publishes `project_context_changed`. |
 | PATCH | `/projects/{id}/context/{contextId}` | Partial. Publishes `project_context_changed`. |
 | DELETE | `/projects/{id}/context/{contextId}` | `204`. Publishes `project_context_changed`. |

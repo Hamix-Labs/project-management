@@ -147,7 +147,8 @@ export function parseProjectContextListResponse(
   if (!isRecord(value)) {
     throw new Error("Invalid API response: project context list must be an object");
   }
-  const raw = value.items;
+  // Null empty lists (Go nil slices) are treated like omitted arrays.
+  const raw = value.items ?? [];
   if (!Array.isArray(raw)) {
     throw new Error("Invalid API response: items must be an array");
   }
