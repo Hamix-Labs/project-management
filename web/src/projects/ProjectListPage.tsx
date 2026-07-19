@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useProjectDetailPrefetcher } from "@/app/hooks/usePrefetchOnIntent";
+import { useGlobalRepositories } from "@/hooks/useGlobalRepositories";
 import { EmptyState } from "@/shared/EmptyState";
 import { useDocumentTitle } from "@/shared/useDocumentTitle";
 import type { Project } from "@/types";
@@ -8,13 +9,28 @@ import { useProjects } from "./hooks";
 import { ProjectCreateDialog } from "@/components/projects/ProjectCreateDialog";
 import { useCreateProjectMutation } from "./mutations";
 
+/** Last path segment for repo labels (e.g. `C:/proj/hamix` → `hamix`). */
+function repositoryBasename(path: string): string {
+  const normalized = path.trim().replace(/\\/g, "/").replace(/\/+$/, "");
+  if (normalized === "") return path;
+  const slash = normalized.lastIndexOf("/");
+  return slash >= 0 ? normalized.slice(slash + 1) : normalized;
+}
+
 export function ProjectListPage() {
   useDocumentTitle("Projects");
   const { data, isLoading, error } = useProjects({ includeArchived: true });
+  const repositoriesQuery = useGlobalRepositories();
   const projects = data?.projects ?? [];
   const activeCount = projects.filter((p) => p.status === "active").length;
   const archivedCount = projects.length - activeCount;
   const [createOpen, setCreateOpen] = useState(false);
+  const repoLabelById = new Map(
+    (repositoriesQuery.data ?? []).map((repo) => [
+      repo.id,
+      repositoryBasename(repo.path) || repo.path,
+    ]),
+  );
 
   const createMutation = useCreateProjectMutation();
 
@@ -101,7 +117,16 @@ export function ProjectListPage() {
         {projects.length > 0 ? (
           <div className="pl__list" aria-label="Projects">
             {projects.map((project, i) => (
-              <ProjectRow key={project.id} project={project} index={i} />
+              <ProjectRow
+                key={project.id}
+                project={project}
+                index={i}
+                repositoryLabel={
+                  project.repository_id
+                    ? repoLabelById.get(project.repository_id)
+                    : undefined
+                }
+              />
             ))}
           </div>
         ) : null}
@@ -110,9 +135,21 @@ export function ProjectListPage() {
   );
 }
 
-function ProjectRow({ project, index }: { project: Project; index: number }) {
+function ProjectRow({
+  project,
+  index,
+  repositoryLabel,
+}: {
+  project: Project;
+  index: number;
+  repositoryLabel?: string;
+}) {
   const isArchived = project.status === "archived";
-  const openLabel = `Open project ${project.name}`;
+  const displayName =
+    project.is_default && repositoryLabel
+      ? `${project.name} · ${repositoryLabel}`
+      : project.name;
+  const openLabel = `Open project ${displayName}`;
   const to = `/projects/${encodeURIComponent(project.id)}`;
   const prefetchProjectDetail = useProjectDetailPrefetcher();
   const onIntent = () => prefetchProjectDetail(project.id);
@@ -128,7 +165,7 @@ function ProjectRow({ project, index }: { project: Project; index: number }) {
     >
       <div className="pl__row-marker" aria-hidden="true" />
       <div className="pl__row-main">
-        <span className="pl__row-name">{project.name}</span>
+        <span className="pl__row-name">{displayName}</span>
         <span className="pl__row-desc">
           {project.description || project.context_summary || "No description"}
         </span>

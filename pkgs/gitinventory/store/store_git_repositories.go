@@ -13,6 +13,7 @@ import (
 	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
+	projectsstore "github.com/AlexsanderHamir/Hamix/pkgs/projects/store"
 	"gorm.io/gorm"
 )
 
@@ -77,6 +78,7 @@ func (s *Store) CreateGitRepository(ctx context.Context, projectID string, input
 
 // DeleteGitRepository removes a repository when no running tasks reference it.
 // projectID is accepted for API-route compatibility but ignored (repos are global).
+// Cascades: projects (including system defaults), worktrees, and branches for the repo.
 func (s *Store) DeleteGitRepository(ctx context.Context, projectID, repoID string) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "gitinventory.store.DeleteGitRepository")
 	if _, err := s.GetGitRepository(ctx, projectID, repoID); err != nil {
@@ -85,16 +87,26 @@ func (s *Store) DeleteGitRepository(ctx context.Context, projectID, repoID strin
 	if err := guardNoRunningTask(ctx, s.db, repoID); err != nil {
 		return err
 	}
-	res := s.db.WithContext(ctx).
-		Where("id = ?", repoID).
-		Delete(&model.GitRepository{})
-	if res.Error != nil {
-		return fmt.Errorf("delete git repository: %w", res.Error)
-	}
-	if res.RowsAffected == 0 {
-		return gitdomain.NewGitErr(gitdomain.GitCodeRepositoryNotFound, "repository not found")
-	}
-	return nil
+	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := projectsstore.DeleteProjectsForRepository(ctx, tx, repoID); err != nil {
+			return err
+		}
+		if err := tx.Where("repository_id = ?", repoID).Delete(&model.GitWorktree{}).Error; err != nil {
+			return fmt.Errorf("delete git worktrees: %w", err)
+		}
+		if err := tx.Where("repository_id = ?", repoID).Delete(&model.GitBranch{}).Error; err != nil {
+			return fmt.Errorf("delete git branches: %w", err)
+		}
+		res := tx.Where("id = ?", repoID).Delete(&model.GitRepository{})
+		if res.Error != nil {
+			return fmt.Errorf("delete git repository: %w", res.Error)
+		}
+		if res.RowsAffected == 0 {
+			return gitdomain.NewGitErr(gitdomain.GitCodeRepositoryNotFound, "repository not found")
+		}
+		return nil
+	})
+	return err
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."

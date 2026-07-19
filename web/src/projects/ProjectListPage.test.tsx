@@ -82,7 +82,11 @@ describe("ProjectListPage", () => {
 
   it("does not surface row delete controls on the list", () => {
     const projects: Project[] = [
-      project(0, { name: "Default", is_default: true }),
+      project(0, {
+        name: "Default",
+        is_default: true,
+        repository_id: "00000000-0000-4000-8000-000000000010",
+      }),
       project(1, { id: "custom-a", name: "Alpha" }),
       project(2, { id: "custom-b", name: "Beta" }),
     ];
@@ -91,6 +95,43 @@ describe("ProjectListPage", () => {
     expect(
       within(library).queryAllByRole("button", { name: /^Delete project / }),
     ).toHaveLength(0);
+  });
+
+  it("labels default projects with their repository basename", async () => {
+    const repoId = "00000000-0000-4000-8000-000000000010";
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input: FetchInput) => {
+      const url = requestUrl(input);
+      if (url === "/git/repositories" || url.endsWith("/git/repositories")) {
+        return jsonResponse({
+          repositories: [
+            {
+              id: repoId,
+              path: "C:/Users/gomes/OneDrive/Documents/Hamix",
+              git_common_dir: "",
+              host_path: "",
+              default_branch: "main",
+              linked_worktree_count: 0,
+              created_at: "2026-04-27T00:00:00Z",
+              updated_at: "2026-04-27T00:00:00Z",
+            },
+          ],
+        });
+      }
+      return jsonResponse({ error: "not found" }, { status: 404 });
+    });
+
+    renderPage([
+      project(0, {
+        name: "Default",
+        is_default: true,
+        repository_id: repoId,
+        description: "Built-in project for tasks tied to this repository.",
+      }),
+    ]);
+
+    expect(
+      await screen.findByRole("link", { name: /^Open project Default · Hamix$/ }),
+    ).toBeInTheDocument();
   });
 
   it("creates a project with name, description, and repository via the dialog", async () => {

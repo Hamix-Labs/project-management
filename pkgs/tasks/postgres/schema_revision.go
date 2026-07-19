@@ -36,7 +36,10 @@ import (
 //
 // Rev 10: peel one-shot migrate steps into pkgs/tasks/postgres/migrate.
 // No SQL or post-AutoMigrate behavior change.
-const SchemaRevision = 10
+//
+// Rev 11: purge projects whose repository_id no longer exists (orphans left
+// when repositories were deleted without cascading project rows).
+const SchemaRevision = 11
 
 const schemaMetaRowID = 1
 
