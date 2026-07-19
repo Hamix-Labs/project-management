@@ -1,7 +1,7 @@
 # ADR-0040: Git reconcile v2 (path repair with stable IDs)
 
 **Date:** 2026-06-27  
-**Status:** Accepted  
+**Status:** Accepted (superseded in part by [ADR-0081](./ADR-0081-hamix-managed-worktrees.md) — Sync replaces discover/register operator flows; path repair + relocate remain)  
 **Deciders:** Engineering (git/worktrees vertical)
 
 ## Context

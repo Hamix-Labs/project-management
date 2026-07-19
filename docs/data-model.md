@@ -19,7 +19,7 @@ Work hierarchy is **Project → Task**. Tasks may have:
 | `id` | string (UUID) | Server-assigned when omitted. |
 | `title` | string | Required after trim. |
 | `initial_prompt` | string (HTML) | TipTap rich text; `@`-mentions validated against the task's `worktree_id` when present. |
-| `worktree_id` | string \| null | FK to `git_worktrees.id`; binds the task to a registered worktree (branch via `git_worktrees.branch_id`, ADR-0039). |
+| `worktree_id` | string \| null | FK to `git_worktrees.id`; set by server allocate on create from `repository_id` (ADR-0081). |
 | `status` | enum | `ready` / `running` / `blocked` / `review` / `done` / `failed` / `on_hold`. Default `ready`. `on_hold` is operator-set: pickup is gated on `status = ready` so an `on_hold` task is intentionally kept out of the worker's queue until the operator flips it back to `ready` (PATCH `/tasks/{id}`). |
 | `pending_retry` | JSON \| null | Ephemeral operator intent between `POST /tasks/{id}/retry` and worker pickup. `{ mode: fresh|resume, parent_cycle_id }`. Not exposed on the HTTP task JSON (`json:"-"`); consumed and cleared atomically when the worker transitions `ready→running`. |
 | `priority` | enum | `low` / `medium` / `high` / `critical`. Required at create. |
@@ -341,7 +341,7 @@ Out of scope today: embeddings / vector search, autonomous memory pruning, summa
 
 ## Git workflow (`git_repositories`, `git_worktrees`, `git_branches`)
 
-Git context is a strict, project-free chain: **repo → worktree (`branch_id`) → task (`worktree_id`)**. A **project** is an optional overlay tied to one repo, not a node in the git chain. See [ADR-0039](./adr/ADR-0039-fixed-worktree-branch.md) (current model), [ADR-0037](./adr/ADR-0037-global-repos-project-tree.md) (global repos + project overlay), [ADR-0033](./adr/ADR-0033-git-worktrees-and-branches.md) (original), and [domain/worktrees-and-branches.md](./domain/worktrees-and-branches.md).
+Git context chain: **repo → managed worktree (`branch_id`) → task (`worktree_id`)**. Operators register a repository by path; task create with `repository_id` allocates a worktree under `.hamix/{repoID}/worktrees/…` (see [ADR-0081](./adr/ADR-0081-hamix-managed-worktrees.md)). A **project** is an optional overlay tied to one repo. Also [ADR-0039](./adr/ADR-0039-fixed-worktree-branch.md), [ADR-0037](./adr/ADR-0037-global-repos-project-tree.md), [domain/worktrees-and-branches.md](./domain/worktrees-and-branches.md).
 
 ```mermaid
 flowchart TB

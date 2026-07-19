@@ -1,7 +1,7 @@
 # ADR-0041: Unified git repository registration
 
 **Date:** 2026-06-27  
-**Status:** Accepted  
+**Status:** Accepted (superseded in part by [ADR-0081](./ADR-0081-hamix-managed-worktrees.md) for task worktree allocation; repository registration path unify remains)  
 **Deciders:** Engineering (git/worktrees vertical)
 
 ## Context
