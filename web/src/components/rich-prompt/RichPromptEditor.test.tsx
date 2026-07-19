@@ -3,7 +3,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ProjectContextEdge, ProjectContextItem } from "@/types";
+import type { ProjectContextItem } from "@/types";
 import { ModalStackProvider } from "@/shared/ModalStackContext";
 import { RichPromptEditor } from "./RichPromptEditor";
 
@@ -29,20 +29,6 @@ const items: ProjectContextItem[] = [
     body: "Stay under 200ms",
     created_by: "user",
     pinned: false,
-    created_at: "2026-04-29T00:00:00Z",
-    updated_at: "2026-04-29T00:00:00Z",
-  },
-];
-
-const edges: ProjectContextEdge[] = [
-  {
-    id: "edge-1",
-    project_id: projectId,
-    source_context_id: "ctx-decision",
-    target_context_id: "ctx-constraint",
-    relation: "supports",
-    strength: 4,
-    note: "",
     created_at: "2026-04-29T00:00:00Z",
     updated_at: "2026-04-29T00:00:00Z",
   },
@@ -91,7 +77,6 @@ describe("RichPromptEditor — project context wiring", () => {
         onChange={vi.fn()}
         projectContext={{
           items,
-          edges,
           selectedIds: [],
           onSelectedIdsChange: vi.fn(),
         }}
@@ -112,7 +97,6 @@ describe("RichPromptEditor — project context wiring", () => {
         onChange={vi.fn()}
         projectContext={{
           items,
-          edges,
           selectedIds: ["ctx-decision", "ctx-constraint"],
           onSelectedIdsChange: vi.fn(),
         }}
@@ -143,7 +127,6 @@ describe("RichPromptEditor — project context wiring", () => {
         onChange={vi.fn()}
         projectContext={{
           items,
-          edges,
           selectedIds: ["ctx-decision", "ctx-constraint"],
           onSelectedIdsChange,
         }}

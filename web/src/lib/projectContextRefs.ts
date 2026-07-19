@@ -1,4 +1,4 @@
-import type { ProjectContextEdge, ProjectContextItem } from "@/types";
+import type { ProjectContextItem } from "@/types";
 
 /**
  * Server cap from `pkgs/tasks/store/internal/tasks/project_context_selection.go`
@@ -29,58 +29,6 @@ export function projectContextShortId(rawId: string): string {
   const cleaned = trimmed.replace(/[^A-Za-z0-9]/g, "").toLowerCase();
   if (cleaned.length === 0) return trimmed.slice(0, PROJECT_CONTEXT_SHORT_ID_LENGTH);
   return cleaned.slice(0, PROJECT_CONTEXT_SHORT_ID_LENGTH);
-}
-
-/**
- * Outcome of a context-add gesture. `nodeOnly` adds just the chosen node;
- * `withChildren` follows outgoing project-context edges
- * (`source_context_id -> target_context_id`).
- */
-export type ProjectContextAddMode = "nodeOnly" | "withChildren";
-
-/**
- * Compute the set of context item IDs that should be selected when the user
- * picks `nodeId` with the given `mode`. For `nodeOnly`, returns `[nodeId]`.
- * For `withChildren`, includes `nodeId` plus all reachable descendants
- * following outgoing edges, with cycle protection.
- *
- * The returned list preserves the order: the chosen node first, then its
- * descendants in breadth-first order. Callers are expected to merge this
- * with the existing `selectedIds` via `mergeProjectContextSelection`.
- */
-export function expandProjectContextSelection(
-  nodeId: string,
-  mode: ProjectContextAddMode,
-  edges: readonly ProjectContextEdge[],
-): string[] {
-  const root = (nodeId ?? "").trim();
-  if (!root) return [];
-  if (mode === "nodeOnly") return [root];
-
-  const childrenBySource = new Map<string, string[]>();
-  for (const edge of edges) {
-    const src = edge.source_context_id;
-    const tgt = edge.target_context_id;
-    if (!src || !tgt) continue;
-    const list = childrenBySource.get(src) ?? [];
-    list.push(tgt);
-    childrenBySource.set(src, list);
-  }
-
-  const result: string[] = [];
-  const seen = new Set<string>();
-  const queue: string[] = [root];
-  while (queue.length > 0) {
-    const current = queue.shift()!;
-    if (seen.has(current)) continue;
-    seen.add(current);
-    result.push(current);
-    const children = childrenBySource.get(current) ?? [];
-    for (const child of children) {
-      if (!seen.has(child)) queue.push(child);
-    }
-  }
-  return result;
 }
 
 /**
@@ -128,18 +76,4 @@ export function selectedProjectContextItems(
     if (item) out.push(item);
   }
   return out;
-}
-
-/**
- * True when the reachable set from `nodeId` (following outgoing edges) is
- * strictly larger than the node itself. Used by the choice dialog to decide
- * whether to even offer the "Reference this node and its children" option.
- */
-export function hasProjectContextChildren(
-  nodeId: string,
-  edges: readonly ProjectContextEdge[],
-): boolean {
-  const id = (nodeId ?? "").trim();
-  if (!id) return false;
-  return edges.some((edge) => edge.source_context_id === id);
 }

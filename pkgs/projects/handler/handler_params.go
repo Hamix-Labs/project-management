@@ -21,19 +21,6 @@ func parseProjectContextPath(r *http.Request) (projectID, itemID string, err err
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func parseProjectContextEdgePath(r *http.Request) (projectID, edgeID string, err error) {
-	projectID, err = parsePathID(r.PathValue("id"))
-	if err != nil {
-		return "", "", err
-	}
-	edgeID, err = parsePathID(r.PathValue("edgeId"))
-	if err != nil {
-		return "", "", err
-	}
-	return projectID, edgeID, nil
-}
-
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func parseProjectListParams(q map[string][]string) (limit int, includeArchived bool, err error) {
 	limit, err = handlerhttp.ParseBoundedLimit(q, 50, 100)
 	if err != nil {

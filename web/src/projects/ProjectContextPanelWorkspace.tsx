@@ -9,7 +9,6 @@ type Props = {
   error: Error | null;
   mutations: ProjectContextMutations;
   onImportMemory: () => void;
-  onAddEdge: (sourceId?: string) => void;
 };
 
 export function ProjectContextPanelWorkspace({
@@ -18,7 +17,6 @@ export function ProjectContextPanelWorkspace({
   error,
   mutations,
   onImportMemory,
-  onAddEdge,
 }: Props) {
   if (isLoading) {
     return (
@@ -62,15 +60,6 @@ export function ProjectContextPanelWorkspace({
           >
             Import memory file
           </button>
-          {items.length >= 2 ? (
-            <button
-              type="button"
-              className="pc__btn-secondary"
-              onClick={() => onAddEdge()}
-            >
-              Add connection
-            </button>
-          ) : null}
         </div>
       </div>
       <ProjectContextListView
@@ -81,7 +70,6 @@ export function ProjectContextPanelWorkspace({
           mutations.patchContextMutation.mutate({ id, ...patch })
         }
         onDeleteNode={(id) => mutations.deleteContextMutation.mutate(id)}
-        onAddConnection={onAddEdge}
       />
     </>
   );

@@ -10,5 +10,4 @@ import (
 type ProjectStore interface {
 	GetProject(ctx context.Context, id string) (projectsdomain.Project, error)
 	ListProjectContextByIDs(ctx context.Context, projectID string, ids []string) ([]projectsdomain.ProjectContextItem, error)
-	ListProjectContextEdges(ctx context.Context, projectID string, nodeIDs []string) ([]projectsdomain.ProjectContextEdge, error)
 }

@@ -1,12 +1,6 @@
 export type ProjectStatus = "active" | "archived";
 
 export type ProjectContextKind = string;
-export type ProjectContextRelation =
-  | "supports"
-  | "blocks"
-  | "refines"
-  | "depends_on"
-  | "related";
 
 export type Project = {
   id: string;
@@ -34,18 +28,6 @@ export type ProjectContextItem = {
   updated_at: string;
 };
 
-export type ProjectContextEdge = {
-  id: string;
-  project_id: string;
-  source_context_id: string;
-  target_context_id: string;
-  relation: ProjectContextRelation;
-  strength: number;
-  note: string;
-  created_at: string;
-  updated_at: string;
-};
-
 export type ProjectListResponse = {
   projects: Project[];
   limit: number;
@@ -53,7 +35,8 @@ export type ProjectListResponse = {
 
 export type ProjectContextListResponse = {
   items: ProjectContextItem[];
-  edges: ProjectContextEdge[];
+  /** Always empty; retained for API wire compatibility. */
+  edges: [];
   limit: number;
 };
 
@@ -63,12 +46,4 @@ export const PROJECT_CONTEXT_KIND_SUGGESTIONS: ProjectContextKind[] = [
   "note",
   "decision",
   "constraint",
-];
-
-export const PROJECT_CONTEXT_RELATIONS: ProjectContextRelation[] = [
-  "supports",
-  "blocks",
-  "refines",
-  "depends_on",
-  "related",
 ];

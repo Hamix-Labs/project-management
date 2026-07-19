@@ -391,8 +391,7 @@
 .project-create-form,
 .project-edit-form,
 .project-context-form,
-.project-context-item-form,
-.project-context-edge-form {
+.project-context-item-form {
   display: grid;
   gap: var(--space-3);
 }
@@ -2318,26 +2317,6 @@ a.pg__btn:focus-visible {
   font-weight: 700;
 }
 
-.project-context-add-connection-button {
-  min-height: 2rem;
-  padding: 0 var(--space-3);
-  border: 1px solid var(--border-hairline);
-  border-radius: var(--radius-md);
-  background: var(--bg-elevated);
-  color: var(--text-secondary);
-  box-shadow: none;
-  font-size: 0.875rem;
-  font-weight: 700;
-}
-
-.project-context-add-connection-button:not(:disabled):hover {
-  border-color: var(--border-strong);
-  background: var(--bg-subtle);
-  color: var(--text);
-  box-shadow: none;
-  transform: none;
-}
-
 .project-context-guide {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2392,7 +2371,6 @@ a.pg__btn:focus-visible {
 }
 
 .project-context-node-modal,
-.project-context-edge-modal,
 .project-context-import-modal {
   display: grid;
   gap: var(--space-4);
@@ -2400,7 +2378,6 @@ a.pg__btn:focus-visible {
 }
 
 .project-context-node-modal h2,
-.project-context-edge-modal h2,
 .project-context-import-modal h2 {
   margin: 0;
   color: var(--text);
@@ -2411,8 +2388,7 @@ a.pg__btn:focus-visible {
 
 /* Match worktrees / task-create modal field chrome */
 .modal-sheet.project-context-form,
-.modal-sheet.project-context-item-form,
-.modal-sheet.project-context-edge-form {
+.modal-sheet.project-context-item-form {
   margin: 0;
   padding: var(--space-5);
   border: 0;
@@ -2424,9 +2400,7 @@ a.pg__btn:focus-visible {
 .project-context-form .field > span,
 .project-context-form .field-label-with-req label,
 .project-context-item-form .field > span,
-.project-context-item-form .field-label-with-req label,
-.project-context-edge-form .field > span,
-.project-context-edge-form .field-label-with-req label {
+.project-context-item-form .field-label-with-req label {
   color: var(--text-secondary);
   font-size: var(--text-sm);
   font-weight: 650;
@@ -2434,10 +2408,8 @@ a.pg__btn:focus-visible {
 
 .project-context-form .field input:not([type="file"]):not([type="checkbox"]):not([type="radio"]),
 .project-context-item-form .field input:not([type="file"]):not([type="checkbox"]):not([type="radio"]),
-.project-context-edge-form .field input:not([type="file"]):not([type="checkbox"]):not([type="radio"]),
 .project-context-form .field textarea,
-.project-context-item-form .field textarea,
-.project-context-edge-form .field textarea {
+.project-context-item-form .field textarea {
   display: block;
   width: 100%;
   box-sizing: border-box;
@@ -2457,36 +2429,29 @@ a.pg__btn:focus-visible {
 }
 
 .project-context-form .field textarea,
-.project-context-item-form .field textarea,
-.project-context-edge-form .field textarea {
+.project-context-item-form .field textarea {
   min-height: 7.5rem;
   resize: vertical;
 }
 
 .project-context-form .field input::placeholder,
 .project-context-item-form .field input::placeholder,
-.project-context-edge-form .field input::placeholder,
 .project-context-form .field textarea::placeholder,
-.project-context-item-form .field textarea::placeholder,
-.project-context-edge-form .field textarea::placeholder {
+.project-context-item-form .field textarea::placeholder {
   color: var(--text-tertiary);
 }
 
 .project-context-form .field input:hover:not(:disabled),
 .project-context-item-form .field input:hover:not(:disabled),
-.project-context-edge-form .field input:hover:not(:disabled),
 .project-context-form .field textarea:hover:not(:disabled),
-.project-context-item-form .field textarea:hover:not(:disabled),
-.project-context-edge-form .field textarea:hover:not(:disabled) {
+.project-context-item-form .field textarea:hover:not(:disabled) {
   border-color: var(--border-interactive-hover, var(--border-strong));
 }
 
 .project-context-form .field input:focus,
 .project-context-item-form .field input:focus,
-.project-context-edge-form .field input:focus,
 .project-context-form .field textarea:focus,
-.project-context-item-form .field textarea:focus,
-.project-context-edge-form .field textarea:focus {
+.project-context-item-form .field textarea:focus {
   outline: none;
   border-color: var(--brand);
   box-shadow: var(--shadow-focus);
@@ -2494,10 +2459,8 @@ a.pg__btn:focus-visible {
 
 .project-context-form .field input:disabled,
 .project-context-item-form .field input:disabled,
-.project-context-edge-form .field input:disabled,
 .project-context-form .field textarea:disabled,
-.project-context-item-form .field textarea:disabled,
-.project-context-edge-form .field textarea:disabled {
+.project-context-item-form .field textarea:disabled {
   background: var(--bg-subtle);
   color: var(--text-tertiary);
   cursor: not-allowed;
@@ -2750,8 +2713,7 @@ a.pg__btn:focus-visible {
   gap: var(--space-3);
 }
 
-.project-context-form__heading strong,
-.project-context-graph h4 {
+.project-context-form__heading strong {
   color: var(--text);
   font-size: 0.95rem;
   font-weight: 750;
@@ -2922,116 +2884,6 @@ a.pg__btn:focus-visible {
   background: transparent;
 }
 
-.project-context-edge-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: var(--space-3);
-  align-items: end;
-}
-
-.project-context-edge-grid .field {
-  min-width: 0;
-}
-
-.project-context-edge-grid .field--custom-select {
-  max-width: none;
-}
-
-.project-context-edge-grid .custom-select-trigger {
-  min-height: 2.75rem;
-}
-
-.project-context-edge-grid select {
-  width: 100%;
-  min-width: 0;
-}
-
-.project-context-edge-note {
-  grid-column: 1 / -1;
-}
-
-.project-context-graph {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(17rem, 0.82fr);
-  gap: var(--space-4);
-  align-items: stretch;
-}
-
-.project-context-graph--nodes-only {
-  grid-template-columns: 1fr;
-}
-
-.project-context-graph--nodes-only .project-context-graph__section {
-  gap: var(--space-3);
-  padding: var(--space-3);
-  border-radius: var(--radius-xl);
-  background:
-    radial-gradient(
-      circle at top left,
-      color-mix(in srgb, var(--brand-muted) 42%, transparent),
-      transparent 22rem
-    ),
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--bg-subtle) 58%, transparent),
-      transparent 16rem
-    ),
-    var(--bg-elevated);
-  box-shadow: var(--shadow-xs);
-}
-
-.project-context-graph__section {
-  display: grid;
-  gap: var(--space-3);
-  min-width: 0;
-  max-height: min(64vh, 44rem);
-  align-content: start;
-  padding: var(--space-4);
-  border: 1px solid color-mix(in srgb, var(--accent, var(--brand)) 12%, var(--border-hairline));
-  border-radius: var(--radius-lg);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--brand-muted) 18%, transparent),
-      transparent 10rem
-    ),
-    var(--bg-elevated);
-  overflow: hidden;
-}
-
-.project-context-graph__section-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-}
-
-.project-context-graph__section-heading h4 {
-  margin: 0;
-}
-
-.project-context-graph__section-heading p {
-  max-width: 34rem;
-  margin: var(--space-1) 0 0;
-  color: var(--muted);
-  font-size: 0.85rem;
-  line-height: 1.45;
-}
-
-.project-context-graph__section-heading > span {
-  display: inline-flex;
-  min-width: 1.75rem;
-  min-height: 1.75rem;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid color-mix(in srgb, var(--accent, var(--brand)) 22%, var(--border-hairline));
-  border-radius: var(--radius-full);
-  color: var(--accent, var(--brand));
-  background: var(--brand-muted);
-  font-size: 0.8rem;
-  font-weight: 720;
-}
-
 .project-context-list-stats {
   display: flex;
   flex: 0 0 auto;
@@ -3110,12 +2962,6 @@ a.pg__btn:focus-visible {
     background-color 150ms var(--ease-default);
   content-visibility: auto;
   contain-intrinsic-size: 4.5rem;
-}
-
-.project-context-graph--nodes-only .project-context-node-card {
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  align-items: center;
-  column-gap: var(--space-3);
 }
 
 .project-context-node-card:hover {
@@ -3240,45 +3086,6 @@ a.pg__btn:focus-visible {
   justify-content: flex-end;
 }
 
-.project-context-graph-viewport {
-  min-height: min(58vh, 34rem);
-  max-height: min(64vh, 44rem);
-  scrollbar-gutter: stable;
-}
-
-.project-context-graph-edges path {
-  stroke: color-mix(in srgb, var(--accent, var(--brand)) 38%, var(--border-chrome-muted));
-  stroke-width: 1.8;
-}
-
-.project-context-graph-node {
-  overflow: hidden;
-  width: 12rem;
-  min-height: 4.75rem;
-  padding: var(--space-2);
-  gap: var(--space-1);
-  content-visibility: auto;
-  contain-intrinsic-size: 12rem 4.75rem;
-}
-
-.project-context-graph-node__title {
-  color: var(--text);
-  font-size: var(--text-sm);
-  font-weight: 760;
-  line-height: 1.25;
-}
-
-.project-context-graph-node p {
-  display: -webkit-box;
-  margin: 0;
-  overflow: hidden;
-  color: var(--muted);
-  font-size: 0.8rem;
-  line-height: 1.35;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 1;
-}
-
 .project-context-node-card__action-button {
   display: inline-flex;
   width: fit-content;
@@ -3395,64 +3202,6 @@ a.pg__btn:focus-visible {
   color: var(--muted);
   font-size: 0.875rem;
   line-height: 1.45;
-}
-
-.project-context-edge-list {
-  display: grid;
-  gap: var(--space-2);
-  max-height: 32rem;
-  overflow: auto;
-  padding-right: var(--space-1);
-}
-
-.project-context-edge {
-  display: grid;
-  gap: var(--space-2);
-  padding: var(--space-3);
-  border: 1px solid var(--border-hairline);
-  border-radius: var(--radius-md);
-  background: var(--bg-elevated);
-  transition: all 150ms ease;
-}
-
-.project-context-edge:hover {
-  background: var(--brand-muted);
-}
-
-.project-context-edge__summary {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  gap: var(--space-2);
-  align-items: center;
-  color: var(--text);
-  font-size: 0.875rem;
-}
-
-.project-context-edge__summary span {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.project-context-edge__summary strong {
-  padding: var(--space-1) var(--space-2);
-  border: 1px solid var(--border-hairline);
-  border-radius: var(--radius-full);
-  color: var(--text-secondary);
-  background: var(--bg-subtle);
-  font-size: 0.75rem;
-  font-weight: 750;
-}
-
-.project-context-edge details {
-  margin-top: var(--space-1);
-}
-
-.project-context-edge summary {
-  cursor: pointer;
-  color: var(--accent, var(--brand));
-  font-weight: 650;
 }
 
 .project-task-list {
@@ -3613,9 +3362,7 @@ a.pg__btn:focus-visible {
 @media (max-width: 760px) {
   .project-context-page-card.project-context-card,
   .project-context-hero__body,
-  .project-context-edge-grid,
-  .project-context-guide,
-  .project-context-graph {
+  .project-context-guide {
     grid-template-columns: 1fr;
   }
 
@@ -3669,11 +3416,6 @@ a.pg__btn:focus-visible {
 
   .pl__row-arrow {
     display: none;
-  }
-
-
-  .project-context-graph--nodes-only .project-context-node-card {
-    grid-template-columns: 1fr;
   }
 
   .project-context-list-stats,
@@ -3755,63 +3497,6 @@ a.pg__btn:focus-visible {
 .project-context-picker__chip-remove:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-/* Add-context choice dialog: presented above the editor (or chooser modal)
-   so every "add a node" gesture funnels through the same node-only vs
-   with-children decision. */
-.project-context-choice {
-  display: grid;
-  gap: var(--space-4);
-  padding: var(--space-5);
-}
-
-.project-context-choice__header h2 {
-  margin: 0 0 var(--space-1);
-  font-size: var(--text-md);
-}
-
-.project-context-choice__options {
-  display: grid;
-  gap: var(--space-3);
-}
-
-.project-context-choice__option {
-  display: grid;
-  gap: var(--space-1);
-  padding: var(--space-3) var(--space-4);
-  text-align: left;
-  border: 1px solid var(--border-hairline);
-  border-radius: var(--radius-md);
-  background: var(--bg-elevated);
-  cursor: pointer;
-  transition:
-    border-color var(--duration-short) var(--ease-out),
-    background-color var(--duration-short) var(--ease-out);
-}
-
-.project-context-choice__option:not(:disabled):hover {
-  border-color: var(--brand-border-emphasis);
-  background: var(--brand-surface-faint);
-}
-
-.project-context-choice__option:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-.project-context-choice__option-title {
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.project-context-choice__option-help {
-  font-size: var(--text-help);
-}
-
-.project-context-choice__footer {
-  display: flex;
-  justify-content: flex-end;
 }
 
 /* --- Project detail: ordered steps + gate chips --- */

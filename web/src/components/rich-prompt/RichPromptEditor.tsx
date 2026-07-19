@@ -1,5 +1,4 @@
 import { EditorContent } from "@tiptap/react";
-import { ProjectContextChoiceDialog } from "@/components/project-context";
 import { ProjectReferencesBlock } from "./ProjectReferencesBlock";
 import { RichPromptFileReferenceModal } from "./RichPromptFileReferenceModal";
 import { RichPromptMenuBar } from "./RichPromptMenuBar";
@@ -23,11 +22,6 @@ export function RichPromptEditor(props: RichPromptEditorProps) {
     dismissPendingInsert,
     insertPathOnly,
     insertWithRange,
-    pendingProjectChoice,
-    projectEdges,
-    selectedProjectIds,
-    cancelProjectContextChoice,
-    confirmProjectContextChoice,
     repoHints,
   } = useRichPromptEditorController(props);
 
@@ -51,15 +45,6 @@ export function RichPromptEditor(props: RichPromptEditorProps) {
           onClose={dismissPendingInsert}
           onInsertWithRange={insertWithRange}
           onInsertPathOnly={insertPathOnly}
-        />
-      ) : null}
-      {pendingProjectChoice ? (
-        <ProjectContextChoiceDialog
-          item={pendingProjectChoice.item}
-          edges={projectEdges}
-          selectedIds={selectedProjectIds}
-          onClose={cancelProjectContextChoice}
-          onConfirm={confirmProjectContextChoice}
         />
       ) : null}
       <RichPromptRepoHints

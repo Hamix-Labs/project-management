@@ -18,7 +18,6 @@ type Props = {
   index: number;
   saving: boolean;
   deleting: boolean;
-  canAddConnection?: boolean;
   selected?: boolean;
   selectionDisabled?: boolean;
   onSave: (
@@ -31,7 +30,6 @@ type Props = {
     },
   ) => void;
   onDelete: (id: string) => void;
-  onAddConnection?: (sourceId: string) => void;
   onToggleSelected?: (item: ProjectContextItem) => void;
 };
 
@@ -40,12 +38,10 @@ export function ProjectContextNodeCard({
   index,
   saving,
   deleting,
-  canAddConnection = false,
   selected = false,
   selectionDisabled = false,
   onSave,
   onDelete,
-  onAddConnection,
   onToggleSelected,
 }: Props) {
   const hue = NODE_HUES[index % NODE_HUES.length];
@@ -82,22 +78,13 @@ export function ProjectContextNodeCard({
       </span>
       {!onToggleSelected ? (
         <div className="pc__node-actions">
-        {canAddConnection ? (
-          <button
-            type="button"
-            className="pc__btn-ghost"
-            onClick={() => onAddConnection?.(item.id)}
-          >
-            Link
-          </button>
-        ) : null}
-        <ProjectContextItemEditor
-          item={item}
-          saving={saving}
-          deleting={deleting}
-          onSave={onSave}
-          onDelete={onDelete}
-        />
+          <ProjectContextItemEditor
+            item={item}
+            saving={saving}
+            deleting={deleting}
+            onSave={onSave}
+            onDelete={onDelete}
+          />
         </div>
       ) : null}
     </article>

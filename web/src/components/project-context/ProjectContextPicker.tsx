@@ -1,14 +1,11 @@
 import { useCallback, useMemo, useState } from "react";
-import type { ProjectContextEdge, ProjectContextItem } from "@/types";
+import type { ProjectContextItem } from "@/types";
 import { Modal } from "@/shared/Modal";
 import { ProjectContextListView } from "@/projects/ProjectContextListView";
-import { ProjectContextChoiceDialog } from "@/components/project-context";
 import {
-  expandProjectContextSelection,
   mergeProjectContextSelection,
   projectContextShortId,
   selectedProjectContextItems,
-  type ProjectContextAddMode,
 } from "@/lib/projectContextRefs";
 import { useProjectContext } from "@/projects/hooks";
 
@@ -22,14 +19,11 @@ interface ProjectContextPickerProps {
 }
 
 const EMPTY_CONTEXT_ITEMS: ProjectContextItem[] = [];
-const EMPTY_CONTEXT_EDGES: ProjectContextEdge[] = [];
 
 /**
  * Compact summary of the project context items currently attached to the
- * task plus an entry point into the full chooser. The chooser shares the
- * `Reference only this node / Reference this node and its children` choice
- * with the editor's `#` mention flow so both surfaces produce the same
- * canonical `project_context_item_ids`.
+ * task plus an entry point into the full chooser. Selecting a node adds that
+ * node only (same as the editor's `#` mention flow).
  *
  * The displayed labels intentionally include a 6-character short id so
  * operators can disambiguate same-titled nodes from different projects
@@ -43,9 +37,6 @@ export function ProjectContextPicker({
   onChange,
 }: ProjectContextPickerProps) {
   const [chooserOpen, setChooserOpen] = useState(false);
-  const [pendingChoice, setPendingChoice] = useState<ProjectContextItem | null>(
-    null,
-  );
 
   const contextQuery = useProjectContext(projectId, {
     enabled: Boolean(projectId),
@@ -53,7 +44,6 @@ export function ProjectContextPicker({
     pinnedOnly: false,
   });
   const items = contextQuery.data?.items ?? EMPTY_CONTEXT_ITEMS;
-  const edges = contextQuery.data?.edges ?? EMPTY_CONTEXT_EDGES;
   const selected = useMemo(() => new Set(selectedIds), [selectedIds]);
   const selectedItems = useMemo(
     () => selectedProjectContextItems(items, selectedIds),
@@ -84,15 +74,10 @@ export function ProjectContextPicker({
     (item: ProjectContextItem) => {
       if (disabled) return;
       if (selected.has(item.id)) {
-        // Toggling off is a single-click remove — no confirmation dialog so
-        // operators can reverse a misclick fast.
         onChange(selectedIds.filter((id) => id !== item.id));
         return;
       }
-      // Adding always funnels through the choice dialog so operators have
-      // one consistent mental model whether they're using `#` from the
-      // prompt or this chooser.
-      setPendingChoice(item);
+      onChange(mergeProjectContextSelection(selectedIds, [item.id]));
     },
     [disabled, onChange, selected, selectedIds],
   );
@@ -105,20 +90,6 @@ export function ProjectContextPicker({
       onChange(next);
     },
     [disabled, onChange, selectedIds],
-  );
-
-  const handleConfirmChoice = useCallback(
-    (mode: ProjectContextAddMode) => {
-      if (!pendingChoice) return;
-      const expanded = expandProjectContextSelection(
-        pendingChoice.id,
-        mode,
-        edges,
-      );
-      onChange(mergeProjectContextSelection(selectedIds, expanded));
-      setPendingChoice(null);
-    },
-    [edges, onChange, pendingChoice, selectedIds],
   );
 
   if (!projectId) return null;
@@ -145,10 +116,6 @@ export function ProjectContextPicker({
       {contextQuery.isPending ? (
         <span>Loading project context...</span>
       ) : contextQuery.error ? (
-        // The error is also surfaced inside the chooser modal with a real
-        // `role="alert"`. Keeping the summary line non-alert prevents
-        // duplicated alert nodes in tests and avoids shouting at the user
-        // before they've taken any action.
         <span className="muted">Project context unavailable.</span>
       ) : items.length === 0 ? (
         <span>This project has no context nodes yet.</span>
@@ -180,7 +147,7 @@ export function ProjectContextPicker({
                   <svg
                     width="10"
                     height="10"
-                    viewBox="0 0 12 12"
+                    viewBox="0 0 10 10"
                     fill="none"
                     aria-hidden="true"
                   >
@@ -263,8 +230,8 @@ export function ProjectContextPicker({
               <div>
                 <h2 id="task-context-chooser-title">Choose task context</h2>
                 <p id="task-context-chooser-desc" className="muted">
-                  Search project memory. Picking a node asks whether to
-                  reference just that node or also include its children.
+                  Search project memory and select the nodes this task should
+                  reference.
                 </p>
               </div>
               <button
@@ -299,7 +266,6 @@ export function ProjectContextPicker({
               ) : (
                 <ProjectContextListView
                   items={items}
-                  onAddConnection={() => undefined}
                   selection={{
                     selectedIds: selected,
                     disabled,
@@ -328,16 +294,6 @@ export function ProjectContextPicker({
             </div>
           </section>
         </Modal>
-      ) : null}
-
-      {pendingChoice ? (
-        <ProjectContextChoiceDialog
-          item={pendingChoice}
-          edges={edges}
-          selectedIds={selectedIds}
-          onClose={() => setPendingChoice(null)}
-          onConfirm={handleConfirmChoice}
-        />
       ) : null}
     </section>
   );

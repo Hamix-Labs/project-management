@@ -56,23 +56,3 @@ type projectContextListResponse struct {
 	Edges []domain.ProjectContextEdge `json:"edges"`
 	Limit int                         `json:"limit"`
 }
-
-type projectContextEdgeCreateJSON struct {
-	ID              string                        `json:"id"`
-	SourceContextID string                        `json:"source_context_id"`
-	TargetContextID string                        `json:"target_context_id"`
-	Relation        domain.ProjectContextRelation `json:"relation"`
-	Strength        int                           `json:"strength"`
-	Note            string                        `json:"note"`
-}
-
-type projectContextEdgePatchJSON struct {
-	Relation *domain.ProjectContextRelation `json:"relation"`
-	Strength *int                           `json:"strength"`
-	Note     *string                        `json:"note"`
-}
-
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func (p projectContextEdgePatchJSON) isEmpty() bool {
-	return p.Relation == nil && p.Strength == nil && p.Note == nil
-}

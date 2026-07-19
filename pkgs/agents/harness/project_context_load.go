@@ -33,14 +33,9 @@ func (h *Harness) selectedProjectContext(ctx context.Context, task *taskcoredoma
 	if err != nil {
 		return renderedProjectContext{}, fmt.Errorf("list selected context: %w", err)
 	}
-	edges, err := h.store.ListProjectContextEdges(ctx, project.ID, task.ProjectContextItemIDs)
-	if err != nil {
-		return renderedProjectContext{}, fmt.Errorf("list selected context edges: %w", err)
-	}
 	rendered := prompt.BuildProjectContextSection(prompt.ProjectContextInput{
 		Project: project,
 		Items:   items,
-		Edges:   edges,
 	})
 	raw, err := json.Marshal(map[string]any{
 		"project_id": project.ID,
@@ -51,7 +46,7 @@ func (h *Harness) selectedProjectContext(ctx context.Context, task *taskcoredoma
 		},
 		"selected_item_ids": task.ProjectContextItemIDs,
 		"items":             items,
-		"edges":             edges,
+		"edges":             []any{},
 	})
 	if err != nil {
 		return renderedProjectContext{}, fmt.Errorf("marshal context snapshot: %w", err)

@@ -71,8 +71,6 @@ const C4 = "c4444444-4444-4444-8444-444444444444";
 const C5 = "c5555555-5555-4555-8555-555555555555";
 const C6 = "c6666666-6666-4666-8666-666666666666";
 
-const E1 = "e1111111-1111-4111-8111-111111111111";
-
 const ALL_TASK_IDS: string[] = [];
 
 function reg(id: string) {
@@ -474,52 +472,7 @@ export function demoContextWire(projectId: string): unknown {
         updated_at: ISO,
       },
     ],
-    edges: [
-      {
-        id: E1,
-        project_id: DEMO_PRIMARY_PROJECT_ID,
-        source_context_id: C1,
-        target_context_id: C2,
-        relation: "refines",
-        strength: 4,
-        note: "Decision narrows how constraint is applied in middleware.",
-        created_at: ISO,
-        updated_at: ISO,
-      },
-      {
-        id: "e2222222-2222-4222-8222-222222222222",
-        project_id: DEMO_PRIMARY_PROJECT_ID,
-        source_context_id: C2,
-        target_context_id: C5,
-        relation: "supports",
-        strength: 3,
-        note: "",
-        created_at: ISO,
-        updated_at: ISO,
-      },
-      {
-        id: "e3333333-3333-4333-8333-333333333333",
-        project_id: DEMO_PRIMARY_PROJECT_ID,
-        source_context_id: C3,
-        target_context_id: C1,
-        relation: "depends_on",
-        strength: 2,
-        note: "",
-        created_at: ISO,
-        updated_at: ISO,
-      },
-      {
-        id: "e4444444-4444-4444-8444-444444444444",
-        project_id: DEMO_PRIMARY_PROJECT_ID,
-        source_context_id: C4,
-        target_context_id: C1,
-        relation: "related",
-        strength: 3,
-        note: "",
-        created_at: ISO,
-        updated_at: ISO,
-      },
-    ],
+    edges: [],
     limit: 100,
   };
 }
