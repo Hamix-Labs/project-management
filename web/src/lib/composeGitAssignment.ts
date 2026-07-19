@@ -1,5 +1,3 @@
-import type { GitWorktree } from "@/types/git";
-
 export type ComposeGitAssignment = {
   repositoryId: string;
   projectId: string;
@@ -65,7 +63,6 @@ export function selectWorktree(current: ComposeGitAssignment, worktreeId: string
 export function applyRepoScopedDefaults(
   current: ComposeGitAssignment,
   projects: ComposeGitProjectOption[],
-  _worktrees: GitWorktree[],
 ): ComposeGitAssignment {
   let next = current;
   const projectValid =

@@ -95,7 +95,7 @@ export function useComposeGitAssignment(input: Input) {
     if (freshDefaultsDoneRef.current) {
       return;
     }
-    const next = applyRepoScopedDefaults(assignment, projects, worktrees);
+    const next = applyRepoScopedDefaults(assignment, projects);
     freshDefaultsDoneRef.current = true;
     if (!assignmentEquals(next, assignment)) {
       input.onAssignmentChange(next);
@@ -103,7 +103,6 @@ export function useComposeGitAssignment(input: Input) {
   }, [
     assignment,
     projects,
-    worktrees,
     projectsQuery.isLoading,
     worktreesQuery.isLoading,
     input,
@@ -116,14 +115,13 @@ export function useComposeGitAssignment(input: Input) {
     if (projectsQuery.isLoading || worktreesQuery.isLoading) {
       return;
     }
-    const next = applyRepoScopedDefaults(assignment, projects, worktrees);
+    const next = applyRepoScopedDefaults(assignment, projects);
     if (!assignmentEquals(next, assignment)) {
       input.onAssignmentChange(next);
     }
   }, [
     assignment,
     projects,
-    worktrees,
     projectsQuery.isLoading,
     worktreesQuery.isLoading,
     input,

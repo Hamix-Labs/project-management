@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import type { GitWorktree } from "@/types/git";
 import {
   applyRepoScopedDefaults,
   hydrateAssignmentFromPayload,
@@ -12,32 +11,10 @@ import {
 const REPO_A = "00000000-0000-4000-8000-000000000010";
 const REPO_B = "00000000-0000-4000-8000-000000000011";
 const PROJ_A = "00000000-0000-4000-8000-000000000040";
-const WT_MAIN = "00000000-0000-4000-8000-000000000020";
 const WT_FEATURE = "00000000-0000-4000-8000-000000000021";
 
 const projects = [
   { id: PROJ_A, is_default: true, status: "active" as const },
-];
-
-const worktrees: GitWorktree[] = [
-  {
-    id: WT_FEATURE,
-    repository_id: REPO_A,
-    path: "/repo/feature",
-    name: "feature",
-    is_main: false,
-    branch_id: "00000000-0000-4000-8000-000000000030",
-    created_at: "2026-06-22T12:00:00Z",
-  },
-  {
-    id: WT_MAIN,
-    repository_id: REPO_A,
-    path: "/repo/main",
-    name: "main",
-    is_main: true,
-    branch_id: "00000000-0000-4000-8000-000000000031",
-    created_at: "2026-06-22T12:00:00Z",
-  },
 ];
 
 describe("composeGitAssignment", () => {
@@ -80,7 +57,7 @@ describe("composeGitAssignment", () => {
 
   it("applyRepoScopedDefaults clears worktree (server allocates)", () => {
     const current = { repositoryId: REPO_A, projectId: PROJ_A, worktreeId: WT_FEATURE };
-    expect(applyRepoScopedDefaults(current, projects, worktrees)).toEqual({
+    expect(applyRepoScopedDefaults(current, projects)).toEqual({
       repositoryId: REPO_A,
       projectId: PROJ_A,
       worktreeId: "",
@@ -89,7 +66,7 @@ describe("composeGitAssignment", () => {
 
   it("applyRepoScopedDefaults picks default project when empty", () => {
     const current = { repositoryId: REPO_A, projectId: "", worktreeId: "" };
-    expect(applyRepoScopedDefaults(current, projects, worktrees).projectId).toBe(PROJ_A);
+    expect(applyRepoScopedDefaults(current, projects).projectId).toBe(PROJ_A);
   });
 
   it("isFreshAssignment detects an untouched compose form", () => {
