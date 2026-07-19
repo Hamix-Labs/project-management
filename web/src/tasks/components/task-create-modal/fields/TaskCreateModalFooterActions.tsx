@@ -8,7 +8,7 @@ type Props = {
   title: string;
   priority: PriorityChoice;
   checklistItems: ChecklistItemDraft[];
-  worktreeId?: string;
+  repositoryId?: string;
   requireGitBinding?: boolean;
   onClose: () => void;
   onSaveDraft?: () => void;
@@ -21,12 +21,12 @@ export function TaskCreateModalFooterActions({
   title,
   priority,
   checklistItems,
-  worktreeId = "",
+  repositoryId = "",
   requireGitBinding = false,
   onClose,
   onSaveDraft,
 }: Props) {
-  const gitBindingIncomplete = requireGitBinding && worktreeId.trim() === "";
+  const gitBindingIncomplete = requireGitBinding && repositoryId.trim() === "";
   const submitDisabled =
     !title.trim() ||
     !priority ||

@@ -11,6 +11,7 @@ import (
 
 const defaultRemote = "origin"
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by Fetch/ResolveDefaultBranch."
 func remoteOrDefault(remote string) string {
 	remote = strings.TrimSpace(remote)
 	if remote == "" {

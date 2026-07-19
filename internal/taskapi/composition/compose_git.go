@@ -117,6 +117,8 @@ func (a *API) SyncGitRepository(ctx context.Context, repoID string, gitSvc gitwo
 }
 
 // WorktreeStaleMap reports stale managed worktrees for a repository.
+//
+//funclogmeasure:skip category=delegate-already-logs reason="Thin store facade; gitinventory.store.WorktreeStaleMap emits operation trace."
 func (a *API) WorktreeStaleMap(ctx context.Context, repoID string, now time.Time) (map[string]bool, error) {
 	return a.git.WorktreeStaleMap(ctx, repoID, now)
 }

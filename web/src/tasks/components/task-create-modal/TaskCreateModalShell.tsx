@@ -97,7 +97,7 @@ export function TaskCreateModalShell({
                 title={formProps.title}
                 priority={formProps.priority}
                 checklistItems={formProps.checklistItems}
-                worktreeId={formProps.worktreeId}
+                repositoryId={formProps.repositoryId}
                 draftSaving={formProps.draftSaving}
                 onClose={onClose}
                 onSaveDraft={formProps.onSaveDraft}
