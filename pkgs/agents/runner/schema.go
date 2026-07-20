@@ -93,6 +93,14 @@ type ConfigValidator interface {
 	ValidateConfig(blob json.RawMessage) error
 }
 
+// Configurer is the preferred optional config surface (schema + validate).
+// Adapters that implement both ConfigSchemaProvider and ConfigValidator
+// satisfy Configurer automatically (B-35).
+type Configurer interface {
+	ConfigSchemaProvider
+	ConfigValidator
+}
+
 // MetricsLabeler returns adapter-owned extra Prometheus labels for a
 // given request. The cursor adapter returns {"model": effective} so
 // the by-model series stays compatible. Adapters without model
@@ -109,4 +117,12 @@ type MetricsLabeler interface {
 // implementations MUST be pure (no I/O).
 type CycleMetaProvider interface {
 	CycleMeta(req Request) map[string]any
+}
+
+// Attributor is the preferred optional attribution surface (metrics
+// labels + cycle meta). Adapters that implement both MetricsLabeler and
+// CycleMetaProvider satisfy Attributor automatically (B-35).
+type Attributor interface {
+	MetricsLabeler
+	CycleMetaProvider
 }

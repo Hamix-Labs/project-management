@@ -91,6 +91,8 @@ func (r *Runner) ClassifyFailure(_ string) (kind, standardizedMsg string) {
 
 // Compile-time assertions for all capability interfaces.
 var (
+	_ runner.Configurer           = (*Runner)(nil)
+	_ runner.Attributor           = (*Runner)(nil)
 	_ runner.ConfigSchemaProvider = (*Runner)(nil)
 	_ runner.ConfigValidator      = (*Runner)(nil)
 	_ runner.Prober               = (*Runner)(nil)

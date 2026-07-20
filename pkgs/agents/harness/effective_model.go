@@ -26,6 +26,9 @@ func effectiveModelFromCycleMeta(r runner.Runner, task *taskcoredomain.Task, cyc
 		Prompt:      task.InitialPrompt,
 		CursorModel: task.CursorModel,
 	}
+	if attr, ok := r.(runner.Attributor); ok {
+		return attr.MetricsLabels(req)["model"]
+	}
 	if ml, ok := r.(runner.MetricsLabeler); ok {
 		return ml.MetricsLabels(req)["model"]
 	}

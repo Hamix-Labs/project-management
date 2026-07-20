@@ -26,8 +26,15 @@ import (
 // (buildCycleMeta / detailsBytes) live in meta.go.
 
 // processState records what the worker has written so far for a single
-// task. The deferred panic-recovery and the shutdown branch use it to
-// decide which cleanup writes are still needed.
+// task. Nested bags are stage-scoped where possible (B-34):
+//   - cycle: cross-iteration identity (id, started, effective model)
+//   - phase: execute/verify phase seqs and correlation for the current loop
+//   - verify: verify-attempt scratch (feedback, prior passes); reset on new cycle
+//   - git: execute-outcome anchors handed to verify/commit ingest
+//   - resume: entry mirrors for crash/operator resume (not live mid-execute)
+// Prefer passing stage values as arguments when adding new control flow;
+// only put fields here when panic/shutdown cleanup or multi-iteration
+// verify retry must consult them.
 type cycleLifecycleState struct {
 	cycleID        string
 	cycleStarted   bool
@@ -122,9 +129,8 @@ func (h *Harness) transitionTask(ctx context.Context, taskID string, next taskco
 // The Request is the same shape invokeRunner builds later (sans
 // per-run timeout, which is irrelevant to attribution). Intent is
 // Runner-specific metadata (e.g. model intent/effective) comes from
-// the CycleMetaProvider interface; metric model labels from
-// MetricsLabeler. Both may produce "" and that empty string is the
-// truth, not a placeholder.
+// the Attributor interface (metrics labels + cycle meta). Both may produce
+// "" and that empty string is the truth, not a placeholder.
 func (h *Harness) startCycle(ctx context.Context, task *taskcoredomain.Task, state *processState, opts startCycleOpts) (*cyclesdomain.TaskCycle, bool) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.startCycle",
 		"task_id", task.ID)
@@ -153,9 +159,10 @@ func (h *Harness) startCycle(ctx context.Context, task *taskcoredomain.Task, sta
 	}
 	state.cycle.cycleID = cycle.ID
 	state.cycle.cycleStarted = true
-	if ml, ok := h.runner.(runner.MetricsLabeler); ok {
-		labels := ml.MetricsLabels(req)
-		state.cycle.effectiveModel = labels["model"]
+	if attr, ok := h.runner.(runner.Attributor); ok {
+		state.cycle.effectiveModel = attr.MetricsLabels(req)["model"]
+	} else if ml, ok := h.runner.(runner.MetricsLabeler); ok {
+		state.cycle.effectiveModel = ml.MetricsLabels(req)["model"]
 	} else {
 		state.cycle.effectiveModel = h.runner.EffectiveModel(req)
 	}

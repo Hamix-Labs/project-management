@@ -258,7 +258,7 @@ func (h *Handler) validateRunnerConfig(w http.ResponseWriter, r *http.Request) {
 		handlerhttp.WriteJSONError(w, r, op, http.StatusInternalServerError, "failed to load runner")
 		return
 	}
-	cv, ok := built.(runner.ConfigValidator)
+	cv, ok := built.(runner.Configurer)
 	if !ok {
 		handlerhttp.WriteJSONError(w, r, op, http.StatusNotImplemented, "runner does not support config validation")
 		return

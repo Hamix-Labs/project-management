@@ -22,13 +22,9 @@ import (
 
 // buildCycleMeta produces the JSON body written to TaskCycle.MetaJSON.
 // Common keys (runner, runner_version, prompt_hash) are always present.
-// Runner-specific keys come from the runner.CycleMetaProvider capability
-// interface — adapters contribute their own metadata (model intent,
-// effective model, etc.) without the worker knowing about adapter
-// internals.
-//
-// When the runner does not implement CycleMetaProvider, the common keys
-// are emitted alone.
+// Runner-specific keys come from the runner.Attributor capability
+// (CycleMeta). When the runner does not implement Attributor /
+// CycleMetaProvider, the common keys are emitted alone.
 func buildCycleMeta(r runner.Runner, prompt string, req runner.Request) []byte {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.buildCycleMeta",
 		"runner", r.Name())
@@ -37,7 +33,11 @@ func buildCycleMeta(r runner.Runner, prompt string, req runner.Request) []byte {
 		"runner_version": r.Version(),
 		"prompt_hash":    sha256Hex(prompt),
 	}
-	if cmp, ok := r.(runner.CycleMetaProvider); ok {
+	if attr, ok := r.(runner.Attributor); ok {
+		for k, v := range attr.CycleMeta(req) {
+			out[k] = v
+		}
+	} else if cmp, ok := r.(runner.CycleMetaProvider); ok {
 		for k, v := range cmp.CycleMeta(req) {
 			out[k] = v
 		}
