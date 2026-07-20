@@ -11,7 +11,7 @@
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.01em;
-  color: var(--text-secondary, var(--color-text-muted, #555));
+  color: var(--text-secondary);
   cursor: pointer;
   list-style: none;
   user-select: none;
@@ -40,7 +40,7 @@
 }
 
 .settings-learn-more > summary:hover {
-  color: var(--text-primary, var(--color-text, #1a1a1a));
+  color: var(--text-primary);
 }
 
 .settings-learn-more > summary:focus-visible {
@@ -53,11 +53,11 @@
   margin: 6px 0 0;
   font-size: 12px;
   line-height: 1.5;
-  color: var(--text-secondary, var(--color-text-muted, #555));
+  color: var(--text-secondary);
 }
 
 .settings-learn-more > p code {
-  font-size: 11px;
+  font-size: var(--text-xs);
 }
 
 .settings-learn-more-subheading {
@@ -65,7 +65,7 @@
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.01em;
-  color: var(--text-primary, var(--color-text, #1a1a1a));
+  color: var(--text-primary);
 }
 
 .settings-learn-more-list {
@@ -73,7 +73,7 @@
   padding-left: 1.15rem;
   font-size: 12px;
   line-height: 1.5;
-  color: var(--text-secondary, var(--color-text-muted, #555));
+  color: var(--text-secondary);
 }
 
 .settings-learn-more-list li {
