@@ -5,7 +5,7 @@ import { server } from "./server";
 
 /**
  * Full-app Vitest projects set HAMIX_MSW_UNHANDLED=error so a forgotten
- * handler fails loudly. unit/components keep bypass so legacy
+ * handler fails loudly. unit/components keep bypass so remaining legacy
  * vi.spyOn(fetch) suites still work until migrated.
  */
 const unhandledMode =

@@ -81,7 +81,7 @@ Use the smallest render helper from [`appHarness.tsx`](../../web/src/test/integr
 | `renderTasksHome()` / `renderTasksAt()` | Home, drafts, create modals — no bootstrap or SSE (`test-task-create`) |
 | Direct page `render()` + MSW | Single page when routing is not under test (`test-task-pages`) |
 
-MSW uses `onUnhandledRequest: "error"` for app/task harnesses (`app`, `task-pages`, `task-create`) and migrated `projects` via `HAMIX_MSW_UNHANDLED=error`. The `unit`, `components`, `settings`, and `worktrees` projects keep `bypass` so legacy `vi.spyOn(fetch)` suites still work until migrated. Integration tests must still register handlers via `appDefaultHandlers()` for every endpoint they trigger.
+MSW uses `onUnhandledRequest: "error"` for app/task harnesses (`app`, `task-pages`, `task-create`) and full-app verticals (`projects`, `settings`, `worktrees`) via `HAMIX_MSW_UNHANDLED=error`. The `unit` and `components` projects keep `bypass` so remaining legacy `vi.spyOn(fetch)` component suites still work until migrated. Integration tests must still register handlers via `appDefaultHandlers()` for every endpoint they trigger.
 
 ## Five rules
 

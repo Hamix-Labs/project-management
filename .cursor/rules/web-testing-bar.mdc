@@ -19,7 +19,7 @@ Full reference: [docs/domain/web-testing.md](../../docs/domain/web-testing.md).
 ## Rules
 
 1. **MSW only for new tests** — `server.use(handlers)` from `web/src/test/handlers/`. No new `vi.spyOn(globalThis, "fetch")`.
-2. **Register handlers in integration tests** — `server.use(...appDefaultHandlers(), …)` for task-pages and task-create. App/task harnesses (+ migrated `projects`) fail on unhandled MSW requests (`HAMIX_MSW_UNHANDLED=error`); `unit`/`components`/`settings`/`worktrees` keep `bypass` for legacy `vi.spyOn(fetch)` until migrated.
+2. **Register handlers in integration tests** — `server.use(...appDefaultHandlers(), …)` for task-pages and task-create. App/task harnesses and full-app verticals (`projects`/`settings`/`worktrees`) fail on unhandled MSW requests (`HAMIX_MSW_UNHANDLED=error`); `unit`/`components` keep `bypass` for remaining legacy `vi.spyOn(fetch)` until migrated.
 3. **No bare sleeps** — `vi.useFakeTimers()` or `createDeferred()`; never `setTimeout` or `new Promise(() => {})`.
 4. **Project placement** — `unit` / `components` / `app` / `task-pages` / `task-create` / `settings` / `projects` / `worktrees` per `web/vitest.workspace.ts`. `<App />` and pages belong in the matching full-app project.
 5. **≤ 500 lines** per `*.test.{ts,tsx}`.
