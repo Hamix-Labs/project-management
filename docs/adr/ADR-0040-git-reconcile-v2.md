@@ -58,7 +58,7 @@ Optional startup: `HAMIX_GIT_RECONCILE_ON_STARTUP=repair-only` runs conservative
 |----------|------------|
 | Agent worker / harness | `git_worktrees.path` via `worktree_id` |
 | `GET /repo/*`, mention validation | `OpenWorktreeRoot` from DB path |
-| SPA `/repositories` | Sync + register-repository path discovery (legacy `/worktrees` redirects here) |
+| SPA `/repositories` | Register + delete repositories (legacy `/worktrees` redirects here); sync/relocate are API-only |
 
 Not covered: `app_settings.CursorBin`, `task_cycle_command_runs` artifact paths, historical verify stdout paths.
 

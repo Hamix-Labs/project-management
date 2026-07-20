@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui";
 import { useDocumentTitle } from "@/shared/useDocumentTitle";
-import { useOptionalToast } from "@/shared/toast";
 import { EmptyState } from "@/shared/EmptyState";
 import { useDelayedTrue } from "@/lib/useDelayedTrue";
 import { useDebouncedTrimmedValue } from "@/hooks/useDebouncedTrimmedValue";
@@ -13,14 +12,12 @@ import { useRepositoryGitActions } from "./hooks/useRepositoryGitActions";
 import { RepositoriesListTable } from "./components/RepositoriesListTable";
 import { DeleteConfirmDialog } from "./components/DeleteConfirmDialog";
 import { RegisterRepositoryModal } from "./modals/RegisterRepositoryModal";
-import { RelocateRepositoryModal } from "./modals/RelocateRepositoryModal";
 import {
   deriveWorktreesPageMode,
   worktreesPageErrorMessage,
   worktreesPageTitle,
 } from "./worktreesPageMode";
 import { repositoryMatchesSearchQuery } from "./repositoryDisplay";
-import { formatReconcileSuccess } from "./gitReconcileErrors";
 import { worktreeGitCopy } from "./worktreeGitCopy";
 import {
   WorktreesPlusIcon,
@@ -30,7 +27,6 @@ import {
 
 export function RepositoriesListPage() {
   const repositoriesQuery = useGlobalRepositories();
-  const toast = useOptionalToast();
   const actions = useRepositoryGitActions();
   const [searchParams, setSearchParams] = useSearchParams();
   const [registerOpen, setRegisterOpen] = useState(false);
@@ -187,13 +183,6 @@ export function RepositoriesListPage() {
               {pageMode === "manage" && filteredRepositories.length > 0 ? (
                 <RepositoriesListTable
                   repositories={filteredRepositories}
-                  reconcilingRepositoryId={
-                    actions.reconcilingRepositoryId != null &&
-                    actions.isManualReconciling(actions.reconcilingRepositoryId)
-                      ? actions.reconcilingRepositoryId
-                      : undefined
-                  }
-                  onReconcile={(repo) => void actions.handleReconcile(repo)}
                   onDelete={actions.openDeleteRepository}
                 />
               ) : null}
@@ -222,24 +211,6 @@ export function RepositoriesListPage() {
           error={actions.deleteError}
           onClose={actions.closeDelete}
           onConfirm={() => void actions.runDelete()}
-        />
-
-        <RelocateRepositoryModal
-          open={actions.relocateRepository != null}
-          pending={actions.mutations.relocateRepository.isPending}
-          error={actions.mutations.relocateRepository.error}
-          storedPath={actions.relocateRepository?.path ?? ""}
-          onClose={actions.closeRelocateModal}
-          onSubmit={(input) => {
-            const repo = actions.relocateRepository;
-            if (!repo) return;
-            void actions.mutations.relocateRepository
-              .mutateAsync({ repositoryId: repo.id, input })
-              .then((result) => {
-                actions.closeRelocateModal();
-                toast?.success(formatReconcileSuccess(result));
-              });
-          }}
         />
       </section>
     </div>

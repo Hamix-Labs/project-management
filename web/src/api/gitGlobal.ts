@@ -1,6 +1,5 @@
 import type {
   GitBranch,
-  GitReconcileResult,
   GitRepository,
   GitWorktree,
 } from "@/types/git";
@@ -11,7 +10,6 @@ import {
   parseGitRepository,
   parseGitRepositoryList,
   parseGitWorktreeList,
-  parseGitReconcileResult,
 } from "./parseGitApi";
 import { assertTaskPathId } from "./taskRequestBounds";
 import {
@@ -68,29 +66,6 @@ export async function listGlobalGitBranches(
     gitJsonGetInit(options?.signal),
   );
   return parseGitBranchList(raw);
-}
-
-export async function syncGlobalGitRepository(
-  repositoryId: string,
-): Promise<GitReconcileResult> {
-  const repoId = assertTaskPathId(repositoryId, "repository id");
-  const raw = await gitFetchJson(
-    `${gitRoot}/repositories/${encodeURIComponent(repoId)}/sync`,
-    gitJsonPostInit({}),
-  );
-  return parseGitReconcileResult(raw);
-}
-
-export async function relocateGlobalGitRepository(
-  repositoryId: string,
-  input: { path: string },
-): Promise<GitReconcileResult> {
-  const repoId = assertTaskPathId(repositoryId, "repository id");
-  const raw = await gitFetchJson(
-    `${gitRoot}/repositories/${encodeURIComponent(repoId)}/relocate`,
-    gitJsonPostInit(input),
-  );
-  return parseGitReconcileResult(raw);
 }
 
 export async function listProjectsByRepository(

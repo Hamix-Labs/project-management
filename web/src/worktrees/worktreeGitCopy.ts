@@ -1,7 +1,5 @@
 export const worktreeGitCopy = {
   registerRepository: "Register repository",
-  reconcile: "Sync",
-  reconciling: "Syncing…",
   deleteRepository: "Delete",
   hostPathLabel: "Host path",
   listColumnName: "Name",
@@ -20,15 +18,4 @@ export const worktreeGitCopy = {
   copyPath: "Copy path",
   pathCopied: "Path copied",
   cancel: "Cancel",
-  relocateModalTitle: "Relocate repository",
-  relocateModalLead:
-    "Hamix cannot find this repository at its registered path. Browse from the parent folder or Documents to find the renamed checkout — Hamix verifies it is the same repo before updating paths.",
-  relocateModalStoredPathLabel: "Registered path",
-  relocateModalPathLabel: "New checkout path",
-  relocateModalChoosePath: "Choose folder",
-  relocateModalSelectedPrefix: "Selected:",
-  relocateModalNoPath: "No folder selected yet.",
-  relocateModalSubmit: "Relocate and sync",
-  relocateModalSubmitting: "Relocating…",
-  reconcileErrorTitle: "Sync failed",
 } as const;

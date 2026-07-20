@@ -21,7 +21,7 @@ When no git repository is registered:
 
 Operators manage repositories in the SPA:
 
-- **`/repositories`** — repository list; register, **Sync** (fetch + metadata), and **Delete**.
+- **`/repositories`** — repository list; register and **Delete**.
 - **`/repositories?register=1`** — deep link that opens the register-repository modal.
 - Legacy **`/worktrees`** and **`/worktrees/:repositoryId`** redirect to `/repositories`.
 
@@ -39,12 +39,12 @@ Happy path:
 
 ## Sync and path repair
 
-Hamix stores **absolute paths** for repositories and worktrees. Use **Sync** on a repository list row (`POST /git/repositories/{repoId}/sync`) to `git fetch origin` and refresh registered metadata **without** discovering/registering operator worktrees.
+Hamix stores **absolute paths** for repositories and worktrees. Sync / relocate remain available as **HTTP APIs** (`POST /git/repositories/{repoId}/sync`, `POST /git/repositories/{repoId}/relocate`, `POST /git/worktrees/{worktreeId}/relocate`) for automation and ops tooling — they are **not** exposed in the SPA. Task create allocates and refreshes managed worktrees as needed.
 
 **Operator playbook when folders move:**
 
 1. Prefer `git worktree repair` (or `git worktree move`) so git metadata stays consistent.
-2. Click **Sync** on the repository row. When the stored main path is missing, Hamix returns `needs_bootstrap_path` and opens **Relocate repository**.
+2. Call `POST /git/repositories/{repoId}/sync`. When the stored main path is missing, the API returns `needs_bootstrap_path`; follow with `POST /git/repositories/{repoId}/relocate` and body `{ path }`.
 3. For a single linked worktree with a known new path, use `POST /git/worktrees/{worktreeId}/relocate`.
 
 Conflict resolution (merge/rebase agents) is out of scope — allocate/sync fail with a clear error.

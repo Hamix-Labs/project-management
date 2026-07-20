@@ -11,23 +11,15 @@ import {
   WorktreesCheckIcon,
   WorktreesCopyIcon,
   WorktreesFolderGitIcon,
-  WorktreesRefreshIcon,
   WorktreesTrashIcon,
 } from "./WorktreesIcons";
 
 type Props = {
   repository: GitRepository;
-  reconcilePending: boolean;
-  onReconcile: (repository: GitRepository) => void;
   onDelete: (repository: GitRepository) => void;
 };
 
-export function RepositoryListRow({
-  repository,
-  reconcilePending,
-  onReconcile,
-  onDelete,
-}: Props) {
+export function RepositoryListRow({ repository, onDelete }: Props) {
   const [copied, setCopied] = useState(false);
   const repoName = repositoryDisplayName(repository.path);
   const showHostPath =
@@ -99,19 +91,8 @@ export function RepositoryListRow({
         <div className="repositories-list-row__actions">
           <button
             type="button"
-            className="task-list-icon-btn"
-            aria-label={`${worktreeGitCopy.reconcile} ${repoName}`}
-            aria-busy={reconcilePending || undefined}
-            disabled={reconcilePending}
-            onClick={() => onReconcile(repository)}
-          >
-            <WorktreesRefreshIcon className="repositories-list-row__action-icon" />
-          </button>
-          <button
-            type="button"
             className="task-list-icon-btn task-list-icon-btn--delete"
             aria-label={`${worktreeGitCopy.deleteRepository} ${repoName}`}
-            disabled={reconcilePending}
             onClick={() => onDelete(repository)}
           >
             <WorktreesTrashIcon className="repositories-list-row__action-icon" />

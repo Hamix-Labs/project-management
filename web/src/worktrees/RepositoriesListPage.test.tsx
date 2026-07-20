@@ -134,7 +134,7 @@ describe("RepositoriesListPage", () => {
     expect(screen.getByRole("button", { name: /Choose folder/i })).toBeInTheDocument();
   });
 
-  it("lists one repository with branch badge and sync/delete actions", async () => {
+  it("lists one repository with branch badge and delete action", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input: RequestInfo | URL) => {
       const url = requestUrl(input);
       if (url.endsWith("/git/repositories")) {
@@ -156,7 +156,7 @@ describe("RepositoriesListPage", () => {
     ).toBeInTheDocument();
     expect(await screen.findByText("main", { selector: ".repositories-list-row__name" })).toBeInTheDocument();
     expect(await screen.findByText("main", { selector: ".repositories-list-row__branch" })).toBeInTheDocument();
-    expect(await screen.findByRole("button", { name: /sync main/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /sync main/i })).not.toBeInTheDocument();
     expect(await screen.findByRole("button", { name: /delete main/i })).toBeInTheDocument();
     expect(await screen.findByText("1 of 1 repository")).toBeInTheDocument();
   });

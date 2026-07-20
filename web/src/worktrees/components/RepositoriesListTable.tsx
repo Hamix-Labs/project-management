@@ -4,17 +4,10 @@ import { RepositoryListRow } from "./RepositoryListRow";
 
 type Props = {
   repositories: GitRepository[];
-  reconcilingRepositoryId?: string;
-  onReconcile: (repository: GitRepository) => void;
   onDelete: (repository: GitRepository) => void;
 };
 
-export function RepositoriesListTable({
-  repositories,
-  reconcilingRepositoryId,
-  onReconcile,
-  onDelete,
-}: Props) {
+export function RepositoriesListTable({ repositories, onDelete }: Props) {
   return (
     <div className="repositories-list">
       <div className="repositories-list-head" role="row">
@@ -33,8 +26,6 @@ export function RepositoriesListTable({
           <RepositoryListRow
             key={repository.id}
             repository={repository}
-            reconcilePending={reconcilingRepositoryId === repository.id}
-            onReconcile={onReconcile}
             onDelete={onDelete}
           />
         ))}
