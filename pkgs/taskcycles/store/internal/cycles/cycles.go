@@ -41,7 +41,7 @@ func Start(ctx context.Context, db *gorm.DB, in StartCycleInput) (*cyclesdomain.
 	if taskID == "" {
 		return nil, fmt.Errorf("%w: task_id", taskcoredomain.ErrInvalidInput)
 	}
-	meta, err := storekernel.NormalizeJSONObject(in.Meta, "meta")
+	meta, err := storekernel.NormalizeJSONObject(in.Meta, "meta", taskcoredomain.ErrInvalidInput)
 	if err != nil {
 		return nil, err
 	}

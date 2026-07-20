@@ -31,7 +31,7 @@ func AppendStreamEvent(ctx context.Context, db *gorm.DB, in AppendStreamEventInp
 	if taskID == "" || cycleID == "" || in.PhaseSeq <= 0 || source == "" || kind == "" {
 		return nil, fmt.Errorf("%w: stream event", taskcoredomain.ErrInvalidInput)
 	}
-	payload, err := storekernel.NormalizeJSONObject(in.Payload, "payload")
+	payload, err := storekernel.NormalizeJSONObject(in.Payload, "payload", taskcoredomain.ErrInvalidInput)
 	if err != nil {
 		return nil, err
 	}

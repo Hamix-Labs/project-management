@@ -60,7 +60,7 @@ func CreateContextEdge(ctx context.Context, db *gorm.DB, projectID string, input
 		}
 		row := projectmodel.FromDomainProjectContextEdge(drow)
 		if err := tx.Create(&row).Error; err != nil {
-			return storekernel.MapWriteError(err, "duplicate project row")
+			return storekernel.MapWriteError(err, "duplicate project row", domain.ErrConflict, domain.ErrInvalidInput)
 		}
 		return nil
 	})
@@ -109,14 +109,14 @@ func UpdateContextEdge(ctx context.Context, db *gorm.DB, projectID, edgeID strin
 	err := db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var row projectmodel.ProjectContextEdge
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&row, "id = ? AND project_id = ?", edgeID, projectID).Error; err != nil {
-			return storekernel.MapNotFound(err)
+			return storekernel.MapNotFound(err, domain.ErrNotFound)
 		}
 		drow := projectmodel.ToDomainProjectContextEdge(row)
 		applyContextEdgePatch(&drow, input)
 		drow.UpdatedAt = time.Now().UTC()
 		row = projectmodel.FromDomainProjectContextEdge(drow)
 		if err := tx.Save(&row).Error; err != nil {
-			return storekernel.MapWriteError(err, "duplicate project row")
+			return storekernel.MapWriteError(err, "duplicate project row", domain.ErrConflict, domain.ErrInvalidInput)
 		}
 		out = drow
 		return nil
@@ -138,7 +138,7 @@ func DeleteContextEdge(ctx context.Context, db *gorm.DB, projectID, edgeID strin
 	}
 	res := db.WithContext(ctx).Where("id = ? AND project_id = ?", edgeID, projectID).Delete(&projectmodel.ProjectContextEdge{})
 	if res.Error != nil {
-		return storekernel.MapWriteError(res.Error, "duplicate project row")
+		return storekernel.MapWriteError(res.Error, "duplicate project row", domain.ErrConflict, domain.ErrInvalidInput)
 	}
 	if res.RowsAffected == 0 {
 		return domain.ErrNotFound

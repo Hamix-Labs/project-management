@@ -2,7 +2,6 @@ package storekernel
 
 import "github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 import (
-	"encoding/json"
 	"fmt"
 	"log/slog"
 	"time"
@@ -75,7 +74,7 @@ func NextEventSeq(tx *gorm.DB, taskID string) (int64, error) {
 // normalizeJSONObjectForResponse defense.
 func AppendEvent(tx *gorm.DB, taskID string, seq int64, typ taskeventsdomain.EventType, by taskcoredomain.Actor, data []byte) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.kernel.AppendEvent")
-	normalized, err := NormalizeJSONObject(data, "data")
+	normalized, err := NormalizeJSONObject(data, "data", taskcoredomain.ErrInvalidInput)
 	if err != nil {
 		return err
 	}
@@ -92,15 +91,4 @@ func AppendEvent(tx *gorm.DB, taskID string, seq int64, typ taskeventsdomain.Eve
 		return fmt.Errorf("insert task_event: %w", err)
 	}
 	return nil
-}
-
-// EventPairJSON marshals a {"from": from, "to": to} payload used by
-// status / priority / type transition audit events.
-func EventPairJSON(from, to string) ([]byte, error) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.kernel.EventPairJSON")
-	b, err := json.Marshal(map[string]string{"from": from, "to": to})
-	if err != nil {
-		return nil, fmt.Errorf("marshal event payload: %w", err)
-	}
-	return b, nil
 }

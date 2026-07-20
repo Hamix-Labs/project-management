@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"strings"
 	"testing"
 )
+
+var testInvalidInput = errors.New("invalid input")
 
 // TestNormalizeJSONObject_trimsLeadingAndTrailingWhitespace pins the
 // invariant that the on-disk byte shape of normalized JSON object
@@ -45,7 +46,7 @@ func TestNormalizeJSONObject_trimsLeadingAndTrailingWhitespace(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := NormalizeJSONObject([]byte(tc.in), "field")
+			got, err := NormalizeJSONObject([]byte(tc.in), "field", testInvalidInput)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
@@ -94,12 +95,12 @@ func TestNormalizeJSONObject_rejectsNonObjects(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, err := NormalizeJSONObject([]byte(tc.in), "field")
+			_, err := NormalizeJSONObject([]byte(tc.in), "field", testInvalidInput)
 			if err == nil {
 				t.Fatalf("NormalizeJSONObject(%q) must reject non-object input", tc.in)
 			}
-			if !errors.Is(err, taskcoredomain.ErrInvalidInput) {
-				t.Errorf("error must wrap taskcoredomain.ErrInvalidInput so handlers map to 400; got %v", err)
+			if !errors.Is(err, testInvalidInput) {
+				t.Errorf("error must wrap the caller-supplied invalid sentinel so handlers map to 400; got %v", err)
 			}
 			if !strings.Contains(err.Error(), "field") {
 				t.Errorf("error must include the field name to aid debugging; got %v", err)
@@ -123,11 +124,11 @@ func TestNormalizeJSONObject_idempotent(t *testing.T) {
 		[]byte("   "),
 	}
 	for _, in := range inputs {
-		first, err := NormalizeJSONObject(in, "field")
+		first, err := NormalizeJSONObject(in, "field", testInvalidInput)
 		if err != nil {
 			t.Fatalf("first pass failed for %q: %v", in, err)
 		}
-		second, err := NormalizeJSONObject(first, "field")
+		second, err := NormalizeJSONObject(first, "field", testInvalidInput)
 		if err != nil {
 			t.Fatalf("second pass failed for %q (first=%q): %v", in, first, err)
 		}

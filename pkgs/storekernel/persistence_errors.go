@@ -2,26 +2,24 @@ package storekernel
 
 import (
 	"fmt"
-	"log/slog"
 	"strings"
-
-	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 )
 
 // MapPayloadPersistenceError maps driver failures on JSON/JSONB payload columns
-// to taskcoredomain.ErrInvalidInput so handlers return 400 with a readable message.
-func MapPayloadPersistenceError(err error) error {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.kernel.MapPayloadPersistenceError")
+// to invalid so handlers return 400 with a readable message. Callers pass their
+// BC invalid-input sentinel.
+//
+//funclogmeasure:skip category=hot-path reason="Pure error mapper without I/O; callers emit operation trace."
+func MapPayloadPersistenceError(err, invalid error) error {
 	if err == nil {
 		return nil
 	}
 	msg := strings.ToLower(err.Error())
 	switch {
 	case strings.Contains(msg, "invalid input syntax for type json"):
-		return fmt.Errorf("%w: payload could not be saved", taskcoredomain.ErrInvalidInput)
+		return fmt.Errorf("%w: payload could not be saved", invalid)
 	case strings.Contains(msg, "malformed json"):
-		return fmt.Errorf("%w: payload could not be saved", taskcoredomain.ErrInvalidInput)
+		return fmt.Errorf("%w: payload could not be saved", invalid)
 	default:
 		return err
 	}

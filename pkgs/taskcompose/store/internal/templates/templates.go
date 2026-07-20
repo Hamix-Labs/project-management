@@ -49,7 +49,7 @@ func Patch(ctx context.Context, db *gorm.DB, id string, name *string, payload js
 	}
 	var row model.TaskTemplate
 	if err := db.WithContext(ctx).Where("id = ?", id).First(&row).Error; err != nil {
-		return nil, storekernel.MapNotFound(err)
+		return nil, storekernel.MapNotFound(err, taskcoredomain.ErrNotFound)
 	}
 	updates := map[string]any{"updated_at": time.Now().UTC()}
 	if name != nil {
@@ -60,14 +60,14 @@ func Patch(ctx context.Context, db *gorm.DB, id string, name *string, payload js
 		updates["name"] = trimmed
 	}
 	if payload != nil {
-		normalized, err := storekernel.NormalizeJSONObject(payload, "payload")
+		normalized, err := storekernel.NormalizeJSONObject(payload, "payload", taskcoredomain.ErrInvalidInput)
 		if err != nil {
 			return nil, err
 		}
 		updates["payload_json"] = datatypes.JSON(normalized)
 	}
 	if err := db.WithContext(ctx).Model(&model.TaskTemplate{}).Where("id = ?", id).Updates(updates).Error; err != nil {
-		return nil, storekernel.MapPayloadPersistenceError(fmt.Errorf("patch template: %w", err))
+		return nil, storekernel.MapPayloadPersistenceError(fmt.Errorf("patch template: %w", err), taskcoredomain.ErrInvalidInput)
 	}
 	return Get(ctx, db, id)
 }

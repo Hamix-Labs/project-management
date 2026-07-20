@@ -149,7 +149,7 @@ func CompletePhase(ctx context.Context, db *gorm.DB, in CompletePhaseInput) (*cy
 	if !storekernel.ValidTerminalPhaseStatus(in.Status) {
 		return nil, fmt.Errorf("%w: status must be a terminal phase status", taskcoredomain.ErrInvalidInput)
 	}
-	details, err := storekernel.NormalizeJSONObject(in.Details, "details")
+	details, err := storekernel.NormalizeJSONObject(in.Details, "details", taskcoredomain.ErrInvalidInput)
 	if err != nil {
 		return nil, err
 	}

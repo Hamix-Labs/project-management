@@ -10,7 +10,6 @@ import (
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	"github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
-	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -157,7 +156,7 @@ func TestProjectsStore_DeleteProjectsForRepository_removesDefault(t *testing.T) 
 	if n != 0 {
 		t.Fatalf("remaining projects=%d", n)
 	}
-	if _, err := s.GetProject(ctx, defaultProj.ID); !errors.Is(err, taskcoredomain.ErrNotFound) {
+	if _, err := s.GetProject(ctx, defaultProj.ID); !errors.Is(err, domain.ErrNotFound) {
 		t.Fatalf("GetProject after delete: %v", err)
 	}
 }

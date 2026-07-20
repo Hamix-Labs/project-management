@@ -1,12 +1,9 @@
 package storekernel
 
-import "github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	"log/slog"
 )
 
 // NormalizeJSONObject pins the on-disk shape for JSON object payloads
@@ -16,7 +13,7 @@ import (
 // collapses to "{}" so downstream readers never observe SQL NULL or
 // the JSON literal null. Anything else must be a syntactically valid
 // JSON object; a string / number / array / bool / malformed input
-// returns taskcoredomain.ErrInvalidInput so handlers surface a 400.
+// returns a wrap of invalid so handlers surface a 400.
 //
 // The returned bytes are always whitespace-trimmed at the document
 // boundaries: the empty/null branch returns the canonical "{}", and
@@ -36,19 +33,33 @@ import (
 // intact.
 //
 // field is the human-readable name of the offending column; it is
-// only used to format the wrapped error.
-func NormalizeJSONObject(b []byte, field string) ([]byte, error) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.kernel.NormalizeJSONObject")
+// only used to format the wrapped error. invalid is the BC sentinel
+// to wrap (e.g. taskcore/domain.ErrInvalidInput).
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func NormalizeJSONObject(b []byte, field string, invalid error) ([]byte, error) {
 	trimmed := bytes.TrimSpace(b)
 	if len(trimmed) == 0 || bytes.Equal(trimmed, []byte("null")) {
 		return []byte("{}"), nil
 	}
 	var probe any
 	if err := json.Unmarshal(trimmed, &probe); err != nil {
-		return nil, fmt.Errorf("%w: %s must be a JSON object", taskcoredomain.ErrInvalidInput, field)
+		return nil, fmt.Errorf("%w: %s must be a JSON object", invalid, field)
 	}
 	if _, ok := probe.(map[string]any); !ok {
-		return nil, fmt.Errorf("%w: %s must be a JSON object", taskcoredomain.ErrInvalidInput, field)
+		return nil, fmt.Errorf("%w: %s must be a JSON object", invalid, field)
 	}
 	return trimmed, nil
+}
+
+// EventPairJSON marshals a {"from": from, "to": to} payload used by
+// status / priority / type transition audit events.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func EventPairJSON(from, to string) ([]byte, error) {
+	b, err := json.Marshal(map[string]string{"from": from, "to": to})
+	if err != nil {
+		return nil, fmt.Errorf("marshal event payload: %w", err)
+	}
+	return b, nil
 }
