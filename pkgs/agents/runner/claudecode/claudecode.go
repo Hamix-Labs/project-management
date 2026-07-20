@@ -3,8 +3,8 @@
 // set so the generic registration path is exercised end-to-end.
 //
 // Status: SCAFFOLD. The Run method returns ErrTimeout unconditionally;
-// the adapter is not yet wired to a real CLI binary. Use this package
-// as a template when adding a production Claude Code integration.
+// the adapter is not yet wired to a real CLI binary. It is not registered
+// by registry/all — call Register() or import registry/scaffold to opt in.
 package claudecode
 
 import (
