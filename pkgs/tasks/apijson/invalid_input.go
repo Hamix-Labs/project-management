@@ -6,6 +6,7 @@ import "strings"
 const (
 	TasksInvalidInputMark    = "tasks: invalid input: "
 	SettingsInvalidInputMark = "settings: invalid input: "
+	ProjectsInvalidInputMark = "projects: invalid input: "
 )
 
 // InvalidInputDetail returns the trimmed suffix after the first matching mark in

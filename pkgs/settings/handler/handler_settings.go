@@ -24,7 +24,7 @@ func (h *Handler) getSettings(w http.ResponseWriter, r *http.Request) {
 
 	cfg, err := h.settings.GetSettings(r.Context())
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	handlerhttp.WriteJSONWithETag(w, r, op, http.StatusOK, h.settingsResponseFrom(cfg))
@@ -68,7 +68,7 @@ func (h *Handler) patchSettings(w http.ResponseWriter, r *http.Request) {
 
 	updated, err := h.settings.UpdateSettings(r.Context(), patch)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	if reloadErr := h.agent.Reload(r.Context()); reloadErr != nil {
@@ -108,7 +108,7 @@ func (h *Handler) probeCursor(w http.ResponseWriter, r *http.Request) {
 	if body.Runner == "" || body.BinaryPath == "" {
 		cfg, err := h.settings.GetSettings(r.Context())
 		if err != nil {
-			writeStoreError(w, r, op, err)
+			handlerhttp.WriteStoreError(w, r, op, err)
 			return
 		}
 		if body.Runner == "" {
@@ -154,7 +154,7 @@ func (h *Handler) listCursorModels(w http.ResponseWriter, r *http.Request) {
 	if body.Runner == "" || body.BinaryPath == "" {
 		cfg, err := h.settings.GetSettings(r.Context())
 		if err != nil {
-			writeStoreError(w, r, op, err)
+			handlerhttp.WriteStoreError(w, r, op, err)
 			return
 		}
 		if body.Runner == "" {

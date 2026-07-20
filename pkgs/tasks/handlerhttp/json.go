@@ -13,6 +13,8 @@ import (
 
 	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	gitinventoryhandler "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/handler"
+	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
+	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/apijson"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
@@ -210,14 +212,19 @@ func UserFacingJSONError(err error) string {
 func StoreErrorClientMessage(err error) string {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handlerhttp.StoreErrorClientMessage")
 	switch {
-	case errors.Is(err, taskcoredomain.ErrNotFound):
+	case errors.Is(err, taskcoredomain.ErrNotFound), errors.Is(err, projectsdomain.ErrNotFound):
 		return "not found"
-	case errors.Is(err, taskcoredomain.ErrConflict):
+	case errors.Is(err, taskcoredomain.ErrConflict), errors.Is(err, projectsdomain.ErrConflict):
 		if d := conflictDetail(err); d != "" {
 			return d
 		}
+		if errors.Is(err, projectsdomain.ErrConflict) {
+			return "conflict"
+		}
 		return "task id already exists"
-	case errors.Is(err, taskcoredomain.ErrInvalidInput):
+	case errors.Is(err, taskcoredomain.ErrInvalidInput),
+		errors.Is(err, projectsdomain.ErrInvalidInput),
+		errors.Is(err, settingsdomain.ErrInvalidInput):
 		if d := InvalidInputDetail(err); d != "" {
 			return d
 		}
@@ -227,20 +234,26 @@ func StoreErrorClientMessage(err error) string {
 	}
 }
 
-// InvalidInputDetail extracts the client-facing suffix after
-// "tasks: invalid input: ". Implementation lives in apijson so gitinventory
-// can share it without importing this package (import-cycle exception).
+// InvalidInputDetail extracts the client-facing suffix after a known
+// invalid-input mark (projects, settings, or tasks). Implementation lives in
+// apijson so gitinventory can share it without importing this package
+// (import-cycle exception).
 func InvalidInputDetail(err error) string {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handlerhttp.InvalidInputDetail")
-	return apijson.InvalidInputDetail(err, apijson.TasksInvalidInputMark)
+	return apijson.InvalidInputDetail(err,
+		apijson.ProjectsInvalidInputMark,
+		apijson.SettingsInvalidInputMark,
+		apijson.TasksInvalidInputMark,
+	)
 }
 
 func conflictDetail(err error) string {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handlerhttp.conflictDetail")
 	s := err.Error()
-	const mark = "tasks: conflict: "
-	if i := strings.Index(s, mark); i >= 0 {
-		return strings.TrimSpace(s[i+len(mark):])
+	for _, mark := range []string{"projects: conflict: ", "tasks: conflict: "} {
+		if i := strings.Index(s, mark); i >= 0 {
+			return strings.TrimSpace(s[i+len(mark):])
+		}
 	}
 	return ""
 }
@@ -287,11 +300,13 @@ func StoreErrHTTPResponse(ctx context.Context, err error) (code int, msg string)
 		code = http.StatusRequestTimeout
 		msg = "request canceled"
 		return code, msg
-	case errors.Is(err, taskcoredomain.ErrNotFound):
+	case errors.Is(err, taskcoredomain.ErrNotFound), errors.Is(err, projectsdomain.ErrNotFound):
 		code = http.StatusNotFound
-	case errors.Is(err, taskcoredomain.ErrInvalidInput):
+	case errors.Is(err, taskcoredomain.ErrInvalidInput),
+		errors.Is(err, projectsdomain.ErrInvalidInput),
+		errors.Is(err, settingsdomain.ErrInvalidInput):
 		code = http.StatusBadRequest
-	case errors.Is(err, taskcoredomain.ErrConflict):
+	case errors.Is(err, taskcoredomain.ErrConflict), errors.Is(err, projectsdomain.ErrConflict):
 		code = http.StatusConflict
 	}
 	msg = StoreErrorClientMessage(err)

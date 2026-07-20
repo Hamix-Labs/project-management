@@ -29,7 +29,7 @@ func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
 		RepositoryID:   body.RepositoryID,
 	})
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	h.notifyChange(realtime.ProjectCreated, project.ID)
@@ -42,12 +42,12 @@ func (h *Handler) listProjects(w http.ResponseWriter, r *http.Request) {
 	r = calltrace.WithRequestRoot(r, op)
 	limit, includeArchived, err := parseProjectListParams(r.URL.Query())
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	projects, err := h.store.ListProjects(r.Context(), includeArchived, limit)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	handlerhttp.WriteJSONWithETag(w, r, op, http.StatusOK, projectsListResponse{Projects: projects, Limit: limit})
@@ -59,12 +59,12 @@ func (h *Handler) getProject(w http.ResponseWriter, r *http.Request) {
 	r = calltrace.WithRequestRoot(r, op)
 	id, err := parsePathID(r.PathValue("id"))
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	project, err := h.store.GetProject(r.Context(), id)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	handlerhttp.WriteJSONWithETag(w, r, op, http.StatusOK, project)
@@ -76,7 +76,7 @@ func (h *Handler) patchProject(w http.ResponseWriter, r *http.Request) {
 	r = calltrace.WithRequestRoot(r, op)
 	id, err := parsePathID(r.PathValue("id"))
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	var body projectPatchJSON
@@ -85,7 +85,7 @@ func (h *Handler) patchProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if body.isEmpty() {
-		writeStoreError(w, r, op, fmt.Errorf("%w: no fields to update", domain.ErrInvalidInput))
+		handlerhttp.WriteStoreError(w, r, op, fmt.Errorf("%w: no fields to update", domain.ErrInvalidInput))
 		return
 	}
 	project, err := h.store.UpdateProject(r.Context(), id, contract.UpdateProjectInput{
@@ -95,7 +95,7 @@ func (h *Handler) patchProject(w http.ResponseWriter, r *http.Request) {
 		ContextSummary: body.ContextSummary,
 	})
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	h.notifyChange(realtime.ProjectUpdated, project.ID)
@@ -108,11 +108,11 @@ func (h *Handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 	r = calltrace.WithRequestRoot(r, op)
 	id, err := parsePathID(r.PathValue("id"))
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	if err := h.store.DeleteProject(r.Context(), id); err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	h.notifyChange(realtime.ProjectDeleted, id)
@@ -125,7 +125,7 @@ func (h *Handler) createProjectContext(w http.ResponseWriter, r *http.Request) {
 	r = calltrace.WithRequestRoot(r, op)
 	projectID, err := parsePathID(r.PathValue("id"))
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	var body projectContextCreateJSON
@@ -144,7 +144,7 @@ func (h *Handler) createProjectContext(w http.ResponseWriter, r *http.Request) {
 		Pinned:        body.Pinned,
 	})
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	h.notifyChange(realtime.ProjectContextChanged, projectID)
@@ -157,17 +157,17 @@ func (h *Handler) listProjectContext(w http.ResponseWriter, r *http.Request) {
 	r = calltrace.WithRequestRoot(r, op)
 	projectID, err := parsePathID(r.PathValue("id"))
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	limit, includeUnpinned, err := parseProjectContextListParams(r.URL.Query())
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	items, err := h.store.ListProjectContext(r.Context(), projectID, includeUnpinned, limit)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	// Empty store results are nil slices; JSON would encode them as null and
@@ -189,7 +189,7 @@ func (h *Handler) patchProjectContext(w http.ResponseWriter, r *http.Request) {
 	r = calltrace.WithRequestRoot(r, op)
 	projectID, itemID, err := parseProjectContextPath(r)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	var body projectContextPatchJSON
@@ -198,7 +198,7 @@ func (h *Handler) patchProjectContext(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if body.isEmpty() {
-		writeStoreError(w, r, op, fmt.Errorf("%w: no fields to update", domain.ErrInvalidInput))
+		handlerhttp.WriteStoreError(w, r, op, fmt.Errorf("%w: no fields to update", domain.ErrInvalidInput))
 		return
 	}
 	item, err := h.store.UpdateProjectContext(r.Context(), projectID, itemID, contract.UpdateProjectContextInput{
@@ -208,7 +208,7 @@ func (h *Handler) patchProjectContext(w http.ResponseWriter, r *http.Request) {
 		Pinned: body.Pinned,
 	})
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	h.notifyChange(realtime.ProjectContextChanged, projectID)
@@ -221,11 +221,11 @@ func (h *Handler) deleteProjectContext(w http.ResponseWriter, r *http.Request) {
 	r = calltrace.WithRequestRoot(r, op)
 	projectID, itemID, err := parseProjectContextPath(r)
 	if err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	if err := h.store.DeleteProjectContext(r.Context(), projectID, itemID); err != nil {
-		writeStoreError(w, r, op, err)
+		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
 	h.notifyChange(realtime.ProjectContextChanged, projectID)
