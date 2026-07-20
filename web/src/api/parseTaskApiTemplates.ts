@@ -4,7 +4,7 @@ import type {
   TaskTemplateSummary,
 } from "@/types/taskTemplates";
 import { parseComposePayloadCore } from "./parseTaskApiCompose";
-import { parseTask } from "./parseTaskApiTasks";
+import { parseDependsOnList, parseTask } from "./parseTaskApiTasks";
 import {
   isRecord,
   parseFiniteNumber,
@@ -53,21 +53,7 @@ function parseTaskTemplateSummaryFields(
 
 function parseDependsOnWire(value: unknown): TaskComposePayload["depends_on"] {
   if (value === undefined || value === null) return [];
-  if (!Array.isArray(value)) {
-    throw new Error("Invalid API response: depends_on must be array");
-  }
-  return value.map((edge, i) => {
-    if (typeof edge === "string") {
-      return { task_id: parseString(edge, `depends_on[${i}]`), satisfies: "done" as const };
-    }
-    if (!isRecord(edge)) {
-      throw new Error(`Invalid API response: depends_on[${i}] must be object or string`);
-    }
-    return {
-      task_id: parseString(edge.task_id, `depends_on[${i}].task_id`),
-      satisfies: "done" as const,
-    };
-  });
+  return parseDependsOnList(value);
 }
 
 export function parseTaskComposePayload(value: unknown): TaskComposePayload {
