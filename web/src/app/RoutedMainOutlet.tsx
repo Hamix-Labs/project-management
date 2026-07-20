@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
+import { RoutePanelSkeleton } from "@/components/skeletons/RoutePanelSkeleton";
 import { AppErrorBoundary } from "../shared/AppErrorBoundary";
 
 export function RoutedMainOutlet() {
@@ -12,7 +13,9 @@ export function RoutedMainOutlet() {
       fallbackMessage="Something went wrong in this view."
       onRecover={() => setOutletKey((k) => k + 1)}
     >
-      <Outlet key={outletKey} />
+      <Suspense fallback={<RoutePanelSkeleton />}>
+        <Outlet key={outletKey} />
+      </Suspense>
     </AppErrorBoundary>
   );
 }

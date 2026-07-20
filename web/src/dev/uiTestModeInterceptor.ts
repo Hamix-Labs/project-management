@@ -1,20 +1,4 @@
 import { isUiTestMode } from "./uiTestMode";
-import {
-  demoContextWire,
-  demoCycleFailuresWire,
-  demoProjectWire,
-  demoProjectsListWire,
-  demoTaskChecklistWire,
-  demoTaskCyclesListWire,
-  demoTaskDraftsWire,
-  demoTaskTemplatesWire,
-  demoTaskEventsWire,
-  demoTaskStatsWire,
-  demoTasksListWire,
-  demoTaskWire,
-  isDemoProjectId,
-  isDemoTaskId,
-} from "./uiTestModeDemoWire";
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -41,25 +25,30 @@ function parseRequestUrl(input: RequestInfo | URL, init?: RequestInit): URL | nu
  * When UI test mode is active, returns a synthetic JSON Response for matching
  * GET requests so the SPA can render without taskapi data. Returns null to
  * use the real network (mutations, health, settings, unknown paths).
+ *
+ * Demo wire is loaded via dynamic import so production builds keep the catalog
+ * out of the static fetch graph when test mode is off.
  */
-export function interceptUiTestModeFetch(
+export async function interceptUiTestModeFetch(
   input: RequestInfo | URL,
   init?: RequestInit,
-): Response | null {
+): Promise<Response | null> {
   if (!isUiTestMode()) return null;
   const u = parseRequestUrl(input, init);
   if (!u) return null;
   const path = u.pathname;
   const search = u.searchParams;
 
+  const wire = await import("./uiTestModeDemoWire");
+
   if (path === "/projects") {
-    return jsonResponse(demoProjectsListWire());
+    return jsonResponse(wire.demoProjectsListWire());
   }
 
   const projectOnly = path.match(/^\/projects\/([^/]+)$/);
   if (projectOnly) {
     const id = decodeURIComponent(projectOnly[1] ?? "");
-    const row = demoProjectWire(id);
+    const row = wire.demoProjectWire(id);
     if (row) return jsonResponse(row);
     return null;
   }
@@ -67,58 +56,58 @@ export function interceptUiTestModeFetch(
   const ctx = path.match(/^\/projects\/([^/]+)\/context$/);
   if (ctx) {
     const id = decodeURIComponent(ctx[1] ?? "");
-    if (!isDemoProjectId(id)) return null;
-    return jsonResponse(demoContextWire(id));
+    if (!wire.isDemoProjectId(id)) return null;
+    return jsonResponse(wire.demoContextWire(id));
   }
 
   if (path === "/tasks/stats") {
-    return jsonResponse(demoTaskStatsWire());
+    return jsonResponse(wire.demoTaskStatsWire());
   }
 
   if (path === "/tasks") {
     const limit = Number(search.get("limit") ?? "200") || 200;
     const offset = Number(search.get("offset") ?? "0") || 0;
     const afterId = search.get("after_id");
-    return jsonResponse(demoTasksListWire(limit, offset, afterId));
+    return jsonResponse(wire.demoTasksListWire(limit, offset, afterId));
   }
 
   if (path.startsWith("/tasks/cycle-failures")) {
-    return jsonResponse(demoCycleFailuresWire());
+    return jsonResponse(wire.demoCycleFailuresWire());
   }
 
   if (path.startsWith("/task-drafts")) {
-    return jsonResponse(demoTaskDraftsWire());
+    return jsonResponse(wire.demoTaskDraftsWire());
   }
 
   if (path.startsWith("/task-templates")) {
-    return jsonResponse(demoTaskTemplatesWire());
+    return jsonResponse(wire.demoTaskTemplatesWire());
   }
 
   const checklist = path.match(/^\/tasks\/([^/]+)\/checklist$/);
   if (checklist) {
     const tid = decodeURIComponent(checklist[1] ?? "");
-    if (!isDemoTaskId(tid)) return null;
-    return jsonResponse(demoTaskChecklistWire());
+    if (!wire.isDemoTaskId(tid)) return null;
+    return jsonResponse(wire.demoTaskChecklistWire());
   }
 
   const events = path.match(/^\/tasks\/([^/]+)\/events$/);
   if (events) {
     const tid = decodeURIComponent(events[1] ?? "");
-    if (!isDemoTaskId(tid)) return null;
-    return jsonResponse(demoTaskEventsWire(tid));
+    if (!wire.isDemoTaskId(tid)) return null;
+    return jsonResponse(wire.demoTaskEventsWire(tid));
   }
 
   const cyclesList = path.match(/^\/tasks\/([^/]+)\/cycles$/);
   if (cyclesList) {
     const tid = decodeURIComponent(cyclesList[1] ?? "");
-    if (!isDemoTaskId(tid)) return null;
-    return jsonResponse(demoTaskCyclesListWire(tid));
+    if (!wire.isDemoTaskId(tid)) return null;
+    return jsonResponse(wire.demoTaskCyclesListWire(tid));
   }
 
   const taskOne = path.match(/^\/tasks\/([^/]+)$/);
   if (taskOne) {
     const tid = decodeURIComponent(taskOne[1] ?? "");
-    const row = demoTaskWire(tid);
+    const row = wire.demoTaskWire(tid);
     if (row) return jsonResponse(row);
     return null;
   }

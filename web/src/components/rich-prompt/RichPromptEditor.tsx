@@ -1,3 +1,4 @@
+import "tippy.js/dist/tippy.css";
 import { EditorContent } from "@tiptap/react";
 import { ProjectReferencesBlock } from "./ProjectReferencesBlock";
 import { RichPromptFileReferenceModal } from "./RichPromptFileReferenceModal";

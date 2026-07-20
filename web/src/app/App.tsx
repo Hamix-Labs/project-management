@@ -1,4 +1,4 @@
-import { Suspense, lazy } from "react";
+import { lazy } from "react";
 import { Link, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { isUiFeatureOmitted } from "@/launch/omittedFeatures";
 import {
@@ -262,23 +262,22 @@ function routeNeedsHomeListData(pathname: string): boolean {
 }
 
 export default function App() {
-  useBootstrap();
+  const bootstrapSettled = useBootstrap();
   const sseLive = useTaskEventStream();
   const location = useLocation();
   const dataEnabled = routeNeedsHomeListData(location.pathname);
-  const app = useTasksApp({ sseLive, dataEnabled });
+  const app = useTasksApp({ sseLive, dataEnabled, bootstrapSettled });
   const projectsUiEnabled = !isUiFeatureOmitted("projects");
 
   return (
     <TasksAppProvider value={app}>
-      <Suspense fallback={null}>
-        <Routes>
-          <Route path="/" element={<AppShell />}>
-            <Route index element={<TaskHome />} />
-            <Route path="drafts" element={<TaskDraftsPage />} />
-            <Route path="templates" element={<TaskTemplatesPage />} />
-            <Route path="worktrees" element={<RepositoriesListPage />} />
-            <Route path="worktrees/:repositoryId" element={<RepositoryWorktreesPage />} />
+      <Routes>
+        <Route path="/" element={<AppShell />}>
+          <Route index element={<TaskHome />} />
+          <Route path="drafts" element={<TaskDraftsPage />} />
+          <Route path="templates" element={<TaskTemplatesPage />} />
+          <Route path="worktrees" element={<RepositoriesListPage />} />
+          <Route path="worktrees/:repositoryId" element={<RepositoryWorktreesPage />} />
           {projectsUiEnabled ? (
             <>
               <Route path="projects" element={<ProjectListPage />} />
@@ -308,7 +307,6 @@ export default function App() {
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
-    </Suspense>
     </TasksAppProvider>
   );
 }

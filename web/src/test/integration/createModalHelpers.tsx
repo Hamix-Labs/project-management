@@ -12,7 +12,8 @@ export async function waitForCreateTaskEnabled(dialog: HTMLElement) {
 
 export async function openNewTaskModal(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole("button", { name: /\+?\s*new task/i }));
-  return screen.findByRole("dialog");
+  // Create-modal / TipTap is lazy; wait for the real dialog, not the chunk fallback.
+  return screen.findByRole("dialog", { name: /^new task$/i });
 }
 
 export async function choosePriorityInDialog(

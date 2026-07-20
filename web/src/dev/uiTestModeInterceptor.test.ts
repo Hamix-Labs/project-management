@@ -7,14 +7,14 @@ describe("interceptUiTestModeFetch", () => {
     vi.restoreAllMocks();
   });
 
-  it("returns null when UI test mode is off", () => {
+  it("returns null when UI test mode is off", async () => {
     vi.spyOn(uiTestMode, "isUiTestMode").mockReturnValue(false);
-    expect(interceptUiTestModeFetch("/projects", undefined)).toBeNull();
+    expect(await interceptUiTestModeFetch("/projects", undefined)).toBeNull();
   });
 
   it("returns synthetic JSON for GET /projects when mode is on", async () => {
     vi.spyOn(uiTestMode, "isUiTestMode").mockReturnValue(true);
-    const res = interceptUiTestModeFetch("/projects", undefined);
+    const res = await interceptUiTestModeFetch("/projects", undefined);
     expect(res).not.toBeNull();
     expect(res?.ok).toBe(true);
     const body = (await res!.json()) as { projects: unknown[] };
@@ -22,10 +22,10 @@ describe("interceptUiTestModeFetch", () => {
     expect(body.projects.length).toBeGreaterThanOrEqual(3);
   });
 
-  it("does not intercept non-GET requests", () => {
+  it("does not intercept non-GET requests", async () => {
     vi.spyOn(uiTestMode, "isUiTestMode").mockReturnValue(true);
     expect(
-      interceptUiTestModeFetch("/projects", { method: "POST", body: "{}" }),
+      await interceptUiTestModeFetch("/projects", { method: "POST", body: "{}" }),
     ).toBeNull();
   });
 });
