@@ -16,7 +16,7 @@ func TestComposeContinuationPrompt_scopeLockAndAntiDiscovery(t *testing.T) {
 	cycle := &cyclesdomain.TaskCycle{ID: "child-1", AttemptSeq: 2, StartedAt: started}
 	bundle := &ContinuationBundle{
 		LineageAttempt: 1,
-		FailureClass:   resume.FailureClassVerify,
+		FailureClass:   resume.ContinuationFailureVerify,
 		FailureReason:  verificationFailedReason,
 		FailurePhase:   cyclesdomain.PhaseVerify,
 		ScopeFiles:     []string{"pkgs/foo/bar.go"},

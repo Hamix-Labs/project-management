@@ -18,16 +18,6 @@ const (
 	resumeEntryAfterExecuteSuccess = resume.EntryAfterExecuteSuccess
 )
 
-type failureClass = resume.FailureClass
-
-const (
-	failureClassRunner         = resume.FailureClassRunner
-	failureClassExecuteGate    = resume.FailureClassExecuteGate
-	failureClassVerify         = resume.FailureClassVerify
-	failureClassInfrastructure = resume.FailureClassInfrastructure
-	failureClassOperator       = resume.FailureClassOperator
-)
-
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (h *Harness) resumeSvc() *resume.Service {
 	if h.resume == nil {
@@ -39,8 +29,11 @@ func (h *Harness) resumeSvc() *resume.Service {
 	return h.resume
 }
 
+// cloneVerdictMap copies locked-pass verdicts from a checkpoint into process state.
+// CriterionVerdict is an alias of verify.Verdict, so no field mapping is needed.
+//
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func harnessVerdictsFromResume(m map[string]resume.CriterionVerdict) map[string]criterionVerdict {
+func cloneVerdictMap(m map[string]criterionVerdict) map[string]criterionVerdict {
 	if len(m) == 0 {
 		return map[string]criterionVerdict{}
 	}
@@ -50,13 +43,8 @@ func harnessVerdictsFromResume(m map[string]resume.CriterionVerdict) map[string]
 		if key == "" {
 			key = id
 		}
-		out[key] = criterionVerdict{
-			ID:        key,
-			Passed:    v.Passed,
-			Evidence:  v.Evidence,
-			Verifier:  v.Verifier,
-			Reasoning: v.Reasoning,
-		}
+		v.ID = key
+		out[key] = v
 	}
 	return out
 }

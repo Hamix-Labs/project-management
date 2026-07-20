@@ -69,12 +69,8 @@ func (h *Harness) runResumeRetry(parentCtx context.Context, task *taskcoredomain
 	}
 	startedAt := h.opts.Clock()
 	state := processState{
-		cycle: cycleLifecycleState{startedAt: startedAt},
-		verify: verifyLifecycleState{
-			previouslyPassed: harnessVerdictsFromResume(cp.PreviouslyPassed),
-			verifyAttempt:    0,
-			verifyFeedback:   cp.VerifyFeedback,
-		},
+		cycle:  cycleLifecycleState{startedAt: startedAt},
+		verify: verifyLifecycleFromCheckpoint(cp, true),
 	}
 	defer h.recoverFromPanic(&state, *task)
 
@@ -103,22 +99,7 @@ func (h *Harness) runResumeRetry(parentCtx context.Context, task *taskcoredomain
 			return
 		}
 	}
-	snap, err := h.loadVerificationSnapshot(parentCtx, task.ID)
-	if err != nil {
-		slog.Error("agent harness resume-retry verification snapshot failed", "cmd", calltrace.LogCmd,
-			"operation", "agent.harness.Harness.runResumeRetry.verify_snap_err",
-			"task_id", task.ID, "cycle_id", cycle.ID, "err", err)
-		h.bestEffortTerminate(parentCtx, &state, task.ID, cyclesdomain.CycleStatusFailed, "verification_snapshot_load_failed")
-		return
-	}
-	state.verify.verifySnap = snap
-	h.runCycleLoop(parentCtx, task, cycle, &state, cycleLoopOpts{
-		resumeNotice:     true,
-		interruptedPhase: cyclesdomain.PhaseExecute,
-		skipFirstExecute: cp.Entry == resumeEntryVerifyOnly,
-		knownCommits:     cp.KnownCommits,
-		continuation:     cp.Continuation,
-	})
+	h.enterCycleLoopFromCheckpoint(parentCtx, task, cycle, &state, cp, cycleLoopEntryOperatorRetry)
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
