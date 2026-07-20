@@ -21,7 +21,7 @@ func (noopHostPathMapper) DisplayHostPath(p string) string { return p }
 
 // Deps wires git inventory HTTP handlers into the taskapi mux.
 type Deps struct {
-	Read       contract.GitReadStore
+	Inventory  contract.GitInventoryStore
 	Write      contract.GitWriteStore
 	Projects   projectscontract.ProjectStore
 	GitService gitwork.Service
@@ -30,11 +30,11 @@ type Deps struct {
 
 // Handler serves global git inventory REST routes.
 type Handler struct {
-	read     contract.GitReadStore
-	write    contract.GitWriteStore
-	projects projectscontract.ProjectStore
-	git      gitwork.Service
-	paths    HostPathMapper
+	inventory contract.GitInventoryStore
+	write     contract.GitWriteStore
+	projects  projectscontract.ProjectStore
+	git       gitwork.Service
+	paths     HostPathMapper
 }
 
 // Register mounts /git/* routes on m.
@@ -50,11 +50,11 @@ func Register(m *http.ServeMux, deps Deps) {
 		gitSvc = gitwork.New()
 	}
 	h := &Handler{
-		read:     deps.Read,
-		write:    deps.Write,
-		projects: deps.Projects,
-		git:      gitSvc,
-		paths:    paths,
+		inventory: deps.Inventory,
+		write:     deps.Write,
+		projects:  deps.Projects,
+		git:       gitSvc,
+		paths:     paths,
 	}
 	m.Handle("GET /git/repositories", http.HandlerFunc(h.listGlobalGitRepositories))
 	m.Handle("POST /git/repositories", http.HandlerFunc(h.createGlobalGitRepository))

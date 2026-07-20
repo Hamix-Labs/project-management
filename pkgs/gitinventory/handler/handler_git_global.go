@@ -38,7 +38,7 @@ func (h *Handler) listGlobalGitWorktreesCheckoutStatus(w http.ResponseWriter, r 
 	const op = "git.worktrees.checkout_status"
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.listGlobalGitWorktreesCheckoutStatus")
 	r = calltrace.WithRequestRoot(r, op)
-	repo, err := h.read.GetGitRepositoryByID(r.Context(), r.PathValue("repoId"))
+	repo, err := h.inventory.GetGitRepositoryByID(r.Context(), r.PathValue("repoId"))
 	if err != nil {
 		WriteGitStoreError(w, r, op, err)
 		return

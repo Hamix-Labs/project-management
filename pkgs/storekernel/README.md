@@ -12,6 +12,7 @@ Shared persistence helpers used by bounded-context stores and `internal/taskapi/
 | IDs + errors | `ids.go`, `errors.go`, `persistence_errors.go` | `ResolveID`, `MapNotFound`, duplicate-key mapping |
 | JSON | `json.go`, `jsonmap/` | `NormalizeJSONObject`, `EventPairJSON`; RawMessage↔datatypes helpers in `jsonmap` |
 | Task load | `taskload/` | Shared GORM task-row load helpers |
+
 ## Dependency rules
 
 | May import | Must not import |

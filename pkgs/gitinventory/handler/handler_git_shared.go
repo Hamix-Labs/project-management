@@ -12,7 +12,7 @@ import (
 func (h *Handler) serveListGitRepositories(w http.ResponseWriter, r *http.Request, op string) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", op)
 	r = calltrace.WithRequestRoot(r, op)
-	rows, err := h.read.ListAllGitRepositoriesWithSummary(r.Context())
+	rows, err := h.inventory.ListAllGitRepositoriesWithSummary(r.Context())
 	if err != nil {
 		WriteGitStoreError(w, r, op, err)
 		return
@@ -49,7 +49,7 @@ func (h *Handler) serveGetGitRepository(w http.ResponseWriter, r *http.Request, 
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", op)
 	r = calltrace.WithRequestRoot(r, op)
 	repoID := r.PathValue("repoId")
-	repo, err := h.read.GetGitRepositoryByID(r.Context(), repoID)
+	repo, err := h.inventory.GetGitRepositoryByID(r.Context(), repoID)
 	if err != nil {
 		WriteGitStoreError(w, r, op, err)
 		return
@@ -61,7 +61,7 @@ func (h *Handler) serveDeleteGitRepository(w http.ResponseWriter, r *http.Reques
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", op)
 	r = calltrace.WithRequestRoot(r, op)
 	repoID := r.PathValue("repoId")
-	if err := h.read.DeleteGlobalGitRepository(r.Context(), repoID); err != nil {
+	if err := h.inventory.DeleteGlobalGitRepository(r.Context(), repoID); err != nil {
 		WriteGitStoreError(w, r, op, err)
 		return
 	}
@@ -72,12 +72,12 @@ func (h *Handler) serveListGitWorktrees(w http.ResponseWriter, r *http.Request, 
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", op)
 	r = calltrace.WithRequestRoot(r, op)
 	repoID := r.PathValue("repoId")
-	rows, err := h.read.ListGitWorktreesByRepo(r.Context(), repoID)
+	rows, err := h.inventory.ListGitWorktreesByRepo(r.Context(), repoID)
 	if err != nil {
 		WriteGitStoreError(w, r, op, err)
 		return
 	}
-	staleMap, err := h.read.WorktreeStaleMap(r.Context(), repoID, time.Now().UTC())
+	staleMap, err := h.inventory.WorktreeStaleMap(r.Context(), repoID, time.Now().UTC())
 	if err != nil {
 		WriteGitStoreError(w, r, op, err)
 		return
@@ -101,7 +101,7 @@ func (h *Handler) serveDeleteGitWorktree(w http.ResponseWriter, r *http.Request,
 	if removeFromDisk {
 		err = h.write.RemoveGitWorktreeFromDiskByID(r.Context(), worktreeID, force, gitSvc)
 	} else {
-		err = h.read.UnregisterGitWorktreeByID(r.Context(), worktreeID)
+		err = h.inventory.UnregisterGitWorktreeByID(r.Context(), worktreeID)
 	}
 	if err != nil {
 		WriteGitStoreError(w, r, op, err)
@@ -114,7 +114,7 @@ func (h *Handler) serveListGitBranches(w http.ResponseWriter, r *http.Request, o
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", op)
 	r = calltrace.WithRequestRoot(r, op)
 	repoID := r.PathValue("repoId")
-	rows, err := h.read.ListGitBranchesByRepo(r.Context(), repoID)
+	rows, err := h.inventory.ListGitBranchesByRepo(r.Context(), repoID)
 	if err != nil {
 		WriteGitStoreError(w, r, op, err)
 		return

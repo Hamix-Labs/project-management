@@ -23,7 +23,7 @@ func gitHandlerTest(t *testing.T) (http.Handler, *composition.API, string) {
 	main := initHandlerGitRepo(t)
 	mux := http.NewServeMux()
 	Register(mux, Deps{
-		Read:       st,
+		Inventory:  st,
 		Write:      st,
 		Projects:   st,
 		GitService: gitwork.New(),

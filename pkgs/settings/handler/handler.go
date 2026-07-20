@@ -15,20 +15,20 @@ type NotifyFunc func(typ realtime.ChangeType)
 
 // Deps wires settings HTTP handlers into the taskapi mux.
 type Deps struct {
-	Settings contract.SettingsStore
-	GitRead  gitcontract.GitReadStore
-	Agent    contract.AgentWorkerControl
-	Git      gitwork.Service
-	Notify   NotifyFunc
+	Settings     contract.SettingsStore
+	GitInventory gitcontract.GitInventoryStore
+	Agent        contract.AgentWorkerControl
+	Git          gitwork.Service
+	Notify       NotifyFunc
 }
 
 // Handler serves /settings* REST routes.
 type Handler struct {
-	settings contract.SettingsStore
-	gitRead  gitcontract.GitReadStore
-	agent    contract.AgentWorkerControl
-	git      gitwork.Service
-	notify   NotifyFunc
+	settings     contract.SettingsStore
+	gitInventory gitcontract.GitInventoryStore
+	agent        contract.AgentWorkerControl
+	git          gitwork.Service
+	notify       NotifyFunc
 }
 
 // Register mounts /settings* routes on m.
@@ -40,11 +40,11 @@ func Register(m *http.ServeMux, deps Deps) {
 		gitSvc = gitwork.New()
 	}
 	h := &Handler{
-		settings: deps.Settings,
-		gitRead:  deps.GitRead,
-		agent:    deps.Agent,
-		git:      gitSvc,
-		notify:   deps.Notify,
+		settings:     deps.Settings,
+		gitInventory: deps.GitInventory,
+		agent:        deps.Agent,
+		git:          gitSvc,
+		notify:       deps.Notify,
 	}
 	m.Handle("GET /settings", http.HandlerFunc(h.getSettings))
 	m.Handle("GET /settings/workspace-roots", http.HandlerFunc(h.workspaceRoots))
