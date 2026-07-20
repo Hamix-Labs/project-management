@@ -1,16 +1,18 @@
 package cursor
 
-import "github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 import (
 	"bytes"
 	"encoding/json"
 	"log/slog"
 	"path"
+	"runtime/debug"
 	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
+	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/adapterkit"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 )
 
 type progressMessage struct {
@@ -44,7 +46,11 @@ func emitProgressFromLine(onProgress func(runner.ProgressEvent), raw []byte, hom
 		return
 	}
 	defer func() {
-		_ = recover()
+		if rec := recover(); rec != nil {
+			slog.Error("cursor progress callback panicked",
+				"cmd", calltrace.LogCmd, "operation", "cursor.emitProgressFromLine.panic",
+				"panic", rec, "stack", string(debug.Stack()))
+		}
 	}()
 	onProgress(ev)
 }
@@ -70,7 +76,7 @@ func progressFromLine(raw []byte, homePaths []string) (runner.ProgressEvent, boo
 			}, true
 		}
 	case cursorEventAssistant:
-		msg := clipSummaryRunes(redact(strings.TrimSpace(textContent(line.Message.Content)), homePaths), limits.ProgressSummaryRunes)
+		msg := adapterkit.ClipRunes(redact(strings.TrimSpace(textContent(line.Message.Content)), homePaths), limits.ProgressSummaryRunes)
 		if msg != "" {
 			return runner.ProgressEvent{Kind: cursorEventAssistant, Message: msg, Payload: progressPayload(raw, homePaths)}, true
 		}
@@ -494,5 +500,5 @@ func shellCommandLabel(command string) string {
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func clipProgressSummary(s string) string {
-	return clipSummaryRunes(strings.Join(strings.Fields(s), " "), 80)
+	return adapterkit.ClipRunes(strings.Join(strings.Fields(s), " "), 80)
 }

@@ -9,11 +9,11 @@ import (
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func parseProjectContextPath(r *http.Request) (projectID, itemID string, err error) {
-	projectID, err = parsePathID(r.PathValue("id"))
+	projectID, err = handlerhttp.ParsePathID(r.PathValue("id"))
 	if err != nil {
 		return "", "", err
 	}
-	itemID, err = parsePathID(r.PathValue("contextId"))
+	itemID, err = handlerhttp.ParsePathID(r.PathValue("contextId"))
 	if err != nil {
 		return "", "", err
 	}

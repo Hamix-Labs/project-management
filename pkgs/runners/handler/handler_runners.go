@@ -36,7 +36,7 @@ func (h *Handler) listRunners(w http.ResponseWriter, r *http.Request) {
 	const op = "runners.list"
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "runners.handler.Handler.listRunners")
 	r = calltrace.WithRequestRoot(r, op)
-	debugHTTPRequest(r, op)
+	handlerhttp.DebugHTTPRequest(r, op)
 
 	descs := registry.List()
 	out := make([]runnerDescriptorWire, 0, len(descs))
@@ -74,7 +74,7 @@ func (h *Handler) probeRunner(w http.ResponseWriter, r *http.Request) {
 	const op = "runners.probe"
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "runners.handler.Handler.probeRunner")
 	r = calltrace.WithRequestRoot(r, op)
-	debugHTTPRequest(r, op)
+	handlerhttp.DebugHTTPRequest(r, op)
 
 	runnerID := r.PathValue("id")
 	if runnerID == "" {
@@ -143,7 +143,7 @@ func (h *Handler) listRunnerModels(w http.ResponseWriter, r *http.Request) {
 	const op = "runners.list_models"
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "runners.handler.Handler.listRunnerModels")
 	r = calltrace.WithRequestRoot(r, op)
-	debugHTTPRequest(r, op)
+	handlerhttp.DebugHTTPRequest(r, op)
 
 	runnerID := r.PathValue("id")
 	if runnerID == "" {
@@ -204,7 +204,7 @@ func (h *Handler) runnerConfigSchema(w http.ResponseWriter, r *http.Request) {
 	const op = "runners.config_schema"
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "runners.handler.Handler.runnerConfigSchema")
 	r = calltrace.WithRequestRoot(r, op)
-	debugHTTPRequest(r, op)
+	handlerhttp.DebugHTTPRequest(r, op)
 
 	runnerID := r.PathValue("id")
 	if runnerID == "" {
@@ -239,7 +239,7 @@ func (h *Handler) validateRunnerConfig(w http.ResponseWriter, r *http.Request) {
 	const op = "runners.validate_config"
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "runners.handler.Handler.validateRunnerConfig")
 	r = calltrace.WithRequestRoot(r, op)
-	debugHTTPRequest(r, op)
+	handlerhttp.DebugHTTPRequest(r, op)
 
 	runnerID := r.PathValue("id")
 	if runnerID == "" {
@@ -258,7 +258,7 @@ func (h *Handler) validateRunnerConfig(w http.ResponseWriter, r *http.Request) {
 		handlerhttp.WriteJSONError(w, r, op, http.StatusInternalServerError, "failed to load runner")
 		return
 	}
-	cv, ok := built.(runner.ConfigValidator)
+	cv, ok := built.(runner.Configurer)
 	if !ok {
 		handlerhttp.WriteJSONError(w, r, op, http.StatusNotImplemented, "runner does not support config validation")
 		return

@@ -9,10 +9,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/contract"
-	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler/readpolicy"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler/policy"
 )
 
 // maxCycleListLimitParamBytes mirrors maxTaskEventSeqParamBytes — keep
@@ -81,7 +81,7 @@ func parseCycleListLimit(ctx context.Context, q url.Values) (int, error) {
 	ctx = calltrace.Push(ctx, "parseCycleListLimit")
 	calltrace.HelperIOIn(ctx, "parseCycleListLimit", "limit_q", q.Get("limit"))
 	var (
-		limit = readpolicy.CycleListDefaultLimit
+		limit = policy.CycleListDefaultLimit
 		err   error
 	)
 	defer func() { calltrace.HelperIOOut(ctx, "parseCycleListLimit", "limit", limit, "err", err) }()
@@ -94,12 +94,12 @@ func parseCycleListLimit(ctx context.Context, q url.Values) (int, error) {
 		return 0, err
 	}
 	n, e := strconv.Atoi(v)
-	if e != nil || n < 0 || n > readpolicy.CycleListMaxLimit {
-		err = fmt.Errorf("%w: limit must be integer 0..%d", taskcoredomain.ErrInvalidInput, readpolicy.CycleListMaxLimit)
+	if e != nil || n < 0 || n > policy.CycleListMaxLimit {
+		err = fmt.Errorf("%w: limit must be integer 0..%d", taskcoredomain.ErrInvalidInput, policy.CycleListMaxLimit)
 		return 0, err
 	}
 	if n == 0 {
-		return readpolicy.CycleListDefaultLimit, nil
+		return policy.CycleListDefaultLimit, nil
 	}
 	limit = n
 	return limit, nil
@@ -129,7 +129,7 @@ func parseCycleStreamLimit(ctx context.Context, q url.Values) (int, error) {
 	ctx = calltrace.Push(ctx, "parseCycleStreamLimit")
 	calltrace.HelperIOIn(ctx, "parseCycleStreamLimit", "limit_q", q.Get("limit"))
 	var (
-		limit = readpolicy.CycleStreamDefaultLimit
+		limit = policy.CycleStreamDefaultLimit
 		err   error
 	)
 	defer func() { calltrace.HelperIOOut(ctx, "parseCycleStreamLimit", "limit", limit, "err", err) }()
@@ -142,12 +142,12 @@ func parseCycleStreamLimit(ctx context.Context, q url.Values) (int, error) {
 		return 0, err
 	}
 	n, e := strconv.Atoi(v)
-	if e != nil || n < 0 || n > readpolicy.CycleStreamMaxLimit {
-		err = fmt.Errorf("%w: limit must be integer 0..%d", taskcoredomain.ErrInvalidInput, readpolicy.CycleStreamMaxLimit)
+	if e != nil || n < 0 || n > policy.CycleStreamMaxLimit {
+		err = fmt.Errorf("%w: limit must be integer 0..%d", taskcoredomain.ErrInvalidInput, policy.CycleStreamMaxLimit)
 		return 0, err
 	}
 	if n == 0 {
-		return readpolicy.CycleStreamDefaultLimit, nil
+		return policy.CycleStreamDefaultLimit, nil
 	}
 	limit = n
 	return limit, nil

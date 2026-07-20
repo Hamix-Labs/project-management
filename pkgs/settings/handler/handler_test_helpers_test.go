@@ -91,10 +91,10 @@ func settingsTestServer(t *testing.T) (*httptest.Server, *composition.API, *sseN
 	capture, notify := newSSENotifyCapture()
 	ctrl := &fakeAgentControl{}
 	srv := newSettingsHTTPServer(t, st, Deps{
-		Settings: st,
-		GitInventory:  st,
-		Agent:    ctrl,
-		Notify:   notify,
+		Settings:     st,
+		GitInventory: st,
+		Agent:        ctrl,
+		Notify:       notify,
 	})
 	return srv, st, capture, ctrl
 }

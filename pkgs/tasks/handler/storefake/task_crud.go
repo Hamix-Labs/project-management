@@ -22,7 +22,7 @@ type RetryCall struct {
 // GateCall records one ApplyTaskGateAction invocation.
 type GateCall struct {
 	TaskID string
-	Action string
+	Action taskcorecontract.GateAction
 	By     taskcoredomain.Actor
 }
 
@@ -211,7 +211,7 @@ func (f *TaskCRUDFake) RequestTaskRetry(ctx context.Context, in taskcorecontract
 // ApplyTaskGateAction records the call and returns the configured outcome.
 //
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (f *TaskCRUDFake) ApplyTaskGateAction(ctx context.Context, taskID, action string, by taskcoredomain.Actor) (*taskcoredomain.Task, error) {
+func (f *TaskCRUDFake) ApplyTaskGateAction(ctx context.Context, taskID string, action taskcorecontract.GateAction, by taskcoredomain.Actor) (*taskcoredomain.Task, error) {
 	f.mu.Lock()
 	f.gateCalls = append(f.gateCalls, GateCall{TaskID: taskID, Action: action, By: by})
 	err := f.gateErr

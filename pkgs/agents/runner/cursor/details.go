@@ -46,12 +46,6 @@ func buildDetails(p cursorOutput) json.RawMessage {
 	return b
 }
 
-func combineStreams(stdout, stderr []byte) string {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "cursor.combineStreams",
-		"stdout_bytes", len(stdout), "stderr_bytes", len(stderr))
-	return adapterkit.CombineStreams(stdout, stderr)
-}
-
 func stderrFirstLineHint(stderr []byte, homePaths []string) string {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "cursor.stderrFirstLineHint",
 		"stderr_bytes", len(stderr))
@@ -64,7 +58,7 @@ func stderrFirstLineHint(stderr []byte, homePaths []string) string {
 		if t == "" {
 			continue
 		}
-		return clipSummaryRunes(redact(t, homePaths), limits.StderrSummaryHintRunes)
+		return adapterkit.ClipRunes(redact(t, homePaths), limits.StderrSummaryHintRunes)
 	}
 	return ""
 }
@@ -112,7 +106,7 @@ func execFailedSummary(err error, homePaths []string) string {
 	if err == nil {
 		return "cursor: exec failed"
 	}
-	msg := clipSummaryRunes(redact(strings.TrimSpace(err.Error()), homePaths), limits.StderrSummaryHintRunes)
+	msg := adapterkit.ClipRunes(redact(strings.TrimSpace(err.Error()), homePaths), limits.StderrSummaryHintRunes)
 	if msg == "" {
 		return "cursor: exec failed"
 	}
@@ -124,16 +118,11 @@ func invalidOutputSummary(err error, homePaths []string) string {
 	if err == nil {
 		return "cursor: invalid output"
 	}
-	msg := clipSummaryRunes(redact(strings.TrimSpace(err.Error()), homePaths), limits.StderrSummaryHintRunes)
+	msg := adapterkit.ClipRunes(redact(strings.TrimSpace(err.Error()), homePaths), limits.StderrSummaryHintRunes)
 	if msg == "" {
 		return "cursor: invalid output"
 	}
 	return "cursor: invalid output: " + msg
-}
-
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func clipSummaryRunes(s string, maxRunes int) string {
-	return adapterkit.ClipRunes(s, maxRunes)
 }
 
 func failureDetails(stage string, err error, stdout, stderr []byte, homePaths []string, extra map[string]any) json.RawMessage {
@@ -173,7 +162,7 @@ func stderrTailDetails(stderr []byte, homePaths []string) json.RawMessage {
 	tail := stderr
 	if len(tail) > limits.StderrTailBytes {
 		tail = tail[len(tail)-limits.StderrTailBytes:]
-		tail = trimLeadingPartialRune(tail)
+		tail = adapterkit.TrimLeadingPartialRune(tail)
 	}
 	redacted := redact(string(tail), homePaths)
 	payload, err := json.Marshal(struct {

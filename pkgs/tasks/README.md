@@ -8,7 +8,7 @@ Package comment: [`doc.go`](./doc.go). Persistence wiring: `internal/taskapi/com
 
 | Path | Role |
 | --- | --- |
-| [`handler/`](./handler/) | REST/SSE mux; registers BC routes; bootstrap, health, RUM, writepolicy/readpolicy |
+| [`handler/`](./handler/) | REST/SSE mux; registers BC routes; bootstrap, health, RUM, policy |
 | [`handlerhttp/`](./handlerhttp/) | Shared HTTP JSON/path/limit helpers for BC handlers |
 | [`middleware/`](./middleware/) | Outer HTTP stack (auth, rate limit, idempotency, …) |
 | [`postgres/`](./postgres/) | GORM open + AutoMigrate orchestration (BC models registered here) |

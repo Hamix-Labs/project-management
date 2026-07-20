@@ -10,9 +10,9 @@ import (
 	"strconv"
 	"strings"
 
-	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler/readpolicy"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler/policy"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
 )
 
@@ -32,11 +32,11 @@ func (h *Handler) taskEvent(w http.ResponseWriter, r *http.Request) {
 	}
 	seq, err := strconv.ParseInt(seqStr, 10, 64)
 	if err != nil || seq < 1 {
-		debugHTTPRequest(r, op, "task_id", id, "seq_param", seqStr, "seq_parse_failed", true)
+		handlerhttp.DebugHTTPRequest(r, op, "task_id", id, "seq_param", seqStr, "seq_parse_failed", true)
 		handlerhttp.WriteError(w, r, op, errors.New("seq must be a positive integer"), http.StatusBadRequest)
 		return
 	}
-	debugHTTPRequest(r, op, "task_id", id, "seq", seq)
+	handlerhttp.DebugHTTPRequest(r, op, "task_id", id, "seq", seq)
 	ev, err := h.events.GetTaskEvent(r.Context(), id, seq)
 	if err != nil {
 		handlerhttp.WriteStoreError(w, r, op, err)
@@ -54,7 +54,7 @@ func (h *Handler) taskEvents(w http.ResponseWriter, r *http.Request) {
 		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
-	debugHTTPRequest(r, op, "task_id", id)
+	handlerhttp.DebugHTTPRequest(r, op, "task_id", id)
 	if _, err := h.tasks.Get(r.Context(), id); err != nil {
 		handlerhttp.WriteStoreError(w, r, op, err)
 		return
@@ -165,19 +165,19 @@ func (h *Handler) patchTaskEventUserResponse(w http.ResponseWriter, r *http.Requ
 	}
 	seq, err := strconv.ParseInt(seqStr, 10, 64)
 	if err != nil || seq < 1 {
-		debugHTTPRequest(r, op, "task_id", id, "seq_param", seqStr, "seq_parse_failed", true)
+		handlerhttp.DebugHTTPRequest(r, op, "task_id", id, "seq_param", seqStr, "seq_parse_failed", true)
 		handlerhttp.WriteError(w, r, op, errors.New("seq must be a positive integer"), http.StatusBadRequest)
 		return
 	}
 	var body taskEventUserResponseJSON
 	if err := handlerhttp.DecodeJSON(r.Context(), r.Body, &body); err != nil {
-		debugHTTPRequest(r, op, "task_id", id, "seq", seq, "json_decode_failed", true)
+		handlerhttp.DebugHTTPRequest(r, op, "task_id", id, "seq", seq, "json_decode_failed", true)
 		handlerhttp.WriteError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
-	debugHTTPRequest(r, op, "task_id", id, "seq", seq,
+	handlerhttp.DebugHTTPRequest(r, op, "task_id", id, "seq", seq,
 		"user_response_len", len(body.UserResponse),
-		"user_response_preview", truncateRunes(body.UserResponse, maxHTTPLogTextRunes),
+		"user_response_preview", handlerhttp.TruncateRunes(body.UserResponse, handlerhttp.MaxHTTPLogTextRunes),
 	)
 	by := handlerhttp.ActorFromRequest(r)
 	if err := h.events.AppendTaskEventResponseMessage(r.Context(), id, seq, body.UserResponse, by); err != nil {
@@ -200,22 +200,22 @@ func parseTaskEventsLimit(ctx context.Context, q url.Values) (limit int, err err
 	ctx = calltrace.Push(ctx, "parseTaskEventsLimit")
 	calltrace.HelperIOIn(ctx, "parseTaskEventsLimit", "limit_q", q.Get("limit"), "before_seq_q", q.Get("before_seq"), "after_seq_q", q.Get("after_seq"))
 	defer func() { calltrace.HelperIOOut(ctx, "parseTaskEventsLimit", "limit", limit, "err", err) }()
-	limit = readpolicy.TaskEventsDefaultLimit
+	limit = policy.TaskEventsDefaultLimit
 	if v := q.Get("limit"); v != "" {
 		if len(v) > maxTaskEventSeqParamBytes {
 			return 0, fmt.Errorf("%w: limit too long", taskcoredomain.ErrInvalidInput)
 		}
 		n, e := strconv.Atoi(v)
-		if e != nil || n < 0 || n > readpolicy.TaskEventsMaxLimit {
-			return 0, fmt.Errorf("%w: limit must be integer 0..%d", taskcoredomain.ErrInvalidInput, readpolicy.TaskEventsMaxLimit)
+		if e != nil || n < 0 || n > policy.TaskEventsMaxLimit {
+			return 0, fmt.Errorf("%w: limit must be integer 0..%d", taskcoredomain.ErrInvalidInput, policy.TaskEventsMaxLimit)
 		}
 		limit = n
 	}
 	if limit <= 0 {
-		limit = readpolicy.TaskEventsDefaultLimit
+		limit = policy.TaskEventsDefaultLimit
 	}
-	if limit > readpolicy.TaskEventsMaxLimit {
-		limit = readpolicy.TaskEventsMaxLimit
+	if limit > policy.TaskEventsMaxLimit {
+		limit = policy.TaskEventsMaxLimit
 	}
 	return limit, nil
 }

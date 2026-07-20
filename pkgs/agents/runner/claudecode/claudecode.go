@@ -186,6 +186,8 @@ func (a *Adapter) CycleMeta(req runner.Request) map[string]any {
 
 var (
 	_ runner.Runner               = (*Adapter)(nil)
+	_ runner.Configurer           = (*Adapter)(nil)
+	_ runner.Attributor           = (*Adapter)(nil)
 	_ runner.ConfigSchemaProvider = (*Adapter)(nil)
 	_ runner.ConfigValidator      = (*Adapter)(nil)
 	_ runner.Prober               = (*Adapter)(nil)

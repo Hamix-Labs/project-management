@@ -6,12 +6,19 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/apijson"
 	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/apijson"
 )
 
-// MaxHTTPLogQueryBytes caps RawQuery in DebugHTTPRequest (and settings thin wrappers).
+// MaxHTTPLogQueryBytes caps RawQuery in DebugHTTPRequest.
 const MaxHTTPLogQueryBytes = 1024
+
+// MaxHTTPLogTextRunes caps free-text previews in http.io debug fields
+// (checklist text, event user_response, cycle terminate reason, etc.).
+const MaxHTTPLogTextRunes = 240
+
+// MaxHTTPLogTitleRunes caps short path/query/title previews in http.io logs.
+const MaxHTTPLogTitleRunes = 160
 
 // DebugHTTPRequest logs structured request context (method, path, query, headers safe for logs).
 // Skips work when Debug is disabled for ctx.

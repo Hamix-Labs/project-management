@@ -17,7 +17,6 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/internal/gittest"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 )
 
 func TestHTTP_createTask_branchBoundToWorktree_returns409(t *testing.T) {
@@ -29,7 +28,6 @@ func TestHTTP_createTask_branchBoundToWorktree_returns409(t *testing.T) {
 	t.Cleanup(srv.Close)
 
 	ctx := context.Background()
-	gitSvc := gitwork.New()
 	repos, err := st.ListAllGitRepositories(ctx)
 	if err != nil || len(repos) == 0 {
 		t.Fatalf("ListAllGitRepositories: %v len=%d", err, len(repos))
@@ -65,7 +63,6 @@ func TestHTTP_createTask_projectRepoMismatch_returns409(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	gitSvc := gitwork.New()
 	otherDir := t.TempDir()
 	gittest.InitMain(t, otherDir)
 	gittest.AttachOrigin(t, otherDir)

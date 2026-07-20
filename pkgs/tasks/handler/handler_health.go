@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"time"
 
-	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
+	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/postgres"
 )
 
@@ -17,7 +17,7 @@ func health(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.health")
 	const op = "health"
 	r = calltrace.WithRequestRoot(r, op)
-	debugHTTPRequest(r, op)
+	handlerhttp.DebugHTTPRequest(r, op)
 	handlerhttp.WriteJSON(w, r, op, http.StatusOK, map[string]string{
 		"status":  "ok",
 		"version": ServerVersion(),
@@ -28,7 +28,7 @@ func healthLive(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.health.live")
 	const op = "health.live"
 	r = calltrace.WithRequestRoot(r, op)
-	debugHTTPRequest(r, op)
+	handlerhttp.DebugHTTPRequest(r, op)
 	handlerhttp.WriteJSON(w, r, op, http.StatusOK, map[string]string{
 		"status":  "ok",
 		"version": ServerVersion(),
@@ -39,7 +39,7 @@ func (h *Handler) healthReady(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.health.ready")
 	const op = "health.ready"
 	r = calltrace.WithRequestRoot(r, op)
-	debugHTTPRequest(r, op)
+	handlerhttp.DebugHTTPRequest(r, op)
 	ctx, cancel := context.WithTimeout(r.Context(), taskcorestore.DefaultReadyTimeout)
 	defer cancel()
 

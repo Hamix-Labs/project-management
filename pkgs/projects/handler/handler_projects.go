@@ -6,9 +6,9 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/projects/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 )
 
@@ -57,7 +57,7 @@ func (h *Handler) getProject(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.getProject")
 	const op = "projects.get"
 	r = calltrace.WithRequestRoot(r, op)
-	id, err := parsePathID(r.PathValue("id"))
+	id, err := handlerhttp.ParsePathID(r.PathValue("id"))
 	if err != nil {
 		handlerhttp.WriteStoreError(w, r, op, err)
 		return
@@ -74,7 +74,7 @@ func (h *Handler) patchProject(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.patchProject")
 	const op = "projects.patch"
 	r = calltrace.WithRequestRoot(r, op)
-	id, err := parsePathID(r.PathValue("id"))
+	id, err := handlerhttp.ParsePathID(r.PathValue("id"))
 	if err != nil {
 		handlerhttp.WriteStoreError(w, r, op, err)
 		return
@@ -106,7 +106,7 @@ func (h *Handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.deleteProject")
 	const op = "projects.delete"
 	r = calltrace.WithRequestRoot(r, op)
-	id, err := parsePathID(r.PathValue("id"))
+	id, err := handlerhttp.ParsePathID(r.PathValue("id"))
 	if err != nil {
 		handlerhttp.WriteStoreError(w, r, op, err)
 		return
@@ -123,7 +123,7 @@ func (h *Handler) createProjectContext(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.createProjectContext")
 	const op = "projects.context.create"
 	r = calltrace.WithRequestRoot(r, op)
-	projectID, err := parsePathID(r.PathValue("id"))
+	projectID, err := handlerhttp.ParsePathID(r.PathValue("id"))
 	if err != nil {
 		handlerhttp.WriteStoreError(w, r, op, err)
 		return
@@ -156,7 +156,7 @@ func (h *Handler) listProjectContext(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.listProjectContext")
 	const op = "projects.context.list"
 	r = calltrace.WithRequestRoot(r, op)
-	projectID, err := parsePathID(r.PathValue("id"))
+	projectID, err := handlerhttp.ParsePathID(r.PathValue("id"))
 	if err != nil {
 		handlerhttp.WriteStoreError(w, r, op, err)
 		return

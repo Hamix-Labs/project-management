@@ -4,11 +4,11 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	taskcorecontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 )
 
 type taskCreateJSON struct {

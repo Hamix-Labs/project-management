@@ -6,10 +6,10 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 	taskeventsstore "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store"
-	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 )
 
 var jsonObjectMessageEmpty = json.RawMessage(`{}`)

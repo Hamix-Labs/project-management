@@ -8,9 +8,9 @@ import (
 	"log/slog"
 )
 
-func (a *API) ListDeferredReadyPickupTasks(ctx context.Context, limit int) ([]taskcorecontract.DeferredPickup, error) {
+func (a *API) ListDeferredReadyPickupTasks(ctx context.Context, limit int, after *taskcorecontract.DeferredPickupCursor) ([]taskcorecontract.DeferredPickup, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ListDeferredReadyPickupTasks")
-	return a.taskcore.ListDeferredReadyPickupTasks(ctx, limit)
+	return a.taskcore.ListDeferredReadyPickupTasks(ctx, limit, after)
 }
 
 func (a *API) ListReadyTaskQueueCandidates(ctx context.Context, limit int, cursor *taskcorecontract.ReadyTaskQueueCursor) ([]taskcorecontract.ReadyTaskQueueCandidate, error) {

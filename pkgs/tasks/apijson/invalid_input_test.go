@@ -40,3 +40,18 @@ func TestInvalidInputDetail(t *testing.T) {
 		})
 	}
 }
+
+func TestUserFacingMessage(t *testing.T) {
+	t.Parallel()
+	if got := UserFacingMessage(nil, TasksInvalidInputMark); got != "" {
+		t.Fatalf("nil = %q", got)
+	}
+	marked := fmt.Errorf("%swrong status", TasksInvalidInputMark)
+	if got := UserFacingMessage(marked, TasksInvalidInputMark); got != "wrong status" {
+		t.Fatalf("marked = %q", got)
+	}
+	other := errors.New("plain")
+	if got := UserFacingMessage(other, TasksInvalidInputMark); got != "plain" {
+		t.Fatalf("fallback = %q", got)
+	}
+}

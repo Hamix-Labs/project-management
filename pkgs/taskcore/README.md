@@ -19,7 +19,7 @@ Task CRUD bounded context: domain types, persistence, and `/tasks*` core HTTP ro
 
 ## Not in taskcore
 
-- SSE hub, bootstrap, writepolicy, readpolicy (`pkgs/tasks/handler`)
+- SSE hub, bootstrap, policy (`pkgs/tasks/handler`)
 - Checklist, cycles, events, compose, settings, git routes (sibling BC handlers)
 - Worker scheduling predicates (`pkgs/tasks/scheduling`) — pure Decide; Apply uses this store’s ready queue
 

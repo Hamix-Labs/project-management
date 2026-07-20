@@ -1,21 +1,14 @@
 package cursor
 
-import "github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 import (
-	"bytes"
 	"context"
 	"errors"
-	"io"
 	"log/slog"
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/adapterkit"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 )
-
-func trimLeadingPartialRune(b []byte) []byte {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agents.runner.cursor.trimLeadingPartialRune", "bytes", len(b))
-	return adapterkit.TrimLeadingPartialRune(b)
-}
 
 func buildEnv(reqEnv map[string]string, extraKeys []string) []string {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "cursor.buildEnv",
@@ -72,11 +65,6 @@ func defaultStreamExecFn(ctx context.Context, dir string, env []string, stdin []
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "cursor.defaultStreamExecFn",
 		"dir", dir, "env_count", len(env), "stdin_bytes", len(stdin), "name", name, "argc", len(args))
 	return adapterkit.DefaultStreamExec(ctx, dir, env, stdin, name, onStdoutLine, args...)
-}
-
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func scanStdoutLines(r io.Reader, dst *bytes.Buffer, onLine func([]byte)) error {
-	return adapterkit.ScanStdoutLines(r, dst, onLine)
 }
 
 func normalizePipeReadError(err error) error {

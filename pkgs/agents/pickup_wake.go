@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/worker"
+	taskcorecontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 )
@@ -89,19 +90,44 @@ func NewPickupWakeScheduler(st worker.Store, q *MemoryQueue) *PickupWakeSchedule
 }
 
 // Hydrate schedules wake timers for every ready task with pickup_not_before
-// in the future (bounded list). Safe to call once after SetPickupWake.
+// in the future. Pages through the store until exhausted so large deferred
+// backlogs are not silently truncated at 10_000 (B-36).
 func (w *PickupWakeScheduler) Hydrate(ctx context.Context) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agents.PickupWakeScheduler.Hydrate")
 	if w == nil || w.st == nil {
 		return nil
 	}
-	rows, err := w.st.ListDeferredReadyPickupTasks(ctx, 10_000)
-	if err != nil {
-		return err
+	const pageSize = 10_000
+	var (
+		after *taskcorecontract.DeferredPickupCursor
+		total int
+	)
+	for {
+		rows, err := w.st.ListDeferredReadyPickupTasks(ctx, pageSize, after)
+		if err != nil {
+			return err
+		}
+		for i := range rows {
+			r := rows[i]
+			w.Schedule(ctx, r.ID, r.PickupNotBefore)
+		}
+		total += len(rows)
+		if len(rows) < pageSize {
+			break
+		}
+		last := rows[len(rows)-1]
+		after = &taskcorecontract.DeferredPickupCursor{
+			NotBefore: last.PickupNotBefore,
+			ID:        last.ID,
+		}
+		slog.Info("pickup wake hydrate page complete; continuing",
+			"cmd", calltrace.LogCmd, "operation", "agents.PickupWakeScheduler.Hydrate.page",
+			"scheduled", total, "page_size", pageSize)
 	}
-	for i := range rows {
-		r := rows[i]
-		w.Schedule(ctx, r.ID, r.PickupNotBefore)
+	if total > 0 {
+		slog.Info("pickup wake hydrate complete",
+			"cmd", calltrace.LogCmd, "operation", "agents.PickupWakeScheduler.Hydrate.done",
+			"scheduled", total)
 	}
 	return nil
 }

@@ -8,7 +8,10 @@ const (
 	VerifierVerifyAgent        VerifierKind = "verify_agent"
 	VerifierDeterministicCheck VerifierKind = "deterministic_check"
 	VerifierHumanOverride      VerifierKind = "human_override"
-	VerifierLegacy             VerifierKind = "legacy"
+	// VerifierLegacy is retained for historical completion rows and
+	// verify-disabled checklist writes. New HTTP creates reject it;
+	// retire after migrate clears verified_by='legacy' (see harness README).
+	VerifierLegacy VerifierKind = "legacy"
 )
 
 // ValidVerifierKind reports whether k is allowed on completion rows.

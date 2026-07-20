@@ -4,8 +4,8 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
 )
 
@@ -21,12 +21,12 @@ func (h *Handler) postTaskCyclePhase(w http.ResponseWriter, r *http.Request) {
 	}
 	var body phaseStartJSON
 	if err := handlerhttp.DecodeJSON(r.Context(), r.Body, &body); err != nil {
-		debugHTTPRequest(r, op, "task_id", taskID, "cycle_id", cycleID, "json_decode_failed", true)
+		handlerhttp.DebugHTTPRequest(r, op, "task_id", taskID, "cycle_id", cycleID, "json_decode_failed", true)
 		handlerhttp.WriteError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
 	by := handlerhttp.ActorFromRequest(r)
-	debugHTTPRequest(r, op, "task_id", taskID, "cycle_id", cycleID,
+	handlerhttp.DebugHTTPRequest(r, op, "task_id", taskID, "cycle_id", cycleID,
 		"actor", string(by), "body_phase", string(body.Phase))
 	if err := assertCycleBelongsToTask(r.Context(), h.cycles, taskID, cycleID); err != nil {
 		handlerhttp.WriteStoreError(w, r, op, err)
@@ -58,12 +58,12 @@ func (h *Handler) patchTaskCyclePhase(w http.ResponseWriter, r *http.Request) {
 	}
 	var body phasePatchJSON
 	if err := handlerhttp.DecodeJSON(r.Context(), r.Body, &body); err != nil {
-		debugHTTPRequest(r, op, "task_id", taskID, "cycle_id", cycleID, "phase_seq", phaseSeq, "json_decode_failed", true)
+		handlerhttp.DebugHTTPRequest(r, op, "task_id", taskID, "cycle_id", cycleID, "phase_seq", phaseSeq, "json_decode_failed", true)
 		handlerhttp.WriteError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
 	by := handlerhttp.ActorFromRequest(r)
-	debugHTTPRequest(r, op, "task_id", taskID, "cycle_id", cycleID, "phase_seq", phaseSeq,
+	handlerhttp.DebugHTTPRequest(r, op, "task_id", taskID, "cycle_id", cycleID, "phase_seq", phaseSeq,
 		"actor", string(by), "body_status", string(body.Status),
 		"summary_set", body.Summary != nil, "details_bytes", len(body.Details))
 	if err := assertCycleBelongsToTask(r.Context(), h.cycles, taskID, cycleID); err != nil {

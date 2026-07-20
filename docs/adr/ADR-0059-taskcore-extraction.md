@@ -16,7 +16,7 @@ Harness and the SPA still import `pkgs/tasks/domain` aliases during the migratio
 
 2. **Actor ownership** — `Actor` / `ActorUser` / `ActorAgent` live in `pkgs/taskcore/domain`. `pkgs/taskevents/domain` aliases them; `pkgs/tasks/domain` re-exports for harness compatibility.
 
-3. **Composition shell** — `pkgs/tasks/store` embeds `*taskcore/store.Store` and retains notify/pickup-wake wiring. `pkgs/tasks/handler` registers `taskcore/handler.Register` and keeps SSE, bootstrap, writepolicy, readpolicy.
+3. **Composition shell** — `pkgs/tasks/store` embeds `*taskcore/store.Store` and retains notify/pickup-wake wiring. `pkgs/tasks/handler` registers `taskcore/handler.Register` and keeps SSE, bootstrap, policy.
 
 4. **Contract hub** — `pkgs/tasks/contract` aliases `TaskCRUDStore`, stats, and health types from `pkgs/taskcore/contract`. Narrow read-only lookup is `taskcore/contract.TaskGetter` (`Get(ctx, id) (*Task, error)`); sibling BCs and agentworker alias or import it rather than redefining identical interfaces.
 

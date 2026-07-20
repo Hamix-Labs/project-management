@@ -4,7 +4,7 @@ import (
 	"log/slog"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler/writepolicy"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler/policy"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 )
 
@@ -13,7 +13,7 @@ func (h *Handler) notifyChange(typ realtime.ChangeType, id string) {
 	if h.hub == nil || id == "" {
 		return
 	}
-	if writepolicy.EnrichedTaskChangeEvent(typ) {
+	if policy.EnrichedTaskChangeEvent(typ) {
 		slog.Warn("notifyChange called for enriched SSE type; publishing id-only hint",
 			"change_type", typ, "task_id", id)
 	}
@@ -26,11 +26,11 @@ func (h *Handler) notifyTaskChanged(typ realtime.ChangeType, id string, data any
 		return
 	}
 	ev := realtime.Event{Type: typ, ID: id}
-	if writepolicy.EnrichedTaskChangeEvent(typ) {
+	if policy.EnrichedTaskChangeEvent(typ) {
 		if data != nil {
 			ev.Data = data
 		}
-	} else if !writepolicy.IsHintOnly(typ) && data != nil {
+	} else if !policy.IsHintOnly(typ) && data != nil {
 		ev.Data = data
 	}
 	h.publishPolicyEvent(ev)
@@ -69,7 +69,7 @@ func (h *Handler) notifyScopelessChange(typ realtime.ChangeType) {
 	if h.hub == nil {
 		return
 	}
-	if !writepolicy.IsScopelessHint(typ) {
+	if !policy.IsScopelessHint(typ) {
 		slog.Warn("notifyScopelessChange called for scoped SSE type", "change_type", typ)
 	}
 	h.publishPolicyEvent(realtime.Event{Type: typ})
@@ -83,7 +83,7 @@ func (h *Handler) publishPolicyEvent(ev realtime.Event) {
 	if h.hub == nil {
 		return
 	}
-	if ev.ID != "" && writepolicy.IsHintOnly(ev.Type) {
+	if ev.ID != "" && policy.IsHintOnly(ev.Type) {
 		ev.Data = nil
 	}
 	h.hub.Publish(ev)

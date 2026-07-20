@@ -31,7 +31,7 @@ func (h *Handler) patchTaskGate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	by := h.httpPort.ActorFromRequest(r)
-	if _, err := h.tasks.ApplyTaskGateAction(r.Context(), id, action, by); err != nil {
+	if _, err := h.tasks.ApplyTaskGateAction(r.Context(), id, contract.GateAction(action), by); err != nil {
 		h.httpPort.WriteStoreError(w, r, op, err)
 		return
 	}

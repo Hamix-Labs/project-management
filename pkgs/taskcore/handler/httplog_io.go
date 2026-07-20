@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
 )
 
 const (
@@ -28,9 +30,9 @@ func taskCreateInputFields(body *taskCreateJSON, actor string) []any {
 		"body_status", string(body.Status),
 		"body_priority", string(body.Priority),
 		"body_title_len", len(body.Title),
-		"body_title_preview", truncateRunes(body.Title, maxHTTPLogTitleRunes),
+		"body_title_preview", handlerhttp.TruncateRunes(body.Title, maxHTTPLogTitleRunes),
 		"body_initial_prompt_len", len(body.InitialPrompt),
-		"body_initial_prompt_preview", truncateRunes(body.InitialPrompt, maxHTTPLogPromptRunes),
+		"body_initial_prompt_preview", handlerhttp.TruncateRunes(body.InitialPrompt, maxHTTPLogPromptRunes),
 		"body_project_id_set", body.ProjectID != nil,
 		"actor", actor,
 	}
@@ -57,11 +59,11 @@ func taskPatchInputFields(body *taskPatchJSON) []any {
 	}
 	out := []any{}
 	if body.Title != nil {
-		out = append(out, "patch_title", true, "patch_title_len", len(*body.Title), "patch_title_preview", truncateRunes(*body.Title, maxHTTPLogTitleRunes))
+		out = append(out, "patch_title", true, "patch_title_len", len(*body.Title), "patch_title_preview", handlerhttp.TruncateRunes(*body.Title, maxHTTPLogTitleRunes))
 	}
 	if body.InitialPrompt != nil {
 		out = append(out, "patch_initial_prompt", true, "patch_initial_prompt_len", len(*body.InitialPrompt),
-			"patch_initial_prompt_preview", truncateRunes(*body.InitialPrompt, maxHTTPLogPromptRunes))
+			"patch_initial_prompt_preview", handlerhttp.TruncateRunes(*body.InitialPrompt, maxHTTPLogPromptRunes))
 	}
 	if body.Status != nil {
 		out = append(out, "patch_status", string(*body.Status))
@@ -101,24 +103,4 @@ func (h *Handler) debugHTTPOut(ctx context.Context, op string, httpStatus int, e
 	if h.httpPort != nil {
 		h.httpPort.DebugHTTPOut(ctx, op, httpStatus, extra...)
 	}
-}
-
-// truncateRunes limits s to maxRunes runes and appends "…" when truncated.
-//
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func truncateRunes(s string, maxRunes int) string {
-	if maxRunes <= 0 {
-		return ""
-	}
-	var b strings.Builder
-	n := 0
-	for _, r := range s {
-		if n >= maxRunes {
-			b.WriteString("…")
-			break
-		}
-		b.WriteRune(r)
-		n++
-	}
-	return b.String()
 }

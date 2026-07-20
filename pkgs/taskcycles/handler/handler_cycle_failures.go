@@ -62,7 +62,7 @@ func (h *Handler) cycleFailures(w http.ResponseWriter, r *http.Request) {
 		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
-	debugHTTPRequest(r, op, "limit", limit, "offset", offset, "sort", sort)
+	handlerhttp.DebugHTTPRequest(r, op, "limit", limit, "offset", offset, "sort", sort)
 	out, err := h.failures.ListCycleFailures(r.Context(), cyclescontract.ListCycleFailuresInput{
 		Limit:  limit,
 		Offset: offset,

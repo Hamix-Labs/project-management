@@ -14,7 +14,7 @@ ADR-0025 centralized frontend query and mutation policy. The backend still had s
 
 ### Read policy
 
-Centralize bootstrap (and future shell) limits in [`pkgs/tasks/handler/readpolicy/readpolicy.go`](../../pkgs/tasks/handler/readpolicy/readpolicy.go). [`handler_bootstrap.go`](../../pkgs/tasks/handler/handler_bootstrap.go) imports these constants instead of local magic numbers.
+Centralize bootstrap (and future shell) limits in [`pkgs/tasks/handler/policy/read_limits.go`](../../pkgs/tasks/handler/policy/read_limits.go). [`handler_bootstrap.go`](../../pkgs/tasks/handler/handler_bootstrap.go) imports these constants instead of local magic numbers.
 
 | Constant | Value | SPA mirror |
 |----------|-------|------------|
@@ -24,7 +24,7 @@ Centralize bootstrap (and future shell) limits in [`pkgs/tasks/handler/readpolic
 
 ### Write / publish policy
 
-Add [`handler_writepolicy.go`](../../pkgs/tasks/handler/handler_writepolicy.go) with `notifyTaskUpdatedEnriched` and pure classification in [`writepolicy/publish_policy.go`](../../pkgs/tasks/handler/writepolicy/publish_policy.go).
+Add [`handler_writepolicy.go`](../../pkgs/tasks/handler/handler_writepolicy.go) with `notifyTaskUpdatedEnriched` and pure classification in [`policy/publish_policy.go`](../../pkgs/tasks/handler/policy/publish_policy.go).
 
 **Invariants:**
 
@@ -63,7 +63,7 @@ Extract `buildListResponse` shared by `GET /tasks` and bootstrap tasks envelope 
 - Bootstrap limits documented in one module cross-linked from `docs/api.md`
 - Checklist/gate SSE matches CRUD enrichment; fewer SPA refetches
 - Shared list builder reduces bootstrap/list drift risk
-- Pure `readpolicy` / `writepolicy` subpackages enforceable in CI
+- Pure `policy` subpackages enforceable in CI
 
 ### Negative / Trade-offs
 
@@ -82,4 +82,4 @@ Extract `buildListResponse` shared by `GET /tasks` and bootstrap tasks envelope 
 
 - [ADR-0025](ADR-0025-frontend-data-coherence.md) — client query/mutation policy
 - [docs/domain/sse-hub.md](../domain/sse-hub.md) — hub behavior and enrichment
-- [docs/api.md](../api.md) — bootstrap limits reference `readpolicy`
+- [docs/api.md](../api.md) — bootstrap limits reference `policy`

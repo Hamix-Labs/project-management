@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitexec"
-	"github.com/AlexsanderHamir/Hamix/pkgs/repo"
 	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/repo"
 )
 
 type repoSearchResponse struct {
@@ -108,7 +108,7 @@ func (h *Handler) requireWorktreeRepo(w http.ResponseWriter, r *http.Request, op
 func (h *Handler) repoSearch(w http.ResponseWriter, r *http.Request) {
 	const op = "repo.search"
 	r = calltrace.WithRequestRoot(r, op)
-	debugHTTPRequest(r, op, "search_q", truncateRunes(r.URL.Query().Get("q"), maxHTTPLogTitleRunes))
+	handlerhttp.DebugHTTPRequest(r, op, "search_q", handlerhttp.TruncateRunes(r.URL.Query().Get("q"), handlerhttp.MaxHTTPLogTitleRunes))
 	if r.Method != http.MethodGet {
 		handlerhttp.WriteError(w, r, op, methodNotAllowed(), http.StatusMethodNotAllowed)
 		return
@@ -161,7 +161,7 @@ func (h *Handler) repoValidateRange(w http.ResponseWriter, r *http.Request) {
 		handlerhttp.WriteJSONError(w, r, op, http.StatusBadRequest, "start or end too long")
 		return
 	}
-	debugHTTPRequest(r, op, "validate_path", truncateRunes(path, maxHTTPLogTitleRunes), "validate_start", truncateRunes(startStr, maxHTTPLogTitleRunes), "validate_end", truncateRunes(endStr, maxHTTPLogTitleRunes))
+	handlerhttp.DebugHTTPRequest(r, op, "validate_path", handlerhttp.TruncateRunes(path, handlerhttp.MaxHTTPLogTitleRunes), "validate_start", handlerhttp.TruncateRunes(startStr, handlerhttp.MaxHTTPLogTitleRunes), "validate_end", handlerhttp.TruncateRunes(endStr, handlerhttp.MaxHTTPLogTitleRunes))
 	start, err1 := strconv.Atoi(startStr)
 	end, err2 := strconv.Atoi(endStr)
 	if err1 != nil || err2 != nil {
@@ -204,7 +204,7 @@ func (h *Handler) repoFile(w http.ResponseWriter, r *http.Request) {
 	const op = "repo.file"
 	r = calltrace.WithRequestRoot(r, op)
 	path := strings.TrimSpace(r.URL.Query().Get("path"))
-	debugHTTPRequest(r, op, "file_path", truncateRunes(path, maxHTTPLogTitleRunes))
+	handlerhttp.DebugHTTPRequest(r, op, "file_path", handlerhttp.TruncateRunes(path, handlerhttp.MaxHTTPLogTitleRunes))
 	if r.Method != http.MethodGet {
 		handlerhttp.WriteError(w, r, op, methodNotAllowed(), http.StatusMethodNotAllowed)
 		return
@@ -262,7 +262,7 @@ func (h *Handler) repoDiff(w http.ResponseWriter, r *http.Request) {
 	const op = "repo.diff"
 	r = calltrace.WithRequestRoot(r, op)
 	sha := strings.TrimSpace(r.URL.Query().Get("sha"))
-	debugHTTPRequest(r, op, "diff_sha", truncateRunes(sha, maxHTTPLogTitleRunes))
+	handlerhttp.DebugHTTPRequest(r, op, "diff_sha", handlerhttp.TruncateRunes(sha, handlerhttp.MaxHTTPLogTitleRunes))
 	if r.Method != http.MethodGet {
 		handlerhttp.WriteError(w, r, op, methodNotAllowed(), http.StatusMethodNotAllowed)
 		return

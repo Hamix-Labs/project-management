@@ -8,7 +8,7 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/internal/handlertest"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler/readpolicy"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler/policy"
 )
 
 func TestHTTP_bootstrap_returns_aggregate_envelope(t *testing.T) {
@@ -52,8 +52,8 @@ func TestHTTP_bootstrap_returns_aggregate_envelope(t *testing.T) {
 	if err := json.Unmarshal(body["tasks"], &tasksPayload); err != nil {
 		t.Fatalf("decode tasks payload: %v", err)
 	}
-	if tasksPayload.Limit != readpolicy.BootstrapListLimit {
-		t.Errorf("tasks.limit = %d, want %d", tasksPayload.Limit, readpolicy.BootstrapListLimit)
+	if tasksPayload.Limit != policy.BootstrapListLimit {
+		t.Errorf("tasks.limit = %d, want %d", tasksPayload.Limit, policy.BootstrapListLimit)
 	}
 
 	var projectsPayload struct {
@@ -62,8 +62,8 @@ func TestHTTP_bootstrap_returns_aggregate_envelope(t *testing.T) {
 	if err := json.Unmarshal(body["projects"], &projectsPayload); err != nil {
 		t.Fatalf("decode projects payload: %v", err)
 	}
-	if projectsPayload.Limit != readpolicy.BootstrapProjectsLimit {
-		t.Errorf("projects.limit = %d, want %d", projectsPayload.Limit, readpolicy.BootstrapProjectsLimit)
+	if projectsPayload.Limit != policy.BootstrapProjectsLimit {
+		t.Errorf("projects.limit = %d, want %d", projectsPayload.Limit, policy.BootstrapProjectsLimit)
 	}
 }
 

@@ -148,7 +148,11 @@ func MergeCriteriaReportProbeErr(baseDetails []byte, probeErr string) []byte {
 	}
 	root := map[string]any{}
 	if len(baseDetails) > 0 {
-		_ = json.Unmarshal(baseDetails, &root)
+		if err := json.Unmarshal(baseDetails, &root); err != nil {
+			slog.Warn("MergeCriteriaReportProbeErr: keeping base details; unmarshal failed",
+				"operation", "agent.harness.git.MergeCriteriaReportProbeErr", "err", err)
+			return baseDetails
+		}
 	}
 	root["criteria_report_probe_err"] = probeErr
 	out, err := json.Marshal(root)
@@ -170,7 +174,11 @@ func MergeRunnerDetailsWithGit(baseDetails []byte, snap PhaseSnapshot, commitCou
 	}
 	root := map[string]any{}
 	if len(baseDetails) > 0 {
-		_ = json.Unmarshal(baseDetails, &root)
+		if err := json.Unmarshal(baseDetails, &root); err != nil {
+			slog.Warn("MergeRunnerDetailsWithGit: keeping base details; unmarshal failed",
+				"operation", "agent.harness.git.MergeRunnerDetailsWithGit", "err", err)
+			return baseDetails
+		}
 	}
 	root["git"] = snapshotToMap(snap, commitCount)
 	out, err := json.Marshal(root)

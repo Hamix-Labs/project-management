@@ -29,7 +29,7 @@ func parseLastEventIDHeader(v string) uint64 {
 func (h *Handler) streamEvents(w http.ResponseWriter, r *http.Request) {
 	const op = "tasks.sse"
 	r = calltrace.WithRequestRoot(r, op)
-	debugHTTPRequest(r, op, "sse_accept", "text/event-stream")
+	handlerhttp.DebugHTTPRequest(r, op, "sse_accept", "text/event-stream")
 	if h.hub == nil {
 		handlerhttp.WriteJSONError(w, r, op, http.StatusServiceUnavailable, "event stream unavailable")
 		return

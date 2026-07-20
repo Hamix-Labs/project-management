@@ -121,7 +121,7 @@ var validWebVitalNames = map[string]struct{}{
 func (h *Handler) postRUM(w http.ResponseWriter, r *http.Request) {
 	const op = "tasks.rum"
 	r = calltrace.WithRequestRoot(r, op)
-	debugHTTPRequest(r, op, "rum_post", "")
+	handlerhttp.DebugHTTPRequest(r, op, "rum_post", "")
 
 	if r.ContentLength > maxRUMBatchBytes {
 		handlerhttp.WriteJSONError(w, r, op, http.StatusRequestEntityTooLarge,

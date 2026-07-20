@@ -79,3 +79,23 @@ func Stderr(err error) string {
 func StderrContains(err error, substr string) bool {
 	return strings.Contains(strings.ToLower(Stderr(err)), strings.ToLower(substr))
 }
+
+// IsObjectNotFound reports whether err's git stderr looks like a missing
+// object / revision / repository (shared by gitexec and gitwork; B-45).
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func IsObjectNotFound(err error) bool {
+	return StderrContains(err, "bad object") ||
+		StderrContains(err, "unknown revision") ||
+		StderrContains(err, "not a valid object name") ||
+		StderrContains(err, "ambiguous argument") ||
+		StderrContains(err, "not a git repository")
+}
+
+// IsNotARepository reports whether err's git stderr indicates the path
+// is not a git repository.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func IsNotARepository(err error) bool {
+	return StderrContains(err, "not a git repository")
+}
