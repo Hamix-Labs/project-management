@@ -2,6 +2,7 @@ import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { listProjects } from "@/api";
 import type { ProjectListResponse } from "@/types";
 import { projectQueryKeys } from "@/lib/projectQueryKeys";
+import { QUERY_POLICY } from "@/lib/queryPolicy";
 
 export function useProjects(options?: {
   includeArchived?: boolean;
@@ -26,5 +27,6 @@ export function useProjects(options?: {
         limit,
       }),
     enabled,
+    staleTime: QUERY_POLICY.shellStaleTimeMs,
   });
 }

@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useGlobalRepositories } from "@/hooks/useGlobalRepositories";
 import { gitQueryKeys } from "@/lib/gitQueryKeys";
+import { QUERY_POLICY } from "@/lib/queryPolicy";
 import { useProject } from "@/hooks/useProject";
 import { resolveTaskGitBinding } from "../task-git/resolveTaskGitBinding";
 
@@ -33,6 +34,6 @@ export function useTaskGitBinding(
         signal,
       }),
     enabled: wtId !== "" && repositoriesReady && projectReady,
-    staleTime: 60_000,
+    staleTime: QUERY_POLICY.listStaleTimeMs,
   });
 }
