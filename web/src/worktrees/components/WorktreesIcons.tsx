@@ -1,17 +1,10 @@
 export {
   WorktreesBranchIcon,
   WorktreesCheckIcon,
-  WorktreesChevronDownIcon,
-  WorktreesChevronLeftIcon,
-  WorktreesChevronRightIcon,
   WorktreesClearIcon,
-  WorktreesCloseIcon,
   WorktreesCopyIcon,
   WorktreesFolderGitIcon,
-  WorktreesFolderIcon,
-  WorktreesMoreIcon,
   WorktreesPlusIcon,
-  WorktreesRefreshIcon,
   WorktreesSearchIcon,
   WorktreesTrashIcon,
 } from "@/components/git/GitWorktreeIcons";

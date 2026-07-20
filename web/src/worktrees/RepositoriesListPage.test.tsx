@@ -38,7 +38,7 @@ function repositoryJson(
   };
 }
 
-function renderListPage(initialEntries: string[] = ["/worktrees"]) {
+function renderListPage(initialEntries: string[] = ["/repositories"]) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 } },
   });
@@ -47,8 +47,7 @@ function renderListPage(initialEntries: string[] = ["/worktrees"]) {
       <MemoryRouter future={ROUTER_FUTURE_FLAGS} initialEntries={initialEntries}>
         <ModalStackProvider>
           <Routes>
-            <Route path="/worktrees" element={<RepositoriesListPage />} />
-            <Route path="/worktrees/:repositoryId" element={<div>Detail</div>} />
+            <Route path="/repositories" element={<RepositoriesListPage />} />
           </Routes>
         </ModalStackProvider>
       </MemoryRouter>
@@ -114,7 +113,7 @@ describe("RepositoriesListPage", () => {
       return jsonResponse({ error: "not found" }, { status: 404 });
     });
 
-    renderListPage(["/worktrees?register=1"]);
+    renderListPage(["/repositories?register=1"]);
     expect(
       await screen.findByRole("button", { name: /Choose folder/i }),
     ).toBeInTheDocument();
@@ -135,7 +134,7 @@ describe("RepositoriesListPage", () => {
     expect(screen.getByRole("button", { name: /Choose folder/i })).toBeInTheDocument();
   });
 
-  it("lists one repository with branch badge and worktree count from API", async () => {
+  it("lists one repository with branch badge and delete action", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input: RequestInfo | URL) => {
       const url = requestUrl(input);
       if (url.endsWith("/git/repositories")) {
@@ -157,11 +156,12 @@ describe("RepositoriesListPage", () => {
     ).toBeInTheDocument();
     expect(await screen.findByText("main", { selector: ".repositories-list-row__name" })).toBeInTheDocument();
     expect(await screen.findByText("main", { selector: ".repositories-list-row__branch" })).toBeInTheDocument();
-    expect(await screen.findByRole("gridcell", { name: /1 worktree/i })).toHaveTextContent("1");
+    expect(screen.queryByRole("button", { name: /sync main/i })).not.toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /delete main/i })).toBeInTheDocument();
     expect(await screen.findByText("1 of 1 repository")).toBeInTheDocument();
   });
 
-  it("navigates to repository detail when a row is clicked", async () => {
+  it("opens delete confirmation when delete is clicked", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input: RequestInfo | URL) => {
       const url = requestUrl(input);
       if (url.endsWith("/git/repositories")) {
@@ -171,9 +171,9 @@ describe("RepositoriesListPage", () => {
     });
 
     renderListPage();
-    const row = await screen.findByRole("row", { name: /main, 0 worktrees/i });
-    await userEvent.click(row);
-    expect(await screen.findByText("Detail")).toBeInTheDocument();
+    await userEvent.click(await screen.findByRole("button", { name: /delete main/i }));
+    expect(await screen.findByRole("heading", { name: /delete repository/i })).toBeInTheDocument();
+    expect(screen.getByRole("dialog")).toHaveTextContent("/repo/main");
   });
 
   it("filters repositories with the search field and shows empty search state", async () => {

@@ -34,7 +34,7 @@ export function RepositorySetupPrompt({ open, onClose }: Props) {
             className="btn-primary"
             onClick={() => {
               onClose();
-              navigate("/worktrees?register=1");
+              navigate("/repositories?register=1");
             }}
           >
             Register repository

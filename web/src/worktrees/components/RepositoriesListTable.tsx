@@ -4,9 +4,10 @@ import { RepositoryListRow } from "./RepositoryListRow";
 
 type Props = {
   repositories: GitRepository[];
+  onDelete: (repository: GitRepository) => void;
 };
 
-export function RepositoriesListTable({ repositories }: Props) {
+export function RepositoriesListTable({ repositories, onDelete }: Props) {
   return (
     <div className="repositories-list">
       <div className="repositories-list-head" role="row">
@@ -14,15 +15,19 @@ export function RepositoriesListTable({ repositories }: Props) {
           {worktreeGitCopy.listColumnName}
         </span>
         <span
-          className="repositories-list-head__label repositories-list-head__label--count"
+          className="repositories-list-head__label repositories-list-head__label--actions"
           role="columnheader"
         >
-          {worktreeGitCopy.listColumnWorktreeCount}
+          {worktreeGitCopy.listColumnActions}
         </span>
       </div>
       <ul className="repositories-list-rows" aria-label="Repositories">
         {repositories.map((repository) => (
-          <RepositoryListRow key={repository.id} repository={repository} />
+          <RepositoryListRow
+            key={repository.id}
+            repository={repository}
+            onDelete={onDelete}
+          />
         ))}
       </ul>
     </div>

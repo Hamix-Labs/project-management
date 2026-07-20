@@ -8,8 +8,9 @@ import { useDebouncedTrimmedValue } from "@/hooks/useDebouncedTrimmedValue";
 import { TASK_TIMINGS } from "@/constants/tasks";
 import { TaskDraftsListSkeleton } from "@/components/skeletons/TaskDraftsListSkeleton";
 import { useGlobalRepositories } from "./hooks/useGlobalRepositories";
-import { useGlobalGitMutations } from "./hooks/useGlobalGitMutations";
+import { useRepositoryGitActions } from "./hooks/useRepositoryGitActions";
 import { RepositoriesListTable } from "./components/RepositoriesListTable";
+import { DeleteConfirmDialog } from "./components/DeleteConfirmDialog";
 import { RegisterRepositoryModal } from "./modals/RegisterRepositoryModal";
 import {
   deriveWorktreesPageMode,
@@ -26,7 +27,7 @@ import {
 
 export function RepositoriesListPage() {
   const repositoriesQuery = useGlobalRepositories();
-  const mutations = useGlobalGitMutations();
+  const actions = useRepositoryGitActions();
   const [searchParams, setSearchParams] = useSearchParams();
   const [registerOpen, setRegisterOpen] = useState(false);
   const [searchInput, setSearchInput] = useState("");
@@ -180,7 +181,10 @@ export function RepositoriesListPage() {
                 </div>
               ) : null}
               {pageMode === "manage" && filteredRepositories.length > 0 ? (
-                <RepositoriesListTable repositories={filteredRepositories} />
+                <RepositoriesListTable
+                  repositories={filteredRepositories}
+                  onDelete={actions.openDeleteRepository}
+                />
               ) : null}
             </>
           ) : null}
@@ -188,20 +192,27 @@ export function RepositoriesListPage() {
 
         <RegisterRepositoryModal
           open={registerOpen}
-          pending={mutations.createRepository.isPending}
-          error={mutations.createRepository.error}
+          pending={actions.mutations.createRepository.isPending}
+          error={actions.mutations.createRepository.error}
           onClose={() => {
             setRegisterOpen(false);
-            mutations.createRepository.reset();
+            actions.mutations.createRepository.reset();
           }}
           onSubmit={(input) => {
-            void mutations.createRepository
+            void actions.mutations.createRepository
               .mutateAsync(input)
               .then(() => setRegisterOpen(false));
           }}
+        />
+
+        <DeleteConfirmDialog
+          target={actions.deleteTarget}
+          pending={actions.deletePending}
+          error={actions.deleteError}
+          onClose={actions.closeDelete}
+          onConfirm={() => void actions.runDelete()}
         />
       </section>
     </div>
   );
 }
-

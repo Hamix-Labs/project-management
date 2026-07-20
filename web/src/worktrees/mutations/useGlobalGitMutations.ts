@@ -2,22 +2,13 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   createGlobalGitRepository,
   deleteGlobalGitRepository,
-  deleteGlobalGitWorktreeFromDisk,
-  unregisterGlobalGitWorktree,
-  relocateGlobalGitRepository,
-  syncGlobalGitRepository,
 } from "@/api/gitGlobal";
-import type { GitReconcileInput } from "@/types/git";
 import {
   invalidateGitCache,
 } from "./invalidateGitCache";
 
 export function useGlobalGitMutations() {
   const qc = useQueryClient();
-
-  const invalidateRepo = (repositoryId: string) => {
-    invalidateGitCache(qc, { scope: "repository", repositoryId });
-  };
 
   const createRepository = useMutation({
     mutationFn: createGlobalGitRepository,
@@ -33,39 +24,8 @@ export function useGlobalGitMutations() {
     },
   });
 
-  const unregisterWorktree = useMutation({
-    mutationFn: (vars: { worktreeId: string; repositoryId: string }) =>
-      unregisterGlobalGitWorktree(vars.worktreeId),
-    onSuccess: (_data, vars) => invalidateRepo(vars.repositoryId),
-  });
-
-  const removeWorktreeFromDisk = useMutation({
-    mutationFn: (vars: {
-      worktreeId: string;
-      repositoryId: string;
-      force?: boolean;
-    }) => deleteGlobalGitWorktreeFromDisk(vars.worktreeId, { force: vars.force }),
-    onSuccess: (_data, vars) => invalidateRepo(vars.repositoryId),
-  });
-
-  const reconcile = useMutation({
-    mutationFn: (vars: { repositoryId: string; input?: GitReconcileInput }) =>
-      syncGlobalGitRepository(vars.repositoryId),
-    onSuccess: (_data, vars) => invalidateRepo(vars.repositoryId),
-  });
-
-  const relocateRepository = useMutation({
-    mutationFn: (vars: { repositoryId: string; input: { path: string } }) =>
-      relocateGlobalGitRepository(vars.repositoryId, vars.input),
-    onSuccess: (_data, vars) => invalidateRepo(vars.repositoryId),
-  });
-
   return {
     createRepository,
     deleteRepository,
-    unregisterWorktree,
-    removeWorktreeFromDisk,
-    reconcile,
-    relocateRepository,
   };
 }

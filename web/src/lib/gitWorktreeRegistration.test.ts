@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { GitWorktree } from "@/types/git";
 import {
-  isDetailPageWorktree,
   isFullyRegisteredWorktree,
   isLinkedWorktreeForDisplay,
   pickDefaultWorktreeId,
@@ -40,16 +39,10 @@ describe("gitWorktreeRegistration", () => {
     expect(isFullyRegisteredWorktree(incompleteMainStub)).toBe(false);
   });
 
-  it("shows only registered linked worktrees on the worktrees page", () => {
+  it("shows only registered linked worktrees", () => {
     expect(isLinkedWorktreeForDisplay(linked)).toBe(true);
     expect(isLinkedWorktreeForDisplay(mainSeeded)).toBe(false);
     expect(isLinkedWorktreeForDisplay(incompleteMainStub)).toBe(false);
-  });
-
-  it("excludes the primary checkout from the repository detail list", () => {
-    expect(isDetailPageWorktree(linked)).toBe(true);
-    expect(isDetailPageWorktree(mainSeeded)).toBe(false);
-    expect(isDetailPageWorktree(incompleteMainStub)).toBe(false);
   });
 
   it("picks a managed worktree, never the primary checkout", () => {

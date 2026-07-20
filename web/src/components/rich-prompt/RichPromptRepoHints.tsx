@@ -28,27 +28,27 @@ export function RichPromptRepoHints({
           {workspaceBroken ? (
             <>
               The selected worktree path is missing or not a directory.
-              Update it on the{" "}
-              <a href="/worktrees" target="_blank" rel="noopener noreferrer">
-                Worktrees page
+              Update the repository on the{" "}
+              <a href="/repositories" target="_blank" rel="noopener noreferrer">
+                Repositories page
               </a>{" "}
               to restore <code>@file</code> mentions.
             </>
           ) : fileSearchFailedWhileAvailable ? (
             <>
-              File search failed for the selected worktree. Check the worktree
-              path on the{" "}
-              <a href="/worktrees" target="_blank" rel="noopener noreferrer">
-                Worktrees page
+              File search failed for the selected worktree. Check the repository
+              on the{" "}
+              <a href="/repositories" target="_blank" rel="noopener noreferrer">
+                Repositories page
               </a>{" "}
               or inspect the server logs.
             </>
           ) : (
             <>
               File search is not available for the selected worktree. Check the
-              worktree on the{" "}
-              <a href="/worktrees" target="_blank" rel="noopener noreferrer">
-                Worktrees page
+              repository on the{" "}
+              <a href="/repositories" target="_blank" rel="noopener noreferrer">
+                Repositories page
               </a>{" "}
               to enable <code>@file</code> mentions.
             </>
@@ -58,9 +58,9 @@ export function RichPromptRepoHints({
       {showRepoUnknownHint ? (
         <p className="mention-repo-hint" role="status">
           Could not verify file search for the selected worktree. Check the
-          worktree on the{" "}
-          <a href="/worktrees" target="_blank" rel="noopener noreferrer">
-            Worktrees page
+          repository on the{" "}
+          <a href="/repositories" target="_blank" rel="noopener noreferrer">
+            Repositories page
           </a>
           .
         </p>

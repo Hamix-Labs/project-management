@@ -1,4 +1,4 @@
-/** Pure mode derivation for `/worktrees` from global repository query state. */
+/** Pure mode derivation for `/repositories` from global repository query state. */
 export type WorktreesPageMode = "loading" | "error" | "setup" | "manage";
 
 export function deriveWorktreesPageMode(input: {
