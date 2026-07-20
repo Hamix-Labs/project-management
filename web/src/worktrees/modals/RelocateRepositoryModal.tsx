@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Button } from "@/components/ui";
 import { Modal } from "@/shared/Modal";
 import { MutationErrorBanner } from "@/shared/MutationErrorBanner";
 import { WorkspaceDirPickerModal } from "@/components/workspace-picker";
@@ -90,12 +91,17 @@ export function RelocateRepositoryModal({
             <MutationErrorBanner error={errorMessage} className="worktrees-form-modal__error" />
           ) : null}
           <div className="row stack-row-actions">
-            <button type="button" className="secondary" disabled={pending} onClick={onClose}>
+            <Button type="button" variant="secondary" disabled={pending} onClick={onClose}>
               {worktreeGitCopy.cancel}
-            </button>
-            <button type="submit" className="btn-primary" disabled={pending || !path.trim()}>
-              {pending ? worktreeGitCopy.relocateModalSubmitting : worktreeGitCopy.relocateModalSubmit}
-            </button>
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={pending || !path.trim()}
+              loading={pending}
+            >
+              {worktreeGitCopy.relocateModalSubmit}
+            </Button>
           </div>
         </form>
       </Modal>

@@ -17,6 +17,7 @@ Vite + React client under `web/`. All `fetch` calls live in `web/src/api/`; resp
 - [Query policy](#query-policy)
 - [Project/worktree mutation invalidation](#projectworktree-mutation-invalidation)
 - [Task detail — execution cycles](#task-detail--execution-cycles)
+- [CSS ownership](#css-ownership)
 - [See also](#see-also)
 
 ## Routes
@@ -94,6 +95,26 @@ Project and git writes invalidate React Query through a shared catalog — not i
 Expanded cycle rows in `TaskCyclesPanel` load `GET /tasks/{id}/cycles/{cycleId}/verdicts`. When the worker indexed git commits for the cycle, the panel shows a repo → branch breadcrumb and commit rows (`git_context`, `commits[]`) with **status badges** (`eligible`, `observed`, …) above the per-criterion verdict list.
 
 The task detail page also loads **`GET /tasks/{id}/commits`** via `TaskCommitsPanel` / `useTaskCommits` — task-wide commit history deduped by SHA, refetched on `task_cycle_changed` SSE. Clicking a commit row navigates to **`/tasks/{id}/commits/{sha}`** (`TaskCommitDiffPage`), which loads **`GET /repo/diff?sha=`** with GitHub-style summary stats, syntax-highlighted hunks (refractor + `react-diff-view`), unified/split toggle, file navigator, and collapsible large files. Parsers: `web/src/api/parseTaskApiCycles.ts`; types: `web/src/types/cycle.ts`. See [domain/cycle-commits.md](./domain/cycle-commits.md).
+
+## CSS ownership
+
+Global chrome and feature CSS load from [`web/src/app/App.css`](../web/src/app/App.css) via barrels under [`web/src/app/styles/`](../web/src/app/styles/). Design tokens live in `styles/tokens/` (`app-design-tokens.css`).
+
+| Area | Barrel / entry | Section partials |
+| --- | --- | --- |
+| Tokens | `app-design-tokens.css` | `tokens/app-design-tokens-{foundation,light,dark}.css` |
+| Base shell | `app-base.css` | `base/` |
+| Task create / fields | `app-task-create-and-fields.css` | `task-create/` |
+| Task list / mentions | `app-task-list-and-mentions.css` | `task-list/`, `mentions/` |
+| Task detail | `app-task-detail.css` | `task-detail/` |
+| Task timeline | `app-task-timeline.css` | `timeline/` |
+| Modals | `app-modals.css` | `modals/` |
+| **Projects** | `app-projects.css` | `projects/` (`app-project-list`, `detail`, `context`, `sections`) |
+| **Repositories / worktrees** | `app-worktrees.css` | `worktrees/` (`app-repositories-list`, `app-repository-detail`) |
+| Settings | `settings/settings.css` (imported from `SettingsPage`) | `settings-*.css` colocated with the settings vertical |
+| Shared UI primitives | `components/ui/ui.css` (via `App.css`) | `Button` / `Badge` (`.ui-btn`, `.ui-badge`) |
+
+Prefer editing the section partial that owns the surface; keep barrel `@import` order stable (cascade matches the former monoliths). Settings and toast/picker CSS outside `app/styles/` are still in the CSS standards scan.
 
 ## See also
 

@@ -9,7 +9,7 @@ import {
   phaseLabel,
   phaseStatusFillClass,
   phaseStatusLabel,
-} from "@/observability";
+} from "@/tasks/cycleDisplay/cyclesViewModel";
 import type { TaskCycle } from "@/types/cycle";
 import { useTaskCycle } from "../../../hooks/useTaskCycles";
 import { formatCycleLineageLabel } from "../../../cycleDisplay/cycleLineage";

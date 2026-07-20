@@ -1,3 +1,5 @@
+import { Button } from "@/components/ui";
+
 type TemplateEmptyStateProps = {
   hasFilters: boolean;
   onClearFilters: () => void;
@@ -39,13 +41,18 @@ export function TemplateEmptyState({
         </p>
       </div>
       {hasFilters ? (
-        <button type="button" className="secondary" onClick={onClearFilters}>
+        <Button type="button" variant="secondary" onClick={onClearFilters}>
           Clear filters
-        </button>
+        </Button>
       ) : (
-        <button type="button" className="templates-page-header__new-btn" onClick={onNewTemplate}>
+        <Button
+          type="button"
+          variant="primary"
+          className="templates-page-header__new-btn"
+          onClick={onNewTemplate}
+        >
           New template
-        </button>
+        </Button>
       )}
     </div>
   );

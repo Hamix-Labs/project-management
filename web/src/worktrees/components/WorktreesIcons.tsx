@@ -14,4 +14,4 @@ export {
   WorktreesRefreshIcon,
   WorktreesSearchIcon,
   WorktreesTrashIcon,
-} from "@/components/git/GitWorktreeIcons";
+} from "./GitWorktreeIcons";

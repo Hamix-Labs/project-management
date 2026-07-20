@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { listTaskEvents } from "@/api";
-import { phaseLabel } from "@/observability";
+import { phaseLabel } from "@/tasks/cycleDisplay/cyclesViewModel";
 import type { TaskCycleDetail, TaskCycleStreamEvent } from "@/types";
 import { activityCountCaption } from "@/tasks/pages/attempt/filterActivityByPhase";
 import type { TaskCycleDetailPageState } from "@/tasks/pages/attempt/useTaskCycleDetailPageState";

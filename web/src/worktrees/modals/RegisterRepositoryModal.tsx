@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Button } from "@/components/ui";
 import { Modal } from "@/shared/Modal";
 import { MutationErrorBanner } from "@/shared/MutationErrorBanner";
 import { WorkspaceDirPickerModal } from "@/components/workspace-picker";
@@ -74,12 +75,17 @@ export function RegisterRepositoryModal({
             <MutationErrorBanner error={errorMessage} className="worktrees-form-modal__error" />
           ) : null}
           <div className="row stack-row-actions">
-            <button type="button" className="secondary" disabled={pending} onClick={onClose}>
+            <Button type="button" variant="secondary" disabled={pending} onClick={onClose}>
               Cancel
-            </button>
-            <button type="submit" className="btn-primary" disabled={pending || !path.trim()}>
-              {pending ? "Registering…" : "Register"}
-            </button>
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={pending || !path.trim()}
+              loading={pending}
+            >
+              Register
+            </Button>
           </div>
         </form>
       </Modal>

@@ -1,5 +1,5 @@
 import type { Phase, TaskEvent, TaskEventType } from "@/types";
-import { phaseLabel } from "@/observability";
+import { phaseLabel } from "@/tasks/cycleDisplay/cyclesViewModel";
 
 const LABELS: Record<TaskEventType, string> = {
   task_created: "Task created",
