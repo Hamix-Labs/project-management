@@ -25,6 +25,7 @@ type Props = {
     patch: {
       kind: ProjectContextKind;
       title: string;
+      description: string;
       body: string;
       pinned: boolean;
     },
@@ -65,6 +66,9 @@ export function ProjectContextNodeCard({
       ) : null}
       <div className="pc__node-body">
         <h5 className="pc__node-title">{item.title}</h5>
+        {item.description.trim() ? (
+          <p className="pc__node-description">{item.description}</p>
+        ) : null}
         <span className="pc__node-source">
           {item.created_by === "agent" ? "Agent" : "User"}
           {item.pinned ? " · Pinned" : ""}

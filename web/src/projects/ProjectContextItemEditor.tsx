@@ -4,6 +4,10 @@ import { Modal } from "@/shared/Modal";
 import { RichPromptEditor } from "@/components/rich-prompt";
 import { promptHasVisibleContent } from "@/lib/promptFormat";
 import { type ProjectContextItem, type ProjectContextKind } from "@/types";
+import {
+  MAX_PROJECT_CONTEXT_DESCRIPTION_CHARS,
+  validateProjectContextDescription,
+} from "./projectContextLimits";
 import { ProjectContextKindPicker } from "./ProjectContextKindPicker";
 
 type Props = {
@@ -15,6 +19,7 @@ type Props = {
     patch: {
       kind: ProjectContextKind;
       title: string;
+      description: string;
       body: string;
       pinned: boolean;
     },
@@ -30,24 +35,34 @@ export function ProjectContextItemEditor({
   onDelete,
 }: Props) {
   const [body, setBody] = useState(item.body);
+  const [description, setDescription] = useState(item.description);
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     setBody(item.body);
   }, [item.body]);
 
+  useEffect(() => {
+    setDescription(item.description);
+  }, [item.description]);
+
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const nextBody = body.trim();
     if (!promptHasVisibleContent(nextBody)) return;
+    const nextDescription = description.trim();
+    if (validateProjectContextDescription(nextDescription)) return;
     onSave(item.id, {
       kind: String(form.get("kind") ?? "note") as ProjectContextKind,
       title: String(form.get("title") ?? "").trim(),
+      description: nextDescription,
       body: nextBody,
       pinned: false,
     });
   }
+
+  const descriptionError = validateProjectContextDescription(description);
 
   return (
     <>
@@ -101,6 +116,27 @@ export function ProjectContextItemEditor({
               />
             </div>
             <div className="field grow">
+              <FieldLabel htmlFor={`context-desc-${item.id}`}>
+                Short description
+              </FieldLabel>
+              <textarea
+                id={`context-desc-${item.id}`}
+                name="description"
+                value={description}
+                aria-invalid={Boolean(descriptionError)}
+                disabled={saving || deleting}
+                maxLength={MAX_PROJECT_CONTEXT_DESCRIPTION_CHARS}
+                rows={2}
+                placeholder="Optional blurb for when to use this memory"
+                onChange={(event) => setDescription(event.target.value)}
+              />
+              {descriptionError ? (
+                <p className="pd__inline-error" role="alert">
+                  {descriptionError}
+                </p>
+              ) : null}
+            </div>
+            <div className="field grow">
               <FieldLabel
                 id={`context-body-${item.id}-label`}
                 htmlFor={`context-body-${item.id}`}
@@ -119,7 +155,7 @@ export function ProjectContextItemEditor({
               </div>
             </div>
             <div className="row stack-row-actions">
-              <button type="submit" disabled={saving}>
+              <button type="submit" disabled={saving || Boolean(descriptionError)}>
                 Save item
               </button>
               <button

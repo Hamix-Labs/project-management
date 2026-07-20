@@ -38,6 +38,24 @@ describe("ProjectContextSuggestionList", () => {
     expect(screen.getByText("· ctxcon")).toBeInTheDocument();
   });
 
+  it("renders the short description when present", () => {
+    render(
+      <ProjectContextSuggestionList
+        items={[
+          {
+            item: makeItem({
+              id: "ctx-desc",
+              title: "CONTRIBUTING",
+              description: "Repo contribution guide",
+            }),
+          },
+        ]}
+        command={vi.fn()}
+      />,
+    );
+    expect(screen.getByText("Repo contribution guide")).toBeInTheDocument();
+  });
+
   it("invokes command when an item is selected", async () => {
     const user = userEvent.setup();
     const command = vi.fn();
