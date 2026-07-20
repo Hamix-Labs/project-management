@@ -9,6 +9,7 @@ import {
   patchAppSettings,
   probeCursor,
 } from "@/api/settings";
+import { QUERY_POLICY } from "@/lib/queryPolicy";
 import { settingsQueryKeys } from "@/lib/settingsQueryKeys";
 
 /**
@@ -29,6 +30,7 @@ export function useAppSettings() {
   const settingsQuery = useQuery<AppSettings>({
     queryKey: settingsQueryKeys.app(),
     queryFn: ({ signal }) => fetchAppSettings({ signal }),
+    staleTime: QUERY_POLICY.shellStaleTimeMs,
   });
 
   const patchMutation = useMutation<AppSettings, Error, AppSettingsPatch>({

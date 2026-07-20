@@ -114,7 +114,7 @@ Vertical slice (domain → store → handler → optional web): [docs/agent-map.
 | Full reload on `/tasks/<id>` shows raw JSON | Restart Vite; see `web/vite.config.ts` HTML bypass for `/tasks` proxy |
 | SSE connected but Updates timeline empty | `HAMIX_SSE_TEST=1` in `.env`, restart `taskapi` — [docs/configuration.md](docs/configuration.md) |
 | Fetch / EventSource errors | Confirm `taskapi` on `:8080` and dev script running |
-| No repository for file search / `@`-mentions | Register a git repo on **Repositories** (`/worktrees`, or `/worktrees?register=1`) — [docs/domain/worktrees-and-branches.md](docs/domain/worktrees-and-branches.md) |
+| No repository for file search / `@`-mentions | Register a git repo on **Repositories** (`/repositories`, or `/repositories?register=1`; legacy `/worktrees` redirects) — [docs/domain/worktrees-and-branches.md](docs/domain/worktrees-and-branches.md) |
 | Tests fail with database errors | Use `internal/tasktestdb/` (SQLite); gate real Postgres with `//go:build integration` |
 | Match API error to logs | `request_id` in JSON body / `X-Request-ID` header on access logs |
 | Still failing local checks | Use scoped groups: `.\scripts\check-go.ps1 -TestsOnly -Group <core\|tasks\|agents\|harness>` (same as CI). Full bar: `.\scripts\check.ps1 -GoOnly`. Avoid `go test ./...` — it pulls in `web/node_modules` test packages and can flake on parallel SQLite. |

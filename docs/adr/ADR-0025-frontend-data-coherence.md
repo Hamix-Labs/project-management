@@ -35,7 +35,7 @@ Introduce [`web/src/tasks/mutations/`](../../web/src/tasks/mutations/) — share
 | ID | Rule |
 |----|------|
 | M1 | Task-scoped mutation bumps guard before optimistic write |
-| M2 | Bulk N-task PATCH invalidates list once — no per-task guard |
+| M2 | Bulk N-task PATCH invalidates list once; arms per-id suppress credits via `beginBulkTaskMutationGuard` (not a single bulk-only guard) |
 | M3 | Create-flow draft refs remain separate (ADR-0024 I2–I5) |
 
 ### Render isolation

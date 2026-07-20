@@ -40,30 +40,13 @@ if (Test-Path $srcRoot) {
     }
 }
 
-# Scan all web/src CSS except design tokens. Settings vertical CSS still has
-# widespread hex/rgba fallbacks (audit F-07-02 / Wave F1) — temporary allowlist
-# with burn-down; do not expand this list for new files.
-$cssRawColorAllowlist = @(
-    "web/src/settings/settings-shell.css",
-    "web/src/settings/settings-dropdown.css",
-    "web/src/settings/settings-deeplinks.css",
-    "web/src/settings/settings-details.css"
-)
-function Test-IsCssRawColorAllowlisted {
-    param([string]$FullPath)
-    $n = $FullPath.Replace('\', '/')
-    foreach ($rel in $cssRawColorAllowlist) {
-        if ($n.EndsWith($rel)) { return $true }
-    }
-    return $false
-}
+# Scan all web/src CSS except design tokens.
 if (Test-Path $srcRoot) {
     $cssFiles = Get-ChildItem -Path $srcRoot -Recurse -Filter *.css -File | Where-Object {
         $_.FullName.Replace('\', '/') -notmatch '/web/src/app/styles/tokens/'
     }
     $rawColorPat = '#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\('
     foreach ($f in $cssFiles) {
-        if (Test-IsCssRawColorAllowlisted $f.FullName) { continue }
         $text = Get-Content -LiteralPath $f.FullName -Raw
         if ($null -eq $text) { continue }
         if ($text -match $rawColorPat) {

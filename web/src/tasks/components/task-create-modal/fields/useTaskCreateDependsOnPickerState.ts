@@ -8,6 +8,7 @@ import {
   type KeyboardEvent,
 } from "react";
 import { listTasks } from "@/api";
+import { QUERY_POLICY } from "@/lib/queryPolicy";
 import { taskQueryKeys } from "@/tasks/task-query";
 import type { Task } from "@/types";
 import {
@@ -56,7 +57,7 @@ export function useTaskCreateDependsOnPickerState({
     queryKey: taskQueryKeys.list({ limit: 200, offset: 0 }),
     queryFn: ({ signal }) => listTasks(200, 0, { signal }),
     enabled: hasProject,
-    staleTime: 30_000,
+    staleTime: QUERY_POLICY.detailStaleTimeMs,
   });
 
   const projectTasks = useMemo(() => {

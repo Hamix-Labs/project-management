@@ -390,7 +390,7 @@ describe("TaskCreateModal", () => {
 
   describe("edit mode", () => {
     function renderEditModal(
-      props?: Partial<ComponentProps<typeof TaskCreateModal>>,
+      props?: Partial<TaskCreateModalFlatInput>,
     ) {
       return renderModal({
         editingTaskId: "task-123",
@@ -479,7 +479,7 @@ describe("TaskCreateModal", () => {
 
   describe("template compose mode", () => {
     function renderTemplateModal(
-      props?: Partial<ComponentProps<typeof TaskCreateModal>>,
+      props?: Partial<TaskCreateModalFlatInput>,
     ) {
       return renderModal({
         composeTarget: "template",
