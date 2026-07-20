@@ -5,8 +5,8 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/contract"
 )
 
 // postTaskCycle handles POST /tasks/{id}/cycles.
@@ -21,12 +21,12 @@ func (h *Handler) postTaskCycle(w http.ResponseWriter, r *http.Request) {
 	}
 	var body cycleStartJSON
 	if err := handlerhttp.DecodeJSON(r.Context(), r.Body, &body); err != nil {
-		debugHTTPRequest(r, op, "task_id", taskID, "json_decode_failed", true)
+		handlerhttp.DebugHTTPRequest(r, op, "task_id", taskID, "json_decode_failed", true)
 		handlerhttp.WriteError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
 	by := handlerhttp.ActorFromRequest(r)
-	debugHTTPRequest(r, op, "task_id", taskID, "actor", string(by),
+	handlerhttp.DebugHTTPRequest(r, op, "task_id", taskID, "actor", string(by),
 		"parent_cycle_id_set", body.ParentCycleID != nil,
 		"meta_bytes", len(body.Meta))
 	in := contract.StartCycleInput{
@@ -64,7 +64,7 @@ func (h *Handler) getTaskCycles(w http.ResponseWriter, r *http.Request) {
 		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
-	debugHTTPRequest(r, op, "task_id", taskID, "limit", limit, "before_attempt_seq", beforeAttemptSeq)
+	handlerhttp.DebugHTTPRequest(r, op, "task_id", taskID, "limit", limit, "before_attempt_seq", beforeAttemptSeq)
 	rows, err := h.cycles.ListCyclesForTaskBefore(r.Context(), taskID, beforeAttemptSeq, limit+1)
 	if err != nil {
 		handlerhttp.WriteStoreError(w, r, op, err)
@@ -93,7 +93,7 @@ func (h *Handler) getTaskCycle(w http.ResponseWriter, r *http.Request) {
 		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
-	debugHTTPRequest(r, op, "task_id", taskID, "cycle_id", cycleID)
+	handlerhttp.DebugHTTPRequest(r, op, "task_id", taskID, "cycle_id", cycleID)
 	if err := assertCycleBelongsToTask(r.Context(), h.cycles, taskID, cycleID); err != nil {
 		handlerhttp.WriteStoreError(w, r, op, err)
 		return
@@ -121,7 +121,7 @@ func (h *Handler) getTaskCycleVerdicts(w http.ResponseWriter, r *http.Request) {
 		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
-	debugHTTPRequest(r, op, "task_id", taskID, "cycle_id", cycleID)
+	handlerhttp.DebugHTTPRequest(r, op, "task_id", taskID, "cycle_id", cycleID)
 	if err := assertCycleBelongsToTask(r.Context(), h.cycles, taskID, cycleID); err != nil {
 		handlerhttp.WriteStoreError(w, r, op, err)
 		return
@@ -184,15 +184,15 @@ func (h *Handler) patchTaskCycle(w http.ResponseWriter, r *http.Request) {
 	}
 	var body cycleTerminateJSON
 	if err := handlerhttp.DecodeJSON(r.Context(), r.Body, &body); err != nil {
-		debugHTTPRequest(r, op, "task_id", taskID, "cycle_id", cycleID, "json_decode_failed", true)
+		handlerhttp.DebugHTTPRequest(r, op, "task_id", taskID, "cycle_id", cycleID, "json_decode_failed", true)
 		handlerhttp.WriteError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
 	by := handlerhttp.ActorFromRequest(r)
-	debugHTTPRequest(r, op, "task_id", taskID, "cycle_id", cycleID,
+	handlerhttp.DebugHTTPRequest(r, op, "task_id", taskID, "cycle_id", cycleID,
 		"actor", string(by), "body_status", string(body.Status),
 		"reason_len", len(body.Reason),
-		"reason_preview", truncateRunes(body.Reason, maxHTTPLogTextRunes))
+		"reason_preview", handlerhttp.TruncateRunes(body.Reason, handlerhttp.MaxHTTPLogTextRunes))
 	if err := assertCycleBelongsToTask(r.Context(), h.cycles, taskID, cycleID); err != nil {
 		handlerhttp.WriteStoreError(w, r, op, err)
 		return

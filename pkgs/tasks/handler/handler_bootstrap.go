@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"net/http"
 
-	settingshandler "github.com/AlexsanderHamir/Hamix/pkgs/settings/handler"
 	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
+	settingshandler "github.com/AlexsanderHamir/Hamix/pkgs/settings/handler"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler/readpolicy"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/service"
 )
@@ -52,7 +52,7 @@ func (h *Handler) bootstrap(w http.ResponseWriter, r *http.Request) {
 	const op = "bootstrap.aggregate"
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.bootstrap")
 	r = calltrace.WithRequestRoot(r, op)
-	debugHTTPRequest(r, op)
+	handlerhttp.DebugHTTPRequest(r, op)
 
 	ctx := r.Context()
 	data, err := service.Bootstrap(ctx, h.store, service.BootstrapLimits{

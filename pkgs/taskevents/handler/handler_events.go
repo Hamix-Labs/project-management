@@ -10,8 +10,8 @@ import (
 	"strconv"
 	"strings"
 
-	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler/readpolicy"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
 )
@@ -32,11 +32,11 @@ func (h *Handler) taskEvent(w http.ResponseWriter, r *http.Request) {
 	}
 	seq, err := strconv.ParseInt(seqStr, 10, 64)
 	if err != nil || seq < 1 {
-		debugHTTPRequest(r, op, "task_id", id, "seq_param", seqStr, "seq_parse_failed", true)
+		handlerhttp.DebugHTTPRequest(r, op, "task_id", id, "seq_param", seqStr, "seq_parse_failed", true)
 		handlerhttp.WriteError(w, r, op, errors.New("seq must be a positive integer"), http.StatusBadRequest)
 		return
 	}
-	debugHTTPRequest(r, op, "task_id", id, "seq", seq)
+	handlerhttp.DebugHTTPRequest(r, op, "task_id", id, "seq", seq)
 	ev, err := h.events.GetTaskEvent(r.Context(), id, seq)
 	if err != nil {
 		handlerhttp.WriteStoreError(w, r, op, err)
@@ -54,7 +54,7 @@ func (h *Handler) taskEvents(w http.ResponseWriter, r *http.Request) {
 		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
-	debugHTTPRequest(r, op, "task_id", id)
+	handlerhttp.DebugHTTPRequest(r, op, "task_id", id)
 	if _, err := h.tasks.Get(r.Context(), id); err != nil {
 		handlerhttp.WriteStoreError(w, r, op, err)
 		return
@@ -165,19 +165,19 @@ func (h *Handler) patchTaskEventUserResponse(w http.ResponseWriter, r *http.Requ
 	}
 	seq, err := strconv.ParseInt(seqStr, 10, 64)
 	if err != nil || seq < 1 {
-		debugHTTPRequest(r, op, "task_id", id, "seq_param", seqStr, "seq_parse_failed", true)
+		handlerhttp.DebugHTTPRequest(r, op, "task_id", id, "seq_param", seqStr, "seq_parse_failed", true)
 		handlerhttp.WriteError(w, r, op, errors.New("seq must be a positive integer"), http.StatusBadRequest)
 		return
 	}
 	var body taskEventUserResponseJSON
 	if err := handlerhttp.DecodeJSON(r.Context(), r.Body, &body); err != nil {
-		debugHTTPRequest(r, op, "task_id", id, "seq", seq, "json_decode_failed", true)
+		handlerhttp.DebugHTTPRequest(r, op, "task_id", id, "seq", seq, "json_decode_failed", true)
 		handlerhttp.WriteError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
-	debugHTTPRequest(r, op, "task_id", id, "seq", seq,
+	handlerhttp.DebugHTTPRequest(r, op, "task_id", id, "seq", seq,
 		"user_response_len", len(body.UserResponse),
-		"user_response_preview", truncateRunes(body.UserResponse, maxHTTPLogTextRunes),
+		"user_response_preview", handlerhttp.TruncateRunes(body.UserResponse, handlerhttp.MaxHTTPLogTextRunes),
 	)
 	by := handlerhttp.ActorFromRequest(r)
 	if err := h.events.AppendTaskEventResponseMessage(r.Context(), id, seq, body.UserResponse, by); err != nil {

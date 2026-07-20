@@ -35,7 +35,7 @@ func (h *Handler) getTaskCommits(w http.ResponseWriter, r *http.Request) {
 		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
-	debugHTTPRequest(r, op, "task_id", taskID)
+	handlerhttp.DebugHTTPRequest(r, op, "task_id", taskID)
 	if _, err := h.tasks.Get(r.Context(), taskID); err != nil {
 		handlerhttp.WriteStoreError(w, r, op, err)
 		return

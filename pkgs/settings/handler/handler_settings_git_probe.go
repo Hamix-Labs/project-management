@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
-	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 )
 
 func (h *Handler) gitRepositoryProbe(w http.ResponseWriter, r *http.Request) {
@@ -17,7 +17,7 @@ func (h *Handler) gitRepositoryProbe(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "settings.handler.gitRepositoryProbe")
 	r = calltrace.WithRequestRoot(r, op)
 	path := strings.TrimSpace(r.URL.Query().Get("path"))
-	debugHTTPRequest(r, op, "probe_path", truncateRunes(path, maxHTTPLogTitleRunes))
+	handlerhttp.DebugHTTPRequest(r, op, "probe_path", handlerhttp.TruncateRunes(path, maxHTTPLogTitleRunes))
 	if r.Method != http.MethodGet {
 		handlerhttp.WriteError(w, r, op, errors.New("method not allowed"), http.StatusMethodNotAllowed)
 		return

@@ -8,16 +8,16 @@ import (
 	"os"
 	"strings"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/repo"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 )
 
 func (h *Handler) workspaceRoots(w http.ResponseWriter, r *http.Request) {
 	const op = "settings.workspace_roots"
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "settings.handler.workspaceRoots")
 	r = calltrace.WithRequestRoot(r, op)
-	debugHTTPRequest(r, op)
+	handlerhttp.DebugHTTPRequest(r, op)
 	if r.Method != http.MethodGet {
 		handlerhttp.WriteError(w, r, op, errors.New("method not allowed"), http.StatusMethodNotAllowed)
 		return
@@ -58,7 +58,7 @@ func (h *Handler) browseDirs(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "settings.handler.browseDirs")
 	r = calltrace.WithRequestRoot(r, op)
 	path := strings.TrimSpace(r.URL.Query().Get("path"))
-	debugHTTPRequest(r, op, "browse_path", truncateRunes(path, maxHTTPLogTitleRunes))
+	handlerhttp.DebugHTTPRequest(r, op, "browse_path", handlerhttp.TruncateRunes(path, maxHTTPLogTitleRunes))
 	if r.Method != http.MethodGet {
 		handlerhttp.WriteError(w, r, op, errors.New("method not allowed"), http.StatusMethodNotAllowed)
 		return

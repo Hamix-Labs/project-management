@@ -14,7 +14,7 @@ HTTP surface for `taskapi`: REST + optional `/repo` + `GET /events` (SSE). **Con
 | SPA / operator shell | `handler_bootstrap.go`, `handler_rum.go` |
 | Policy | `handler_writepolicy.go`, `writepolicy/`, `readpolicy/` |
 | Cross-BC glue | `handler_task_*`, `handler_compose_*`, `handler_git_helpers.go` |
-| Shell utilities | `repo_compat.go`, `server_version.go`, `httplog_io.go`, `handler_http_json.go`, `handler_store.go` |
+| Shell utilities | `repo_compat.go`, `server_version.go`, `handler_http_json.go`, `handler_store.go` (http.io via `handlerhttp`) |
 | Fakes | `storefake/` |
 
 Root stays one Go package. Domain grouping is by **filename prefix**, not subdirectories with `package handler`.

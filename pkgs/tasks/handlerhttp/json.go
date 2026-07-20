@@ -12,12 +12,12 @@ import (
 	"strings"
 
 	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/apijson"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/httperr"
-	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/logctx"
 )
 

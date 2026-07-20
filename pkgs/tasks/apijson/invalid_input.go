@@ -31,3 +31,17 @@ func InvalidInputDetail(err error, marks ...string) string {
 	}
 	return ""
 }
+
+// UserFacingMessage returns InvalidInputDetail when a mark matches, otherwise
+// err.Error(). Nil err yields "". Shared by repo/settings handlers (B-33).
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func UserFacingMessage(err error, marks ...string) string {
+	if err == nil {
+		return ""
+	}
+	if d := InvalidInputDetail(err, marks...); d != "" {
+		return d
+	}
+	return err.Error()
+}

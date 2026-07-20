@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/settings/contract"
 	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 )
 
@@ -19,7 +19,7 @@ func (h *Handler) getSettings(w http.ResponseWriter, r *http.Request) {
 	const op = "settings.get"
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "settings.handler.getSettings")
 	r = calltrace.WithRequestRoot(r, op)
-	debugHTTPRequest(r, op)
+	handlerhttp.DebugHTTPRequest(r, op)
 
 	cfg, err := h.settings.GetSettings(r.Context())
 	if err != nil {
@@ -33,7 +33,7 @@ func (h *Handler) patchSettings(w http.ResponseWriter, r *http.Request) {
 	const op = "settings.patch"
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "settings.handler.patchSettings")
 	r = calltrace.WithRequestRoot(r, op)
-	debugHTTPRequest(r, op)
+	handlerhttp.DebugHTTPRequest(r, op)
 
 	if h.agent == nil {
 		handlerhttp.WriteJSONError(w, r, op, http.StatusServiceUnavailable, "agent worker control unavailable")
@@ -85,7 +85,7 @@ func (h *Handler) probeCursor(w http.ResponseWriter, r *http.Request) {
 	const op = "settings.probe_cursor"
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "settings.handler.probeCursor")
 	r = calltrace.WithRequestRoot(r, op)
-	debugHTTPRequest(r, op)
+	handlerhttp.DebugHTTPRequest(r, op)
 
 	if h.agent == nil {
 		handlerhttp.WriteJSONError(w, r, op, http.StatusServiceUnavailable, "agent worker control unavailable")
@@ -136,7 +136,7 @@ func (h *Handler) listCursorModels(w http.ResponseWriter, r *http.Request) {
 	const op = "settings.list_cursor_models"
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "settings.handler.listCursorModels")
 	r = calltrace.WithRequestRoot(r, op)
-	debugHTTPRequest(r, op)
+	handlerhttp.DebugHTTPRequest(r, op)
 
 	var body listCursorModelsRequest
 	if r.ContentLength != 0 {
@@ -189,7 +189,7 @@ func (h *Handler) cancelCurrentRun(w http.ResponseWriter, r *http.Request) {
 	const op = "settings.cancel_current_run"
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "settings.handler.cancelCurrentRun")
 	r = calltrace.WithRequestRoot(r, op)
-	debugHTTPRequest(r, op)
+	handlerhttp.DebugHTTPRequest(r, op)
 
 	if h.agent == nil {
 		handlerhttp.WriteJSONError(w, r, op, http.StatusServiceUnavailable, "agent worker control unavailable")

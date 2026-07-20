@@ -8,10 +8,10 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/contract"
 	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 )
 
 type checklistItemCreateJSON struct {
@@ -40,7 +40,7 @@ func (h *Handler) getChecklist(w http.ResponseWriter, r *http.Request) {
 		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
-	debugHTTPRequest(r, op, "task_id", id)
+	handlerhttp.DebugHTTPRequest(r, op, "task_id", id)
 	items, err := h.checklist.ListChecklistForSubject(r.Context(), id)
 	if err != nil {
 		handlerhttp.WriteStoreError(w, r, op, err)
@@ -60,13 +60,13 @@ func (h *Handler) postChecklistItem(w http.ResponseWriter, r *http.Request) {
 	}
 	var body checklistItemCreateJSON
 	if err := handlerhttp.DecodeJSON(r.Context(), r.Body, &body); err != nil {
-		debugHTTPRequest(r, op, "task_id", id, "json_decode_failed", true)
+		handlerhttp.DebugHTTPRequest(r, op, "task_id", id, "json_decode_failed", true)
 		handlerhttp.WriteError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
 	by := handlerhttp.ActorFromRequest(r)
-	debugHTTPRequest(r, op, "task_id", id, "actor", string(by),
-		"text_len", len(body.Text), "text_preview", truncateRunes(body.Text, maxHTTPLogTextRunes))
+	handlerhttp.DebugHTTPRequest(r, op, "task_id", id, "actor", string(by),
+		"text_len", len(body.Text), "text_preview", handlerhttp.TruncateRunes(body.Text, handlerhttp.MaxHTTPLogTextRunes))
 	if running, err := h.cycleRunning.IsTaskCycleRunning(r.Context(), id); err != nil {
 		handlerhttp.WriteStoreError(w, r, op, err)
 		return
@@ -102,7 +102,7 @@ func (h *Handler) patchChecklistItem(w http.ResponseWriter, r *http.Request) {
 	}
 	var body patchChecklistItemBody
 	if err := handlerhttp.DecodeJSON(r.Context(), r.Body, &body); err != nil {
-		debugHTTPRequest(r, op, "task_id", taskID, "item_id", itemID, "json_decode_failed", true)
+		handlerhttp.DebugHTTPRequest(r, op, "task_id", taskID, "item_id", itemID, "json_decode_failed", true)
 		handlerhttp.WriteError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
@@ -140,7 +140,7 @@ func (h *Handler) patchChecklistItem(w http.ResponseWriter, r *http.Request) {
 	}
 	if body.Text != nil {
 		t := strings.TrimSpace(*body.Text)
-		debugHTTPRequest(r, op, "task_id", taskID, "item_id", itemID, "text_len", len(t), "text_preview", truncateRunes(t, maxHTTPLogTextRunes), "actor", string(by))
+		handlerhttp.DebugHTTPRequest(r, op, "task_id", taskID, "item_id", itemID, "text_len", len(t), "text_preview", handlerhttp.TruncateRunes(t, handlerhttp.MaxHTTPLogTextRunes), "actor", string(by))
 		if t == "" {
 			handlerhttp.WriteStoreError(w, r, op, fmt.Errorf("%w: text required", taskcoredomain.ErrInvalidInput))
 			return
@@ -155,7 +155,7 @@ func (h *Handler) patchChecklistItem(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		debugHTTPRequest(r, op, "task_id", taskID, "item_id", itemID, "done", *body.Done, "actor", string(by))
+		handlerhttp.DebugHTTPRequest(r, op, "task_id", taskID, "item_id", itemID, "done", *body.Done, "actor", string(by))
 		if *body.Done {
 			if by != taskcoredomain.ActorAgent {
 				handlerhttp.WriteStoreError(w, r, op, fmt.Errorf("%w: only the agent may mark checklist items done", taskcoredomain.ErrInvalidInput))
@@ -214,7 +214,7 @@ func (h *Handler) deleteChecklistItem(w http.ResponseWriter, r *http.Request) {
 		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
-	debugHTTPRequest(r, op, "task_id", id, "item_id", itemID)
+	handlerhttp.DebugHTTPRequest(r, op, "task_id", id, "item_id", itemID)
 	if running, err := h.cycleRunning.IsTaskCycleRunning(r.Context(), id); err != nil {
 		handlerhttp.WriteStoreError(w, r, op, err)
 		return
@@ -231,7 +231,7 @@ func (h *Handler) deleteChecklistItem(w http.ResponseWriter, r *http.Request) {
 		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
-	debugHTTPOut(r.Context(), op, http.StatusNoContent, "task_id", id, "item_id", itemID, "response_empty", true)
+	handlerhttp.DebugHTTPOut(r.Context(), op, http.StatusNoContent, "task_id", id, "item_id", itemID, "response_empty", true)
 	w.WriteHeader(http.StatusNoContent)
 }
 

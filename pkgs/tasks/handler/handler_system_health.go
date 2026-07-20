@@ -38,7 +38,7 @@ func (h *Handler) systemHealth(w http.ResponseWriter, r *http.Request) {
 	const op = "system.health"
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.systemHealth")
 	r = calltrace.WithRequestRoot(r, op)
-	debugHTTPRequest(r, op)
+	handlerhttp.DebugHTTPRequest(r, op)
 	snap := h.snapshotSystemHealth(time.Now())
 	// agent.paused is sourced from app_settings, not Prometheus —
 	// the supervisor goes idle on a flip and counters would lag the
