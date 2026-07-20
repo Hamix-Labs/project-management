@@ -1,10 +1,11 @@
 import { Suspense, lazy } from "react";
+import { useNavigate } from "react-router-dom";
+import { RegisterRepositoryFirstPrompt } from "@/components/RegisterRepositoryFirstPrompt";
 import { ProjectContextPicker } from "@/components/project-context/ProjectContextPicker";
 import { useProjectContextPromptBinding } from "@/hooks/useProjectContextPromptBinding";
 import { isUiFeatureOmitted } from "@/launch/omittedFeatures";
 import { useAppTimezone } from "@/shared/time/appTimezone";
 import { DraftResumeModal } from "../components/draft-resume";
-import { RepositorySetupPrompt } from "@/components/git/RepositorySetupPrompt";
 import { useTasksAppContext } from "../app/TasksAppProvider";
 import { CreateModalChunkFallback } from "./CreateModalChunkFallback";
 
@@ -17,6 +18,7 @@ const TaskCreateModal = lazy(() =>
 
 export function TaskCreateModalsLayer() {
   const app = useTasksAppContext();
+  const navigate = useNavigate();
   const appTimezone = useAppTimezone();
   const projectsUiEnabled = !isUiFeatureOmitted("projects");
   const promptProjectContext = useProjectContextPromptBinding({
@@ -166,9 +168,13 @@ export function TaskCreateModalsLayer() {
         />
       ) : null}
       {app.repositorySetupPromptOpen ? (
-        <RepositorySetupPrompt
+        <RegisterRepositoryFirstPrompt
           open={app.repositorySetupPromptOpen}
           onClose={() => app.setRepositorySetupPromptOpen(false)}
+          onRegister={() => {
+            app.setRepositorySetupPromptOpen(false);
+            navigate("/worktrees?register=1");
+          }}
         />
       ) : null}
     </>
