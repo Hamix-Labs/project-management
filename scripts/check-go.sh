@@ -578,18 +578,24 @@ step_storekernel_boundary() {
   printf '%s ' "$label"
 
   local hits=""
+  # Forbidden: composition shell / retired facade internals
   if rg -q 'github.com/.*/pkgs/tasks/handler' pkgs/storekernel/ -g '*.go' 2>/dev/null; then
     hits="$(rg -n 'github.com/.*/pkgs/tasks/handler' pkgs/storekernel/ -g '*.go' 2>/dev/null || true)"
   fi
   if rg -q 'github.com/.*/pkgs/tasks/store/internal' pkgs/storekernel/ -g '*.go' 2>/dev/null; then
     hits+=$'\n'"$(rg -n 'github.com/.*/pkgs/tasks/store/internal' pkgs/storekernel/ -g '*.go' 2>/dev/null || true)"
   fi
+  # Forbidden: domain BC packages (kernel must stay domain-agnostic)
+  local bc_pat='github.com/.*/pkgs/(taskcore|taskcycles|taskevents|taskchecklist|taskcompose|projects|settings|gitinventory|agents|runners|tasks)/'
+  if rg -q "$bc_pat" pkgs/storekernel/ -g '*.go' 2>/dev/null; then
+    hits+=$'\n'"$(rg -n "$bc_pat" pkgs/storekernel/ -g '*.go' 2>/dev/null || true)"
+  fi
   local elapsed=$((SECONDS - start))
   add_section_time "$elapsed"
 
   if [[ -n "$(echo "$hits" | sed '/^$/d')" ]]; then
     echo "${C_RED}FAILED${C_RESET}"
-    echo "pkgs/storekernel must not import pkgs/tasks/handler or pkgs/tasks/store/internal:"
+    echo "pkgs/storekernel must not import tasks handler/internal or domain BC packages:"
     echo "$hits" | sed '/^$/d'
     fail_step "$label" 1
   fi

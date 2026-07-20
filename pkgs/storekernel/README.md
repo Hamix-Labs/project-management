@@ -1,26 +1,36 @@
 # `pkgs/storekernel`
 
-Shared persistence helpers used by bounded-context stores and `internal/taskapi/composition`. Extracted from the retired `pkgs/tasks/kernel` per [ADR-0050](../../docs/adr/ADR-0050-storekernel-extraction.md). Composition wiring lives in [ADR-0079](../../docs/adr/ADR-0079-facade-deletion.md) — there is no `pkgs/tasks/store` facade.
+Domain-agnostic persistence primitives shared by bounded-context stores.
+Extracted from the retired `pkgs/tasks/kernel` per [ADR-0050](../../docs/adr/ADR-0050-storekernel-extraction.md).
+Composition wiring lives in [ADR-0079](../../docs/adr/ADR-0079-facade-deletion.md) — there is no `pkgs/tasks/store` facade.
+
+Task-specific adapters live with their owning BC:
+
+| Concern | Home |
+| --- | --- |
+| Status / priority / actor validators | `pkgs/taskcore/domain` |
+| Phase validators | `pkgs/taskcycles/domain` |
+| Audit seq + event insert | `pkgs/taskevents/store/audit` |
+| Load task row in a TX | `pkgs/taskcore/store/taskload` |
 
 ## Responsibilities
 
 | Area | Files | Role |
 | --- | --- | --- |
 | Metrics | `metrics.go` | `DeferLatency`, `Op*` Prometheus label constants |
-| Audit events | `events.go`, `tx.go` | `NextEventSeq`, `AppendEvent`, transactional append |
-| Validation | `validate.go`, `constraints.go` | `ValidateActor`, enum/check helpers |
-| IDs + errors | `ids.go`, `errors.go`, `persistence_errors.go` | `ResolveID`, `MapNotFound`, duplicate-key mapping |
-| JSON | `json.go`, `jsonmap/` | `NormalizeJSONObject`, `EventPairJSON`; RawMessage↔datatypes helpers in `jsonmap` |
+| IDs | `ids.go` | `ResolveID` |
+| Constraint classifiers | `constraints.go` | `IsDuplicateKey`, FK/check helpers |
+| Error mapping | `errors.go`, `persistence_errors.go` | `MapNotFound` / `MapWriteError` / `MapPayloadPersistenceError` (callers pass BC sentinels) |
+| JSON | `json.go`, `jsonmap/` | `NormalizeJSONObject` (callers pass invalid sentinel), `EventPairJSON`; RawMessage↔datatypes helpers |
 | Field parity | `parity/` | Domain↔model field-parity assertion helpers (`AssertFieldParity`) |
-| Task load | `taskload/` | Shared GORM task-row load helpers |
 
 ## Dependency rules
 
 | May import | Must not import |
 | --- | --- |
-| `pkgs/taskcore/domain`, `pkgs/taskcore/store/model`, `pkgs/taskcycles/domain`, `pkgs/taskevents/domain` + `store/model`, `pkgs/obs/calltrace`, stdlib, GORM | `pkgs/tasks/handler`, BC `handler` packages, `internal/taskapi/composition` |
+| stdlib, GORM, Prometheus, `google/uuid`, `pkgs/obs/calltrace` (tests may use fixtures) | Any domain BC (`taskcore`, `taskcycles`, `taskevents`, `tasks`, `projects`, …), BC `handler` packages, `internal/taskapi/composition` |
 
-`MapNotFound` / `MapWriteError` emit **taskcore** sentinels (`ErrNotFound`, `ErrConflict`, `ErrInvalidInput`) so HTTP mappers can use `errors.Is` without importing GORM.
+`MapNotFound` / `MapWriteError` / `NormalizeJSONObject` take the caller's BC sentinels so projects can emit `projects/domain` errors while task paths keep `taskcore/domain` errors.
 
 ## Tests
 

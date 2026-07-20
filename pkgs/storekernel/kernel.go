@@ -1,11 +1,6 @@
-// Package storekernel holds shared store helpers: Prometheus latency histogram
-// (DeferLatency + Op* constants), audit-log primitives, domain validators,
-// and generic transactional helpers. Extracted from pkgs/tasks/kernel so
-// bounded contexts share one kernel without importing pkgs/tasks/store/internal.
+// Package storekernel holds domain-agnostic store helpers: Prometheus latency
+// histogram (DeferLatency + Op* constants), ID allocation, SQL constraint
+// classifiers, and sentinel-parameterized error/JSON mappers. Task-specific
+// validators, audit append, and task-row loading live in their owning BCs
+// (taskcore / taskcycles / taskevents).
 package storekernel
-
-// LogCmd is the cmd label every kernel slog call uses, mirroring the
-// historical "taskapi" tag from the original pkgs/tasks/store package.
-// Sub-packages that wrap kernel helpers should set their own cmd label
-// when they wish to differentiate; the kernel itself is considered part
-// of the same operational surface.
