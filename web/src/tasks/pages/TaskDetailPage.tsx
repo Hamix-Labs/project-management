@@ -1,7 +1,6 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { errorMessage } from "@/lib/errorMessage";
 import { TaskDetailPageSkeleton } from "../components/skeletons";
-import { useTaskDetailChecklist } from "../checklist/hooks/useTaskDetailChecklist";
 import { useTaskDetailDeleteNavigate } from "../hooks/useTaskDetailDeleteNavigate";
 import { useTaskDetailMutations } from "../hooks/useTaskDetailMutations";
 import { useTaskDetailPageQueries } from "../hooks/useTaskDetailPageQueries";
@@ -48,9 +47,7 @@ export function TaskDetailPage() {
   const { saving } = useTasksAppMeta();
   const { taskId = "" } = useParams<{ taskId: string }>();
   const navigate = useNavigate();
-  const checklistState = useTaskDetailChecklist(taskId);
-  const { taskQuery, checklistQuery, dependencySummaries } =
-    useTaskDetailPageQueries(taskId);
+  const { taskQuery, dependencySummaries } = useTaskDetailPageQueries(taskId);
   const scheduling = useTaskDetailScheduling(taskId);
   const {
     modelConfigOpen,
@@ -93,8 +90,6 @@ export function TaskDetailPage() {
       saving={saving}
       modals={modals}
       scheduling={scheduling}
-      checklistQuery={checklistQuery}
-      checklistState={checklistState}
       dependencySummaries={dependencySummaries}
       autonomyMode={autonomyMode}
       autonomyConfirmOpen={autonomyConfirmOpen}

@@ -1,5 +1,6 @@
 import { TASK_TIMINGS } from "@/constants/tasks";
 import { useCallback, useEffect, useMemo, type MutableRefObject } from "react";
+import { isAbortError } from "@/lib/isAbortError";
 import { buildDraftSavePayload, computeDraftAutosaveSignature } from "../draftPayload";
 import type { TaskCreateFormFields } from "../types";
 import type { useTaskCreateMutations } from "./useTaskCreateMutations";
@@ -85,12 +86,16 @@ export function useTaskCreateDraftAutosave(input: {
     input,
   ]);
 
+  const saveFailedVisibly =
+    input.saveDraftMutation.isError &&
+    !isAbortError(input.saveDraftMutation.error);
+
   const draftSaveLabel = useMemo(() => {
     if (input.editingTaskId || input.composeTarget !== "task" || !input.createModalOpen) {
       return null;
     }
     if (input.saveDraftMutation.isPending) return "Saving draft…";
-    if (input.saveDraftMutation.isError) {
+    if (saveFailedVisibly) {
       return "Draft autosave failed. You can still create the task.";
     }
     if (input.lastDraftSavedAt == null) return null;
@@ -100,13 +105,13 @@ export function useTaskCreateDraftAutosave(input: {
     input.composeTarget,
     input.editingTaskId,
     input.lastDraftSavedAt,
-    input.saveDraftMutation.isError,
     input.saveDraftMutation.isPending,
+    saveFailedVisibly,
   ]);
 
   return {
     saveDraftNow,
     draftSaveLabel,
-    draftSaveError: input.createModalOpen && input.saveDraftMutation.isError,
+    draftSaveError: input.createModalOpen && saveFailedVisibly,
   };
 }

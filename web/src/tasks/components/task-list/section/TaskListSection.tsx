@@ -6,29 +6,18 @@ import {
   type ReactNode,
 } from "react";
 import { useDelayedTrue } from "@/lib/useDelayedTrue";
-import { TaskListDataTable } from "../table/TaskListDataTable";
-import { TaskListFilters } from "../filters/TaskListFilters";
-import { TaskListStatusTabs } from "../filters/TaskListStatusTabs";
-import { TaskListSectionHeading } from "./TaskListSectionHeading";
 import { formatTaskListHeadingSummary } from "./taskListHeadingSummary";
-import { TaskPager } from "../pager/TaskPager";
 import type { Task, TaskStatsResponse } from "@/types";
 import type { TaskWithDepth } from "../../../task-tree";
 import type { DeleteTargetInput } from "../../../hooks/useTaskDeleteFlow";
 import type { EmptyStateAction } from "@/shared/EmptyState";
-import { taskListPagerSummary } from "../pager/taskListPagerSummary";
-import { TaskListTableSkeleton } from "../table/TaskListTableSkeleton";
 import { useAppTimezone } from "@/shared/time/appTimezone";
 import { isUiFeatureOmitted } from "@/launch/omittedFeatures";
-import {
-  TaskBulkDeleteConfirmModal,
-  TaskBulkRescheduleModal,
-  TaskListBulkActionBar,
-} from "../bulk";
-import {
-  useTaskListSectionFilters,
-} from "./useTaskListSectionFilters";
+import { useTaskListSectionFilters } from "./useTaskListSectionFilters";
 import { useTaskListSectionBulkActions } from "./useTaskListSectionBulkActions";
+import { TaskListToolbar } from "./TaskListToolbar";
+import { TaskListTableRegion } from "./TaskListTableRegion";
+import { TaskListBulkLayer } from "./TaskListBulkLayer";
 
 type Props = {
   tasks: TaskWithDepth[];
@@ -161,121 +150,42 @@ export const TaskListSection = memo(function TaskListSection({
       id="task-list-panel"
       role="tabpanel"
     >
-      <div className="task-list-toolbar">
-        <TaskListSectionHeading actions={actions} summary={headingSummary} />
-        {!loading ? (
-          <>
-            <TaskListStatusTabs
-              value={filters.statusFilter}
-              onChange={filters.setStatusFilter}
-              stats={taskStats}
-            />
-            <TaskListFilters
-              priorityFilter={filters.priorityFilter}
-              onPriorityFilterChange={(v) =>
-                filters.setPriorityFilter(v as typeof filters.priorityFilter)
-              }
-              projectFilter={filters.projectFilter}
-              projectOptions={showProjectColumn ? projectFilterOptions : []}
-              onProjectFilterChange={
-                showProjectColumn ? filters.setProjectFilter : undefined
-              }
-              titleSearch={filters.titleSearch}
-              onTitleSearchChange={filters.setTitleSearch}
-              searchInputRef={filters.searchInputRef}
-            />
-          </>
-        ) : null}
-      </div>
-      {refreshing && !loading && !hideBackgroundRefreshHint ? (
-        <p className="sync-hint task-list-phase-msg" aria-live="polite" role="status">
-          Syncing with server…
-        </p>
-      ) : null}
-      {loading && showLoadingLine ? (
-        <TaskListTableSkeleton caption={TASK_LIST_TABLE_CAPTION} />
-      ) : null}
-      {!loading ? (
-        <div className="task-list-content task-list-content--enter">
-          <TaskListDataTable
-            caption={TASK_LIST_TABLE_CAPTION}
-            refreshing={refreshing}
-            tasks={tasks}
-            filteredTasks={filters.filteredTasks}
-            saving={saving}
-            emptyListAction={emptyListAction}
-            onEdit={onEdit}
-            onRequestDelete={onRequestDelete}
-            projectNameById={filters.projectNameById}
-            showProjectColumn={showProjectColumn}
-            sortKey={filters.sortKey}
-            sortDir={filters.sortDir}
-            onSortChange={filters.handleSortChange}
-            selection={{
-              isSelected: bulk.selection.isSelected,
-              onRowToggle: bulk.selection.toggle,
-              allVisibleSelected: bulk.selection.allVisibleSelected,
-              someVisibleSelected: bulk.selection.someVisibleSelected,
-              onToggleAllVisible: bulk.selection.toggleAllVisible,
-            }}
-          />
-          {bulk.bulkErrorBanner ? (
-            <p
-              className="err task-list-bulk-error"
-              role="alert"
-              data-testid="task-list-bulk-error"
-            >
-              {bulk.bulkErrorBanner}
-            </p>
-          ) : null}
-          {showTaskPager ? (
-            <TaskPager
-              navLabel="Task list pages"
-              summary={taskListPagerSummary({
-                tasksLength: tasks.length,
-                listPage,
-                listPageSize,
-                rootTasksOnPage,
-                hasNextPage,
-              })}
-              onPrev={() => onListPageChange(listPage - 1)}
-              onNext={() => onListPageChange(listPage + 1)}
-              disablePrev={!hasPrevPage}
-              disableNext={!hasNextPage}
-            />
-          ) : null}
-        </div>
-      ) : null}
-      <TaskListBulkActionBar
-        selectedCount={bulk.selection.selectedVisibleIds.length}
-        scheduledCount={bulk.selectedScheduledIds.length}
-        rescheduleDisabled={bulk.selectedIncludesDone}
-        showScheduleActions={scheduleUiEnabled}
-        busy={bulk.bulkSchedule.isPending || bulk.bulkDelete.isPending}
-        onReschedule={bulk.openRescheduleModal}
-        onClearSchedule={bulk.handleClearSchedule}
-        onDelete={bulk.openBulkDeleteModal}
-        onCancel={bulk.handleCancelSelection}
+      <TaskListToolbar
+        loading={loading}
+        actions={actions}
+        headingSummary={headingSummary}
+        taskStats={taskStats}
+        showProjectColumn={showProjectColumn}
+        projectFilterOptions={projectFilterOptions}
+        filters={filters}
       />
-      {bulk.bulkDeleteModalOpen && bulk.selectedRowsForBulkDelete.length > 0 ? (
-        <TaskBulkDeleteConfirmModal
-          tasks={bulk.selectedRowsForBulkDelete}
-          busy={bulk.bulkDelete.isPending}
-          error={bulk.bulkDeleteError}
-          onCancel={bulk.closeBulkDelete}
-          onConfirm={bulk.handleBulkDeleteConfirm}
-        />
-      ) : null}
-      {bulk.rescheduleModalOpen ? (
-        <TaskBulkRescheduleModal
-          selectedCount={bulk.selection.selectedVisibleIds.length}
-          appTimezone={appTimezone}
-          busy={bulk.bulkSchedule.isPending}
-          error={bulk.bulkErrorBanner}
-          onClose={bulk.closeReschedule}
-          onSubmit={bulk.handleRescheduleSubmit}
-        />
-      ) : null}
+      <TaskListTableRegion
+        caption={TASK_LIST_TABLE_CAPTION}
+        loading={loading}
+        showLoadingLine={showLoadingLine}
+        refreshing={refreshing}
+        hideBackgroundRefreshHint={hideBackgroundRefreshHint}
+        saving={saving}
+        tasks={tasks}
+        rootTasksOnPage={rootTasksOnPage}
+        listPage={listPage}
+        listPageSize={listPageSize}
+        hasNextPage={hasNextPage}
+        hasPrevPage={hasPrevPage}
+        showTaskPager={showTaskPager}
+        showProjectColumn={showProjectColumn}
+        emptyListAction={emptyListAction}
+        onEdit={onEdit}
+        onRequestDelete={onRequestDelete}
+        onListPageChange={onListPageChange}
+        filters={filters}
+        bulk={bulk}
+      />
+      <TaskListBulkLayer
+        scheduleUiEnabled={scheduleUiEnabled}
+        appTimezone={appTimezone}
+        bulk={bulk}
+      />
     </section>
   );
 });

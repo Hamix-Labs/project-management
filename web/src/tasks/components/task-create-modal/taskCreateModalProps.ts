@@ -3,7 +3,8 @@ import type { ChecklistItemDraft, PriorityChoice, Status } from "@/types";
 import type { RichPromptEditorProjectContextProps } from "@/components/rich-prompt";
 import type { TestScenario } from "@/tasks/test-scenarios";
 
-export type TaskCreateModalProps = {
+/** Modal open mode, busy flags, and mutation/validation errors. */
+export type TaskCreateModalSession = {
   /** When set, the modal edits an existing task using the same layout as create. */
   editingTaskId?: string | null;
   composeTarget?: "task" | "template";
@@ -21,30 +22,33 @@ export type TaskCreateModalProps = {
   draftSaving: boolean;
   draftSaveLabel: string | null;
   draftSaveError: boolean;
-  onClose: () => void;
+  createError?: Error | null;
+  createFormError?: string | null;
+};
+
+export type TaskCreateModalEssentials = {
   title: string;
-  prompt: string;
   priority: PriorityChoice;
-  checklistItems: ChecklistItemDraft[];
   onTitleChange: (v: string) => void;
-  onPromptChange: (v: string) => void;
   onPriorityChange: (p: PriorityChoice) => void;
+};
+
+export type TaskCreateModalPromptFields = {
+  prompt: string;
+  onPromptChange: (v: string) => void;
+  promptProjectContext?: RichPromptEditorProjectContextProps;
+};
+
+export type TaskCreateModalCriteria = {
+  checklistItems: ChecklistItemDraft[];
   onAppendChecklistCriterion: (item: ChecklistItemDraft | string) => void;
   onUpdateChecklistRow: (index: number, item: ChecklistItemDraft) => void;
   onRemoveChecklistRow: (index: number) => void;
-  taskRunner: string;
-  taskCursorModel: string;
-  onTaskRunnerChange: (runner: string) => void;
-  onTaskCursorModelChange: (v: string) => void;
-  projectAssignment?: ReactNode;
-  promptProjectContext?: RichPromptEditorProjectContextProps;
-  schedule: string | null;
-  onScheduleChange: (next: string | null) => void;
-  autonomyEnabled: boolean;
-  onAutonomyChange: (enabled: boolean) => void;
-  autonomyDisabled?: boolean;
   tagsCsv: string;
-  milestone: string;
+  onTagsCsvChange: (value: string) => void;
+};
+
+export type TaskCreateModalGitBinding = {
   repositoryId: string;
   projectId: string;
   worktreeId: string;
@@ -52,14 +56,55 @@ export type TaskCreateModalProps = {
   onProjectChange: (projectId: string) => void;
   onWorktreeChange: (worktreeId: string) => void;
   onProjectContextClear: () => void;
-  dependsOn: string[];
-  onTagsCsvChange: (value: string) => void;
+};
+
+export type TaskCreateModalExecution = {
+  taskRunner: string;
+  taskCursorModel: string;
+  onTaskRunnerChange: (runner: string) => void;
+  onTaskCursorModelChange: (v: string) => void;
+  schedule: string | null;
+  onScheduleChange: (next: string | null) => void;
+  autonomyEnabled: boolean;
+  onAutonomyChange: (enabled: boolean) => void;
+  autonomyDisabled?: boolean;
+  milestone: string;
   onMilestoneChange: (value: string) => void;
+  dependsOn: string[];
   onDependsOnChange: (value: string[]) => void;
-  appTimezone: string;
+};
+
+export type TaskCreateModalActions = {
+  onClose: () => void;
   onSaveDraft: () => void;
   onSubmit: (e: FormEvent) => void;
-  createError?: Error | null;
-  createFormError?: string | null;
   onApplyTestScenario?: (scenario: TestScenario) => void;
 };
+
+/**
+ * Public create/edit modal contract grouped by form section.
+ * Prefer {@link buildTaskCreateModalProps} at the layer / test boundary.
+ */
+export type TaskCreateModalProps = {
+  session: TaskCreateModalSession;
+  essentials: TaskCreateModalEssentials;
+  prompt: TaskCreateModalPromptFields;
+  criteria: TaskCreateModalCriteria;
+  git: TaskCreateModalGitBinding;
+  execution: TaskCreateModalExecution;
+  actions: TaskCreateModalActions;
+  projectAssignment?: ReactNode;
+  appTimezone: string;
+};
+
+/** Flat field bag accepted by {@link buildTaskCreateModalProps}. */
+export type TaskCreateModalFlatInput = TaskCreateModalSession &
+  TaskCreateModalEssentials &
+  TaskCreateModalPromptFields &
+  TaskCreateModalCriteria &
+  TaskCreateModalGitBinding &
+  TaskCreateModalExecution &
+  TaskCreateModalActions & {
+    projectAssignment?: ReactNode;
+    appTimezone: string;
+  };

@@ -6,6 +6,7 @@ import { useProjectContextPromptBinding } from "@/hooks/useProjectContextPromptB
 import { isUiFeatureOmitted } from "@/launch/omittedFeatures";
 import { useAppTimezone } from "@/shared/time/appTimezone";
 import { DraftResumeModal } from "../components/draft-resume";
+import { buildTaskCreateModalProps } from "../components/task-create-modal/buildTaskCreateModalProps";
 import { useTasksAppContext } from "../app/TasksAppProvider";
 import { CreateModalChunkFallback } from "./CreateModalChunkFallback";
 
@@ -61,37 +62,37 @@ export function TaskCreateModalsLayer() {
           fallback={<CreateModalChunkFallback onClose={app.closeEdit} />}
         >
           <TaskCreateModal
-            editingTaskId={app.editingTaskId}
-            composeTarget={app.composeTarget}
-            composeOperation={app.composeOperation}
-            editingTaskRunner={app.editingTaskRunner}
-            composeStatus={app.composeStatus}
-            onComposeStatusChange={app.setComposeStatus}
-            patchPending={app.patchPending}
-            patchError={app.patchError}
-            formError={app.editFormError}
-            pending={isTemplateMode ? app.templateSavePending : app.createPending}
-            saving={app.saving}
-            draftSaving={isEditing || isTemplateMode ? false : app.draftSavePending}
-            draftSaveLabel={isEditing || isTemplateMode ? null : app.draftSaveLabel}
-            draftSaveError={isEditing || isTemplateMode ? false : app.draftSaveError}
-            onClose={app.closeEdit}
-            title={app.newTitle}
-            prompt={app.newPrompt}
-            priority={app.newPriority}
-            checklistItems={app.newChecklistItems}
-            onTitleChange={app.setNewTitle}
-            onPromptChange={app.setNewPrompt}
-            onPriorityChange={app.setNewPriority}
-            onAppendChecklistCriterion={app.appendNewChecklistCriterion}
-            onUpdateChecklistRow={app.updateNewChecklistRow}
-            onRemoveChecklistRow={app.removeNewChecklistRow}
-            taskRunner={isEditing ? app.editingTaskRunner : app.newTaskRunner}
-            taskCursorModel={app.newTaskCursorModel}
-            onTaskRunnerChange={app.setNewTaskRunner}
-            onTaskCursorModelChange={app.setNewTaskCursorModel}
-            projectAssignment={
-              projectsUiEnabled ? (
+            {...buildTaskCreateModalProps({
+              editingTaskId: app.editingTaskId,
+              composeTarget: app.composeTarget,
+              composeOperation: app.composeOperation,
+              editingTaskRunner: app.editingTaskRunner,
+              composeStatus: app.composeStatus,
+              onComposeStatusChange: app.setComposeStatus,
+              patchPending: app.patchPending,
+              patchError: app.patchError,
+              formError: app.editFormError,
+              pending: isTemplateMode ? app.templateSavePending : app.createPending,
+              saving: app.saving,
+              draftSaving: isEditing || isTemplateMode ? false : app.draftSavePending,
+              draftSaveLabel: isEditing || isTemplateMode ? null : app.draftSaveLabel,
+              draftSaveError: isEditing || isTemplateMode ? false : app.draftSaveError,
+              onClose: app.closeEdit,
+              title: app.newTitle,
+              prompt: app.newPrompt,
+              priority: app.newPriority,
+              checklistItems: app.newChecklistItems,
+              onTitleChange: app.setNewTitle,
+              onPromptChange: app.setNewPrompt,
+              onPriorityChange: app.setNewPriority,
+              onAppendChecklistCriterion: app.appendNewChecklistCriterion,
+              onUpdateChecklistRow: app.updateNewChecklistRow,
+              onRemoveChecklistRow: app.removeNewChecklistRow,
+              taskRunner: isEditing ? app.editingTaskRunner : app.newTaskRunner,
+              taskCursorModel: app.newTaskCursorModel,
+              onTaskRunnerChange: app.setNewTaskRunner,
+              onTaskCursorModelChange: app.setNewTaskCursorModel,
+              projectAssignment: projectsUiEnabled ? (
                 <section
                   className="task-create-project"
                   aria-label="Project context"
@@ -104,51 +105,52 @@ export function TaskCreateModalsLayer() {
                     onChange={app.setNewProjectContextItemIDs}
                   />
                 </section>
-              ) : undefined
-            }
-            promptProjectContext={
-              projectsUiEnabled ? (promptProjectContext ?? undefined) : undefined
-            }
-            schedule={app.newSchedule}
-            onScheduleChange={app.setNewSchedule}
-            autonomyEnabled={
-              isEditing ? app.composeStatus === "ready" : app.newAutonomyEnabled
-            }
-            onAutonomyChange={app.setNewAutonomyEnabled}
-            autonomyDisabled={isEditing}
-            tagsCsv={app.newTagsCsv}
-            milestone={app.newMilestone}
-            repositoryId={app.newRepositoryID}
-            projectId={app.newProjectID}
-            worktreeId={app.newWorktreeID}
-            onRepositoryChange={(repositoryId) => {
-              app.setNewRepositoryID(repositoryId);
-              app.setNewProjectID("");
-              app.setNewWorktreeID("");
-              app.setNewProjectContextItemIDs([]);
-            }}
-            onProjectChange={(projectId) => {
-              app.setNewProjectID(projectId);
-              app.setNewProjectContextItemIDs([]);
-            }}
-            onWorktreeChange={app.setNewWorktreeID}
-            onProjectContextClear={() => app.setNewProjectContextItemIDs([])}
-            dependsOn={app.newDependsOn}
-            onTagsCsvChange={app.setNewTagsCsv}
-            onMilestoneChange={app.setNewMilestone}
-            onDependsOnChange={app.setNewDependsOn}
-            appTimezone={appTimezone}
-            onSaveDraft={() => {
-              if (!isEditing) void app.saveDraftNow();
-            }}
-            onSubmit={(e) => void app.submitComposeModal(e)}
-            createError={
-              isEditing ? null : isTemplateMode ? app.templateSaveError : app.createError
-            }
-            createFormError={isEditing ? null : app.createFormError}
-            onApplyTestScenario={
-              isEditing || isTemplateEdit ? undefined : app.applyTestScenario
-            }
+              ) : undefined,
+              promptProjectContext: projectsUiEnabled
+                ? (promptProjectContext ?? undefined)
+                : undefined,
+              schedule: app.newSchedule,
+              onScheduleChange: app.setNewSchedule,
+              autonomyEnabled: isEditing
+                ? app.composeStatus === "ready"
+                : app.newAutonomyEnabled,
+              onAutonomyChange: app.setNewAutonomyEnabled,
+              autonomyDisabled: isEditing,
+              tagsCsv: app.newTagsCsv,
+              milestone: app.newMilestone,
+              repositoryId: app.newRepositoryID,
+              projectId: app.newProjectID,
+              worktreeId: app.newWorktreeID,
+              onRepositoryChange: (repositoryId) => {
+                app.setNewRepositoryID(repositoryId);
+                app.setNewProjectID("");
+                app.setNewWorktreeID("");
+                app.setNewProjectContextItemIDs([]);
+              },
+              onProjectChange: (projectId) => {
+                app.setNewProjectID(projectId);
+                app.setNewProjectContextItemIDs([]);
+              },
+              onWorktreeChange: app.setNewWorktreeID,
+              onProjectContextClear: () => app.setNewProjectContextItemIDs([]),
+              dependsOn: app.newDependsOn,
+              onTagsCsvChange: app.setNewTagsCsv,
+              onMilestoneChange: app.setNewMilestone,
+              onDependsOnChange: app.setNewDependsOn,
+              appTimezone,
+              onSaveDraft: () => {
+                if (!isEditing) void app.saveDraftNow();
+              },
+              onSubmit: (e) => void app.submitComposeModal(e),
+              createError: isEditing
+                ? null
+                : isTemplateMode
+                  ? app.templateSaveError
+                  : app.createError,
+              createFormError: isEditing ? null : app.createFormError,
+              onApplyTestScenario:
+                isEditing || isTemplateEdit ? undefined : app.applyTestScenario,
+            })}
           />
         </Suspense>
       ) : null}

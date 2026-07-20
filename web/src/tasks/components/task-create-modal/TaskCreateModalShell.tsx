@@ -11,13 +11,6 @@ import type { TestScenario } from "@/tasks/test-scenarios";
 
 type Props = TaskCreateModalProps & {
   presentation: TaskCreateModalPresentation;
-  editingTaskId: string | null;
-  editingTaskRunner: string;
-  autonomyDisabled: boolean;
-  createError: Error | null;
-  createFormError: string | null;
-  patchError: string | null;
-  formError: string | null;
   busyLabel: string;
   scenariosOpen: boolean;
   scenariosTriggerRef: RefObject<HTMLButtonElement | null>;
@@ -28,29 +21,34 @@ type Props = TaskCreateModalProps & {
 
 export function TaskCreateModalShell({
   presentation,
-  editingTaskId,
-  editingTaskRunner,
-  draftSaveLabel,
-  draftSaveError,
-  onClose,
-  onSubmit,
-  autonomyDisabled,
-  createError,
-  createFormError,
-  patchError,
-  formError,
+  session,
+  essentials,
+  prompt,
+  criteria,
+  git,
+  execution,
+  actions,
+  projectAssignment,
+  appTimezone,
   busyLabel,
   scenariosOpen,
   scenariosTriggerRef,
   onToggleScenarios,
   onScenarioPicked,
   onCloseScenarios,
-  ...formProps
 }: Props) {
+  const editingTaskId = session.editingTaskId ?? null;
+  const editingTaskRunner = session.editingTaskRunner ?? "";
+  const autonomyDisabled = execution.autonomyDisabled ?? false;
+  const createError = session.createError ?? null;
+  const createFormError = session.createFormError ?? null;
+  const patchError = session.patchError ?? null;
+  const formError = session.formError ?? null;
+
   return (
     <>
       <Modal
-        onClose={onClose}
+        onClose={actions.onClose}
         labelledBy={presentation.modalTitleId}
         describedBy={presentation.modalDescribedBy}
         size="wide"
@@ -62,25 +60,31 @@ export function TaskCreateModalShell({
           <TaskCreateModalHeader
             presentation={presentation}
             editingTaskId={editingTaskId}
-            draftSaveLabel={draftSaveLabel}
-            draftSaveError={draftSaveError}
+            draftSaveLabel={session.draftSaveLabel}
+            draftSaveError={session.draftSaveError}
             disabled={presentation.disabled}
             scenariosOpen={scenariosOpen}
             scenariosTriggerRef={scenariosTriggerRef}
             onToggleScenarios={onToggleScenarios}
-            onClose={onClose}
+            onClose={actions.onClose}
           />
 
           <form
             className="task-create-modal-form task-create-form"
-            onSubmit={onSubmit}
+            onSubmit={actions.onSubmit}
           >
             <TaskCreateModalFormBody
               presentation={presentation}
               editingTaskId={editingTaskId}
               editingTaskRunner={editingTaskRunner}
-              autonomyDisabled={autonomyDisabled}
-              {...formProps}
+              onComposeStatusChange={session.onComposeStatusChange}
+              essentials={essentials}
+              prompt={prompt}
+              criteria={criteria}
+              git={git}
+              execution={{ ...execution, autonomyDisabled }}
+              projectAssignment={projectAssignment}
+              appTimezone={appTimezone}
             />
 
             <TaskCreateModalMutationErrors
@@ -94,13 +98,13 @@ export function TaskCreateModalShell({
             <footer className="task-create-modal-footer">
               <TaskCreateModalActionFooter
                 presentation={presentation}
-                title={formProps.title}
-                priority={formProps.priority}
-                checklistItems={formProps.checklistItems}
-                repositoryId={formProps.repositoryId}
-                draftSaving={formProps.draftSaving}
-                onClose={onClose}
-                onSaveDraft={formProps.onSaveDraft}
+                title={essentials.title}
+                priority={essentials.priority}
+                checklistItems={criteria.checklistItems}
+                repositoryId={git.repositoryId}
+                draftSaving={session.draftSaving}
+                onClose={actions.onClose}
+                onSaveDraft={actions.onSaveDraft}
               />
             </footer>
           </form>

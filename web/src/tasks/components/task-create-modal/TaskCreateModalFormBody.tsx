@@ -1,98 +1,46 @@
 import type { ReactNode } from "react";
-import type { ChecklistItemDraft, PriorityChoice, Status } from "@/types";
-import type { RichPromptEditorProjectContextProps } from "@/components/rich-prompt";
+import type { Status } from "@/types";
 import { TaskCreateModalCriteriaSection } from "./TaskCreateModalCriteriaSection";
 import { TaskCreateModalEssentialsSection } from "./TaskCreateModalEssentialsSection";
 import { TaskCreateModalExecutionSection } from "./TaskCreateModalExecutionSection";
 import { TaskCreateModalProjectSection } from "./TaskCreateModalProjectSection";
 import { TaskCreateModalPromptSection } from "./TaskCreateModalPromptSection";
+import type {
+  TaskCreateModalCriteria,
+  TaskCreateModalEssentials,
+  TaskCreateModalExecution,
+  TaskCreateModalGitBinding,
+  TaskCreateModalPromptFields,
+} from "./taskCreateModalProps";
 import type { TaskCreateModalPresentation } from "./taskCreateModalPresentation";
 
 type Props = {
   presentation: TaskCreateModalPresentation;
   editingTaskId: string | null;
   editingTaskRunner: string;
-  title: string;
-  prompt: string;
-  priority: PriorityChoice;
-  checklistItems: ChecklistItemDraft[];
-  onTitleChange: (v: string) => void;
-  onPromptChange: (v: string) => void;
-  onPriorityChange: (p: PriorityChoice) => void;
-  onAppendChecklistCriterion: (item: ChecklistItemDraft | string) => void;
-  onUpdateChecklistRow: (index: number, item: ChecklistItemDraft) => void;
-  onRemoveChecklistRow: (index: number) => void;
-  promptProjectContext?: RichPromptEditorProjectContextProps;
-  projectAssignment?: ReactNode;
-  taskRunner: string;
-  taskCursorModel: string;
-  onTaskRunnerChange: (runner: string) => void;
-  onTaskCursorModelChange: (v: string) => void;
   onComposeStatusChange?: (status: Status) => void;
-  autonomyEnabled: boolean;
-  autonomyDisabled: boolean;
-  onAutonomyChange: (enabled: boolean) => void;
-  schedule: string | null;
-  onScheduleChange: (next: string | null) => void;
+  essentials: TaskCreateModalEssentials;
+  prompt: TaskCreateModalPromptFields;
+  criteria: TaskCreateModalCriteria;
+  git: TaskCreateModalGitBinding;
+  execution: TaskCreateModalExecution & { autonomyDisabled: boolean };
+  projectAssignment?: ReactNode;
   appTimezone: string;
-  tagsCsv: string;
-  milestone: string;
-  repositoryId: string;
-  projectId: string;
-  worktreeId: string;
-  onRepositoryChange: (repositoryId: string) => void;
-  onProjectChange: (projectId: string) => void;
-  onWorktreeChange: (worktreeId: string) => void;
-  onProjectContextClear: () => void;
-  dependsOn: string[];
-  onTagsCsvChange: (value: string) => void;
-  onMilestoneChange: (value: string) => void;
-  onDependsOnChange: (value: string[]) => void;
 };
 
-export function TaskCreateModalFormBody(props: Props) {
-  const {
-    presentation,
-    editingTaskId,
-    editingTaskRunner,
-    title,
-    prompt,
-    priority,
-    checklistItems,
-    onTitleChange,
-    onPromptChange,
-    onPriorityChange,
-    onAppendChecklistCriterion,
-    onUpdateChecklistRow,
-    onRemoveChecklistRow,
-    promptProjectContext,
-    projectAssignment,
-    taskRunner,
-    taskCursorModel,
-    onTaskRunnerChange,
-    onTaskCursorModelChange,
-    onComposeStatusChange,
-    autonomyEnabled,
-    autonomyDisabled,
-    onAutonomyChange,
-    schedule,
-    onScheduleChange,
-    appTimezone,
-    tagsCsv,
-    milestone,
-    repositoryId,
-    projectId,
-    worktreeId,
-    onRepositoryChange,
-    onProjectChange,
-    onWorktreeChange,
-    onProjectContextClear,
-    dependsOn,
-    onTagsCsvChange,
-    onMilestoneChange,
-    onDependsOnChange,
-  } = props;
-
+export function TaskCreateModalFormBody({
+  presentation,
+  editingTaskId,
+  editingTaskRunner,
+  onComposeStatusChange,
+  essentials,
+  prompt,
+  criteria,
+  git,
+  execution,
+  projectAssignment,
+  appTimezone,
+}: Props) {
   const editorKey = presentation.isTaskEdit
     ? editingTaskId ?? "edit-prompt-modal"
     : presentation.isTemplateMode
@@ -104,37 +52,37 @@ export function TaskCreateModalFormBody(props: Props) {
     <div className="task-create-modal-scroll">
       <TaskCreateModalEssentialsSection
         presentation={presentation}
-        title={title}
-        priority={priority}
-        repositoryId={repositoryId}
-        projectId={projectId}
-        worktreeId={worktreeId}
-        onTitleChange={onTitleChange}
-        onPriorityChange={onPriorityChange}
-        onRepositoryChange={onRepositoryChange}
-        onProjectChange={onProjectChange}
-        onWorktreeChange={onWorktreeChange}
-        onProjectContextClear={onProjectContextClear}
+        title={essentials.title}
+        priority={essentials.priority}
+        repositoryId={git.repositoryId}
+        projectId={git.projectId}
+        worktreeId={git.worktreeId}
+        onTitleChange={essentials.onTitleChange}
+        onPriorityChange={essentials.onPriorityChange}
+        onRepositoryChange={git.onRepositoryChange}
+        onProjectChange={git.onProjectChange}
+        onWorktreeChange={git.onWorktreeChange}
+        onProjectContextClear={git.onProjectContextClear}
       />
 
       <TaskCreateModalPromptSection
         presentation={presentation}
         editorKey={editorKey}
-        prompt={prompt}
-        worktreeId={worktreeId}
-        onPromptChange={onPromptChange}
-        promptProjectContext={promptProjectContext}
+        prompt={prompt.prompt}
+        worktreeId={git.worktreeId}
+        onPromptChange={prompt.onPromptChange}
+        promptProjectContext={prompt.promptProjectContext}
       />
 
       <TaskCreateModalCriteriaSection
         presentation={presentation}
-        checklistItems={checklistItems}
+        checklistItems={criteria.checklistItems}
         checklistRequirement={checklistRequirement}
-        tagsCsv={tagsCsv}
-        onAppendChecklistCriterion={onAppendChecklistCriterion}
-        onUpdateChecklistRow={onUpdateChecklistRow}
-        onRemoveChecklistRow={onRemoveChecklistRow}
-        onTagsCsvChange={onTagsCsvChange}
+        tagsCsv={criteria.tagsCsv}
+        onAppendChecklistCriterion={criteria.onAppendChecklistCriterion}
+        onUpdateChecklistRow={criteria.onUpdateChecklistRow}
+        onRemoveChecklistRow={criteria.onRemoveChecklistRow}
+        onTagsCsvChange={criteria.onTagsCsvChange}
       />
 
       {projectAssignment ? (
@@ -144,24 +92,24 @@ export function TaskCreateModalFormBody(props: Props) {
       <TaskCreateModalExecutionSection
         presentation={presentation}
         editingTaskRunner={editingTaskRunner}
-        autonomyEnabled={autonomyEnabled}
-        autonomyDisabled={autonomyDisabled}
-        onAutonomyChange={onAutonomyChange}
-        taskRunner={taskRunner}
-        taskCursorModel={taskCursorModel}
-        onTaskRunnerChange={onTaskRunnerChange}
-        onTaskCursorModelChange={onTaskCursorModelChange}
+        autonomyEnabled={execution.autonomyEnabled}
+        autonomyDisabled={execution.autonomyDisabled}
+        onAutonomyChange={execution.onAutonomyChange}
+        taskRunner={execution.taskRunner}
+        taskCursorModel={execution.taskCursorModel}
+        onTaskRunnerChange={execution.onTaskRunnerChange}
+        onTaskCursorModelChange={execution.onTaskCursorModelChange}
         onComposeStatusChange={onComposeStatusChange}
-        schedule={schedule}
-        onScheduleChange={onScheduleChange}
+        schedule={execution.schedule}
+        onScheduleChange={execution.onScheduleChange}
         appTimezone={appTimezone}
-        tagsCsv={tagsCsv}
-        milestone={milestone}
-        projectId={projectId}
-        dependsOn={dependsOn}
-        onTagsCsvChange={onTagsCsvChange}
-        onMilestoneChange={onMilestoneChange}
-        onDependsOnChange={onDependsOnChange}
+        tagsCsv={criteria.tagsCsv}
+        milestone={execution.milestone}
+        projectId={git.projectId}
+        dependsOn={execution.dependsOn}
+        onTagsCsvChange={criteria.onTagsCsvChange}
+        onMilestoneChange={execution.onMilestoneChange}
+        onDependsOnChange={execution.onDependsOnChange}
       />
     </div>
   );

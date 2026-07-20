@@ -1,38 +1,43 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { HttpResponse, type RequestHandler } from "msw";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { AppSettings, AppSettingsPatch } from "@/api/settings";
 import { ROUTER_FUTURE_FLAGS } from "@/lib/routerFutureFlags";
-import { TASK_TEST_DEFAULTS } from "@/test/taskDefaults";
-import { requestUrl } from "../test/requestUrl";
+import {
+  appSettingsOk,
+  appSettingsPatchError,
+  appSettingsPatchOk,
+  appSettingsPatchPending,
+  listCursorModelsOk,
+  probeCursorFail,
+  probeCursorOk,
+} from "@/test/handlers/settings";
+import { server } from "@/test/server";
+import { APP_SETTINGS_DEFAULTS } from "@/test/settingsDefaults";
 import { SettingsPage } from "./SettingsPage";
 
-type FetchInput = RequestInfo | URL;
-
-function jsonResponse(body: unknown, init: ResponseInit = { status: 200 }): Response {
-  return new Response(JSON.stringify(body), {
-    ...init,
-    headers: { "content-type": "application/json", ...(init.headers ?? {}) },
-  });
+/** Settings page fixture: filled CLI path + updated_at for form hydration. */
+function pageSettings(overrides: Partial<AppSettings> = {}): Partial<AppSettings> {
+  return {
+    cursor_bin: "/usr/local/bin/cursor-agent",
+    sse_replay_enabled: true,
+    updated_at: "2026-04-18T12:00:00Z",
+    ...overrides,
+  };
 }
 
-/** POST /settings/list-cursor-models is requested when Settings mounts; stub it for tests. */
-function stubListCursorModelsFetch(
-  inner: (input: FetchInput, init?: RequestInit) => Promise<Response>,
-) {
-  return async (input: FetchInput, init?: RequestInit) => {
-    const u = requestUrl(input);
-    if (u.endsWith("/settings/list-cursor-models")) {
-      return jsonResponse({
-        ok: true,
-        runner: TASK_TEST_DEFAULTS.runner,
-        binary_path: "/usr/local/bin/cursor-agent",
-        models: [{ id: "auto", label: "Auto" }],
-      });
-    }
-    return inner(input, init);
-  };
+function usePageHandlers(...extra: RequestHandler[]) {
+  server.use(
+    appSettingsOk(pageSettings()),
+    listCursorModelsOk({
+      binary_path: "/usr/local/bin/cursor-agent",
+      models: [{ id: "auto", label: "Auto" }],
+    }),
+    ...extra,
+  );
 }
 
 /** Edit the Cursor CLI path field in Agent settings. */
@@ -41,22 +46,6 @@ async function editCursorBin(value: string) {
   await userEvent.clear(cursorBin);
   await userEvent.type(cursorBin, value);
   return cursorBin;
-}
-
-function defaultSettings(overrides: Partial<Record<string, unknown>> = {}) {
-  return {
-    agent_paused: false,
-    cursor_bin: "/usr/local/bin/cursor-agent",
-    ...TASK_TEST_DEFAULTS,
-    max_run_duration_seconds: 0,
-    stream_idle_stuck_seconds: 60,
-    agent_pickup_delay_seconds: 5,
-    display_timezone: "UTC",
-    optimistic_mutations_enabled: true,
-    sse_replay_enabled: true,
-    updated_at: "2026-04-18T12:00:00Z",
-    ...overrides,
-  };
 }
 
 function renderPage(options?: { initialEntry?: string }) {
@@ -79,7 +68,6 @@ function renderPage(options?: { initialEntry?: string }) {
 describe("SettingsPage", () => {
   afterEach(() => {
     vi.restoreAllMocks();
-    vi.unstubAllGlobals();
   });
 
   it("scrolls to Cursor agent section after load when URL hash is #cursor-agent", async () => {
@@ -90,12 +78,7 @@ describe("SettingsPage", () => {
       writable: true,
       value: scrollIntoView,
     });
-    vi.spyOn(globalThis, "fetch").mockImplementation(stubListCursorModelsFetch(async (input: FetchInput) => {
-      if (requestUrl(input).endsWith("/settings")) {
-        return jsonResponse(defaultSettings());
-      }
-      return new Response("not found", { status: 404 });
-    }));
+    usePageHandlers();
 
     try {
       renderPage({ initialEntry: "/settings#cursor-agent" });
@@ -112,12 +95,7 @@ describe("SettingsPage", () => {
   });
 
   it("loads the settings row and pre-populates the form", async () => {
-    vi.spyOn(globalThis, "fetch").mockImplementation(stubListCursorModelsFetch(async (input: FetchInput) => {
-      if (requestUrl(input).endsWith("/settings")) {
-        return jsonResponse(defaultSettings());
-      }
-      return new Response("not found", { status: 404 });
-    }));
+    usePageHandlers();
 
     renderPage();
     expect(await screen.findByLabelText(/^CLI path$/)).toHaveValue(
@@ -127,18 +105,19 @@ describe("SettingsPage", () => {
   });
 
   it("formats Last saved in the selected display timezone (explicit IANA)", async () => {
-    vi.spyOn(globalThis, "fetch").mockImplementation(stubListCursorModelsFetch(async (input: FetchInput) => {
-      if (requestUrl(input).endsWith("/settings")) {
-        return jsonResponse(
-          defaultSettings({
-            display_timezone: "Europe/Berlin",
-            // 10:00 UTC → 12:00 in Berlin on 2026-07-18 (CEST, UTC+2).
-            updated_at: "2026-07-18T10:00:00Z",
-          }),
-        );
-      }
-      return new Response("not found", { status: 404 });
-    }));
+    server.use(
+      appSettingsOk(
+        pageSettings({
+          display_timezone: "Europe/Berlin",
+          // 10:00 UTC → 12:00 in Berlin on 2026-07-18 (CEST, UTC+2).
+          updated_at: "2026-07-18T10:00:00Z",
+        }),
+      ),
+      listCursorModelsOk({
+        binary_path: "/usr/local/bin/cursor-agent",
+        models: [{ id: "auto", label: "Auto" }],
+      }),
+    );
 
     renderPage();
     const chip = await screen.findByTestId("settings-last-updated");
@@ -159,34 +138,25 @@ describe("SettingsPage", () => {
     //      after the GET response changes — otherwise saving an
     //      unrelated field would race-clobber a concurrent script
     //      that just paused the agent.
-    const fetchMock = vi
-      .spyOn(globalThis, "fetch")
-      .mockImplementation(
-        stubListCursorModelsFetch(async (input: FetchInput, init?: RequestInit) => {
-          const url = requestUrl(input);
-          if (url.endsWith("/settings") && (init?.method ?? "GET") === "GET") {
-            return jsonResponse(defaultSettings({ agent_paused: true }));
-          }
-          if (url.endsWith("/settings") && init?.method === "PATCH") {
-            const body = JSON.parse(String(init.body ?? "{}")) as Record<
-              string,
-              unknown
-            >;
-            // The whole point of the lockdown: agent_paused must
-            // never appear in any patch this page emits, regardless
-            // of what the GET returned.
-            expect(body).not.toHaveProperty("agent_paused");
-            return jsonResponse(
-              defaultSettings({
-                agent_paused: true,
-                cursor_bin: "/usr/local/bin/cursor-agent-2",
-                updated_at: "2026-04-18T12:34:00Z",
-              }),
-            );
-          }
-          return new Response("not found", { status: 404 });
+    const patches: AppSettingsPatch[] = [];
+    server.use(
+      appSettingsOk(pageSettings({ agent_paused: true })),
+      listCursorModelsOk({
+        binary_path: "/usr/local/bin/cursor-agent",
+        models: [{ id: "auto", label: "Auto" }],
+      }),
+      appSettingsPatchOk(
+        pageSettings({
+          agent_paused: true,
+          cursor_bin: "/usr/local/bin/cursor-agent-2",
+          updated_at: "2026-04-18T12:34:00Z",
         }),
-      );
+        (body) => {
+          expect(body).not.toHaveProperty("agent_paused");
+          patches.push(body);
+        },
+      ),
+    );
 
     renderPage();
 
@@ -211,38 +181,25 @@ describe("SettingsPage", () => {
     await userEvent.click(saveButton);
 
     await waitFor(() => {
-      const patches = fetchMock.mock.calls.filter(([input, init]) => {
-        const u = requestUrl(input as FetchInput);
-        return (
-          u.endsWith("/settings") &&
-          (init as RequestInit | undefined)?.method === "PATCH"
-        );
-      });
       expect(patches.length).toBe(1);
     });
   });
 
   it("PATCHes only the changed fields and updates form state on success", async () => {
-    const fetchMock = vi
-      .spyOn(globalThis, "fetch")
-      .mockImplementation(stubListCursorModelsFetch(async (input: FetchInput, init?: RequestInit) => {
-        const url = requestUrl(input);
-        if (url.endsWith("/settings") && (init?.method ?? "GET") === "GET") {
-          return jsonResponse(defaultSettings());
-        }
-        if (url.endsWith("/settings") && init?.method === "PATCH") {
-          const body = JSON.parse(String(init.body ?? "{}")) as Record<string, unknown>;
+    const patches: AppSettingsPatch[] = [];
+    usePageHandlers(
+      appSettingsPatchOk(
+        pageSettings({
+          cursor_bin: "/opt/local/bin/cursor-agent-2",
+          updated_at: "2026-04-18T12:30:00Z",
+        }),
+        (body) => {
           expect(Object.keys(body)).toEqual(["cursor_bin"]);
           expect(body.cursor_bin).toBe("/opt/local/bin/cursor-agent-2");
-          return jsonResponse(
-            defaultSettings({
-              cursor_bin: "/opt/local/bin/cursor-agent-2",
-              updated_at: "2026-04-18T12:30:00Z",
-            }),
-          );
-        }
-        return new Response("not found", { status: 404 });
-      }));
+          patches.push(body);
+        },
+      ),
+    );
 
     renderPage();
     await editCursorBin("/opt/local/bin/cursor-agent-2");
@@ -254,28 +211,19 @@ describe("SettingsPage", () => {
     await waitFor(() => expect(screen.getByTestId("settings-status")).toHaveTextContent(
       /saved/i,
     ));
-    expect(fetchMock).toHaveBeenCalled();
+    expect(patches.length).toBe(1);
   });
 
   it(
     "auto-dismisses the success banner after a few seconds",
     async () => {
-      vi.spyOn(globalThis, "fetch").mockImplementation(
-        stubListCursorModelsFetch(async (input: FetchInput, init?: RequestInit) => {
-          const url = requestUrl(input);
-          if (url.endsWith("/settings") && (init?.method ?? "GET") === "GET") {
-            return jsonResponse(defaultSettings());
-          }
-          if (url.endsWith("/settings") && init?.method === "PATCH") {
-            return jsonResponse(
-              defaultSettings({
-                cursor_bin: "/opt/local/bin/cursor-agent-2",
-                updated_at: "2026-04-18T12:30:00Z",
-              }),
-            );
-          }
-          return new Response("not found", { status: 404 });
-        }),
+      usePageHandlers(
+        appSettingsPatchOk(
+          pageSettings({
+            cursor_bin: "/opt/local/bin/cursor-agent-2",
+            updated_at: "2026-04-18T12:30:00Z",
+          }),
+        ),
       );
 
       renderPage();
@@ -295,25 +243,14 @@ describe("SettingsPage", () => {
   );
 
   it("disables Save when no fields have changed", async () => {
-    vi.spyOn(globalThis, "fetch").mockImplementation(stubListCursorModelsFetch(async () =>
-      jsonResponse(defaultSettings()),
-    ));
+    usePageHandlers();
     renderPage();
     const saveBtn = await screen.findByRole("button", { name: /Save changes/ });
     expect(saveBtn).toBeDisabled();
   });
 
   it("calls /settings/probe-cursor and shows the version on success", async () => {
-    vi.spyOn(globalThis, "fetch").mockImplementation(stubListCursorModelsFetch(async (input: FetchInput, init?: RequestInit) => {
-      const url = requestUrl(input);
-      if (url.endsWith("/settings/probe-cursor")) {
-        return jsonResponse({ ok: true, runner: TASK_TEST_DEFAULTS.runner, version: "2026.04" });
-      }
-      if (url.endsWith("/settings") && (init?.method ?? "GET") === "GET") {
-        return jsonResponse(defaultSettings());
-      }
-      return new Response("not found", { status: 404 });
-    }));
+    usePageHandlers(probeCursorOk({ version: "2026.04" }));
 
     renderPage();
     const probeBtn = await screen.findByRole("button", { name: /Test binary/ });
@@ -328,21 +265,15 @@ describe("SettingsPage", () => {
     // and clicks Test sees only "Cursor binary OK" and has no idea
     // which binary on PATH was actually exec'd. The /settings/probe-cursor
     // response now carries `binary_path`; the SPA must surface it.
-    vi.spyOn(globalThis, "fetch").mockImplementation(
-      stubListCursorModelsFetch(async (input: FetchInput, init?: RequestInit) => {
-        const url = requestUrl(input);
-        if (url.endsWith("/settings/probe-cursor")) {
-          return jsonResponse({
-            ok: true,
-            runner: TASK_TEST_DEFAULTS.runner,
-            binary_path: "/opt/local/bin/cursor-agent",
-            version: "2026.05",
-          });
-        }
-        if (url.endsWith("/settings") && (init?.method ?? "GET") === "GET") {
-          return jsonResponse(defaultSettings({ cursor_bin: "" }));
-        }
-        return new Response("not found", { status: 404 });
+    server.use(
+      appSettingsOk(pageSettings({ cursor_bin: "" })),
+      listCursorModelsOk({
+        binary_path: "/usr/local/bin/cursor-agent",
+        models: [{ id: "auto", label: "Auto" }],
+      }),
+      probeCursorOk({
+        binary_path: "/opt/local/bin/cursor-agent",
+        version: "2026.05",
       }),
     );
 
@@ -366,16 +297,7 @@ describe("SettingsPage", () => {
     // failure and must announce assertively to screen-readers, AND
     // must NOT appear in the success-styled `settings-status`
     // region (which is now reserved for actual successes).
-    vi.spyOn(globalThis, "fetch").mockImplementation(stubListCursorModelsFetch(async (input: FetchInput, init?: RequestInit) => {
-      const url = requestUrl(input);
-      if (url.endsWith("/settings/probe-cursor")) {
-        return jsonResponse({ ok: false, runner: TASK_TEST_DEFAULTS.runner, error: "spawn ENOENT" });
-      }
-      if (url.endsWith("/settings") && (init?.method ?? "GET") === "GET") {
-        return jsonResponse(defaultSettings());
-      }
-      return new Response("not found", { status: 404 });
-    }));
+    usePageHandlers(probeCursorFail("spawn ENOENT"));
 
     renderPage();
     const probeBtn = await screen.findByRole("button", { name: /Test binary/ });
@@ -394,22 +316,7 @@ describe("SettingsPage", () => {
     // a 500 from PATCH /settings rendered through the same
     // `role="status"` channel as a successful save, which was a
     // direct a11y regression (assertive failure announced as polite).
-    vi.spyOn(globalThis, "fetch").mockImplementation(stubListCursorModelsFetch(async (input: FetchInput, init?: RequestInit) => {
-      const url = requestUrl(input);
-      if (url.endsWith("/settings") && (init?.method ?? "GET") === "GET") {
-        return jsonResponse(defaultSettings());
-      }
-      if (url.endsWith("/settings") && init?.method === "PATCH") {
-        return new Response(
-          JSON.stringify({ error: "internal: disk full" }),
-          {
-            status: 500,
-            headers: { "content-type": "application/json" },
-          },
-        );
-      }
-      return new Response("not found", { status: 404 });
-    }));
+    usePageHandlers(appSettingsPatchError(500, "internal: disk full"));
 
     renderPage();
     await editCursorBin("/opt/local/bin/cursor-agent-2");
@@ -435,24 +342,8 @@ describe("SettingsPage", () => {
     // the user's typing). The fix snapshots `formAtSubmit` and only
     // applies server truth per-field where the form hasn't been
     // re-edited since submit.
-    let releasePatch: ((value: Response) => void) | null = null;
-    vi.spyOn(globalThis, "fetch").mockImplementation(
-      stubListCursorModelsFetch(async (input: FetchInput, init?: RequestInit) => {
-        const url = requestUrl(input);
-        if (url.endsWith("/settings") && (init?.method ?? "GET") === "GET") {
-          return jsonResponse(defaultSettings());
-        }
-        if (url.endsWith("/settings") && init?.method === "PATCH") {
-          // Hold the PATCH response until the test releases it, so
-          // we have a deterministic in-flight window for typing
-          // into the second field.
-          return new Promise<Response>((resolve) => {
-            releasePatch = resolve;
-          });
-        }
-        return new Response("not found", { status: 404 });
-      }),
-    );
+    const [pendingHandler, deferred] = appSettingsPatchPending();
+    usePageHandlers(pendingHandler);
 
     renderPage();
     const cursorInput = await editCursorBin("/opt/local/bin/cursor-agent-2");
@@ -466,14 +357,14 @@ describe("SettingsPage", () => {
     await userEvent.clear(maxInput);
     await userEvent.type(maxInput, "120");
 
-    if (!releasePatch) throw new Error("PATCH was not in flight");
-    (releasePatch as (value: Response) => void)(
-      jsonResponse(
-        defaultSettings({
+    deferred.resolve(
+      HttpResponse.json({
+        ...APP_SETTINGS_DEFAULTS,
+        ...pageSettings({
           cursor_bin: "/opt/local/bin/cursor-agent-2",
           updated_at: "2026-04-19T12:30:00Z",
         }),
-      ),
+      }),
     );
 
     await waitFor(() =>
@@ -490,21 +381,8 @@ describe("SettingsPage", () => {
     // still in flight. The PATCH resolves with /A. The user's
     // current intent is /B; clobbering back to /A would be silent
     // data loss + violate the user's mental model.
-    let releasePatch: ((value: Response) => void) | null = null;
-    vi.spyOn(globalThis, "fetch").mockImplementation(
-      stubListCursorModelsFetch(async (input: FetchInput, init?: RequestInit) => {
-        const url = requestUrl(input);
-        if (url.endsWith("/settings") && (init?.method ?? "GET") === "GET") {
-          return jsonResponse(defaultSettings());
-        }
-        if (url.endsWith("/settings") && init?.method === "PATCH") {
-          return new Promise<Response>((resolve) => {
-            releasePatch = resolve;
-          });
-        }
-        return new Response("not found", { status: 404 });
-      }),
-    );
+    const [pendingHandler, deferred] = appSettingsPatchPending();
+    usePageHandlers(pendingHandler);
 
     renderPage();
     const cursorInput = await editCursorBin("/var/repos/A");
@@ -514,14 +392,14 @@ describe("SettingsPage", () => {
     await userEvent.clear(cursorInput);
     await userEvent.type(cursorInput, "/var/repos/B");
 
-    if (!releasePatch) throw new Error("PATCH was not in flight");
-    (releasePatch as (value: Response) => void)(
-      jsonResponse(
-        defaultSettings({
+    deferred.resolve(
+      HttpResponse.json({
+        ...APP_SETTINGS_DEFAULTS,
+        ...pageSettings({
           cursor_bin: "/var/repos/A",
           updated_at: "2026-04-19T12:30:00Z",
         }),
-      ),
+      }),
     );
 
     await waitFor(() =>
@@ -531,9 +409,7 @@ describe("SettingsPage", () => {
   });
 
   it("rejects negative max_run_duration_seconds", async () => {
-    vi.spyOn(globalThis, "fetch").mockImplementation(stubListCursorModelsFetch(async () =>
-      jsonResponse(defaultSettings()),
-    ));
+    usePageHandlers();
     renderPage();
     const maxInput = await screen.findByLabelText(/Max execute duration/);
     await userEvent.clear(maxInput);

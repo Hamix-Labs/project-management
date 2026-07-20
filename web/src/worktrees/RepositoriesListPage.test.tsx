@@ -2,41 +2,23 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { describe, expect, it, vi, afterEach } from "vitest";
+import { describe, expect, it } from "vitest";
 import { ROUTER_FUTURE_FLAGS } from "@/lib/routerFutureFlags";
 import { ModalStackProvider } from "@/shared/ModalStackContext";
-import { requestUrl } from "@/test/requestUrl";
-import { respondGlobalGitApi } from "@/test/handlers/gitGlobal";
+import { gitRepositoryFactory } from "@/test/factories/git";
+import {
+  FACTORY_GIT_REPO_ID,
+  gitRepositoriesListEmpty,
+  gitRepositoriesListError,
+  gitRepositoriesListOk,
+} from "@/test/handlers/worktrees";
+import { server } from "@/test/server";
 import { RepositoriesListPage } from "./RepositoriesListPage";
 import { RegisterRepositoryModal } from "./modals/RegisterRepositoryModal";
 import { worktreeGitCopy } from "./worktreeGitCopy";
 
-const repoId = "00000000-0000-4000-8000-000000000010";
+const repoId = FACTORY_GIT_REPO_ID;
 const repoId2 = "00000000-0000-4000-8000-000000000011";
-
-function jsonResponse(body: unknown, init: ResponseInit = { status: 200 }): Response {
-  return new Response(JSON.stringify(body), {
-    ...init,
-    headers: { "content-type": "application/json", ...(init.headers ?? {}) },
-  });
-}
-
-function repositoryJson(
-  overrides: Record<string, unknown> = {},
-): Record<string, unknown> {
-  return {
-    id: repoId,
-    path: "/repo/main",
-    git_common_dir: "",
-    host_path: "",
-    default_branch: "main",
-    main_branch_name: "main",
-    linked_worktree_count: 0,
-    created_at: "2026-06-22T12:00:00Z",
-    updated_at: "2026-06-22T12:00:00Z",
-    ...overrides,
-  };
-}
 
 function renderListPage(initialEntries: string[] = ["/repositories"]) {
   const client = new QueryClient({
@@ -56,20 +38,8 @@ function renderListPage(initialEntries: string[] = ["/repositories"]) {
 }
 
 describe("RepositoriesListPage", () => {
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
   it("shows repository setup copy when no repositories are registered", async () => {
-    vi.spyOn(globalThis, "fetch").mockImplementation(async (input: RequestInfo | URL) => {
-      const url = requestUrl(input);
-      if (url.endsWith("/git/repositories")) {
-        return jsonResponse({ repositories: [] });
-      }
-      const res = respondGlobalGitApi(url, "GET");
-      if (res) return res;
-      return jsonResponse({ error: "not found" }, { status: 404 });
-    });
+    server.use(gitRepositoriesListEmpty());
 
     renderListPage();
     expect(await screen.findByRole("heading", { name: /^repositories$/i })).toBeInTheDocument();
@@ -88,13 +58,7 @@ describe("RepositoriesListPage", () => {
   });
 
   it("shows only an error callout when repository fetch fails with Not Found", async () => {
-    vi.spyOn(globalThis, "fetch").mockImplementation(async (input: RequestInfo | URL) => {
-      const url = requestUrl(input);
-      if (url.endsWith("/git/repositories")) {
-        return jsonResponse({ error: "Not Found" }, { status: 404 });
-      }
-      return jsonResponse({ error: "not found" }, { status: 404 });
-    });
+    server.use(gitRepositoriesListError(404, "Not Found"));
 
     renderListPage();
     const alert = await screen.findByRole("alert");
@@ -105,13 +69,7 @@ describe("RepositoriesListPage", () => {
   });
 
   it("opens register modal from ?register=1 and strips the query param", async () => {
-    vi.spyOn(globalThis, "fetch").mockImplementation(async (input: RequestInfo | URL) => {
-      const url = requestUrl(input);
-      if (url.endsWith("/git/repositories")) {
-        return jsonResponse({ repositories: [] });
-      }
-      return jsonResponse({ error: "not found" }, { status: 404 });
-    });
+    server.use(gitRepositoriesListEmpty());
 
     renderListPage(["/repositories?register=1"]);
     expect(
@@ -135,20 +93,14 @@ describe("RepositoriesListPage", () => {
   });
 
   it("lists one repository with branch badge and delete action", async () => {
-    vi.spyOn(globalThis, "fetch").mockImplementation(async (input: RequestInfo | URL) => {
-      const url = requestUrl(input);
-      if (url.endsWith("/git/repositories")) {
-        return jsonResponse({
-          repositories: [
-            repositoryJson({
-              linked_worktree_count: 1,
-              main_branch_name: "main",
-            }),
-          ],
-        });
-      }
-      return jsonResponse({ error: "not found" }, { status: 404 });
-    });
+    server.use(
+      gitRepositoriesListOk([
+        gitRepositoryFactory({
+          linked_worktree_count: 1,
+          main_branch_name: "main",
+        }),
+      ]),
+    );
 
     renderListPage();
     expect(
@@ -162,13 +114,7 @@ describe("RepositoriesListPage", () => {
   });
 
   it("opens delete confirmation when delete is clicked", async () => {
-    vi.spyOn(globalThis, "fetch").mockImplementation(async (input: RequestInfo | URL) => {
-      const url = requestUrl(input);
-      if (url.endsWith("/git/repositories")) {
-        return jsonResponse({ repositories: [repositoryJson()] });
-      }
-      return jsonResponse({ error: "not found" }, { status: 404 });
-    });
+    server.use(gitRepositoriesListOk([gitRepositoryFactory()]));
 
     renderListPage();
     await userEvent.click(await screen.findByRole("button", { name: /delete main/i }));
@@ -177,26 +123,20 @@ describe("RepositoriesListPage", () => {
   });
 
   it("filters repositories with the search field and shows empty search state", async () => {
-    vi.spyOn(globalThis, "fetch").mockImplementation(async (input: RequestInfo | URL) => {
-      const url = requestUrl(input);
-      if (url.endsWith("/git/repositories")) {
-        return jsonResponse({
-          repositories: [
-            repositoryJson({
-              id: repoId,
-              path: "/repo/hamix",
-              host_path: "C:/Users/dev/Documents/hamix",
-            }),
-            repositoryJson({
-              id: repoId2,
-              path: "/repo/other",
-              host_path: "C:/Users/dev/Documents/other",
-            }),
-          ],
-        });
-      }
-      return jsonResponse({ error: "not found" }, { status: 404 });
-    });
+    server.use(
+      gitRepositoriesListOk([
+        gitRepositoryFactory({
+          id: repoId,
+          path: "/repo/hamix",
+          host_path: "C:/Users/dev/Documents/hamix",
+        }),
+        gitRepositoryFactory({
+          id: repoId2,
+          path: "/repo/other",
+          host_path: "C:/Users/dev/Documents/other",
+        }),
+      ]),
+    );
 
     renderListPage();
     const search = await screen.findByRole("searchbox", { name: /search repositories/i });

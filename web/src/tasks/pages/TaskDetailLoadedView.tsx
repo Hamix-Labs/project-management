@@ -1,10 +1,8 @@
 import { isUiFeatureOmitted } from "@/launch/omittedFeatures";
-import type { Task, TaskChecklistResponse } from "@/types";
-import type { UseQueryResult } from "@tanstack/react-query";
+import type { Task } from "@/types";
 import { TaskDetailHeader } from "../components/task-detail";
 import type { TaskRetryMode } from "../components/dialogs/TaskRetryConfirmDialog";
 import { sanitizePromptHtml } from "@/lib/promptFormat";
-import { useTaskDetailChecklist } from "../checklist/hooks/useTaskDetailChecklist";
 import { useTaskDetailMutations } from "../hooks/useTaskDetailMutations";
 import { useTaskDetailScheduling } from "../hooks/useTaskDetailScheduling";
 import { resolveTaskDependencySummaries } from "../task-query";
@@ -15,17 +13,10 @@ import { TaskDetailLoadedToolbar } from "./TaskDetailLoadedToolbar";
 
 export type AutonomyMode = "hidden" | "ready" | "on_hold";
 
-type TaskDetailChecklistState = ReturnType<typeof useTaskDetailChecklist>;
-
 export function resolveAutonomyMode(taskStatus: Task["status"]): AutonomyMode {
   if (taskStatus === "ready") return "ready";
   if (taskStatus === "on_hold") return "on_hold";
   return "hidden";
-}
-
-function countChecklistProgress(items: { done: boolean }[]) {
-  const doneCount = items.filter((item) => item.done).length;
-  return { doneCount, totalCount: items.length };
 }
 
 export type TaskDetailLoadedViewProps = {
@@ -35,8 +26,6 @@ export type TaskDetailLoadedViewProps = {
   saving: boolean;
   modals: ReturnType<typeof useTasksAppModals>;
   scheduling: ReturnType<typeof useTaskDetailScheduling>;
-  checklistQuery: UseQueryResult<TaskChecklistResponse>;
-  checklistState: TaskDetailChecklistState;
   dependencySummaries: ReturnType<typeof resolveTaskDependencySummaries>;
   autonomyMode: AutonomyMode;
   autonomyConfirmOpen: boolean;
@@ -56,8 +45,6 @@ export function TaskDetailLoadedView({
   saving,
   modals,
   scheduling,
-  checklistQuery,
-  checklistState,
   dependencySummaries,
   autonomyMode,
   autonomyConfirmOpen,
@@ -69,8 +56,6 @@ export function TaskDetailLoadedView({
   modelConfigOpen,
   setModelConfigOpen,
 }: TaskDetailLoadedViewProps) {
-  const checklistItems = checklistQuery.data?.items ?? [];
-  const { doneCount, totalCount } = countChecklistProgress(checklistItems);
   const sanitizedInitialPrompt = sanitizePromptHtml(task.initial_prompt);
   const dependenciesUiEnabled = !isUiFeatureOmitted("tagsAndDependencies");
   const releaseGatesUiEnabled = !isUiFeatureOmitted("releaseGates");
@@ -111,12 +96,8 @@ export function TaskDetailLoadedView({
         taskId={taskId}
         taskQuerySuccess={taskQuerySuccess}
         saving={saving}
-        checklistQuery={checklistQuery}
-        checklistState={checklistState}
         dependencySummaries={dependencySummaries}
         scheduling={scheduling}
-        doneCount={doneCount}
-        totalCount={totalCount}
         sanitizedInitialPrompt={sanitizedInitialPrompt}
         dependenciesUiEnabled={dependenciesUiEnabled}
         releaseGatesUiEnabled={releaseGatesUiEnabled}

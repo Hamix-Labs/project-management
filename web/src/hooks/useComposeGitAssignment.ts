@@ -5,10 +5,8 @@ import { useGlobalBranches } from "@/hooks/useGlobalBranches";
 import { isFullyRegisteredWorktree } from "@/lib/gitWorktreeRegistration";
 import { useProjectsByRepository } from "@/hooks/useProjectsByRepository";
 import {
-  applyRepoScopedDefaults,
   assignmentEquals,
-  initFreshAssignment,
-  isFreshAssignment,
+  decideComposeGitAssignment,
   selectProject as selectProjectState,
   selectRepository as selectRepositoryState,
   selectWorktree as selectWorktreeState,
@@ -22,14 +20,6 @@ type Input = {
   onAssignmentChange: (next: ComposeGitAssignment) => void;
   onProjectContextClear: () => void;
 };
-
-function needsFreshRepoDefaults(assignment: ComposeGitAssignment): boolean {
-  return (
-    assignment.repositoryId !== "" &&
-    assignment.projectId === "" &&
-    assignment.worktreeId === ""
-  );
-}
 
 export function useComposeGitAssignment(input: Input) {
   const assignment: ComposeGitAssignment = useMemo(
@@ -72,55 +62,34 @@ export function useComposeGitAssignment(input: Input) {
     [branches],
   );
 
-  const freshDefaultsDoneRef = useRef(false);
+  // User project picks beat late-arriving defaults (F-06-07).
+  const projectChosenByUserRef = useRef(false);
+  const prevRepositoryIdRef = useRef(assignment.repositoryId);
+
+  if (prevRepositoryIdRef.current !== assignment.repositoryId) {
+    prevRepositoryIdRef.current = assignment.repositoryId;
+    projectChosenByUserRef.current = false;
+  }
 
   useEffect(() => {
-    if (repositoriesQuery.isLoading || !isFreshAssignment(assignment)) {
-      return;
-    }
-    const next = initFreshAssignment(assignment, repositories);
-    if (!assignmentEquals(next, assignment)) {
-      input.onAssignmentChange(next);
-    }
-  }, [assignment, repositories, repositoriesQuery.isLoading, input]);
-
-  useEffect(() => {
-    if (!needsFreshRepoDefaults(assignment)) {
-      freshDefaultsDoneRef.current = false;
-      return;
-    }
-    if (projectsQuery.isLoading || worktreesQuery.isLoading) {
-      return;
-    }
-    if (freshDefaultsDoneRef.current) {
-      return;
-    }
-    const next = applyRepoScopedDefaults(assignment, projects);
-    freshDefaultsDoneRef.current = true;
+    const next = decideComposeGitAssignment(
+      assignment,
+      {
+        repositories,
+        repositoriesLoading: repositoriesQuery.isLoading,
+        projects,
+        projectsLoading: projectsQuery.isLoading,
+        worktreesLoading: worktreesQuery.isLoading,
+      },
+      { projectChosenByUser: projectChosenByUserRef.current },
+    );
     if (!assignmentEquals(next, assignment)) {
       input.onAssignmentChange(next);
     }
   }, [
     assignment,
-    projects,
-    projectsQuery.isLoading,
-    worktreesQuery.isLoading,
-    input,
-  ]);
-
-  useEffect(() => {
-    if (assignment.repositoryId === "" || needsFreshRepoDefaults(assignment)) {
-      return;
-    }
-    if (projectsQuery.isLoading || worktreesQuery.isLoading) {
-      return;
-    }
-    const next = applyRepoScopedDefaults(assignment, projects);
-    if (!assignmentEquals(next, assignment)) {
-      input.onAssignmentChange(next);
-    }
-  }, [
-    assignment,
+    repositories,
+    repositoriesQuery.isLoading,
     projects,
     projectsQuery.isLoading,
     worktreesQuery.isLoading,
@@ -152,10 +121,12 @@ export function useComposeGitAssignment(input: Input) {
     projects,
     worktreeOptions,
     selectRepository: (repositoryId: string) => {
+      projectChosenByUserRef.current = false;
       input.onProjectContextClear();
       input.onAssignmentChange(selectRepositoryState(assignment, repositoryId));
     },
     selectProject: (projectId: string) => {
+      projectChosenByUserRef.current = true;
       input.onProjectContextClear();
       input.onAssignmentChange(selectProjectState(assignment, projectId));
     },
