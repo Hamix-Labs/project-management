@@ -2,6 +2,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 
 	gitcontract "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/contract"
@@ -32,18 +33,19 @@ type Handler struct {
 }
 
 // Register mounts /settings* routes on m.
+// Deps.Git must be non-nil; Register panics if it is missing so tests and
+// wiring cannot accidentally hit a silent gitwork.New() default.
 //
 //funclogmeasure:skip category=hot-path reason="Route table wiring only; operation trace is emitted by registered handlers."
 func Register(m *http.ServeMux, deps Deps) {
-	gitSvc := deps.Git
-	if gitSvc == nil {
-		gitSvc = gitwork.New()
+	if deps.Git == nil {
+		panic(fmt.Errorf("settings handler: Deps.Git is required"))
 	}
 	h := &Handler{
 		settings:     deps.Settings,
 		gitInventory: deps.GitInventory,
 		agent:        deps.Agent,
-		git:          gitSvc,
+		git:          deps.Git,
 		notify:       deps.Notify,
 	}
 	m.Handle("GET /settings", http.HandlerFunc(h.getSettings))
@@ -58,10 +60,7 @@ func Register(m *http.ServeMux, deps Deps) {
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (h *Handler) gitService() gitwork.Service {
-	if h.git != nil {
-		return h.git
-	}
-	return gitwork.New()
+	return h.git
 }
 
 //funclogmeasure:skip category=delegate-already-logs reason="SSE notify callback; HTTP handler chokepoint emits trace."
