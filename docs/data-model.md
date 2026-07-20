@@ -367,7 +367,7 @@ Global. One row per git object database (`git_common_dir`). Not owned by a proje
 | `id` | uuid pk | Server-assigned. |
 | `path` | text | Absolute path to the **main** worktree checkout. **Unique globally.** Normalized from any linked checkout at register time. |
 | `git_common_dir` | text | Shared git directory from `git rev-parse --git-common-dir`. **Unique globally.** |
-| `host_path` | text | Optional display path for Docker (`HAMIX_PATH_MAP`). |
+| `host_path` | text | Optional display path when it differs from `path` (e.g. symlink or alternate view). |
 | `default_branch` | string | Deprecated; retained for schema compatibility. Not shown in UI. |
 | `created_at` / `updated_at` | timestamptz | |
 

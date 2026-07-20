@@ -33,7 +33,6 @@ func (h *Handler) registerRoutes(m *http.ServeMux) {
 		Write:      h.store,
 		Projects:   h.store,
 		GitService: h.git,
-		HostPaths:  h.pathMap,
 	})
 	settingshandler.Register(m, settingshandler.Deps{
 		Settings: h.store,

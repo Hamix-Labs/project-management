@@ -21,38 +21,14 @@ Set up the repo, verify your change, and find the right documentation for learni
 ## Requirements
 
 - **Database** — `DATABASE_URL` in repo-root `.env` (always)
+- **Go** 1.25+ and **Node** 20+ (npm/npx included; for the web UI)
 - **Never commit** `.env` or secrets
-
-**Docker path** — Docker only; no Go or Node on the host. See [docs/docker.md](docs/docker.md).
-
-**Native path** — **Go** 1.25+ and **Node** 20+ (npm/npx included; for the web UI).
 
 > **Warning** — Workspace repo path, agent worker settings, cursor binary, and run timeout are configured in the SPA **Settings** page (`/settings`), not in `.env`. See [docs/configuration.md](docs/configuration.md).
 
 ## Setup
 
 1. Copy `.env.example` to `.env` and set `DATABASE_URL`.
-
-### Docker
-
-Requires [Docker](https://www.docker.com/products/docker-desktop/) only. Full guide: [docs/docker.md](docs/docker.md).
-
-```bash
-docker compose up              # builds the image on first run
-```
-
-Optional — rebuild the toolchain image after [Dockerfile.dev](docker/Dockerfile.dev) changes:
-
-```bash
-./scripts/docker-build.sh        # Unix — chmod +x once if needed
-.\scripts\docker-build.ps1       # Windows PowerShell
-```
-
-Taskapi does **not** migrate on dev startup by default. See [Schema migrations in docs/configuration.md](docs/configuration.md) and [docs/docker.md](docs/docker.md).
-
-API: `http://127.0.0.1:8080` · Web: `http://localhost:5173`
-
-### Native
 
 2. Migrate (once per schema change or first setup):
 
@@ -76,13 +52,14 @@ API: `http://127.0.0.1:8080` · Web: `http://localhost:5173`
 
 Manual migrate only: `go run ./cmd/dbcheck -migrate` — [Schema migrations in configuration.md](docs/configuration.md).
 
+Taskapi does **not** migrate on dev startup by default. See [Schema migrations in docs/configuration.md](docs/configuration.md).
+
 ## Before you open a PR
 
 Verification steps live in `scripts/check-go.sh` / `scripts/check-web.sh` (and PowerShell twins). CI runs those leaf scripts directly — not duplicated commands in `.github/workflows/ci.yml`.
 
 | I want to… | Command |
 |------------|---------|
-| Run everything (Docker, no local Go/Node) | `docker compose run --rm dev ./scripts/check.sh --install` |
 | Run everything locally | `./scripts/check.sh` or `.\scripts\check.ps1` |
 | First run / lockfile changed | `./scripts/check.sh --install` or `.\scripts\check.ps1 -Install` |
 | Same as CI Go lint | `./scripts/check-go.sh --lint-only --verbose` or `.\scripts\check-go.ps1 -LintOnly -Verbose` |

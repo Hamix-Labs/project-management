@@ -40,7 +40,7 @@ Optional startup: `HAMIX_GIT_RECONCILE_ON_STARTUP=repair-only` runs conservative
 ### Negative / Trade-offs
 
 - Absolute paths remain in schema; relative-path identity is a future migration (see LLD cross-cutting section).
-- Reconcile does not fix Cursor binary paths, worker scratch artifacts, or `HAMIX_PATH_MAP` — those stay on Settings / env.
+- Reconcile does not fix Cursor binary paths or worker scratch artifacts — those stay on Settings / env.
 - Detached linked worktrees without branch keys need manual `POST …/worktrees/{id}/relocate`.
 
 ## Alternatives Considered

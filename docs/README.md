@@ -27,7 +27,6 @@ Use [guide.md](./guide.md) to pick a learning path by goal. Use the tables below
 | Doc | Read when |
 | --- | --- |
 | [guide.md](./guide.md) | You are new or need to pick a learning path by goal |
-| [docker.md](./docker.md) | You want local dev without installing Go or Node |
 | [agent-map.md](./agent-map.md) | You need a repository path for a subsystem you are editing |
 
 ## Reference and overview

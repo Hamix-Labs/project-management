@@ -78,7 +78,6 @@ func TestHTTP_health_ready_git_unavailable(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
 	st := composition.NewAPI(db)
 	h := handler.NewHandler(st, realtime.NewSSEHub(), nil,
-		handler.WithPathMap(&handler.PathMap{}),
 		handler.WithGitAvailable(false),
 	)
 	srv := httptest.NewServer(h)

@@ -34,7 +34,6 @@ type Handler struct {
 	agent          AgentWorkerControl
 	systemHealthFn systemHealthSnapshotter
 	git            gitwork.Service
-	pathMap        *PathMap
 	gitAvailable   bool
 	schemaDrift    postgres.SchemaDriftReport
 }
@@ -58,7 +57,6 @@ func NewHandler(s HandlerStore, hub *realtime.SSEHub, rep *repo.Root, opts ...Ha
 		hub:          hub,
 		repoProv:     NewStaticRepoProvider(rep),
 		git:          gitwork.New(),
-		pathMap:      &PathMap{},
 		gitAvailable: gitErr == nil,
 	}
 	for _, opt := range opts {
@@ -116,5 +114,14 @@ func WithSchemaDriftReport(r postgres.SchemaDriftReport) HandlerOption {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.WithSchemaDriftReport")
 	return func(h *Handler) {
 		h.schemaDrift = r
+	}
+}
+
+// WithGitAvailable overrides the git binary probe (tests only).
+//
+//funclogmeasure:skip category=tool-required-noop reason="Test-only HandlerOption wiring; no production operation boundary."
+func WithGitAvailable(ok bool) HandlerOption {
+	return func(h *Handler) {
+		h.gitAvailable = ok
 	}
 }

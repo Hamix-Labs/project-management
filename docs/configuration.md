@@ -16,7 +16,7 @@ The two surfaces do not overlap. Anything in `app_settings` is **not** driven by
 
 ## Environment variables
 
-`taskapi` loads `.env` from the repo root via `internal/envload.Load`. `dbcheck` follows the same discovery rule for `DATABASE_URL`. Docker Compose also loads the same file via `env_file` in [compose.yml](../compose.yml).
+`taskapi` loads `.env` from the repo root via `internal/envload.Load`. `dbcheck` follows the same discovery rule for `DATABASE_URL`.
 
 > **Note** — [.env.example](../.env.example) lists only `DATABASE_URL` and optional logging knobs. The tables below are the full operator reference (defaults, flags, and dev-only tunables).
 
@@ -47,9 +47,6 @@ The two surfaces do not overlap. Anything in `app_settings` is **not** driven by
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `HAMIX_HOST_HOME` | Host `HOME` / `USERPROFILE` (Docker Compose only) | Host path bind-mounted to `/host-home` in [compose.yml](../compose.yml) and [compose.prod.yml](../compose.prod.yml). Optional override when full home is too broad (e.g. narrow to `C:/Users/me/projects`). |
-| `HAMIX_HOST_CLI_DIR` | `/usr/local/bin` (production Compose only) | Host directory bind-mounted read-only to `/host-cli` in [compose.prod.yml](../compose.prod.yml). Point Settings → `cursor_bin` at `/host-cli/cursor` after mount. See [docker.md](./docker.md). |
-| `HAMIX_PATH_MAP` | — | Optional JSON object mapping **container prefix → host prefix** (e.g. `{"/host-home":"/Users/me"}`). Git API `host_path` fields and legacy Settings `repo_root` responses show host paths; inbound requests stay container paths. Invalid JSON logs a warn at boot and is ignored. |
 | `HAMIX_BROWSE_ROOTS` | — | Comma-separated absolute paths. When set, **replaces** DB-sourced workspace roots (registered git repositories) for the picker. Use for CI or restricted deployments where git_repositories rows should not drive the picker. Also constrains `GET /settings/browse-dirs` to these paths; without it, browse-dirs performs full-disk listing for register-repo bootstrap. |
 | `DEV_TASKAPI_PORT` | `8080` | Non-default API port when using `scripts/dev.*`. Set `VITE_TASKAPI_ORIGIN` in `web/.env.local` to match. |
 | `DEV_TASKAPI_STARTUP_TIMEOUT_SEC` | `150` | Port-wait timeout when using `scripts/dev.* -Migrate` sugar (derived from migrate timeout + grace). |

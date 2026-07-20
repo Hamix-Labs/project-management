@@ -13,8 +13,6 @@ import (
 const (
 	browseRootInstall = "install"
 	browseRootHome    = "home"
-	dockerHomeMount   = "/host-home"
-	dockerInstallPath = "/app"
 
 	// WorkspacePickerScopeDefault returns registered-repo roots in manage mode.
 	WorkspacePickerScopeDefault = "default"
@@ -32,20 +30,14 @@ type BrowseRoot struct {
 	UnavailableReason string        `json:"unavailable_reason,omitempty"`
 }
 
-// BrowseEnvironment is where taskapi runs (native host vs Docker container).
+// BrowseEnvironment is where taskapi runs. Always native on the host OS.
 type BrowseEnvironment string
 
-const (
-	BrowseEnvNative BrowseEnvironment = "native"
-	BrowseEnvDocker BrowseEnvironment = "docker"
-)
+const BrowseEnvNative BrowseEnvironment = "native"
 
-// DetectBrowseEnvironment reports docker when /.dockerenv exists.
+// DetectBrowseEnvironment reports the workspace picker environment.
 func DetectBrowseEnvironment() BrowseEnvironment {
 	slog.Debug("trace", "operation", "repo.DetectBrowseEnvironment")
-	if _, err := os.Stat("/.dockerenv"); err == nil {
-		return BrowseEnvDocker
-	}
 	return BrowseEnvNative
 }
 
@@ -224,16 +216,7 @@ func parseBrowseRootPaths(raw string) ([]BrowseRoot, error) {
 }
 
 //funclogmeasure:skip category=hot-path reason="Browse sub-step; operation trace is emitted by ResolveBrowseRoots."
-func resolveInstallBrowseRoot(startDir string, env BrowseEnvironment) (BrowseRoot, error) {
-	if env == BrowseEnvDocker {
-		root := BrowseRoot{
-			ID:    browseRootInstall,
-			Path:  dockerInstallPath,
-			Label: "Hamix checkout",
-		}
-		markBrowseRootAvailable(&root)
-		return root, nil
-	}
+func resolveInstallBrowseRoot(startDir string, _ BrowseEnvironment) (BrowseRoot, error) {
 	install, err := FindInstallRoot(startDir)
 	if err != nil {
 		return BrowseRoot{}, err
@@ -248,17 +231,12 @@ func resolveInstallBrowseRoot(startDir string, env BrowseEnvironment) (BrowseRoo
 }
 
 //funclogmeasure:skip category=hot-path reason="Browse sub-step; operation trace is emitted by ResolveBrowseRoots."
-func resolveHomeBrowseRoot(env BrowseEnvironment) (BrowseRoot, error) {
-	path := ""
-	if env == BrowseEnvDocker {
-		path = dockerHomeMount
-	} else {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return BrowseRoot{}, err
-		}
-		path = home
+func resolveHomeBrowseRoot(_ BrowseEnvironment) (BrowseRoot, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return BrowseRoot{}, err
 	}
+	path := home
 	root := BrowseRoot{
 		ID:    browseRootHome,
 		Path:  path,
