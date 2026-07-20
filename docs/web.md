@@ -28,14 +28,16 @@ Vite + React client under `web/`. All `fetch` calls live in `web/src/api/`; resp
 | `/drafts` | `web/src/tasks/` | Saved create-task drafts |
 | `/projects` | `web/src/projects/` | Project list |
 | `/projects/:id` | `web/src/projects/` | Project detail |
+| `/worktrees` | `web/src/worktrees/` | Registered git repositories (nav: **Repositories**) |
+| `/worktrees/:repositoryId` | `web/src/worktrees/` | Managed worktrees for one repository |
 | `/settings` | `web/src/settings/` | App settings |
 | `/tasks/:id` | `web/src/tasks/pages/` | Task detail |
 
-Primary nav links: Tasks, Templates, Drafts, Projects (Settings is header gear).
+Primary nav links: Tasks, Templates, Drafts, Projects, Repositories (Settings is header gear). Register a repo via `/worktrees` or `/worktrees?register=1` — see [domain/worktrees-and-branches.md](./domain/worktrees-and-branches.md).
 
 ## Cold start
 
-`web/src/app/hooks/useBootstrap.ts` seeds TanStack Query from `GET /v1/bootstrap`. Per-page hooks fall back to individual GETs when bootstrap is absent.
+`web/src/app/hooks/useBootstrap.ts` seeds TanStack Query from `GET /v1/bootstrap`. List/stats/settings queries stay disabled until bootstrap settles (success, unavailable, or failure); then per-resource GETs run only when the cache was not seeded.
 
 **Sync policy exception:** bootstrap calls `seedBootstrapCache` in [`tasks/sync/seedBootstrapCache.ts`](../web/src/tasks/sync/seedBootstrapCache.ts) — intentional direct `setQueryData`, not SSE-driven.
 
