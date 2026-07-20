@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
+	eventsaudit "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/audit"
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel/jsonmap"
 	taskcorecontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
@@ -49,7 +50,7 @@ func AgentPickup(ctx context.Context, db *gorm.DB, taskID string, by domain.Acto
 		out.ConsumedRetry = dcur.PendingRetry.Clone()
 		dcur.PendingRetry = nil
 		running := domain.StatusRunning
-		nextSeq, err := storekernel.NextEventSeq(tx, taskID)
+		nextSeq, err := eventsaudit.NextEventSeq(tx, taskID)
 		if err != nil {
 			return err
 		}

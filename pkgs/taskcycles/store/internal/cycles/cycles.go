@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
+	eventsaudit "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/audit"
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel/taskload"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
@@ -85,7 +86,7 @@ func Start(ctx context.Context, db *gorm.DB, in StartCycleInput) (*cyclesdomain.
 		if err := tx.Create(model.FromDomainTaskCyclePtr(row)).Error; err != nil {
 			return fmt.Errorf("insert task_cycle: %w", err)
 		}
-		seq, err := storekernel.NextEventSeq(tx, taskID)
+		seq, err := eventsaudit.NextEventSeq(tx, taskID)
 		if err != nil {
 			return err
 		}
@@ -93,7 +94,7 @@ func Start(ctx context.Context, db *gorm.DB, in StartCycleInput) (*cyclesdomain.
 		if err != nil {
 			return err
 		}
-		if err := storekernel.AppendEvent(tx, taskID, seq, taskeventsdomain.EventCycleStarted, in.TriggeredBy, payload); err != nil {
+		if err := eventsaudit.AppendEvent(tx, taskID, seq, taskeventsdomain.EventCycleStarted, in.TriggeredBy, payload); err != nil {
 			return err
 		}
 		created = row
@@ -171,7 +172,7 @@ func Terminate(ctx context.Context, db *gorm.DB, cycleID string, status cyclesdo
 			}
 		}
 
-		seq, err := storekernel.NextEventSeq(tx, cycle.TaskID)
+		seq, err := eventsaudit.NextEventSeq(tx, cycle.TaskID)
 		if err != nil {
 			return err
 		}
@@ -180,7 +181,7 @@ func Terminate(ctx context.Context, db *gorm.DB, cycleID string, status cyclesdo
 			return err
 		}
 		mirrorType := mirrorEventTypeForCycleStatus(status)
-		if err := storekernel.AppendEvent(tx, cycle.TaskID, seq, mirrorType, by, payload); err != nil {
+		if err := eventsaudit.AppendEvent(tx, cycle.TaskID, seq, mirrorType, by, payload); err != nil {
 			return err
 		}
 		out = cycle

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
+	eventsaudit "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/audit"
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel/taskload"
 	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 	checklistmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/store/model"
@@ -67,12 +68,12 @@ func Add(ctx context.Context, db *gorm.DB, taskID, text string, verifyCommands [
 		if err := replaceCommandsInTx(tx, dit.ID, cmds); err != nil {
 			return err
 		}
-		seq, err := storekernel.NextEventSeq(tx, taskID)
+		seq, err := eventsaudit.NextEventSeq(tx, taskID)
 		if err != nil {
 			return err
 		}
 		b, _ := json.Marshal(map[string]string{"item_id": dit.ID, "text": dit.Text})
-		if err := storekernel.AppendEvent(tx, taskID, seq, taskeventsdomain.EventChecklistItemAdded, by, b); err != nil {
+		if err := eventsaudit.AppendEvent(tx, taskID, seq, taskeventsdomain.EventChecklistItemAdded, by, b); err != nil {
 			return err
 		}
 		created = &dit
@@ -147,12 +148,12 @@ func Delete(ctx context.Context, db *gorm.DB, taskID, itemID string, by taskcore
 				return fmt.Errorf("delete checklist completions: %w", err)
 			}
 		}
-		seq, err := storekernel.NextEventSeq(tx, taskID)
+		seq, err := eventsaudit.NextEventSeq(tx, taskID)
 		if err != nil {
 			return err
 		}
 		b, _ := json.Marshal(map[string]string{"item_id": itemID, "text": dit.Text})
-		if err := storekernel.AppendEvent(tx, taskID, seq, taskeventsdomain.EventChecklistItemRemoved, by, b); err != nil {
+		if err := eventsaudit.AppendEvent(tx, taskID, seq, taskeventsdomain.EventChecklistItemRemoved, by, b); err != nil {
 			return err
 		}
 		if err := tx.Delete(&it).Error; err != nil {
@@ -227,12 +228,12 @@ func UpdateText(ctx context.Context, db *gorm.DB, taskID, itemID, text string, b
 		if err := tx.Model(&it).Update("text", text).Error; err != nil {
 			return fmt.Errorf("update checklist item: %w", err)
 		}
-		seq, err := storekernel.NextEventSeq(tx, taskID)
+		seq, err := eventsaudit.NextEventSeq(tx, taskID)
 		if err != nil {
 			return err
 		}
 		b, _ := json.Marshal(map[string]any{"item_id": itemID, "text": text})
-		return storekernel.AppendEvent(tx, taskID, seq, taskeventsdomain.EventChecklistItemUpdated, by, b)
+		return eventsaudit.AppendEvent(tx, taskID, seq, taskeventsdomain.EventChecklistItemUpdated, by, b)
 	})
 }
 
@@ -305,12 +306,12 @@ func SetDone(ctx context.Context, db *gorm.DB, subjectTaskID, itemID string, don
 				return fmt.Errorf("delete completion: %w", res.Error)
 			}
 		}
-		seq, err := storekernel.NextEventSeq(tx, subjectTaskID)
+		seq, err := eventsaudit.NextEventSeq(tx, subjectTaskID)
 		if err != nil {
 			return err
 		}
 		b, _ := json.Marshal(map[string]any{"item_id": itemID, "done": done})
-		if err := storekernel.AppendEvent(tx, subjectTaskID, seq, taskeventsdomain.EventChecklistItemToggled, by, b); err != nil {
+		if err := eventsaudit.AppendEvent(tx, subjectTaskID, seq, taskeventsdomain.EventChecklistItemToggled, by, b); err != nil {
 			return err
 		}
 		_, err = syncCriteriaSatisfiedAtInTx(tx, subjectTaskID, by)

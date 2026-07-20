@@ -12,6 +12,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
+	eventsaudit "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/audit"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store/model"
@@ -98,7 +99,7 @@ func StartPhase(ctx context.Context, db *gorm.DB, cycleID string, phase cyclesdo
 		if err := tx.Create(model.FromDomainTaskCyclePhasePtr(row)).Error; err != nil {
 			return fmt.Errorf("insert task_cycle_phase: %w", err)
 		}
-		evSeq, err := storekernel.NextEventSeq(tx, cycle.TaskID)
+		evSeq, err := eventsaudit.NextEventSeq(tx, cycle.TaskID)
 		if err != nil {
 			return err
 		}
@@ -106,7 +107,7 @@ func StartPhase(ctx context.Context, db *gorm.DB, cycleID string, phase cyclesdo
 		if err != nil {
 			return err
 		}
-		if err := storekernel.AppendEvent(tx, cycle.TaskID, evSeq, taskeventsdomain.EventPhaseStarted, by, payload); err != nil {
+		if err := eventsaudit.AppendEvent(tx, cycle.TaskID, evSeq, taskeventsdomain.EventPhaseStarted, by, payload); err != nil {
 			return err
 		}
 		if err := tx.Model(&model.TaskCyclePhase{}).Where("id = ?", row.ID).Update("event_seq", evSeq).Error; err != nil {
@@ -189,7 +190,7 @@ func CompletePhase(ctx context.Context, db *gorm.DB, in CompletePhaseInput) (*cy
 			s := *in.Summary
 			ph.Summary = &s
 		}
-		evSeq, err := storekernel.NextEventSeq(tx, cycle.TaskID)
+		evSeq, err := eventsaudit.NextEventSeq(tx, cycle.TaskID)
 		if err != nil {
 			return err
 		}
@@ -198,7 +199,7 @@ func CompletePhase(ctx context.Context, db *gorm.DB, in CompletePhaseInput) (*cy
 			return err
 		}
 		mirrorType := mirrorEventTypeForPhaseStatus(in.Status)
-		if err := storekernel.AppendEvent(tx, cycle.TaskID, evSeq, mirrorType, in.By, payload); err != nil {
+		if err := eventsaudit.AppendEvent(tx, cycle.TaskID, evSeq, mirrorType, in.By, payload); err != nil {
 			return err
 		}
 		if err := tx.Model(&model.TaskCyclePhase{}).Where("id = ?", ph.ID).Update("event_seq", evSeq).Error; err != nil {

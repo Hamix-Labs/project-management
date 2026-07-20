@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
+	eventsaudit "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/audit"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/model"
@@ -70,7 +71,7 @@ func RequestTaskRetry(ctx context.Context, db *gorm.DB, in RequestRetryInput, by
 		if dcur.Status != domain.StatusFailed {
 			return fmt.Errorf("%w: task status is %q, want failed", domain.ErrInvalidInput, dcur.Status)
 		}
-		nextSeq, err := storekernel.NextEventSeq(tx, taskID)
+		nextSeq, err := eventsaudit.NextEventSeq(tx, taskID)
 		if err != nil {
 			return err
 		}
@@ -81,7 +82,7 @@ func RequestTaskRetry(ctx context.Context, db *gorm.DB, in RequestRetryInput, by
 		if err != nil {
 			return err
 		}
-		if err := storekernel.AppendEvent(tx, taskID, nextSeq, taskeventsdomain.EventTaskRetryRequested, by, payload); err != nil {
+		if err := eventsaudit.AppendEvent(tx, taskID, nextSeq, taskeventsdomain.EventTaskRetryRequested, by, payload); err != nil {
 			return err
 		}
 		nextSeq++

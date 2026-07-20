@@ -7,7 +7,7 @@
 // helper used by the handler and devsim test harness.
 //
 // Append paths from other store subpackages (CRUD, cycles, checklist,
-// devmirror) write through storekernel.NextEventSeq + storekernel.AppendEvent
+// devmirror) write through eventsaudit.NextEventSeq + eventsaudit.AppendEvent
 // directly, not through this package, so the audit log invariants
 // stay enforceable in a single hot-path helper.
 package events
@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
+	eventsaudit "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/audit"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 	"gorm.io/gorm"
@@ -48,11 +49,11 @@ func Append(ctx context.Context, db *gorm.DB, taskID string, typ taskeventsdomai
 		if n == 0 {
 			return taskcoredomain.ErrNotFound
 		}
-		seq, err := storekernel.NextEventSeq(tx, taskID)
+		seq, err := eventsaudit.NextEventSeq(tx, taskID)
 		if err != nil {
 			return err
 		}
-		return storekernel.AppendEvent(tx, taskID, seq, typ, by, data)
+		return eventsaudit.AppendEvent(tx, taskID, seq, typ, by, data)
 	})
 	if err != nil {
 		if errors.Is(err, taskcoredomain.ErrNotFound) {

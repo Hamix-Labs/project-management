@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
+	eventsaudit "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/audit"
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel/taskload"
 	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 	checklistmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/store/model"
@@ -81,7 +82,7 @@ func SetDoneWithEvidenceInTx(
 	}).Create(&row).Error; err != nil {
 		return CriteriaFlagChange{}, fmt.Errorf("save completion: %w", err)
 	}
-	seq, err := storekernel.NextEventSeq(tx, subjectTaskID)
+	seq, err := eventsaudit.NextEventSeq(tx, subjectTaskID)
 	if err != nil {
 		return CriteriaFlagChange{}, err
 	}
@@ -89,7 +90,7 @@ func SetDoneWithEvidenceInTx(
 		"item_id": itemID, "done": true,
 		"verified_by": string(verifier), "cycle_id": drow.CycleID,
 	})
-	if err := storekernel.AppendEvent(tx, subjectTaskID, seq, taskeventsdomain.EventChecklistItemToggled, by, b); err != nil {
+	if err := eventsaudit.AppendEvent(tx, subjectTaskID, seq, taskeventsdomain.EventChecklistItemToggled, by, b); err != nil {
 		return CriteriaFlagChange{}, err
 	}
 	return syncCriteriaSatisfiedAtInTx(tx, subjectTaskID, by)

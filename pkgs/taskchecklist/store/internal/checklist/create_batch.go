@@ -7,8 +7,8 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel/taskload"
+	eventsaudit "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/audit"
 	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 	checklistmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/store/model"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
@@ -40,7 +40,7 @@ func SeedDefinitionItemsAtCreateInTx(tx *gorm.DB, taskID string, items []CreateC
 	if err := row.Scan(&maxOrder).Error; err != nil {
 		return fmt.Errorf("checklist order: %w", err)
 	}
-	seq, err := storekernel.NextEventSeq(tx, taskID)
+	seq, err := eventsaudit.NextEventSeq(tx, taskID)
 	if err != nil {
 		return err
 	}
@@ -69,7 +69,7 @@ func SeedDefinitionItemsAtCreateInTx(tx *gorm.DB, taskID string, items []CreateC
 			}
 		}
 		b, _ := json.Marshal(map[string]string{"item_id": it.ID, "text": it.Text})
-		if err := storekernel.AppendEvent(tx, taskID, seq, taskeventsdomain.EventChecklistItemAdded, by, b); err != nil {
+		if err := eventsaudit.AppendEvent(tx, taskID, seq, taskeventsdomain.EventChecklistItemAdded, by, b); err != nil {
 			return err
 		}
 		seq++

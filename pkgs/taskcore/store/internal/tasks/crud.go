@@ -12,6 +12,7 @@ import (
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
 	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
+	eventsaudit "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/audit"
 	checkliststore "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/store"
 	composestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/store"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
@@ -106,7 +107,7 @@ func Update(ctx context.Context, db *gorm.DB, id string, in UpdateInput, by doma
 		}
 		dcur := model.ToDomainTask(cur)
 		origStatus = dcur.Status
-		nextSeq, err := storekernel.NextEventSeq(tx, id)
+		nextSeq, err := eventsaudit.NextEventSeq(tx, id)
 		if err != nil {
 			return err
 		}
@@ -268,7 +269,7 @@ func createTaskInTx(tx *gorm.DB, t *domain.Task, in CreateInput, by domain.Actor
 	if err := composestore.DeleteDraftByIDInTx(tx, in.DraftID); err != nil {
 		return err
 	}
-	if err := storekernel.AppendEvent(tx, t.ID, seq, taskeventsdomain.EventTaskCreated, by, nil); err != nil {
+	if err := eventsaudit.AppendEvent(tx, t.ID, seq, taskeventsdomain.EventTaskCreated, by, nil); err != nil {
 		return err
 	}
 	if len(in.ChecklistItems) > 0 {
