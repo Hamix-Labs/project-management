@@ -12,7 +12,7 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
 	eventsaudit "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/audit"
-	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel/taskload"
+	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/taskload"
 	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 	checklistmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/store/model"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
