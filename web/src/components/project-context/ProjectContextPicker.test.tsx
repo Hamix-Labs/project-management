@@ -80,7 +80,9 @@ describe("ProjectContextPicker", () => {
     const dialog = screen.getByRole("dialog", { name: /choose task context/i });
 
     await user.type(
-      within(dialog).getByPlaceholderText(/search by title, body, or kind/i),
+      within(dialog).getByPlaceholderText(
+        /search by title, description, body, or kind/i,
+      ),
       "risk",
     );
 
