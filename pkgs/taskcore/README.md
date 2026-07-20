@@ -13,15 +13,15 @@ Task CRUD bounded context: domain types, persistence, and `/tasks*` core HTTP ro
 
 ## Wiring
 
-- **Store:** `tasks/store.NewStore` constructs `taskcorestore.NewStore(db)` and delegates facades.
-- **HTTP:** `tasks/handler.registerRoutes` calls `taskcorehandler.Register(m, deps)` with settings/git-compose callbacks from the tasks handler shell.
-- **Contracts:** `tasks/contract` aliases `TaskCRUDStore` and related types from `taskcore/contract`.
+- **Composition:** `internal/taskapi/composition.NewAPI(db)` constructs `taskcorestore.NewStore(db)` and implements `pkgs/tasks/wire.HandlerAPI` / worker store surfaces ([ADR-0079](../../docs/adr/ADR-0079-facade-deletion.md)).
+- **HTTP:** `pkgs/tasks/handler/handler_routes.go` calls `taskcorehandler.Register(m, deps)` with settings/git-compose callbacks from the tasks handler shell.
+- **Migrations:** BC models register in [`pkgs/tasks/postgres/migrate/migrate_models.go`](../tasks/postgres/migrate/migrate_models.go).
 
 ## Not in taskcore
 
 - SSE hub, bootstrap, writepolicy, readpolicy (`pkgs/tasks/handler`)
 - Checklist, cycles, events, compose, settings, git routes (sibling BC handlers)
-- Worker scheduling predicates (`pkgs/tasks/scheduling`)
+- Worker scheduling predicates (`pkgs/tasks/scheduling`) — pure Decide; Apply uses this store’s ready queue
 
 ## Verification
 

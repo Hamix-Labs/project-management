@@ -2,6 +2,16 @@
 
 Git worktree and branch operations for Hamix worktree management ([Issue #39](https://github.com/AlexsanderHamir/Hamix/issues/39)).
 
+## Which package?
+
+| Need | Package |
+| --- | --- |
+| Raw `git -C <dir> …` subprocess + stderr capture | [`pkgs/gitcore`](../gitcore/) |
+| Bounded fixed-subcommand helpers (e.g. commit patch) over gitcore | [`pkgs/gitexec`](../gitexec/) |
+| Worktree/branch/status ops for registered checkouts | **`pkgs/gitwork`** (this package) |
+| Persisted repos/worktrees/branches + `/git/*` HTTP | [`pkgs/gitinventory`](../gitinventory/) |
+| Workspace path/@-mention search + `/repo/*` HTTP | [`pkgs/repo`](../repo/) |
+
 ## Scope
 
 - `OpenRepository` — validate a path is a git root
@@ -12,8 +22,8 @@ Git worktree and branch operations for Hamix worktree management ([Issue #39](ht
 
 ## Out of scope
 
-- HTTP handlers (Plan 3)
-- Task/worker binding (Plan 4)
+- HTTP handlers — live in [`pkgs/gitinventory/handler`](../gitinventory/handler/) (`/git/*`) and [`pkgs/repo/handler`](../repo/handler/) (`/repo/*`)
+- Task/worker binding — `pkgs/agents/worker` + harness
 - Merge, rebase, fetch, pull
 - Worktrunk CLI integration
 
@@ -31,7 +41,7 @@ All paths returned are absolute with forward slashes.
 
 ## Tests
 
-```bash
+```powershell
 go test ./pkgs/gitwork/... -count=1 -race
 ```
 

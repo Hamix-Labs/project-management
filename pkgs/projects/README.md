@@ -15,17 +15,18 @@ HTTP routes (`/projects`, `/projects/{id}/context`, …) and JSON shapes are unc
 
 ## Wiring
 
-- **`cmd/taskapi`** still constructs `pkgs/tasks/store.Store` as the composition root.
-- `tasks/store.Store` holds `*projectsstore.Store` and implements `contract.ProjectStore` via delegation ([`facade_projects.go`](../tasks/store/facade_projects.go)).
-- Harness and worker load project context through the tasks store facade; contract types use `pkgs/projects/domain`.
+- **`cmd/taskapi`** constructs `internal/taskapi/composition.API` via `composition.NewAPI(db)` ([ADR-0079](../../docs/adr/ADR-0079-facade-deletion.md)).
+- Composition holds `*projectsstore.Store` and satisfies `contract.ProjectStore` for HTTP and harness callers.
+- Harness and worker load project context through composition; contract types use `pkgs/projects/domain`.
+- Model registration for AutoMigrate lives in [`pkgs/tasks/postgres/migrate/migrate_models.go`](../tasks/postgres/migrate/migrate_models.go).
 
 ## Dependency rules
 
 | Package | May import | Must not import |
 | --- | --- | --- |
 | `domain` | stdlib | `pkgs/tasks/*`, GORM |
-| `store` | `projects/domain`, `projects/contract`, GORM, `pkgs/storekernel`, `pkgs/tasks/store/model` (task FK checks) | `pkgs/tasks/handler`, `pkgs/tasks/store/internal` |
-| `handler` | `projects/domain`, `projects/contract`, `pkgs/tasks/apijson`, `pkgs/tasks/calltrace`, `pkgs/tasks/logctx` | `pkgs/tasks/store` facade, `pkgs/tasks/handler` |
+| `store` | `projects/domain`, `projects/contract`, GORM, `pkgs/storekernel`, `pkgs/taskcore/store/model` (task FK checks), `pkgs/tasks/calltrace` | `pkgs/tasks/handler`, `internal/taskapi/composition` |
+| `handler` | `projects/domain`, `projects/contract`, `pkgs/tasks/handlerhttp`, `pkgs/tasks/apijson`, `pkgs/tasks/calltrace`, `pkgs/tasks/logctx`, `pkgs/tasks/realtime` | `internal/taskapi/composition`, `pkgs/tasks/handler` |
 
 Enforced in CI: `scripts/check-go.sh` → `step_projects_boundary`.
 
@@ -33,10 +34,7 @@ Enforced in CI: `scripts/check-go.sh` → `step_projects_boundary`.
 
 ```powershell
 go test ./pkgs/projects/... -count=1
-go test ./pkgs/tasks/store/... -run Project -count=1
 ```
-
-Integration coverage for project CRUD, context graph, and snapshots lives in [`pkgs/tasks/store/facade_projects_test.go`](../tasks/store/facade_projects_test.go) (tasks facade delegates to this package).
 
 ## See also
 

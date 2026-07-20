@@ -15,20 +15,20 @@ HTTP routes (`/tasks/{id}/events*`) and JSON shapes are unchanged from the pre-e
 
 ## Wiring
 
-- **`cmd/taskapi`** still constructs `pkgs/tasks/store.Store` as the composition root.
-- `tasks/store.Store` embeds `taskevents/store.Store` and delegates through [`facade_events.go`](../tasks/store/facade_events.go).
+- **`cmd/taskapi`** constructs `internal/taskapi/composition.API` via `composition.NewAPI(db)` ([ADR-0079](../../docs/adr/ADR-0079-facade-deletion.md)).
+- Composition holds `*taskeventsstore.Store` and exposes event read/append methods on the composition API.
 - Event **append** from CRUD, cycles, checklist, and devmirror still uses `storekernel.NextEventSeq` + `storekernel.AppendEvent` inside those subpackages (dual-write); this context owns **reads**, standalone `AppendTaskEvent`, and thread messages.
 - `pkgs/tasks/handler/handler_routes.go` calls `taskevents/handler.Register` with `NotifyTaskEventChanged` for SSE after PATCH.
-- `pkgs/tasks/store/model/migrate_models.go` registers `taskevents/store/model` types in FK-safe order.
+- Model registration for AutoMigrate lives in [`pkgs/tasks/postgres/migrate/migrate_models.go`](../tasks/postgres/migrate/migrate_models.go).
 
 ## Dependency rules
 
 | Package | May import | Must not import |
 | --- | --- | --- |
-| `domain` | stdlib | GORM, `pkgs/tasks/*` |
-| `contract` | `taskevents/domain`, `pkgs/tasks/domain` (`Task`) | `pkgs/tasks/handler`, `pkgs/tasks/store/internal` |
-| `store` | `taskevents/domain`, `taskevents/contract`, `taskevents/store/model`, GORM, `pkgs/storekernel`, `pkgs/tasks/domain`, `pkgs/tasks/store/model` (task rows only) | `pkgs/tasks/handler`, `pkgs/tasks/store/internal` |
-| `handler` | `taskevents/domain`, `taskevents/contract`, `pkgs/tasks/apijson`, `pkgs/tasks/calltrace`, `pkgs/tasks/logctx`, `pkgs/tasks/domain` | `pkgs/tasks/store` facade, `pkgs/tasks/handler` |
+| `domain` | stdlib, `pkgs/taskcore/domain` (Actor alias) | GORM, `pkgs/tasks/*` |
+| `contract` | `taskevents/domain`, `pkgs/taskcore/contract` | `pkgs/tasks/handler`, `internal/taskapi/composition` |
+| `store` | `taskevents/domain`, `taskevents/contract`, `taskevents/store/model`, GORM, `pkgs/storekernel`, `pkgs/taskcore/domain`, `pkgs/tasks/calltrace` | `pkgs/tasks/handler`, `internal/taskapi/composition` |
+| `handler` | `taskevents/domain`, `taskevents/contract`, `pkgs/tasks/handlerhttp`, `pkgs/tasks/apijson`, `pkgs/tasks/calltrace`, `pkgs/tasks/logctx`, `pkgs/taskcore/domain`, `pkgs/tasks/handler/readpolicy` | `internal/taskapi/composition`, `pkgs/tasks/handler` |
 
 Enforced in CI: `scripts/check-go.sh` → `step_taskevents_boundary`.
 
@@ -36,11 +36,7 @@ Enforced in CI: `scripts/check-go.sh` → `step_taskevents_boundary`.
 
 ```powershell
 go test ./pkgs/taskevents/... -count=1
-go test ./pkgs/tasks/store/... -run Event -count=1
-go test ./pkgs/tasks/handler/... -run Events -count=1
 ```
-
-Cross-route HTTP contract tests for events remain in [`pkgs/tasks/handler/handler_http_events_*_test.go`](../pkgs/tasks/handler/).
 
 ## See also
 

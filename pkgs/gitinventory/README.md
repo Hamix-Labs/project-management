@@ -15,18 +15,19 @@ HTTP routes (`/git/repositories`, `/git/worktrees`, …) and JSON shapes are unc
 
 ## Wiring
 
-- **`cmd/taskapi`** still constructs `pkgs/tasks/store.Store` as the composition root.
-- `tasks/store.Store` holds `*gitinventorystore.Store` and implements `contract.GitReadStore` / `contract.GitWriteStore` via delegation ([`facade_git.go`](../tasks/store/facade_git.go)).
-- Harness, worker, and agent reconcile load git rows through the tasks store facade; contract types use `pkgs/gitinventory/domain`.
+- **`cmd/taskapi`** constructs `internal/taskapi/composition.API` via `composition.NewAPI(db)` ([ADR-0079](../../docs/adr/ADR-0079-facade-deletion.md)).
+- Composition holds `*gitinventorystore.Store` and satisfies `contract.GitReadStore` / `contract.GitWriteStore`.
+- Harness, worker, and agent reconcile load git rows through composition; contract types use `pkgs/gitinventory/domain`.
 - `handler.Register` receives `contract.ProjectStore` for `GET /git/repositories/{repoId}/projects`.
+- Model registration for AutoMigrate lives in [`pkgs/tasks/postgres/migrate/migrate_models.go`](../tasks/postgres/migrate/migrate_models.go).
 
 ## Dependency rules
 
 | Package | May import | Must not import |
 | --- | --- | --- |
 | `domain` | stdlib | `pkgs/tasks/*`, GORM |
-| `store` | `gitinventory/domain`, `gitinventory/contract`, GORM, `pkgs/storekernel`, `pkgs/gitwork` | `pkgs/tasks/handler`, `pkgs/tasks/store/internal` |
-| `handler` | `gitinventory/domain`, `pkgs/projects/domain`, `gitinventory/contract`, `pkgs/tasks/apijson`, `pkgs/tasks/calltrace`, `pkgs/tasks/logctx`, `pkgs/gitwork` | `pkgs/tasks/store` facade, `pkgs/tasks/handler` |
+| `store` | `gitinventory/domain`, `gitinventory/contract`, GORM, `pkgs/storekernel`, `pkgs/gitwork`, `pkgs/tasks/calltrace` | `pkgs/tasks/handler`, `internal/taskapi/composition` |
+| `handler` | `gitinventory/domain`, `pkgs/projects/domain`, `gitinventory/contract`, `pkgs/tasks/apijson`, `pkgs/tasks/calltrace`, `pkgs/tasks/logctx`, `pkgs/gitwork` | `internal/taskapi/composition`, `pkgs/tasks/handler` |
 
 Enforced in CI: `scripts/check-go.sh` → `step_gitinventory_boundary`.
 
@@ -34,14 +35,12 @@ Enforced in CI: `scripts/check-go.sh` → `step_gitinventory_boundary`.
 
 ```powershell
 go test ./pkgs/gitinventory/... -count=1
-go test ./pkgs/tasks/store/... -run Git -count=1
 ```
-
-Integration coverage for git CRUD, reconcile, and facade delegation lives in [`pkgs/tasks/store/facade_git_test.go`](../tasks/store/facade_git_test.go) and [`pkgs/gitinventory/store/`](../gitinventory/store/) tests.
 
 ## See also
 
 - [docs/api.md](../../docs/api.md) — `/git/*` contract
 - [docs/domain/worktrees-and-branches.md](../../docs/domain/worktrees-and-branches.md) — operator model
+- [pkgs/gitwork/README.md](../gitwork/README.md) — which git package?
 - [pkgs/gitinventory/contract/read.go](./contract/read.go) — `GitReadStore` interface
 - [pkgs/gitinventory/contract/write.go](./contract/write.go) — `GitWriteStore` interface

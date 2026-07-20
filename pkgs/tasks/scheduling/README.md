@@ -1,6 +1,6 @@
 # `pkgs/tasks/scheduling`
 
-Pure **Decide** layer for worker readiness and post-commit notify policy. Apply stays in `pkgs/tasks/store` (notify/wake) and `pkgs/agents/worker` (admission). ADR: [docs/adr/ADR-0023-task-scheduling-domain.md](../../docs/adr/ADR-0023-task-scheduling-domain.md).
+Pure **Decide** layer for worker readiness and post-commit notify policy. Apply stays in `internal/taskapi/composition` (notify/wake) and `pkgs/agents/worker` (admission). ADR: [docs/adr/ADR-0023-task-scheduling-domain.md](../../../docs/adr/ADR-0023-task-scheduling-domain.md).
 
 ## Read order
 
@@ -15,7 +15,7 @@ Pure **Decide** layer for worker readiness and post-commit notify policy. Apply 
 1. Check row: gate, dependencies, `pickup_not_before`, `on_hold` / status
 2. Search logs for `failed_predicate=` on the task id (worker admission defer)
 3. If not in memory queue → reconcile backstop (2m) or pickup wake
-4. SQL mirror lives in [`store/internal/ready/predicates.go`](../store/internal/ready/predicates.go); contract tests in [`store/scheduling_parity_test.go`](../store/scheduling_parity_test.go)
+4. SQL mirror lives in [`pkgs/taskcore/store/internal/ready/predicates.go`](../../taskcore/store/internal/ready/predicates.go)
 
 ## Invariants (I1–I7)
 
@@ -23,5 +23,5 @@ See ADR-0023. **I7:** immediate notify after `ready` transition does not require
 
 ## Boundaries
 
-- Imports: `pkgs/tasks/domain` only (production `*.go`)
-- Must not import: `store`, `handler`, `agents`, `gorm`
+- Imports: `pkgs/taskcore/domain` and `pkgs/taskcore/contract` only (production `*.go`)
+- Must not import: store packages, `handler`, `agents`, `gorm`, `internal/taskapi/composition`

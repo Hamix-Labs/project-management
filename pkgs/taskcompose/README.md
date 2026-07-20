@@ -13,8 +13,15 @@ Bounded context for **task drafts** and **task templates** — saved compose pay
 
 ## Wiring
 
-- `pkgs/tasks/store.Store` composes `taskcompose/store.Store` and re-exports draft/template methods via `facade_compose.go`.
+- `internal/taskapi/composition.NewAPI(db)` constructs `taskcompose/store.Store` and exposes draft/template methods on the composition API ([ADR-0079](../../docs/adr/ADR-0079-facade-deletion.md)).
 - `pkgs/tasks/handler/handler_routes.go` calls `taskcompose/handler.Register` with `NormalizeCompose` and `InstantiateFromTemplate` callbacks for task create.
+- Model registration for AutoMigrate lives in [`pkgs/tasks/postgres/migrate/migrate_models.go`](../tasks/postgres/migrate/migrate_models.go).
+
+## Tests
+
+```powershell
+go test ./pkgs/taskcompose/... -count=1
+```
 
 ## Docs
 
