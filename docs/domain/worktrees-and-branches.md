@@ -21,30 +21,30 @@ When no git repository is registered:
 
 Operators manage repositories in the SPA:
 
-- **`/worktrees`** — repository list; register a main checkout here.
-- **`/worktrees/:repositoryId`** — inspect managed worktrees, **Sync** (fetch + metadata), relocate when the path moved, remove stale checkouts.
-- **`/worktrees?register=1`** — deep link that opens the register-repository modal.
+- **`/repositories`** — repository list; register, **Sync** (fetch + metadata), and **Delete**.
+- **`/repositories?register=1`** — deep link that opens the register-repository modal.
+- Legacy **`/worktrees`** and **`/worktrees/:repositoryId`** redirect to `/repositories`.
 
 Happy path:
 
-1. **Register repository** on `/worktrees` — path to the main git checkout.
+1. **Register repository** on `/repositories` — path to the main git checkout.
 2. **Create task** with `repository_id` (+ project) — Hamix allocates `{dir(repo)}/.hamix/{repoID}/worktrees/{branchSlug}`.
-3. **Inspect** the worktree path on the repository detail page; UI diffs and `/repo/*` stay keyed by `worktree_id`.
+3. Managed worktrees stay internal to Hamix; operators manage repositories from the list, not a worktree detail page.
 
-**Stale hint:** a non-main worktree with no non-terminal tasks whose latest terminal task `updated_at` is older than **24h** shows a non-blocking stale hint. The operator confirms **Remove from disk** (`DELETE /git/worktrees/{id}?remove_from_disk=true`). Hamix does **not** auto-delete worktrees.
+**Stale managed worktrees:** a non-main worktree with no non-terminal tasks whose latest terminal task `updated_at` is older than **24h** may be marked `stale` in the API. Hamix does **not** auto-delete worktrees; operators remove them via `DELETE /git/worktrees/{id}?remove_from_disk=true` when needed (no SPA worktree browser).
 
-**Unregister vs delete from disk:** **Unregister** drops only the Hamix row. **Delete from disk** runs `git worktree remove` and deletes the row. The main worktree cannot be deleted from disk via the API.
+**Unregister vs delete from disk (API):** **Unregister** drops only the Hamix row. **Delete from disk** runs `git worktree remove` and deletes the row. The main worktree cannot be deleted from disk via the API.
 
 **Runtime:** tasks on the same worktree run sequentially (per-worktree gate). Tasks on different worktrees may run in parallel when `HAMIX_AGENT_WORKER_CONCURRENCY` > 1. The worker refuses main/default-branch bindings and verifies HEAD matches the bound branch (no `git checkout` at pickup).
 
 ## Sync and path repair
 
-Hamix stores **absolute paths** for repositories and worktrees. Use **Sync** on the repository detail page (`POST /git/repositories/{repoId}/sync`) to `git fetch origin` and refresh registered metadata **without** discovering/registering operator worktrees.
+Hamix stores **absolute paths** for repositories and worktrees. Use **Sync** on a repository list row (`POST /git/repositories/{repoId}/sync`) to `git fetch origin` and refresh registered metadata **without** discovering/registering operator worktrees.
 
 **Operator playbook when folders move:**
 
 1. Prefer `git worktree repair` (or `git worktree move`) so git metadata stays consistent.
-2. Click **Sync**. When the stored main path is missing, Hamix returns `needs_bootstrap_path` and opens **Relocate repository**.
+2. Click **Sync** on the repository row. When the stored main path is missing, Hamix returns `needs_bootstrap_path` and opens **Relocate repository**.
 3. For a single linked worktree with a known new path, use `POST /git/worktrees/{worktreeId}/relocate`.
 
 Conflict resolution (merge/rebase agents) is out of scope — allocate/sync fail with a clear error.
