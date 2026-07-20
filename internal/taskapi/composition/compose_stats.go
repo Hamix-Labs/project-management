@@ -6,6 +6,7 @@ import (
 	"log/slog"
 
 	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
+	cyclesstore "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store"
 )
 
 func (a *API) TaskStats(ctx context.Context) (taskcorestore.TaskStats, error) {
@@ -13,9 +14,9 @@ func (a *API) TaskStats(ctx context.Context) (taskcorestore.TaskStats, error) {
 	return a.taskcore.TaskStats(ctx)
 }
 
-func (a *API) ListCycleFailures(ctx context.Context, in taskcorestore.ListCycleFailuresInput) (taskcorestore.ListCycleFailuresResult, error) {
+func (a *API) ListCycleFailures(ctx context.Context, in cyclesstore.ListCycleFailuresInput) (cyclesstore.ListCycleFailuresResult, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ListCycleFailures")
-	return a.taskcore.ListCycleFailures(ctx, in)
+	return a.cycles.ListCycleFailures(ctx, in)
 }
 
 func (a *API) CountPreFeatureCycles(ctx context.Context) (taskcorestore.PreFeatureCycleCounts, error) {

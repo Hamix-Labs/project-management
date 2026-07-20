@@ -13,16 +13,11 @@ import (
 // When data is non-nil it is the enriched cycle detail payload; nil means hint-only.
 type NotifyCycleChangedFunc func(ctx context.Context, taskID, cycleID string, data any)
 
-// CycleFailuresStore lists paginated cycle failure mirror rows for GET /tasks/cycle-failures.
-type CycleFailuresStore interface {
-	ListCycleFailures(ctx context.Context, in taskscontract.ListCycleFailuresInput) (taskscontract.ListCycleFailuresResult, error)
-}
-
 // Deps wires cycle HTTP handlers into the taskapi mux.
 type Deps struct {
 	Cycles             contract.CycleStore
 	Tasks              taskscontract.TaskGetter
-	CycleFailures      CycleFailuresStore
+	CycleFailures      contract.CycleFailuresStore
 	NotifyCycleChanged NotifyCycleChangedFunc
 }
 
@@ -30,7 +25,7 @@ type Deps struct {
 type Handler struct {
 	cycles             contract.CycleStore
 	tasks              taskscontract.TaskGetter
-	failures           CycleFailuresStore
+	failures           contract.CycleFailuresStore
 	notifyCycleChanged NotifyCycleChangedFunc
 }
 

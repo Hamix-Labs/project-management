@@ -13,8 +13,9 @@ type GetCall struct {
 	ID string
 }
 
-// TaskCRUDFake implements taskcorecontract.TaskCRUDStore with call recording and
-// injectable per-method outcomes for handler error-path tests.
+// TaskCRUDFake implements the focused taskcore contracts (and composed
+// TaskCRUDStore) with call recording and injectable per-method outcomes
+// for handler error-path tests.
 type TaskCRUDFake struct {
 	mu sync.Mutex
 
@@ -139,9 +140,11 @@ func (f *TaskCRUDFake) RemoveTaskDependency(ctx context.Context, taskID, depends
 	return errNotImplemented
 }
 
-//funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (f *TaskCRUDFake) ListCycleFailures(ctx context.Context, in taskcorecontract.ListCycleFailuresInput) (taskcorecontract.ListCycleFailuresResult, error) {
-	return taskcorecontract.ListCycleFailuresResult{}, errNotImplemented
-}
-
-var _ taskcorecontract.TaskCRUDStore = (*TaskCRUDFake)(nil)
+var (
+	_ taskcorecontract.TaskGetter    = (*TaskCRUDFake)(nil)
+	_ taskcorecontract.TaskReader    = (*TaskCRUDFake)(nil)
+	_ taskcorecontract.TaskWriter    = (*TaskCRUDFake)(nil)
+	_ taskcorecontract.TaskDepsStore = (*TaskCRUDFake)(nil)
+	_ taskcorecontract.TaskOpsStore  = (*TaskCRUDFake)(nil)
+	_ taskcorecontract.TaskCRUDStore = (*TaskCRUDFake)(nil)
+)

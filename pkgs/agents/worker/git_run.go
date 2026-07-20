@@ -5,14 +5,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
-	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
-	cyclescontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/contract"
-	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"log/slog"
 	"os"
 	"strings"
 
+	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 )
@@ -103,56 +100,7 @@ func mapGitPrepError(err error) error {
 }
 
 func (w *Worker) abortRunningFromGitPrep(ctx context.Context, taskID string, prepErr error) {
-	slog.Warn("agent worker git prep failed", "cmd", calltrace.LogCmd,
-		"operation", "agent.worker.Worker.abortRunningFromGitPrep",
-		"task_id", taskID, "err", prepErr)
-	// Mirror harness bestEffortTerminate: close any open Running phase+cycle
-	// before failing the task so Resume cannot orphan a cycle under Failed.
-	if cycle, ok := w.openRunningCycle(ctx, taskID); ok {
-		phases, err := w.store.ListPhasesForCycle(ctx, cycle.ID)
-		if err != nil {
-			if !errors.Is(err, taskcoredomain.ErrNotFound) {
-				slog.Warn("agent worker git prep ListPhasesForCycle failed", "cmd", calltrace.LogCmd,
-					"operation", "agent.worker.Worker.abortRunningFromGitPrep.list_phases_err",
-					"task_id", taskID, "cycle_id", cycle.ID, "err", err)
-			}
-		} else {
-			for _, p := range phases {
-				if p.Status != cyclesdomain.PhaseStatusRunning {
-					continue
-				}
-				summary := gitPrepFailedReason
-				if _, err := w.store.CompletePhase(ctx, cyclescontract.CompletePhaseInput{
-					CycleID:  cycle.ID,
-					PhaseSeq: p.PhaseSeq,
-					Status:   cyclesdomain.PhaseStatusFailed,
-					Summary:  &summary,
-					By:       taskcoredomain.ActorAgent,
-				}); err != nil {
-					if !errors.Is(err, taskcoredomain.ErrNotFound) {
-						slog.Warn("agent worker git prep CompletePhase failed", "cmd", calltrace.LogCmd,
-							"operation", "agent.worker.Worker.abortRunningFromGitPrep.complete_err",
-							"task_id", taskID, "cycle_id", cycle.ID, "phase_seq", p.PhaseSeq, "err", err)
-					}
-				}
-			}
-		}
-		if _, err := w.store.TerminateCycle(ctx, cycle.ID, cyclesdomain.CycleStatusFailed, gitPrepFailedReason, taskcoredomain.ActorAgent); err != nil {
-			if !errors.Is(err, taskcoredomain.ErrNotFound) {
-				slog.Warn("agent worker git prep TerminateCycle failed", "cmd", calltrace.LogCmd,
-					"operation", "agent.worker.Worker.abortRunningFromGitPrep.terminate_err",
-					"task_id", taskID, "cycle_id", cycle.ID, "err", err)
-			}
-		}
-	}
-	failed := taskcoredomain.StatusFailed
-	if _, err := w.store.Update(ctx, taskID, taskcorestore.UpdateTaskInput{Status: &failed}, taskcoredomain.ActorAgent); err != nil {
-		if !errors.Is(err, taskcoredomain.ErrNotFound) {
-			slog.Warn("agent worker git prep task transition failed", "cmd", calltrace.LogCmd,
-				"operation", "agent.worker.Worker.abortRunningFromGitPrep.err",
-				"task_id", taskID, "err", err)
-		}
-	}
+	w.failStuckRunning(ctx, taskID, gitPrepFailedReason, prepErr)
 }
 
 //funclogmeasure:skip category=delegate-already-logs reason="Orchestrator; resolveTaskGitBinding and prepareGitRun emit operation traces."

@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	taskscontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
-	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclescontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/contract"
 )
 
 const cycleFailureSortAtDesc = "at_desc"
@@ -37,7 +37,7 @@ type cycleFailuresResponse struct {
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure DTO mapper without I/O; operation trace is emitted by the calling chokepoint."
-func recentFailuresToJSON(failures []taskscontract.RecentFailure) []cycleFailureEntry {
+func recentFailuresToJSON(failures []cyclescontract.CycleFailure) []cycleFailureEntry {
 	out := make([]cycleFailureEntry, 0, len(failures))
 	for _, f := range failures {
 		out = append(out, cycleFailureEntry{
@@ -63,7 +63,7 @@ func (h *Handler) cycleFailures(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	debugHTTPRequest(r, op, "limit", limit, "offset", offset, "sort", sort)
-	out, err := h.failures.ListCycleFailures(r.Context(), taskscontract.ListCycleFailuresInput{
+	out, err := h.failures.ListCycleFailures(r.Context(), cyclescontract.ListCycleFailuresInput{
 		Limit:  limit,
 		Offset: offset,
 		Sort:   sort,
