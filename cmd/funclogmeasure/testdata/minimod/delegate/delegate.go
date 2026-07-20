@@ -3,7 +3,7 @@ package delegate
 import (
 	"context"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 )
 
 func ViaRunObserved(ctx context.Context) error {

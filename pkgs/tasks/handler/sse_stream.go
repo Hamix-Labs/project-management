@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/middleware"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"

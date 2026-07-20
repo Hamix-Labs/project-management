@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/contract"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 )
 
 //funclogmeasure:skip category=hot-path reason="Pure request parser without I/O; operation trace is emitted by reconcile handlers."

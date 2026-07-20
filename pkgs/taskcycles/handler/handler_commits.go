@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 )
 
 type taskCommitEntry struct {

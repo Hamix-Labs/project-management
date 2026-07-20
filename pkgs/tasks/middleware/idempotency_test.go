@@ -6,7 +6,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/internal/handlertest"
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/logctx"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/middleware"
 	"github.com/google/uuid"

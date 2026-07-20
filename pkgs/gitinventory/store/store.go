@@ -3,7 +3,7 @@ package store
 import (
 	"log/slog"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	"gorm.io/gorm"
 )
 

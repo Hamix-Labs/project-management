@@ -10,7 +10,7 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/repo"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 )
 
 func (h *Handler) workspaceRoots(w http.ResponseWriter, r *http.Request) {

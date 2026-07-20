@@ -20,7 +20,7 @@ const maxHTTPLogQueryBytes = 1024
 // line to avoid probe noise but still assign and echo X-Request-ID (and request context) so probes
 // and any logs during readiness stay correlatable.
 //
-// callPath may be nil; when non-nil it supplies call_path on the access line (e.g. pkgs/tasks/calltrace.Path).
+// callPath may be nil; when non-nil it supplies call_path on the access line (e.g. pkgs/obs/calltrace.Path).
 func WithAccessLog(h http.Handler, callPath func(context.Context) string) http.Handler {
 	slog.Debug("trace", "cmd", logctx.TraceCmd, "operation", "middleware.WithAccessLog")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

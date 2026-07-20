@@ -3,7 +3,7 @@ package handler
 import (
 	"log/slog"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler/writepolicy"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 )

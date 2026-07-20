@@ -10,7 +10,7 @@
 // error never duplicates rows or shifts a verdict.
 package reports
 
-import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+import "github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 import (
 	"context"
 	"errors"

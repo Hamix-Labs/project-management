@@ -5,7 +5,7 @@
 // contract — see handler_http_list_stats_contract_test.go.
 package stats
 
-import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+import "github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 import (
 	"context"
 	"log/slog"

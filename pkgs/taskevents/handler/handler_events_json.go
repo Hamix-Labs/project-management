@@ -9,7 +9,7 @@ import (
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 	taskeventsstore "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 )
 
 var jsonObjectMessageEmpty = json.RawMessage(`{}`)

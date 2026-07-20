@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/contract"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
 )
 

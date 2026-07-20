@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 )
 
 // RunMetrics is the optional Prometheus seam for the agent harness.

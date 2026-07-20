@@ -1,6 +1,6 @@
 package devsim
 
-import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+import "github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 import (
 	"context"
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"

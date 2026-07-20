@@ -2,7 +2,7 @@
 // cycles into task_cycle_commits.
 package commits
 
-import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+import "github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 import (
 	"context"
 	"fmt"

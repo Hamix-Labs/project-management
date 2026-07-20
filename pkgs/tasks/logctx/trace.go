@@ -1,6 +1,6 @@
 package logctx
 
-import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+import "github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 
-// TraceCmd is the slog "cmd" field value shared with pkgs/tasks/calltrace.
+// TraceCmd is the slog "cmd" field value shared with pkgs/obs/calltrace.
 const TraceCmd = calltrace.LogCmd

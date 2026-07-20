@@ -2,7 +2,7 @@
 // context items, and immutable task context snapshots.
 package internal
 
-import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+import "github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 import (
 	"context"
 	"encoding/json"

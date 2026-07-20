@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 )
 
 // MaxPathIDBytes caps path segments for task UUIDs, draft ids, checklist item

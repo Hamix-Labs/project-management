@@ -8,7 +8,8 @@
 //   - postgres — GORM open + AutoMigrate orchestration (BC models registered here)
 //   - realtime — SSE wire types, Publisher, coalesce (hub transport ownership evolving)
 //   - scheduling — worker readiness / pickup predicates
-//   - apijson, calltrace, logctx — JSON errors and observability kernels
+//   - apijson, logctx — JSON errors and request log context
+//   - (call stack / helper.io: pkgs/obs/calltrace)
 //   - service — HTTP-agnostic bootstrap/git/retry orchestration used by the shell
 //   - wire — HandlerAPI composition interface (implemented by internal/taskapi/composition)
 //   - devsim — HAMIX_SSE_TEST synthetic events

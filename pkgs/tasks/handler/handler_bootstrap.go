@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	settingshandler "github.com/AlexsanderHamir/Hamix/pkgs/settings/handler"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler/readpolicy"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/service"
 )

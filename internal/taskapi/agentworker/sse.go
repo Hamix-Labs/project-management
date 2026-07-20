@@ -9,7 +9,7 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	taskcorecontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 )
 

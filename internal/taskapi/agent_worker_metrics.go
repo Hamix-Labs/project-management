@@ -9,7 +9,7 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/worker"
 	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

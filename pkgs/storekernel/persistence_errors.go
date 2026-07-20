@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 )
 
 // MapPayloadPersistenceError maps driver failures on JSON/JSONB payload columns
