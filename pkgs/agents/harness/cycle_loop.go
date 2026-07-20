@@ -111,9 +111,21 @@ func (h *Harness) runCycleLoopExecute(
 		return false
 	}
 	if decision.Mode == CursorResumeFresh || decision.Mode == CursorResumeFallback {
-		_ = reports.ScrubCycleArtifacts(h.opts.ReportDir, cycle.ID)
+		if err := reports.ScrubCycleArtifacts(h.opts.ReportDir, cycle.ID); err != nil {
+			slog.Error("agent harness scrub cycle artifacts failed", "cmd", calltrace.LogCmd,
+				"operation", "agent.harness.Harness.runCycleLoop.scrub_err",
+				"cycle_id", cycle.ID, "report_dir", h.opts.ReportDir, "err", err)
+			h.bestEffortTerminate(parentCtx, state, task.ID, cyclesdomain.CycleStatusFailed, "execute_report_scrub_failed")
+			return false
+		}
 	}
-	_ = reports.EnsureReportCycleDir(h.opts.ReportDir, cycle.ID)
+	if err := reports.EnsureReportCycleDir(h.opts.ReportDir, cycle.ID); err != nil {
+		slog.Error("agent harness ensure report cycle dir failed", "cmd", calltrace.LogCmd,
+			"operation", "agent.harness.Harness.runCycleLoop.ensure_report_dir_err",
+			"cycle_id", cycle.ID, "report_dir", h.opts.ReportDir, "err", err)
+		h.bestEffortTerminate(parentCtx, state, task.ID, cyclesdomain.CycleStatusFailed, "execute_report_dir_ensure_failed")
+		return false
+	}
 
 	result, runErr := h.invokeRunnerWithTask(parentCtx, task, cycle, execPhase, decision)
 	if errors.Is(runErr, runner.ErrResumeSession) {
@@ -243,7 +255,17 @@ func (h *Harness) runCycleLoopFinalizeSuccess(
 			"operation", "agent.harness.Harness.runCycleLoop.finalize_err",
 			"task_id", task.ID, "err", completionErr)
 	}
-	_ = h.applyFinalizeEffects(parentCtx, task, cycle, state, effects)
+	if ok := h.applyFinalizeEffects(parentCtx, task, cycle, state, effects); !ok {
+		slog.Error("agent harness finalize effects incomplete", "cmd", calltrace.LogCmd,
+			"operation", "agent.harness.Harness.runCycleLoopFinalizeSuccess.effects_incomplete",
+			"task_id", task.ID, "cycle_id", cycle.ID,
+			"cycle_status", string(effects.CycleStatus), "task_status", string(effects.TaskStatus))
+		if state.cycle.cycleStarted {
+			h.bestEffortTerminate(parentCtx, state, task.ID, cyclesdomain.CycleStatusFailed, "finalize_effects_failed")
+		} else {
+			h.bestEffortFailTask(parentCtx, task.ID)
+		}
+	}
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."

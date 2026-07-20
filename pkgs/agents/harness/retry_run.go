@@ -103,7 +103,15 @@ func (h *Harness) runResumeRetry(parentCtx context.Context, task *taskcoredomain
 			return
 		}
 	}
-	state.verify.verifySnap, _ = h.loadVerificationSnapshot(parentCtx, task.ID)
+	snap, err := h.loadVerificationSnapshot(parentCtx, task.ID)
+	if err != nil {
+		slog.Error("agent harness resume-retry verification snapshot failed", "cmd", calltrace.LogCmd,
+			"operation", "agent.harness.Harness.runResumeRetry.verify_snap_err",
+			"task_id", task.ID, "cycle_id", cycle.ID, "err", err)
+		h.bestEffortTerminate(parentCtx, &state, task.ID, cyclesdomain.CycleStatusFailed, "verification_snapshot_load_failed")
+		return
+	}
+	state.verify.verifySnap = snap
 	h.runCycleLoop(parentCtx, task, cycle, &state, cycleLoopOpts{
 		resumeNotice:     true,
 		interruptedPhase: cyclesdomain.PhaseExecute,
@@ -127,7 +135,15 @@ func (h *Harness) runFreshCycle(parentCtx context.Context, task *taskcoredomain.
 		h.bestEffortFailTask(parentCtx, task.ID)
 		return
 	}
-	state.verify.verifySnap, _ = h.loadVerificationSnapshot(parentCtx, task.ID)
+	snap, err := h.loadVerificationSnapshot(parentCtx, task.ID)
+	if err != nil {
+		slog.Error("agent harness fresh-cycle verification snapshot failed", "cmd", calltrace.LogCmd,
+			"operation", "agent.harness.Harness.runFreshCycle.verify_snap_err",
+			"task_id", task.ID, "cycle_id", cycle.ID, "err", err)
+		h.bestEffortTerminate(parentCtx, &state, task.ID, cyclesdomain.CycleStatusFailed, "verification_snapshot_load_failed")
+		return
+	}
+	state.verify.verifySnap = snap
 	h.runCycleLoop(parentCtx, task, cycle, &state, cycleLoopOpts{})
 }
 

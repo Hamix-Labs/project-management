@@ -37,7 +37,15 @@ func (h *Harness) Resume(parentCtx context.Context, task *taskcoredomain.Task, c
 			verifyFeedback:   cp.VerifyFeedback,
 		},
 	}
-	state.verify.verifySnap, _ = h.loadVerificationSnapshot(parentCtx, task.ID)
+	snap, err := h.loadVerificationSnapshot(parentCtx, task.ID)
+	if err != nil {
+		slog.Error("agent harness resume verification snapshot failed", "cmd", calltrace.LogCmd,
+			"operation", "agent.harness.Harness.Resume.verify_snap_err",
+			"task_id", task.ID, "cycle_id", cycle.ID, "err", err)
+		h.bestEffortTerminate(parentCtx, &state, task.ID, cyclesdomain.CycleStatusFailed, "verification_snapshot_load_failed")
+		return
+	}
+	state.verify.verifySnap = snap
 
 	defer h.recoverFromPanic(&state, *task)
 
