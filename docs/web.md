@@ -29,12 +29,11 @@ Vite + React client under `web/`. All `fetch` calls live in `web/src/api/`; resp
 | `/drafts` | `web/src/tasks/` | Saved create-task drafts |
 | `/projects` | `web/src/projects/` | Project list |
 | `/projects/:id` | `web/src/projects/` | Project detail |
-| `/worktrees` | `web/src/worktrees/` | Registered git repositories (nav: **Repositories**) |
-| `/worktrees/:repositoryId` | `web/src/worktrees/` | Managed worktrees for one repository |
+| `/repositories` | `web/src/worktrees/` | Registered git repositories (nav: **Repositories**) |
 | `/settings` | `web/src/settings/` | App settings |
 | `/tasks/:id` | `web/src/tasks/pages/` | Task detail |
 
-Primary nav links: Tasks, Templates, Drafts, Projects, Repositories (Settings is header gear). Register a repo via `/worktrees` or `/worktrees?register=1` — see [domain/worktrees-and-branches.md](./domain/worktrees-and-branches.md).
+Primary nav links: Tasks, Templates, Drafts, Projects, Repositories (Settings is header gear). Register a repo via `/repositories` or `/repositories?register=1` — see [domain/worktrees-and-branches.md](./domain/worktrees-and-branches.md). Legacy `/worktrees` and `/worktrees/:repositoryId` redirect to `/repositories`.
 
 ## Cold start
 

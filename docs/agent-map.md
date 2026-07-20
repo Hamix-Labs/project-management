@@ -72,7 +72,7 @@ Repository paths grouped by subsystem. Read only the rows relevant to your task.
 | Task templates | `web/src/api/taskTemplates.ts`, `pages/TaskTemplatesPage.tsx` | Template CRUD and batch instantiate | [api.md](./api.md), [web.md](./web.md) |
 | App shell | `web/src/app/` | Router, providers, bootstrap, global styles | [web.md](./web.md) |
 | Projects | `web/src/projects/` | Project list/detail, context graph UI | [web.md](./web.md) §Routes |
-| Repositories / worktrees | `web/src/worktrees/` | `/worktrees` SPA vertical — register repos, managed worktrees | [web.md](./web.md) §Routes, [domain/worktrees-and-branches.md](./domain/worktrees-and-branches.md) |
+| Repositories / worktrees | `web/src/worktrees/` | `/repositories` SPA vertical — register repos (legacy `/worktrees` redirects) | [web.md](./web.md) §Routes, [domain/worktrees-and-branches.md](./domain/worktrees-and-branches.md) |
 | Worktrees mutations | `web/src/worktrees/mutations/` | Global git invalidate + register/sync/remove hooks | [ADR-0044](./adr/ADR-0044-query-invalidation-catalog.md) |
 | Git API client | `web/src/api/gitGlobal.ts`, `web/src/api/parseGitApi.ts` | `GET/POST /git/*` fetch + parsers | [api.md](./api.md) |
 | Settings | `web/src/settings/` | App settings page and settings hooks | [web.md](./web.md) §Routes |
