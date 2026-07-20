@@ -300,7 +300,11 @@ func TestVerifyOnlyCrossCycleResume_runCycleLoopSkipsRunnerExecute(t *testing.T)
 		t.Fatal(err)
 	}
 	writeVerifyReportForTest(t, reportDir, child.ID, []string{item.ID})
-	state.verify.verifySnap, _ = h.loadVerificationSnapshot(ctx, tsk.ID)
+	snap, err := h.loadVerificationSnapshot(ctx, tsk.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	state.verify.verifySnap = snap
 	h.runCycleLoop(ctx, tsk, child, &state, cycleLoopOpts{
 		skipFirstExecute: true,
 		continuation:     cp.Continuation,
