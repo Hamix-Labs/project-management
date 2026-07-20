@@ -149,61 +149,62 @@ func (h *Harness) resolveCursorResume(
 ) (CursorResumeDecision, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.resolveCursorResume",
 		"cycle_id", cycle.ID, "phase", string(phase), "force_fresh", forceFresh)
-	if forceFresh {
-		return CursorResumeDecision{Mode: CursorResumeFresh, DenyReason: "resume_failed"}, nil
+
+	facts := CursorResumeFacts{
+		ForceFresh:              forceFresh,
+		RetryMode:               retryModeFromCycleMeta(cycle),
+		Phase:                   phase,
+		ResumeNotice:            opts.resumeNotice,
+		ReportTampered:          state.verify.reportTampered,
+		FirstVerifyAfterExecute: firstVerifyAfterNewExecute(state),
+		GitSkipped:              state.git.gitSnap.Skipped,
+		HasPostExecuteHead:      state.git.postExecuteHeadSHA != "",
+		HeadMatchesAnchor:       true,
+		WorkingDir:              h.opts.WorkingDir,
 	}
-	settings, err := h.store.GetSettings(ctx)
-	if err != nil {
-		return CursorResumeDecision{}, err
-	}
-	if !settings.CursorSessionResumeEnabled {
-		return CursorResumeDecision{Mode: CursorResumeFresh, DenyReason: "settings_disabled"}, nil
-	}
-	retryMode := retryModeFromCycleMeta(cycle)
-	if retryMode == taskcoredomain.RetryFresh {
-		return CursorResumeDecision{Mode: CursorResumeFresh, DenyReason: "retry_fresh"}, nil
-	}
-	if opts.resumeNotice && retryMode != taskcoredomain.RetryResume && phase == cyclesdomain.PhaseExecute {
-		if state.verify.reportTampered {
-			return CursorResumeDecision{Mode: CursorResumeFresh, DenyReason: "tamper"}, nil
+	if !forceFresh {
+		settings, err := h.store.GetSettings(ctx)
+		if err != nil {
+			return CursorResumeDecision{}, err
+		}
+		facts.SessionResumeEnabled = settings.CursorSessionResumeEnabled
+
+		if !state.git.gitSnap.Skipped && state.git.postExecuteHeadSHA != "" {
+			current, ok, herr := h.resolveCurrentHeadSHA(ctx, state.git.gitSnap)
+			if herr != nil {
+				facts.HeadMatchesAnchor = false
+			} else if ok {
+				facts.HeadMatchesAnchor = strings.EqualFold(strings.TrimSpace(current), strings.TrimSpace(state.git.postExecuteHeadSHA))
+			}
 		}
 	}
-	if phase == cyclesdomain.PhaseVerify && h.firstVerifyAfterNewExecute(state) {
-		return CursorResumeDecision{Mode: CursorResumeFresh, DenyReason: "verify_fresh_after_execute"}, nil
+
+	// Decide without session id first so we skip LastSessionID I/O when an
+	// earlier gate already denies (matches prior short-circuit order).
+	early := DecideCursorResume(facts)
+	if early.DenyReason != "" && early.DenyReason != "no_session_id" && early.DenyReason != "workspace_mismatch" {
+		return CursorResumeDecision{Mode: early.Mode, DenyReason: early.DenyReason}, nil
 	}
-	if !state.git.gitSnap.Skipped && state.git.postExecuteHeadSHA != "" {
-		headMatches := true
-		current, ok, herr := h.resolveCurrentHeadSHA(ctx, state.git.gitSnap)
-		if herr != nil {
-			headMatches = false
-		} else if ok {
-			headMatches = strings.EqualFold(strings.TrimSpace(current), strings.TrimSpace(state.git.postExecuteHeadSHA))
+
+	if !forceFresh {
+		lookupCycleID := h.sessionLookupCycleID(ctx, cycle, phase, facts.RetryMode, opts)
+		sessionID, err := h.store.LastSessionID(ctx, lookupCycleID, phase)
+		if err != nil {
+			return CursorResumeDecision{}, err
 		}
-		if !headMatches {
-			return CursorResumeDecision{Mode: CursorResumeFresh, DenyReason: "head_drift"}, nil
-		}
+		facts.SessionID = sessionID
 	}
-	if state.verify.reportTampered {
-		return CursorResumeDecision{Mode: CursorResumeFresh, DenyReason: "tamper"}, nil
+
+	policy := DecideCursorResume(facts)
+	if !policy.AllowResume {
+		return CursorResumeDecision{Mode: policy.Mode, DenyReason: policy.DenyReason}, nil
 	}
-	lookupCycleID := h.sessionLookupCycleID(ctx, cycle, phase, retryMode, opts)
-	sessionID, err := h.store.LastSessionID(ctx, lookupCycleID, phase)
-	if err != nil {
-		return CursorResumeDecision{}, err
-	}
-	sessionID = strings.TrimSpace(sessionID)
-	if sessionID == "" {
-		return CursorResumeDecision{Mode: CursorResumeFresh, DenyReason: "no_session_id"}, nil
-	}
-	workdir := strings.TrimSpace(h.opts.WorkingDir)
-	if workdir == "" {
-		return CursorResumeDecision{Mode: CursorResumeFresh, DenyReason: "workspace_mismatch"}, nil
-	}
-	recoveryCtx := h.buildRecoveryContext(phase, task, cycle, state, opts, retryMode)
+
+	recoveryCtx := h.buildRecoveryContext(phase, task, cycle, state, opts, facts.RetryMode)
 	delta := prompt.ComposeRecoveryDelta(recoveryCtx)
 	decision := CursorResumeDecision{
 		Mode:            CursorResumeContinue,
-		ResumeSessionID: sessionID,
+		ResumeSessionID: strings.TrimSpace(facts.SessionID),
 		Prompt:          delta,
 		RecoveryKind:    recoveryCtx.Kind,
 	}
@@ -235,11 +236,6 @@ func (h *Harness) sessionLookupCycleID(
 		}
 	}
 	return cycle.ID
-}
-
-//funclogmeasure:skip category=hot-path reason="Pure state comparison for verify fresh-after-execute deny."
-func (h *Harness) firstVerifyAfterNewExecute(state *processState) bool {
-	return state.phase.lastVerifyAfterExecuteSeq < state.phase.lastCompletedExecutePhaseSeq
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure DTO assembly; ComposeRecoveryDelta logs hint metrics."

@@ -1,0 +1,122 @@
+package harness
+
+import (
+	"testing"
+
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
+)
+
+func TestDecideCursorResume_table(t *testing.T) {
+	t.Parallel()
+	base := CursorResumeFacts{
+		SessionResumeEnabled: true,
+		RetryMode:            taskcoredomain.RetryResume,
+		Phase:                cyclesdomain.PhaseExecute,
+		HeadMatchesAnchor:    true,
+		SessionID:            "sess-1",
+		WorkingDir:           "/tmp/ws",
+	}
+	tests := []struct {
+		name       string
+		mutate     func(*CursorResumeFacts)
+		wantMode   CursorResumeMode
+		wantDeny   string
+		wantAllow  bool
+	}{
+		{
+			name:      "continue when all gates pass",
+			wantMode:  CursorResumeContinue,
+			wantAllow: true,
+		},
+		{
+			name: "force fresh",
+			mutate: func(f *CursorResumeFacts) {
+				f.ForceFresh = true
+			},
+			wantMode: CursorResumeFresh,
+			wantDeny: "resume_failed",
+		},
+		{
+			name: "settings disabled",
+			mutate: func(f *CursorResumeFacts) {
+				f.SessionResumeEnabled = false
+			},
+			wantMode: CursorResumeFresh,
+			wantDeny: "settings_disabled",
+		},
+		{
+			name: "retry fresh",
+			mutate: func(f *CursorResumeFacts) {
+				f.RetryMode = taskcoredomain.RetryFresh
+			},
+			wantMode: CursorResumeFresh,
+			wantDeny: "retry_fresh",
+		},
+		{
+			name: "verify fresh after execute",
+			mutate: func(f *CursorResumeFacts) {
+				f.Phase = cyclesdomain.PhaseVerify
+				f.FirstVerifyAfterExecute = true
+			},
+			wantMode: CursorResumeFresh,
+			wantDeny: "verify_fresh_after_execute",
+		},
+		{
+			name: "head drift",
+			mutate: func(f *CursorResumeFacts) {
+				f.HasPostExecuteHead = true
+				f.HeadMatchesAnchor = false
+			},
+			wantMode: CursorResumeFresh,
+			wantDeny: "head_drift",
+		},
+		{
+			name: "tamper",
+			mutate: func(f *CursorResumeFacts) {
+				f.ReportTampered = true
+			},
+			wantMode: CursorResumeFresh,
+			wantDeny: "tamper",
+		},
+		{
+			name: "no session id",
+			mutate: func(f *CursorResumeFacts) {
+				f.SessionID = ""
+			},
+			wantMode: CursorResumeFresh,
+			wantDeny: "no_session_id",
+		},
+		{
+			name: "workspace mismatch",
+			mutate: func(f *CursorResumeFacts) {
+				f.WorkingDir = "  "
+			},
+			wantMode: CursorResumeFresh,
+			wantDeny: "workspace_mismatch",
+		},
+		{
+			name: "skip head check when git skipped",
+			mutate: func(f *CursorResumeFacts) {
+				f.GitSkipped = true
+				f.HasPostExecuteHead = true
+				f.HeadMatchesAnchor = false
+			},
+			wantMode:  CursorResumeContinue,
+			wantAllow: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			in := base
+			if tt.mutate != nil {
+				tt.mutate(&in)
+			}
+			got := DecideCursorResume(in)
+			if got.Mode != tt.wantMode || got.DenyReason != tt.wantDeny || got.AllowResume != tt.wantAllow {
+				t.Fatalf("got %+v want mode=%s deny=%q allow=%v", got, tt.wantMode, tt.wantDeny, tt.wantAllow)
+			}
+		})
+	}
+}
