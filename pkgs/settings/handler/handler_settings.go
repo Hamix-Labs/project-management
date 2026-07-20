@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/registry"
 	"github.com/AlexsanderHamir/Hamix/pkgs/settings/contract"
 	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
@@ -165,7 +164,12 @@ func (h *Handler) listCursorModels(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	models, resolved, err := registry.ListModelsForRunner(r.Context(), body.Runner, body.BinaryPath, 30*time.Second)
+	if h.runnerModels == nil {
+		handlerhttp.WriteJSONError(w, r, op, http.StatusServiceUnavailable, "runner model listing unavailable")
+		return
+	}
+
+	models, resolved, err := h.runnerModels.ListModels(r.Context(), body.Runner, body.BinaryPath, 30*time.Second)
 	out := listCursorModelsResponse{Runner: body.Runner, BinaryPath: resolved}
 	if err != nil {
 		out.OK = false

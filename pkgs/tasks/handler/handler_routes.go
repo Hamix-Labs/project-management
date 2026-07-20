@@ -35,10 +35,11 @@ func (h *Handler) registerRoutes(m *http.ServeMux) {
 		GitService: h.git,
 	})
 	settingshandler.Register(m, settingshandler.Deps{
-		Settings: h.store,
-		GitInventory:  h.store,
-		Agent:    h.agent,
-		Git:      h.git,
+		Settings:     h.store,
+		GitInventory: h.store,
+		Agent:        h.agent,
+		Git:          h.git,
+		RunnerModels: registryRunnerPorts{},
 		Notify: func(typ realtime.ChangeType) {
 			h.notifyScopelessChange(realtime.ChangeType(typ))
 		},
