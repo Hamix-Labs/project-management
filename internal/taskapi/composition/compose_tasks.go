@@ -147,7 +147,7 @@ func (a *API) ReadyForAgentPickup(ctx context.Context, t *taskcoredomain.Task, n
 	return a.taskcore.ReadyForAgentPickup(ctx, t, now)
 }
 
-func (a *API) ApplyTaskGateAction(ctx context.Context, taskID, action string, by taskcoredomain.Actor) (*taskcoredomain.Task, error) {
+func (a *API) ApplyTaskGateAction(ctx context.Context, taskID string, action taskcorecontract.GateAction, by taskcoredomain.Actor) (*taskcoredomain.Task, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ApplyTaskGateAction")
 	return a.taskcore.ApplyTaskGateAction(ctx, taskID, action, by)
 }

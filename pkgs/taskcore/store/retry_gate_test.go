@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
+	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
@@ -164,7 +165,7 @@ func TestApplyTaskGateAction_releaseHoldClearHold(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	released, err := st.ApplyTaskGateAction(ctx, task.ID, "release", domain.ActorUser)
+	released, err := st.ApplyTaskGateAction(ctx, task.ID, contract.GateActionRelease, domain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -181,7 +182,7 @@ func TestApplyTaskGateAction_releaseHoldClearHold(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	held, err := st.ApplyTaskGateAction(ctx, task.ID, "hold", domain.ActorUser)
+	held, err := st.ApplyTaskGateAction(ctx, task.ID, contract.GateActionHold, domain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -189,7 +190,7 @@ func TestApplyTaskGateAction_releaseHoldClearHold(t *testing.T) {
 		t.Fatalf("after hold: %+v", held.Gate)
 	}
 
-	cleared, err := st.ApplyTaskGateAction(ctx, task.ID, "clear_hold", domain.ActorUser)
+	cleared, err := st.ApplyTaskGateAction(ctx, task.ID, contract.GateActionClearHold, domain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -211,7 +212,7 @@ func TestApplyTaskGateAction_rejectsIllegal(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = st.ApplyTaskGateAction(ctx, noGate.ID, "release", domain.ActorUser)
+	_, err = st.ApplyTaskGateAction(ctx, noGate.ID, contract.GateActionRelease, domain.ActorUser)
 	if !errors.Is(err, domain.ErrInvalidInput) {
 		t.Fatalf("no gate: err = %v, want ErrInvalidInput", err)
 	}
@@ -229,15 +230,15 @@ func TestApplyTaskGateAction_rejectsIllegal(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = st.ApplyTaskGateAction(ctx, gated.ID, "hold", domain.ActorUser)
+	_, err = st.ApplyTaskGateAction(ctx, gated.ID, contract.GateActionHold, domain.ActorUser)
 	if !errors.Is(err, domain.ErrInvalidInput) {
 		t.Fatalf("hold while active: err = %v, want ErrInvalidInput", err)
 	}
-	_, err = st.ApplyTaskGateAction(ctx, gated.ID, "not-a-real-action", domain.ActorUser)
+	_, err = st.ApplyTaskGateAction(ctx, gated.ID, contract.GateAction("not-a-real-action"), domain.ActorUser)
 	if !errors.Is(err, domain.ErrInvalidInput) {
 		t.Fatalf("bad action: err = %v, want ErrInvalidInput", err)
 	}
-	_, err = st.ApplyTaskGateAction(ctx, gated.ID, "  ", domain.ActorUser)
+	_, err = st.ApplyTaskGateAction(ctx, gated.ID, contract.GateAction("  "), domain.ActorUser)
 	if !errors.Is(err, domain.ErrInvalidInput) {
 		t.Fatalf("empty action: err = %v, want ErrInvalidInput", err)
 	}

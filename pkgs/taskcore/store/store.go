@@ -152,9 +152,9 @@ func (s *Store) ReadyForAgentPickup(ctx context.Context, t *domain.Task, now tim
 	return tasks.ReadyForAgentPickup(ctx, s.db, t, now)
 }
 
-func (s *Store) ApplyTaskGateAction(ctx context.Context, taskID, action string, by domain.Actor) (*domain.Task, error) {
+func (s *Store) ApplyTaskGateAction(ctx context.Context, taskID string, action taskcorecontract.GateAction, by domain.Actor) (*domain.Task, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcore.store.ApplyTaskGateAction")
-	return tasks.ApplyTaskGateAction(ctx, s.db, taskID, action, by)
+	return tasks.ApplyTaskGateAction(ctx, s.db, taskID, string(action), by)
 }
 
 func (s *Store) ListDeferredReadyPickupTasks(ctx context.Context, limit int, after *DeferredPickupCursor) ([]DeferredPickup, error) {

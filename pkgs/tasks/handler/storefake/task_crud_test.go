@@ -56,7 +56,7 @@ func TestTaskCRUDFake_RetryAndGate_recording(t *testing.T) {
 
 	wantGate := &taskcoredomain.Task{ID: "t1", Status: taskcoredomain.StatusReady}
 	fake.OnGate(wantGate)
-	got, err = fake.ApplyTaskGateAction(ctx, "t1", "release", taskcoredomain.ActorUser)
+	got, err = fake.ApplyTaskGateAction(ctx, "t1", taskcorecontract.GateActionRelease, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("Gate: %v", err)
 	}
@@ -69,7 +69,7 @@ func TestTaskCRUDFake_RetryAndGate_recording(t *testing.T) {
 	}
 
 	fake.FailGate(taskcoredomain.ErrNotFound)
-	if _, err := fake.ApplyTaskGateAction(ctx, "t1", "hold", taskcoredomain.ActorUser); !errors.Is(err, taskcoredomain.ErrNotFound) {
+	if _, err := fake.ApplyTaskGateAction(ctx, "t1", taskcorecontract.GateActionHold, taskcoredomain.ActorUser); !errors.Is(err, taskcoredomain.ErrNotFound) {
 		t.Fatalf("FailGate: got %v", err)
 	}
 }

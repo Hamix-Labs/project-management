@@ -40,6 +40,23 @@ type PickupNotBeforePatch struct {
 	At    time.Time
 }
 
+// GateFieldPatch updates the task gate when non-nil.
+// Clear=true with Gate=nil clears the gate; Gate non-nil sets/replaces it.
+// Prefer this over UpdateTaskInput.Gate's historical **TaskGate encoding.
+type GateFieldPatch struct {
+	Clear bool
+	Gate  *domain.TaskGate
+}
+
+// GateAction is an operator gate mutation (release / hold / clear_hold).
+type GateAction string
+
+const (
+	GateActionRelease   GateAction = "release"
+	GateActionHold      GateAction = "hold"
+	GateActionClearHold GateAction = "clear_hold"
+)
+
 // UpdateTaskInput is the task patch payload.
 type UpdateTaskInput struct {
 	Title                 *string
@@ -52,11 +69,14 @@ type UpdateTaskInput struct {
 	CursorModel           *string
 	Tags                  *[]string
 	Milestone             *string
-	Gate                  **domain.TaskGate
-	DependsOn             *[]domain.DependencyEdge
-	PendingRetry          *domain.PendingRetry
-	ClearPendingRetry     bool
-	WorktreeID            *string
+	// Gate uses **TaskGate: nil = leave unchanged; non-nil pointer to nil = clear;
+	// non-nil pointer to non-nil = set. Prefer GateFieldPatch for new call sites;
+	// store Update still consumes the double-pointer encoding today.
+	Gate              **domain.TaskGate
+	DependsOn         *[]domain.DependencyEdge
+	PendingRetry      *domain.PendingRetry
+	ClearPendingRetry bool
+	WorktreeID        *string
 }
 
 // ListFilter optionally restricts flat task listing.
