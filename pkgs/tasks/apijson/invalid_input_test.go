@@ -11,6 +11,7 @@ func TestInvalidInputDetail(t *testing.T) {
 
 	tasksErr := fmt.Errorf("%swrong status", TasksInvalidInputMark)
 	settingsErr := fmt.Errorf("%sempty model", SettingsInvalidInputMark)
+	projectsErr := fmt.Errorf("%sproject name required", ProjectsInvalidInputMark)
 	wrapped := fmt.Errorf("wrap: %w", fmt.Errorf("%sbad id", TasksInvalidInputMark))
 
 	tests := []struct {
@@ -23,6 +24,7 @@ func TestInvalidInputDetail(t *testing.T) {
 		{name: "no marks", err: tasksErr, marks: nil, want: ""},
 		{name: "tasks mark", err: tasksErr, marks: []string{TasksInvalidInputMark}, want: "wrong status"},
 		{name: "settings preferred", err: settingsErr, marks: []string{SettingsInvalidInputMark, TasksInvalidInputMark}, want: "empty model"},
+		{name: "projects preferred", err: projectsErr, marks: []string{ProjectsInvalidInputMark, SettingsInvalidInputMark, TasksInvalidInputMark}, want: "project name required"},
 		{name: "tasks after settings miss", err: tasksErr, marks: []string{SettingsInvalidInputMark, TasksInvalidInputMark}, want: "wrong status"},
 		{name: "no match", err: errors.New("other"), marks: []string{TasksInvalidInputMark}, want: ""},
 		{name: "wrapped message still scanned", err: wrapped, marks: []string{TasksInvalidInputMark}, want: "bad id"},

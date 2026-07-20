@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
+	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskcorehandler "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/handler"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
@@ -96,6 +98,32 @@ func TestStoreErrHTTPResponse(t *testing.T) {
 			wantMsg:  "payload could not be saved",
 		},
 		{name: "internal", err: errors.New("db unavailable"), wantCode: http.StatusInternalServerError, wantMsg: "internal server error"},
+		// Dual sentinels: projects storekernel emits taskcore; domain also has local sentinels.
+		{
+			name:     "projects_store_conflict_taskcore",
+			err:      fmt.Errorf("%w: duplicate project row", taskcoredomain.ErrConflict),
+			wantCode: http.StatusConflict,
+			wantMsg:  "duplicate project row",
+		},
+		{name: "projects_domain_not_found", err: projectsdomain.ErrNotFound, wantCode: http.StatusNotFound, wantMsg: "not found"},
+		{
+			name:     "projects_domain_conflict_detail",
+			err:      fmt.Errorf("%w: default project cannot be deleted", projectsdomain.ErrConflict),
+			wantCode: http.StatusConflict,
+			wantMsg:  "default project cannot be deleted",
+		},
+		{
+			name:     "projects_domain_invalid_input",
+			err:      fmt.Errorf("%w: project name required", projectsdomain.ErrInvalidInput),
+			wantCode: http.StatusBadRequest,
+			wantMsg:  "project name required",
+		},
+		{
+			name:     "settings_domain_invalid_input",
+			err:      fmt.Errorf("%w: empty model", settingsdomain.ErrInvalidInput),
+			wantCode: http.StatusBadRequest,
+			wantMsg:  "empty model",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

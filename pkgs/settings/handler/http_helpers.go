@@ -1,42 +1,14 @@
 package handler
 
 import (
-	"errors"
 	"log/slog"
 	"net/http"
 	"strings"
 
-	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
-	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/apijson"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/logctx"
 )
-
-func writeStoreError(w http.ResponseWriter, r *http.Request, op string, err error) {
-	code := http.StatusInternalServerError
-	switch {
-	case errors.Is(err, settingsdomain.ErrInvalidInput), errors.Is(err, taskcoredomain.ErrInvalidInput):
-		code = http.StatusBadRequest
-	}
-	msg := "internal server error"
-	if code != http.StatusInternalServerError {
-		if d := apijson.InvalidInputDetail(err, apijson.SettingsInvalidInputMark, apijson.TasksInvalidInputMark); d != "" {
-			msg = d
-		} else {
-			msg = err.Error()
-		}
-	}
-	handlerhttp.WriteJSONError(w, r, op, code, msg)
-	if r != nil {
-		ctx := r.Context()
-		slog.Log(ctx, slog.LevelWarn, "request failed",
-			"cmd", calltrace.LogCmd, "operation", op,
-			"request_id", logctx.RequestIDFromContext(ctx),
-			"http_status", code, "err", err)
-	}
-}
 
 // debugHTTPRequest preserves the settings-specific slog message "http request"
 // (not "http.io") while sharing query-byte truncation with handlerhttp.
