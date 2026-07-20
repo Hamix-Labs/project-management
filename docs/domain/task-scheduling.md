@@ -275,9 +275,9 @@ Effects:
 - Clears the task from immediate pickup; `PickupWakeScheduler` or reconcile can offer it again after the deferral
 - Does **not** change `status` — the task remains `ready`
 
-### Git binding gate (Plan 4)
+### Git binding gate
 
-After readiness passes, admission checks `task.worktree_id` and `task.branch_id`. When either is missing, the worker logs `missing_binding`, calls `deferTaskPickup` (~60s), and **does not** transition to `running`. This is separate from the four scheduling predicates — a task can be fully ready by deps/gate/pickup rules but still blocked until the operator binds a worktree (Plan 5 UI).
+After readiness passes, admission checks `task.worktree_id` and `task.branch_id`. When either is missing, the worker logs `missing_binding`, calls `deferTaskPickup` (~60s), and **does not** transition to `running`. This is separate from the four scheduling predicates — a task can be fully ready by deps/gate/pickup rules but still blocked until the operator binds a worktree in the UI.
 
 When binding is present, `prepareGitRun` acquires a per-`worktree_id` mutex, runs `gitwork.Checkout`, sets `Harness.SetWorkingDir` to the worktree path, then starts the harness. Checkout failures (`worktree_dirty`, `branch_checked_out`, `worktree_missing`, `branch_missing`) fail the task after pickup.
 
@@ -357,7 +357,7 @@ Reconcile enqueues candidates that are not already pending in `MemoryQueue`. Thi
 | `HAMIX_USER_TASK_AGENT_QUEUE_CAP` | `256` | Queue capacity — [agent-queue.md](./agent-queue.md), [configuration.md](../configuration.md) |
 | Reconcile tick | `2m` | Fixed `ReconcileTickInterval` — backstop for gate release and missed notify |
 
-Worker process enabled when at least one git repository is registered with a valid worktree path and agent not paused — supervisor in [agent-supervisor.md](./agent-supervisor.md). Tasks without `worktree_id`/`branch_id` are **not** picked up: admission defers pickup (~60s) until binding is set (Plan 5 UI).
+Worker process enabled when at least one git repository is registered with a valid worktree path and agent not paused — supervisor in [agent-supervisor.md](./agent-supervisor.md). Tasks without `worktree_id`/`branch_id` are **not** picked up: admission defers pickup (~60s) until binding is set in the UI.
 
 ## Testing strategy
 
