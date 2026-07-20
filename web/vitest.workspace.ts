@@ -48,12 +48,16 @@ const sharedVite = {
   },
 };
 
+/** Strict MSW for app + task harnesses only (F-09-05). settings/projects/worktrees stay on bypass until spy migration finishes. */
+const harnessStrictTest = {
+  ...sharedTest,
+  testTimeout: 15_000,
+  env: { HAMIX_MSW_UNHANDLED: "error" },
+};
+
 const fullAppTest = {
   ...sharedTest,
   testTimeout: 15_000,
-  // Fail loud when a harness forgets an MSW handler (F-09-05 / Wave G1).
-  // unit/components omit this so legacy vi.spyOn(fetch) suites keep working.
-  env: { HAMIX_MSW_UNHANDLED: "error" },
 };
 
 export default defineWorkspace([
@@ -77,7 +81,7 @@ export default defineWorkspace([
   {
     ...sharedVite,
     test: {
-      ...fullAppTest,
+      ...harnessStrictTest,
       name: "app",
       include: appIncludes,
     },
@@ -85,7 +89,7 @@ export default defineWorkspace([
   {
     ...sharedVite,
     test: {
-      ...fullAppTest,
+      ...harnessStrictTest,
       name: "task-pages",
       include: taskPagesIncludes,
     },
@@ -93,7 +97,7 @@ export default defineWorkspace([
   {
     ...sharedVite,
     test: {
-      ...fullAppTest,
+      ...harnessStrictTest,
       name: "task-create",
       include: taskCreateIncludes,
     },
@@ -109,7 +113,8 @@ export default defineWorkspace([
   {
     ...sharedVite,
     test: {
-      ...fullAppTest,
+      // Project list ported off fetch spies (G3); keep strict like task harnesses.
+      ...harnessStrictTest,
       name: "projects",
       include: projectsIncludes,
     },

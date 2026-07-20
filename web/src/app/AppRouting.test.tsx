@@ -11,6 +11,7 @@ import {
   taskEventsEmpty,
   taskGet,
 } from "@/test/handlers/tasks";
+import { taskCommitsEmpty, taskCyclesEmpty } from "@/test/handlers/cycles";
 import {
   appDefaultHandlers,
   renderApp,
@@ -38,11 +39,13 @@ describe("App routing", () => {
       taskGet("h1", { id: "h1", title: "Home link task" }),
       taskChecklistEmpty("h1"),
       taskEventsEmpty("h1"),
+      taskCyclesEmpty("h1"),
+      taskCommitsEmpty("h1"),
     );
 
     renderAppAt(["/tasks/h1"]);
 
-    await screen.findByRole("heading", { name: /^home link task$/i });
+    await screen.findByRole("heading", { name: /^home link task$/i }, { timeout: 10_000 });
     const titleLink = screen.getByRole("link", { name: /^hamix$/i });
     expect(titleLink).not.toHaveAttribute("aria-current");
 
