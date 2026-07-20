@@ -48,9 +48,8 @@ export function RegisterRepositoryModal({
           <header className="worktrees-form-modal__header">
             <h2 id="register-repo-title">Register repository</h2>
             <p id="register-repo-lead" className="worktrees-form-modal__lead">
-              Choose any checkout of the repository on disk. Hamix resolves the main worktree and
-              git identity automatically. After registering, create a task on this repository and
-              Hamix allocates a managed worktree.
+              Point Hamix at a git repository on disk. Task workspaces are allocated later when you
+              create a task on this repository.
             </p>
           </header>
           <div className="worktrees-form-modal__picker">
@@ -61,14 +60,14 @@ export function RegisterRepositoryModal({
               disabled={pending}
               onClick={() => setPickerOpen(true)}
             >
-              Choose folder
+              Choose repository
             </button>
             {path.trim() !== "" ? (
               <p className="worktrees-form-modal__selected">
                 Selected: <code>{path}</code>
               </p>
             ) : (
-              <p className="worktrees-form-modal__picker-empty">No folder selected yet.</p>
+              <p className="worktrees-form-modal__picker-empty">No repository selected yet.</p>
             )}
           </div>
           {errorMessage ? (
@@ -93,6 +92,11 @@ export function RegisterRepositoryModal({
         open={pickerOpen}
         nested
         requireGitRepository
+        rootsScope="expanded"
+        title="Choose repository"
+        lead="If you have multiple worktrees for the same Git repository, you can select any of them. Hamix identifies repositories by their primary checkout (the main working tree), so all linked worktrees are treated as part of the same repository."
+        selectionFooterLabel="Repository to register"
+        confirmLabel="Use this repository"
         currentPath={path}
         onClose={() => setPickerOpen(false)}
         onSelect={(next) => {

@@ -195,3 +195,63 @@ export async function browseWorkspaceDirs(
   }
   return parseBrowseDirsResponse(await res.json());
 }
+
+export type GitLiveBranch = {
+  name: string;
+  head_sha: string;
+};
+
+export type GitRepositoryProbeResponse = {
+  path: string;
+  main_path?: string;
+  is_main?: boolean;
+  is_git_repository: boolean;
+  current_branch?: string;
+  branches: GitLiveBranch[];
+};
+
+export function parseGitRepositoryProbeResponse(raw: unknown): GitRepositoryProbeResponse {
+  if (typeof raw !== "object" || raw === null) {
+    throw new Error("invalid git probe response");
+  }
+  const value = raw as Record<string, unknown>;
+  const branchesRaw = value.branches;
+  if (!Array.isArray(branchesRaw)) {
+    throw new Error("git probe missing branches array");
+  }
+  const branches: GitLiveBranch[] = branchesRaw.map((item) => {
+    if (typeof item !== "object" || item === null) {
+      throw new Error("invalid git probe branch");
+    }
+    const branch = item as Record<string, unknown>;
+    return {
+      name: typeof branch.name === "string" ? branch.name : "",
+      head_sha: typeof branch.head_sha === "string" ? branch.head_sha : "",
+    };
+  });
+  return {
+    path: typeof value.path === "string" ? value.path : "",
+    main_path: typeof value.main_path === "string" ? value.main_path : undefined,
+    is_main: value.is_main === true,
+    is_git_repository: value.is_git_repository === true,
+    current_branch:
+      typeof value.current_branch === "string" ? value.current_branch : undefined,
+    branches,
+  };
+}
+
+export async function probeGitRepository(
+  path: string,
+  init?: RequestInit,
+): Promise<GitRepositoryProbeResponse> {
+  const params = new URLSearchParams();
+  params.set("path", path);
+  const res = await fetchWithTimeout(`/settings/git-probe?${params}`, {
+    ...init,
+    headers: { Accept: "application/json", ...(init?.headers ?? {}) },
+  });
+  if (!res.ok) {
+    throw await apiErrorFromResponse(res);
+  }
+  return parseGitRepositoryProbeResponse(await res.json());
+}

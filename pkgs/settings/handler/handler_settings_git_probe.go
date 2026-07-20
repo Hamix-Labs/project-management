@@ -68,8 +68,19 @@ func (h *Handler) gitRepositoryProbe(w http.ResponseWriter, r *http.Request) {
 			current = b.Name
 		}
 	}
+
+	mainRoot, _, err := gitSvc.ResolveRegistration(r.Context(), opened.Root)
+	if err != nil {
+		slog.Log(r.Context(), slog.LevelError, "resolve registration for probe failed",
+			"cmd", calltrace.LogCmd, "operation", op, "err", err)
+		handlerhttp.WriteJSONError(w, r, op, http.StatusInternalServerError, "git probe failed")
+		return
+	}
+
 	handlerhttp.WriteJSON(w, r, op, http.StatusOK, gitRepositoryProbeResponse{
 		Path:            opened.Root,
+		MainPath:        mainRoot,
+		IsMain:          gitwork.PathKeyEqual(opened.Root, mainRoot),
 		IsGitRepository: true,
 		CurrentBranch:   current,
 		Branches:        out,

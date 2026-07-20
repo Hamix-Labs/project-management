@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os/exec"
+	"path/filepath"
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
@@ -92,6 +93,51 @@ func TestHTTP_gitRepositoryProbe_listsBranches(t *testing.T) {
 	}
 	if len(body.Branches) < 2 {
 		t.Fatalf("branches=%+v", body.Branches)
+	}
+	if body.MainPath == "" {
+		t.Fatal("main_path empty")
+	}
+	if !body.IsMain {
+		t.Fatalf("expected is_main for main checkout, got %+v", body)
+	}
+}
+
+func TestHTTP_gitRepositoryProbe_linkedWorktreeResolvesMain(t *testing.T) {
+	main := t.TempDir()
+	initGitRepo(t, main)
+	wtPath := filepath.Join(filepath.Dir(main), "wt-probe-linked")
+	runGit(t, main, "worktree", "add", "-b", "linked", wtPath)
+
+	db := tasktestdb.OpenSQLite(t)
+	st := composition.NewAPI(db)
+	srv := newSettingsHTTPServer(t, st, Deps{Settings: st, GitInventory: st, Git: gitwork.New()})
+
+	res, err := http.Get(srv.URL + "/settings/git-probe?path=" + url.QueryEscape(wtPath))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(res.Body)
+		t.Fatalf("status %d body=%s", res.StatusCode, b)
+	}
+	var body gitRepositoryProbeResponse
+	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
+		t.Fatal(err)
+	}
+	if !body.IsGitRepository {
+		t.Fatalf("expected git repository, got %+v", body)
+	}
+	if body.IsMain {
+		t.Fatalf("expected linked worktree is_main=false, got %+v", body)
+	}
+	wantMain, _ := filepath.Abs(main)
+	wantMain = filepath.ToSlash(wantMain)
+	if !gitwork.PathKeyEqual(body.MainPath, wantMain) {
+		t.Fatalf("main_path=%q want %q", body.MainPath, wantMain)
+	}
+	if gitwork.PathKeyEqual(body.Path, body.MainPath) {
+		t.Fatalf("path should be linked toplevel, got path=%q main=%q", body.Path, body.MainPath)
 	}
 }
 

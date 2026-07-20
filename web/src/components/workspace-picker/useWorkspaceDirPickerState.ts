@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   browseWorkspaceDirs,
   fetchWorkspaceRoots,
+  probeGitRepository,
   type BrowseDirEntry,
   type WorkspaceBrowseRoot,
   type WorkspaceRootsScope,
@@ -41,6 +42,12 @@ type LoadState =
   | { kind: "ready"; roots: WorkspaceBrowseRoot[]; environment: "native" }
   | { kind: "error"; message: string };
 
+type ResolvedGitSelection = {
+  probedPath: string;
+  mainPath: string;
+  isMain: boolean;
+};
+
 type PickerArgs = Pick<
   WorkspaceDirPickerModalProps,
   | "open"
@@ -70,7 +77,7 @@ export function useWorkspaceDirPickerState({
   const resolvedLead =
     lead ??
     (requireGitRepository
-      ? "Navigate to a git repository checkout. Hamix needs a .git folder at the path you register."
+      ? "If you have multiple worktrees for the same Git repository, you can select any of them. Hamix identifies repositories by their primary checkout (the main working tree), so all linked worktrees are treated as part of the same repository."
       : "Open a folder to browse inside it. Confirm the folder you're in to register it.");
 
   const [loadState, setLoadState] = useState<LoadState>({ kind: "idle" });
@@ -84,25 +91,73 @@ export function useWorkspaceDirPickerState({
     null,
   );
   const [validatingPath, setValidatingPath] = useState(false);
+  const [resolvedSelection, setResolvedSelection] = useState<ResolvedGitSelection | null>(null);
+  const [probePending, setProbePending] = useState(false);
+  const [probeError, setProbeError] = useState<string | null>(null);
 
   const atRoots = currentBrowsePath.trim() === "";
 
-  const loadListing = useCallback(async (path: string) => {
-    setListingPending(true);
-    setListingError(null);
-    try {
-      const listing = await browseWorkspaceDirs(path);
-      setEntries(listing.entries);
-      setCurrentBrowsePath(listing.path ?? path);
-      setParentPath(listing.parent_path ?? "");
-      setCurrentPathIsGitRepo(listing.is_git_repo === true);
-    } catch (err) {
-      setListingError(err instanceof Error ? err.message : "Could not list folders");
-      setEntries([]);
-    } finally {
-      setListingPending(false);
-    }
+  const clearResolvedSelection = useCallback(() => {
+    setResolvedSelection(null);
+    setProbeError(null);
+    setProbePending(false);
   }, []);
+
+  const resolveGitSelection = useCallback(async (path: string) => {
+    const trimmed = path.trim();
+    if (trimmed === "") {
+      clearResolvedSelection();
+      return;
+    }
+    setProbePending(true);
+    setProbeError(null);
+    try {
+      const probe = await probeGitRepository(trimmed);
+      if (!probe.is_git_repository) {
+        setResolvedSelection(null);
+        setProbeError("This folder is not a git repository.");
+        return;
+      }
+      const mainPath = (probe.main_path?.trim() || probe.path).trim();
+      setResolvedSelection({
+        probedPath: probe.path,
+        mainPath,
+        isMain: probe.is_main === true,
+      });
+    } catch (err) {
+      setResolvedSelection(null);
+      setProbeError(err instanceof Error ? err.message : "Could not resolve repository");
+    } finally {
+      setProbePending(false);
+    }
+  }, [clearResolvedSelection]);
+
+  const loadListing = useCallback(
+    async (path: string) => {
+      setListingPending(true);
+      setListingError(null);
+      if (requireGitRepository) {
+        clearResolvedSelection();
+      }
+      try {
+        const listing = await browseWorkspaceDirs(path);
+        setEntries(listing.entries);
+        const listedPath = listing.path ?? path;
+        setCurrentBrowsePath(listedPath);
+        setParentPath(listing.parent_path ?? "");
+        setCurrentPathIsGitRepo(listing.is_git_repo === true);
+        if (requireGitRepository && listing.is_git_repo === true) {
+          void resolveGitSelection(listedPath);
+        }
+      } catch (err) {
+        setListingError(err instanceof Error ? err.message : "Could not list folders");
+        setEntries([]);
+      } finally {
+        setListingPending(false);
+      }
+    },
+    [clearResolvedSelection, requireGitRepository, resolveGitSelection],
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -115,6 +170,7 @@ export function useWorkspaceDirPickerState({
     setListingError(null);
     setPathValidation(null);
     setValidatingPath(false);
+    clearResolvedSelection();
     void fetchWorkspaceRoots({ scope: rootsScope })
       .then((roots) => {
         if (cancelled) return;
@@ -138,22 +194,26 @@ export function useWorkspaceDirPickerState({
     return () => {
       cancelled = true;
     };
-  }, [open, initialBrowsePath, loadListing, rootsScope]);
+  }, [open, initialBrowsePath, loadListing, rootsScope, clearResolvedSelection]);
 
   const crumbs = useMemo(() => {
     if (loadState.kind !== "ready") return [];
     return computeCrumbs(loadState.roots, currentBrowsePath);
   }, [loadState, currentBrowsePath]);
 
+  const pathToValidate = requireGitRepository
+    ? (resolvedSelection?.mainPath ?? "")
+    : currentBrowsePath;
+
   useEffect(() => {
-    if (!open || !validatePath || currentBrowsePath.trim() === "") {
+    if (!open || !validatePath || pathToValidate.trim() === "") {
       setPathValidation(null);
       setValidatingPath(false);
       return;
     }
     let cancelled = false;
     setValidatingPath(true);
-    void validatePath(currentBrowsePath)
+    void validatePath(pathToValidate)
       .then((result) => {
         if (!cancelled) {
           setPathValidation(result);
@@ -172,7 +232,7 @@ export function useWorkspaceDirPickerState({
     return () => {
       cancelled = true;
     };
-  }, [open, validatePath, currentBrowsePath]);
+  }, [open, validatePath, pathToValidate]);
 
   function goRoots() {
     setEntries([]);
@@ -180,6 +240,9 @@ export function useWorkspaceDirPickerState({
     setParentPath("");
     setCurrentPathIsGitRepo(false);
     setListingError(null);
+    if (requireGitRepository) {
+      clearResolvedSelection();
+    }
   }
 
   function goBack() {
@@ -198,20 +261,40 @@ export function useWorkspaceDirPickerState({
   }
 
   function confirmSelection() {
-    if (atRoots || listingPending || currentBrowsePath.trim() === "") return;
-    if (requireGitRepository && !currentPathIsGitRepo) return;
+    if (listingPending || probePending) return;
+    if (requireGitRepository) {
+      if (!resolvedSelection) return;
+      onSelect(resolvedSelection.mainPath);
+      onClose();
+      return;
+    }
+    if (atRoots || currentBrowsePath.trim() === "") return;
     onSelect(currentBrowsePath);
     onClose();
   }
 
   const selectionLabel =
     selectionFooterLabel ??
-    (requireGitRepository ? "Repository checkout" : "Folder to register");
-  const confirmButtonLabel = confirmLabel ?? "Use this folder";
+    (requireGitRepository ? "Repository to register" : "Folder to register");
+  const confirmButtonLabel =
+    confirmLabel ?? (requireGitRepository ? "Use this repository" : "Use this folder");
   const hasOpenFolder = !atRoots && currentBrowsePath.trim() !== "";
-  const gitRequirementMet = !requireGitRepository || currentPathIsGitRepo;
+  const hasResolvedRepo = resolvedSelection != null && resolvedSelection.mainPath.trim() !== "";
+  const remapped =
+    resolvedSelection != null &&
+    !resolvedSelection.isMain &&
+    resolvedSelection.probedPath.trim() !== "" &&
+    resolvedSelection.probedPath !== resolvedSelection.mainPath;
+  const footerPath = requireGitRepository
+    ? (resolvedSelection?.mainPath ?? "")
+    : currentBrowsePath;
+  const footerEmptyHint = requireGitRepository
+    ? "Select a git repository"
+    : "Open a folder to register it";
   const customValidationMet = !validatePath || (pathValidation?.ok === true && !validatingPath);
-  const canConfirm = hasOpenFolder && !listingPending && gitRequirementMet && customValidationMet;
+  const canConfirm = requireGitRepository
+    ? hasResolvedRepo && !listingPending && !probePending && customValidationMet
+    : hasOpenFolder && !listingPending && customValidationMet;
 
   const rootGroups =
     loadState.kind === "ready" ? partitionBrowseRoots(loadState.roots) : null;
@@ -236,10 +319,18 @@ export function useWorkspaceDirPickerState({
     goBack,
     goRoots,
     loadListing,
+    resolveGitSelection,
     confirmSelection,
     selectionLabel,
     confirmButtonLabel,
     hasOpenFolder,
+    hasResolvedRepo,
+    remapped,
+    probedPath: resolvedSelection?.probedPath ?? "",
+    footerPath,
+    footerEmptyHint,
+    probePending,
+    probeError,
     canConfirm,
     requireGitRepository,
   };

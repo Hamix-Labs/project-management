@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   parseBrowseDirsResponse,
+  parseGitRepositoryProbeResponse,
   parseWorkspaceRootsResponse,
 } from "./settingsBrowse";
 
@@ -93,5 +94,27 @@ describe("parseBrowseDirsResponse", () => {
         entries: [{ path: "/x", has_children: false, is_git_repo: false }],
       }),
     ).toThrow(/name must be a non-empty string/);
+  });
+});
+
+describe("parseGitRepositoryProbeResponse", () => {
+  it("parses main_path and is_main for a checkout", () => {
+    expect(
+      parseGitRepositoryProbeResponse({
+        path: "/repos/wt-linked",
+        main_path: "/repos/main",
+        is_main: false,
+        is_git_repository: true,
+        current_branch: "linked",
+        branches: [{ name: "linked", head_sha: "abc" }],
+      }),
+    ).toEqual({
+      path: "/repos/wt-linked",
+      main_path: "/repos/main",
+      is_main: false,
+      is_git_repository: true,
+      current_branch: "linked",
+      branches: [{ name: "linked", head_sha: "abc" }],
+    });
   });
 });
