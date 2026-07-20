@@ -57,6 +57,12 @@ func (s *Store) GetDefaultProjectForRepository(ctx context.Context, repoID strin
 }
 
 // CreateDefaultProjectForRepo inserts the non-deletable default for a newly registered repo.
+func (s *Store) CreateDefaultProjectForRepo(ctx context.Context, repoID string) (domain.Project, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.CreateDefaultProjectForRepo")
+	return internal.CreateDefaultProjectForRepo(ctx, s.db, repoID, time.Now().UTC())
+}
+
+// CreateDefaultProjectForRepoTx inserts the default project inside an open transaction.
 //
 //funclogmeasure:skip category=delegate-already-logs reason="Package-level forwarder; internal.CreateDefaultProjectForRepo emits trace at the store chokepoint."
 func CreateDefaultProjectForRepo(ctx context.Context, tx *gorm.DB, repoID string, now time.Time) (domain.Project, error) {
@@ -64,6 +70,12 @@ func CreateDefaultProjectForRepo(ctx context.Context, tx *gorm.DB, repoID string
 }
 
 // DeleteProjectsForRepository removes all projects for a repository (including defaults).
+func (s *Store) DeleteProjectsForRepository(ctx context.Context, repoID string) error {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.DeleteProjectsForRepository")
+	return internal.DeleteProjectsForRepository(ctx, s.db, repoID)
+}
+
+// DeleteProjectsForRepositoryTx removes all projects for a repository inside an open transaction.
 //
 //funclogmeasure:skip category=delegate-already-logs reason="Package-level forwarder; internal.DeleteProjectsForRepository emits trace at the store chokepoint."
 func DeleteProjectsForRepository(ctx context.Context, tx *gorm.DB, repoID string) error {
