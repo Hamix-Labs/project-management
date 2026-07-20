@@ -57,6 +57,7 @@ type (
 	ReadyTaskQueueCursor    = ready.QueueCursor
 	ReadyTaskQueueCandidate = ready.QueueCandidate
 	DeferredPickup          = ready.DeferredPickup
+	DeferredPickupCursor    = ready.DeferredPickupCursor
 	TaskStats               = stats.TaskStats
 	CycleStats              = stats.CycleStats
 	PhaseStats              = stats.PhaseStats
@@ -156,9 +157,9 @@ func (s *Store) ApplyTaskGateAction(ctx context.Context, taskID, action string, 
 	return tasks.ApplyTaskGateAction(ctx, s.db, taskID, action, by)
 }
 
-func (s *Store) ListDeferredReadyPickupTasks(ctx context.Context, limit int) ([]DeferredPickup, error) {
+func (s *Store) ListDeferredReadyPickupTasks(ctx context.Context, limit int, after *DeferredPickupCursor) ([]DeferredPickup, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcore.store.ListDeferredReadyPickupTasks")
-	return ready.ListDeferredReadyPickups(ctx, s.db, time.Now().UTC(), limit)
+	return ready.ListDeferredReadyPickups(ctx, s.db, time.Now().UTC(), limit, after)
 }
 
 func (s *Store) ListReadyTaskQueueCandidates(ctx context.Context, limit int, cursor *ReadyTaskQueueCursor) ([]ReadyTaskQueueCandidate, error) {

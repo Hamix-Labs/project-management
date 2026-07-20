@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
-	taskcorecontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
+	taskcorecontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 )
 
@@ -169,23 +169,13 @@ func (a *runProgressSSEAdapter) shouldDrop(taskID, cycleID string, phaseSeq int6
 	return false
 }
 
-func publishEventNonBlocking(pub realtime.Publisher, metrics NotifierMetrics, kind string, ev realtime.Event) {
+func publishEventNonBlocking(pub realtime.Publisher, _ NotifierMetrics, _ string, ev realtime.Event) {
 	if pub == nil {
 		return
 	}
-	done := make(chan struct{}, 1)
-	go func() {
-		pub.Publish(ev)
-		done <- struct{}{}
-	}()
-	select {
-	case <-done:
-	case <-time.After(50 * time.Millisecond):
-		recordNotifierDropped(metrics, kind)
-		slog.Warn("agent worker notifier publish slow; continuing without blocking harness",
-			"cmd", calltrace.LogCmd, "operation", "taskapi.notifier.publish_timeout",
-			"kind", kind, "task_id", ev.ID)
-	}
+	// SSEHub.Publish is already non-blocking for subscriber fan-out (select/default).
+	// Call it directly so drop metrics only reflect real enqueue failures (B-37).
+	pub.Publish(ev)
 }
 
 //funclogmeasure:skip category=hot-path reason="Metrics delegate; drop events trace at notifier publish boundary."

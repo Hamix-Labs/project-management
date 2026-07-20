@@ -140,7 +140,14 @@ func (s *Service) resolveClaimedCommits(
 		}
 		branch := strings.TrimSpace(claim.Branch)
 		if branch == "" {
-			branch, _ = s.branchContaining(ctx, g.Worktree, sha)
+			resolved, branchErr := s.branchContaining(ctx, g.Worktree, sha)
+			if branchErr != nil {
+				slog.Warn("branchContaining failed; falling back to base branch",
+					"cmd", calltrace.LogCmd, "operation", "agent.harness.git.resolveClaimedCommits.branch_err",
+					"sha", sha, "err", branchErr)
+			} else {
+				branch = resolved
+			}
 		}
 		if branch == "" {
 			branch = g.BaseBranch

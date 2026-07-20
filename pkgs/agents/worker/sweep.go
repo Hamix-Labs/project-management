@@ -1,13 +1,15 @@
 package worker
 
-import "github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 import (
 	"context"
 	"errors"
+	"fmt"
+	"log/slog"
+
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclescontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/contract"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
-	"log/slog"
 )
 
 // InterruptPhaseReason is the phase summary recorded when a running phase
@@ -40,7 +42,8 @@ type SweepResult struct {
 // by a previous process without aborting cycles or failing tasks. Running
 // cycles stay running so Harness.Resume can continue the same attempt.
 //
-// Idempotent: re-running on a clean DB is a no-op.
+// Idempotent: re-running on a clean DB is a no-op. Non-NotFound CompletePhase
+// errors are joined and returned so startup can fail closed (B-36 / F-ERR-9).
 func FinalizeInterruptedPhases(ctx context.Context, st Store) (FinalizeResult, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.worker.FinalizeInterruptedPhases")
 	var res FinalizeResult
@@ -52,9 +55,10 @@ func FinalizeInterruptedPhases(ctx context.Context, st Store) (FinalizeResult, e
 	if err != nil {
 		return res, err
 	}
+	var errs []error
 	for _, p := range phases {
 		if ctx.Err() != nil {
-			return res, ctx.Err()
+			return res, errors.Join(append(errs, ctx.Err())...)
 		}
 		summary := InterruptPhaseReason
 		if _, err := st.CompletePhase(ctx, cyclescontract.CompletePhaseInput{
@@ -64,13 +68,16 @@ func FinalizeInterruptedPhases(ctx context.Context, st Store) (FinalizeResult, e
 			Summary:  &summary,
 			By:       taskcoredomain.ActorAgent,
 		}); err != nil {
-			level := slog.LevelWarn
 			if errors.Is(err, taskcoredomain.ErrNotFound) {
-				level = slog.LevelInfo
+				slog.Info("agent worker finalize CompletePhase not found",
+					"cmd", calltrace.LogCmd, "operation", "agent.worker.FinalizeInterruptedPhases.complete_err",
+					"cycle_id", p.CycleID, "phase_seq", p.PhaseSeq, "err", err)
+				continue
 			}
-			slog.Log(ctx, level, "agent worker finalize CompletePhase failed",
+			slog.Error("agent worker finalize CompletePhase failed",
 				"cmd", calltrace.LogCmd, "operation", "agent.worker.FinalizeInterruptedPhases.complete_err",
 				"cycle_id", p.CycleID, "phase_seq", p.PhaseSeq, "err", err)
+			errs = append(errs, fmt.Errorf("complete phase cycle=%s seq=%d: %w", p.CycleID, p.PhaseSeq, err))
 			continue
 		}
 		res.PhasesFinalized++
@@ -78,6 +85,9 @@ func FinalizeInterruptedPhases(ctx context.Context, st Store) (FinalizeResult, e
 
 	slog.Info("agent worker startup finalize complete", "cmd", calltrace.LogCmd,
 		"operation", "agent.worker.FinalizeInterruptedPhases.summary",
-		"phases_finalized", res.PhasesFinalized)
+		"phases_finalized", res.PhasesFinalized, "errors", len(errs))
+	if len(errs) > 0 {
+		return res, errors.Join(errs...)
+	}
 	return res, nil
 }

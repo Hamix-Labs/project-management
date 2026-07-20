@@ -1,17 +1,18 @@
 package cursor
 
-import "github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 import (
 	"bytes"
 	"encoding/json"
 	"log/slog"
 	"path"
+	"runtime/debug"
 	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/adapterkit"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 )
 
 type progressMessage struct {
@@ -45,7 +46,11 @@ func emitProgressFromLine(onProgress func(runner.ProgressEvent), raw []byte, hom
 		return
 	}
 	defer func() {
-		_ = recover()
+		if rec := recover(); rec != nil {
+			slog.Error("cursor progress callback panicked",
+				"cmd", calltrace.LogCmd, "operation", "cursor.emitProgressFromLine.panic",
+				"panic", rec, "stack", string(debug.Stack()))
+		}
 	}()
 	onProgress(ev)
 }

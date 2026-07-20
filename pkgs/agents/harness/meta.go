@@ -75,7 +75,11 @@ func mergeCycleMetaBytes(base []byte, extra map[string]any) []byte {
 	}
 	out := map[string]any{}
 	if len(base) > 0 {
-		_ = json.Unmarshal(base, &out)
+		if err := json.Unmarshal(base, &out); err != nil {
+			slog.Warn("mergeCycleMetaBytes: keeping base meta; unmarshal failed",
+				"cmd", calltrace.LogCmd, "operation", "agent.harness.mergeCycleMetaBytes", "err", err)
+			return base
+		}
 	}
 	for k, v := range extra {
 		out[k] = v

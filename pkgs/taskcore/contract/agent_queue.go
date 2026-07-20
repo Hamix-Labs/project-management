@@ -44,6 +44,12 @@ type DeferredPickup struct {
 	PickupNotBefore time.Time
 }
 
+// DeferredPickupCursor is a keyset cursor for ListDeferredReadyPickupTasks.
+type DeferredPickupCursor struct {
+	NotBefore time.Time
+	ID        string
+}
+
 // TaskGitContext is the resolved filesystem path and branch name for a task binding.
 type TaskGitContext struct {
 	WorktreeID   string
@@ -55,7 +61,7 @@ type TaskGitContext struct {
 // AgentQueueStore covers agent dequeue, pickup wake, and readiness checks.
 type AgentQueueStore interface {
 	ListReadyTaskQueueCandidates(ctx context.Context, limit int, cursor *ReadyTaskQueueCursor) ([]ReadyTaskQueueCandidate, error)
-	ListDeferredReadyPickupTasks(ctx context.Context, limit int) ([]DeferredPickup, error)
+	ListDeferredReadyPickupTasks(ctx context.Context, limit int, after *DeferredPickupCursor) ([]DeferredPickup, error)
 	AgentPickup(ctx context.Context, taskID string, by domain.Actor) (*AgentPickupResult, error)
 	ReadyForAgentPickup(ctx context.Context, t *domain.Task, now time.Time) (bool, FailedPredicate, error)
 	ResolveTaskGitContext(ctx context.Context, worktreeID string) (TaskGitContext, error)
