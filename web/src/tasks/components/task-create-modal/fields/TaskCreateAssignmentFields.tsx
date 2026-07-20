@@ -40,7 +40,7 @@ export function TaskCreateAssignmentFields({
     return (
       <p className="worktrees-git-selector__manage">
         No repositories registered.{" "}
-        <Link to="/worktrees?register=1" target="_blank" rel="noopener noreferrer">
+        <Link to="/repositories?register=1" target="_blank" rel="noopener noreferrer">
           Register repository
         </Link>
       </p>
@@ -76,7 +76,7 @@ export function TaskCreateAssignmentFields({
 
       <p className="worktrees-git-selector__manage">
         Hamix allocates a worktree and branch when the task is created.{" "}
-        <Link to="/worktrees" target="_blank" rel="noopener noreferrer">
+        <Link to="/repositories" target="_blank" rel="noopener noreferrer">
           Inspect repositories
         </Link>
       </p>

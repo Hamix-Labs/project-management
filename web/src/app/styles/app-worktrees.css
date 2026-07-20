@@ -3,7 +3,7 @@
  * brand left rail, nested worktree rows, and an add row per repository.
  */
 
-/* —— Repositories list page ( /worktrees ) — card shell per reference —— */
+/* —— Repositories list page ( /repositories ) — card shell per reference —— */
 
 .repositories-page {
   padding-block: var(--space-2) var(--space-4);
@@ -557,7 +557,7 @@
   font-weight: 500;
 }
 
-/* —— Repository list ( /worktrees ) — flat list inside card —— */
+/* —— Repository list ( /repositories ) — flat list inside card —— */
 
 .repositories-list {
   --repositories-list-inset-start: var(--space-4);

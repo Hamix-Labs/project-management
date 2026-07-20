@@ -82,7 +82,7 @@ function AppShell() {
   const homeIsCurrent = location.pathname === "/";
   const draftsIsCurrent = location.pathname.startsWith("/drafts");
   const templatesIsCurrent = location.pathname.startsWith("/templates");
-  const worktreesIsCurrent = location.pathname.startsWith("/worktrees");
+  const repositoriesIsCurrent = location.pathname.startsWith("/repositories");
   const projectsUiEnabled = !isUiFeatureOmitted("projects");
   const projectsIsCurrent = projectsUiEnabled && location.pathname.startsWith("/projects");
   const headerElevated = useStickyShellElevation();
@@ -134,9 +134,9 @@ function AppShell() {
                 Templates
               </Link>
               <Link
-                to="/worktrees"
+                to="/repositories"
                 className="app-nav__link"
-                {...(worktreesIsCurrent
+                {...(repositoriesIsCurrent
                   ? { "aria-current": "page" as const }
                   : {})}
               >
@@ -247,6 +247,7 @@ function routeNeedsHomeListData(pathname: string): boolean {
   if (pathname === "/" || pathname === "") return true;
   if (pathname.startsWith("/drafts")) return true;
   if (pathname.startsWith("/templates")) return true;
+  if (pathname.startsWith("/repositories")) return true;
   if (pathname.startsWith("/worktrees")) return true;
   // The task detail / cycle / event / graph routes embed the same
   // shell modals (edit/delete/change-model) that read from the home
@@ -272,7 +273,12 @@ export default function App() {
             <Route index element={<TaskHome />} />
             <Route path="drafts" element={<TaskDraftsPage />} />
             <Route path="templates" element={<TaskTemplatesPage />} />
-            <Route path="worktrees" element={<RepositoriesListPage />} />
+            <Route path="repositories" element={<RepositoriesListPage />} />
+            <Route path="worktrees" element={<Navigate to="/repositories" replace />} />
+            <Route
+              path="worktrees/:repositoryId"
+              element={<Navigate to="/repositories" replace />}
+            />
           {projectsUiEnabled ? (
             <>
               <Route path="projects" element={<ProjectListPage />} />

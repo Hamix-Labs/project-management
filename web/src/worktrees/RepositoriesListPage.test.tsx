@@ -38,7 +38,7 @@ function repositoryJson(
   };
 }
 
-function renderListPage(initialEntries: string[] = ["/worktrees"]) {
+function renderListPage(initialEntries: string[] = ["/repositories"]) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 } },
   });
@@ -47,7 +47,7 @@ function renderListPage(initialEntries: string[] = ["/worktrees"]) {
       <MemoryRouter future={ROUTER_FUTURE_FLAGS} initialEntries={initialEntries}>
         <ModalStackProvider>
           <Routes>
-            <Route path="/worktrees" element={<RepositoriesListPage />} />
+            <Route path="/repositories" element={<RepositoriesListPage />} />
           </Routes>
         </ModalStackProvider>
       </MemoryRouter>
@@ -113,7 +113,7 @@ describe("RepositoriesListPage", () => {
       return jsonResponse({ error: "not found" }, { status: 404 });
     });
 
-    renderListPage(["/worktrees?register=1"]);
+    renderListPage(["/repositories?register=1"]);
     expect(
       await screen.findByRole("button", { name: /Choose folder/i }),
     ).toBeInTheDocument();
