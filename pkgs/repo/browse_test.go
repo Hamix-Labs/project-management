@@ -37,6 +37,9 @@ func TestListBrowseDirs_listsSubdirectories(t *testing.T) {
 	if err := os.MkdirAll(filepath.Join(root, "node_modules", "x"), 0o755); err != nil {
 		t.Fatal(err)
 	}
+	if err := os.MkdirAll(filepath.Join(root, ".hamix", "repo", "worktrees"), 0o755); err != nil {
+		t.Fatal(err)
+	}
 	if err := os.MkdirAll(filepath.Join(root, "other"), 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -46,7 +49,12 @@ func TestListBrowseDirs_listsSubdirectories(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(listing.Entries) != 2 {
-		t.Fatalf("entries = %d want 2 (skip node_modules)", len(listing.Entries))
+		t.Fatalf("entries = %d want 2 (skip node_modules and .hamix)", len(listing.Entries))
+	}
+	for _, e := range listing.Entries {
+		if e.Name == "node_modules" || e.Name == ".hamix" {
+			t.Fatalf("skipped dir listed: %s", e.Name)
+		}
 	}
 	var sawGit bool
 	for _, e := range listing.Entries {

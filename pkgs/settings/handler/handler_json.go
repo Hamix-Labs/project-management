@@ -104,6 +104,8 @@ type gitLiveBranchJSON struct {
 
 type gitRepositoryProbeResponse struct {
 	Path            string              `json:"path"`
+	MainPath        string              `json:"main_path,omitempty"`
+	IsMain          bool                `json:"is_main,omitempty"`
 	IsGitRepository bool                `json:"is_git_repository"`
 	CurrentBranch   string              `json:"current_branch,omitempty"`
 	Branches        []gitLiveBranchJSON `json:"branches"`

@@ -14,6 +14,7 @@ const maxBrowseDirEntries = 200
 
 var browseSkipDirNames = map[string]struct{}{
 	"node_modules": {},
+	".hamix":       {},
 }
 
 // BrowseDirEntry is one subdirectory in a picker listing.
