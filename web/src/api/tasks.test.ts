@@ -479,7 +479,7 @@ describe("saveTaskDraft", () => {
     const ac = new AbortController();
     await saveTaskDraft({
       name: "Draft",
-      payload: { title: "T", initial_prompt: "" },
+      payload: { title: "T", initial_prompt: "", priority: "medium", checklist_items: [] },
       signal: ac.signal,
     });
     expect(spy).toHaveBeenCalledWith(

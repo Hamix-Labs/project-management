@@ -10,7 +10,7 @@ type Filters = ReturnType<typeof useTaskListSectionFilters>;
 type Props = {
   loading: boolean;
   actions?: ReactNode;
-  headingSummary: string | null;
+  headingSummary?: string;
   taskStats?: TaskStatsResponse | null;
   showProjectColumn: boolean;
   projectFilterOptions: Array<{ id: string; name: string }>;
