@@ -5,13 +5,15 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
-	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
-	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 	"log/slog"
 	"strings"
 	"time"
+
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
+	cyclescontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/contract"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
+	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 )
 
 const pickupPersistenceDefer = 2 * time.Minute
@@ -93,23 +95,81 @@ func (w *Worker) recordPickupPersistenceFailure(ctx context.Context, taskID stri
 	}
 }
 
-func (w *Worker) openRunningCycle(ctx context.Context, taskID string) (*cyclesdomain.TaskCycle, bool) {
+func (w *Worker) openRunningCycle(ctx context.Context, taskID string) (*cyclesdomain.TaskCycle, error) {
 	cycles, err := w.store.ListCyclesForTask(ctx, taskID, 0)
 	if err != nil {
 		if errors.Is(err, taskcoredomain.ErrNotFound) {
-			return nil, false
+			return nil, nil
 		}
 		slog.Warn("agent worker list cycles failed", "cmd", calltrace.LogCmd,
 			"operation", "agent.worker.Worker.openRunningCycle.err", "task_id", taskID, "err", err)
-		return nil, false
+		return nil, err
 	}
 	for i := len(cycles) - 1; i >= 0; i-- {
 		if cycles[i].Status == cyclesdomain.CycleStatusRunning {
 			cycle := cycles[i]
-			return &cycle, true
+			return &cycle, nil
 		}
 	}
-	return nil, false
+	return nil, nil
+}
+
+const (
+	admissionRunningWithoutCycleReason  = "running_without_open_cycle"
+	admissionRunningMissingBindingReason = "running_missing_git_binding"
+)
+
+// failStuckRunning terminates any open Running cycle/phase then fails the
+// task. Used when admission would otherwise Ack-and-drop a Running row.
+func (w *Worker) failStuckRunning(ctx context.Context, taskID, reason string, cause error) {
+	slog.Warn("agent worker failing stuck running task", "cmd", calltrace.LogCmd,
+		"operation", "agent.worker.Worker.failStuckRunning",
+		"task_id", taskID, "reason", reason, "err", cause)
+	if cycle, err := w.openRunningCycle(ctx, taskID); err == nil && cycle != nil {
+		phases, listErr := w.store.ListPhasesForCycle(ctx, cycle.ID)
+		if listErr != nil {
+			if !errors.Is(listErr, taskcoredomain.ErrNotFound) {
+				slog.Warn("agent worker failStuckRunning ListPhasesForCycle failed", "cmd", calltrace.LogCmd,
+					"operation", "agent.worker.Worker.failStuckRunning.list_phases_err",
+					"task_id", taskID, "cycle_id", cycle.ID, "err", listErr)
+			}
+		} else {
+			for _, p := range phases {
+				if p.Status != cyclesdomain.PhaseStatusRunning {
+					continue
+				}
+				summary := reason
+				if _, completeErr := w.store.CompletePhase(ctx, cyclescontract.CompletePhaseInput{
+					CycleID:  cycle.ID,
+					PhaseSeq: p.PhaseSeq,
+					Status:   cyclesdomain.PhaseStatusFailed,
+					Summary:  &summary,
+					By:       taskcoredomain.ActorAgent,
+				}); completeErr != nil {
+					if !errors.Is(completeErr, taskcoredomain.ErrNotFound) {
+						slog.Warn("agent worker failStuckRunning CompletePhase failed", "cmd", calltrace.LogCmd,
+							"operation", "agent.worker.Worker.failStuckRunning.complete_err",
+							"task_id", taskID, "cycle_id", cycle.ID, "phase_seq", p.PhaseSeq, "err", completeErr)
+					}
+				}
+			}
+		}
+		if _, termErr := w.store.TerminateCycle(ctx, cycle.ID, cyclesdomain.CycleStatusFailed, reason, taskcoredomain.ActorAgent); termErr != nil {
+			if !errors.Is(termErr, taskcoredomain.ErrNotFound) {
+				slog.Warn("agent worker failStuckRunning TerminateCycle failed", "cmd", calltrace.LogCmd,
+					"operation", "agent.worker.Worker.failStuckRunning.terminate_err",
+					"task_id", taskID, "cycle_id", cycle.ID, "err", termErr)
+			}
+		}
+	}
+	failed := taskcoredomain.StatusFailed
+	if _, err := w.store.Update(ctx, taskID, taskcorestore.UpdateTaskInput{Status: &failed}, taskcoredomain.ActorAgent); err != nil {
+		if !errors.Is(err, taskcoredomain.ErrNotFound) {
+			slog.Warn("agent worker failStuckRunning task transition failed", "cmd", calltrace.LogCmd,
+				"operation", "agent.worker.Worker.failStuckRunning.err",
+				"task_id", taskID, "err", err)
+		}
+	}
 }
 
 // processOne runs queue admission then delegates the cycle body to the harness.
@@ -126,15 +186,23 @@ func (w *Worker) processOne(parentCtx context.Context, task taskcoredomain.Task)
 
 	switch fresh.Status {
 	case taskcoredomain.StatusRunning:
-		cycle, ok := w.openRunningCycle(parentCtx, fresh.ID)
-		if !ok {
+		cycle, err := w.openRunningCycle(parentCtx, fresh.ID)
+		if err != nil {
+			slog.Warn("running task cycle lookup failed at dequeue; deferring", "cmd", calltrace.LogCmd,
+				"operation", "agent.worker.Worker.processOne.cycle_lookup_err", "task_id", task.ID, "err", err)
+			w.deferTaskPickup(parentCtx, task.ID, pickupPersistenceDefer)
+			return
+		}
+		if cycle == nil {
 			slog.Warn("running task without open cycle at dequeue", "cmd", calltrace.LogCmd,
 				"operation", "agent.worker.Worker.processOne.no_open_cycle", "task_id", task.ID)
+			w.failStuckRunning(parentCtx, fresh.ID, admissionRunningWithoutCycleReason, nil)
 			return
 		}
 		if !taskHasBinding(fresh) {
 			slog.Warn("running task missing git binding", "cmd", calltrace.LogCmd,
 				"operation", "agent.worker.Worker.processOne.missing_binding", "task_id", task.ID)
+			w.failStuckRunning(parentCtx, fresh.ID, admissionRunningMissingBindingReason, nil)
 			return
 		}
 		unlock := w.gate.Lock(strings.TrimSpace(*fresh.WorktreeID))
