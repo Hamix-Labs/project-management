@@ -122,7 +122,7 @@ describe("useTaskPatchFlow", () => {
     });
   });
 
-  it("invalidates list + task-stats on success and fires onPatched(id)", async () => {
+  it("invalidates list + task-stats + detail on success and fires onPatched(id)", async () => {
     mockedPatch.mockResolvedValueOnce(undefined as unknown as never);
     const { Wrapper, invalidateSpy } = makeMutationTestWrapper();
     const onPatched = vi.fn();
@@ -137,6 +137,9 @@ describe("useTaskPatchFlow", () => {
     });
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: taskQueryKeys.listRoot() });
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: taskQueryKeys.stats() });
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: taskQueryKeys.detail("t1"),
+    });
   });
 
   it("surfaces API errors via patchError; does not call onPatched", async () => {

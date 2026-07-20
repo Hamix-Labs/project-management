@@ -107,7 +107,11 @@ export function useGuardedTaskMutation<
       );
     },
     onSuccess: async (_data, variables, context) => {
-      await invalidateTaskCacheAsync(queryClient, ...invalidateScopes);
+      await invalidateTaskCacheAsync(
+        queryClient,
+        ...invalidateScopes,
+        { scope: "detail", taskId: variables.id },
+      );
       await onSuccessSideEffect?.({ variables, context });
       if (context) {
         rumMutationSettled(

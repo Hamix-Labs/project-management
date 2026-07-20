@@ -69,7 +69,11 @@ function useTaskDetailRetryMutation(
     },
     onSuccess: async (_data, _vars, context) => {
       onRetryConfirmed();
-      await invalidateTaskCacheAsync(queryClient, { scope: "listStats" });
+      await invalidateTaskCacheAsync(
+        queryClient,
+        { scope: "listStats" },
+        { scope: "detail", taskId },
+      );
       if (context) {
         rumMutationSettled(
           "task_retry",
@@ -139,7 +143,11 @@ function useTaskDetailAutonomyMutation(
       toast.error("Couldn't update autonomy — reverted.");
     },
     onSuccess: async (_data, _vars, context) => {
-      await invalidateTaskCacheAsync(queryClient, { scope: "listStats" });
+      await invalidateTaskCacheAsync(
+        queryClient,
+        { scope: "listStats" },
+        { scope: "detail", taskId },
+      );
       onAutonomyConfirmed();
       if (context) {
         rumMutationSettled(
