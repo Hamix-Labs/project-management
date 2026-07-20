@@ -4,6 +4,7 @@ import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
 import (
 	"container/heap"
 	"context"
+	"errors"
 	"log/slog"
 	"sync"
 	"time"
@@ -12,6 +13,11 @@ import (
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 )
+
+// pickupWakeQueueFullBackoff is how long to wait before retrying a wake
+// that failed because the ready-task queue was full. Short so deferred
+// ready tasks recover once capacity frees, without busy-spinning.
+const pickupWakeQueueFullBackoff = time.Second
 
 // PickupWakeScheduler implements taskcorestore.PickupWake: a min-heap of
 // (pickup_not_before, task_id) with one timer for the earliest deadline.
@@ -215,11 +221,24 @@ func (w *PickupWakeScheduler) tryNotify(taskID string, now time.Time) {
 	}
 	ctx := context.Background()
 	t, err := w.st.Get(ctx, taskID)
-	if err != nil || t == nil || t.Status != taskcoredomain.StatusReady {
+	if err != nil {
+		slog.Warn("pickup wake Get failed", "cmd", calltrace.LogCmd,
+			"operation", "agents.PickupWakeScheduler.tryNotify.get_err",
+			"task_id", taskID, "err", err)
+		return
+	}
+	if t == nil || t.Status != taskcoredomain.StatusReady {
 		return
 	}
 	if !taskcorestore.ShouldNotifyReadyNow(t.PickupNotBefore, now) {
 		return
 	}
-	_ = w.q.NotifyReadyTask(ctx, *t)
+	if err := w.q.NotifyReadyTask(ctx, *t); err != nil {
+		slog.Warn("pickup wake NotifyReadyTask failed", "cmd", calltrace.LogCmd,
+			"operation", "agents.PickupWakeScheduler.tryNotify.notify_err",
+			"task_id", taskID, "err", err)
+		if errors.Is(err, ErrQueueFull) {
+			w.Schedule(ctx, taskID, now.Add(pickupWakeQueueFullBackoff))
+		}
+	}
 }
