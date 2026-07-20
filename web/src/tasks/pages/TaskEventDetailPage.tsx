@@ -236,7 +236,7 @@ export function TaskEventDetailPage() {
         </div>
       ) : null}
 
-      <TaskEventDataPanel eventType={ev.type} data={ev.data} />
+      <TaskEventDataPanel event={ev} />
 
       {ev.response_thread && ev.response_thread.length > 0 ? (
         <div

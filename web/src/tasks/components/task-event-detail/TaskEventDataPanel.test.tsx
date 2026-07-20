@@ -1,20 +1,33 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
+import type { TaskEvent, TaskEventType } from "@/types/task";
 import { TaskEventDataPanel } from "./TaskEventDataPanel";
+
+function panelEvent(
+  type: TaskEventType,
+  data: TaskEvent["data"],
+): TaskEvent {
+  return {
+    seq: 1,
+    at: "2026-01-01T00:00:00Z",
+    type,
+    by: "agent",
+    data,
+  } as TaskEvent;
+}
 
 describe("TaskEventDataPanel", () => {
   it("renders cycle_failed overview with failure summary and reason code", () => {
     render(
       <TaskEventDataPanel
-        eventType="cycle_failed"
-        data={{
+        event={panelEvent("cycle_failed", {
           cycle_id: "c1",
           attempt_seq: 1,
           status: "failed",
           reason: "runner_non_zero_exit",
           failure_summary: "Operator-visible failure text.",
-        }}
+        })}
       />,
     );
     expect(
@@ -26,12 +39,11 @@ describe("TaskEventDataPanel", () => {
   it("renders GFM markdown tables in phase summary", () => {
     render(
       <TaskEventDataPanel
-        eventType="phase_completed"
-        data={{
+        event={panelEvent("phase_completed", {
           phase: "execute",
           status: "succeeded",
           summary: "| File | Content |\n| --- | --- |\n| 1.md | hello 1 |",
-        }}
+        })}
       />,
     );
     expect(screen.getByRole("table")).toBeInTheDocument();
@@ -42,12 +54,11 @@ describe("TaskEventDataPanel", () => {
   it("renders tables when summary uses escaped newlines", () => {
     render(
       <TaskEventDataPanel
-        eventType="phase_completed"
-        data={{
+        event={panelEvent("phase_completed", {
           phase: "execute",
           status: "succeeded",
           summary: "| A | B |\\n| --- | --- |\\n| x | y |",
-        }}
+        })}
       />,
     );
     expect(screen.getByRole("table")).toBeInTheDocument();
@@ -57,8 +68,7 @@ describe("TaskEventDataPanel", () => {
   it("renders verify phase overview with criterion reasoning", () => {
     render(
       <TaskEventDataPanel
-        eventType="phase_failed"
-        data={{
+        event={panelEvent("phase_failed", {
           phase: "verify",
           status: "failed",
           phase_seq: 2,
@@ -79,7 +89,7 @@ describe("TaskEventDataPanel", () => {
               ],
             },
           },
-        }}
+        })}
       />,
     );
     expect(screen.getByText("1 of 1 criteria failed")).toBeInTheDocument();
@@ -93,11 +103,10 @@ describe("TaskEventDataPanel", () => {
     const user = userEvent.setup();
     render(
       <TaskEventDataPanel
-        eventType="task_created"
-        data={{
+        event={panelEvent("task_created", {
           task_id: "t1",
           title: "Task",
-        }}
+        })}
       />,
     );
 

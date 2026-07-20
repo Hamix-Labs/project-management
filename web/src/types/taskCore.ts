@@ -322,6 +322,32 @@ export const TASK_EVENT_TYPES = [
 
 export type TaskEventType = (typeof TASK_EVENT_TYPES)[number];
 
+export type {
+  ChecklistItemRemovedEventData,
+  CycleLifecycleEventData,
+  CycleLifecycleEventType,
+  PhaseLifecycleEventData,
+  PhaseLifecycleEventType,
+  TaskPickupFailedEventData,
+  TaskRetryRequestedEventData,
+  TransitionEventData,
+  TransitionEventType,
+  TypedTaskEventDataType,
+} from "./taskEventData";
+
+import type {
+  ChecklistItemRemovedEventData,
+  CycleLifecycleEventData,
+  CycleLifecycleEventType,
+  PhaseLifecycleEventData,
+  PhaseLifecycleEventType,
+  TaskPickupFailedEventData,
+  TaskRetryRequestedEventData,
+  TransitionEventData,
+  TransitionEventType,
+  TypedTaskEventDataType,
+} from "./taskEventData";
+
 /** One message in the user ↔ agent thread on an event (`response_thread` in API). */
 export type TaskEventResponseEntry = {
   /** ISO 8601 from API */
@@ -330,13 +356,11 @@ export type TaskEventResponseEntry = {
   body: string;
 };
 
-export type TaskEvent = {
+type TaskEventEnvelope = {
   seq: number;
   /** ISO 8601 from API */
   at: string;
-  type: TaskEventType;
   by: "user" | "agent";
-  data: Record<string, unknown>;
   /** Human-submitted text for event types that accept input (`PATCH .../events/{seq}`). */
   user_response?: string;
   /** ISO 8601 when `user_response` was last saved; omitted for legacy rows. */
@@ -344,6 +368,37 @@ export type TaskEvent = {
   /** Ordered messages on this event (user and agent); legacy rows may be synthesized server-side. */
   response_thread?: TaskEventResponseEntry[];
 };
+
+/** High-traffic families carry narrowed `data`; long-tail types keep an opaque bag. */
+export type TaskEvent =
+  | (TaskEventEnvelope & {
+      type: PhaseLifecycleEventType;
+      data: PhaseLifecycleEventData;
+    })
+  | (TaskEventEnvelope & {
+      type: CycleLifecycleEventType;
+      data: CycleLifecycleEventData;
+    })
+  | (TaskEventEnvelope & {
+      type: TransitionEventType;
+      data: TransitionEventData;
+    })
+  | (TaskEventEnvelope & {
+      type: "checklist_item_removed";
+      data: ChecklistItemRemovedEventData;
+    })
+  | (TaskEventEnvelope & {
+      type: "task_retry_requested";
+      data: TaskRetryRequestedEventData;
+    })
+  | (TaskEventEnvelope & {
+      type: "task_pickup_failed";
+      data: TaskPickupFailedEventData;
+    })
+  | (TaskEventEnvelope & {
+      type: Exclude<TaskEventType, TypedTaskEventDataType>;
+      data: Record<string, unknown>;
+    });
 
 export type TaskEventsResponse = {
   task_id: string;

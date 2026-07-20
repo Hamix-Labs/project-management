@@ -1,280 +1,44 @@
 import { useId, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import { CopyableId } from "@/shared/CopyableId";
-import type { TaskEventType } from "@/types/task";
+import type { TaskEvent } from "@/types/task";
 import {
-  normalizePhaseSummaryMarkdown,
   parseCycleTerminalOverview,
   parsePhaseEventOverview,
-  type CycleTerminalOverviewModel,
-  type PhaseEventOverviewModel,
 } from "../../task-events/parsePhaseEventOverview";
+import { CycleTerminalOverviewBody } from "./CycleTerminalOverviewBody";
 import { GenericEventDataOverview } from "./GenericEventDataOverview";
-import { VerificationCriteriaList } from "../shared/VerificationCriteriaList";
-
-function formatDurationMs(ms: number | undefined): string | undefined {
-  if (ms === undefined) return undefined;
-  if (ms < 1000) return `${ms} ms`;
-  const s = ms / 1000;
-  if (s < 60) return `${s >= 10 ? Math.round(s) : s.toFixed(1)} s`;
-  const m = Math.floor(s / 60);
-  const rem = Math.round(s % 60);
-  return `${m}m ${rem}s`;
-}
-
-function formatTokens(n: number | undefined): string {
-  if (n === undefined) return "—";
-  return n.toLocaleString();
-}
-
-function statusTone(
-  status: string,
-): "success" | "failed" | "neutral" {
-  const s = status.toLowerCase();
-  if (s === "succeeded" || s === "skipped") return "success";
-  if (s === "failed") return "failed";
-  return "neutral";
-}
-
-function CycleTerminalOverviewBody({ model }: { model: CycleTerminalOverviewModel }) {
-  const tone = model.terminal === "failed" ? "failed" : "success";
-  return (
-    <div
-      className="task-event-cycle-overview task-event-phase-overview"
-      data-terminal={model.terminal}
-    >
-      <div className="task-event-phase-overview-header">
-        <span
-          className="task-event-status-pill"
-          data-tone={tone}
-          data-status={model.status.toLowerCase()}
-        >
-          {model.status}
-        </span>
-      </div>
-      <dl className="task-event-phase-meta">
-        <div>
-          <dt>Cycle</dt>
-          <dd>
-            <CopyableId value={model.cycleId} />
-          </dd>
-        </div>
-        <div>
-          <dt>Attempt</dt>
-          <dd>#{model.attemptSeq}</dd>
-        </div>
-      </dl>
-      {model.terminal === "failed" ? (
-        <div className="task-event-cycle-failure-block">
-          {model.failureSummary ? (
-            <div
-              className="task-event-phase-alert"
-              role="alert"
-              data-severity="error"
-            >
-              <p className="task-event-phase-alert-msg">{model.failureSummary}</p>
-              {model.reason ? (
-                <p className="task-event-cycle-reason-code">
-                  <span className="muted">Reason code</span>{" "}
-                  <code>{model.reason}</code>
-                </p>
-              ) : null}
-            </div>
-          ) : model.reason ? (
-            <p className="task-event-cycle-reason-only">
-              <span className="muted">Reason code</span>{" "}
-              <code>{model.reason}</code>
-            </p>
-          ) : null}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function PhaseEventOverviewBody({ model }: { model: PhaseEventOverviewModel }) {
-  const summaryText = model.summary
-    ? normalizePhaseSummaryMarkdown(model.summary)
-    : "";
-  const tone = statusTone(model.status);
-  const hasUsage =
-    model.usage &&
-    (model.usage.inputTokens !== undefined ||
-      model.usage.outputTokens !== undefined ||
-      model.usage.cacheReadTokens !== undefined ||
-      model.usage.cacheWriteTokens !== undefined);
-
-  return (
-    <div className="task-event-phase-overview">
-      <div className="task-event-phase-overview-header">
-        <span
-          className="task-event-phase-pill"
-          data-phase={model.phase.toLowerCase()}
-        >
-          {model.phase}
-        </span>
-        <span
-          className="task-event-status-pill"
-          data-tone={tone}
-          data-status={model.status.toLowerCase()}
-        >
-          {model.status}
-        </span>
-      </div>
-
-      <dl className="task-event-phase-meta">
-        {model.cycleId ? (
-          <div>
-            <dt>Cycle</dt>
-            <dd>
-              <CopyableId value={model.cycleId} />
-            </dd>
-          </div>
-        ) : null}
-        {model.phaseSeq !== undefined ? (
-          <div>
-            <dt>Phase seq</dt>
-            <dd>{model.phaseSeq}</dd>
-          </div>
-        ) : null}
-        {(model.durationMs !== undefined ||
-          model.durationApiMs !== undefined) && (
-          <div>
-            <dt>Duration</dt>
-            <dd>
-              {formatDurationMs(model.durationMs ?? model.durationApiMs)}
-              {model.durationMs !== undefined &&
-              model.durationApiMs !== undefined &&
-              model.durationMs !== model.durationApiMs ? (
-                <span className="task-event-phase-duration-note">
-                  {" "}
-                  (API {formatDurationMs(model.durationApiMs)})
-                </span>
-              ) : null}
-            </dd>
-          </div>
-        )}
-        {model.requestId ? (
-          <div>
-            <dt>Request</dt>
-            <dd>
-              <CopyableId value={model.requestId} />
-            </dd>
-          </div>
-        ) : null}
-        {model.sessionId ? (
-          <div>
-            <dt>Session</dt>
-            <dd>
-              <CopyableId value={model.sessionId} />
-            </dd>
-          </div>
-        ) : null}
-      </dl>
-
-      {hasUsage ? (
-        <div className="task-event-usage-card" aria-label="Token usage">
-          <h4 className="task-event-usage-heading">Usage</h4>
-          <div className="task-event-usage-grid">
-            <div>
-              <span className="task-event-usage-label">Input</span>
-              <span className="task-event-usage-value">
-                {formatTokens(model.usage?.inputTokens)}
-              </span>
-            </div>
-            <div>
-              <span className="task-event-usage-label">Output</span>
-              <span className="task-event-usage-value">
-                {formatTokens(model.usage?.outputTokens)}
-              </span>
-            </div>
-            <div>
-              <span className="task-event-usage-label">Cache read</span>
-              <span className="task-event-usage-value">
-                {formatTokens(model.usage?.cacheReadTokens)}
-              </span>
-            </div>
-            <div>
-              <span className="task-event-usage-label">Cache write</span>
-              <span className="task-event-usage-value">
-                {formatTokens(model.usage?.cacheWriteTokens)}
-              </span>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {(model.failureKind || model.standardizedMessage || model.stderrTail) && (
-        <div
-          className="task-event-phase-alert"
-          role="alert"
-          data-severity="error"
-        >
-          {model.standardizedMessage ? (
-            <p className="task-event-phase-alert-msg">
-              {model.standardizedMessage}
-            </p>
-          ) : null}
-          {model.failureKind ? (
-            <p className="task-event-phase-alert-kind">
-              <span className="muted">Kind:</span>{" "}
-              <code>{model.failureKind}</code>
-            </p>
-          ) : null}
-          {model.stderrTail ? (
-            <pre className="task-event-phase-stderr">{model.stderrTail}</pre>
-          ) : null}
-        </div>
-      )}
-
-      {model.verification ? (
-        <VerificationCriteriaList
-          criteria={model.verification.criteria}
-          heading={
-            model.status.toLowerCase() === "failed"
-              ? `${model.verification.failedCount} of ${model.verification.passedCount + model.verification.failedCount} criteria failed`
-              : `All ${model.verification.passedCount} criteria verified`
-          }
-          attemptSeq={model.verification.attemptSeq}
-        />
-      ) : summaryText ? (
-        <div className="task-event-summary-block">
-          <h4 className="task-event-summary-heading">Summary</h4>
-          <div className="task-event-markdown">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              components={{
-                table: (props) => (
-                  <div className="task-event-markdown-table-scroll">
-                    <table {...props} />
-                  </div>
-                ),
-              }}
-            >
-              {summaryText}
-            </ReactMarkdown>
-          </div>
-        </div>
-      ) : null}
-    </div>
-  );
-}
+import { PhaseEventOverviewBody } from "./PhaseEventOverviewBody";
 
 type TabId = "overview" | "json";
 const TAB_ORDER: TabId[] = ["overview", "json"];
 
-export function TaskEventDataPanel({
-  eventType,
-  data,
-}: {
-  eventType: TaskEventType;
-  data: Record<string, unknown>;
-}) {
-  const phaseOverview = parsePhaseEventOverview(eventType, data);
-  const cycleOverview = parseCycleTerminalOverview(eventType, data);
-  const dataJson = JSON.stringify(data, null, 2);
+function EventDataOverviewSwitch({ event }: { event: TaskEvent }) {
+  switch (event.type) {
+    case "phase_completed":
+    case "phase_failed": {
+      const model = parsePhaseEventOverview(event.type, event.data);
+      return model ? (
+        <PhaseEventOverviewBody model={model} />
+      ) : (
+        <GenericEventDataOverview data={event.data} />
+      );
+    }
+    case "cycle_failed":
+    case "cycle_completed": {
+      const model = parseCycleTerminalOverview(event.type, event.data);
+      return model ? (
+        <CycleTerminalOverviewBody model={model} />
+      ) : (
+        <GenericEventDataOverview data={event.data} />
+      );
+    }
+    default:
+      return <GenericEventDataOverview data={event.data} />;
+  }
+}
+
+export function TaskEventDataPanel({ event }: { event: TaskEvent }) {
+  const dataJson = JSON.stringify(event.data, null, 2);
   const baseId = useId();
   const tabOverviewId = `${baseId}-tab-overview`;
   const tabJsonId = `${baseId}-tab-json`;
@@ -294,39 +58,25 @@ export function TaskEventDataPanel({
     }
   };
 
-  const handleTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
+  const handleTabKeyDown = (eventKey: KeyboardEvent<HTMLButtonElement>) => {
     const currentIndex = TAB_ORDER.indexOf(tab);
     let nextTab: TabId | undefined;
 
-    if (event.key === "ArrowRight") {
+    if (eventKey.key === "ArrowRight") {
       nextTab = TAB_ORDER[(currentIndex + 1) % TAB_ORDER.length];
-    } else if (event.key === "ArrowLeft") {
+    } else if (eventKey.key === "ArrowLeft") {
       nextTab =
         TAB_ORDER[(currentIndex - 1 + TAB_ORDER.length) % TAB_ORDER.length];
-    } else if (event.key === "Home") {
+    } else if (eventKey.key === "Home") {
       nextTab = TAB_ORDER[0];
-    } else if (event.key === "End") {
+    } else if (eventKey.key === "End") {
       nextTab = TAB_ORDER[TAB_ORDER.length - 1];
     }
 
     if (!nextTab) return;
-    event.preventDefault();
+    eventKey.preventDefault();
     selectTab(nextTab, true);
   };
-
-  const jsonPre = (
-    <pre className="task-timeline-data task-event-detail-data-pre">
-      {dataJson}
-    </pre>
-  );
-
-  const overviewBody = phaseOverview ? (
-    <PhaseEventOverviewBody model={phaseOverview} />
-  ) : cycleOverview ? (
-    <CycleTerminalOverviewBody model={cycleOverview} />
-  ) : (
-    <GenericEventDataOverview data={data} />
-  );
 
   return (
     <div className="task-event-detail-data-block">
@@ -381,7 +131,7 @@ export function TaskEventDataPanel({
         hidden={tab !== "overview"}
         className="task-event-data-panel"
       >
-        {overviewBody}
+        <EventDataOverviewSwitch event={event} />
       </div>
       <div
         id={panelJsonId}
@@ -390,7 +140,9 @@ export function TaskEventDataPanel({
         hidden={tab !== "json"}
         className="task-event-data-panel"
       >
-        {jsonPre}
+        <pre className="task-timeline-data task-event-detail-data-pre">
+          {dataJson}
+        </pre>
       </div>
     </div>
   );

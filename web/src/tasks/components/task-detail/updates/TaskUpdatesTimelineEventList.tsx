@@ -141,10 +141,11 @@ function EventDataPreview({
   data,
   eventType,
 }: {
-  data: Record<string, unknown>;
+  data: object;
   eventType: TaskEventType;
 }) {
-  const keys = Object.keys(data);
+  const record = data as Record<string, unknown>;
+  const keys = Object.keys(record);
   if (keys.length === 0) return null;
   if (
     eventType === "status_changed" ||
@@ -152,8 +153,8 @@ function EventDataPreview({
     eventType === "message_added" ||
     eventType === "prompt_appended"
   ) {
-    const from = data.from;
-    const to = data.to;
+    const from = record.from;
+    const to = record.to;
     if (typeof from === "string" && typeof to === "string") {
       return (
         <pre className="task-timeline-data">
@@ -163,13 +164,13 @@ function EventDataPreview({
     }
   }
   if (eventType === "checklist_item_removed") {
-    const text = data.text;
+    const text = record.text;
     if (typeof text === "string") {
       return <pre className="task-timeline-data">{text}</pre>;
     }
   }
   if (eventType === "phase_failed" || eventType === "phase_completed") {
-    const details = data.details;
+    const details = record.details;
     if (details && typeof details === "object" && details !== null) {
       const d = details as Record<string, unknown>;
       const std = d.standardized_message;
@@ -177,13 +178,13 @@ function EventDataPreview({
         return (
           <div className="task-timeline-phase-details">
             <p className="task-timeline-standardized-msg">{std}</p>
-            <pre className="task-timeline-data">{JSON.stringify(data, null, 2)}</pre>
+            <pre className="task-timeline-data">{JSON.stringify(record, null, 2)}</pre>
           </div>
         );
       }
     }
   }
   return (
-    <pre className="task-timeline-data">{JSON.stringify(data, null, 2)}</pre>
+    <pre className="task-timeline-data">{JSON.stringify(record, null, 2)}</pre>
   );
 }

@@ -1,5 +1,6 @@
 import { listTaskEvents } from "@/api";
 import type { TaskCycleStreamEvent } from "@/types";
+import { taskEventCycleId } from "@/tasks/task-events/taskEventFields";
 
 export function sortStreamEventsNewestFirst(
   events: readonly TaskCycleStreamEvent[],
@@ -11,7 +12,7 @@ export function filterAuditEventsForCycle(
   events: Awaited<ReturnType<typeof listTaskEvents>>["events"] | undefined,
   cycleId: string,
 ) {
-  return (events?.filter((ev) => ev.data.cycle_id === cycleId) ?? []).sort(
-    (a, b) => b.seq - a.seq,
-  );
+  return (
+    events?.filter((ev) => taskEventCycleId(ev) === cycleId) ?? []
+  ).sort((a, b) => b.seq - a.seq);
 }

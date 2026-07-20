@@ -1,9 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { TASK_EVENT_TYPES, type TaskEventType } from "@/types";
+import { TASK_EVENT_TYPES, type TaskEvent, type TaskEventType } from "@/types";
 import { eventDisplayLabel, eventTypeLabel } from "./taskEventLabels";
 
-function ev(type: TaskEventType, data: Record<string, unknown> = {}) {
-  return { seq: 1, at: "2026-01-01T12:00:00.000Z", type, by: "agent" as const, data };
+function ev(type: TaskEventType, data: TaskEvent["data"] = {}): TaskEvent {
+  return {
+    seq: 1,
+    at: "2026-01-01T12:00:00.000Z",
+    type,
+    by: "agent",
+    data,
+  } as TaskEvent;
 }
 
 describe("eventTypeLabel", () => {
