@@ -95,16 +95,70 @@ type FolderRowProps = {
   /** When set, shows git status before the chevron. */
   gitRepoStatus?: boolean;
   disabled?: boolean;
+  selected?: boolean;
   onClick: () => void;
+  /** When set, chevron opens the folder instead of selecting (git row select vs open). */
+  onOpen?: () => void;
 };
 
-export function FolderRow({ name, sublabel, gitRepoStatus, disabled, onClick }: FolderRowProps) {
+export function FolderRow({
+  name,
+  sublabel,
+  gitRepoStatus,
+  disabled,
+  selected,
+  onClick,
+  onOpen,
+}: FolderRowProps) {
+  if (onOpen) {
+    return (
+      <div
+        className={
+          selected
+            ? "workspace-picker-row-split workspace-picker-row-split--selected"
+            : "workspace-picker-row-split"
+        }
+      >
+        <button
+          type="button"
+          className="workspace-picker-row-select"
+          onClick={onClick}
+          disabled={disabled}
+          aria-pressed={selected}
+        >
+          <FolderIcon />
+          <span className="workspace-picker-row-main">
+            <span className="workspace-picker-row-name">{name}</span>
+            {sublabel ? (
+              <span className="workspace-picker-row-sub">{sublabel}</span>
+            ) : null}
+          </span>
+          {gitRepoStatus !== undefined ? (
+            <GitRepoStatusIcon isGitRepo={gitRepoStatus} />
+          ) : null}
+        </button>
+        <button
+          type="button"
+          className="workspace-picker-row-open"
+          onClick={onOpen}
+          disabled={disabled}
+          aria-label={`Open ${name}`}
+        >
+          <ChevronIcon />
+        </button>
+      </div>
+    );
+  }
+
   return (
     <button
       type="button"
-      className="workspace-picker-row"
+      className={
+        selected ? "workspace-picker-row workspace-picker-row--selected" : "workspace-picker-row"
+      }
       onClick={onClick}
       disabled={disabled}
+      aria-pressed={selected || undefined}
     >
       <FolderIcon />
       <span className="workspace-picker-row-main">

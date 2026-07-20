@@ -406,6 +406,18 @@ describe("WorkspaceDirPickerModal", () => {
           },
         })(url);
       }
+      if (url.includes("/settings/git-probe")) {
+        const u = new URL(url, "http://test.local");
+        const path = u.searchParams.get("path") ?? "";
+        return jsonResponse({
+          path,
+          main_path: path,
+          is_main: true,
+          is_git_repository: true,
+          current_branch: "main",
+          branches: [{ name: "main", head_sha: "abc" }],
+        });
+      }
       return new Response("not found", { status: 404 });
     });
 
@@ -422,17 +434,162 @@ describe("WorkspaceDirPickerModal", () => {
     await userEvent.click(await screen.findByRole("button", { name: /Home/ }));
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /Use this folder/ })).toBeDisabled();
+      expect(screen.getByRole("button", { name: /Use this repository/ })).toBeDisabled();
     });
+    expect(screen.getByText("Select a git repository")).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole("button", { name: /my-app/ }));
+    await userEvent.click(screen.getByRole("button", { name: /^my-app/ }));
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /Use this folder/ })).toBeEnabled();
+      expect(screen.getByRole("button", { name: /Use this repository/ })).toBeEnabled();
+    });
+    expect(screen.getByText("/roots/my-app")).toBeInTheDocument();
+    expect(screen.getByText("Repository to register")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /Use this repository/ }));
+    expect(onSelect).toHaveBeenCalledWith("/roots/my-app");
+    fetchMock.mockRestore();
+  });
+
+  it("resolves a linked git folder to the main path and shows a remap note", async () => {
+    const onSelect = vi.fn();
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.endsWith("/settings/workspace-roots")) {
+        return jsonResponse({
+          environment: "native",
+          roots: [{ id: "home", path: "/roots", label: "Home", category: "home", available: true }],
+        });
+      }
+      if (url.includes("/settings/browse-dirs")) {
+        return browseRouter({
+          "/roots": {
+            path: "/roots",
+            parent_path: "",
+            is_git_repo: false,
+            entries: [
+              {
+                name: "wt-linked",
+                path: "/roots/wt-linked",
+                has_children: false,
+                is_git_repo: true,
+              },
+            ],
+          },
+        })(url);
+      }
+      if (url.includes("/settings/git-probe")) {
+        return jsonResponse({
+          path: "/roots/wt-linked",
+          main_path: "/roots/my-app",
+          is_main: false,
+          is_git_repository: true,
+          current_branch: "linked",
+          branches: [{ name: "linked", head_sha: "def" }],
+        });
+      }
+      return new Response("not found", { status: 404 });
     });
 
-    await userEvent.click(screen.getByRole("button", { name: /Use this folder/ }));
+    render(
+      <WorkspaceDirPickerModal
+        open
+        requireGitRepository
+        currentPath=""
+        onClose={() => {}}
+        onSelect={onSelect}
+      />,
+    );
+
+    await userEvent.click(await screen.findByRole("button", { name: /Home/ }));
+    await userEvent.click(await screen.findByRole("button", { name: /^wt-linked/ }));
+
+    await waitFor(() => {
+      expect(screen.getByText("/roots/my-app")).toBeInTheDocument();
+    });
+    expect(
+      screen.getByText(/You opened a linked folder\. Hamix registers the repository at the path above\./),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Opened:/)).toBeInTheDocument();
+    expect(screen.getByText("/roots/wt-linked")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /Use this repository/ }));
     expect(onSelect).toHaveBeenCalledWith("/roots/my-app");
+    fetchMock.mockRestore();
+  });
+
+  it("opens a git folder via the Open control without selecting it", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.endsWith("/settings/workspace-roots")) {
+        return jsonResponse({
+          environment: "native",
+          roots: [{ id: "home", path: "/roots", label: "Home", category: "home", available: true }],
+        });
+      }
+      if (url.includes("/settings/browse-dirs")) {
+        return browseRouter({
+          "/roots": {
+            path: "/roots",
+            parent_path: "",
+            is_git_repo: false,
+            entries: [
+              {
+                name: "my-app",
+                path: "/roots/my-app",
+                has_children: true,
+                is_git_repo: true,
+              },
+            ],
+          },
+          "/roots/my-app": {
+            path: "/roots/my-app",
+            parent_path: "/roots",
+            is_git_repo: true,
+            entries: [
+              {
+                name: "src",
+                path: "/roots/my-app/src",
+                has_children: false,
+                is_git_repo: false,
+              },
+            ],
+          },
+        })(url);
+      }
+      if (url.includes("/settings/git-probe")) {
+        return jsonResponse({
+          path: "/roots/my-app",
+          main_path: "/roots/my-app",
+          is_main: true,
+          is_git_repository: true,
+          current_branch: "main",
+          branches: [{ name: "main", head_sha: "abc" }],
+        });
+      }
+      return new Response("not found", { status: 404 });
+    });
+
+    render(
+      <WorkspaceDirPickerModal
+        open
+        requireGitRepository
+        currentPath=""
+        onClose={() => {}}
+        onSelect={() => {}}
+      />,
+    );
+
+    await userEvent.click(await screen.findByRole("button", { name: /Home/ }));
+    await userEvent.click(await screen.findByRole("button", { name: /Open my-app/ }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /src/ })).toBeInTheDocument();
+    });
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /Use this repository/ })).toBeEnabled();
+    });
+    expect(screen.getByText("/roots/my-app")).toBeInTheDocument();
     fetchMock.mockRestore();
   });
 
