@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/projects/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
@@ -59,9 +58,8 @@ func CreateProject(ctx context.Context, db *gorm.DB, input CreateProjectInput) (
 	if repoID == nil {
 		return domain.Project{}, fmt.Errorf("%w: repository_id required", domain.ErrInvalidInput)
 	}
-	var repo gitmodel.GitRepository
-	if err := db.WithContext(ctx).First(&repo, "id = ?", *repoID).Error; err != nil {
-		return domain.Project{}, storekernel.MapNotFound(err)
+	if err := ensureRepositoryExists(ctx, db, *repoID); err != nil {
+		return domain.Project{}, err
 	}
 	now := time.Now().UTC()
 	drow := domain.Project{
@@ -556,9 +554,8 @@ func ListProjectsByRepository(ctx context.Context, db *gorm.DB, repoID string) (
 	if repoID == "" {
 		return nil, fmt.Errorf("%w: repository_id required", domain.ErrInvalidInput)
 	}
-	var repo gitmodel.GitRepository
-	if err := db.WithContext(ctx).First(&repo, "id = ?", repoID).Error; err != nil {
-		return nil, storekernel.MapNotFound(err)
+	if err := ensureRepositoryExists(ctx, db, repoID); err != nil {
+		return nil, err
 	}
 	var rows []projectmodel.Project
 	err := db.WithContext(ctx).
@@ -569,6 +566,22 @@ func ListProjectsByRepository(ctx context.Context, db *gorm.DB, repoID string) (
 		return nil, fmt.Errorf("list projects by repository: %w", err)
 	}
 	return projectmodel.ToDomainProjects(rows), nil
+}
+
+// ensureRepositoryExists checks git_repositories by string id without importing
+// gitinventory models (peer BC cycle break; FK is a plain string column).
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func ensureRepositoryExists(ctx context.Context, db *gorm.DB, repoID string) error {
+	var n int64
+	err := db.WithContext(ctx).Table("git_repositories").Where("id = ?", repoID).Limit(1).Count(&n).Error
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return storekernel.MapNotFound(gorm.ErrRecordNotFound)
+	}
+	return nil
 }
 
 // GetDefaultProjectForRepository returns the system default project for a repo.

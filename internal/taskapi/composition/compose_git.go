@@ -2,6 +2,7 @@ package composition
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -26,15 +27,26 @@ func (a *API) ListAllGitRepositoriesWithSummary(ctx context.Context) ([]gitinven
 	return a.git.ListAllGitRepositoriesWithSummary(ctx)
 }
 
-// CreateGlobalGitRepository registers a repository without project scoping.
+// CreateGlobalGitRepository registers a repository without project scoping and
+// seeds the system default project (cross-BC write owned by composition).
 func (a *API) CreateGlobalGitRepository(ctx context.Context, input gitinventorystore.CreateGitRepositoryInput, gitSvc gitwork.Service) (gitdomain.GitRepository, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.CreateGlobalGitRepository")
-	return a.git.CreateGlobalGitRepository(ctx, input, gitSvc)
+	repo, err := a.git.CreateGlobalGitRepository(ctx, input, gitSvc)
+	if err != nil {
+		return gitdomain.GitRepository{}, err
+	}
+	if _, err := a.projects.CreateDefaultProjectForRepo(ctx, repo.ID); err != nil {
+		return gitdomain.GitRepository{}, fmt.Errorf("seed default project: %w", err)
+	}
+	return repo, nil
 }
 
-// DeleteGlobalGitRepository removes a repository by ID.
+// DeleteGlobalGitRepository removes projects for the repo, then the repository.
 func (a *API) DeleteGlobalGitRepository(ctx context.Context, repoID string) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.DeleteGlobalGitRepository")
+	if err := a.projects.DeleteProjectsForRepository(ctx, repoID); err != nil {
+		return err
+	}
 	return a.git.DeleteGlobalGitRepository(ctx, repoID)
 }
 
@@ -62,15 +74,26 @@ func (a *API) GetGitRepositoryByID(ctx context.Context, repoID string) (gitdomai
 	return a.git.GetGitRepositoryByID(ctx, repoID)
 }
 
-// CreateGitRepository validates path with git, then inserts repository + main worktree + current branch.
+// CreateGitRepository validates path with git, then inserts repository + main worktree + current branch
+// and seeds the system default project (cross-BC write owned by composition).
 func (a *API) CreateGitRepository(ctx context.Context, projectID string, input gitinventorystore.CreateGitRepositoryInput, gitSvc gitwork.Service) (gitdomain.GitRepository, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.CreateGitRepository")
-	return a.git.CreateGitRepository(ctx, projectID, input, gitSvc)
+	repo, err := a.git.CreateGitRepository(ctx, projectID, input, gitSvc)
+	if err != nil {
+		return gitdomain.GitRepository{}, err
+	}
+	if _, err := a.projects.CreateDefaultProjectForRepo(ctx, repo.ID); err != nil {
+		return gitdomain.GitRepository{}, fmt.Errorf("seed default project: %w", err)
+	}
+	return repo, nil
 }
 
-// DeleteGitRepository removes a repository when no running tasks reference it.
+// DeleteGitRepository removes projects for the repo, then the repository.
 func (a *API) DeleteGitRepository(ctx context.Context, projectID, repoID string) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.DeleteGitRepository")
+	if err := a.projects.DeleteProjectsForRepository(ctx, repoID); err != nil {
+		return err
+	}
 	return a.git.DeleteGitRepository(ctx, projectID, repoID)
 }
 

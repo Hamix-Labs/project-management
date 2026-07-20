@@ -1,8 +1,12 @@
 package model
 
 import (
+	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel/parity"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 )
+
+// ParityPair is the BC-local name for the shared parity registry entry type.
+type ParityPair = parity.Pair
 
 // ParityPairs is the taskcore registry for field-parity tests in this package.
 var ParityPairs = []ParityPair{
@@ -35,14 +39,4 @@ var ParityPairs = []ParityPair{
 			&ProjectRow{},
 		},
 	},
-}
-
-// ParityPair binds a domain struct prototype to its model counterpart for
-// schema- and field-parity guards.
-type ParityPair struct {
-	Name              string
-	Domain            any
-	Model             any
-	Table             string
-	ModelMigrateExtra []any
 }

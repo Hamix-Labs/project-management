@@ -113,6 +113,7 @@ func (s *Store) CreateGlobalGitRepository(ctx context.Context, input CreateGitRe
 }
 
 // DeleteGlobalGitRepository removes a repository by id when no running tasks reference it.
+// Cascades worktrees and branches; project rows are removed by composition.
 func (s *Store) DeleteGlobalGitRepository(ctx context.Context, repoID string) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "gitinventory.store.DeleteGlobalGitRepository")
 	repoID = strings.TrimSpace(repoID)
@@ -125,14 +126,7 @@ func (s *Store) DeleteGlobalGitRepository(ctx context.Context, repoID string) er
 	if err := guardNoRunningTask(ctx, s.db, repoID); err != nil {
 		return err
 	}
-	res := s.db.WithContext(ctx).Delete(&model.GitRepository{}, "id = ?", repoID)
-	if res.Error != nil {
-		return fmt.Errorf("delete git repository: %w", res.Error)
-	}
-	if res.RowsAffected == 0 {
-		return gitdomain.NewGitErr(gitdomain.GitCodeRepositoryNotFound, "repository not found")
-	}
-	return nil
+	return s.deleteGitRepositoryCascade(ctx, repoID)
 }
 
 // ListGitWorktreesByRepo returns worktrees for a repository (no project scope).

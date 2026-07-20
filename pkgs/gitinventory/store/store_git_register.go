@@ -12,7 +12,6 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
-	projectsstore "github.com/AlexsanderHamir/Hamix/pkgs/projects/store"
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/google/uuid"
@@ -78,9 +77,6 @@ func (s *Store) registerGitRepository(ctx context.Context, input CreateGitReposi
 				return gitdomain.NewGitErr(gitdomain.GitCodeDuplicate, "repository already registered")
 			}
 			return err
-		}
-		if _, err := projectsstore.CreateDefaultProjectForRepo(ctx, tx, repo.ID, now); err != nil {
-			return fmt.Errorf("seed default project: %w", err)
 		}
 		return nil
 	})

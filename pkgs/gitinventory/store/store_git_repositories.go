@@ -13,7 +13,6 @@ import (
 	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
-	projectsstore "github.com/AlexsanderHamir/Hamix/pkgs/projects/store"
 	"gorm.io/gorm"
 )
 
@@ -78,7 +77,8 @@ func (s *Store) CreateGitRepository(ctx context.Context, projectID string, input
 
 // DeleteGitRepository removes a repository when no running tasks reference it.
 // projectID is accepted for API-route compatibility but ignored (repos are global).
-// Cascades: projects (including system defaults), worktrees, and branches for the repo.
+// Cascades: worktrees and branches for the repo. Project rows are removed by
+// composition (internal/taskapi/composition) so this BC does not import projects.
 func (s *Store) DeleteGitRepository(ctx context.Context, projectID, repoID string) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "gitinventory.store.DeleteGitRepository")
 	if _, err := s.GetGitRepository(ctx, projectID, repoID); err != nil {
@@ -87,10 +87,12 @@ func (s *Store) DeleteGitRepository(ctx context.Context, projectID, repoID strin
 	if err := guardNoRunningTask(ctx, s.db, repoID); err != nil {
 		return err
 	}
-	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := projectsstore.DeleteProjectsForRepository(ctx, tx, repoID); err != nil {
-			return err
-		}
+	return s.deleteGitRepositoryCascade(ctx, repoID)
+}
+
+//funclogmeasure:skip category=hot-path reason="Internal helper; trace emitted by calling chokepoint."
+func (s *Store) deleteGitRepositoryCascade(ctx context.Context, repoID string) error {
+	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Where("repository_id = ?", repoID).Delete(&model.GitWorktree{}).Error; err != nil {
 			return fmt.Errorf("delete git worktrees: %w", err)
 		}
@@ -106,7 +108,6 @@ func (s *Store) DeleteGitRepository(ctx context.Context, projectID, repoID strin
 		}
 		return nil
 	})
-	return err
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."

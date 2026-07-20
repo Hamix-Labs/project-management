@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
-	gitmodel "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
@@ -26,13 +25,17 @@ func seedRepoWithDefaultProject(t *testing.T, db *gorm.DB, ctx context.Context) 
 	t.Helper()
 	repoID = uuid.NewString()
 	now := time.Now().UTC()
-	repo := gitmodel.GitRepository{
-		ID:        repoID,
-		Path:      t.TempDir(),
-		CreatedAt: now,
-		UpdatedAt: now,
-	}
-	if err := db.WithContext(ctx).Create(&repo).Error; err != nil {
+	path := t.TempDir()
+	// Insert by table/columns only — projects must not import gitinventory models.
+	if err := db.WithContext(ctx).Table("git_repositories").Create(map[string]any{
+		"id":             repoID,
+		"path":           path,
+		"git_common_dir": path,
+		"host_path":      "",
+		"default_branch": "main",
+		"created_at":     now,
+		"updated_at":     now,
+	}).Error; err != nil {
 		t.Fatalf("seed repo: %v", err)
 	}
 	defaultProj, err := CreateDefaultProjectForRepo(ctx, db, repoID, now)

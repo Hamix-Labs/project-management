@@ -11,6 +11,7 @@ import (
 )
 
 // CreateDefaultProjectForRepo delegates to the projects bounded context.
+// Preferred: call via (*API).projects through CreateGlobalGitRepository composition.
 var CreateDefaultProjectForRepo = projectsstore.CreateDefaultProjectForRepo
 
 // ListProjectsByRepository returns projects tied to a repository.
