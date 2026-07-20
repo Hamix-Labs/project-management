@@ -14,7 +14,7 @@ HTTP surface for `taskapi`: REST + optional `/repo` + `GET /events` (SSE). **Con
 | SPA / operator shell | `handler_bootstrap.go`, `handler_rum.go` |
 | Policy | `handler_writepolicy.go`, `writepolicy/`, `readpolicy/` |
 | Cross-BC glue | `handler_task_*`, `handler_compose_*`, `handler_git_helpers.go` |
-| Shell utilities | `pathmap.go`, `repo_compat.go`, `server_version.go`, `httplog_io.go`, `handler_http_json.go`, `handler_store.go` |
+| Shell utilities | `repo_compat.go`, `server_version.go`, `httplog_io.go`, `handler_http_json.go`, `handler_store.go` |
 | Fakes | `storefake/` |
 
 Root stays one Go package. Domain grouping is by **filename prefix**, not subdirectories with `package handler`.
@@ -48,13 +48,13 @@ Implementations live in [`pkgs/tasks/middleware`](../middleware/). Production st
 | [`internal/handlertest/sse`](../../../internal/handlertest/sse/) | Blackbox SSE HTTP (lossless, trigger surface, headers/events) |
 | [`internal/handlertest/shell`](../../../internal/handlertest/shell/) | Shell HTTP (RUM, list/error logging) |
 | [`internal/handlertest/taskcore`](../../../internal/handlertest/taskcore/) (+ checklist/compose/cycles/events) | BC contract suites |
-| `pkgs/tasks/handler/*_test.go` | Whitebox only: fold RUM, WriteJSON helpers, SSE notify/hub units, security headers, pathmap, writepolicy |
+| `pkgs/tasks/handler/*_test.go` | Whitebox only: fold RUM, WriteJSON helpers, SSE notify/hub units, security headers, writepolicy |
 
 Whitebox suites **cannot** import `handlertest` (import cycle with `handler`). They use package-local `sse_whitebox_helpers_test.go` for drain/assert.
 
 ## Navigability metrics (ROI cleanup)
 
-Target: root **&lt;25** files and test ratio **&lt;30%**. After ROI drains/aliases, remaining root files are mostly production shell + unavoidable whitebox tests (notify/writepolicy/security/pathmap/WriteJSON/RUM fold/hub units). Blackbox HTTP is in `internal/handlertest/**`.
+Target: root **&lt;25** files and test ratio **&lt;30%**. After ROI drains/aliases, remaining root files are mostly production shell + unavoidable whitebox tests (notify/writepolicy/security/WriteJSON/RUM fold/hub units). Blackbox HTTP is in `internal/handlertest/**`.
 
 ## Do not extract shell glue as a new BC
 

@@ -9,7 +9,7 @@ import (
 	projectscontract "github.com/AlexsanderHamir/Hamix/pkgs/projects/contract"
 )
 
-// HostPathMapper translates container paths for JSON host_path fields.
+// HostPathMapper supplies optional host-facing paths for JSON host_path fields.
 type HostPathMapper interface {
 	DisplayHostPath(containerPath string) string
 }

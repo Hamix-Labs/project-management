@@ -30,12 +30,11 @@ Wrappers: **`scripts/check.sh`** (Unix) and **`scripts/check.ps1`** (Windows).
 
 | Platform | Full bar | Go only | Web only |
 | --- | --- | --- | --- |
-| Unix / Git Bash / Docker | `./scripts/check.sh` | `./scripts/check.sh --go-only` | `./scripts/check.sh --web-only` |
+| Unix / Git Bash | `./scripts/check.sh` | `./scripts/check.sh --go-only` | `./scripts/check.sh --web-only` |
 | Windows PowerShell | `.\scripts\check.ps1` | `.\scripts\check.ps1 -GoOnly` | `.\scripts\check.ps1 -WebOnly` |
 
 - Run from **repo root** before finishing or pushing. Fix until green.
 - Lockfile / first web run: add `--install` / `-Install`.
-- No local Go/Node: `docker compose run --rm dev ./scripts/check.sh --install` ([docs/docker.md](../../docs/docker.md)).
 - After a failure: re-run scoped (e.g. `./scripts/check-go.sh --tests-only --group=harness --verbose`) — do not start with ad hoc `go test ./...` / `npm test` unless narrowing further or the user asked.
 
 ### Do not

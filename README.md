@@ -35,7 +35,10 @@ Future work will be planned as additional milestones after the initial release.
 ## Get started
 
 1. Copy `.env.example` to `.env` and set `DATABASE_URL`.
-2. Run `docker compose up`.
+2. Run `.\scripts\migrate.ps1` (Windows) or `./scripts/migrate.sh` (Unix) once per schema change.
+3. Run `.\scripts\dev.ps1` (Windows) or `./scripts/dev.sh` (Unix).
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for full setup.
 
 API at `http://127.0.0.1:8080` · Web at `http://localhost:5173`
 

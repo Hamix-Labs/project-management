@@ -20,9 +20,9 @@ Introduce a **Place / PlaceProvider** abstraction in `pkgs/repo`:
 
 Default registry order:
 
-1. `InstallPlaceProvider` — Hamix checkout (`go.mod` root or `/app` in Docker).
-2. `HomePlaceProvider` — operator home (`$HOME` or `/host-home` in Docker).
-3. `UserDirsPlaceProvider` — OS-resolved profile folders (skipped in Docker).
+1. `InstallPlaceProvider` — Hamix checkout (`go.mod` root).
+2. `HomePlaceProvider` — operator home (`$HOME`).
+3. `UserDirsPlaceProvider` — OS-resolved profile folders.
 
 Directory listing (`ListBrowseDirs` / `readBrowseSubdirs`) performs **pure I/O** — no name-based remapping.
 

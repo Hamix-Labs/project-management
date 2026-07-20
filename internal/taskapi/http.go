@@ -29,7 +29,6 @@ import (
 func NewHTTPHandler(s *composition.API, hub *realtime.SSEHub, rep *repo.Root, agent handler.AgentWorkerControl, drift postgres.SchemaDriftReport) http.Handler {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "internal.taskapi.NewHTTPHandler")
 	opts := []handler.HandlerOption{
-		handler.WithPathMap(handler.NewPathMapFromEnv()),
 		handler.WithSchemaDriftReport(drift),
 	}
 	if agent != nil {

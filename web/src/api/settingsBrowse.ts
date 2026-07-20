@@ -23,7 +23,7 @@ export type WorkspaceBrowseRoot = {
 
 export type WorkspaceRootsResponse = {
   roots: WorkspaceBrowseRoot[];
-  environment: "native" | "docker";
+  environment: "native";
 };
 
 export type BrowseDirEntry = {
@@ -103,7 +103,7 @@ export function parseWorkspaceRootsResponse(raw: unknown): WorkspaceRootsRespons
     throw new Error("workspace roots missing roots array");
   }
   const environment = value.environment;
-  if (environment !== "native" && environment !== "docker") {
+  if (environment !== "native") {
     throw new Error("workspace roots missing environment");
   }
   return {

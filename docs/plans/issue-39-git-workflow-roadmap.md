@@ -12,7 +12,6 @@ Hamix today is **single-workspace**:
 - Tasks have **no** worktree/branch fields ([`domain.Task`](pkgs/tasks/domain/models.go)).
 - Git context is **audit-only** on cycles (`task_cycle_commits.repo/worktree/branch`) — observed after execute, not configured at create.
 - One sequential agent worker ([`internal/taskapi/agentworker/instance.go`](internal/taskapi/agentworker/instance.go)).
-- Docker dev ([`compose.yml`](compose.yml)) bind-mounts repo + `/host-home` for the folder picker; Cursor CLI is **not** in the image ([`docs/docker.md`](docs/docker.md)).
 
 ```mermaid
 flowchart TB
@@ -220,32 +219,11 @@ Plans are ordered by dependency. Each plan should be implementable as its own PR
 
 ---
 
-### Plan 6 — Docker production and host integration
-
-**Goal:** Deployable image with host repo + CLI access (req 9).
-
-**Outputs**
-
-- Production [`docker/Dockerfile`](docker/) (multi-stage, non-dev) + [`compose.yml`](compose.yml) production profile or separate `compose.prod.yml`.
-- Volume contract documented in [`docs/docker.md`](docs/docker.md):
-  - `${HAMIX_HOST_HOME}` → `/host-home` (user git repos)
-  - Optional `${HAMIX_HOST_PATH}` for explicit repo roots
-  - Persist Hamix DB via `DATABASE_URL` (unchanged)
-- CLI discovery:
-  - Mount host Cursor/Claude binaries **or** document `PATH` + bind-mount `~/.local/bin`, `/usr/local/bin`
-  - Settings fields `cursor_bin` / future runner bins resolve host paths via mount map
-- `HAMIX_PATH_MAP` (or similar): JSON map host→container prefixes so API stores container paths but UI shows host paths.
-- Git in image: ensure `git` ≥ 2.5 (worktree support); **do not** require Worktrunk in image for v0.1.
-- Health/readiness: `checks.git_available`, `checks.registered_repositories`.
-
-**Depends on:** Plans 2–4 (paths used by worker)  
-**Blocks:** production deploy validation
-
----
-
-### Plan 7 — Migration, cleanup, and post-completion hooks (foundation only)
+### Plan 6 — Migration, cleanup, and post-completion hooks (foundation only)
 
 **Goal:** Finish deprecation; lay groundwork for Issue #39 follow-ups (PR automation).
+
+**Note:** Former Plan 6 (Docker production deploy) was removed — Hamix runs natively on the host OS.
 
 **Outputs**
 
@@ -254,7 +232,7 @@ Plans are ordered by dependency. Each plan should be implementable as its own PR
 - Close/supersede HARNESS item 8 (per-cycle worktree) — replaced by persistent worktree model.
 - Stub hooks: `on_task_done` event payload includes `worktree`, `branch`, `commits[]` for future `gh pr create` automation (no UI yet).
 
-**Depends on:** Plans 4–6 stable  
+**Depends on:** Plans 4–5 stable  
 **Blocks:** nothing
 
 ---
@@ -268,9 +246,8 @@ flowchart LR
   P3 --> P4[Plan4 Worker Tasks]
   P3 --> P5[Plan5 UI]
   P4 --> P5
-  P4 --> P6[Plan6 Docker]
-  P5 --> P7[Plan7 Migration]
-  P6 --> P7
+  P4 --> P6[Plan6 Migration]
+  P5 --> P6
 ```
 
 **Parallelization:** After Plan 3 merges, **Plan 4** (backend) and **Plan 5** (UI against API) can proceed in parallel with coordinated task-field contract.
@@ -282,7 +259,6 @@ flowchart LR
 | Risk | Mitigation |
 |------|------------|
 | Same worktree, two tasks `running` | Worker lock per `worktree_id`; checkout only when idle |
-| Docker path confusion | `HAMIX_PATH_MAP` + store container-canonical paths |
 | Delete worktree with queued tasks | 409 if `running`; optional “archive” or force-delete with task reassignment (decide in Plan 1 ADR) |
 | `@`-mention paths after multi-worktree | Scope validation to task worktree root |
 | Cursor session resume tied to workspace ([ADR-0031](docs/adr/ADR-0031-cursor-session-resume-default.md)) | Resume keyed by worktree path + branch |
@@ -298,8 +274,7 @@ flowchart LR
 | **M2 — Backend core** | 2 + 3 | API can create/list/delete worktrees & branches |
 | **M3 — Tasks run in worktrees** | 4 | Tasks execute in chosen worktree/branch |
 | **M4 — UI** | 5 | Worktrees nav page + task create selectors |
-| **M5 — Deploy** | 6 | Docker deploy with host repos + CLIs |
-| **M6 — Ship** | 7 | `repo_root` removed, docs updated |
+| **M5 — Ship** | 6 | `repo_root` removed, docs updated |
 
 ---
 

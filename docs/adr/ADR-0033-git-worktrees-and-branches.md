@@ -6,7 +6,7 @@
 
 ## Context
 
-Hamix v0 shipped with a single global `app_settings.repo_root`: one working directory for every agent run, `/repo/*` autocomplete, and `@`-mention validation. [Issue #39](https://github.com/AlexsanderHamir/Hamix/issues/39) requires tasks bound to a **worktree + branch**, UI CRUD for worktrees/branches, and Docker host integration.
+Hamix v0 shipped with a single global `app_settings.repo_root`: one working directory for every agent run, `/repo/*` autocomplete, and `@`-mention validation. [Issue #39](https://github.com/AlexsanderHamir/Hamix/issues/39) requires tasks bound to a **worktree + branch** and UI CRUD for worktrees/branches.
 
 We evaluated [Worktrunk](https://github.com/max-sixty/worktrunk) as an external worktree CLI. Hamix needs **DB authority** (tasks, delete guards, queue, SPA) and verify-in-place semantics ([ADR-0003](./ADR-0003-verify-component-upgrade.md)); Worktrunk is terminal-first with no Hamix task model.
 
@@ -23,8 +23,7 @@ We evaluated [Worktrunk](https://github.com/max-sixty/worktrunk) as an external 
 6. **Scoped repo API** — `/repo/*` requires `?worktree_id=`; `@`-mentions validate against that worktree on task create/patch.
 7. **Verify-in-place preserved** — verify runs in the same cwd as execute; Hamix controls checkout timing.
 8. **Cursor session resume** — resume key is worktree path + branch ([ADR-0031](./ADR-0031-cursor-session-resume-default.md)); workspace mismatch deny-list still applies.
-9. **Docker** — container-canonical paths in DB; `HAMIX_PATH_MAP` translates for SPA display; `git` in image; host repos via bind mounts ([docs/docker.md](../docker.md)).
-10. **Deprecation** — `app_settings.repo_root` removed after backfill migration; `on_task_done` audit event carries `worktree_id`, `branch_id`, `commits[]` for future PR automation (no UI in v0.1).
+9. **Deprecation** — `app_settings.repo_root` removed after backfill migration; `on_task_done` audit event carries `worktree_id`, `branch_id`, `commits[]` for future PR automation (no UI in v0.1).
 
 ## Consequences
 
@@ -32,7 +31,6 @@ We evaluated [Worktrunk](https://github.com/max-sixty/worktrunk) as an external 
 
 - Multiple parallel work contexts on one host without a global settings path.
 - Delete semantics and task binding are enforceable in SQL.
-- Production Docker path mapping is explicit.
 
 ### Negative / trade-offs
 
@@ -45,7 +43,7 @@ We evaluated [Worktrunk](https://github.com/max-sixty/worktrunk) as an external 
 | Alternative | Reason rejected |
 | --- | --- |
 | Worktrunk as primary backend | CLI-only; dual config surface; no Hamix task model |
-| Keep `repo_root` forever | Conflicts with per-task binding and Docker path model |
+| Keep `repo_root` forever | Conflicts with per-task binding |
 | Block delete when queued tasks exist | Issue #39 allows delete with only **running** guard |
 
 ## See also

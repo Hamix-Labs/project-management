@@ -38,7 +38,7 @@ export type WorkspaceDirPickerModalProps = {
 type LoadState =
   | { kind: "idle" }
   | { kind: "loading" }
-  | { kind: "ready"; roots: WorkspaceBrowseRoot[]; environment: "native" | "docker" }
+  | { kind: "ready"; roots: WorkspaceBrowseRoot[]; environment: "native" }
   | { kind: "error"; message: string };
 
 type PickerArgs = Pick<

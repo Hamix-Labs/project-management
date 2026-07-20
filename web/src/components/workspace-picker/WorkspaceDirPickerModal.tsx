@@ -59,13 +59,6 @@ export function WorkspaceDirPickerModal({
 
         {picker.loadState.kind === "ready" ? (
           <>
-            {picker.loadState.environment === "docker" ? (
-              <p className="workspace-picker-hint">
-                Folders shown here live inside the dev container. Your home directory is
-                mounted at <code>/host-home</code>.
-              </p>
-            ) : null}
-
             {picker.atRoots ? (
               <p className="workspace-picker-section-label">
                 Choose a folder to browse from

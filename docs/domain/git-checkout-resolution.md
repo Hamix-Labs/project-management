@@ -68,7 +68,7 @@ Order: **cache → candidate → discover** (discover only when `AllowDiscover` 
 
 ## Explicit non-coverage
 
-- Non-git paths (`CursorBin`, `HAMIX_PATH_MAP`, cycle artifact paths)
+- Non-git paths (`CursorBin`, cycle artifact paths)
 - Startup silent relocate (`HAMIX_GIT_RECONCILE_ON_STARTUP` skips missing paths)
 - Full-disk repo search or remote-URL fingerprinting
 
