@@ -22,6 +22,7 @@ type HandlerAPI interface {
 	taskeventscontract.TaskEventStore
 	checklistcontract.ChecklistStore
 	cyclescontract.CycleStore
+	cyclescontract.CycleFailuresStore
 	projectscontract.ProjectStore
 	composecontract.ComposeStore
 	gitcontract.GitInventoryStore

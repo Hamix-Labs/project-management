@@ -12,6 +12,7 @@ import (
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store/internal/commits"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store/internal/cycles"
+	"github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store/internal/failures"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store/internal/reports"
 	"gorm.io/gorm"
 )
@@ -42,6 +43,25 @@ type (
 	VerifyReportEntry = contract.VerifyReportEntry
 	// CommandRunEntry is one verify-phase shell command execution row.
 	CommandRunEntry = contract.CommandRunEntry
+	// CycleFailure is one cycle_failed mirror projection row.
+	CycleFailure = contract.CycleFailure
+	// ListCycleFailuresInput is the paginated cycle-failures query.
+	ListCycleFailuresInput = contract.ListCycleFailuresInput
+	// ListCycleFailuresResult is returned by ListCycleFailures.
+	ListCycleFailuresResult = contract.ListCycleFailuresResult
+)
+
+const (
+	// CycleFailureSortAtDesc sorts failures newest-first by event time.
+	CycleFailureSortAtDesc = failures.SortAtDesc
+	// CycleFailureSortAtAsc sorts failures oldest-first by event time.
+	CycleFailureSortAtAsc = failures.SortAtAsc
+	// CycleFailureSortReasonAsc sorts failures by reason ascending.
+	CycleFailureSortReasonAsc = failures.SortReasonAsc
+	// CycleFailureSortReasonDesc sorts failures by reason descending.
+	CycleFailureSortReasonDesc = failures.SortReasonDesc
+	// RecentFailureLimit caps /tasks/stats recent_failures.
+	RecentFailureLimit = failures.RecentFailureLimit
 )
 
 // FailureSurfaceMessage returns operator-facing failure text for cycle_failed mirrors.
@@ -165,4 +185,16 @@ func (s *Store) UpsertCommandRuns(ctx context.Context, cycleID string, attemptSe
 func (s *Store) ListCommandRunsForCycle(ctx context.Context, cycleID string) ([]cyclesdomain.TaskCycleCommandRun, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.ListCommandRunsForCycle")
 	return reports.ListCommandRunsForCycle(ctx, s.db, cycleID)
+}
+
+func (s *Store) ListCycleFailures(ctx context.Context, in ListCycleFailuresInput) (ListCycleFailuresResult, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.ListCycleFailures")
+	return failures.List(ctx, s.db, in)
+}
+
+// ScanRecentFailures returns the newest cycle_failed mirror rows for /tasks/stats.
+//
+//funclogmeasure:skip category=delegate-already-logs reason="Package-level forwarder; failures.ScanRecent emits the operation trace."
+func ScanRecentFailures(ctx context.Context, db *gorm.DB, limit int) ([]CycleFailure, error) {
+	return failures.ScanRecent(ctx, db, limit)
 }

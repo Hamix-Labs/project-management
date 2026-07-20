@@ -21,5 +21,4 @@ type TaskCRUDStore interface {
 	ListTaskDependencies(ctx context.Context, taskID string) ([]domain.DependencyEdge, error)
 	AddTaskDependency(ctx context.Context, taskID, dependsOnTaskID string, satisfies domain.DependencySatisfies) error
 	RemoveTaskDependency(ctx context.Context, taskID, dependsOnTaskID string) error
-	ListCycleFailures(ctx context.Context, in ListCycleFailuresInput) (ListCycleFailuresResult, error)
 }

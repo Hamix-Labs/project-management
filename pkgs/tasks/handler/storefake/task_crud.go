@@ -139,9 +139,4 @@ func (f *TaskCRUDFake) RemoveTaskDependency(ctx context.Context, taskID, depends
 	return errNotImplemented
 }
 
-//funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (f *TaskCRUDFake) ListCycleFailures(ctx context.Context, in taskcorecontract.ListCycleFailuresInput) (taskcorecontract.ListCycleFailuresResult, error) {
-	return taskcorecontract.ListCycleFailuresResult{}, errNotImplemented
-}
-
 var _ taskcorecontract.TaskCRUDStore = (*TaskCRUDFake)(nil)

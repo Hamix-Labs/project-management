@@ -64,17 +64,11 @@ type (
 	RunnerStats             = stats.RunnerStats
 	RunnerBucket            = stats.RunnerBucket
 	RecentFailure           = stats.RecentFailure
-	ListCycleFailuresInput  = stats.ListCycleFailuresInput
-	ListCycleFailuresResult = stats.ListCycleFailuresResult
 	PreFeatureCycleCounts   = stats.PreFeatureCycleCounts
 )
 
 const (
-	CycleFailureSortAtDesc     = stats.CycleFailureSortAtDesc
-	CycleFailureSortAtAsc      = stats.CycleFailureSortAtAsc
-	CycleFailureSortReasonAsc  = stats.CycleFailureSortReasonAsc
-	CycleFailureSortReasonDesc = stats.CycleFailureSortReasonDesc
-	RunnerUnknownKey           = stats.RunnerUnknownKey
+	RunnerUnknownKey = stats.RunnerUnknownKey
 )
 
 // ShouldNotifyReadyNow returns true when a freshly-ready task should enter the in-memory queue.
@@ -181,11 +175,6 @@ func (s *Store) ListReadyTasksUserCreated(ctx context.Context, limit int, afterI
 func (s *Store) TaskStats(ctx context.Context) (TaskStats, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcore.store.TaskStats")
 	return stats.Get(ctx, s.db)
-}
-
-func (s *Store) ListCycleFailures(ctx context.Context, in ListCycleFailuresInput) (ListCycleFailuresResult, error) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcore.store.ListCycleFailures")
-	return stats.ListCycleFailures(ctx, s.db, in)
 }
 
 func (s *Store) CountPreFeatureCycles(ctx context.Context) (PreFeatureCycleCounts, error) {

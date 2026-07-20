@@ -72,3 +72,8 @@ func (unimplementedHandlerStore) ListCommitsForCycle(context.Context, string) ([
 func (unimplementedHandlerStore) ListCommitsForTask(context.Context, string) ([]cyclesdomain.TaskCycleCommit, error) {
 	return nil, errNotImplemented
 }
+
+//funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
+func (unimplementedHandlerStore) ListCycleFailures(context.Context, cyclescontract.ListCycleFailuresInput) (cyclescontract.ListCycleFailuresResult, error) {
+	return cyclescontract.ListCycleFailuresResult{}, errNotImplemented
+}

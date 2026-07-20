@@ -1,9 +1,8 @@
 package contract
 
 import (
-	"time"
-
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclescontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/contract"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
@@ -49,27 +48,5 @@ type RunnerBucket struct {
 	DurationP95SucceededSeconds float64
 }
 
-// RecentFailure is one row in the recent_failures slice on /tasks/stats.
-type RecentFailure struct {
-	TaskID     string
-	EventSeq   int64
-	At         time.Time
-	CycleID    string
-	AttemptSeq int64
-	Status     string
-	Reason     string
-}
-
-// ListCycleFailuresInput is the paginated query for cycle failures.
-type ListCycleFailuresInput struct {
-	Limit  int
-	Offset int
-	Sort   string
-}
-
-// ListCycleFailuresResult is returned by ListCycleFailures.
-type ListCycleFailuresResult struct {
-	Total               int64
-	Failures            []RecentFailure
-	ReasonSortTruncated bool
-}
+// RecentFailure aliases the cycle-owned failure projection used on /tasks/stats.
+type RecentFailure = cyclescontract.CycleFailure
