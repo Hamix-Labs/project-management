@@ -1,9 +1,9 @@
 import { useState } from "react";
+import { Button } from "@/components/ui";
 import { useGlobalRepositories } from "@/hooks/useGlobalRepositories";
 import { EmptyState } from "@/shared/EmptyState";
 import { useDocumentTitle } from "@/shared/useDocumentTitle";
 import { useProjects } from "./hooks";
-import { Button } from "@/components/ui";
 import { ProjectCreateDialog } from "./ProjectCreateDialog";
 import { useCreateProjectMutation } from "./mutations";
 import {
