@@ -13,6 +13,19 @@ type GetCall struct {
 	ID string
 }
 
+// RetryCall records one RequestTaskRetry invocation.
+type RetryCall struct {
+	Input taskcorecontract.RequestRetryInput
+	By    taskcoredomain.Actor
+}
+
+// GateCall records one ApplyTaskGateAction invocation.
+type GateCall struct {
+	TaskID string
+	Action string
+	By     taskcoredomain.Actor
+}
+
 // TaskCRUDFake implements the focused taskcore contracts (and composed
 // TaskCRUDStore) with call recording and injectable per-method outcomes
 // for handler error-path tests.
@@ -22,11 +35,20 @@ type TaskCRUDFake struct {
 	getErr  error
 	getTask *taskcoredomain.Task
 
-	getCalls []GetCall
+	retryErr  error
+	retryTask *taskcoredomain.Task
+
+	gateErr  error
+	gateTask *taskcoredomain.Task
+
+	getCalls   []GetCall
+	retryCalls []RetryCall
+	gateCalls  []GateCall
 }
 
 // NewTaskCRUD returns an empty TaskCRUDFake. Get returns taskcoredomain.ErrNotFound
-// until OnGet or FailGet configures a response.
+// until OnGet or FailGet configures a response. Retry/Gate return
+// errNotImplemented until OnRetry/FailRetry or OnGate/FailGate are set.
 //
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
 func NewTaskCRUD() *TaskCRUDFake {
@@ -59,6 +81,64 @@ func (f *TaskCRUDFake) GetCalls() []GetCall {
 	defer f.mu.Unlock()
 	out := make([]GetCall, len(f.getCalls))
 	copy(out, f.getCalls)
+	return out
+}
+
+// FailRetry configures RequestTaskRetry to return err.
+//
+//funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
+func (f *TaskCRUDFake) FailRetry(err error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.retryErr = err
+}
+
+// OnRetry configures RequestTaskRetry to return task.
+//
+//funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
+func (f *TaskCRUDFake) OnRetry(task *taskcoredomain.Task) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.retryTask = task
+}
+
+// RetryCalls returns a copy of recorded RequestTaskRetry calls.
+//
+//funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
+func (f *TaskCRUDFake) RetryCalls() []RetryCall {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	out := make([]RetryCall, len(f.retryCalls))
+	copy(out, f.retryCalls)
+	return out
+}
+
+// FailGate configures ApplyTaskGateAction to return err.
+//
+//funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
+func (f *TaskCRUDFake) FailGate(err error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.gateErr = err
+}
+
+// OnGate configures ApplyTaskGateAction to return task.
+//
+//funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
+func (f *TaskCRUDFake) OnGate(task *taskcoredomain.Task) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.gateTask = task
+}
+
+// GateCalls returns a copy of recorded ApplyTaskGateAction calls.
+//
+//funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
+func (f *TaskCRUDFake) GateCalls() []GateCall {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	out := make([]GateCall, len(f.gateCalls))
+	copy(out, f.gateCalls)
 	return out
 }
 
@@ -110,13 +190,39 @@ func (f *TaskCRUDFake) TaskStats(ctx context.Context) (taskcorecontract.TaskStat
 	return taskcorecontract.TaskStats{}, errNotImplemented
 }
 
+// RequestTaskRetry records the call and returns the configured outcome.
+//
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
 func (f *TaskCRUDFake) RequestTaskRetry(ctx context.Context, in taskcorecontract.RequestRetryInput, by taskcoredomain.Actor) (*taskcoredomain.Task, error) {
+	f.mu.Lock()
+	f.retryCalls = append(f.retryCalls, RetryCall{Input: in, By: by})
+	err := f.retryErr
+	task := f.retryTask
+	f.mu.Unlock()
+	if err != nil {
+		return nil, err
+	}
+	if task != nil {
+		return task, nil
+	}
 	return nil, errNotImplemented
 }
 
+// ApplyTaskGateAction records the call and returns the configured outcome.
+//
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
 func (f *TaskCRUDFake) ApplyTaskGateAction(ctx context.Context, taskID, action string, by taskcoredomain.Actor) (*taskcoredomain.Task, error) {
+	f.mu.Lock()
+	f.gateCalls = append(f.gateCalls, GateCall{TaskID: taskID, Action: action, By: by})
+	err := f.gateErr
+	task := f.gateTask
+	f.mu.Unlock()
+	if err != nil {
+		return nil, err
+	}
+	if task != nil {
+		return task, nil
+	}
 	return nil, errNotImplemented
 }
 
