@@ -6,7 +6,9 @@ import type { DecideSyncFrameInput, SyncFrameDecision } from "./syncTypes";
 export function decideSyncFrame(input: DecideSyncFrameInput): SyncFrameDecision {
   const { frame, shouldSuppressTaskEcho } = input;
   if (frame === null) {
-    return { schedule: "debounce", pendingDelta: {}, effects: [] };
+    // Malformed / unparseable frames must not schedule a debounce that
+    // later flushes empty pending → broad taskQueryKeys.all invalidate.
+    return { schedule: "ignore", pendingDelta: {}, effects: [] };
   }
   if (frame.kind === "task") {
     if (shouldSuppressTaskEcho(frame.taskId)) {
@@ -119,5 +121,5 @@ export function decideSyncFrame(input: DecideSyncFrameInput): SyncFrameDecision 
       ],
     };
   }
-  return { schedule: "debounce", pendingDelta: {}, effects: [] };
+  return { schedule: "ignore", pendingDelta: {}, effects: [] };
 }

@@ -111,7 +111,7 @@ export function useTaskEventStream(): boolean {
         return;
       }
       const result = coordinator.handleRawFrame(data, scheduleProgressStreamInvalidation);
-      if (result.kind === "immediate") {
+      if (result.kind === "immediate" || result.kind === "ignore") {
         return;
       }
       if (result.kind === "resync") {

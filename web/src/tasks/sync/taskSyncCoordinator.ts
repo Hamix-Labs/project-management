@@ -20,7 +20,8 @@ import type { SyncSchedule } from "./syncTypes";
 export type FrameDispatchResult =
   | { kind: "debounce" }
   | { kind: "immediate" }
-  | { kind: "resync" };
+  | { kind: "resync" }
+  | { kind: "ignore" };
 
 function scheduleToDispatchResult(schedule: SyncSchedule): FrameDispatchResult {
   if (schedule === "resync") {
@@ -28,6 +29,9 @@ function scheduleToDispatchResult(schedule: SyncSchedule): FrameDispatchResult {
   }
   if (schedule === "immediate") {
     return { kind: "immediate" };
+  }
+  if (schedule === "ignore") {
+    return { kind: "ignore" };
   }
   return { kind: "debounce" };
 }
