@@ -39,7 +39,10 @@ import (
 //
 // Rev 11: purge projects whose repository_id no longer exists (orphans left
 // when repositories were deleted without cascading project rows).
-const SchemaRevision = 11
+//
+// Rev 12: project_context_items.description — short selection blurb for
+// memory nodes (optional; empty string default for existing rows).
+const SchemaRevision = 12
 
 const schemaMetaRowID = 1
 
