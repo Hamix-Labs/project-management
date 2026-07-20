@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   applyRepoScopedDefaults,
+  decideComposeGitAssignment,
   hydrateAssignmentFromPayload,
   initFreshAssignment,
   isFreshAssignment,
@@ -11,11 +12,21 @@ import {
 const REPO_A = "00000000-0000-4000-8000-000000000010";
 const REPO_B = "00000000-0000-4000-8000-000000000011";
 const PROJ_A = "00000000-0000-4000-8000-000000000040";
+const PROJ_B = "00000000-0000-4000-8000-000000000041";
 const WT_FEATURE = "00000000-0000-4000-8000-000000000021";
 
 const projects = [
   { id: PROJ_A, is_default: true, status: "active" as const },
+  { id: PROJ_B, is_default: false, status: "active" as const },
 ];
+
+const settledQueries = {
+  repositories: [{ id: REPO_A }],
+  repositoriesLoading: false,
+  projects,
+  projectsLoading: false,
+  worktreesLoading: false,
+};
 
 describe("composeGitAssignment", () => {
   it("initFresh selects the only repository when assignment is empty", () => {
@@ -81,5 +92,42 @@ describe("composeGitAssignment", () => {
         WT_FEATURE,
       ).worktreeId,
     ).toBe(WT_FEATURE);
+  });
+
+  it("decide applies sole-repo default on a fresh assignment", () => {
+    const next = decideComposeGitAssignment(
+      { repositoryId: "", projectId: "", worktreeId: "" },
+      settledQueries,
+      { projectChosenByUser: false },
+    );
+    expect(next.repositoryId).toBe(REPO_A);
+  });
+
+  it("decide fills default project when user has not chosen one", () => {
+    const next = decideComposeGitAssignment(
+      { repositoryId: REPO_A, projectId: "", worktreeId: "" },
+      settledQueries,
+      { projectChosenByUser: false },
+    );
+    expect(next.projectId).toBe(PROJ_A);
+  });
+
+  it("decide keeps user project pick over late defaults", () => {
+    const next = decideComposeGitAssignment(
+      { repositoryId: REPO_A, projectId: PROJ_B, worktreeId: "" },
+      settledQueries,
+      { projectChosenByUser: true },
+    );
+    expect(next.projectId).toBe(PROJ_B);
+  });
+
+  it("decide waits while scoped lists are loading", () => {
+    const current = { repositoryId: REPO_A, projectId: "", worktreeId: "" };
+    const next = decideComposeGitAssignment(
+      current,
+      { ...settledQueries, projectsLoading: true },
+      { projectChosenByUser: false },
+    );
+    expect(next).toEqual(current);
   });
 });

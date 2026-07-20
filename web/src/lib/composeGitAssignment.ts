@@ -106,3 +106,56 @@ export function applyAssignmentPatch(
     worktreeId: patch.worktreeId ?? current.worktreeId,
   };
 }
+
+export type ComposeGitQuerySnapshot = {
+  repositories: { id: string }[];
+  repositoriesLoading: boolean;
+  projects: ComposeGitProjectOption[];
+  projectsLoading: boolean;
+  worktreesLoading: boolean;
+};
+
+export type ComposeGitUserIntent = {
+  /** User explicitly chose a project; defaults must not overwrite it. */
+  projectChosenByUser: boolean;
+};
+
+/**
+ * Single Decide tick for compose git assignment.
+ * Returns at most one transition; callers re-run when queries/assignment settle.
+ * User project picks beat auto-defaults; invalid picks still fall back to defaults.
+ */
+export function decideComposeGitAssignment(
+  assignment: ComposeGitAssignment,
+  queries: ComposeGitQuerySnapshot,
+  intent: ComposeGitUserIntent,
+): ComposeGitAssignment {
+  if (queries.repositoriesLoading) {
+    return assignment;
+  }
+
+  if (isFreshAssignment(assignment)) {
+    return initFreshAssignment(assignment, queries.repositories);
+  }
+
+  if (assignment.repositoryId === "") {
+    return assignment;
+  }
+
+  if (queries.projectsLoading || queries.worktreesLoading) {
+    return assignment;
+  }
+
+  const projectValid =
+    assignment.projectId !== "" &&
+    queries.projects.some((p) => p.id === assignment.projectId);
+
+  if (intent.projectChosenByUser && projectValid) {
+    if (assignment.worktreeId === "") {
+      return assignment;
+    }
+    return { ...assignment, worktreeId: "" };
+  }
+
+  return applyRepoScopedDefaults(assignment, queries.projects);
+}
