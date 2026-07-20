@@ -7,72 +7,22 @@ import { TaskCreateModalShell } from "./TaskCreateModalShell";
 
 export type { TaskCreateModalProps };
 
-export function TaskCreateModal({
-  editingTaskId = null,
-  composeTarget = "task",
-  composeOperation = "create",
-  editingTaskRunner = "",
-  composeStatus,
-  onComposeStatusChange,
-  patchPending = false,
-  patchError = null,
-  formError = null,
-  pending,
-  saving,
-  draftSaving,
-  draftSaveLabel,
-  draftSaveError,
-  onClose,
-  title,
-  prompt,
-  priority,
-  checklistItems,
-  onTitleChange,
-  onPromptChange,
-  onPriorityChange,
-  onAppendChecklistCriterion,
-  onUpdateChecklistRow,
-  onRemoveChecklistRow,
-  taskRunner,
-  taskCursorModel,
-  onTaskRunnerChange,
-  onTaskCursorModelChange,
-  projectAssignment,
-  promptProjectContext,
-  schedule,
-  onScheduleChange,
-  autonomyEnabled,
-  onAutonomyChange,
-  autonomyDisabled = false,
-  tagsCsv,
-  milestone,
-  repositoryId,
-  projectId,
-  worktreeId,
-  onRepositoryChange,
-  onProjectChange,
-  onWorktreeChange,
-  onProjectContextClear,
-  dependsOn,
-  onTagsCsvChange,
-  onMilestoneChange,
-  onDependsOnChange,
-  appTimezone,
-  onSaveDraft,
-  onSubmit,
-  createError = null,
-  createFormError = null,
-  onApplyTestScenario,
-}: TaskCreateModalProps) {
+export function TaskCreateModal(props: TaskCreateModalProps) {
+  const { session, actions } = props;
+  const editingTaskId = session.editingTaskId ?? null;
+  const composeTarget = session.composeTarget ?? "task";
+  const composeOperation = session.composeOperation ?? "create";
+  const { onApplyTestScenario } = actions;
+
   const presentation = resolveTaskCreateModalPresentation({
     editingTaskId,
     composeTarget,
     composeOperation,
-    composeStatus,
-    pending,
-    saving,
-    patchPending,
-    draftSaveLabel,
+    composeStatus: session.composeStatus,
+    pending: session.pending,
+    saving: session.saving,
+    patchPending: session.patchPending ?? false,
+    draftSaveLabel: session.draftSaveLabel,
     onApplyTestScenario,
   });
 
@@ -87,58 +37,8 @@ export function TaskCreateModal({
 
   return (
     <TaskCreateModalShell
+      {...props}
       presentation={presentation}
-      editingTaskId={editingTaskId}
-      editingTaskRunner={editingTaskRunner}
-      composeStatus={composeStatus}
-      onComposeStatusChange={onComposeStatusChange}
-      pending={pending}
-      saving={saving}
-      draftSaving={draftSaving}
-      draftSaveLabel={draftSaveLabel}
-      draftSaveError={draftSaveError}
-      onClose={onClose}
-      title={title}
-      prompt={prompt}
-      priority={priority}
-      checklistItems={checklistItems}
-      onTitleChange={onTitleChange}
-      onPromptChange={onPromptChange}
-      onPriorityChange={onPriorityChange}
-      onAppendChecklistCriterion={onAppendChecklistCriterion}
-      onUpdateChecklistRow={onUpdateChecklistRow}
-      onRemoveChecklistRow={onRemoveChecklistRow}
-      taskRunner={taskRunner}
-      taskCursorModel={taskCursorModel}
-      onTaskRunnerChange={onTaskRunnerChange}
-      onTaskCursorModelChange={onTaskCursorModelChange}
-      projectAssignment={projectAssignment}
-      promptProjectContext={promptProjectContext}
-      schedule={schedule}
-      onScheduleChange={onScheduleChange}
-      autonomyEnabled={autonomyEnabled}
-      onAutonomyChange={onAutonomyChange}
-      autonomyDisabled={autonomyDisabled}
-      tagsCsv={tagsCsv}
-      milestone={milestone}
-      repositoryId={repositoryId}
-      projectId={projectId}
-      worktreeId={worktreeId}
-      onRepositoryChange={onRepositoryChange}
-      onProjectChange={onProjectChange}
-      onWorktreeChange={onWorktreeChange}
-      onProjectContextClear={onProjectContextClear}
-      dependsOn={dependsOn}
-      onTagsCsvChange={onTagsCsvChange}
-      onMilestoneChange={onMilestoneChange}
-      onDependsOnChange={onDependsOnChange}
-      appTimezone={appTimezone}
-      onSaveDraft={onSaveDraft}
-      onSubmit={onSubmit}
-      createError={createError}
-      createFormError={createFormError}
-      patchError={patchError}
-      formError={formError}
       busyLabel={taskCreateModalBusyLabel()}
       scenariosOpen={scenariosOpen}
       scenariosTriggerRef={scenariosTriggerRef}

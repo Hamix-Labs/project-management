@@ -1,5 +1,7 @@
 export * from "./TaskCreateModal";
+export * from "./buildTaskCreateModalProps";
 export * from "./taskCreateModalBusyLabel";
+export * from "./taskCreateModalProps";
 export * from "./fields/TaskCreateModalPrimaryFields";
 export * from "./fields/TaskCreateModalFooterActions";
 export * from "./fields/TaskCreateModalAgentSection";

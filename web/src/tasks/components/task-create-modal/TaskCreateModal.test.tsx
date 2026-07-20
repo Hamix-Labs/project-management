@@ -2,14 +2,15 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import { within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { ComponentProps } from "react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import type { AppSettings, ListCursorModelsResult } from "@/api/settings";
 import { settingsQueryKeys } from "@/settings/settingsQueryKeys";
 import { TASK_TEST_DEFAULTS } from "@/test/taskDefaults";
 import { APP_SETTINGS_DEFAULTS } from "@/test/settingsDefaults";
+import { buildTaskCreateModalProps } from "./buildTaskCreateModalProps";
 import { TaskCreateModal } from "./TaskCreateModal";
+import type { TaskCreateModalFlatInput } from "./taskCreateModalProps";
 
 const isUiFeatureOmitted = vi.hoisted(() => vi.fn((_feature: string) => false));
 
@@ -34,8 +35,8 @@ const testCursorModelsEmpty: ListCursorModelsResult = {
   models: [],
 };
 
-function renderModal(props?: Partial<ComponentProps<typeof TaskCreateModal>>) {
-  const base: ComponentProps<typeof TaskCreateModal> = {
+function renderModal(overrides?: Partial<TaskCreateModalFlatInput>) {
+  const base: TaskCreateModalFlatInput = {
     pending: false,
     saving: false,
     draftSaving: false,
@@ -90,7 +91,9 @@ function renderModal(props?: Partial<ComponentProps<typeof TaskCreateModal>>) {
   return render(
     <MemoryRouter>
       <QueryClientProvider client={client}>
-        <TaskCreateModal {...base} {...props} />
+        <TaskCreateModal
+          {...buildTaskCreateModalProps({ ...base, ...overrides })}
+        />
       </QueryClientProvider>
     </MemoryRouter>,
   );

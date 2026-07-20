@@ -1,6 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
-import type { ComponentProps } from "react";
 import { useState } from "react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
@@ -9,7 +8,9 @@ import { settingsQueryKeys } from "@/settings/settingsQueryKeys";
 import { TASK_TEST_DEFAULTS } from "@/test/taskDefaults";
 import { respondGlobalGitApi } from "@/test/handlers/gitGlobal";
 import { APP_SETTINGS_DEFAULTS } from "@/test/settingsDefaults";
+import { buildTaskCreateModalProps } from "./buildTaskCreateModalProps";
 import { TaskCreateModal } from "./TaskCreateModal";
+import type { TaskCreateModalFlatInput } from "./taskCreateModalProps";
 
 const testAppSettings: AppSettings = {
   ...APP_SETTINGS_DEFAULTS,
@@ -23,49 +24,50 @@ const testCursorModelsEmpty: ListCursorModelsResult = {
   models: [],
 };
 
-function renderModal(props?: Partial<ComponentProps<typeof TaskCreateModal>>) {
-  const base: ComponentProps<typeof TaskCreateModal> = {
-    pending: false,
-    saving: false,
-    draftSaving: false,
-    draftSaveLabel: null,
-    draftSaveError: false,
-    onClose: vi.fn(),
-    title: "Draft title",
-    prompt: "Draft prompt",
-    priority: "medium",
-    checklistItems: [{ text: "Criterion" }],
-    onTitleChange: vi.fn(),
-    onPromptChange: vi.fn(),
-    onPriorityChange: vi.fn(),
-    onAppendChecklistCriterion: vi.fn(),
-    onUpdateChecklistRow: vi.fn(),
-    onRemoveChecklistRow: vi.fn(),
-    taskRunner: TASK_TEST_DEFAULTS.runner,
-    taskCursorModel: TASK_TEST_DEFAULTS.cursor_model,
-    onTaskRunnerChange: vi.fn(),
-    onTaskCursorModelChange: vi.fn(),
-    schedule: null,
-    onScheduleChange: vi.fn(),
-    autonomyEnabled: true,
-    onAutonomyChange: vi.fn(),
-    tagsCsv: "",
-    milestone: "",
-    repositoryId: "",
-    projectId: "",
-    worktreeId: "",
-    onRepositoryChange: vi.fn(),
-    onProjectChange: vi.fn(),
-    onWorktreeChange: vi.fn(),
-    onProjectContextClear: vi.fn(),
-    dependsOn: [],
-    onTagsCsvChange: vi.fn(),
-    onMilestoneChange: vi.fn(),
-    onDependsOnChange: vi.fn(),
-    appTimezone: "UTC",
-    onSaveDraft: vi.fn(),
-    onSubmit: vi.fn(),
-  };
+const flatDefaults = {
+  pending: false,
+  saving: false,
+  draftSaving: false,
+  draftSaveLabel: null,
+  draftSaveError: false,
+  onClose: vi.fn(),
+  title: "Draft title",
+  prompt: "Draft prompt",
+  priority: "medium" as const,
+  checklistItems: [{ text: "Criterion" }],
+  onTitleChange: vi.fn(),
+  onPromptChange: vi.fn(),
+  onPriorityChange: vi.fn(),
+  onAppendChecklistCriterion: vi.fn(),
+  onUpdateChecklistRow: vi.fn(),
+  onRemoveChecklistRow: vi.fn(),
+  taskRunner: TASK_TEST_DEFAULTS.runner,
+  taskCursorModel: TASK_TEST_DEFAULTS.cursor_model,
+  onTaskRunnerChange: vi.fn(),
+  onTaskCursorModelChange: vi.fn(),
+  schedule: null,
+  onScheduleChange: vi.fn(),
+  autonomyEnabled: true,
+  onAutonomyChange: vi.fn(),
+  tagsCsv: "",
+  milestone: "",
+  repositoryId: "",
+  projectId: "",
+  worktreeId: "",
+  onRepositoryChange: vi.fn(),
+  onProjectChange: vi.fn(),
+  onWorktreeChange: vi.fn(),
+  onProjectContextClear: vi.fn(),
+  dependsOn: [],
+  onTagsCsvChange: vi.fn(),
+  onMilestoneChange: vi.fn(),
+  onDependsOnChange: vi.fn(),
+  appTimezone: "UTC",
+  onSaveDraft: vi.fn(),
+  onSubmit: vi.fn(),
+} satisfies TaskCreateModalFlatInput;
+
+function renderModal(overrides?: Partial<TaskCreateModalFlatInput>) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, staleTime: Infinity } },
   });
@@ -77,7 +79,9 @@ function renderModal(props?: Partial<ComponentProps<typeof TaskCreateModal>>) {
   return render(
     <MemoryRouter>
       <QueryClientProvider client={client}>
-        <TaskCreateModal {...base} {...props} />
+        <TaskCreateModal
+          {...buildTaskCreateModalProps({ ...flatDefaults, ...overrides })}
+        />
       </QueryClientProvider>
     </MemoryRouter>,
   );
@@ -108,46 +112,15 @@ describe("TaskCreateModal git binding", () => {
       const [worktreeId, setWorktreeId] = useState("");
       return (
         <TaskCreateModal
-          pending={false}
-          saving={false}
-          draftSaving={false}
-          draftSaveLabel={null}
-          draftSaveError={false}
-          onClose={vi.fn()}
-          title="Draft title"
-          prompt="Draft prompt"
-          priority="medium"
-          checklistItems={[{ text: "Criterion" }]}
-          onTitleChange={vi.fn()}
-          onPromptChange={vi.fn()}
-          onPriorityChange={vi.fn()}
-          onAppendChecklistCriterion={vi.fn()}
-          onUpdateChecklistRow={vi.fn()}
-          onRemoveChecklistRow={vi.fn()}
-          taskRunner={TASK_TEST_DEFAULTS.runner}
-          taskCursorModel={TASK_TEST_DEFAULTS.cursor_model}
-          onTaskRunnerChange={vi.fn()}
-          onTaskCursorModelChange={vi.fn()}
-          schedule={null}
-          onScheduleChange={vi.fn()}
-          autonomyEnabled={true}
-          onAutonomyChange={vi.fn()}
-          tagsCsv=""
-          milestone=""
-          repositoryId={repositoryId}
-          projectId={projectId}
-          worktreeId={worktreeId}
-          onRepositoryChange={setRepositoryId}
-          onProjectChange={setProjectId}
-          onWorktreeChange={setWorktreeId}
-          onProjectContextClear={vi.fn()}
-          dependsOn={[]}
-          onTagsCsvChange={vi.fn()}
-          onMilestoneChange={vi.fn()}
-          onDependsOnChange={vi.fn()}
-          appTimezone="UTC"
-          onSaveDraft={vi.fn()}
-          onSubmit={vi.fn()}
+          {...buildTaskCreateModalProps({
+            ...flatDefaults,
+            repositoryId,
+            projectId,
+            worktreeId,
+            onRepositoryChange: setRepositoryId,
+            onProjectChange: setProjectId,
+            onWorktreeChange: setWorktreeId,
+          })}
         />
       );
     }
