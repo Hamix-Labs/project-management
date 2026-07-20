@@ -1,6 +1,9 @@
 package model
 
-import "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+import (
+	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel/jsonmap"
+	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+)
 
 // FromDomainTask copies persisted columns from domain.Task to model.Task.
 //
@@ -19,7 +22,7 @@ func FromDomainTask(d domain.Task) Task {
 		Gate:                  d.Gate,
 		Runner:                d.Runner,
 		CursorModel:           d.CursorModel,
-		RunnerConfig:          datatypesFromRaw(d.RunnerConfig),
+		RunnerConfig:          jsonmap.DatatypesFromRaw(d.RunnerConfig),
 		PickupNotBefore:       d.PickupNotBefore,
 		CriteriaSatisfiedAt:   d.CriteriaSatisfiedAt,
 		PendingRetry:          d.PendingRetry,
@@ -32,9 +35,9 @@ func FromDomainTask(d domain.Task) Task {
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func ToDomainTask(m Task) domain.Task {
-	runnerConfig := rawFromDatatypes(m.RunnerConfig)
+	runnerConfig := jsonmap.RawFromDatatypes(m.RunnerConfig)
 	if len(runnerConfig) == 0 {
-		runnerConfig = jsonRawObject()
+		runnerConfig = jsonmap.JSONRawObject()
 	}
 	return domain.Task{
 		ID:                    m.ID,

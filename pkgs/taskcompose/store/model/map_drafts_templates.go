@@ -1,13 +1,16 @@
 package model
 
-import "github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/domain"
+import (
+	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel/jsonmap"
+	"github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/domain"
+)
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func FromDomainTaskDraft(d domain.TaskDraft) TaskDraft {
 	return TaskDraft{
 		ID:          d.ID,
 		Name:        d.Name,
-		PayloadJSON: datatypesFromRaw(d.PayloadJSON),
+		PayloadJSON: jsonmap.DatatypesFromRaw(d.PayloadJSON),
 		CreatedAt:   d.CreatedAt,
 		UpdatedAt:   d.UpdatedAt,
 	}
@@ -27,7 +30,7 @@ func ToDomainTaskDraft(m TaskDraft) domain.TaskDraft {
 	return domain.TaskDraft{
 		ID:          m.ID,
 		Name:        m.Name,
-		PayloadJSON: rawFromDatatypes(m.PayloadJSON),
+		PayloadJSON: jsonmap.RawFromDatatypes(m.PayloadJSON),
 		CreatedAt:   m.CreatedAt,
 		UpdatedAt:   m.UpdatedAt,
 	}
@@ -50,7 +53,7 @@ func FromDomainTaskTemplate(d domain.TaskTemplate) TaskTemplate {
 	return TaskTemplate{
 		ID:          d.ID,
 		Name:        d.Name,
-		PayloadJSON: datatypesFromRaw(d.PayloadJSON),
+		PayloadJSON: jsonmap.DatatypesFromRaw(d.PayloadJSON),
 		CreatedAt:   d.CreatedAt,
 		UpdatedAt:   d.UpdatedAt,
 	}
@@ -70,7 +73,7 @@ func ToDomainTaskTemplate(m TaskTemplate) domain.TaskTemplate {
 	return domain.TaskTemplate{
 		ID:          m.ID,
 		Name:        m.Name,
-		PayloadJSON: rawFromDatatypes(m.PayloadJSON),
+		PayloadJSON: jsonmap.RawFromDatatypes(m.PayloadJSON),
 		CreatedAt:   m.CreatedAt,
 		UpdatedAt:   m.UpdatedAt,
 	}

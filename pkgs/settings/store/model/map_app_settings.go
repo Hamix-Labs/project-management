@@ -1,6 +1,9 @@
 package model
 
-import "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
+import (
+	"github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel/jsonmap"
+)
 
 // FromDomainAppSettings copies a domain row to its persistence model.
 //
@@ -18,7 +21,7 @@ func FromDomainAppSettings(d domain.AppSettings) AppSettings {
 		DisplayTimezone:             d.DisplayTimezone,
 		OptimisticMutationsEnabled:  d.OptimisticMutationsEnabled,
 		SSEReplayEnabled:            d.SSEReplayEnabled,
-		RunnerConfigs:               datatypesFromRaw(d.RunnerConfigs),
+		RunnerConfigs:               jsonmap.DatatypesFromRaw(d.RunnerConfigs),
 		VerifyMaxRetries:            d.VerifyMaxRetries,
 		VerifyRunnerName:            d.VerifyRunnerName,
 		VerifyRunnerModel:           d.VerifyRunnerModel,
@@ -44,7 +47,7 @@ func ToDomainAppSettings(m AppSettings) domain.AppSettings {
 		DisplayTimezone:             m.DisplayTimezone,
 		OptimisticMutationsEnabled:  m.OptimisticMutationsEnabled,
 		SSEReplayEnabled:            m.SSEReplayEnabled,
-		RunnerConfigs:               rawFromDatatypes(m.RunnerConfigs),
+		RunnerConfigs:               jsonmap.RawFromDatatypes(m.RunnerConfigs),
 		VerifyMaxRetries:            m.VerifyMaxRetries,
 		VerifyRunnerName:            m.VerifyRunnerName,
 		VerifyRunnerModel:           m.VerifyRunnerModel,
