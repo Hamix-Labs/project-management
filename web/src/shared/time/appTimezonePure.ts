@@ -104,11 +104,14 @@ export function formatInAppTimezone(
  * time.LoadLocation, so we don't try to enumerate every zone here.
  */
 export function supportedTimezones(): string[] {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const intl = Intl as any;
-  if (typeof intl.supportedValuesOf === "function") {
+  const supportedValuesOf = (
+    Intl as typeof Intl & {
+      supportedValuesOf?: (key: "timeZone") => string[];
+    }
+  ).supportedValuesOf;
+  if (typeof supportedValuesOf === "function") {
     try {
-      const v = intl.supportedValuesOf("timeZone");
+      const v = supportedValuesOf("timeZone");
       if (Array.isArray(v) && v.length > 0) {
         // Intl.supportedValuesOf("timeZone") returns canonical IANA
         // names and intentionally OMITS the legacy alias "UTC" (the
@@ -117,7 +120,7 @@ export function supportedTimezones(): string[] {
         // (domain.DefaultDisplayTimezone) and the wire format every
         // API returns. Prepend it so the SettingsPage selector always
         // includes it.
-        const merged = ["UTC", ...v.filter((z: string) => z !== "UTC")];
+        const merged = ["UTC", ...v.filter((z) => z !== "UTC")];
         return [...new Set(merged)].sort((a, b) => {
           if (a === "UTC") return -1;
           if (b === "UTC") return 1;
