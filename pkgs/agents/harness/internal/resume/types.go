@@ -1,7 +1,7 @@
 package resume
 
 import (
-	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/verify"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
@@ -14,32 +14,27 @@ const (
 	EntryAfterExecuteSuccess
 )
 
-// FailureClass categorizes the parent attempt failure for continuation prompts.
-type FailureClass string
+// ContinuationFailureKind categorizes the parent attempt failure for continuation prompts.
+// Distinct from orchestration.VerifyRetryFailureClass (ADR-0028 infra vs implementation).
+type ContinuationFailureKind string
 
 const (
-	FailureClassRunner         FailureClass = "runner"
-	FailureClassExecuteGate    FailureClass = "executeGate"
-	FailureClassVerify         FailureClass = "verify"
-	FailureClassInfrastructure FailureClass = "infrastructure"
-	FailureClassOperator       FailureClass = "operator"
+	ContinuationFailureRunner         ContinuationFailureKind = "runner"
+	ContinuationFailureExecuteGate    ContinuationFailureKind = "executeGate"
+	ContinuationFailureVerify         ContinuationFailureKind = "verify"
+	ContinuationFailureInfrastructure ContinuationFailureKind = "infrastructure"
+	ContinuationFailureOperator       ContinuationFailureKind = "operator"
 )
 
-// CriterionVerdict records a locked pass from a prior verify attempt.
-type CriterionVerdict struct {
-	ID        string
-	Passed    bool
-	Evidence  string
-	Verifier  checklistdomain.VerifierKind
-	Reasoning string
-}
+// CriterionVerdict is the shared locked-pass DTO (same shape as verify.Verdict).
+type CriterionVerdict = verify.Verdict
 
 // ContinuationBundle rehydrates cross-cycle resume context from a parent attempt.
 type ContinuationBundle struct {
 	Entry                  Entry
 	LineageAttempt         int64
 	ParentCycleID          string
-	FailureClass           FailureClass
+	FailureClass           ContinuationFailureKind
 	FailureReason          string
 	FailurePhase           cyclesdomain.Phase
 	ScopeFiles             []string

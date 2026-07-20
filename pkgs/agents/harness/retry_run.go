@@ -71,7 +71,7 @@ func (h *Harness) runResumeRetry(parentCtx context.Context, task *taskcoredomain
 	state := processState{
 		cycle: cycleLifecycleState{startedAt: startedAt},
 		verify: verifyLifecycleState{
-			previouslyPassed: harnessVerdictsFromResume(cp.PreviouslyPassed),
+			previouslyPassed: cloneVerdictMap(cp.PreviouslyPassed),
 			verifyAttempt:    0,
 			verifyFeedback:   cp.VerifyFeedback,
 		},

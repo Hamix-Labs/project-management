@@ -11,15 +11,6 @@ import (
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func verdictsToClassifyInput(verdicts []criterionVerdict) []orchestration.ClassifyVerdict {
-	out := make([]orchestration.ClassifyVerdict, len(verdicts))
-	for i, v := range verdicts {
-		out[i] = orchestration.ClassifyVerdict{Passed: v.Passed, Verifier: v.Verifier}
-	}
-	return out
-}
-
 func (h *Harness) anchorPostExecuteState(
 	ctx context.Context,
 	state *processState,
@@ -109,7 +100,7 @@ func (h *Harness) gatherRetryClassifyInput(
 		}
 	}
 	pipelineFailed := verifyErr != nil
-	failureClass := orchestration.ClassifyFailureClass(verdictsToClassifyInput(verdicts), pipelineFailed)
+	failureClass := orchestration.ClassifyFailureClass(verdicts, pipelineFailed)
 	return orchestration.ClassifyInput{
 		FailureClass:         failureClass,
 		CriteriaReportValid:  reportValid,

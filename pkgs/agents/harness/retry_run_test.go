@@ -284,7 +284,7 @@ func TestVerifyOnlyCrossCycleResume_runCycleLoopSkipsRunnerExecute(t *testing.T)
 	state := processState{
 		cycle: cycleLifecycleState{startedAt: h.opts.Clock()},
 		verify: verifyLifecycleState{
-			previouslyPassed: harnessVerdictsFromResume(cp.PreviouslyPassed),
+			previouslyPassed: cloneVerdictMap(cp.PreviouslyPassed),
 			verifyFeedback:   cp.VerifyFeedback,
 		},
 	}

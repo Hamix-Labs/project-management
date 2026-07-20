@@ -32,7 +32,7 @@ func (h *Harness) Resume(parentCtx context.Context, task *taskcoredomain.Task, c
 			effectiveModel: effectiveModelFromCycleMeta(h.runner, task, cycle),
 		},
 		verify: verifyLifecycleState{
-			previouslyPassed: harnessVerdictsFromResume(cp.PreviouslyPassed),
+			previouslyPassed: cloneVerdictMap(cp.PreviouslyPassed),
 			verifyAttempt:    cp.VerifyAttempt,
 			verifyFeedback:   cp.VerifyFeedback,
 		},

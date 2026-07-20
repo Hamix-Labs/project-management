@@ -1,14 +1,16 @@
 package orchestration
 
 import (
-	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 	"testing"
+
+	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/verify"
+	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 )
 
 func TestClassify_EC01_verifyInfra_verifyOnly(t *testing.T) {
 	t.Parallel()
 	mode, reason := ClassifyVerifyRetryMode(ClassifyInput{
-		FailureClass:         FailureClassInfra,
+		FailureClass:         VerifyRetryFailureInfra,
 		CriteriaReportValid:  true,
 		GitHeadMatchesAnchor: true,
 		CommitIngestOK:       true,
@@ -21,8 +23,8 @@ func TestClassify_EC01_verifyInfra_verifyOnly(t *testing.T) {
 
 func TestClassify_EC02_verifyAgentReject_fullReexecute(t *testing.T) {
 	t.Parallel()
-	cls := ClassifyFailureClass([]ClassifyVerdict{{Passed: false, Verifier: checklistdomain.VerifierVerifyAgent}}, false)
-	if cls != FailureClassImplementation {
+	cls := ClassifyFailureClass([]verify.Verdict{{Passed: false, Verifier: checklistdomain.VerifierVerifyAgent}}, false)
+	if cls != VerifyRetryFailureImplementation {
 		t.Fatalf("class=%v", cls)
 	}
 	mode, reason := ClassifyVerifyRetryMode(ClassifyInput{
@@ -39,7 +41,7 @@ func TestClassify_EC02_verifyAgentReject_fullReexecute(t *testing.T) {
 
 func TestClassify_EC03_claimedNotDone_fullReexecute(t *testing.T) {
 	t.Parallel()
-	cls := ClassifyFailureClass([]ClassifyVerdict{{Passed: false, Verifier: checklistdomain.VerifierAgentSelf}}, false)
+	cls := ClassifyFailureClass([]verify.Verdict{{Passed: false, Verifier: checklistdomain.VerifierAgentSelf}}, false)
 	mode, _ := ClassifyVerifyRetryMode(ClassifyInput{
 		FailureClass:         cls,
 		CriteriaReportValid:  true,
@@ -55,7 +57,7 @@ func TestClassify_EC03_claimedNotDone_fullReexecute(t *testing.T) {
 func TestClassify_EC04_reportInvalid_fullReexecute(t *testing.T) {
 	t.Parallel()
 	mode, reason := ClassifyVerifyRetryMode(ClassifyInput{
-		FailureClass:         FailureClassInfra,
+		FailureClass:         VerifyRetryFailureInfra,
 		CriteriaReportValid:  false,
 		GitHeadMatchesAnchor: true,
 		CommitIngestOK:       true,
@@ -69,7 +71,7 @@ func TestClassify_EC04_reportInvalid_fullReexecute(t *testing.T) {
 func TestClassify_EC05_headChanged_fullReexecute(t *testing.T) {
 	t.Parallel()
 	mode, reason := ClassifyVerifyRetryMode(ClassifyInput{
-		FailureClass:         FailureClassInfra,
+		FailureClass:         VerifyRetryFailureInfra,
 		CriteriaReportValid:  true,
 		GitHeadMatchesAnchor: false,
 		CommitIngestOK:       true,
@@ -83,7 +85,7 @@ func TestClassify_EC05_headChanged_fullReexecute(t *testing.T) {
 func TestClassify_EC06_ingestFailed_fullReexecute(t *testing.T) {
 	t.Parallel()
 	mode, reason := ClassifyVerifyRetryMode(ClassifyInput{
-		FailureClass:         FailureClassInfra,
+		FailureClass:         VerifyRetryFailureInfra,
 		CriteriaReportValid:  true,
 		GitHeadMatchesAnchor: true,
 		CommitIngestOK:       false,
@@ -104,7 +106,7 @@ func TestClassify_EC08_budgetExhausted_terminal(t *testing.T) {
 
 func TestClassifyFailureClass_pipelineErrIsInfra(t *testing.T) {
 	t.Parallel()
-	if ClassifyFailureClass(nil, true) != FailureClassInfra {
+	if ClassifyFailureClass(nil, true) != VerifyRetryFailureInfra {
 		t.Fatal("want infra for pipeline failure without verdicts")
 	}
 }

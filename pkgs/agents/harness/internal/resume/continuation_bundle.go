@@ -90,27 +90,27 @@ func (s *Service) LoadContinuationBundle(ctx context.Context, parentCycleID stri
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func classifyParentFailure(phases []cyclesdomain.TaskCyclePhase, cycle *cyclesdomain.TaskCycle, lastPhase cyclesdomain.TaskCyclePhase) FailureClass {
+func classifyParentFailure(phases []cyclesdomain.TaskCyclePhase, cycle *cyclesdomain.TaskCycle, lastPhase cyclesdomain.TaskCyclePhase) ContinuationFailureKind {
 	reason := parentFailureReason(phases, cycle)
 	if reason == "" {
 		reason = phaseSummary(lastPhase)
 	}
 	if reason == cancelledByOperatorReason {
-		return FailureClassOperator
+		return ContinuationFailureOperator
 	}
 	if strings.HasPrefix(reason, verificationFailedReason) || lastPhase.Phase == cyclesdomain.PhaseVerify {
-		return FailureClassVerify
+		return ContinuationFailureVerify
 	}
 	if strings.HasPrefix(reason, "runner_") || strings.Contains(reason, "runner_") {
-		return FailureClassRunner
+		return ContinuationFailureRunner
 	}
 	if lastPhase.Phase == cyclesdomain.PhaseExecute && lastPhase.Status == cyclesdomain.PhaseStatusFailed {
-		return FailureClassRunner
+		return ContinuationFailureRunner
 	}
 	if reason == "shutdown" || reason == "panic" || strings.HasSuffix(reason, "_failed") {
-		return FailureClassInfrastructure
+		return ContinuationFailureInfrastructure
 	}
-	return FailureClassInfrastructure
+	return ContinuationFailureInfrastructure
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
