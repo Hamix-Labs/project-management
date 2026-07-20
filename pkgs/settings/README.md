@@ -15,17 +15,18 @@ HTTP routes (`/settings`, `/settings/workspace-roots`, …) and JSON shapes are 
 
 ## Wiring
 
-- **`cmd/taskapi`** still constructs `pkgs/tasks/store.Store` as the composition root.
-- `tasks/store.Store` holds `*settingsstore.Store` and implements `contract.SettingsStore` via delegation ([`facade_settings.go`](../tasks/store/facade_settings.go)).
+- **`cmd/taskapi`** constructs `internal/taskapi/composition.API` via `composition.NewAPI(db)` ([ADR-0079](../../docs/adr/ADR-0079-facade-deletion.md)).
+- Composition holds `*settingsstore.Store` and satisfies `contract.SettingsStore`.
 - Supervisor reload/probe/cancel is injected as `settings/contract.AgentWorkerControl` from `handler_routes.go` (same supervisor type as before, without importing `pkgs/tasks/handler` from settings).
+- Model registration for AutoMigrate lives in [`pkgs/tasks/postgres/migrate/migrate_models.go`](../tasks/postgres/migrate/migrate_models.go).
 
 ## Dependency rules
 
 | Package | May import | Must not import |
 | --- | --- | --- |
 | `domain` | stdlib | `pkgs/tasks/*`, GORM |
-| `store` | `settings/domain`, `settings/contract`, GORM, `pkgs/storekernel`, `pkgs/tasks/store/model` (migrate parity) | `pkgs/tasks/handler`, `pkgs/tasks/store/internal` |
-| `handler` | `settings/domain`, `settings/contract`, `pkgs/tasks/apijson`, `pkgs/tasks/calltrace`, `pkgs/tasks/logctx`, `pkgs/tasks/realtime`, `pkgs/gitwork`, `pkgs/repo` | `pkgs/tasks/store` facade, `pkgs/tasks/handler` |
+| `store` | `settings/domain`, `settings/contract`, GORM, `pkgs/storekernel`, `pkgs/tasks/calltrace` | `pkgs/tasks/handler`, `internal/taskapi/composition` |
+| `handler` | `settings/domain`, `settings/contract`, `pkgs/tasks/apijson`, `pkgs/tasks/calltrace`, `pkgs/tasks/logctx`, `pkgs/tasks/realtime`, `pkgs/tasks/handlerhttp`, `pkgs/gitwork`, `pkgs/repo` | `internal/taskapi/composition`, `pkgs/tasks/handler` |
 
 Enforced in CI: `scripts/check-go.sh` → `step_settings_boundary`.
 
@@ -33,10 +34,9 @@ Enforced in CI: `scripts/check-go.sh` → `step_settings_boundary`.
 
 ```powershell
 go test ./pkgs/settings/... -count=1
-go test ./pkgs/tasks/handler/... -run Settings -count=1
 ```
 
-Contract coverage for `/settings*` lives in [`handler/handler_http_settings_contract_test.go`](./handler/handler_http_settings_contract_test.go). Cross-route SSE trigger pins remain in [`pkgs/tasks/handler/sse_trigger_surface_test.go`](../tasks/handler/sse_trigger_surface_test.go).
+Contract coverage for `/settings*` lives in [`handler/handler_http_settings_contract_test.go`](./handler/handler_http_settings_contract_test.go).
 
 ## See also
 

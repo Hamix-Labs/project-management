@@ -9,8 +9,8 @@ GORM-backed persistence for projects and project context.
 | `internal/edges.go` | Context edge CRUD |
 | `model/` | GORM models and domain mappers |
 
-`pkgs/tasks/store.Store` embeds `*Store` and delegates project methods. Migrations in `pkgs/tasks/postgres` import `pkgs/projects/store/model` for AutoMigrate.
+`internal/taskapi/composition.API` holds `*Store` and exposes project methods to HTTP and harness. Migrations in `pkgs/tasks/postgres` import `pkgs/projects/store/model` for AutoMigrate.
 
-Shared SQL helpers: `pkgs/tasks/kernel` (temporary until `pkgs/storekernel/` extraction).
+Shared SQL helpers: [`pkgs/storekernel`](../../storekernel/) ([ADR-0050](../../../docs/adr/ADR-0050-storekernel-extraction.md)).
 
-Tests: [`store_test.go`](./store_test.go) (unit); integration via [`pkgs/tasks/store/facade_projects_test.go`](../../tasks/store/facade_projects_test.go).
+Tests: [`store_test.go`](./store_test.go).

@@ -15,20 +15,20 @@ HTTP routes (`/tasks/{id}/cycles*`, commits, cycle-failures) and JSON shapes are
 
 ## Wiring
 
-- **`cmd/taskapi`** still constructs `pkgs/tasks/store.Store` as the composition root.
-- `tasks/store.Store` embeds `taskcycles/store.Store` and delegates through `facade_cycles.go`, `facade_commits.go`, and `facade_reports.go`.
+- **`cmd/taskapi`** constructs `internal/taskapi/composition.API` via `composition.NewAPI(db)` ([ADR-0079](../../docs/adr/ADR-0079-facade-deletion.md)).
+- Composition holds `*cyclesstore.Store` and exposes cycle/commit/report methods on the composition API.
 - `pkgs/tasks/handler/handler_routes.go` calls `taskcycles/handler.Register`.
-- `FailureSurfaceMessage` is exported from `taskcycles/store` for `pkgs/tasks/store/internal/stats` (operator-facing failure text on cycle_failed mirrors).
-- `pkgs/tasks/store/model/migrate_models.go` registers `taskcycles/store/model` types in FK-safe order.
+- `FailureSurfaceMessage` is exported from `taskcycles/store` for `pkgs/taskcore/store/internal/stats` (operator-facing failure text on cycle_failed mirrors).
+- Model registration for AutoMigrate lives in [`pkgs/tasks/postgres/migrate/migrate_models.go`](../tasks/postgres/migrate/migrate_models.go).
 
 ## Dependency rules
 
 | Package | May import | Must not import |
 | --- | --- | --- |
 | `domain` | stdlib, `taskchecklist/domain` | GORM, `pkgs/tasks/*` |
-| `contract` | `taskcycles/domain`, `pkgs/tasks/domain` (`Actor`) | `pkgs/tasks/handler`, `pkgs/tasks/store/internal` |
-| `store` | `taskcycles/domain`, `taskcycles/contract`, `taskcycles/store/model`, GORM, `pkgs/storekernel`, `pkgs/tasks/domain`, `pkgs/tasks/store/model` (task row FK only) | `pkgs/tasks/handler`, `pkgs/tasks/store/internal` |
-| `handler` | `taskcycles/domain`, `taskcycles/contract`, `pkgs/tasks/apijson`, `pkgs/tasks/calltrace`, `pkgs/tasks/logctx`, `pkgs/tasks/domain` | `pkgs/tasks/store` facade, `pkgs/tasks/handler` |
+| `contract` | `taskcycles/domain`, `pkgs/taskcore/domain` (`Actor`) | `pkgs/tasks/handler`, `internal/taskapi/composition` |
+| `store` | `taskcycles/domain`, `taskcycles/contract`, `taskcycles/store/model`, GORM, `pkgs/storekernel`, `pkgs/taskcore/domain`, `pkgs/tasks/calltrace` | `pkgs/tasks/handler`, `internal/taskapi/composition` |
+| `handler` | `taskcycles/domain`, `taskcycles/contract`, `pkgs/tasks/handlerhttp`, `pkgs/tasks/apijson`, `pkgs/tasks/calltrace`, `pkgs/tasks/logctx`, `pkgs/taskcore/domain`, `pkgs/taskcore/contract` | `internal/taskapi/composition`, `pkgs/tasks/handler` |
 
 Enforced in CI: `scripts/check-go.sh` → `step_taskcycles_boundary`.
 
@@ -36,7 +36,6 @@ Enforced in CI: `scripts/check-go.sh` → `step_taskcycles_boundary`.
 
 ```powershell
 go test ./pkgs/taskcycles/... -count=1
-go test ./pkgs/tasks/store/... -run Cycle -count=1
 go test ./pkgs/agents/harness/... -run Cycle -count=1
 ```
 

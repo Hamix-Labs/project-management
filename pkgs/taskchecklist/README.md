@@ -15,20 +15,20 @@ HTTP routes (`/tasks/{id}/checklist*`) and JSON shapes are unchanged from the pr
 
 ## Wiring
 
-- **`cmd/taskapi`** still constructs `pkgs/tasks/store.Store` as the composition root.
-- `tasks/store.Store` embeds `taskchecklist/store.Store` and delegates through [`facade_checklist.go`](../tasks/store/facade_checklist.go).
-- `notifyUnblockedDependents` runs in the tasks facade after completion mutations that set `criteria_satisfied_at`.
+- **`cmd/taskapi`** constructs `internal/taskapi/composition.API` via `composition.NewAPI(db)` ([ADR-0079](../../docs/adr/ADR-0079-facade-deletion.md)).
+- Composition holds `*checkliststore.Store` and exposes checklist methods on the composition API.
+- After completion mutations that set `criteria_satisfied_at`, composition runs `NotifyUnblockedDependents` for dependent wake.
 - `pkgs/tasks/handler/handler_routes.go` calls `taskchecklist/handler.Register` with `NotifyTaskUpdated` for enriched SSE.
-- `pkgs/tasks/store/model/migrate_models.go` registers `taskchecklist/store/model` types in FK-safe order.
+- Model registration for AutoMigrate lives in [`pkgs/tasks/postgres/migrate/migrate_models.go`](../tasks/postgres/migrate/migrate_models.go).
 
 ## Dependency rules
 
 | Package | May import | Must not import |
 | --- | --- | --- |
 | `domain` | stdlib | GORM, `pkgs/tasks/*` |
-| `contract` | `taskchecklist/domain`, `pkgs/tasks/domain` (`Actor`) | `pkgs/tasks/handler`, `pkgs/tasks/store/internal` |
-| `store` | `taskchecklist/domain`, `taskchecklist/contract`, `taskchecklist/store/model`, GORM, `pkgs/storekernel`, `pkgs/tasks/domain`, `pkgs/tasks/store/model` (task/cycle rows only) | `pkgs/tasks/handler`, `pkgs/tasks/store/internal` |
-| `handler` | `taskchecklist/domain`, `taskchecklist/contract`, `pkgs/tasks/apijson`, `pkgs/tasks/calltrace`, `pkgs/tasks/logctx`, `pkgs/tasks/domain` | `pkgs/tasks/store` facade, `pkgs/tasks/handler` |
+| `contract` | `taskchecklist/domain`, `pkgs/taskcore/domain` (`Actor`) | `pkgs/tasks/handler`, `internal/taskapi/composition` |
+| `store` | `taskchecklist/domain`, `taskchecklist/contract`, `taskchecklist/store/model`, GORM, `pkgs/storekernel`, `pkgs/taskcore/domain`, `pkgs/taskcore/store/model` (task/cycle FK), `pkgs/tasks/calltrace` | `pkgs/tasks/handler`, `internal/taskapi/composition` |
+| `handler` | `taskchecklist/domain`, `taskchecklist/contract`, `pkgs/tasks/handlerhttp`, `pkgs/tasks/apijson`, `pkgs/tasks/calltrace`, `pkgs/tasks/logctx`, `pkgs/taskcore/domain` | `internal/taskapi/composition`, `pkgs/tasks/handler` |
 
 Enforced in CI: `scripts/check-go.sh` → `step_taskchecklist_boundary`.
 
@@ -36,11 +36,7 @@ Enforced in CI: `scripts/check-go.sh` → `step_taskchecklist_boundary`.
 
 ```powershell
 go test ./pkgs/taskchecklist/... -count=1
-go test ./pkgs/tasks/store/... -run Checklist -count=1
-go test ./pkgs/tasks/handler/... -run Checklist -count=1
 ```
-
-Cross-route HTTP contract tests for checklist remain in [`pkgs/tasks/handler/handler_http_checklist_contract_test.go`](../pkgs/tasks/handler/handler_http_checklist_contract_test.go).
 
 ## See also
 

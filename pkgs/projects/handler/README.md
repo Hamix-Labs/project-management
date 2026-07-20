@@ -10,6 +10,4 @@ REST handlers for `/projects*` routes. Registered from [`pkgs/tasks/handler/hand
 | `handler_params.go` | Query/path parsing |
 | `http_helpers.go` | Local JSON/error helpers (no import of `pkgs/tasks/handler`) |
 
-Store dependency is `contract.ProjectStore` — satisfied by `pkgs/tasks/store.Store` at wire time.
-
-Contract tests remain under `pkgs/tasks/handler/handler_http_projects_*`.
+Store dependency is `contract.ProjectStore` — satisfied by `internal/taskapi/composition.API` at wire time.
