@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/contract"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 )
 
 //funclogmeasure:skip category=delegate-already-logs reason="Global route wrapper; serve* emits operation trace."

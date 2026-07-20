@@ -13,7 +13,7 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitexec"
 	"github.com/AlexsanderHamir/Hamix/pkgs/repo"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 )
 
 type repoSearchResponse struct {

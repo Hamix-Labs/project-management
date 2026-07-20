@@ -81,8 +81,10 @@ Not a single domain anymore. It **wires** BCs for `taskapi`. Persistence composi
 | `pkgs/tasks/scheduling/` | Worker readiness predicates |
 | `pkgs/tasks/middleware/` | HTTP middleware stack |
 | `pkgs/tasks/handlerhttp/` | Shared HTTP JSON / path / limit helpers |
-| `pkgs/tasks/apijson/`, `calltrace/`, `logctx/` | JSON errors and observability kernels |
+| `pkgs/tasks/apijson/`, `logctx/` | JSON errors and request log context |
 | `pkgs/tasks/service/` | HTTP-agnostic bootstrap/git/retry helpers |
+
+**Observability:** `pkgs/obs/calltrace/` — per-request call stack (`call_path`, helper.io); stdlib/`slog` only.
 
 **Agents:** `pkgs/agents/` (harness, worker, runner adapters) — orchestration, not task HTTP.
 

@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 )
 
 func (h *Handler) listTaskTemplates(w http.ResponseWriter, r *http.Request) {

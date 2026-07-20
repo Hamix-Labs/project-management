@@ -1,6 +1,6 @@
 package composition
 
-import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+import "github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 import (
 	"context"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"

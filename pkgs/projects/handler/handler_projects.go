@@ -8,7 +8,7 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/projects/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 )
 

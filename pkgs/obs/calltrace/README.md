@@ -1,4 +1,4 @@
-# `pkgs/tasks/calltrace`
+# `pkgs/obs/calltrace`
 
 Per-request **call stack** for structured logs (`call_path`, `helper.io`): `Push`, `Path`, `WithRequestRoot`, `RunObserved`, and `HelperIOIn` / `HelperIOOut`.
 

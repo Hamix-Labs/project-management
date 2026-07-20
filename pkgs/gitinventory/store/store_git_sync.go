@@ -10,7 +10,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 )
 
 // WorktreeStaleAfter is how long after the latest terminal task a managed

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 )
 
 // Stack with calltrace.Path is the production chain for taskapi; these tests pin critical

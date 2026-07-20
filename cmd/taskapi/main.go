@@ -4,7 +4,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 )
 
 const cmdName = calltrace.LogCmd

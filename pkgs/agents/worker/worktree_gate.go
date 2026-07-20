@@ -1,6 +1,6 @@
 package worker
 
-import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+import "github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 import (
 	"log/slog"
 	"sync"

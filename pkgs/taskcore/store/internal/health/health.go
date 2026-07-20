@@ -6,7 +6,7 @@
 // rest of the store concerns.
 package health
 
-import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+import "github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 import (
 	"context"
 	"errors"

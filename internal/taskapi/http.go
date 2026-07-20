@@ -8,7 +8,7 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/pkgs/repo"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/middleware"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/postgres"

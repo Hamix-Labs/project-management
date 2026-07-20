@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitcore"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 )
 
 func (s *DefaultService) runGit(ctx context.Context, dir string, args ...string) (string, error) {

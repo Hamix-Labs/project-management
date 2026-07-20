@@ -8,7 +8,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	"github.com/AlexsanderHamir/Hamix/pkgs/repo"
 	settingscontract "github.com/AlexsanderHamir/Hamix/pkgs/settings/contract"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/postgres"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 )

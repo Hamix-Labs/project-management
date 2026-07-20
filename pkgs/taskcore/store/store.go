@@ -2,7 +2,7 @@
 // ready queue, stats, dev-mirror row updates, and health probes.
 package store
 
-import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+import "github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 import (
 	"context"
 	"log/slog"

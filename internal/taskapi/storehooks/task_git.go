@@ -12,7 +12,7 @@ import (
 	projectsstore "github.com/AlexsanderHamir/Hamix/pkgs/projects/store"
 	taskcorecontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 )
 
 // GitDeps is the BC store surface required for task git-context resolution.

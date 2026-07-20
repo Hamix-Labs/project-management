@@ -3,7 +3,7 @@
 // pkgs/tasks/store/model (migrate hub cycles with BC model packages).
 package taskload
 
-import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+import "github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 import (
 	"errors"
 	"fmt"

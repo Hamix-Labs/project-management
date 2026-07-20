@@ -32,10 +32,10 @@ def ensure_imports(text: str) -> str:
             'import (\n\t"github.com/AlexsanderHamir/Hamix/pkgs/tasks/middleware"',
             1,
         )
-    if "calltrace.Path" in text and "pkgs/tasks/calltrace" not in text:
+    if "calltrace.Path" in text and "pkgs/obs/calltrace" not in text:
         text = text.replace(
             "import (",
-            'import (\n\t"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"',
+            'import (\n\t"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"',
             1,
         )
     return text

@@ -3,7 +3,7 @@ package middleware_test
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/middleware"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 	"io"

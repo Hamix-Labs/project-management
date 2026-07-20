@@ -25,8 +25,8 @@ HTTP routes (`/settings`, `/settings/workspace-roots`, …) and JSON shapes are 
 | Package | May import | Must not import |
 | --- | --- | --- |
 | `domain` | stdlib | `pkgs/tasks/*`, GORM |
-| `store` | `settings/domain`, `settings/contract`, GORM, `pkgs/storekernel`, `pkgs/tasks/calltrace` | `pkgs/tasks/handler`, `internal/taskapi/composition` |
-| `handler` | `settings/domain`, `settings/contract`, `pkgs/tasks/apijson`, `pkgs/tasks/calltrace`, `pkgs/tasks/logctx`, `pkgs/tasks/realtime`, `pkgs/tasks/handlerhttp`, `pkgs/gitwork`, `pkgs/repo` | `internal/taskapi/composition`, `pkgs/tasks/handler` |
+| `store` | `settings/domain`, `settings/contract`, GORM, `pkgs/storekernel`, `pkgs/obs/calltrace` | `pkgs/tasks/handler`, `internal/taskapi/composition` |
+| `handler` | `settings/domain`, `settings/contract`, `pkgs/tasks/apijson`, `pkgs/obs/calltrace`, `pkgs/tasks/logctx`, `pkgs/tasks/realtime`, `pkgs/tasks/handlerhttp`, `pkgs/gitwork`, `pkgs/repo` | `internal/taskapi/composition`, `pkgs/tasks/handler` |
 
 Enforced in CI: `scripts/check-go.sh` → `step_settings_boundary`.
 

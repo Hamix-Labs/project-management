@@ -14,7 +14,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/store/model"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )

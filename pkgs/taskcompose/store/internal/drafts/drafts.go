@@ -20,7 +20,7 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/store/internal/namedpayload"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/store/model"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	"gorm.io/gorm"
 )
 

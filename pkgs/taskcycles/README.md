@@ -27,8 +27,8 @@ HTTP routes (`/tasks/{id}/cycles*`, commits, cycle-failures) and JSON shapes are
 | --- | --- | --- |
 | `domain` | stdlib, `taskchecklist/domain` | GORM, `pkgs/tasks/*` |
 | `contract` | `taskcycles/domain`, `pkgs/taskcore/domain` (`Actor`) | `pkgs/tasks/handler`, `internal/taskapi/composition` |
-| `store` | `taskcycles/domain`, `taskcycles/contract`, `taskcycles/store/model`, GORM, `pkgs/storekernel`, `pkgs/taskcore/domain`, `pkgs/tasks/calltrace` | `pkgs/tasks/handler`, `internal/taskapi/composition` |
-| `handler` | `taskcycles/domain`, `taskcycles/contract`, `pkgs/tasks/handlerhttp`, `pkgs/tasks/apijson`, `pkgs/tasks/calltrace`, `pkgs/tasks/logctx`, `pkgs/taskcore/domain`, `pkgs/taskcore/contract` | `internal/taskapi/composition`, `pkgs/tasks/handler` |
+| `store` | `taskcycles/domain`, `taskcycles/contract`, `taskcycles/store/model`, GORM, `pkgs/storekernel`, `pkgs/taskcore/domain`, `pkgs/obs/calltrace` | `pkgs/tasks/handler`, `internal/taskapi/composition` |
+| `handler` | `taskcycles/domain`, `taskcycles/contract`, `pkgs/tasks/handlerhttp`, `pkgs/tasks/apijson`, `pkgs/obs/calltrace`, `pkgs/tasks/logctx`, `pkgs/taskcore/domain`, `pkgs/taskcore/contract` | `internal/taskapi/composition`, `pkgs/tasks/handler` |
 
 Enforced in CI: `scripts/check-go.sh` → `step_taskcycles_boundary`.
 

@@ -51,7 +51,7 @@ Repository paths grouped by subsystem. Read only the rows relevant to your task.
 | Agent worker | `pkgs/agents/worker/` | Single-goroutine queue consumer; calls harness | [configuration.md](./configuration.md) |
 | Worker supervisor | `internal/taskapi/agentworker/` | Boot, reload, probe, hot-swap worker from settings | [domain/agent-supervisor.md](./domain/agent-supervisor.md) |
 | Agent runner stack | `pkgs/agents/runner/` | `Runner` interface, cursor adapter, registry, adapterkit, runnerfake | [domain/runner-adapters.md](./domain/runner-adapters.md) |
-| Request logging | `pkgs/tasks/logctx/`, `pkgs/tasks/calltrace/` | `request_id`, `log_seq`, `call_path` in logs | [observability-trace-lines.md](./domain/observability-trace-lines.md) |
+| Request logging | `pkgs/tasks/logctx/`, `pkgs/obs/calltrace/` | `request_id`, `log_seq`, `call_path` in logs | [observability-trace-lines.md](./domain/observability-trace-lines.md) |
 | JSON response helpers | `pkgs/tasks/apijson/` | Security headers, `WriteJSONError` | — |
 | HTTP middleware | `pkgs/tasks/middleware/`, `internal/taskapi/` | Middleware stack, server assembly | [middleware/README.md](../pkgs/tasks/middleware/README.md) |
 | Dev SSE simulation | `pkgs/tasks/devsim/` | `HAMIX_SSE_TEST` synthetic events for local UI | [api.md](./api.md), [configuration.md](./configuration.md) |

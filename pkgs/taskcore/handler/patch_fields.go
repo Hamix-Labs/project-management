@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 )
 
 // patchProjectField decodes optional JSON project_id: omitted (no change),

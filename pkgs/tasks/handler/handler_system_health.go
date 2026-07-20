@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/internal/systemhealth"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

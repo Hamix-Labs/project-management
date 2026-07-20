@@ -1,6 +1,6 @@
 package tasks
 
-import "github.com/AlexsanderHamir/Hamix/pkgs/tasks/calltrace"
+import "github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 import (
 	"fmt"
 	"log/slog"
