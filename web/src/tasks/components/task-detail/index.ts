@@ -2,6 +2,7 @@ export * from "./cycles/TaskCyclesPanel";
 export * from "./commits/TaskCommitsPanel";
 export * from "./layout/TaskDetailAttentionBar";
 export * from "./checklist/TaskDetailChecklistItemList";
+export * from "./checklist/TaskDetailChecklistContainer";
 export * from "./checklist/TaskDetailChecklistSection";
 export * from "./layout/TaskDetailHeader";
 export * from "./prompt/TaskDetailPromptSection";

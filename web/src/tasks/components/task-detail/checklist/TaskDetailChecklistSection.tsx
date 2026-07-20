@@ -1,6 +1,5 @@
 import type { UseQueryResult } from "@tanstack/react-query";
-import type { FormEvent } from "react";
-import type { ChecklistVerifyCommandInput, TaskChecklistResponse } from "@/types";
+import type { TaskChecklistResponse } from "@/types";
 import { errorMessage } from "@/lib/errorMessage";
 import { FieldRequirementBadge } from "@/shared/FieldLabel";
 import {
@@ -9,48 +8,18 @@ import {
 } from "@/shared/EmptyState";
 import { ChecklistCriterionModal } from "../../task-compose";
 import { canEditChecklistItem } from "../../../task-display/canMutateTaskCriteria";
+import type { useTaskDetailChecklist } from "../../../checklist/hooks/useTaskDetailChecklist";
 import { TaskDetailChecklistItemList } from "./TaskDetailChecklistItemList";
 import { TaskChecklistSkeleton } from "../../skeletons";
+
+export type TaskDetailChecklistControls = ReturnType<typeof useTaskDetailChecklist>;
 
 export type TaskDetailChecklistSectionProps = {
   saving: boolean;
   checklistQuery: UseQueryResult<TaskChecklistResponse, Error>;
   doneCount: number;
   totalCount: number;
-  modalOpen: boolean;
-  newCriterionText: string;
-  onNewCriterionTextChange: (v: string) => void;
-  newCriterionVerifyCommands: ChecklistVerifyCommandInput[];
-  onNewCriterionVerifyCommandsChange: (cmds: ChecklistVerifyCommandInput[]) => void;
-  onOpenAddModal: () => void;
-  onCloseAddModal: () => void;
-  onSubmitNewCriterion: (e: FormEvent) => void;
-  addCriterionPending: boolean;
-  editModalOpen: boolean;
-  editingItemId: string | null;
-  editCriterionText: string;
-  onEditCriterionTextChange: (v: string) => void;
-  editCriterionVerifyCommands: ChecklistVerifyCommandInput[];
-  onEditCriterionVerifyCommandsChange: (cmds: ChecklistVerifyCommandInput[]) => void;
-  onOpenEditCriterionModal: (
-    itemId: string,
-    text: string,
-    verifyCommands?: ChecklistVerifyCommandInput[],
-  ) => void;
-  onCloseEditCriterionModal: () => void;
-  onSubmitEditCriterion: (e: FormEvent) => void;
-  editCriterionPending: boolean;
-  onRemoveChecklistItem: (itemId: string) => void;
-  removeItemPending: boolean;
-  /**
-   * Most recent error from the underlying mutations. Surfaced inline
-   * so users get visible feedback when a write fails (the modals stay
-   * open & the buttons re-enable, but without this the user has no
-   * idea anything went wrong). `null` for happy path / idle / pending.
-   */
-  addCriterionError?: unknown;
-  editCriterionError?: unknown;
-  removeItemError?: unknown;
+  checklist: TaskDetailChecklistControls;
   /** False when the task is running — criteria are locked while in progress. */
   canAddCriterion?: boolean;
   /** Task status drives per-row edit/remove affordances. */
@@ -62,33 +31,40 @@ export function TaskDetailChecklistSection({
   checklistQuery,
   doneCount,
   totalCount,
-  modalOpen,
-  newCriterionText,
-  onNewCriterionTextChange,
-  newCriterionVerifyCommands,
-  onNewCriterionVerifyCommandsChange,
-  onOpenAddModal,
-  onCloseAddModal,
-  onSubmitNewCriterion,
-  addCriterionPending,
-  editModalOpen,
-  editingItemId,
-  editCriterionText,
-  onEditCriterionTextChange,
-  editCriterionVerifyCommands,
-  onEditCriterionVerifyCommandsChange,
-  onOpenEditCriterionModal,
-  onCloseEditCriterionModal,
-  onSubmitEditCriterion,
-  editCriterionPending,
-  onRemoveChecklistItem,
-  removeItemPending,
-  addCriterionError = null,
-  editCriterionError = null,
-  removeItemError = null,
+  checklist,
   canAddCriterion = true,
   taskStatus = "ready",
 }: TaskDetailChecklistSectionProps) {
+  const {
+    checklistModalOpen: modalOpen,
+    newChecklistText: newCriterionText,
+    setNewChecklistText: onNewCriterionTextChange,
+    newChecklistVerifyCommands: newCriterionVerifyCommands,
+    setNewChecklistVerifyCommands: onNewCriterionVerifyCommandsChange,
+    openChecklistModal: onOpenAddModal,
+    closeChecklistModal: onCloseAddModal,
+    submitNewChecklistCriterion: onSubmitNewCriterion,
+    addChecklistMutation,
+    editCriterionModalOpen: editModalOpen,
+    editingChecklistItemId: editingItemId,
+    editChecklistText: editCriterionText,
+    setEditChecklistText: onEditCriterionTextChange,
+    editChecklistVerifyCommands: editCriterionVerifyCommands,
+    setEditChecklistVerifyCommands: onEditCriterionVerifyCommandsChange,
+    openEditCriterionModal: onOpenEditCriterionModal,
+    closeEditCriterionModal: onCloseEditCriterionModal,
+    submitEditChecklistCriterion: onSubmitEditCriterion,
+    updateChecklistTextMutation,
+    deleteChecklistMutation,
+  } = checklist;
+
+  const addCriterionPending = addChecklistMutation.isPending;
+  const editCriterionPending = updateChecklistTextMutation.isPending;
+  const removeItemPending = deleteChecklistMutation.isPending;
+  const addCriterionError = addChecklistMutation.error;
+  const editCriterionError = updateChecklistTextMutation.error;
+  const removeItemError = deleteChecklistMutation.error;
+
   const showProgress =
     !checklistQuery.isPending &&
     !checklistQuery.isError &&
@@ -221,7 +197,7 @@ export function TaskDetailChecklistSection({
             removeItemPending={removeItemPending}
             addCriterionPending={addCriterionPending}
             onOpenEditCriterionModal={onOpenEditCriterionModal}
-            onRemoveChecklistItem={onRemoveChecklistItem}
+            onRemoveChecklistItem={(id) => deleteChecklistMutation.mutate(id)}
           />
         )}
       </div>
@@ -242,8 +218,8 @@ export function TaskDetailChecklistSection({
           // still matches `addSubmissionTokenRef.current`. Server-truth
           // invalidations (`taskQueryKeys.checklist(taskId)`,
           // `taskQueryKeys.detail(taskId)`) still fire so the new
-          // criterion appears in the list even when the modal is
-          // already gone. See `.agent/frontend-improvement-agent.log`
+          // criterion appears in the list even when the modal is already
+          // gone. See `.agent/frontend-improvement-agent.log`
           // Session 30.
           dismissibleWhileBusy
           error={addCriterionError}
