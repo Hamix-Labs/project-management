@@ -21,9 +21,6 @@ export function useTaskCreateTemplateEntryActions(input: {
       const settings = input.queryClient.getQueryData<AppSettings>(settingsQueryKeys.app());
       const hydrated = hydrateFormFromComposePayload(template.payload, settings);
       input.modal.resetNewTaskForm();
-      input.modal.setComposeTarget("template");
-      input.modal.setComposeOperation("edit");
-      input.modal.setEditingTemplateId(template.id);
       input.form.setNewTitle(hydrated.title);
       input.form.setNewPrompt(hydrated.prompt);
       input.form.setNewPriority(hydrated.priority);
@@ -39,7 +36,11 @@ export function useTaskCreateTemplateEntryActions(input: {
       input.form.setNewMilestone(hydrated.milestone);
       input.form.setNewDependsOn(hydrated.dependsOn);
       input.form.setNewChecklistItems(hydrated.checklistItems);
-      input.modal.setCreateModalOpen(true);
+      input.modal.openComposePhase({
+        target: "template",
+        operation: "edit",
+        editingTemplateId: template.id,
+      });
     },
     [input],
   );

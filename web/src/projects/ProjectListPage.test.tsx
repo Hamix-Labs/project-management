@@ -2,21 +2,19 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ROUTER_FUTURE_FLAGS } from "@/lib/routerFutureFlags";
-import { requestUrl } from "@/test/requestUrl";
+import {
+  FACTORY_GIT_REPO_ID,
+  gitRepositoriesList,
+  projectCreate,
+  projectsListEmpty,
+} from "@/test/handlers/projects";
+import { gitRepositoryFactory } from "@/test/factories/git";
+import { server } from "@/test/server";
 import { type Project } from "@/types";
 import { ProjectListPage } from "./ProjectListPage";
 import { projectQueryKeys } from "./queryKeys";
-
-type FetchInput = RequestInfo | URL;
-
-function jsonResponse(body: unknown, init: ResponseInit = { status: 200 }): Response {
-  return new Response(JSON.stringify(body), {
-    ...init,
-    headers: { "content-type": "application/json", ...(init.headers ?? {}) },
-  });
-}
 
 function project(index: number, overrides: Partial<Project> = {}): Project {
   return {
@@ -54,6 +52,11 @@ function renderPage(projects: Project[]) {
 }
 
 describe("ProjectListPage", () => {
+  beforeEach(() => {
+    // Strict MSW (HAMIX_MSW_UNHANDLED=error): page may fetch repos for default labels.
+    server.use(gitRepositoriesList(), projectsListEmpty());
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
   });
@@ -98,27 +101,15 @@ describe("ProjectListPage", () => {
   });
 
   it("labels default projects with their repository basename", async () => {
-    const repoId = "00000000-0000-4000-8000-000000000010";
-    vi.spyOn(globalThis, "fetch").mockImplementation(async (input: FetchInput) => {
-      const url = requestUrl(input);
-      if (url === "/git/repositories" || url.endsWith("/git/repositories")) {
-        return jsonResponse({
-          repositories: [
-            {
-              id: repoId,
-              path: "C:/Users/gomes/OneDrive/Documents/Hamix",
-              git_common_dir: "",
-              host_path: "",
-              default_branch: "main",
-              linked_worktree_count: 0,
-              created_at: "2026-04-27T00:00:00Z",
-              updated_at: "2026-04-27T00:00:00Z",
-            },
-          ],
-        });
-      }
-      return jsonResponse({ error: "not found" }, { status: 404 });
-    });
+    const repoId = FACTORY_GIT_REPO_ID;
+    server.use(
+      gitRepositoriesList([
+        gitRepositoryFactory({
+          id: repoId,
+          path: "C:/Users/gomes/OneDrive/Documents/Hamix",
+        }),
+      ]),
+    );
 
     renderPage([
       project(0, {
@@ -135,7 +126,7 @@ describe("ProjectListPage", () => {
   });
 
   it("creates a project with name, description, and repository via the dialog", async () => {
-    const repoId = "00000000-0000-4000-8000-000000000010";
+    const repoId = FACTORY_GIT_REPO_ID;
     const created = {
       id: "new-1",
       name: "Payments",
@@ -148,36 +139,26 @@ describe("ProjectListPage", () => {
       updated_at: "2026-05-31T00:00:00Z",
     };
 
-    let captured: { name?: unknown; description?: unknown; repository_id?: unknown } | null = null;
-    vi.spyOn(globalThis, "fetch").mockImplementation(
-      async (input: FetchInput, init?: RequestInit) => {
-        const url = requestUrl(input);
-        if (url === "/git/repositories") {
-          return jsonResponse({
-            repositories: [
-              {
-                id: repoId,
-                path: "/repo/main",
-                git_common_dir: "/repo/main/.git",
-                host_path: "",
-                default_branch: "",
-                main_branch_name: "main",
-                linked_worktree_count: 0,
-                created_at: "2026-05-31T00:00:00Z",
-                updated_at: "2026-05-31T00:00:00Z",
-              },
-            ],
-          });
-        }
-        if (url === "/projects" && init?.method === "POST") {
-          captured = JSON.parse(String(init.body ?? "{}")) as Record<
-            string,
-            unknown
-          >;
-          return jsonResponse(created, { status: 201 });
-        }
-        return new Response(`unexpected fetch ${url}`, { status: 500 });
-      },
+    let captured: { name?: unknown; description?: unknown; repository_id?: unknown } | null =
+      null;
+    server.use(
+      gitRepositoriesList([
+        gitRepositoryFactory({
+          id: repoId,
+          path: "/repo/main",
+          git_common_dir: "/repo/main/.git",
+          main_branch_name: "main",
+          created_at: "2026-05-31T00:00:00Z",
+          updated_at: "2026-05-31T00:00:00Z",
+        }),
+      ]),
+      projectCreate(created, (body) => {
+        captured = body as {
+          name?: unknown;
+          description?: unknown;
+          repository_id?: unknown;
+        };
+      }),
     );
 
     renderPage([]);

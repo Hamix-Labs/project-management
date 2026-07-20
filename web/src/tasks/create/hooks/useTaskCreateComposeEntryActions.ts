@@ -19,6 +19,7 @@ export function useTaskCreateComposeEntryActions(input: {
       operation?: ComposeOperation;
       skipDraftPicker?: boolean;
     }) => {
+      const requestId = input.modal.beginEntryRequest();
       input.modal.setCreateEntryDraftErrorHint(null);
       const projectID = opts?.projectID?.trim();
       input.modal.createModalPrefillRef.current = projectID
@@ -31,17 +32,21 @@ export function useTaskCreateComposeEntryActions(input: {
       const operation = opts?.operation ?? "create";
       if (target === "task" && operation === "create" && !opts?.skipDraftPicker) {
         const hasRepos = await ensureRepositoriesRegistered(input.queryClient);
+        if (!input.modal.isEntryRequestCurrent(requestId)) {
+          return;
+        }
         if (!hasRepos) {
-          input.modal.setRepositorySetupPromptOpen(true);
+          input.modal.showRepositorySetupPhase();
           return;
         }
       }
+      if (!input.modal.isEntryRequestCurrent(requestId)) {
+        return;
+      }
       if (target === "template" || opts?.skipDraftPicker) {
         input.modal.resetNewTaskForm();
-        input.modal.setComposeTarget(target);
-        input.modal.setComposeOperation(operation);
         input.modal.applyCreateModalPrefill();
-        input.modal.setCreateModalOpen(true);
+        input.modal.openComposePhase({ target, operation });
         return;
       }
       const decision = decideCreateEntry({
@@ -53,13 +58,13 @@ export function useTaskCreateComposeEntryActions(input: {
         draftCount: input.draftsQuery.data?.length ?? 0,
       });
       if (decision.kind === "showPicker") {
-        input.modal.setDraftPickerOpen(true);
+        input.modal.showDraftPickerPhase();
         return;
       }
       input.modal.setCreateEntryDraftErrorHint(decision.entryDraftErrorHint);
       input.modal.resetNewTaskForm();
       input.modal.applyCreateModalPrefill();
-      input.modal.setCreateModalOpen(true);
+      input.modal.openComposePhase({ target, operation });
     },
     [input],
   );
@@ -81,16 +86,18 @@ export function useTaskCreateComposeEntryActions(input: {
   }, [openComposeModal]);
 
   const startFreshDraft = useCallback(async () => {
+    const requestId = input.modal.beginEntryRequest();
     const hasRepos = await ensureRepositoriesRegistered(input.queryClient);
+    if (!input.modal.isEntryRequestCurrent(requestId)) {
+      return;
+    }
     if (!hasRepos) {
-      input.modal.setDraftPickerOpen(false);
-      input.modal.setRepositorySetupPromptOpen(true);
+      input.modal.showRepositorySetupPhase();
       return;
     }
     input.modal.resetNewTaskForm();
     input.modal.applyCreateModalPrefill();
-    input.modal.setDraftPickerOpen(false);
-    input.modal.setCreateModalOpen(true);
+    input.modal.openComposePhase({ target: "task", operation: "create" });
   }, [input]);
 
   return {

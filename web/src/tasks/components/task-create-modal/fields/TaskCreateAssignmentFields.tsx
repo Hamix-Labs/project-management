@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useCallback } from "react";
 import { CustomSelect } from "@/components/custom-select";
-import { WorktreesFolderGitIcon } from "@/components/git/GitWorktreeIcons";
+import { FolderGitIcon } from "@/components/icons/FolderGitIcon";
 import { ProjectSelect } from "@/components/project/ProjectSelect";
 import { useComposeGitAssignment } from "@/hooks/useComposeGitAssignment";
 import type { ComposeGitAssignment } from "@/lib/composeGitAssignment";
@@ -60,7 +60,7 @@ export function TaskCreateAssignmentFields({
         disabled={disabled || git.loading || git.repoOptions.length === 0}
         requirement="required"
         leadingIcon={
-          <WorktreesFolderGitIcon className="worktrees-git-selector__icon" />
+          <FolderGitIcon className="worktrees-git-selector__icon" />
         }
         onChange={git.selectRepository}
       />
