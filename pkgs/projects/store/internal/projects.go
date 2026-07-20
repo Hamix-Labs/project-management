@@ -74,7 +74,7 @@ func CreateProject(ctx context.Context, db *gorm.DB, input CreateProjectInput) (
 	}
 	row := projectmodel.FromDomainProject(drow)
 	if err := db.WithContext(ctx).Create(&row).Error; err != nil {
-		return domain.Project{}, storekernel.MapWriteError(err, "duplicate project row")
+		return domain.Project{}, storekernel.MapWriteError(err, "duplicate project row", domain.ErrConflict, domain.ErrInvalidInput)
 	}
 	return drow, nil
 }
@@ -110,7 +110,7 @@ func GetProject(ctx context.Context, db *gorm.DB, id string) (domain.Project, er
 	}
 	var row projectmodel.Project
 	if err := db.WithContext(ctx).First(&row, "id = ?", id).Error; err != nil {
-		return domain.Project{}, storekernel.MapNotFound(err)
+		return domain.Project{}, storekernel.MapNotFound(err, domain.ErrNotFound)
 	}
 	return projectmodel.ToDomainProject(row), nil
 }
@@ -130,7 +130,7 @@ func UpdateProject(ctx context.Context, db *gorm.DB, id string, input UpdateProj
 	err := db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var row projectmodel.Project
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&row, "id = ?", id).Error; err != nil {
-			return storekernel.MapNotFound(err)
+			return storekernel.MapNotFound(err, domain.ErrNotFound)
 		}
 		drow := projectmodel.ToDomainProject(row)
 		if err := validateDefaultProjectPatch(drow, input); err != nil {
@@ -140,7 +140,7 @@ func UpdateProject(ctx context.Context, db *gorm.DB, id string, input UpdateProj
 		drow.UpdatedAt = time.Now().UTC()
 		row = projectmodel.FromDomainProject(drow)
 		if err := tx.Save(&row).Error; err != nil {
-			return storekernel.MapWriteError(err, "duplicate project row")
+			return storekernel.MapWriteError(err, "duplicate project row", domain.ErrConflict, domain.ErrInvalidInput)
 		}
 		out = drow
 		return nil
@@ -162,14 +162,14 @@ func DeleteProject(ctx context.Context, db *gorm.DB, id string) error {
 	}
 	var row projectmodel.Project
 	if err := db.WithContext(ctx).First(&row, "id = ?", id).Error; err != nil {
-		return storekernel.MapNotFound(err)
+		return storekernel.MapNotFound(err, domain.ErrNotFound)
 	}
 	if row.IsDefault {
 		return fmt.Errorf("%w: default project cannot be deleted", domain.ErrConflict)
 	}
 	res := db.WithContext(ctx).Delete(&projectmodel.Project{}, "id = ?", id)
 	if res.Error != nil {
-		return storekernel.MapWriteError(res.Error, "duplicate project row")
+		return storekernel.MapWriteError(res.Error, "duplicate project row", domain.ErrConflict, domain.ErrInvalidInput)
 	}
 	if res.RowsAffected == 0 {
 		return domain.ErrNotFound
@@ -209,7 +209,7 @@ func CreateContext(ctx context.Context, db *gorm.DB, projectID string, input Cre
 	if actor == "" {
 		actor = domain.ActorUser
 	}
-	if err := storekernel.ValidateActor(taskcoredomain.Actor(actor)); err != nil {
+	if err := taskcoredomain.ValidateActor(taskcoredomain.Actor(actor)); err != nil {
 		return domain.ProjectContextItem{}, err
 	}
 	now := time.Now().UTC()
@@ -229,7 +229,7 @@ func CreateContext(ctx context.Context, db *gorm.DB, projectID string, input Cre
 	}
 	row := projectmodel.FromDomainProjectContextItem(drow)
 	if err := db.WithContext(ctx).Create(&row).Error; err != nil {
-		return domain.ProjectContextItem{}, storekernel.MapWriteError(err, "duplicate project row")
+		return domain.ProjectContextItem{}, storekernel.MapWriteError(err, "duplicate project row", domain.ErrConflict, domain.ErrInvalidInput)
 	}
 	return drow, nil
 }
@@ -306,14 +306,14 @@ func UpdateContext(ctx context.Context, db *gorm.DB, projectID, itemID string, i
 	err := db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var row projectmodel.ProjectContextItem
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&row, "id = ? AND project_id = ?", itemID, projectID).Error; err != nil {
-			return storekernel.MapNotFound(err)
+			return storekernel.MapNotFound(err, domain.ErrNotFound)
 		}
 		drow := projectmodel.ToDomainProjectContextItem(row)
 		applyContextPatch(&drow, input)
 		drow.UpdatedAt = time.Now().UTC()
 		row = projectmodel.FromDomainProjectContextItem(drow)
 		if err := tx.Save(&row).Error; err != nil {
-			return storekernel.MapWriteError(err, "duplicate project row")
+			return storekernel.MapWriteError(err, "duplicate project row", domain.ErrConflict, domain.ErrInvalidInput)
 		}
 		out = drow
 		return nil
@@ -335,11 +335,11 @@ func DeleteContext(ctx context.Context, db *gorm.DB, projectID, itemID string) e
 	}
 	return db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Where("project_id = ? AND (source_context_id = ? OR target_context_id = ?)", projectID, itemID, itemID).Delete(&projectmodel.ProjectContextEdge{}).Error; err != nil {
-			return storekernel.MapWriteError(err, "duplicate project row")
+			return storekernel.MapWriteError(err, "duplicate project row", domain.ErrConflict, domain.ErrInvalidInput)
 		}
 		res := tx.Where("id = ? AND project_id = ?", itemID, projectID).Delete(&projectmodel.ProjectContextItem{})
 		if res.Error != nil {
-			return storekernel.MapWriteError(res.Error, "duplicate project row")
+			return storekernel.MapWriteError(res.Error, "duplicate project row", domain.ErrConflict, domain.ErrInvalidInput)
 		}
 		if res.RowsAffected == 0 {
 			return domain.ErrNotFound
@@ -359,7 +359,7 @@ func CreateSnapshot(ctx context.Context, db *gorm.DB, input CreateSnapshotInput)
 	if input.TokenEstimate < 0 {
 		return taskcoredomain.TaskContextSnapshot{}, fmt.Errorf("%w: token_estimate must be >= 0", domain.ErrInvalidInput)
 	}
-	contextJSON, err := storekernel.NormalizeJSONObject(input.ContextJSON, "context_json")
+	contextJSON, err := storekernel.NormalizeJSONObject(input.ContextJSON, "context_json", domain.ErrInvalidInput)
 	if err != nil {
 		return taskcoredomain.TaskContextSnapshot{}, err
 	}
@@ -375,7 +375,7 @@ func CreateSnapshot(ctx context.Context, db *gorm.DB, input CreateSnapshotInput)
 	}
 	row := taskmodel.FromDomainTaskContextSnapshot(drow)
 	if err := db.WithContext(ctx).Create(&row).Error; err != nil {
-		return taskcoredomain.TaskContextSnapshot{}, storekernel.MapWriteError(err, "duplicate project row")
+		return taskcoredomain.TaskContextSnapshot{}, storekernel.MapWriteError(err, "duplicate project row", taskcoredomain.ErrConflict, taskcoredomain.ErrInvalidInput)
 	}
 	return drow, nil
 }
@@ -390,7 +390,7 @@ func GetSnapshotForCycle(ctx context.Context, db *gorm.DB, cycleID string) (task
 	}
 	var row taskmodel.TaskContextSnapshot
 	if err := db.WithContext(ctx).First(&row, "cycle_id = ?", cycleID).Error; err != nil {
-		return taskcoredomain.TaskContextSnapshot{}, storekernel.MapNotFound(err)
+		return taskcoredomain.TaskContextSnapshot{}, storekernel.MapNotFound(err, taskcoredomain.ErrNotFound)
 	}
 	return taskmodel.ToDomainTaskContextSnapshot(row), nil
 }
@@ -541,7 +541,7 @@ func CreateDefaultProjectForRepo(ctx context.Context, tx *gorm.DB, repoID string
 	}
 	row := projectmodel.FromDomainProject(drow)
 	if err := tx.WithContext(ctx).Create(&row).Error; err != nil {
-		return domain.Project{}, storekernel.MapWriteError(err, "duplicate default project")
+		return domain.Project{}, storekernel.MapWriteError(err, "duplicate default project", domain.ErrConflict, domain.ErrInvalidInput)
 	}
 	return drow, nil
 }
@@ -579,7 +579,7 @@ func ensureRepositoryExists(ctx context.Context, db *gorm.DB, repoID string) err
 		return err
 	}
 	if n == 0 {
-		return storekernel.MapNotFound(gorm.ErrRecordNotFound)
+		return storekernel.MapNotFound(gorm.ErrRecordNotFound, domain.ErrNotFound)
 	}
 	return nil
 }
@@ -597,7 +597,7 @@ func GetDefaultProjectForRepository(ctx context.Context, db *gorm.DB, repoID str
 		Where("repository_id = ? AND is_default = ?", repoID, true).
 		First(&row).Error
 	if err != nil {
-		return domain.Project{}, storekernel.MapNotFound(err)
+		return domain.Project{}, storekernel.MapNotFound(err, domain.ErrNotFound)
 	}
 	return projectmodel.ToDomainProject(row), nil
 }

@@ -8,8 +8,7 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
-	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel/taskload"
+	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/taskload"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/contract"
 	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 	checklistmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/store/model"
@@ -108,7 +107,7 @@ func commandsForItemInTx(tx *gorm.DB, itemID string) ([]VerifyCommandView, error
 // ReplaceVerifyCommands replaces all verify commands for an item owned by taskID.
 func ReplaceVerifyCommands(ctx context.Context, db *gorm.DB, taskID, itemID string, cmds []VerifyCommandInput, by taskcoredomain.Actor) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.checklist.ReplaceVerifyCommands")
-	if err := storekernel.ValidateActor(by); err != nil {
+	if err := taskcoredomain.ValidateActor(by); err != nil {
 		return err
 	}
 	normalized, err := NormalizeVerifyCommandInputs(cmds)

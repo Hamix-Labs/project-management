@@ -11,7 +11,8 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
-	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel/taskload"
+	eventsaudit "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/audit"
+	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/taskload"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store/model"
@@ -34,14 +35,14 @@ import (
 func Start(ctx context.Context, db *gorm.DB, in StartCycleInput) (*cyclesdomain.TaskCycle, error) {
 	defer storekernel.DeferLatency(storekernel.OpStartCycle)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.cycles.Start")
-	if err := storekernel.ValidateActor(in.TriggeredBy); err != nil {
+	if err := taskcoredomain.ValidateActor(in.TriggeredBy); err != nil {
 		return nil, err
 	}
 	taskID := strings.TrimSpace(in.TaskID)
 	if taskID == "" {
 		return nil, fmt.Errorf("%w: task_id", taskcoredomain.ErrInvalidInput)
 	}
-	meta, err := storekernel.NormalizeJSONObject(in.Meta, "meta")
+	meta, err := storekernel.NormalizeJSONObject(in.Meta, "meta", taskcoredomain.ErrInvalidInput)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +86,7 @@ func Start(ctx context.Context, db *gorm.DB, in StartCycleInput) (*cyclesdomain.
 		if err := tx.Create(model.FromDomainTaskCyclePtr(row)).Error; err != nil {
 			return fmt.Errorf("insert task_cycle: %w", err)
 		}
-		seq, err := storekernel.NextEventSeq(tx, taskID)
+		seq, err := eventsaudit.NextEventSeq(tx, taskID)
 		if err != nil {
 			return err
 		}
@@ -93,7 +94,7 @@ func Start(ctx context.Context, db *gorm.DB, in StartCycleInput) (*cyclesdomain.
 		if err != nil {
 			return err
 		}
-		if err := storekernel.AppendEvent(tx, taskID, seq, taskeventsdomain.EventCycleStarted, in.TriggeredBy, payload); err != nil {
+		if err := eventsaudit.AppendEvent(tx, taskID, seq, taskeventsdomain.EventCycleStarted, in.TriggeredBy, payload); err != nil {
 			return err
 		}
 		created = row
@@ -118,14 +119,14 @@ func Start(ctx context.Context, db *gorm.DB, in StartCycleInput) (*cyclesdomain.
 func Terminate(ctx context.Context, db *gorm.DB, cycleID string, status cyclesdomain.CycleStatus, reason string, by taskcoredomain.Actor) (*cyclesdomain.TaskCycle, error) {
 	defer storekernel.DeferLatency(storekernel.OpTerminateCycle)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.cycles.Terminate")
-	if err := storekernel.ValidateActor(by); err != nil {
+	if err := taskcoredomain.ValidateActor(by); err != nil {
 		return nil, err
 	}
 	cycleID = strings.TrimSpace(cycleID)
 	if cycleID == "" {
 		return nil, fmt.Errorf("%w: cycle_id", taskcoredomain.ErrInvalidInput)
 	}
-	if !storekernel.ValidTerminalCycleStatus(status) {
+	if !cyclesdomain.TerminalCycleStatus(status) {
 		return nil, fmt.Errorf("%w: status must be a terminal cycle status", taskcoredomain.ErrInvalidInput)
 	}
 	reason = strings.TrimSpace(reason)
@@ -171,7 +172,7 @@ func Terminate(ctx context.Context, db *gorm.DB, cycleID string, status cyclesdo
 			}
 		}
 
-		seq, err := storekernel.NextEventSeq(tx, cycle.TaskID)
+		seq, err := eventsaudit.NextEventSeq(tx, cycle.TaskID)
 		if err != nil {
 			return err
 		}
@@ -180,7 +181,7 @@ func Terminate(ctx context.Context, db *gorm.DB, cycleID string, status cyclesdo
 			return err
 		}
 		mirrorType := mirrorEventTypeForCycleStatus(status)
-		if err := storekernel.AppendEvent(tx, cycle.TaskID, seq, mirrorType, by, payload); err != nil {
+		if err := eventsaudit.AppendEvent(tx, cycle.TaskID, seq, mirrorType, by, payload); err != nil {
 			return err
 		}
 		out = cycle

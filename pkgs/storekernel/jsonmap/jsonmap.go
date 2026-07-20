@@ -1,6 +1,6 @@
 // Package jsonmap holds RawMessage ↔ datatypes.JSON converters shared by
 // BC store/model mappers. Kept as a leaf package so model packages can import
-// it without cycling through storekernel (which imports some BC models).
+// it without pulling the rest of storekernel.
 package jsonmap
 
 import (

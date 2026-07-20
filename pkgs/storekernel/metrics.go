@@ -9,7 +9,7 @@ import (
 
 // Fixed op label values for taskapi_store_operation_duration_seconds (low cardinality).
 // Each constant names exactly one public Store entrypoint; new methods must add a label here
-// rather than reusing one. See pkgs/tasks/store/README.md for the source-of-truth concern map.
+// rather than reusing one. See docs/agent-map.md for the persistence concern map.
 const (
 	OpCreateTask                         = "create_task"
 	OpGetTask                            = "get_task"

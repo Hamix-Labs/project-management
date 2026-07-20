@@ -11,7 +11,8 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
-	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel/taskload"
+	eventsaudit "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/audit"
+	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/taskload"
 	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 	checklistmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/store/model"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
@@ -26,7 +27,7 @@ import (
 func Add(ctx context.Context, db *gorm.DB, taskID, text string, verifyCommands []VerifyCommandInput, by taskcoredomain.Actor) (*checklistdomain.TaskChecklistItem, error) {
 	defer storekernel.DeferLatency(storekernel.OpAddChecklistItem)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.checklist.Add")
-	if err := storekernel.ValidateActor(by); err != nil {
+	if err := taskcoredomain.ValidateActor(by); err != nil {
 		return nil, err
 	}
 	text = strings.TrimSpace(text)
@@ -67,12 +68,12 @@ func Add(ctx context.Context, db *gorm.DB, taskID, text string, verifyCommands [
 		if err := replaceCommandsInTx(tx, dit.ID, cmds); err != nil {
 			return err
 		}
-		seq, err := storekernel.NextEventSeq(tx, taskID)
+		seq, err := eventsaudit.NextEventSeq(tx, taskID)
 		if err != nil {
 			return err
 		}
 		b, _ := json.Marshal(map[string]string{"item_id": dit.ID, "text": dit.Text})
-		if err := storekernel.AppendEvent(tx, taskID, seq, taskeventsdomain.EventChecklistItemAdded, by, b); err != nil {
+		if err := eventsaudit.AppendEvent(tx, taskID, seq, taskeventsdomain.EventChecklistItemAdded, by, b); err != nil {
 			return err
 		}
 		created = &dit
@@ -90,7 +91,7 @@ func Add(ctx context.Context, db *gorm.DB, taskID, text string, verifyCommands [
 func Delete(ctx context.Context, db *gorm.DB, taskID, itemID string, by taskcoredomain.Actor) error {
 	defer storekernel.DeferLatency(storekernel.OpDeleteChecklistItem)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.checklist.Delete")
-	if err := storekernel.ValidateActor(by); err != nil {
+	if err := taskcoredomain.ValidateActor(by); err != nil {
 		return err
 	}
 	taskID = strings.TrimSpace(taskID)
@@ -147,12 +148,12 @@ func Delete(ctx context.Context, db *gorm.DB, taskID, itemID string, by taskcore
 				return fmt.Errorf("delete checklist completions: %w", err)
 			}
 		}
-		seq, err := storekernel.NextEventSeq(tx, taskID)
+		seq, err := eventsaudit.NextEventSeq(tx, taskID)
 		if err != nil {
 			return err
 		}
 		b, _ := json.Marshal(map[string]string{"item_id": itemID, "text": dit.Text})
-		if err := storekernel.AppendEvent(tx, taskID, seq, taskeventsdomain.EventChecklistItemRemoved, by, b); err != nil {
+		if err := eventsaudit.AppendEvent(tx, taskID, seq, taskeventsdomain.EventChecklistItemRemoved, by, b); err != nil {
 			return err
 		}
 		if err := tx.Delete(&it).Error; err != nil {
@@ -169,7 +170,7 @@ func Delete(ctx context.Context, db *gorm.DB, taskID, itemID string, by taskcore
 func UpdateText(ctx context.Context, db *gorm.DB, taskID, itemID, text string, by taskcoredomain.Actor) error {
 	defer storekernel.DeferLatency(storekernel.OpUpdateChecklistItemText)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.checklist.UpdateText")
-	if err := storekernel.ValidateActor(by); err != nil {
+	if err := taskcoredomain.ValidateActor(by); err != nil {
 		return err
 	}
 	taskID = strings.TrimSpace(taskID)
@@ -227,12 +228,12 @@ func UpdateText(ctx context.Context, db *gorm.DB, taskID, itemID, text string, b
 		if err := tx.Model(&it).Update("text", text).Error; err != nil {
 			return fmt.Errorf("update checklist item: %w", err)
 		}
-		seq, err := storekernel.NextEventSeq(tx, taskID)
+		seq, err := eventsaudit.NextEventSeq(tx, taskID)
 		if err != nil {
 			return err
 		}
 		b, _ := json.Marshal(map[string]any{"item_id": itemID, "text": text})
-		return storekernel.AppendEvent(tx, taskID, seq, taskeventsdomain.EventChecklistItemUpdated, by, b)
+		return eventsaudit.AppendEvent(tx, taskID, seq, taskeventsdomain.EventChecklistItemUpdated, by, b)
 	})
 }
 
@@ -244,7 +245,7 @@ func UpdateText(ctx context.Context, db *gorm.DB, taskID, itemID, text string, b
 func SetDone(ctx context.Context, db *gorm.DB, subjectTaskID, itemID string, done bool, by taskcoredomain.Actor) error {
 	defer storekernel.DeferLatency(storekernel.OpSetChecklistItemDone)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.checklist.SetDone")
-	if err := storekernel.ValidateActor(by); err != nil {
+	if err := taskcoredomain.ValidateActor(by); err != nil {
 		return err
 	}
 	if by != taskcoredomain.ActorAgent {
@@ -305,12 +306,12 @@ func SetDone(ctx context.Context, db *gorm.DB, subjectTaskID, itemID string, don
 				return fmt.Errorf("delete completion: %w", res.Error)
 			}
 		}
-		seq, err := storekernel.NextEventSeq(tx, subjectTaskID)
+		seq, err := eventsaudit.NextEventSeq(tx, subjectTaskID)
 		if err != nil {
 			return err
 		}
 		b, _ := json.Marshal(map[string]any{"item_id": itemID, "done": done})
-		if err := storekernel.AppendEvent(tx, subjectTaskID, seq, taskeventsdomain.EventChecklistItemToggled, by, b); err != nil {
+		if err := eventsaudit.AppendEvent(tx, subjectTaskID, seq, taskeventsdomain.EventChecklistItemToggled, by, b); err != nil {
 			return err
 		}
 		_, err = syncCriteriaSatisfiedAtInTx(tx, subjectTaskID, by)

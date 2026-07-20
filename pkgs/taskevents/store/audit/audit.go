@@ -1,12 +1,16 @@
-package storekernel
+// Package audit owns transactional task_events seq allocation and row insert
+// helpers used by peer BC stores (taskcore, taskcycles, taskchecklist) inside
+// open GORM transactions. Kept as a leaf under taskevents/store so callers do
+// not import store/internal.
+package audit
 
-import "github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 import (
-	"encoding/json"
 	"fmt"
 	"log/slog"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 	eventsmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/model"
@@ -16,7 +20,7 @@ import (
 )
 
 // taskIDRow is a minimal tasks-table shape for SELECT … FOR UPDATE locking
-// without importing pkgs/tasks/store/model (avoids migrate-graph cycles).
+// without importing pkgs/taskcore/store/model (avoids migrate-graph cycles).
 type taskIDRow struct {
 	ID string `gorm:"column:id;primaryKey"`
 }
@@ -45,7 +49,7 @@ func (taskIDRow) TableName() string { return "tasks" }
 // `FOR UPDATE` is unnecessary (and unsupported pre-3.45). Mirrors the
 // dialect guard in events/thread.MarkResponded.
 func NextEventSeq(tx *gorm.DB, taskID string) (int64, error) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.kernel.NextEventSeq")
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskevents.store.audit.NextEventSeq")
 	if tx.Dialector.Name() != "sqlite" {
 		var locked taskIDRow
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
@@ -63,8 +67,8 @@ func NextEventSeq(tx *gorm.DB, taskID string) (int64, error) {
 
 // AppendEvent inserts one task_events row inside the open transaction tx.
 //
-// data is normalized through NormalizeJSONObject so the on-disk shape of
-// task_events.data_json honours the documented "always a JSON object"
+// data is normalized through storekernel.NormalizeJSONObject so the on-disk
+// shape of task_events.data_json honours the documented "always a JSON object"
 // invariant (see docs/api.md GET /tasks/{id}/events). nil, empty,
 // whitespace-only, or the literal "null" all collapse to "{}" so downstream
 // consumers (handler readers, SSE fan-out, /events keyset paging) never
@@ -74,8 +78,8 @@ func NextEventSeq(tx *gorm.DB, taskID string) (int64, error) {
 // is caught at the writing call site instead of leaking past the read-side
 // normalizeJSONObjectForResponse defense.
 func AppendEvent(tx *gorm.DB, taskID string, seq int64, typ taskeventsdomain.EventType, by taskcoredomain.Actor, data []byte) error {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.kernel.AppendEvent")
-	normalized, err := NormalizeJSONObject(data, "data")
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskevents.store.audit.AppendEvent")
+	normalized, err := storekernel.NormalizeJSONObject(data, "data", taskcoredomain.ErrInvalidInput)
 	if err != nil {
 		return err
 	}
@@ -92,15 +96,4 @@ func AppendEvent(tx *gorm.DB, taskID string, seq int64, typ taskeventsdomain.Eve
 		return fmt.Errorf("insert task_event: %w", err)
 	}
 	return nil
-}
-
-// EventPairJSON marshals a {"from": from, "to": to} payload used by
-// status / priority / type transition audit events.
-func EventPairJSON(from, to string) ([]byte, error) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.kernel.EventPairJSON")
-	b, err := json.Marshal(map[string]string{"from": from, "to": to})
-	if err != nil {
-		return nil, fmt.Errorf("marshal event payload: %w", err)
-	}
-	return b, nil
 }

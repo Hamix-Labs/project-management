@@ -58,7 +58,7 @@ func saveRow(
 	if name == "" {
 		return nil, fmt.Errorf("%w: %s", taskcoredomain.ErrInvalidInput, nameRequiredMsg)
 	}
-	normalized, err := storekernel.NormalizeJSONObject(payload, "payload")
+	normalized, err := storekernel.NormalizeJSONObject(payload, "payload", taskcoredomain.ErrInvalidInput)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func saveRow(
 		"payload_json": datatypes.JSON(payload),
 		"updated_at":   now,
 	}).Error; err != nil {
-		return nil, storekernel.MapPayloadPersistenceError(fmt.Errorf("%s: %w", updateErr, err))
+		return nil, storekernel.MapPayloadPersistenceError(fmt.Errorf("%s: %w", updateErr, err), taskcoredomain.ErrInvalidInput)
 	}
 	return &Summary{ID: id, Name: name, UpdatedAt: now, CreatedAt: row.CreatedAt}, nil
 }
@@ -97,7 +97,7 @@ func saveTemplateRow(
 	if name == "" {
 		return nil, fmt.Errorf("%w: %s", taskcoredomain.ErrInvalidInput, nameRequiredMsg)
 	}
-	normalized, err := storekernel.NormalizeJSONObject(payload, "payload")
+	normalized, err := storekernel.NormalizeJSONObject(payload, "payload", taskcoredomain.ErrInvalidInput)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +112,7 @@ func saveTemplateRow(
 		"payload_json": datatypes.JSON(payload),
 		"updated_at":   now,
 	}).Error; err != nil {
-		return nil, storekernel.MapPayloadPersistenceError(fmt.Errorf("%s: %w", updateErr, err))
+		return nil, storekernel.MapPayloadPersistenceError(fmt.Errorf("%s: %w", updateErr, err), taskcoredomain.ErrInvalidInput)
 	}
 	return &TemplateSummary{
 		ID:               id,
@@ -202,7 +202,7 @@ func getDraftByID(ctx context.Context, db *gorm.DB, id string) (*Detail, error) 
 	}
 	var row model.TaskDraft
 	if err := db.WithContext(ctx).Where("id = ?", id).First(&row).Error; err != nil {
-		return nil, storekernel.MapNotFound(err)
+		return nil, storekernel.MapNotFound(err, taskcoredomain.ErrNotFound)
 	}
 	return detailFromDraft(row), nil
 }
@@ -216,7 +216,7 @@ func getTemplateByID(ctx context.Context, db *gorm.DB, id string) (*Detail, erro
 	}
 	var row model.TaskTemplate
 	if err := db.WithContext(ctx).Where("id = ?", id).First(&row).Error; err != nil {
-		return nil, storekernel.MapNotFound(err)
+		return nil, storekernel.MapNotFound(err, taskcoredomain.ErrNotFound)
 	}
 	return detailFromTemplate(row), nil
 }

@@ -9,6 +9,7 @@ import (
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
+	eventsaudit "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/audit"
 	checkliststore "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/store"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
@@ -184,7 +185,7 @@ func applyTitlePatch(tx *gorm.DB, taskID string, cur *domain.Task, title *string
 	if err != nil {
 		return err
 	}
-	if err := storekernel.AppendEvent(tx, taskID, *seq, taskeventsdomain.EventMessageAdded, by, b); err != nil {
+	if err := eventsaudit.AppendEvent(tx, taskID, *seq, taskeventsdomain.EventMessageAdded, by, b); err != nil {
 		return err
 	}
 	*seq++
@@ -204,7 +205,7 @@ func applyInitialPromptPatch(tx *gorm.DB, taskID string, cur *domain.Task, promp
 	if err != nil {
 		return err
 	}
-	if err := storekernel.AppendEvent(tx, taskID, *seq, taskeventsdomain.EventPromptAppended, by, b); err != nil {
+	if err := eventsaudit.AppendEvent(tx, taskID, *seq, taskeventsdomain.EventPromptAppended, by, b); err != nil {
 		return err
 	}
 	*seq++
@@ -217,7 +218,7 @@ func applyPriorityPatch(tx *gorm.DB, taskID string, cur *domain.Task, pr *domain
 	if pr == nil {
 		return nil
 	}
-	if !storekernel.ValidPriority(*pr) {
+	if !domain.ValidPriority(*pr) {
 		return fmt.Errorf("%w: priority", domain.ErrInvalidInput)
 	}
 	if *pr == cur.Priority {
@@ -227,7 +228,7 @@ func applyPriorityPatch(tx *gorm.DB, taskID string, cur *domain.Task, pr *domain
 	if err != nil {
 		return err
 	}
-	if err := storekernel.AppendEvent(tx, taskID, *seq, taskeventsdomain.EventPriorityChanged, by, b); err != nil {
+	if err := eventsaudit.AppendEvent(tx, taskID, *seq, taskeventsdomain.EventPriorityChanged, by, b); err != nil {
 		return err
 	}
 	*seq++
@@ -240,7 +241,7 @@ func applyStatusPatch(tx *gorm.DB, taskID string, cur *domain.Task, st *domain.S
 	if st == nil {
 		return nil
 	}
-	if !storekernel.ValidStatus(*st) {
+	if !domain.ValidStatus(*st) {
 		return fmt.Errorf("%w: status", domain.ErrInvalidInput)
 	}
 	if *st == cur.Status {
@@ -255,7 +256,7 @@ func applyStatusPatch(tx *gorm.DB, taskID string, cur *domain.Task, st *domain.S
 	if err != nil {
 		return err
 	}
-	if err := storekernel.AppendEvent(tx, taskID, *seq, taskeventsdomain.EventStatusChanged, by, b); err != nil {
+	if err := eventsaudit.AppendEvent(tx, taskID, *seq, taskeventsdomain.EventStatusChanged, by, b); err != nil {
 		return err
 	}
 	*seq++

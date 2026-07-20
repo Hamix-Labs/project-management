@@ -1,18 +1,9 @@
 package storekernel
 
 import (
-	"context"
 	"errors"
 	"testing"
-	"time"
 
-	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
-	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
-	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
-	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	taskcoremodel "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/model"
-	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
-	cyclesmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store/model"
 	"gorm.io/gorm"
 )
 
@@ -105,6 +96,8 @@ func TestIsCheckConstraintViolation(t *testing.T) {
 
 func TestMapWriteError(t *testing.T) {
 	t.Parallel()
+	conflict := errors.New("conflict")
+	invalid := errors.New("invalid input")
 	tests := []struct {
 		name    string
 		err     error
@@ -112,15 +105,15 @@ func TestMapWriteError(t *testing.T) {
 		wantNil bool
 	}{
 		{"nil", nil, nil, true},
-		{"gorm duplicate", gorm.ErrDuplicatedKey, taskcoredomain.ErrConflict, false},
-		{"unique", errors.New("UNIQUE constraint failed: projects.id"), taskcoredomain.ErrConflict, false},
-		{"foreign key", errors.New("foreign key constraint failed"), taskcoredomain.ErrInvalidInput, false},
-		{"check", gorm.ErrCheckConstraintViolated, taskcoredomain.ErrInvalidInput, false},
+		{"gorm duplicate", gorm.ErrDuplicatedKey, conflict, false},
+		{"unique", errors.New("UNIQUE constraint failed: projects.id"), conflict, false},
+		{"foreign key", errors.New("foreign key constraint failed"), invalid, false},
+		{"check", gorm.ErrCheckConstraintViolated, invalid, false},
 		{"other", errors.New("connection refused"), nil, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := MapWriteError(tt.err, "duplicate project row")
+			got := MapWriteError(tt.err, "duplicate project row", conflict, invalid)
 			if tt.wantNil {
 				if got != nil {
 					t.Fatalf("got %v want nil", got)
@@ -134,66 +127,21 @@ func TestMapWriteError(t *testing.T) {
 	}
 }
 
-func TestConstraintClassifiers_sqlite(t *testing.T) {
-	db := tasktestdb.OpenSQLite(t)
-	ctx := context.Background()
-	now := time.Now().UTC()
-
-	t.Run("duplicate key", func(t *testing.T) {
-		id := "kernel-dup-project"
-		row := projectmodel.Project{
-			ID:        id,
-			Name:      "dup",
-			Status:    projectsdomain.ProjectStatusActive,
-			CreatedAt: now,
-			UpdatedAt: now,
-		}
-		if err := db.WithContext(ctx).Create(&row).Error; err != nil {
-			t.Fatalf("seed: %v", err)
-		}
-		err := db.WithContext(ctx).Create(&row).Error
-		if err == nil {
-			t.Fatal("expected duplicate insert error")
-		}
-		if !IsDuplicateKey(err) {
-			t.Fatalf("IsDuplicateKey(%v) = false", err)
-		}
-	})
-
-	t.Run("foreign key", func(t *testing.T) {
-		badCycle := "missing-cycle-id"
-		phase := cyclesmodel.TaskCyclePhase{
-			ID:        "kernel-fk-phase",
-			CycleID:   badCycle,
-			Phase:     cyclesdomain.PhaseExecute,
-			PhaseSeq:  1,
-			Status:    cyclesdomain.PhaseStatusRunning,
-			StartedAt: now,
-		}
-		err := db.WithContext(ctx).Create(&phase).Error
-		if err == nil {
-			t.Fatal("expected foreign key error")
-		}
-		if !IsForeignKeyViolation(err) {
-			t.Fatalf("IsForeignKeyViolation(%v) = false", err)
-		}
-	})
-
-	t.Run("check constraint", func(t *testing.T) {
-		task := taskcoremodel.Task{
-			ID:            "kernel-check-task",
-			Title:         "check",
-			InitialPrompt: "x",
-			Status:        taskcoredomain.Status("not-a-status"),
-			Priority:      taskcoredomain.PriorityMedium,
-			Runner:        "cursor",
-		}
-		err := db.WithContext(ctx).Create(&task).Error
-		if err == nil {
-			t.Fatal("expected check constraint error")
-		}
-		if !IsCheckConstraintViolation(err) {
-			t.Fatalf("IsCheckConstraintViolation(%v) = false", err)
-		}
-	})
+func TestMapNotFound(t *testing.T) {
+	t.Parallel()
+	notFound := errors.New("not found")
+	if got := MapNotFound(nil, notFound); got != nil {
+		t.Fatalf("nil err: got %v", got)
+	}
+	if got := MapNotFound(gorm.ErrRecordNotFound, notFound); !errors.Is(got, notFound) {
+		t.Fatalf("record not found: got %v", got)
+	}
+	other := errors.New("connection refused")
+	got := MapNotFound(other, notFound)
+	if errors.Is(got, notFound) {
+		t.Fatalf("passthrough must not become notFound: %v", got)
+	}
+	if !errors.Is(got, other) {
+		t.Fatalf("passthrough must wrap original: %v", got)
+	}
 }

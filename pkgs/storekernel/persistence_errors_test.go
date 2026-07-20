@@ -3,12 +3,12 @@ package storekernel
 import (
 	"errors"
 	"fmt"
-	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"strings"
 	"testing"
 )
 
 func TestMapPayloadPersistenceError(t *testing.T) {
+	invalid := errors.New("invalid input")
 	tests := []struct {
 		name    string
 		err     error
@@ -19,13 +19,13 @@ func TestMapPayloadPersistenceError(t *testing.T) {
 			name:    "postgres invalid json",
 			err:     fmt.Errorf("patch template: ERROR: invalid input syntax for type json (SQLSTATE 22P02)"),
 			wantMsg: "payload could not be saved",
-			wantIn:  taskcoredomain.ErrInvalidInput,
+			wantIn:  invalid,
 		},
 		{
 			name:    "sqlite malformed json",
 			err:     errors.New("malformed JSON"),
 			wantMsg: "payload could not be saved",
-			wantIn:  taskcoredomain.ErrInvalidInput,
+			wantIn:  invalid,
 		},
 		{
 			name:    "passthrough",
@@ -35,7 +35,7 @@ func TestMapPayloadPersistenceError(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := MapPayloadPersistenceError(tt.err)
+			got := MapPayloadPersistenceError(tt.err, invalid)
 			if tt.wantIn != nil && !errors.Is(got, tt.wantIn) {
 				t.Fatalf("errors.Is(%v, %v) = false", got, tt.wantIn)
 			}

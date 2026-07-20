@@ -11,7 +11,8 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
-	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel/taskload"
+	eventsaudit "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/audit"
+	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/taskload"
 	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 	checklistmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/store/model"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
@@ -34,7 +35,7 @@ func SetDoneWithEvidenceInTx(
 	by taskcoredomain.Actor,
 ) (CriteriaFlagChange, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.checklist.SetDoneWithEvidenceInTx")
-	if err := storekernel.ValidateActor(by); err != nil {
+	if err := taskcoredomain.ValidateActor(by); err != nil {
 		return CriteriaFlagChange{}, err
 	}
 	if by != taskcoredomain.ActorAgent {
@@ -81,7 +82,7 @@ func SetDoneWithEvidenceInTx(
 	}).Create(&row).Error; err != nil {
 		return CriteriaFlagChange{}, fmt.Errorf("save completion: %w", err)
 	}
-	seq, err := storekernel.NextEventSeq(tx, subjectTaskID)
+	seq, err := eventsaudit.NextEventSeq(tx, subjectTaskID)
 	if err != nil {
 		return CriteriaFlagChange{}, err
 	}
@@ -89,7 +90,7 @@ func SetDoneWithEvidenceInTx(
 		"item_id": itemID, "done": true,
 		"verified_by": string(verifier), "cycle_id": drow.CycleID,
 	})
-	if err := storekernel.AppendEvent(tx, subjectTaskID, seq, taskeventsdomain.EventChecklistItemToggled, by, b); err != nil {
+	if err := eventsaudit.AppendEvent(tx, subjectTaskID, seq, taskeventsdomain.EventChecklistItemToggled, by, b); err != nil {
 		return CriteriaFlagChange{}, err
 	}
 	return syncCriteriaSatisfiedAtInTx(tx, subjectTaskID, by)
