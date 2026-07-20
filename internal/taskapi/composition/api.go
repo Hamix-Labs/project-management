@@ -31,7 +31,7 @@ type API struct {
 //
 //funclogmeasure:skip category=hot-path reason="Composition wiring; BC store constructors emit operation traces."
 func NewAPI(db *gorm.DB) *API {
-	git := gitinventorystore.NewStore(db)
+	git := gitinventorystore.NewStore(db, nil)
 	projects := projectsstore.NewStore(db)
 	return &API{
 		taskcore:  taskcorestore.NewStore(db),

@@ -2,7 +2,10 @@
 // available to the in-process agent worker. Adapters register
 // themselves via Register (typically called from an init() in their
 // package); the cmd/taskapi binary imports registry/all to trigger
-// all registrations.
+// production registrations.
+//
+// Scaffold adapters (e.g. claude-code) are excluded from registry/all;
+// import registry/scaffold to opt them in for tests or experiments.
 //
 // The supervisor consults the registry at boot and on every settings
 // reload to (a) populate the runner choice surface in the SPA
@@ -10,7 +13,7 @@
 // and (c) probe a binary path before persisting it so the operator
 // gets fail-fast feedback.
 //
-// Adding a new runner adapter requires:
+// Adding a new production runner adapter requires:
 //  1. Implement runner.Runner + any desired capability interfaces.
 //  2. Create a register.go with init() calling registry.Register.
 //  3. Add a blank import line to registry/all/all.go.

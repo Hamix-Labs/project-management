@@ -4,21 +4,20 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/registry"
 	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 )
 
 // resolveTaskRunnerModel merges optional JSON fields with app settings and
-// validates the runner id against the registry.
+// validates the runner id via the injected RunnerValidator.
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func resolveTaskRunnerModel(body *taskCreateJSON, settings settingsdomain.AppSettings) (runner, cursorModel string, err error) {
-	return resolveRunnerModelFields(body.Runner, body.CursorModel, settings)
+func resolveTaskRunnerModel(body *taskCreateJSON, settings settingsdomain.AppSettings, runners RunnerValidator) (runner, cursorModel string, err error) {
+	return resolveRunnerModelFields(body.Runner, body.CursorModel, settings, runners)
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func resolveRunnerModelFields(runnerPtr, cursorModelPtr *string, settings settingsdomain.AppSettings) (runner, cursorModel string, err error) {
+func resolveRunnerModelFields(runnerPtr, cursorModelPtr *string, settings settingsdomain.AppSettings, runners RunnerValidator) (runner, cursorModel string, err error) {
 	if runnerPtr != nil && strings.TrimSpace(*runnerPtr) != "" {
 		runner = strings.TrimSpace(*runnerPtr)
 	} else {
@@ -27,8 +26,10 @@ func resolveRunnerModelFields(runnerPtr, cursorModelPtr *string, settings settin
 	if runner == "" {
 		runner = settingsdomain.DefaultRunner
 	}
-	if _, lerr := registry.Lookup(runner); lerr != nil {
-		return "", "", fmt.Errorf("%w: runner", domain.ErrInvalidInput)
+	if runners != nil {
+		if lerr := runners.ValidateRunner(runner); lerr != nil {
+			return "", "", fmt.Errorf("%w: runner", domain.ErrInvalidInput)
+		}
 	}
 	if cursorModelPtr != nil {
 		cursorModel = strings.TrimSpace(*cursorModelPtr)

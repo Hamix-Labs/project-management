@@ -43,7 +43,7 @@ func (h *Handler) listGlobalGitWorktreesCheckoutStatus(w http.ResponseWriter, r 
 		WriteGitStoreError(w, r, op, err)
 		return
 	}
-	rows, err := h.write.RepoWorktreeCheckoutStatus(r.Context(), repo, h.gitService())
+	rows, err := h.write.RepoWorktreeCheckoutStatus(r.Context(), repo)
 	if err != nil {
 		WriteGitStoreError(w, r, op, err)
 		return

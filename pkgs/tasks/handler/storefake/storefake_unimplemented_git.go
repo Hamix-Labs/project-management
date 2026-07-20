@@ -6,7 +6,6 @@ import (
 
 	gitcontract "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/contract"
 	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 )
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
@@ -75,27 +74,27 @@ func (unimplementedHandlerStore) ListGitBranches(context.Context, string, string
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) CreateGlobalGitRepository(context.Context, gitcontract.CreateGitRepositoryInput, gitwork.Service) (gitdomain.GitRepository, error) {
+func (unimplementedHandlerStore) CreateGlobalGitRepository(context.Context, gitcontract.CreateGitRepositoryInput) (gitdomain.GitRepository, error) {
 	return gitdomain.GitRepository{}, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) CreateGitRepository(context.Context, string, gitcontract.CreateGitRepositoryInput, gitwork.Service) (gitdomain.GitRepository, error) {
+func (unimplementedHandlerStore) CreateGitRepository(context.Context, string, gitcontract.CreateGitRepositoryInput) (gitdomain.GitRepository, error) {
 	return gitdomain.GitRepository{}, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) CreateGitWorktreeForRepo(context.Context, string, gitcontract.CreateGitWorktreeInput, gitwork.Service) (gitdomain.GitWorktree, error) {
+func (unimplementedHandlerStore) CreateGitWorktreeForRepo(context.Context, string, gitcontract.CreateGitWorktreeInput) (gitdomain.GitWorktree, error) {
 	return gitdomain.GitWorktree{}, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) AllocateTaskWorktree(context.Context, string, string, gitwork.Service) (gitdomain.GitWorktree, error) {
+func (unimplementedHandlerStore) AllocateTaskWorktree(context.Context, string, string) (gitdomain.GitWorktree, error) {
 	return gitdomain.GitWorktree{}, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) SyncGitRepository(context.Context, string, gitwork.Service) (gitcontract.ReconcileGitOutput, error) {
+func (unimplementedHandlerStore) SyncGitRepository(context.Context, string) (gitcontract.ReconcileGitOutput, error) {
 	return gitcontract.ReconcileGitOutput{}, errNotImplemented
 }
 
@@ -105,61 +104,61 @@ func (unimplementedHandlerStore) WorktreeStaleMap(context.Context, string, time.
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) CreateGitWorktree(context.Context, string, string, gitcontract.CreateGitWorktreeInput, gitwork.Service) (gitdomain.GitWorktree, error) {
+func (unimplementedHandlerStore) CreateGitWorktree(context.Context, string, string, gitcontract.CreateGitWorktreeInput) (gitdomain.GitWorktree, error) {
 	return gitdomain.GitWorktree{}, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) RemoveGitWorktreeFromDiskByID(context.Context, string, bool, gitwork.Service) error {
+func (unimplementedHandlerStore) RemoveGitWorktreeFromDiskByID(context.Context, string, bool) error {
 	return errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) RemoveGitWorktreeFromDisk(context.Context, string, string, bool, gitwork.Service) error {
+func (unimplementedHandlerStore) RemoveGitWorktreeFromDisk(context.Context, string, string, bool) error {
 	return errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) CreateGitBranch(context.Context, string, string, gitcontract.CreateGitBranchInput, gitwork.Service) (gitdomain.GitBranch, error) {
+func (unimplementedHandlerStore) CreateGitBranch(context.Context, string, string, gitcontract.CreateGitBranchInput) (gitdomain.GitBranch, error) {
 	return gitdomain.GitBranch{}, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) DeleteGitBranch(context.Context, string, string, bool, gitwork.Service) error {
+func (unimplementedHandlerStore) DeleteGitBranch(context.Context, string, string, bool) error {
 	return errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) RepoWorktreeInventory(context.Context, gitdomain.GitRepository, gitwork.Service) ([]gitcontract.WorktreeInventoryRow, error) {
+func (unimplementedHandlerStore) RepoWorktreeInventory(context.Context, gitdomain.GitRepository) ([]gitcontract.WorktreeInventoryRow, error) {
 	return nil, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) RepoWorktreeCheckoutStatus(context.Context, gitdomain.GitRepository, gitwork.Service) ([]gitcontract.WorktreeCheckoutStatusRow, error) {
+func (unimplementedHandlerStore) RepoWorktreeCheckoutStatus(context.Context, gitdomain.GitRepository) ([]gitcontract.WorktreeCheckoutStatusRow, error) {
 	return nil, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) ProbeGitWorktree(context.Context, string, string, gitwork.Service) (gitcontract.GitWorktreeProbeResult, error) {
+func (unimplementedHandlerStore) ProbeGitWorktree(context.Context, string, string) (gitcontract.GitWorktreeProbeResult, error) {
 	return gitcontract.GitWorktreeProbeResult{}, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) RegisterExistingGitWorktree(context.Context, string, string, string, gitcontract.BindBranchInput, gitwork.Service) (gitdomain.GitWorktree, error) {
+func (unimplementedHandlerStore) RegisterExistingGitWorktree(context.Context, string, string, string, gitcontract.BindBranchInput) (gitdomain.GitWorktree, error) {
 	return gitdomain.GitWorktree{}, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) ReconcileGitRepository(context.Context, string, string, gitcontract.ReconcileGitInput, gitwork.Service) (gitcontract.ReconcileGitOutput, error) {
+func (unimplementedHandlerStore) ReconcileGitRepository(context.Context, string, string, gitcontract.ReconcileGitInput) (gitcontract.ReconcileGitOutput, error) {
 	return gitcontract.ReconcileGitOutput{}, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) RelocateGitRepository(context.Context, string, string, string, gitwork.Service) (gitcontract.ReconcileGitOutput, error) {
+func (unimplementedHandlerStore) RelocateGitRepository(context.Context, string, string, string) (gitcontract.ReconcileGitOutput, error) {
 	return gitcontract.ReconcileGitOutput{}, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) RelocateGitWorktree(context.Context, string, string, gitwork.Service) (gitdomain.GitWorktree, error) {
+func (unimplementedHandlerStore) RelocateGitWorktree(context.Context, string, string) (gitdomain.GitWorktree, error) {
 	return gitdomain.GitWorktree{}, errNotImplemented
 }

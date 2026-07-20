@@ -5,29 +5,18 @@ import (
 	gitinventorystore "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 )
 
 // GitStore is the git persistence surface used by Git orchestration.
 type GitStore interface {
-	ReconcileGitRepository(ctx context.Context, projectID, repoID string, input gitinventorystore.ReconcileGitInput, gitSvc gitwork.Service) (gitinventorystore.ReconcileGitOutput, error)
-	RelocateGitRepository(ctx context.Context, projectID, repoID, path string, gitSvc gitwork.Service) (gitinventorystore.ReconcileGitOutput, error)
-	RelocateGitWorktree(ctx context.Context, worktreeID, path string, gitSvc gitwork.Service) (domain.GitWorktree, error)
+	ReconcileGitRepository(ctx context.Context, projectID, repoID string, input gitinventorystore.ReconcileGitInput) (gitinventorystore.ReconcileGitOutput, error)
+	RelocateGitRepository(ctx context.Context, projectID, repoID, path string) (gitinventorystore.ReconcileGitOutput, error)
+	RelocateGitWorktree(ctx context.Context, worktreeID, path string) (domain.GitWorktree, error)
 }
 
-// Git composes gitwork.Service with the store git facade so handlers do not
-// pass gitSvc into store methods directly.
+// Git is a thin orchestration facade over GitStore (gitwork is injected into the store).
 type Git struct {
 	Store GitStore
-	Svc   gitwork.Service
-}
-
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func (g *Git) gitSvc() gitwork.Service {
-	if g.Svc != nil {
-		return g.Svc
-	}
-	return gitwork.New()
 }
 
 // ReconcileRepository syncs Hamix git rows with on-disk worktrees.
@@ -38,7 +27,7 @@ func (g *Git) ReconcileRepository(
 	projectID, repoID string,
 	input gitinventorystore.ReconcileGitInput,
 ) (gitinventorystore.ReconcileGitOutput, error) {
-	return g.Store.ReconcileGitRepository(ctx, projectID, repoID, input, g.gitSvc())
+	return g.Store.ReconcileGitRepository(ctx, projectID, repoID, input)
 }
 
 // RelocateRepository moves a registered repository root on disk.
@@ -48,7 +37,7 @@ func (g *Git) RelocateRepository(
 	ctx context.Context,
 	projectID, repoID, path string,
 ) (gitinventorystore.ReconcileGitOutput, error) {
-	return g.Store.RelocateGitRepository(ctx, projectID, repoID, path, g.gitSvc())
+	return g.Store.RelocateGitRepository(ctx, projectID, repoID, path)
 }
 
 // RelocateWorktree moves a registered worktree path on disk.
@@ -58,5 +47,5 @@ func (g *Git) RelocateWorktree(
 	ctx context.Context,
 	worktreeID, path string,
 ) (domain.GitWorktree, error) {
-	return g.Store.RelocateGitWorktree(ctx, worktreeID, path, g.gitSvc())
+	return g.Store.RelocateGitWorktree(ctx, worktreeID, path)
 }

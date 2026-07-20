@@ -57,28 +57,21 @@ func (a *API) ListChecklistForVerify(ctx context.Context, taskID string) ([]chec
 	return a.checklist.ListChecklistForVerify(ctx, taskID)
 }
 
-// IsTaskCycleRunning reports whether the task or an inherit ancestor has a running cycle.
+// IsTaskCycleRunning reports whether the task has a running cycle.
 func (a *API) IsTaskCycleRunning(ctx context.Context, taskID string) (bool, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.IsTaskCycleRunning")
-	return a.checklist.IsTaskCycleRunning(ctx, taskID)
+	return a.cycles.IsTaskCycleRunning(ctx, taskID)
 }
 
 // SetChecklistItemDoneWithEvidence records agent completion with proof metadata.
-func (a *API) SetChecklistItemDoneWithEvidence(
-	ctx context.Context,
-	subjectTaskID, itemID string,
-	evidence string,
-	verifier checklistdomain.VerifierKind,
-	reasoning, cycleID string,
-	by taskcoredomain.Actor,
-) error {
+func (a *API) SetChecklistItemDoneWithEvidence(ctx context.Context, in checklistcontract.SetDoneWithEvidenceInput) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.SetChecklistItemDoneWithEvidence")
-	flag, err := a.checklist.SetDoneWithEvidence(ctx, subjectTaskID, itemID, evidence, verifier, reasoning, cycleID, by)
+	flag, err := a.checklist.SetDoneWithEvidence(ctx, in.TaskID, in.ItemID, in.Evidence, in.Verifier, in.Reasoning, in.CycleID, in.By)
 	if err != nil {
 		return err
 	}
 	if flag.BecameComplete {
-		a.notifyUnblockedDependents(ctx, subjectTaskID)
+		a.notifyUnblockedDependents(ctx, in.TaskID)
 	}
 	return nil
 }

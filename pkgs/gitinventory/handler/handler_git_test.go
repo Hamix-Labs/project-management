@@ -12,6 +12,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/apijson"
 )
 
 func gitHandlerTest(t *testing.T) (http.Handler, *composition.API, string) {
@@ -87,7 +88,7 @@ func TestHandler_createGlobalGitRepository_notGit(t *testing.T) {
 	if rec.Code != http.StatusConflict {
 		t.Fatalf("status=%d want 409 body=%s", rec.Code, rec.Body.String())
 	}
-	var resp jsonCodedErrorBody
+	var resp apijson.JSONCodedErrorBody
 	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
 		t.Fatal(err)
 	}

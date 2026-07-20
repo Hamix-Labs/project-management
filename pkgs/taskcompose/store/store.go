@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"log/slog"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/store/internal/drafts"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/store/internal/templates"
 	"gorm.io/gorm"
@@ -66,9 +67,9 @@ func (s *Store) SaveTemplate(ctx context.Context, id, name string, payload json.
 	return templates.Save(ctx, s.db, id, name, payload)
 }
 
-func (s *Store) ListTemplates(ctx context.Context, limit int, q, sort, order, tag string) ([]TemplateSummary, error) {
+func (s *Store) ListTemplates(ctx context.Context, in contract.ListTemplatesInput) ([]TemplateSummary, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcompose.store.ListTemplates")
-	return templates.List(ctx, s.db, limit, q, sort, order, tag)
+	return templates.List(ctx, s.db, in.Limit, in.Q, in.Sort, in.Order, in.Tag)
 }
 
 func (s *Store) IncrementTemplateInstantiateCounts(ctx context.Context, counts map[string]int) error {

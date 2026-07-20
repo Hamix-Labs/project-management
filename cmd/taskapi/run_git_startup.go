@@ -14,5 +14,5 @@ func maybeRunGitReconcileOnStartup(ctx context.Context, taskStore *composition.A
 		return
 	}
 	slog.Info("git startup reconcile enabled", "cmd", cmdName, "operation", "taskapi.git_startup_reconcile", "mode", mode)
-	taskStore.ReconcileGitRepositoriesOnStartup(ctx, nil)
+	taskStore.ReconcileGitRepositoriesOnStartup(ctx)
 }

@@ -37,7 +37,7 @@ func (h *Handler) runGitReconcile(w http.ResponseWriter, r *http.Request, op, pr
 		writeError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
-	out, err := h.write.ReconcileGitRepository(r.Context(), projectID, repoID, input, h.gitService())
+	out, err := h.write.ReconcileGitRepository(r.Context(), projectID, repoID, input)
 	if err != nil {
 		WriteGitStoreError(w, r, op, err)
 		return
@@ -56,7 +56,7 @@ func (h *Handler) syncGlobalGitRepository(w http.ResponseWriter, r *http.Request
 	const op = "git.repositories.sync_global"
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.syncGlobalGitRepository")
 	r = calltrace.WithRequestRoot(r, op)
-	out, err := h.write.SyncGitRepository(r.Context(), r.PathValue("repoId"), h.gitService())
+	out, err := h.write.SyncGitRepository(r.Context(), r.PathValue("repoId"))
 	if err != nil {
 		WriteGitStoreError(w, r, op, err)
 		return
@@ -74,7 +74,7 @@ func (h *Handler) relocateGlobalGitRepository(w http.ResponseWriter, r *http.Req
 		writeError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
-	out, err := h.write.RelocateGitRepository(r.Context(), "", repoID, body.Path, h.gitService())
+	out, err := h.write.RelocateGitRepository(r.Context(), "", repoID, body.Path)
 	if err != nil {
 		WriteGitStoreError(w, r, op, err)
 		return
@@ -91,7 +91,7 @@ func (h *Handler) relocateGlobalGitWorktree(w http.ResponseWriter, r *http.Reque
 		writeError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
-	wt, err := h.write.RelocateGitWorktree(r.Context(), r.PathValue("worktreeId"), body.Path, h.gitService())
+	wt, err := h.write.RelocateGitWorktree(r.Context(), r.PathValue("worktreeId"), body.Path)
 	if err != nil {
 		WriteGitStoreError(w, r, op, err)
 		return

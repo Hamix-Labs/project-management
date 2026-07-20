@@ -22,4 +22,6 @@ type CycleStore interface {
 	ListCommandRunsForCycle(ctx context.Context, cycleID string) ([]cyclesdomain.TaskCycleCommandRun, error)
 	ListCommitsForCycle(ctx context.Context, cycleID string) ([]cyclesdomain.TaskCycleCommit, error)
 	ListCommitsForTask(ctx context.Context, taskID string) ([]cyclesdomain.TaskCycleCommit, error)
+	// IsTaskCycleRunning reports whether taskID has a running cycle (and that the task exists).
+	IsTaskCycleRunning(ctx context.Context, taskID string) (bool, error)
 }

@@ -10,7 +10,6 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory"
 	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 )
@@ -31,7 +30,7 @@ func TaskBranchName(taskID string) string {
 
 // AllocateTaskWorktree fetches origin, creates a linked worktree + branch for the
 // task, and persists git_worktrees/git_branches rows (never is_main).
-func (s *Store) AllocateTaskWorktree(ctx context.Context, repoID, taskID string, gitSvc gitwork.Service) (gitdomain.GitWorktree, error) {
+func (s *Store) AllocateTaskWorktree(ctx context.Context, repoID, taskID string) (gitdomain.GitWorktree, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "gitinventory.store.AllocateTaskWorktree")
 	repoID = strings.TrimSpace(repoID)
 	taskID = strings.TrimSpace(taskID)
@@ -45,19 +44,16 @@ func (s *Store) AllocateTaskWorktree(ctx context.Context, repoID, taskID string,
 	if err != nil {
 		return gitdomain.GitWorktree{}, err
 	}
-	if gitSvc == nil {
-		gitSvc = gitwork.New()
-	}
-	opened, err := gitSvc.OpenRepository(ctx, repo.Path)
+	opened, err := s.gitSvc().OpenRepository(ctx, repo.Path)
 	if err != nil {
 		return gitdomain.GitWorktree{}, fmt.Errorf("open repository: %w", err)
 	}
-	if err := gitSvc.Fetch(ctx, opened, "origin"); err != nil {
+	if err := s.gitSvc().Fetch(ctx, opened, "origin"); err != nil {
 		return gitdomain.GitWorktree{}, fmt.Errorf("%w: fetch origin failed: %v", taskcoredomain.ErrInvalidInput, err)
 	}
 	defaultBranch := strings.TrimSpace(repo.DefaultBranch)
 	if defaultBranch == "" {
-		resolved, resolveErr := gitSvc.ResolveDefaultBranch(ctx, opened, "origin")
+		resolved, resolveErr := s.gitSvc().ResolveDefaultBranch(ctx, opened, "origin")
 		if resolveErr != nil {
 			return gitdomain.GitWorktree{}, fmt.Errorf("resolve default branch: %w", resolveErr)
 		}
@@ -81,5 +77,5 @@ func (s *Store) AllocateTaskWorktree(ctx context.Context, repoID, taskID string,
 		Branch:       branch,
 		CreateBranch: true,
 		StartPoint:   startPoint,
-	}, gitSvc)
+	})
 }

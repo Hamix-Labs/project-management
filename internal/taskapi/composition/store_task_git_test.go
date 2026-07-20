@@ -9,13 +9,11 @@ import (
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	gitinventorystore "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store"
-	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 )
 
 func seedLinkedWorktree(t *testing.T, s *composition.API) string {
 	t.Helper()
 	ctx := context.Background()
-	gitSvc := gitwork.New()
 	dir := t.TempDir()
 	if out, err := exec.Command("git", "init", "-b", "main", dir).CombinedOutput(); err != nil {
 		t.Fatalf("git init: %v %s", err, out)
@@ -29,7 +27,7 @@ func seedLinkedWorktree(t *testing.T, s *composition.API) string {
 			t.Fatalf("git %v: %v %s", args, err, out)
 		}
 	}
-	repoRow, err := s.CreateGlobalGitRepository(ctx, gitinventorystore.CreateGitRepositoryInput{Path: dir}, gitSvc)
+	repoRow, err := s.CreateGlobalGitRepository(ctx, gitinventorystore.CreateGitRepositoryInput{Path: dir})
 	if err != nil {
 		t.Fatalf("CreateGlobalGitRepository: %v", err)
 	}
@@ -38,7 +36,7 @@ func seedLinkedWorktree(t *testing.T, s *composition.API) string {
 		Branch:       "feature",
 		CreateBranch: true,
 		StartPoint:   "main",
-	}, gitSvc)
+	})
 	if err != nil {
 		t.Fatalf("CreateGitWorktreeForRepo: %v", err)
 	}
@@ -60,12 +58,11 @@ func TestStore_ValidateTaskWorktreeBinding(t *testing.T) {
 func TestStore_ValidateTaskWorktreeBinding_refusesMain(t *testing.T) {
 	ctx := context.Background()
 	s := composition.NewAPI(tasktestdb.OpenSQLite(t))
-	gitSvc := gitwork.New()
 	dir := t.TempDir()
 	if out, err := exec.Command("git", "init", "-b", "main", dir).CombinedOutput(); err != nil {
 		t.Fatalf("git init: %v %s", err, out)
 	}
-	repoRow, err := s.CreateGlobalGitRepository(ctx, gitinventorystore.CreateGitRepositoryInput{Path: dir}, gitSvc)
+	repoRow, err := s.CreateGlobalGitRepository(ctx, gitinventorystore.CreateGitRepositoryInput{Path: dir})
 	if err != nil {
 		t.Fatalf("CreateGlobalGitRepository: %v", err)
 	}

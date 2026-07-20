@@ -15,8 +15,8 @@ import (
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	gitinventorystore "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store"
-	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/apijson"
 )
 
 func createGlobalGitRepo(t *testing.T, h http.Handler, main string) string {
@@ -54,7 +54,7 @@ func seedLinkedWorktreeViaStore(t *testing.T, st *composition.API, repoID, main,
 		Branch:       branch,
 		CreateBranch: true,
 		StartPoint:   "main",
-	}, gitwork.New())
+	})
 	if err != nil {
 		t.Fatalf("CreateGitWorktreeForRepo: %v", err)
 	}
@@ -457,7 +457,7 @@ func TestHandler_gitStoreErrorsReturnStableCode(t *testing.T) {
 			if rec.Code != tt.status {
 				t.Fatalf("write status=%d want %d body=%s", rec.Code, tt.status, rec.Body.String())
 			}
-			var body jsonCodedErrorBody
+			var body apijson.JSONCodedErrorBody
 			if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
 				t.Fatal(err)
 			}

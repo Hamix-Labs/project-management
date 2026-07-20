@@ -12,7 +12,6 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/contract"
 	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
-	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	"gorm.io/gorm"
 )
 
@@ -63,13 +62,13 @@ func (s *Store) GetGitRepository(ctx context.Context, projectID, repoID string) 
 
 // CreateGitRepository validates path with git, then inserts repository + main worktree + current branch.
 // projectID is accepted for API-route compatibility but not stored (repos are global).
-func (s *Store) CreateGitRepository(ctx context.Context, projectID string, input CreateGitRepositoryInput, gitSvc gitwork.Service) (gitdomain.GitRepository, error) {
+func (s *Store) CreateGitRepository(ctx context.Context, projectID string, input CreateGitRepositoryInput) (gitdomain.GitRepository, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "gitinventory.store.CreateGitRepository")
-	repo, err := s.registerGitRepository(ctx, input, gitSvc)
+	repo, err := s.registerGitRepository(ctx, input)
 	if err != nil {
 		return gitdomain.GitRepository{}, err
 	}
-	if err := s.seedMainWorktreeWithCurrentBranch(ctx, repo, gitSvc); err != nil {
+	if err := s.seedMainWorktreeWithCurrentBranch(ctx, repo); err != nil {
 		return gitdomain.GitRepository{}, err
 	}
 	return repo, nil

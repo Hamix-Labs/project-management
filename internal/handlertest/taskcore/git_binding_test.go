@@ -39,7 +39,7 @@ func TestHTTP_createTask_branchBoundToWorktree_returns409(t *testing.T) {
 		Path:         wt2Path,
 		Branch:       "feature-bound",
 		CreateBranch: true,
-	}, gitSvc)
+	})
 	if err != nil {
 		t.Fatalf("CreateGitWorktreeForRepo first: %v", err)
 	}
@@ -48,7 +48,7 @@ func TestHTTP_createTask_branchBoundToWorktree_returns409(t *testing.T) {
 		Path:         wt3Path,
 		Branch:       "feature-bound",
 		CreateBranch: true,
-	}, gitSvc)
+	})
 	if domain.GitErrCode(err) != domain.GitCodeBranchBoundToWorktree {
 		t.Fatalf("CreateGitWorktreeForRepo duplicate branch: got %v want branch_bound_to_worktree", err)
 	}
@@ -69,7 +69,7 @@ func TestHTTP_createTask_projectRepoMismatch_returns409(t *testing.T) {
 	otherDir := t.TempDir()
 	gittest.InitMain(t, otherDir)
 	gittest.AttachOrigin(t, otherDir)
-	otherRepo, err := st.CreateGlobalGitRepository(ctx, gitinventorystore.CreateGitRepositoryInput{Path: otherDir}, gitSvc)
+	otherRepo, err := st.CreateGlobalGitRepository(ctx, gitinventorystore.CreateGitRepositoryInput{Path: otherDir})
 	if err != nil {
 		t.Fatalf("CreateGlobalGitRepository: %v", err)
 	}

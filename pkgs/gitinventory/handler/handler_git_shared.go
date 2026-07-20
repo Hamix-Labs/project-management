@@ -37,7 +37,7 @@ func (h *Handler) serveCreateGitRepository(w http.ResponseWriter, r *http.Reques
 		HostPath:      body.HostPath,
 		DefaultBranch: body.DefaultBranch,
 	}
-	repo, err := h.write.CreateGlobalGitRepository(r.Context(), input, h.gitService())
+	repo, err := h.write.CreateGlobalGitRepository(r.Context(), input)
 	if err != nil {
 		WriteGitStoreError(w, r, op, err)
 		return
@@ -96,10 +96,9 @@ func (h *Handler) serveDeleteGitWorktree(w http.ResponseWriter, r *http.Request,
 	r = calltrace.WithRequestRoot(r, op)
 	worktreeID := r.PathValue("worktreeId")
 	removeFromDisk, force := gitWorktreeDeleteQuery(r, op)
-	gitSvc := h.gitService()
 	var err error
 	if removeFromDisk {
-		err = h.write.RemoveGitWorktreeFromDiskByID(r.Context(), worktreeID, force, gitSvc)
+		err = h.write.RemoveGitWorktreeFromDiskByID(r.Context(), worktreeID, force)
 	} else {
 		err = h.inventory.UnregisterGitWorktreeByID(r.Context(), worktreeID)
 	}

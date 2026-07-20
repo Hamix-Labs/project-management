@@ -23,6 +23,13 @@ type ComposeGitValidator interface {
 	ValidatePromptMentionsForWorktree(ctx context.Context, worktreeID *string, prompt string) error
 }
 
+// RunnerValidator checks that a runner id is known at the composition edge.
+// Implemented outside this BC (wrapping agents/runner/registry) so taskcore
+// does not import agents.
+type RunnerValidator interface {
+	ValidateRunner(id string) error
+}
+
 // NotifyChangeFunc aliases the contract hint-with-id SSE notify type.
 type NotifyChangeFunc = contract.NotifyChangeFunc
 
@@ -35,6 +42,7 @@ type Deps struct {
 	Settings          SettingsReader
 	GitCompose        ComposeGitValidator
 	HTTP              contract.HTTPHelpers
+	Runners           RunnerValidator
 	NotifyChange      NotifyChangeFunc
 	NotifyTaskChanged NotifyTaskChangedFunc
 }
@@ -45,6 +53,7 @@ type Handler struct {
 	settings          SettingsReader
 	gitCompose        ComposeGitValidator
 	httpPort          contract.HTTPHelpers
+	runners           RunnerValidator
 	notifyChange      NotifyChangeFunc
 	notifyTaskChanged NotifyTaskChangedFunc
 }
@@ -58,6 +67,7 @@ func New(deps Deps) *Handler {
 		settings:          deps.Settings,
 		gitCompose:        deps.GitCompose,
 		httpPort:          deps.HTTP,
+		runners:           deps.Runners,
 		notifyChange:      deps.NotifyChange,
 		notifyTaskChanged: deps.NotifyTaskChanged,
 	}

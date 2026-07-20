@@ -30,7 +30,7 @@ func (rig *supervisorTestRig) seedGitRepository(t *testing.T, dir string) {
 	ctx := context.Background()
 	if _, err := rig.store.CreateGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, gitinventorystore.CreateGitRepositoryInput{
 		Path: dir,
-	}, gitwork.New()); err != nil {
+	}); err != nil {
 		t.Fatalf("CreateGitRepository: %v", err)
 	}
 }

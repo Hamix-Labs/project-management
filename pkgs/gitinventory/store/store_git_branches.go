@@ -57,7 +57,7 @@ func (s *Store) GetGitBranch(ctx context.Context, projectID, branchID string) (g
 }
 
 // CreateGitBranch creates a branch via git and inserts a row.
-func (s *Store) CreateGitBranch(ctx context.Context, projectID, repoID string, input CreateGitBranchInput, gitSvc gitwork.Service) (gitdomain.GitBranch, error) {
+func (s *Store) CreateGitBranch(ctx context.Context, projectID, repoID string, input CreateGitBranchInput) (gitdomain.GitBranch, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "gitinventory.store.CreateGitBranch")
 	repo, err := s.GetGitRepository(ctx, projectID, repoID)
 	if err != nil {
@@ -67,14 +67,11 @@ func (s *Store) CreateGitBranch(ctx context.Context, projectID, repoID string, i
 	if name == "" {
 		return gitdomain.GitBranch{}, fmt.Errorf("%w: name required", taskcoredomain.ErrInvalidInput)
 	}
-	if gitSvc == nil {
-		gitSvc = gitwork.New()
-	}
-	opened, err := gitSvc.OpenRepository(ctx, repo.Path)
+	opened, err := s.gitSvc().OpenRepository(ctx, repo.Path)
 	if err != nil {
 		return gitdomain.GitBranch{}, fmt.Errorf("open repository: %w", err)
 	}
-	created, err := gitSvc.CreateBranch(ctx, opened, name, strings.TrimSpace(input.StartPoint))
+	created, err := s.gitSvc().CreateBranch(ctx, opened, name, strings.TrimSpace(input.StartPoint))
 	if err != nil {
 		if errors.Is(err, gitwork.ErrBranchExists) {
 			return gitdomain.GitBranch{}, gitdomain.NewGitErr(gitdomain.GitCodeBranchExists, "branch already exists")
@@ -99,7 +96,7 @@ func (s *Store) CreateGitBranch(ctx context.Context, projectID, repoID string, i
 }
 
 // DeleteGitBranch removes a branch via git and the database.
-func (s *Store) DeleteGitBranch(ctx context.Context, projectID, branchID string, force bool, gitSvc gitwork.Service) error {
+func (s *Store) DeleteGitBranch(ctx context.Context, projectID, branchID string, force bool) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "gitinventory.store.DeleteGitBranch")
 	branch, err := s.GetGitBranch(ctx, projectID, branchID)
 	if err != nil {
@@ -112,14 +109,11 @@ func (s *Store) DeleteGitBranch(ctx context.Context, projectID, branchID string,
 	if err != nil {
 		return err
 	}
-	if gitSvc == nil {
-		gitSvc = gitwork.New()
-	}
-	opened, err := gitSvc.OpenRepository(ctx, repo.Path)
+	opened, err := s.gitSvc().OpenRepository(ctx, repo.Path)
 	if err != nil {
 		return fmt.Errorf("open repository: %w", err)
 	}
-	worktrees, err := gitSvc.ListWorktrees(ctx, opened)
+	worktrees, err := s.gitSvc().ListWorktrees(ctx, opened)
 	if err != nil {
 		return fmt.Errorf("list worktrees: %w", err)
 	}
@@ -128,7 +122,7 @@ func (s *Store) DeleteGitBranch(ctx context.Context, projectID, branchID string,
 			return gitdomain.NewGitErr(gitdomain.GitCodeBranchCheckedOut, "branch is checked out in a worktree")
 		}
 	}
-	if err := gitSvc.DeleteBranch(ctx, opened, branch.Name, force); err != nil {
+	if err := s.gitSvc().DeleteBranch(ctx, opened, branch.Name, force); err != nil {
 		if errors.Is(err, gitwork.ErrBranchCheckedOut) {
 			return gitdomain.NewGitErr(gitdomain.GitCodeBranchCheckedOut, "branch is checked out in a worktree")
 		}

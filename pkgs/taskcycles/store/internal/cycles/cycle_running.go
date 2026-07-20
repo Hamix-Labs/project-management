@@ -1,12 +1,12 @@
-package checklist
+package cycles
 
-import "github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 import (
 	"context"
 	"errors"
 	"fmt"
 	"log/slog"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/model"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
@@ -15,8 +15,9 @@ import (
 )
 
 // IsTaskCycleRunning reports whether taskID has a task_cycles row with status=running.
+// When no running cycle exists, it still verifies the task row exists (ErrNotFound otherwise).
 func IsTaskCycleRunning(ctx context.Context, db *gorm.DB, taskID string) (bool, error) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.checklist.IsTaskCycleRunning")
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.cycles.IsTaskCycleRunning")
 	return isTaskCycleRunningInTx(db.WithContext(ctx), taskID)
 }
 
