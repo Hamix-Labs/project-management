@@ -23,6 +23,17 @@ import {
   assertTaskPathId,
 } from "./taskRequestBounds";
 import { parseDependsOnList } from "./tasks.read";
+import { isRecord, parseNonEmptyString } from "./parseTaskApiCore";
+
+function parseTaskDraftSaveResponse(raw: unknown): { id: string; name: string } {
+  if (!isRecord(raw)) {
+    throw new Error("Invalid API response: draft save payload must be object");
+  }
+  return {
+    id: parseNonEmptyString(raw.id, "id"),
+    name: parseNonEmptyString(raw.name, "name"),
+  };
+}
 
 export async function patchTaskEventUserResponse(
   taskId: string,
@@ -153,9 +164,7 @@ export async function saveTaskDraft(input: {
     }),
   });
   if (!res.ok) throw await apiErrorFromResponse(res);
-  const raw = (await res.json()) as { id: string; name: string };
-  if (!raw?.id || !raw?.name) throw new Error("Invalid API response: draft save payload");
-  return raw;
+  return parseTaskDraftSaveResponse(await res.json());
 }
 
 export async function deleteTaskDraft(id: string): Promise<void> {

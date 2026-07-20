@@ -24,6 +24,12 @@ export type TaskDraftPayload = {
    * memory nodes the operator selected before closing the modal.
    */
   project_context_item_ids?: string[];
+  /**
+   * Optional git binding fields persisted with newer drafts. Omitted in
+   * older drafts; when present, resume restores repo/worktree selection.
+   */
+  repository_id?: string;
+  worktree_id?: string;
 };
 
 export type TaskDraftSummary = {
