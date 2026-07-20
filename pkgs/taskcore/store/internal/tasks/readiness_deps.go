@@ -1,11 +1,11 @@
 package tasks
 
-import "github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 import (
 	"context"
 	"log/slog"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/scheduling"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
 	"gorm.io/gorm"
 )
 
@@ -21,7 +21,7 @@ func DependenciesSatisfied(ctx context.Context, db *gorm.DB, taskID string) (boo
 		if err != nil {
 			return false, err
 		}
-		if !scheduling.EdgeSatisfied(predecessor, e.Satisfies) {
+		if !contract.EdgeSatisfied(predecessor, e.Satisfies) {
 			return false, nil
 		}
 	}

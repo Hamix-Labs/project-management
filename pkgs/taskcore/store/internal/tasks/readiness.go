@@ -1,27 +1,27 @@
 package tasks
 
-import "github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 import (
 	"context"
 	"log/slog"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/scheduling"
 	"gorm.io/gorm"
 )
 
 // ReadyForAgentPickup applies the same predicates as ListQueueCandidates for one task row.
-func ReadyForAgentPickup(ctx context.Context, db *gorm.DB, t *domain.Task, now time.Time) (bool, scheduling.FailedPredicate, error) {
+func ReadyForAgentPickup(ctx context.Context, db *gorm.DB, t *domain.Task, now time.Time) (bool, contract.FailedPredicate, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.tasks.ReadyForAgentPickup")
-	partial := scheduling.EvaluateWorkerReadiness(t, now, false)
-	if !partial.Ready && partial.FailedPredicate != scheduling.FailedPredicateDependencies {
+	partial := contract.EvaluateWorkerReadiness(t, now, false)
+	if !partial.Ready && partial.FailedPredicate != contract.FailedPredicateDependencies {
 		return false, partial.FailedPredicate, nil
 	}
 	depsMet, err := DependenciesSatisfied(ctx, db, t.ID)
 	if err != nil {
-		return false, scheduling.FailedPredicateDependencies, err
+		return false, contract.FailedPredicateDependencies, err
 	}
-	result := scheduling.EvaluateWorkerReadiness(t, now, depsMet)
+	result := contract.EvaluateWorkerReadiness(t, now, depsMet)
 	return result.Ready, result.FailedPredicate, nil
 }
