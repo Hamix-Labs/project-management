@@ -19,6 +19,7 @@ export type ProjectContextItem = {
   project_id: string;
   kind: ProjectContextKind;
   title: string;
+  description: string;
   body: string;
   source_task_id?: string;
   source_cycle_id?: string;

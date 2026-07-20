@@ -16,6 +16,7 @@ const contextItems: ProjectContextItem[] = [
     project_id: projectId,
     kind: "risk",
     title: "New One",
+    description: "",
     body: "Risk details",
     created_by: "user",
     pinned: false,
@@ -27,6 +28,7 @@ const contextItems: ProjectContextItem[] = [
     project_id: projectId,
     kind: "decision",
     title: "Decision node",
+    description: "",
     body: "Decision details",
     created_by: "user",
     pinned: false,
@@ -78,7 +80,9 @@ describe("ProjectContextPicker", () => {
     const dialog = screen.getByRole("dialog", { name: /choose task context/i });
 
     await user.type(
-      within(dialog).getByPlaceholderText(/search by title, body, or kind/i),
+      within(dialog).getByPlaceholderText(
+        /search by title, description, body, or kind/i,
+      ),
       "risk",
     );
 

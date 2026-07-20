@@ -60,7 +60,7 @@ Schema and table definitions: [data-model.md](../data-model.md) (Project context
 | Term | Definition |
 | --- | --- |
 | **Project** | Long-lived container with `name`, `description`, `context_summary`, and `active` / `archived` status. Not a task parent. |
-| **Context item** | Human-inspectable node (`project_context_items`): `kind`, `title`, `body`, optional `source_task_id` / `source_cycle_id`, `pinned`. |
+| **Context item** | Human-inspectable node (`project_context_items`): `kind`, `title`, optional `description`, `body`, optional `source_task_id` / `source_cycle_id`, `pinned`. |
 | **Context edge** | User-curated link between two items in the same project: `relation` + `strength` (1–5) + optional `note`. |
 | **Selection** | Task JSONB `project_context_item_ids` — ordered allowlist of item ids (max 20, deduped). |
 | **Rendered context** | Plain-text `<project_context>…</project_context>` block built by the harness. |
@@ -129,7 +129,7 @@ Operators maintain canonical memory via project APIs ([`handler_projects.go`](..
 
 1. **Create or pick a project** — `POST /projects` or use the seeded default project (`00000000-0000-4000-8000-000000000001`). See [`domain.DefaultProjectID`](../../pkgs/tasks/domain/project_defaults.go).
 
-2. **Add context items** — Import a local `.txt` or `.md` file from the project context page (alias = `title`, file text = `body`, `kind` = `note`), or call `POST /projects/{id}/context` with `kind`, `title`, `body`, optional `pinned`, `source_task_id`, `source_cycle_id`. Store requires non-empty title and body; title ≤ **200** Unicode characters; body ≤ **512 KiB** UTF-8 bytes (reject, never truncate). See [`ValidateProjectContextTitle`](../../pkgs/projects/domain/limits.go) / [`ValidateProjectContextBody`](../../pkgs/projects/domain/limits.go) and [`CreateContext`](../../pkgs/projects/store/internal/projects.go).
+2. **Add context items** — Import a local `.txt` or `.md` file from the project context page (alias = `title`, short description required in the SPA, file text = `body`, `kind` = `note`), or call `POST /projects/{id}/context` with `kind`, `title`, `body`, optional `description`, `pinned`, `source_task_id`, `source_cycle_id`. Store requires non-empty title and body; title ≤ **200** Unicode characters; description ≤ **400** Unicode characters (empty allowed); body ≤ **512 KiB** UTF-8 bytes (reject, never truncate). See [`ValidateProjectContextTitle`](../../pkgs/projects/domain/limits.go) / [`ValidateProjectContextDescription`](../../pkgs/projects/domain/limits.go) / [`ValidateProjectContextBody`](../../pkgs/projects/domain/limits.go) and [`CreateContext`](../../pkgs/projects/store/internal/projects.go).
 
 3. **Link items (optional)** — `POST /projects/{id}/context/edges` with `source_context_id`, `target_context_id`, `relation`, `strength` (1–5), optional `note`. Both nodes must belong to the same project.
 
@@ -253,6 +253,7 @@ Validation errors surface as `400` with `domain.ErrInvalidInput` messages (e.g. 
 | `id` | Server-assigned UUID |
 | `kind` | `note` \| `decision` \| `constraint` \| `handoff` |
 | `title`, `body` | Required on create |
+| `description` | Optional short blurb for selection UX (0–400 Unicode chars); empty allowed |
 | `pinned` | List API returns pinned items first |
 | `source_task_id`, `source_cycle_id` | Optional provenance |
 

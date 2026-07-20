@@ -137,6 +137,7 @@ func (h *Handler) createProjectContext(w http.ResponseWriter, r *http.Request) {
 		ID:            body.ID,
 		Kind:          body.Kind,
 		Title:         body.Title,
+		Description:   body.Description,
 		Body:          body.Body,
 		SourceTaskID:  body.SourceTaskID,
 		SourceCycleID: body.SourceCycleID,
@@ -202,10 +203,11 @@ func (h *Handler) patchProjectContext(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	item, err := h.store.UpdateProjectContext(r.Context(), projectID, itemID, contract.UpdateProjectContextInput{
-		Kind:   body.Kind,
-		Title:  body.Title,
-		Body:   body.Body,
-		Pinned: body.Pinned,
+		Kind:        body.Kind,
+		Title:       body.Title,
+		Description: body.Description,
+		Body:        body.Body,
+		Pinned:      body.Pinned,
 	})
 	if err != nil {
 		writeStoreError(w, r, op, err)

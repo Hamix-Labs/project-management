@@ -14,6 +14,7 @@ function makeItem(overrides: Partial<ProjectContextItem>): ProjectContextItem {
     project_id: projectId,
     kind: overrides.kind ?? "decision",
     title: overrides.title ?? "Decision title",
+    description: overrides.description ?? "",
     body: overrides.body ?? "Decision body",
     created_by: "user",
     pinned: false,

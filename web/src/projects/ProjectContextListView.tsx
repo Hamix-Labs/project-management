@@ -14,6 +14,7 @@ type Props = {
     patch: {
       kind: ProjectContextKind;
       title: string;
+      description: string;
       body: string;
       pinned: boolean;
     },
@@ -39,7 +40,7 @@ export function ProjectContextListView({
     const query = nodeQuery.trim().toLowerCase();
     if (!query) return items;
     return items.filter((item) =>
-      [item.title, item.body, item.kind]
+      [item.title, item.description, item.body, item.kind]
         .join(" ")
         .toLowerCase()
         .includes(query),
@@ -62,7 +63,7 @@ export function ProjectContextListView({
           <input
             value={nodeQuery}
             onChange={(event) => setNodeQuery(event.target.value)}
-            placeholder="Search by title, body, or kind..."
+            placeholder="Search by title, description, body, or kind..."
           />
         </label>
         <span className="pc__count">{resultLabel}</span>

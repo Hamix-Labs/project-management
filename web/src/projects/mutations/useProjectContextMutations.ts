@@ -17,6 +17,7 @@ export function useProjectContextMutations(projectId: string) {
     mutationFn: (input: {
       kind: ProjectContextKind;
       title: string;
+      description: string;
       body: string;
       pinned: boolean;
     }) => createProjectContext(projectId, input),
@@ -27,6 +28,7 @@ export function useProjectContextMutations(projectId: string) {
       id: string;
       kind: ProjectContextKind;
       title: string;
+      description: string;
       body: string;
       pinned: boolean;
     }) => {

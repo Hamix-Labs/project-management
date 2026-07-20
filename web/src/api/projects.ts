@@ -78,6 +78,10 @@ export function parseProjectContextItem(value: unknown): ProjectContextItem {
     project_id: parseNonEmptyString(value.project_id, "project_id"),
     kind: parseProjectContextKind(value.kind),
     title: parseString(value.title, "title"),
+    description:
+      value.description === undefined || value.description === null
+        ? ""
+        : parseString(value.description, "description"),
     body: parseString(value.body, "body"),
     created_by: parseActor(value.created_by),
     pinned: parseBooleanField(value.pinned, "pinned"),
@@ -223,6 +227,7 @@ export async function createProjectContext(
     id?: string;
     kind?: ProjectContextKind;
     title: string;
+    description?: string;
     body: string;
     source_task_id?: string;
     source_cycle_id?: string;
@@ -248,6 +253,7 @@ export async function patchProjectContext(
   input: {
     kind?: ProjectContextKind;
     title?: string;
+    description?: string;
     body?: string;
     pinned?: boolean;
   },

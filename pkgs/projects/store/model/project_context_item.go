@@ -12,6 +12,7 @@ type ProjectContextItem struct {
 	ProjectID     string                    `gorm:"not null;index"`
 	Kind          domain.ProjectContextKind `gorm:"not null;index;default:note"`
 	Title         string                    `gorm:"not null"`
+	Description   string                    `gorm:"not null;default:''"`
 	Body          string                    `gorm:"type:text;not null"`
 	SourceTaskID  *string                   `gorm:"index"`
 	SourceCycleID *string                   `gorm:"index"`

@@ -10,6 +10,7 @@ function makeItem(overrides: Partial<ProjectContextItem> = {}): ProjectContextIt
     project_id: "project-1",
     kind: overrides.kind ?? "decision",
     title: overrides.title ?? "Decision",
+    description: overrides.description ?? "",
     body: "",
     created_by: "user",
     pinned: false,
@@ -35,6 +36,24 @@ describe("ProjectContextSuggestionList", () => {
     // Short id is the first six alphanumeric characters lowercased.
     expect(screen.getByText("· ctxdec")).toBeInTheDocument();
     expect(screen.getByText("· ctxcon")).toBeInTheDocument();
+  });
+
+  it("renders the short description when present", () => {
+    render(
+      <ProjectContextSuggestionList
+        items={[
+          {
+            item: makeItem({
+              id: "ctx-desc",
+              title: "CONTRIBUTING",
+              description: "Repo contribution guide",
+            }),
+          },
+        ]}
+        command={vi.fn()}
+      />,
+    );
+    expect(screen.getByText("Repo contribution guide")).toBeInTheDocument();
   });
 
   it("invokes command when an item is selected", async () => {

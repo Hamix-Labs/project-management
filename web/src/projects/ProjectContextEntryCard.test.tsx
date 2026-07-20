@@ -31,6 +31,7 @@ describe("ProjectContextEntryCard", () => {
               project_id: "proj-1",
               kind: "constraint",
               title: "A",
+              description: "",
               body: "B",
               created_by: "user",
               pinned: false,

@@ -41,3 +41,21 @@ func TestValidateProjectContextBody(t *testing.T) {
 		t.Fatalf("at-limit body: %v", err)
 	}
 }
+
+func TestValidateProjectContextDescription(t *testing.T) {
+	t.Parallel()
+	if err := ValidateProjectContextDescription(""); err != nil {
+		t.Fatalf("empty description: %v", err)
+	}
+	if err := ValidateProjectContextDescription("short blurb for selection"); err != nil {
+		t.Fatalf("short description: %v", err)
+	}
+	long := strings.Repeat("ä", MaxProjectContextDescriptionChars+1)
+	if err := ValidateProjectContextDescription(long); !errors.Is(err, ErrInvalidInput) {
+		t.Fatalf("oversize description err = %v", err)
+	}
+	atLimit := strings.Repeat("a", MaxProjectContextDescriptionChars)
+	if err := ValidateProjectContextDescription(atLimit); err != nil {
+		t.Fatalf("at-limit description: %v", err)
+	}
+}

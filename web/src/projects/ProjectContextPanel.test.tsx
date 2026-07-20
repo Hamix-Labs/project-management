@@ -20,6 +20,7 @@ const contextItem: ProjectContextItem = {
   project_id: "project-1",
   kind: "note",
   title: "API plan",
+  description: "",
   body: "Use REST for v1.",
   created_by: "user",
   pinned: false,

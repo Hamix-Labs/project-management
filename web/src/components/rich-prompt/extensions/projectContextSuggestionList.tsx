@@ -47,6 +47,11 @@ export function ProjectContextSuggestionList({
                   <span className="tiptap-suggestion-list__title">
                     {item.title || "(untitled)"}
                   </span>
+                  {item.description.trim() ? (
+                    <span className="tiptap-suggestion-list__description">
+                      {item.description}
+                    </span>
+                  ) : null}
                   <span className="tiptap-suggestion-list__meta">
                     <span className="tiptap-suggestion-list__kind">
                       {item.kind}

@@ -33,6 +33,7 @@ type projectContextCreateJSON struct {
 	ID            string                    `json:"id"`
 	Kind          domain.ProjectContextKind `json:"kind"`
 	Title         string                    `json:"title"`
+	Description   string                    `json:"description"`
 	Body          string                    `json:"body"`
 	SourceTaskID  *string                   `json:"source_task_id"`
 	SourceCycleID *string                   `json:"source_cycle_id"`
@@ -40,15 +41,16 @@ type projectContextCreateJSON struct {
 }
 
 type projectContextPatchJSON struct {
-	Kind   *domain.ProjectContextKind `json:"kind"`
-	Title  *string                    `json:"title"`
-	Body   *string                    `json:"body"`
-	Pinned *bool                      `json:"pinned"`
+	Kind        *domain.ProjectContextKind `json:"kind"`
+	Title       *string                    `json:"title"`
+	Description *string                    `json:"description"`
+	Body        *string                    `json:"body"`
+	Pinned      *bool                      `json:"pinned"`
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (p projectContextPatchJSON) isEmpty() bool {
-	return p.Kind == nil && p.Title == nil && p.Body == nil && p.Pinned == nil
+	return p.Kind == nil && p.Title == nil && p.Description == nil && p.Body == nil && p.Pinned == nil
 }
 
 type projectContextListResponse struct {

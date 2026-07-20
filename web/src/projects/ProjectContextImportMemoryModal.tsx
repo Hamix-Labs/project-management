@@ -12,7 +12,9 @@ import {
 } from "react";
 import {
   MAX_PROJECT_CONTEXT_BODY_BYTES,
+  MAX_PROJECT_CONTEXT_DESCRIPTION_CHARS,
   MEMORY_IMPORT_ACCEPT,
+  validateProjectContextDescription,
 } from "./projectContextLimits";
 import {
   formatMemoryImportBytes,
@@ -30,6 +32,7 @@ type Props = {
   isPending: boolean;
   onImport: (input: {
     title: string;
+    description: string;
     body: string;
   }) => void;
 };
@@ -43,11 +46,14 @@ export function ProjectContextImportMemoryModal({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropzoneId = useId();
   const aliasId = useId();
+  const descriptionId = useId();
+  const descriptionHintId = useId();
   const errorId = useId();
   const helperId = useId();
 
   const [imported, setImported] = useState<MemoryImportFileResult | null>(null);
   const [alias, setAlias] = useState("");
+  const [description, setDescription] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [reading, setReading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
@@ -56,6 +62,7 @@ export function ProjectContextImportMemoryModal({
     if (!open) {
       setImported(null);
       setAlias("");
+      setDescription("");
       setError(null);
       setReading(false);
       setDragActive(false);
@@ -88,10 +95,14 @@ export function ProjectContextImportMemoryModal({
 
   const busy = isPending || reading;
   const aliasError = alias ? validateMemoryAlias(alias) : null;
+  const trimmedDescription = description.trim();
+  const descriptionError = validateProjectContextDescription(description);
   const canSubmit =
     Boolean(imported) &&
     !aliasError &&
     sanitizeMemoryAlias(alias).length > 0 &&
+    trimmedDescription.length > 0 &&
+    !descriptionError &&
     !busy;
 
   function openFilePicker() {
@@ -144,7 +155,11 @@ export function ProjectContextImportMemoryModal({
       setError(titleErr);
       return;
     }
-    onImport({ title, body: imported.text });
+    if (descriptionError) {
+      setError(descriptionError);
+      return;
+    }
+    onImport({ title, description: trimmedDescription, body: imported.text });
   }
 
   return (
@@ -165,7 +180,8 @@ export function ProjectContextImportMemoryModal({
             <h2 id="project-context-import-title">Import memory file</h2>
             <p id="project-context-import-desc" className="muted">
               Import a local .txt or .md file as a project memory node. The
-              alias is what you and the agent see when selecting it.
+              alias and short description help when choosing this memory for a
+              task.
             </p>
           </div>
         </div>
@@ -253,6 +269,35 @@ export function ProjectContextImportMemoryModal({
           {aliasError ? (
             <p className="pd__inline-error" role="alert">
               {aliasError}
+            </p>
+          ) : null}
+        </div>
+
+        <div className="field grow">
+          <FieldLabel htmlFor={descriptionId} requirement="required">
+            Short description
+          </FieldLabel>
+          <textarea
+            id={descriptionId}
+            name="description"
+            value={description}
+            required
+            aria-required="true"
+            aria-invalid={Boolean(descriptionError)}
+            aria-describedby={descriptionHintId}
+            disabled={busy || !imported}
+            maxLength={MAX_PROJECT_CONTEXT_DESCRIPTION_CHARS}
+            rows={2}
+            placeholder="One or two sentences explaining when to use this memory"
+            onChange={(event) => setDescription(event.target.value)}
+          />
+          <p id={descriptionHintId} className="pc__field-hint">
+            Shown when selecting this node. Max{" "}
+            {MAX_PROJECT_CONTEXT_DESCRIPTION_CHARS} characters.
+          </p>
+          {descriptionError ? (
+            <p className="pd__inline-error" role="alert">
+              {descriptionError}
             </p>
           ) : null}
         </div>
