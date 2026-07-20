@@ -11,7 +11,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler/writepolicy"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler/policy"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 )
 
@@ -38,10 +38,10 @@ func TestWritepolicy_publishClassification(t *testing.T) {
 		{realtime.TaskCycleChanged, false, false},
 	}
 	for _, tc := range tests {
-		if got := writepolicy.EnrichedTaskChangeEvent(tc.typ); got != tc.enriched {
+		if got := policy.EnrichedTaskChangeEvent(tc.typ); got != tc.enriched {
 			t.Errorf("EnrichedTaskChangeEvent(%q) = %v, want %v", tc.typ, got, tc.enriched)
 		}
-		if got := writepolicy.IsHintOnly(tc.typ); got != tc.hintOnly {
+		if got := policy.IsHintOnly(tc.typ); got != tc.hintOnly {
 			t.Errorf("IsHintOnly(%q) = %v, want %v", tc.typ, got, tc.hintOnly)
 		}
 	}

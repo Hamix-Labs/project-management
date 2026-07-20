@@ -137,14 +137,14 @@ From [`Publish`](../../pkgs/tasks/handler/sse.go):
 5. **Fanout** — non-blocking send to each subscriber channel
 6. **Evict** — full channel → remove subscriber, close `cancel`, count eviction metrics (not silent drop)
 
-HTTP handlers use [`sse_notify.go`](../../pkgs/tasks/handler/sse_notify.go) helpers, which apply [`writepolicy`](../../pkgs/tasks/handler/writepolicy/publish_policy.go) at publish time (`publishPolicyEvent` strips `data` from hint-only types; enriched `task_created` / `task_updated` may carry `data`):
+HTTP handlers use [`sse_notify.go`](../../pkgs/tasks/handler/sse_notify.go) helpers, which apply [`policy`](../../pkgs/tasks/handler/policy/publish_policy.go) at publish time (`publishPolicyEvent` strips `data` from hint-only types; enriched `task_created` / `task_updated` may carry `data`):
 
 - `notifyChange(type, id)` — hint-only with task or project id
-- `notifyScopelessChange(type)` — id-less hints (`settings_changed`, `agent_run_cancelled`); classified in [`writepolicy.ScopelessHintChangeTypes`](../../pkgs/tasks/handler/writepolicy/publish_policy.go)
-- `notifyTaskChanged(type, id, data)` — enriched task tree when `writepolicy.EnrichedTaskChangeEvent` is true
+- `notifyScopelessChange(type)` — id-less hints (`settings_changed`, `agent_run_cancelled`); classified in [`policy.ScopelessHintChangeTypes`](../../pkgs/tasks/handler/policy/publish_policy.go)
+- `notifyTaskChanged(type, id, data)` — enriched task tree when `policy.EnrichedTaskChangeEvent` is true
 - `notifyCycleChanged(...)` — cycle frames with `cycle_id`
 
-Classification table (hint-only vs enriched): [`writepolicy/publish_policy.go`](../../pkgs/tasks/handler/writepolicy/publish_policy.go) (`HintOnlyChangeTypes`, `EnrichedTaskChangeEvent`).
+Classification table (hint-only vs enriched): [`policy/publish_policy.go`](../../pkgs/tasks/handler/policy/publish_policy.go) (`HintOnlyChangeTypes`, `EnrichedTaskChangeEvent`).
 
 Direct `h.hub.Publish` is confined to [`sse_notify.go`](../../pkgs/tasks/handler/sse_notify.go); CI enforces this via the `sse publish boundary` step in [`scripts/check-go.sh`](../../scripts/check-go.sh).
 

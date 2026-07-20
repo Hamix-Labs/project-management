@@ -8,7 +8,7 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	settingshandler "github.com/AlexsanderHamir/Hamix/pkgs/settings/handler"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler/readpolicy"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler/policy"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/service"
 )
 
@@ -56,9 +56,9 @@ func (h *Handler) bootstrap(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	data, err := service.Bootstrap(ctx, h.store, service.BootstrapLimits{
-		TasksLimit:    readpolicy.BootstrapListLimit,
-		ProjectsLimit: readpolicy.BootstrapProjectsLimit,
-		DraftsLimit:   readpolicy.BootstrapDraftsLimit,
+		TasksLimit:    policy.BootstrapListLimit,
+		ProjectsLimit: policy.BootstrapProjectsLimit,
+		DraftsLimit:   policy.BootstrapDraftsLimit,
 	})
 	if err != nil {
 		handlerhttp.WriteStoreError(w, r, op, err)
@@ -67,11 +67,11 @@ func (h *Handler) bootstrap(w http.ResponseWriter, r *http.Request) {
 
 	resp := bootstrapResponse{
 		Settings: settingshandler.SettingsWireFrom(data.Settings),
-		Tasks:    taskcorehandler.BuildListResponse(data.Tasks, readpolicy.BootstrapListLimit, 0, data.HasMore),
+		Tasks:    taskcorehandler.BuildListResponse(data.Tasks, policy.BootstrapListLimit, 0, data.HasMore),
 		Stats:    taskcorehandler.TaskStatsResponseFromStore(data.Stats),
 		Projects: projectsListResponse{
 			Projects: data.Projects,
-			Limit:    readpolicy.BootstrapProjectsLimit,
+			Limit:    policy.BootstrapProjectsLimit,
 		},
 		Drafts: bootstrapDraftsPayload{Drafts: data.Drafts},
 	}

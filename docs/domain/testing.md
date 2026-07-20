@@ -83,7 +83,7 @@ Calibrate on **Linux CI** if Windows and Linux totals diverge by more than ~1%.
 | **Git wrapper** | Real `git` in `t.TempDir()` | git binary + fakes for store |
 | **Opt-in real Cursor** | Runner integration | `HAMIX_TEST_REAL_CURSOR=1` (local only; never CI) |
 
-Handler **readpolicy** / **writepolicy** are pure packages — unit test without HTTP.
+Handler **policy** are pure packages — unit test without HTTP.
 
 Taskapi assembly smoke: `internal/taskapi/server_smoke_test.go` (`NewHTTPHandler` + `/health`, `/v1/bootstrap`).
 
@@ -95,8 +95,8 @@ Taskapi assembly smoke: `internal/taskapi/server_smoke_test.go` (`NewHTTPHandler
 | Scheduling rules | `pkgs/tasks/scheduling/*_test.go` (parity with domain) |
 | Harness cycle / verify | [harness-testing.md](harness-testing.md) — `harness.Run`, not `worker.Worker` |
 | Worker admission / queue | `pkgs/agents/worker/` |
-| SSE publish shape | `writepolicy` tests + handler SSE tests |
-| Bootstrap limits | `readpolicy` tests + `handler_bootstrap` tests |
+| SSE publish shape | `policy` publish tests + handler SSE tests |
+| Bootstrap limits | `policy` read-limit tests + `handler_bootstrap` tests |
 
 ## Anti-patterns
 

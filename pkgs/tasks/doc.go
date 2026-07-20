@@ -2,7 +2,7 @@
 // Domain CRUD lives in sibling bounded contexts (taskcore, taskcycles, …).
 // Subpackages under this path:
 //
-//   - handler — REST/SSE mux; registers BC routes; bootstrap, health, RUM, writepolicy/readpolicy
+//   - handler — REST/SSE mux; registers BC routes; bootstrap, health, RUM, policy
 //   - handlerhttp — shared HTTP JSON/path/limit helpers for BC handlers
 //   - middleware — outer HTTP stack (auth, rate limit, idempotency, …)
 //   - postgres — GORM open + AutoMigrate orchestration (BC models registered here)

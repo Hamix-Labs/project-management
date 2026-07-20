@@ -24,7 +24,7 @@ Repository paths grouped by subsystem. Read only the rows relevant to your task.
 
 | Area | Path | Purpose | Deep dive |
 | --- | --- | --- | --- |
-| HTTP API + SSE | `pkgs/tasks/handler/` | SSE hub, bootstrap, writepolicy; delegates core `/tasks*` to taskcore | [handler/README.md](../pkgs/tasks/handler/README.md), [domain/sse-hub.md](./domain/sse-hub.md) |
+| HTTP API + SSE | `pkgs/tasks/handler/` | SSE hub, bootstrap, policy; delegates core `/tasks*` to taskcore | [handler/README.md](../pkgs/tasks/handler/README.md), [domain/sse-hub.md](./domain/sse-hub.md) |
 | Task core BC | `pkgs/taskcore/` | Task CRUD, dependencies, gate, retry, stats, ready queue; `/tasks*` routes | [ADR-0059](./adr/ADR-0059-taskcore-extraction.md), [taskcore/README.md](../pkgs/taskcore/README.md) |
 | Domain types | `pkgs/<bc>/domain/` | BC-owned entities (`taskcore`, `taskcycles`, `taskchecklist`, `taskevents`, `projects`, `settings`) — **no** `pkgs/tasks/domain` | [data-model.md](./data-model.md), [ADR-0060](./adr/ADR-0060-retire-tasks-domain.md) |
 | Handler store contract | `pkgs/tasks/handler/handler_store.go` | Composes BC `contract` slices for HTTP — **no** `pkgs/tasks/contract` hub | [ADR-0062](./adr/ADR-0062-retire-tasks-contract-hub.md) |
@@ -43,7 +43,7 @@ Repository paths grouped by subsystem. Read only the rows relevant to your task.
 | Task scheduling | `pkgs/tasks/scheduling/` | Worker readiness predicates, pickup gate, post-commit notify | [domain/task-scheduling.md](./domain/task-scheduling.md), ADR-0023 |
 | Execution cycles HTTP | `pkgs/taskcycles/handler/` (was `pkgs/tasks/handler/handler_cycles.go`) | Cycle and phase REST surface | [api.md](./api.md), [data-model.md](./data-model.md) |
 | Operator retry | `pkgs/taskcore/handler/`, `pkgs/taskcore/domain/retry.go`, `harness/retry_run.go` | Start over / resume after failure | [retry-start-over.md](./domain/retry-start-over.md), [retry-resume.md](./domain/retry-resume.md) |
-| Read/write policy | `pkgs/tasks/handler/readpolicy/`, `writepolicy/` | Bootstrap limits, commit-then-notify SSE enrichment | ADR-0026 |
+| Read/write policy | `pkgs/tasks/handler/policy/` | Bootstrap limits, commit-then-notify SSE enrichment | ADR-0026 |
 | Workspace search | `pkgs/repo/` | Path resolution, `@`-mentions; HTTP in `pkgs/repo/handler/` | [domain/workspace-repo.md](./domain/workspace-repo.md), [ADR-0049](./adr/ADR-0049-repo-http-handler.md) |
 | Agent queue | `pkgs/agents/` (notifier hook) | Ready-task enqueue, reconcile tick, queue cap | [domain/agent-queue.md](./domain/agent-queue.md) |
 | Agent harness | `pkgs/agents/harness/` | Execute/verify loop, criteria, git integrity, retry modes | [domain/harness.md](./domain/harness.md), [cursor-session-resume.md](./domain/cursor-session-resume.md) |

@@ -12,7 +12,7 @@ HTTP surface for `taskapi`: REST + optional `/repo` + `GET /events` (SSE). **Con
 | SSE (HTTP + notify) | `sse_stream.go`, `sse_notify.go` (+ whitebox `sse_*_test.go`, `sse_whitebox_helpers_test.go`) |
 | Health | `handler_health.go`, `handler_system_health.go` |
 | SPA / operator shell | `handler_bootstrap.go`, `handler_rum.go` |
-| Policy | `handler_writepolicy.go`, `writepolicy/`, `readpolicy/` |
+| Policy | `handler_writepolicy.go`, `policy/` |
 | Cross-BC glue | `handler_task_*`, `handler_compose_*`, `handler_git_helpers.go` |
 | Shell utilities | `repo_compat.go`, `server_version.go`, `handler_http_json.go`, `handler_store.go` (http.io via `handlerhttp`) |
 | Fakes | `storefake/` |

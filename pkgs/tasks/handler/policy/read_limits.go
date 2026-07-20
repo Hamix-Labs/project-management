@@ -1,8 +1,4 @@
-// Package readpolicy holds shared read-side limits for handler aggregates.
-// Constants mirror the SPA query policy in web/src/lib/readLimits.ts and
-// useTasksApp so bootstrap and optional shell routes stay aligned with the
-// client without importing HTTP or database packages.
-package readpolicy
+package policy
 
 import taskcorecontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
 

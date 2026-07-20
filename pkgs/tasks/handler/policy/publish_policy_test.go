@@ -1,9 +1,9 @@
-package writepolicy_test
+package policy_test
 
 import (
 	"testing"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler/writepolicy"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler/policy"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 )
 
@@ -22,7 +22,7 @@ func TestEnrichedTaskChangeEvent(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(string(tt.typ), func(t *testing.T) {
-			if got := writepolicy.EnrichedTaskChangeEvent(tt.typ); got != tt.want {
+			if got := policy.EnrichedTaskChangeEvent(tt.typ); got != tt.want {
 				t.Fatalf("EnrichedTaskChangeEvent(%q) = %v, want %v", tt.typ, got, tt.want)
 			}
 		})
@@ -63,7 +63,7 @@ func TestIsHintOnly(t *testing.T) {
 	for _, typ := range all {
 		t.Run(string(typ), func(t *testing.T) {
 			want := hintSet[typ]
-			if got := writepolicy.IsHintOnly(typ); got != want {
+			if got := policy.IsHintOnly(typ); got != want {
 				t.Fatalf("IsHintOnly(%q) = %v, want %v", typ, got, want)
 			}
 		})
@@ -71,8 +71,8 @@ func TestIsHintOnly(t *testing.T) {
 }
 
 func TestHintOnlyChangeTypes_matchesIsHintOnly(t *testing.T) {
-	for _, typ := range writepolicy.HintOnlyChangeTypes {
-		if !writepolicy.IsHintOnly(typ) {
+	for _, typ := range policy.HintOnlyChangeTypes {
+		if !policy.IsHintOnly(typ) {
 			t.Fatalf("HintOnlyChangeTypes includes %q but IsHintOnly is false", typ)
 		}
 	}

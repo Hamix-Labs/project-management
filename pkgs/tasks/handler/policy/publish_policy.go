@@ -1,7 +1,6 @@
-// Package writepolicy documents SSE publish classification for task-scoped
-// writes. Handlers apply the policy via handler.Handler helpers; this package
-// stays free of HTTP and database imports so CI can enforce purity.
-package writepolicy
+// Package policy holds handler-side read limits and SSE publish classification.
+// It stays free of HTTP and database imports so CI can enforce purity.
+package policy
 
 import (
 	"log/slog"
@@ -12,7 +11,7 @@ import (
 // EnrichedTaskChangeEvent reports whether a change type should carry the full
 // domain.Task in Event.Data after a successful store mutation.
 func EnrichedTaskChangeEvent(typ realtime.ChangeType) bool {
-	slog.Debug("trace", "operation", "writepolicy.EnrichedTaskChangeEvent")
+	slog.Debug("trace", "operation", "policy.EnrichedTaskChangeEvent")
 	switch typ {
 	case realtime.TaskCreated, realtime.TaskUpdated:
 		return true
@@ -37,7 +36,7 @@ var HintOnlyChangeTypes = []realtime.ChangeType{
 
 // IsHintOnly reports whether typ is classified as hint-only in the publish policy.
 func IsHintOnly(typ realtime.ChangeType) bool {
-	slog.Debug("trace", "operation", "writepolicy.IsHintOnly")
+	slog.Debug("trace", "operation", "policy.IsHintOnly")
 	for _, hint := range HintOnlyChangeTypes {
 		if typ == hint {
 			return true
@@ -55,7 +54,7 @@ var ScopelessHintChangeTypes = []realtime.ChangeType{
 
 // IsScopelessHint reports whether typ is published via notifyScopelessChange.
 func IsScopelessHint(typ realtime.ChangeType) bool {
-	slog.Debug("trace", "operation", "writepolicy.IsScopelessHint")
+	slog.Debug("trace", "operation", "policy.IsScopelessHint")
 	for _, scopeless := range ScopelessHintChangeTypes {
 		if typ == scopeless {
 			return true

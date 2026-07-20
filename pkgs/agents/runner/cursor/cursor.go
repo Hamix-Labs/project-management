@@ -338,7 +338,7 @@ func (a *Adapter) Run(ctx context.Context, req runner.Request) (runner.Result, e
 	env := buildEnv(req.Env, a.extraKeys)
 	argv := a.argvFor(req)
 	out := a.invokeCursorProcess(runCtx, req, cancel, env, argv)
-	rawOutput := redact(combineStreams(out.stdout, out.stderr), a.homePaths)
+	rawOutput := redact(adapterkit.CombineStreams(out.stdout, out.stderr), a.homePaths)
 	out.execErr = clearClosedPipeAfterStdout(runCtx, out.stdout, out.stderr, out.execErr)
 
 	if out.execErr != nil {

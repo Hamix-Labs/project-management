@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
+	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/adapterkit"
 )
 
 type progressMessage struct {
@@ -70,7 +71,7 @@ func progressFromLine(raw []byte, homePaths []string) (runner.ProgressEvent, boo
 			}, true
 		}
 	case cursorEventAssistant:
-		msg := clipSummaryRunes(redact(strings.TrimSpace(textContent(line.Message.Content)), homePaths), limits.ProgressSummaryRunes)
+		msg := adapterkit.ClipRunes(redact(strings.TrimSpace(textContent(line.Message.Content)), homePaths), limits.ProgressSummaryRunes)
 		if msg != "" {
 			return runner.ProgressEvent{Kind: cursorEventAssistant, Message: msg, Payload: progressPayload(raw, homePaths)}, true
 		}
@@ -494,5 +495,5 @@ func shellCommandLabel(command string) string {
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func clipProgressSummary(s string) string {
-	return clipSummaryRunes(strings.Join(strings.Fields(s), " "), 80)
+	return adapterkit.ClipRunes(strings.Join(strings.Fields(s), " "), 80)
 }

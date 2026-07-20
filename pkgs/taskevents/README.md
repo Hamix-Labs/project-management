@@ -28,7 +28,7 @@ HTTP routes (`/tasks/{id}/events*`) and JSON shapes are unchanged from the pre-e
 | `domain` | stdlib, `pkgs/taskcore/domain` (Actor alias) | GORM, `pkgs/tasks/*` |
 | `contract` | `taskevents/domain`, `pkgs/taskcore/contract` | `pkgs/tasks/handler`, `internal/taskapi/composition` |
 | `store` | `taskevents/domain`, `taskevents/contract`, `taskevents/store/model`, GORM, `pkgs/storekernel`, `pkgs/taskcore/domain`, `pkgs/obs/calltrace` | `pkgs/tasks/handler`, `internal/taskapi/composition` |
-| `handler` | `taskevents/domain`, `taskevents/contract`, `pkgs/tasks/handlerhttp`, `pkgs/tasks/apijson`, `pkgs/obs/calltrace`, `pkgs/tasks/logctx`, `pkgs/taskcore/domain`, `pkgs/tasks/handler/readpolicy` | `internal/taskapi/composition`, `pkgs/tasks/handler` |
+| `handler` | `taskevents/domain`, `taskevents/contract`, `pkgs/tasks/handlerhttp`, `pkgs/tasks/apijson`, `pkgs/obs/calltrace`, `pkgs/tasks/logctx`, `pkgs/taskcore/domain`, `pkgs/tasks/handler/policy` | `internal/taskapi/composition`, `pkgs/tasks/handler` |
 
 Enforced in CI: `scripts/check-go.sh` → `step_taskevents_boundary`.
 

@@ -1,9 +1,9 @@
-package writepolicy_test
+package policy_test
 
 import (
 	"testing"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler/writepolicy"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler/policy"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 )
 
@@ -33,7 +33,7 @@ func TestIsScopelessHint(t *testing.T) {
 	for _, typ := range all {
 		t.Run(string(typ), func(t *testing.T) {
 			want := scopelessSet[typ]
-			if got := writepolicy.IsScopelessHint(typ); got != want {
+			if got := policy.IsScopelessHint(typ); got != want {
 				t.Fatalf("IsScopelessHint(%q) = %v, want %v", typ, got, want)
 			}
 		})
@@ -41,8 +41,8 @@ func TestIsScopelessHint(t *testing.T) {
 }
 
 func TestScopelessHintChangeTypes_matchesIsScopelessHint(t *testing.T) {
-	for _, typ := range writepolicy.ScopelessHintChangeTypes {
-		if !writepolicy.IsScopelessHint(typ) {
+	for _, typ := range policy.ScopelessHintChangeTypes {
+		if !policy.IsScopelessHint(typ) {
 			t.Fatalf("ScopelessHintChangeTypes includes %q but IsScopelessHint is false", typ)
 		}
 	}
