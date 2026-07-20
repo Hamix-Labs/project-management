@@ -1,6 +1,7 @@
 package model
 
 import (
+	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel/jsonmap"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 )
 
@@ -11,7 +12,7 @@ func FromDomainTaskContextSnapshot(d domain.TaskContextSnapshot) TaskContextSnap
 		TaskID:          d.TaskID,
 		CycleID:         d.CycleID,
 		ProjectID:       d.ProjectID,
-		ContextJSON:     datatypesFromRaw(d.ContextJSON),
+		ContextJSON:     jsonmap.DatatypesFromRaw(d.ContextJSON),
 		RenderedContext: d.RenderedContext,
 		TokenEstimate:   d.TokenEstimate,
 		CreatedAt:       d.CreatedAt,
@@ -25,7 +26,7 @@ func ToDomainTaskContextSnapshot(m TaskContextSnapshot) domain.TaskContextSnapsh
 		TaskID:          m.TaskID,
 		CycleID:         m.CycleID,
 		ProjectID:       m.ProjectID,
-		ContextJSON:     rawFromDatatypes(m.ContextJSON),
+		ContextJSON:     jsonmap.RawFromDatatypes(m.ContextJSON),
 		RenderedContext: m.RenderedContext,
 		TokenEstimate:   m.TokenEstimate,
 		CreatedAt:       m.CreatedAt,

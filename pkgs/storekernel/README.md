@@ -10,7 +10,7 @@ Shared persistence helpers used by bounded-context stores and `internal/taskapi/
 | Audit events | `events.go`, `tx.go` | `NextEventSeq`, `AppendEvent`, transactional append |
 | Validation | `validate.go`, `constraints.go` | `ValidateActor`, enum/check helpers |
 | IDs + errors | `ids.go`, `errors.go`, `persistence_errors.go` | `ResolveID`, `MapNotFound`, duplicate-key mapping |
-| JSON | `json.go` | `NormalizeJSONObject`, `EventPairJSON` |
+| JSON | `json.go`, `jsonmap/` | `NormalizeJSONObject`, `EventPairJSON`; RawMessage↔datatypes helpers in `jsonmap` |
 | Task load | `taskload/` | Shared GORM task-row load helpers |
 
 ## Dependency rules

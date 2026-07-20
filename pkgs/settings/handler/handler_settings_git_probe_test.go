@@ -39,7 +39,7 @@ func TestHTTP_gitRepositoryProbe_notARepository(t *testing.T) {
 
 	db := tasktestdb.OpenSQLite(t)
 	st := composition.NewAPI(db)
-	srv := newSettingsHTTPServer(t, st, Deps{Settings: st, GitRead: st, Git: stubGitService{}})
+	srv := newSettingsHTTPServer(t, st, Deps{Settings: st, GitInventory: st, Git: stubGitService{}})
 
 	res, err := http.Get(srv.URL + "/settings/git-probe?path=" + url.QueryEscape(dir))
 	if err != nil {
@@ -69,7 +69,7 @@ func TestHTTP_gitRepositoryProbe_listsBranches(t *testing.T) {
 
 	db := tasktestdb.OpenSQLite(t)
 	st := composition.NewAPI(db)
-	srv := newSettingsHTTPServer(t, st, Deps{Settings: st, GitRead: st, Git: gitwork.New()})
+	srv := newSettingsHTTPServer(t, st, Deps{Settings: st, GitInventory: st, Git: gitwork.New()})
 
 	res, err := http.Get(srv.URL + "/settings/git-probe?path=" + url.QueryEscape(dir))
 	if err != nil {

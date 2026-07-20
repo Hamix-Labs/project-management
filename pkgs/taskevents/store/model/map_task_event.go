@@ -1,6 +1,9 @@
 package model
 
-import taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
+import (
+	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel/jsonmap"
+	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
+)
 
 // FromDomainTaskEvent copies a domain row to its persistence model.
 //
@@ -12,10 +15,10 @@ func FromDomainTaskEvent(d taskeventsdomain.TaskEvent) TaskEvent {
 		At:             d.At,
 		Type:           d.Type,
 		By:             d.By,
-		Data:           datatypesFromRaw(d.Data),
+		Data:           jsonmap.DatatypesFromRaw(d.Data),
 		UserResponse:   d.UserResponse,
 		UserResponseAt: d.UserResponseAt,
-		ResponseThread: datatypesFromRaw(d.ResponseThread),
+		ResponseThread: jsonmap.DatatypesFromRaw(d.ResponseThread),
 	}
 }
 
@@ -29,10 +32,10 @@ func ToDomainTaskEvent(m TaskEvent) taskeventsdomain.TaskEvent {
 		At:             m.At,
 		Type:           m.Type,
 		By:             m.By,
-		Data:           rawJSONObjectFromDatatypes(m.Data),
+		Data:           jsonmap.RawJSONObjectFromDatatypes(m.Data),
 		UserResponse:   m.UserResponse,
 		UserResponseAt: m.UserResponseAt,
-		ResponseThread: rawFromDatatypes(m.ResponseThread),
+		ResponseThread: jsonmap.RawFromDatatypes(m.ResponseThread),
 	}
 }
 

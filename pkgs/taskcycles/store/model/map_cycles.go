@@ -1,6 +1,9 @@
 package model
 
-import cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
+import (
+	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel/jsonmap"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
+)
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func FromDomainTaskCycle(d cyclesdomain.TaskCycle) TaskCycle {
@@ -13,7 +16,7 @@ func FromDomainTaskCycle(d cyclesdomain.TaskCycle) TaskCycle {
 		EndedAt:       d.EndedAt,
 		TriggeredBy:   d.TriggeredBy,
 		ParentCycleID: d.ParentCycleID,
-		MetaJSON:      datatypesFromRaw(d.MetaJSON),
+		MetaJSON:      jsonmap.DatatypesFromRaw(d.MetaJSON),
 	}
 }
 
@@ -37,7 +40,7 @@ func ToDomainTaskCycle(m TaskCycle) cyclesdomain.TaskCycle {
 		EndedAt:       m.EndedAt,
 		TriggeredBy:   m.TriggeredBy,
 		ParentCycleID: m.ParentCycleID,
-		MetaJSON:      rawFromDatatypes(m.MetaJSON),
+		MetaJSON:      jsonmap.RawFromDatatypes(m.MetaJSON),
 	}
 }
 
@@ -73,7 +76,7 @@ func FromDomainTaskCyclePhase(d cyclesdomain.TaskCyclePhase) TaskCyclePhase {
 		StartedAt:   d.StartedAt,
 		EndedAt:     d.EndedAt,
 		Summary:     d.Summary,
-		DetailsJSON: datatypesFromRaw(d.DetailsJSON),
+		DetailsJSON: jsonmap.DatatypesFromRaw(d.DetailsJSON),
 		EventSeq:    d.EventSeq,
 	}
 }
@@ -98,7 +101,7 @@ func ToDomainTaskCyclePhase(m TaskCyclePhase) cyclesdomain.TaskCyclePhase {
 		StartedAt:   m.StartedAt,
 		EndedAt:     m.EndedAt,
 		Summary:     m.Summary,
-		DetailsJSON: rawFromDatatypes(m.DetailsJSON),
+		DetailsJSON: jsonmap.RawFromDatatypes(m.DetailsJSON),
 		EventSeq:    m.EventSeq,
 	}
 }
@@ -138,7 +141,7 @@ func FromDomainTaskCycleStreamEvent(d cyclesdomain.TaskCycleStreamEvent) TaskCyc
 		Subtype:     d.Subtype,
 		Message:     d.Message,
 		Tool:        d.Tool,
-		PayloadJSON: datatypesFromRaw(d.PayloadJSON),
+		PayloadJSON: jsonmap.DatatypesFromRaw(d.PayloadJSON),
 	}
 }
 
@@ -165,7 +168,7 @@ func ToDomainTaskCycleStreamEvent(m TaskCycleStreamEvent) cyclesdomain.TaskCycle
 		Subtype:     m.Subtype,
 		Message:     m.Message,
 		Tool:        m.Tool,
-		PayloadJSON: rawFromDatatypes(m.PayloadJSON),
+		PayloadJSON: jsonmap.RawFromDatatypes(m.PayloadJSON),
 	}
 }
 

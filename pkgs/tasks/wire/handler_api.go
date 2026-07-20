@@ -24,6 +24,6 @@ type HandlerAPI interface {
 	cyclescontract.CycleStore
 	projectscontract.ProjectStore
 	composecontract.ComposeStore
-	gitcontract.GitReadStore
+	gitcontract.GitInventoryStore
 	gitcontract.GitWriteStore
 }

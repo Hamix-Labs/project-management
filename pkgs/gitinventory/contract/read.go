@@ -7,8 +7,8 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 )
 
-// GitReadStore covers git entity reads and DB-only mutations (no gitSvc).
-type GitReadStore interface {
+// GitInventoryStore covers git entity inventory: reads plus DB-only mutations (no gitSvc).
+type GitInventoryStore interface {
 	ListAllGitRepositories(ctx context.Context) ([]domain.GitRepository, error)
 	ListAllGitRepositoriesWithSummary(ctx context.Context) ([]GitRepositoryListSummary, error)
 	ListGitRepositories(ctx context.Context, projectID string) ([]domain.GitRepository, error)

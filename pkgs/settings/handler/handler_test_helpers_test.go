@@ -72,8 +72,8 @@ func newSettingsHTTPServer(t *testing.T, st *composition.API, deps Deps) *httpte
 	if deps.Settings == nil {
 		deps.Settings = st
 	}
-	if deps.GitRead == nil {
-		deps.GitRead = st
+	if deps.GitInventory == nil {
+		deps.GitInventory = st
 	}
 	if deps.Git == nil {
 		deps.Git = gitwork.New()
@@ -92,7 +92,7 @@ func settingsTestServer(t *testing.T) (*httptest.Server, *composition.API, *sseN
 	ctrl := &fakeAgentControl{}
 	srv := newSettingsHTTPServer(t, st, Deps{
 		Settings: st,
-		GitRead:  st,
+		GitInventory:  st,
 		Agent:    ctrl,
 		Notify:   notify,
 	})
@@ -102,7 +102,7 @@ func settingsTestServer(t *testing.T) (*httptest.Server, *composition.API, *sseN
 func settingsTestServerNoAgent(t *testing.T) (*httptest.Server, *composition.API) {
 	t.Helper()
 	st := composition.NewAPI(tasktestdb.OpenSQLite(t))
-	srv := newSettingsHTTPServer(t, st, Deps{Settings: st, GitRead: st})
+	srv := newSettingsHTTPServer(t, st, Deps{Settings: st, GitInventory: st})
 	return srv, st
 }
 

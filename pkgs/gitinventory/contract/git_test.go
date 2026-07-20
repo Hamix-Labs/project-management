@@ -7,8 +7,8 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store"
 )
 
-func TestStore_implements_GitReadStore(t *testing.T) {
-	var _ contract.GitReadStore = (*store.Store)(nil)
+func TestStore_implements_GitInventoryStore(t *testing.T) {
+	var _ contract.GitInventoryStore = (*store.Store)(nil)
 }
 
 func TestStore_implements_GitWriteStore(t *testing.T) {

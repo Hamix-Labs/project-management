@@ -27,7 +27,7 @@ func (h *Handler) workspaceRoots(w http.ResponseWriter, r *http.Request) {
 		handlerhttp.WriteJSONError(w, r, op, http.StatusInternalServerError, "working directory unavailable")
 		return
 	}
-	gitRepos, err := h.gitRead.ListAllGitRepositories(r.Context())
+	gitRepos, err := h.gitInventory.ListAllGitRepositories(r.Context())
 	if err != nil {
 		slog.Log(r.Context(), slog.LevelError, "list git repositories failed",
 			"cmd", calltrace.LogCmd, "operation", op, "err", err)

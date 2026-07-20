@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
+	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel/jsonmap"
 	taskcorecontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/model"
@@ -55,7 +56,7 @@ func AgentPickup(ctx context.Context, db *gorm.DB, taskID string, by domain.Acto
 		if err := applyStatusPatch(tx, taskID, &dcur, &running, by, &nextSeq); err != nil {
 			return err
 		}
-		pendingRetryJSON, err := model.NullableStructJSON(dcur.PendingRetry)
+		pendingRetryJSON, err := jsonmap.NullableStructJSON(dcur.PendingRetry)
 		if err != nil {
 			return fmt.Errorf("marshal pending_retry: %w", err)
 		}

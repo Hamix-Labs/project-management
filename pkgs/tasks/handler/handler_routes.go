@@ -29,14 +29,14 @@ func (h *Handler) registerRoutes(m *http.ServeMux) {
 		},
 	})
 	gitinventoryhandler.Register(m, gitinventoryhandler.Deps{
-		Read:       h.store,
+		Inventory:  h.store,
 		Write:      h.store,
 		Projects:   h.store,
 		GitService: h.git,
 	})
 	settingshandler.Register(m, settingshandler.Deps{
 		Settings: h.store,
-		GitRead:  h.store,
+		GitInventory:  h.store,
 		Agent:    h.agent,
 		Git:      h.git,
 		Notify: func(typ realtime.ChangeType) {

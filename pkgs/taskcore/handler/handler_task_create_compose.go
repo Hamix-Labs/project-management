@@ -60,10 +60,9 @@ func (h *Handler) CreateTaskFromComposeJSON(
 	if err != nil {
 		return nil, err
 	}
-	if err := h.gitCompose.ValidateTaskRepositoryBinding(r.Context(), payload.ProjectID, payload.RepositoryID); err != nil {
-		return nil, err
-	}
-	if err := h.validateComposePayloadCommonWithoutMentions(r.Context(), payload, settings); err != nil {
+	if err := h.ValidateCompose(r.Context(), payload, settings, ValidateComposeOpts{
+		GitMode: ComposeTaskRepoBinding,
+	}); err != nil {
 		return nil, err
 	}
 	runner, cursorModel, err := resolveRunnerModelFields(payload.Runner, payload.CursorModel, settings)
@@ -152,37 +151,47 @@ func (h *Handler) finalizeCreatedTask(ctx context.Context, t *domain.Task) (*dom
 	return t, nil
 }
 
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func (h *Handler) ValidateComposePayload(ctx context.Context, payload TaskComposePayloadJSON, settings settingsdomain.AppSettings) error {
-	return h.validateComposePayload(ctx, payload, settings)
+// ValidateComposeOpts selects optional git-binding and mention checks around the
+// shared compose field validation.
+type ValidateComposeOpts struct {
+	// GitMode selects which repository/worktree binding check to run (if any).
+	GitMode ComposeGitMode
+	// Mentions, when true, validates @-mentions against the payload worktree.
+	Mentions bool
 }
 
-//funclogmeasure:skip category=delegate-already-logs reason="Validation delegate; create handler emits trace at the HTTP chokepoint."
-func (h *Handler) validateComposePayload(ctx context.Context, payload TaskComposePayloadJSON, settings settingsdomain.AppSettings) error {
-	if err := h.gitCompose.ValidateComposeGitBinding(ctx, payload.RepositoryID, payload.ProjectID, payload.WorktreeID); err != nil {
-		return err
+// ComposeGitMode selects which git binding validation ValidateCompose runs.
+type ComposeGitMode int
+
+const (
+	// ComposeGitNone skips git binding checks (field validation only).
+	ComposeGitNone ComposeGitMode = iota
+	// ComposeGitBinding runs ValidateComposeGitBinding (drafts/templates).
+	ComposeGitBinding
+	// ComposeTaskRepoBinding runs ValidateTaskRepositoryBinding (task create).
+	ComposeTaskRepoBinding
+)
+
+// ValidateCompose validates a compose payload: optional git binding, optional
+// prompt mentions, then shared field checks (runner/model, pickup, title, etc.).
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func (h *Handler) ValidateCompose(ctx context.Context, payload TaskComposePayloadJSON, settings settingsdomain.AppSettings, opts ValidateComposeOpts) error {
+	switch opts.GitMode {
+	case ComposeGitBinding:
+		if err := h.gitCompose.ValidateComposeGitBinding(ctx, payload.RepositoryID, payload.ProjectID, payload.WorktreeID); err != nil {
+			return err
+		}
+	case ComposeTaskRepoBinding:
+		if err := h.gitCompose.ValidateTaskRepositoryBinding(ctx, payload.ProjectID, payload.RepositoryID); err != nil {
+			return err
+		}
 	}
-	return h.validateComposePayloadCommonWithoutMentions(ctx, payload, settings)
-}
-
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func (h *Handler) validateTaskCreateComposePayload(ctx context.Context, payload TaskComposePayloadJSON, settings settingsdomain.AppSettings) error {
-	if err := h.gitCompose.ValidateTaskRepositoryBinding(ctx, payload.ProjectID, payload.RepositoryID); err != nil {
-		return err
+	if opts.Mentions {
+		if err := h.gitCompose.ValidatePromptMentionsForWorktree(ctx, payload.WorktreeID, payload.InitialPrompt); err != nil {
+			return err
+		}
 	}
-	return h.validateComposePayloadCommonWithoutMentions(ctx, payload, settings)
-}
-
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func (h *Handler) validateComposePayloadCommon(ctx context.Context, payload TaskComposePayloadJSON, settings settingsdomain.AppSettings) error {
-	if err := h.gitCompose.ValidatePromptMentionsForWorktree(ctx, payload.WorktreeID, payload.InitialPrompt); err != nil {
-		return err
-	}
-	return h.validateComposePayloadCommonWithoutMentions(ctx, payload, settings)
-}
-
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func (h *Handler) validateComposePayloadCommonWithoutMentions(ctx context.Context, payload TaskComposePayloadJSON, settings settingsdomain.AppSettings) error {
 	if _, _, err := resolveRunnerModelFields(payload.Runner, payload.CursorModel, settings); err != nil {
 		return err
 	}
