@@ -5,7 +5,8 @@ import (
 	"gorm.io/gorm"
 )
 
-// SQL dequeuable predicates MUST stay aligned with pkgs/tasks/scheduling.
+// SQL dequeuable predicates MUST stay aligned with taskcore/contract readiness helpers
+// (and the pkgs/tasks/scheduling re-exports used by composition).
 // Contract tests: store/scheduling_parity_test.go
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."

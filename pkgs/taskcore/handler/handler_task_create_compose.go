@@ -14,7 +14,6 @@ import (
 	taskcorecontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 )
 
 type CreateTaskComposeOpts struct {
@@ -140,12 +139,12 @@ func (h *Handler) CreateTaskFromComposeJSON(
 
 func (h *Handler) finalizeCreatedTask(ctx context.Context, t *domain.Task) (*domain.Task, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.finalizeCreatedTask")
-	h.notifyTaskChangedSafe(realtime.TaskCreated, t.ID, t)
+	h.notifyTaskChangedSafe(taskcorecontract.ChangeTaskCreated, t.ID, t)
 	if t.Gate != nil {
-		h.notifyChangeSafe(realtime.TaskGateChanged, t.ID)
+		h.notifyChangeSafe(taskcorecontract.ChangeTaskGateChanged, t.ID)
 	}
 	if len(t.DependsOn) > 0 {
-		h.notifyChangeSafe(realtime.TaskDependencyChanged, t.ID)
+		h.notifyChangeSafe(taskcorecontract.ChangeTaskDependencyChanged, t.ID)
 	}
 	taskapiDomainTasksCreatedTotal.Inc()
 	return t, nil

@@ -4,6 +4,8 @@
 // client without importing HTTP or database packages.
 package readpolicy
 
+import taskcorecontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
+
 const (
 	// BootstrapListLimit matches the SPA home-page task list (limit 20).
 	BootstrapListLimit = 20
@@ -19,11 +21,11 @@ const (
 	ShellChecklistIncluded = true
 
 	// TaskListDefaultLimit is GET /tasks default when ?limit= is omitted.
-	// The SPA always sends BootstrapListLimit (20) explicitly.
-	TaskListDefaultLimit = 50
+	// Owned by taskcore/contract; re-exported here for shell aggregates.
+	TaskListDefaultLimit = taskcorecontract.TaskListDefaultLimit
 
 	// TaskListMaxLimit caps GET /tasks ?limit=.
-	TaskListMaxLimit = 200
+	TaskListMaxLimit = taskcorecontract.TaskListMaxLimit
 
 	// TaskEventsDefaultLimit is GET /tasks/{id}/events default page size.
 	TaskEventsDefaultLimit = 50

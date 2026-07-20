@@ -16,7 +16,6 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/internal/stats"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/internal/tasks"
 	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/scheduling"
 	"gorm.io/gorm"
 )
 
@@ -74,7 +73,7 @@ const (
 // ShouldNotifyReadyNow returns true when a freshly-ready task should enter the in-memory queue.
 func ShouldNotifyReadyNow(pickupNotBefore *time.Time, now time.Time) bool {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcore.taskcorestore.ShouldNotifyReadyNow", "has_pickup", pickupNotBefore != nil)
-	return scheduling.ShouldNotifyReadyNow(pickupNotBefore, now)
+	return taskcorecontract.ShouldNotifyReadyNow(pickupNotBefore, now)
 }
 
 func (s *Store) Get(ctx context.Context, id string) (*domain.Task, error) {

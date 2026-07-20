@@ -11,18 +11,15 @@ import (
 type FailedPredicate = taskcorecontract.FailedPredicate
 
 const (
-	FailedPredicateNone         FailedPredicate = "none"
-	FailedPredicateStatus       FailedPredicate = "status"
-	FailedPredicatePickup       FailedPredicate = "pickup"
-	FailedPredicateGate         FailedPredicate = "gate"
-	FailedPredicateDependencies FailedPredicate = "dependencies"
+	FailedPredicateNone         FailedPredicate = taskcorecontract.FailedPredicateNone
+	FailedPredicateStatus       FailedPredicate = taskcorecontract.FailedPredicateStatus
+	FailedPredicatePickup       FailedPredicate = taskcorecontract.FailedPredicatePickup
+	FailedPredicateGate         FailedPredicate = taskcorecontract.FailedPredicateGate
+	FailedPredicateDependencies FailedPredicate = taskcorecontract.FailedPredicateDependencies
 )
 
 // ReadinessResult is the outcome of EvaluateWorkerReadiness.
-type ReadinessResult struct {
-	Ready           bool
-	FailedPredicate FailedPredicate
-}
+type ReadinessResult = taskcorecontract.ReadinessResult
 
 // NotifyDecision is the post-commit notify/wake action for a ready transition.
 type NotifyDecision struct {

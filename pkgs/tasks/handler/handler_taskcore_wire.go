@@ -1,6 +1,7 @@
 package handler
 
 import (
+	taskcorecontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
 	taskcorehandler "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/handler"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 )
@@ -11,11 +12,12 @@ func (h *Handler) taskcoreDeps() taskcorehandler.Deps {
 		Tasks:      h.store,
 		Settings:   h.store,
 		GitCompose: h,
-		NotifyChange: func(typ realtime.ChangeType, id string) {
-			h.notifyChange(typ, id)
+		HTTP:       taskcoreHTTP{},
+		NotifyChange: func(typ taskcorecontract.ChangeType, id string) {
+			h.notifyChange(realtime.ChangeType(typ), id)
 		},
-		NotifyTaskChanged: func(typ realtime.ChangeType, id string, data any) {
-			h.notifyTaskChanged(typ, id, data)
+		NotifyTaskChanged: func(typ taskcorecontract.ChangeType, id string, data any) {
+			h.notifyTaskChanged(realtime.ChangeType(typ), id, data)
 		},
 	}
 }
