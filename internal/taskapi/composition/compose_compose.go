@@ -34,9 +34,9 @@ func (a *API) SaveTemplate(ctx context.Context, id, name string, payload json.Ra
 	return a.compose.SaveTemplate(ctx, id, name, payload)
 }
 
-func (a *API) ListTemplates(ctx context.Context, limit int, q, sort, order, tag string) ([]composecontract.TemplateSummary, error) {
+func (a *API) ListTemplates(ctx context.Context, in composecontract.ListTemplatesInput) ([]composecontract.TemplateSummary, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ListTemplates")
-	return a.compose.ListTemplates(ctx, limit, q, sort, order, tag)
+	return a.compose.ListTemplates(ctx, in)
 }
 
 func (a *API) IncrementTemplateInstantiateCounts(ctx context.Context, counts map[string]int) error {

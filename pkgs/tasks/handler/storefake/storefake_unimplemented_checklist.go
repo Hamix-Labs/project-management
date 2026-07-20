@@ -14,11 +14,6 @@ func (unimplementedHandlerStore) ListChecklistForSubject(context.Context, string
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) IsTaskCycleRunning(context.Context, string) (bool, error) {
-	return false, errNotImplemented
-}
-
-//funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
 func (unimplementedHandlerStore) AddChecklistItem(context.Context, string, string, []checklistcontract.VerifyCommandInput, taskcoredomain.Actor) (*checklistdomain.TaskChecklistItem, error) {
 	return nil, errNotImplemented
 }
@@ -34,7 +29,7 @@ func (unimplementedHandlerStore) ReplaceChecklistVerifyCommands(context.Context,
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) SetChecklistItemDoneWithEvidence(context.Context, string, string, string, checklistdomain.VerifierKind, string, string, taskcoredomain.Actor) error {
+func (unimplementedHandlerStore) SetChecklistItemDoneWithEvidence(context.Context, checklistcontract.SetDoneWithEvidenceInput) error {
 	return errNotImplemented
 }
 

@@ -67,7 +67,7 @@ func (h *Handler) postChecklistItem(w http.ResponseWriter, r *http.Request) {
 	by := handlerhttp.ActorFromRequest(r)
 	debugHTTPRequest(r, op, "task_id", id, "actor", string(by),
 		"text_len", len(body.Text), "text_preview", truncateRunes(body.Text, maxHTTPLogTextRunes))
-	if running, err := h.checklist.IsTaskCycleRunning(r.Context(), id); err != nil {
+	if running, err := h.cycleRunning.IsTaskCycleRunning(r.Context(), id); err != nil {
 		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	} else if running {
@@ -122,7 +122,7 @@ func (h *Handler) patchChecklistItem(w http.ResponseWriter, r *http.Request) {
 	}
 	by := handlerhttp.ActorFromRequest(r)
 	if body.Text != nil {
-		if running, err := h.checklist.IsTaskCycleRunning(r.Context(), taskID); err != nil {
+		if running, err := h.cycleRunning.IsTaskCycleRunning(r.Context(), taskID); err != nil {
 			handlerhttp.WriteStoreError(w, r, op, err)
 			return
 		} else if running {
@@ -130,7 +130,7 @@ func (h *Handler) patchChecklistItem(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else if body.VerifyCommands != nil {
-		if running, err := h.checklist.IsTaskCycleRunning(r.Context(), taskID); err != nil {
+		if running, err := h.cycleRunning.IsTaskCycleRunning(r.Context(), taskID); err != nil {
 			handlerhttp.WriteStoreError(w, r, op, err)
 			return
 		} else if running {
@@ -177,7 +177,9 @@ func (h *Handler) patchChecklistItem(w http.ResponseWriter, r *http.Request) {
 				handlerhttp.WriteStoreError(w, r, op, fmt.Errorf("%w: invalid verified_by", taskcoredomain.ErrInvalidInput))
 				return
 			}
-			if err := h.checklist.SetChecklistItemDoneWithEvidence(r.Context(), taskID, itemID, evidence, verifier, "", "", by); err != nil {
+			if err := h.checklist.SetChecklistItemDoneWithEvidence(r.Context(), contract.SetDoneWithEvidenceInput{
+				TaskID: taskID, ItemID: itemID, Evidence: evidence, Verifier: verifier, By: by,
+			}); err != nil {
 				handlerhttp.WriteStoreError(w, r, op, err)
 				return
 			}
@@ -213,7 +215,7 @@ func (h *Handler) deleteChecklistItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	debugHTTPRequest(r, op, "task_id", id, "item_id", itemID)
-	if running, err := h.checklist.IsTaskCycleRunning(r.Context(), id); err != nil {
+	if running, err := h.cycleRunning.IsTaskCycleRunning(r.Context(), id); err != nil {
 		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	} else if running {

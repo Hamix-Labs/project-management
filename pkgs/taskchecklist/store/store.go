@@ -118,21 +118,9 @@ func (s *Store) ListChecklistForVerify(ctx context.Context, taskID string) ([]Ch
 	return out, nil
 }
 
-func (s *Store) IsTaskCycleRunning(ctx context.Context, taskID string) (bool, error) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskchecklist.store.IsTaskCycleRunning")
-	return checklist.IsTaskCycleRunning(ctx, s.db, taskID)
-}
-
-func (s *Store) SetChecklistItemDoneWithEvidence(
-	ctx context.Context,
-	subjectTaskID, itemID string,
-	evidence string,
-	verifier checklistdomain.VerifierKind,
-	reasoning, cycleID string,
-	by taskcoredomain.Actor,
-) error {
+func (s *Store) SetChecklistItemDoneWithEvidence(ctx context.Context, in contract.SetDoneWithEvidenceInput) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskchecklist.store.SetChecklistItemDoneWithEvidence")
-	_, err := checklist.SetDoneWithEvidence(ctx, s.db, subjectTaskID, itemID, evidence, verifier, reasoning, cycleID, by)
+	_, err := checklist.SetDoneWithEvidence(ctx, s.db, in.TaskID, in.ItemID, in.Evidence, in.Verifier, in.Reasoning, in.CycleID, in.By)
 	return err
 }
 
