@@ -12,8 +12,8 @@ const (
 // InvalidInputDetail returns the trimmed suffix after the first matching mark in
 // err.Error(). Empty string if err is nil or no mark matches.
 //
-// Shared here (not handlerhttp) so gitinventory can call it without an import
-// cycle: handlerhttp imports gitinventory/handler for WriteGitStoreError.
+// Shared here (not only in handlerhttp) so httperr and BC handlers can call it
+// without importing pkgs/tasks/handlerhttp.
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func InvalidInputDetail(err error, marks ...string) string {
