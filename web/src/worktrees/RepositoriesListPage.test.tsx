@@ -53,7 +53,7 @@ describe("RepositoriesListPage", () => {
     expect(registerButtons).toHaveLength(1);
     await userEvent.click(registerButtons[0]!);
     expect(
-      await screen.findByRole("button", { name: /Choose folder/i }),
+      await screen.findByRole("button", { name: /Choose repository/i }),
     ).toBeInTheDocument();
   });
 
@@ -73,7 +73,7 @@ describe("RepositoriesListPage", () => {
 
     renderListPage(["/repositories?register=1"]);
     expect(
-      await screen.findByRole("button", { name: /Choose folder/i }),
+      await screen.findByRole("button", { name: /Choose repository/i }),
     ).toBeInTheDocument();
   });
 
@@ -89,7 +89,7 @@ describe("RepositoriesListPage", () => {
         />
       </ModalStackProvider>,
     );
-    expect(screen.getByRole("button", { name: /Choose folder/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Choose repository/i })).toBeInTheDocument();
   });
 
   it("lists one repository with branch badge and delete action", async () => {
