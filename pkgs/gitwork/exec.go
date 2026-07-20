@@ -43,7 +43,7 @@ func mapNotARepository(err error) error {
 	if err == nil {
 		return nil
 	}
-	if stderrContains(err, "not a git repository") {
+	if gitcore.IsNotARepository(err) {
 		return ErrNotARepository
 	}
 	return err

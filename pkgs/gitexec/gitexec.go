@@ -47,9 +47,5 @@ func ShowCommitPatch(ctx context.Context, dir, sha string, maxBytes int) (patch 
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func isNotFoundErr(err error) bool {
-	return gitcore.StderrContains(err, "bad object") ||
-		gitcore.StderrContains(err, "unknown revision") ||
-		gitcore.StderrContains(err, "not a valid object name") ||
-		gitcore.StderrContains(err, "ambiguous argument") ||
-		gitcore.StderrContains(err, "not a git repository")
+	return gitcore.IsObjectNotFound(err)
 }
