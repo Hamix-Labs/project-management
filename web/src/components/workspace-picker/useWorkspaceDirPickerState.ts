@@ -77,7 +77,7 @@ export function useWorkspaceDirPickerState({
   const resolvedLead =
     lead ??
     (requireGitRepository
-      ? "Select any git folder of the repository. Linked folders resolve to one registration at the main repository path."
+      ? "If you have multiple worktrees for the same Git repository, you can select any of them. Hamix identifies repositories by their primary checkout (the main working tree), so all linked worktrees are treated as part of the same repository."
       : "Open a folder to browse inside it. Confirm the folder you're in to register it.");
 
   const [loadState, setLoadState] = useState<LoadState>({ kind: "idle" });

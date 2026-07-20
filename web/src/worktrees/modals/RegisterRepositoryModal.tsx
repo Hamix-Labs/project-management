@@ -94,7 +94,7 @@ export function RegisterRepositoryModal({
         requireGitRepository
         rootsScope="expanded"
         title="Choose repository"
-        lead="Select any git folder of the repository. Linked folders resolve to one registration at the main repository path."
+        lead="If you have multiple worktrees for the same Git repository, you can select any of them. Hamix identifies repositories by their primary checkout (the main working tree), so all linked worktrees are treated as part of the same repository."
         selectionFooterLabel="Repository to register"
         confirmLabel="Use this repository"
         currentPath={path}
