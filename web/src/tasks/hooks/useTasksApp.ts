@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } fro
 import { getTaskStats, listTasks } from "../../api";
 import { flattenTaskTreeRoots } from "../task-tree";
 import { TASK_LIST_PAGE_SIZE } from "../task-paging";
-import { settingsQueryKeys } from "@/settings/settingsQueryKeys";
+import { settingsQueryKeys } from "@/lib/settingsQueryKeys";
 import { taskQueryKeys } from "../task-query";
 import { errorMessage } from "@/lib/errorMessage";
 import {
@@ -36,9 +36,19 @@ export type UseTasksAppOptions = {
    * do not pass this stay on the historical eager-fetch behaviour.
    */
   dataEnabled?: boolean;
+  /**
+   * When false, settings/list/stats stay disabled until `useBootstrap`
+   * settles so the aggregate seed can win over parallel GETs. Defaults
+   * to `true` for harnesses that do not run bootstrap.
+   */
+  bootstrapSettled?: boolean;
 };
 
-export function useTasksApp({ sseLive, dataEnabled = true }: UseTasksAppOptions) {
+export function useTasksApp({
+  sseLive,
+  dataEnabled = true,
+  bootstrapSettled = true,
+}: UseTasksAppOptions) {
   const {
     createFlowError,
     editingTaskId,
@@ -88,9 +98,13 @@ export function useTasksApp({ sseLive, dataEnabled = true }: UseTasksAppOptions)
 
   const [taskListPage, setTaskListPage] = useState(0);
 
+  const queriesReady = bootstrapSettled;
+  const homeDataReady = dataEnabled && bootstrapSettled;
+
   useQuery({
     queryKey: settingsQueryKeys.app(),
     queryFn: ({ signal }) => fetchAppSettings({ signal }),
+    enabled: queriesReady,
   });
 
   const tasksQuery = useQuery({
@@ -104,7 +118,7 @@ export function useTasksApp({ sseLive, dataEnabled = true }: UseTasksAppOptions)
         taskListPage * TASK_LIST_PAGE_SIZE,
         { signal },
       ),
-    enabled: dataEnabled,
+    enabled: homeDataReady,
     staleTime: QUERY_POLICY.listStaleTimeMs,
   });
   const taskStatsQuery = useQuery({
@@ -116,7 +130,7 @@ export function useTasksApp({ sseLive, dataEnabled = true }: UseTasksAppOptions)
         return null;
       }
     },
-    enabled: dataEnabled,
+    enabled: homeDataReady,
     staleTime: QUERY_POLICY.listStaleTimeMs,
   });
 

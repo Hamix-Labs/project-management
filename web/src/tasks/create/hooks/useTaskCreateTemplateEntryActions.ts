@@ -1,7 +1,7 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import type { AppSettings } from "@/api/settings";
-import { settingsQueryKeys } from "@/settings/settingsQueryKeys";
+import { settingsQueryKeys } from "@/lib/settingsQueryKeys";
 import { hydrateFormFromComposePayload } from "../composePayload";
 import type { useTaskCreateFormState } from "./useTaskCreateFormState";
 import type { useTaskCreateModalState } from "./useTaskCreateModalState";

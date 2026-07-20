@@ -1,4 +1,4 @@
-import { useAppSettings } from "@/settings/useAppSettings";
+import { useAppSettingsQuery } from "@/hooks/useAppSettingsQuery";
 
 /**
  * Safety fallback zone used when neither the server nor the browser
@@ -58,7 +58,7 @@ export function detectBrowserTimezone(): string {
  * the chosen zone via React Query invalidation.
  */
 export function useAppTimezone(): string {
-  const { settings } = useAppSettings();
+  const { data: settings } = useAppSettingsQuery();
   if (!settings) return detectBrowserTimezone();
   const tz = settings.display_timezone;
   if (typeof tz !== "string" || tz.length === 0) {

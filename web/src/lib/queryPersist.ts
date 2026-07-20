@@ -1,8 +1,8 @@
 import type { Query } from "@tanstack/react-query";
-import { projectQueryKeys } from "@/projects/queryKeys";
+import { projectQueryKeys } from "@/lib/projectQueryKeys";
 import { QUERY_POLICY } from "@/lib/queryPolicy";
-import { settingsQueryKeys } from "@/settings/settingsQueryKeys";
-import { taskQueryKeys } from "@/tasks/task-query";
+import { settingsQueryKeys } from "@/lib/settingsQueryKeys";
+import { taskQueryKeys } from "@/lib/taskQueryKeys";
 
 const LAST_DETAIL_ID_KEY = "hamix:last-detail-id";
 

@@ -4,7 +4,7 @@ import {
   listCursorModels,
   type ListCursorModelsResult,
 } from "@/api/settings";
-import { settingsQueryKeys } from "@/settings/settingsQueryKeys";
+import { settingsQueryKeys } from "@/lib/settingsQueryKeys";
 
 export function modelIdsFromList(
   data: ListCursorModelsResult | undefined,

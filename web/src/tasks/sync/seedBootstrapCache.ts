@@ -1,7 +1,7 @@
 import type { QueryClient } from "@tanstack/react-query";
 import type { Bootstrap } from "@/api";
 import { projectQueryKeys } from "@/lib/projectQueryKeys";
-import { settingsQueryKeys } from "@/settings/settingsQueryKeys";
+import { settingsQueryKeys } from "@/lib/settingsQueryKeys";
 import { TASK_LIST_PAGE_SIZE } from "@/tasks/task-paging";
 import { taskQueryKeys } from "@/tasks/task-query";
 
