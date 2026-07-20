@@ -1,3 +1,4 @@
+import { isUiTestMode } from "@/dev/uiTestMode";
 import { interceptUiTestModeFetch } from "@/dev/uiTestModeInterceptor";
 
 /** Shared headers and error text for JSON APIs. */
@@ -110,8 +111,12 @@ export async function fetchWithTimeout(
   init?: RequestInit,
   options?: { timeoutMs?: number },
 ): Promise<Response> {
-  const synthetic = interceptUiTestModeFetch(input, init);
-  if (synthetic) return synthetic;
+  // Gate the async interceptor behind the runtime flag so the common
+  // path stays sync-until-fetch (RUM flushNow fire-and-forgets).
+  if (isUiTestMode()) {
+    const synthetic = await interceptUiTestModeFetch(input, init);
+    if (synthetic) return synthetic;
+  }
   const timeoutMs = options?.timeoutMs ?? defaultFetchTimeoutMs;
   const { signal: timeout, cleanup } = timeoutSignal(timeoutMs);
   const signal = combineSignals(init?.signal, timeout);

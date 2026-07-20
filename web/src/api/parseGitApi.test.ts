@@ -55,6 +55,19 @@ describe("parseGitApi", () => {
     expect(rows[0]?.is_main).toBe(true);
   });
 
+  it("rejects non-boolean is_main", () => {
+    expect(() =>
+      parseGitWorktree({
+        id: "00000000-0000-4000-8000-000000000020",
+        repository_id: sampleRepo.id,
+        path: "/repo/wt",
+        name: "feature",
+        is_main: 1,
+        created_at: "2026-06-22T12:00:00Z",
+      }),
+    ).toThrow(/is_main must be a boolean/);
+  });
+
   it("parses single worktree", () => {
     expect(
       parseGitWorktree({

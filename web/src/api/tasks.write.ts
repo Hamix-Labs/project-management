@@ -22,7 +22,7 @@ import {
   assertPositiveSeq,
   assertTaskPathId,
 } from "./taskRequestBounds";
-import { parseDependsOnList } from "./tasks.read";
+import { parseDependenciesEnvelope } from "./parseTaskApiTasks";
 import { isRecord, parseNonEmptyString } from "./parseTaskApiCore";
 
 function parseTaskDraftSaveResponse(raw: unknown): { id: string; name: string } {
@@ -284,8 +284,7 @@ export async function addTaskDependency(
     },
   );
   if (!res.ok) throw await apiErrorFromResponse(res);
-  const raw = (await res.json()) as { depends_on?: unknown };
-  return parseDependsOnList(raw.depends_on);
+  return parseDependenciesEnvelope(await res.json());
 }
 
 export async function removeTaskDependency(

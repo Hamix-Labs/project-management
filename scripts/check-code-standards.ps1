@@ -40,14 +40,30 @@ if (Test-Path $srcRoot) {
     }
 }
 
-$stylesRoot = Join-Path $srcRoot (Join-Path "app" "styles")
-if (Test-Path $stylesRoot) {
-    $cssFiles = Get-ChildItem -Path $stylesRoot -Recurse -Filter *.css -File
-    $componentCssFiles = $cssFiles | Where-Object {
+# Scan all web/src CSS except design tokens. Settings vertical CSS still has
+# widespread hex/rgba fallbacks (audit F-07-02 / Wave F1) — temporary allowlist
+# with burn-down; do not expand this list for new files.
+$cssRawColorAllowlist = @(
+    "web/src/settings/settings-shell.css",
+    "web/src/settings/settings-dropdown.css",
+    "web/src/settings/settings-deeplinks.css",
+    "web/src/settings/settings-details.css"
+)
+function Test-IsCssRawColorAllowlisted {
+    param([string]$FullPath)
+    $n = $FullPath.Replace('\', '/')
+    foreach ($rel in $cssRawColorAllowlist) {
+        if ($n.EndsWith($rel)) { return $true }
+    }
+    return $false
+}
+if (Test-Path $srcRoot) {
+    $cssFiles = Get-ChildItem -Path $srcRoot -Recurse -Filter *.css -File | Where-Object {
         $_.FullName.Replace('\', '/') -notmatch '/web/src/app/styles/tokens/'
     }
     $rawColorPat = '#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\('
-    foreach ($f in $componentCssFiles) {
+    foreach ($f in $cssFiles) {
+        if (Test-IsCssRawColorAllowlisted $f.FullName) { continue }
         $text = Get-Content -LiteralPath $f.FullName -Raw
         if ($null -eq $text) { continue }
         if ($text -match $rawColorPat) {
@@ -57,7 +73,7 @@ if (Test-Path $stylesRoot) {
     }
 
     $tooSmallRemPat = 'font-size:\s*0\.[0-6][0-9]*rem'
-    foreach ($f in $componentCssFiles) {
+    foreach ($f in $cssFiles) {
         $text = Get-Content -LiteralPath $f.FullName -Raw
         if ($null -eq $text) { continue }
         if ($text -match $tooSmallRemPat) {
@@ -162,6 +178,23 @@ foreach ($feat in $featureDirs) {
     }
 }
 
+# TypeScript: inner ring must not import verticals (web-layout.mdc / audit F-01-08).
+# app/ may compose verticals; components|hooks|lib|shared must stay vertical-free.
+$innerRingDirs = @("components", "hooks", "lib", "shared")
+foreach ($dirName in $innerRingDirs) {
+    $dirPath = Join-Path $srcRoot $dirName
+    if (-not (Test-Path $dirPath)) { continue }
+    $innerFiles = Get-ChildItem -Path $dirPath -Recurse -Include *.ts, *.tsx -File
+    foreach ($f in $innerFiles) {
+        $text = Get-Content -LiteralPath $f.FullName -Raw
+        if ($null -eq $text) { continue }
+        if ($text -match $featureImportPat) {
+            Write-Host "VIOLATION: inner-ring $dirName/ imports vertical module: $($f.FullName)" -ForegroundColor Red
+            $failed = $true
+        }
+    }
+}
+
 # TypeScript: vertical production code must not call invalidateQueries outside allowed subdirs.
 $verticals = @(
     @{ Name = "projects"; Path = (Join-Path $srcRoot "projects"); AllowSubdirs = @("mutations") },
@@ -190,8 +223,40 @@ foreach ($vertical in $verticals) {
     }
 }
 
-# Warn-only file-size scan (CODE_STANDARDS.mdc). Yellow/red prints; exit stays 0.
+# TypeScript: EventSource / WebSocket only under web/src/api/ (excl. tests).
+if (Test-Path $srcRoot) {
+    $transportFiles = Get-ChildItem -Path $srcRoot -Recurse -Include *.ts, *.tsx -File |
+        Where-Object {
+            (-not (Test-IsUnderWebSrcApi $_.FullName)) -and
+            $_.Name -notmatch '\.test\.(ts|tsx)$' -and
+            ($_.FullName.Replace('\', '/') -notmatch '/test/')
+        }
+    $transportPat = '(?:^|[^\w.])(?:EventSource|WebSocket)\s*\('
+    foreach ($f in $transportFiles) {
+        $text = Get-Content -LiteralPath $f.FullName -Raw
+        if ($null -eq $text) { continue }
+        if ($text -match $transportPat) {
+            Write-Host "VIOLATION: EventSource/WebSocket outside web/src/api/: $($f.FullName)" -ForegroundColor Red
+            $failed = $true
+        }
+    }
+}
+
+# File-size scan (CODE_STANDARDS.mdc).
+# Yellow/red still print for ambient debt. NEW files that enter the red zone
+# (not listed in scripts/code-standards-size-baseline.txt) fail CI.
+# Burn-down: shrink a file below Red, then remove its line from the baseline.
 $sizeWarnCount = 0
+$sizeNewRedCount = 0
+$sizeBaselinePath = Join-Path $PSScriptRoot "code-standards-size-baseline.txt"
+$sizeBaseline = @{}
+if (Test-Path $sizeBaselinePath) {
+    Get-Content -LiteralPath $sizeBaselinePath | ForEach-Object {
+        $line = $_.Trim()
+        if ($line -eq "" -or $line.StartsWith("#")) { return }
+        $sizeBaseline[$line.Replace('\', '/')] = $true
+    }
+}
 
 function Get-CodeStandardsSizeZone {
     param([string]$RelPath, [string]$FileName)
@@ -274,6 +339,7 @@ if (Test-Path $srcRoot) {
 
 foreach ($f in $goSizeFiles) {
     $rel = $f.FullName.Substring($root.Length).TrimStart('\', '/')
+    $relPosix = $rel.Replace('\', '/')
     $zone = Get-CodeStandardsSizeZone -RelPath $rel -FileName $f.Name
     if ($null -eq $zone) { continue }
 
@@ -285,17 +351,25 @@ foreach ($f in $goSizeFiles) {
 
     $sizeWarnCount++
     if ($lines -gt $zone.Red) {
-        Write-Host "SIZE (red): $lines lines [$($zone.Zone)] $rel" -ForegroundColor Red
+        Write-Host "SIZE (red): $lines lines [$($zone.Zone)] $relPosix" -ForegroundColor Red
+        if (-not $sizeBaseline.ContainsKey($relPosix)) {
+            Write-Host "VIOLATION: new red-zone file (not in size baseline): $relPosix ($lines > $($zone.Red))" -ForegroundColor Red
+            $failed = $true
+            $sizeNewRedCount++
+        }
     } else {
-        Write-Host "SIZE (yellow): $lines lines [$($zone.Zone)] $rel" -ForegroundColor Yellow
+        Write-Host "SIZE (yellow): $lines lines [$($zone.Zone)] $relPosix" -ForegroundColor Yellow
     }
 }
 
 if ($failed) {
+    if ($sizeNewRedCount -gt 0) {
+        Write-Host "Tip: split the file, or if intentional legacy debt add it to scripts/code-standards-size-baseline.txt (prefer split)." -ForegroundColor Yellow
+    }
     exit 1
 }
 if ($sizeWarnCount -gt 0) {
-    Write-Host "check-code-standards: OK ($sizeWarnCount file-size warning(s); warn-only)" -ForegroundColor Green
+    Write-Host "check-code-standards: OK ($sizeWarnCount file-size warning(s); new red files fail CI)" -ForegroundColor Green
 } else {
     Write-Host "check-code-standards: OK" -ForegroundColor Green
 }

@@ -1,21 +1,7 @@
 /**
- * Public import surface for runtime status, RUM, and cycle display helpers.
+ * Public import surface for RUM beacons and system-health helpers.
+ * Cycle/phase display labels live in `@/tasks/cycleDisplay/cyclesViewModel`.
  */
-export { SystemStatusChip } from "./SystemStatusChip";
-
-// Cycle/phase display helpers — re-exported so feature areas
-// (e.g. tasks/components/task-detail/cycles) consume the same
-// labels and pill classes.
-export {
-  cycleStatusLabel,
-  phaseLabel,
-  phaseStatusLabel,
-  cycleStatusFillClass,
-  phaseStatusFillClass,
-  runnerLabel,
-  formatRunnerModel,
-  cycleRunnerChipClass,
-} from "./cyclesViewModel";
 
 // Operator-friendly duration formatter (matches journalctl/kubectl
 // style: "12.3 s" / "12 min" / "12 h"). Used by task-detail cycles

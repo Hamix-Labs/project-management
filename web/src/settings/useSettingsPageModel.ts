@@ -16,7 +16,7 @@ import {
 } from "@/api/settings";
 import { getTimezoneSelectOptions } from "@/shared/time/appTimezone";
 import { useAppSettings } from "./useAppSettings";
-import { settingsQueryKeys } from "./settingsQueryKeys";
+import { settingsQueryKeys } from "@/lib/settingsQueryKeys";
 import { useCursorModels } from "./hooks/useCursorModels";
 import { SECTION_IDS } from "./sections";
 import {

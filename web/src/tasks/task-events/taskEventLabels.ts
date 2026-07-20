@@ -1,5 +1,5 @@
 import type { Phase, TaskEvent, TaskEventType } from "@/types";
-import { phaseLabel } from "@/observability";
+import { phaseLabel } from "@/tasks/cycleDisplay/cyclesViewModel";
 
 const LABELS: Record<TaskEventType, string> = {
   task_created: "Task created",
@@ -61,9 +61,19 @@ export function eventTypeLabel(type: TaskEventType): string {
 export function eventDisplayLabel(ev: TaskEvent): string {
   const action = PHASE_EVENT_ACTION[ev.type];
   if (action) {
-    const phase = ev.data.phase;
-    if (typeof phase === "string" && isPhase(phase)) {
-      return `${phaseLabel(phase)} ${action}`;
+    switch (ev.type) {
+      case "phase_started":
+      case "phase_completed":
+      case "phase_failed":
+      case "phase_skipped": {
+        const phase = ev.data.phase;
+        if (typeof phase === "string" && isPhase(phase)) {
+          return `${phaseLabel(phase)} ${action}`;
+        }
+        break;
+      }
+      default:
+        break;
     }
   }
   return eventTypeLabel(ev.type);

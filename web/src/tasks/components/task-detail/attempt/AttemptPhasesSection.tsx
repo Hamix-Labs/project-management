@@ -1,5 +1,5 @@
 import type { TaskCycleDetail, TaskCyclePhase } from "@/types";
-import { phaseLabel } from "@/observability";
+import { phaseLabel } from "@/tasks/cycleDisplay/cyclesViewModel";
 import type { AttemptTimelineDisplay } from "./attemptTimelineDisplay";
 import { AttemptPhaseList } from "./AttemptPhaseList";
 

@@ -1,15 +1,15 @@
 import { errorMessage } from "@/lib/errorMessage";
 import { useNow } from "@/shared/useNow";
+import { formatDurationSeconds } from "@/observability";
 import {
   cycleStatusLabel,
   cycleStatusFillClass,
   cycleRunnerChipClass,
-  formatDurationSeconds,
   formatRunnerModel,
   phaseLabel,
   phaseStatusFillClass,
   phaseStatusLabel,
-} from "@/observability";
+} from "@/tasks/cycleDisplay/cyclesViewModel";
 import type { TaskCycle } from "@/types/cycle";
 import { useAgentRunProgress, type AgentRunProgressItem } from "../../../hooks/useAgentRunProgress";
 import { useTaskCycle } from "../../../hooks/useTaskCycles";

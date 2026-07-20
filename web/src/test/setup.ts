@@ -3,10 +3,16 @@ import "@testing-library/jest-dom/vitest";
 import { afterAll, afterEach, beforeAll } from "vitest";
 import { server } from "./server";
 
+/**
+ * Full-app Vitest projects set HAMIX_MSW_UNHANDLED=error so a forgotten
+ * handler fails loudly. unit/components keep bypass so legacy
+ * vi.spyOn(fetch) suites still work until migrated.
+ */
+const unhandledMode =
+  process.env.HAMIX_MSW_UNHANDLED === "error" ? "error" : "bypass";
+
 beforeAll(() => {
-  // bypass: component tests still use vi.spyOn(fetch); error mode rejects those bypasses.
-  // Integration tests should still register handlers via appDefaultHandlers().
-  server.listen({ onUnhandledRequest: "bypass" });
+  server.listen({ onUnhandledRequest: unhandledMode });
 });
 
 afterEach(() => {

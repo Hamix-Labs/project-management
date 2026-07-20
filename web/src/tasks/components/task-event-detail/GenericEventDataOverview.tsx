@@ -49,9 +49,10 @@ function ValueCell({ value }: { value: unknown }) {
 export function GenericEventDataOverview({
   data,
 }: {
-  data: Record<string, unknown>;
+  data: object;
 }) {
-  const keys = Object.keys(data).sort((a, b) => a.localeCompare(b));
+  const record = data as Record<string, unknown>;
+  const keys = Object.keys(record).sort((a, b) => a.localeCompare(b));
 
   if (keys.length === 0) {
     return (
@@ -68,7 +69,7 @@ export function GenericEventDataOverview({
           <div key={key}>
             <dt>{humanizeEventDataKey(key)}</dt>
             <dd>
-              <ValueCell value={data[key]} />
+              <ValueCell value={record[key]} />
             </dd>
           </div>
         ))}

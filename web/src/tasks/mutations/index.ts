@@ -28,3 +28,8 @@ export type {
   RunGuardedTaskMutationOptions,
   RunGuardedTaskMutationResult,
 } from "./runGuardedMutation";
+export { buildPatchMutationInput } from "./buildPatchMutationInput";
+export type {
+  BuildPatchMutationInputArgs,
+  PatchMutationInput,
+} from "./buildPatchMutationInput";

@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { CustomSelect } from "@/components/custom-select";
+import { Button } from "@/components/ui";
 import { useGlobalRepositories } from "@/hooks/useGlobalRepositories";
 import { Modal } from "@/shared/Modal";
 import { MutationErrorBanner } from "@/shared/MutationErrorBanner";
@@ -136,17 +137,17 @@ export function ProjectCreateDialog({
           />
 
           <div className="row stack-row-actions pl__create-dialog-actions">
-            <button
+            <Button
               type="button"
-              className="secondary"
+              variant="secondary"
               onClick={onCancel}
               disabled={saving}
             >
               Cancel
-            </button>
-            <button type="submit" disabled={!canSubmit}>
-              {saving ? "Creating…" : "Create project"}
-            </button>
+            </Button>
+            <Button type="submit" variant="primary" disabled={!canSubmit} loading={saving}>
+              Create project
+            </Button>
           </div>
         </form>
       </section>

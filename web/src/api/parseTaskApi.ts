@@ -3,11 +3,18 @@ export {
   parseTaskStatsResponse,
 } from "./parseTaskApiStats";
 export { parseTaskChecklistResponse } from "./parseTaskApiChecklist";
-export { parseTask, parseTaskListResponse } from "./parseTaskApiTasks";
+export {
+  parseTask,
+  parseTaskListResponse,
+  parseDependsOnEdge,
+  parseDependsOnList,
+  parseDependenciesEnvelope,
+} from "./parseTaskApiTasks";
 export {
   parseTaskEventDetail,
   parseTaskEventsResponse,
 } from "./parseTaskApiEvents";
+export { parseTaskEventData } from "./parseTaskApiEventData";
 export {
   parseTaskDraftDetail,
   parseTaskDraftSummaryList,

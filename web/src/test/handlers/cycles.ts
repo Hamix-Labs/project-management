@@ -2,7 +2,20 @@ import { http, HttpResponse, type JsonBodyType } from "msw";
 
 /** Placeholder for cycle endpoints referenced by full-page flows. */
 export function taskCyclesEmpty(taskId: string) {
-  return http.get(`/tasks/${taskId}/cycles`, () => HttpResponse.json({ cycles: [] }));
+  return http.get(`/tasks/${taskId}/cycles`, () =>
+    HttpResponse.json({
+      task_id: taskId,
+      cycles: [],
+      limit: 50,
+      has_more: false,
+    }),
+  );
+}
+
+export function taskCommitsEmpty(taskId: string) {
+  return http.get(`/tasks/${taskId}/commits`, () =>
+    HttpResponse.json({ task_id: taskId, commits: [] }),
+  );
 }
 
 export function cycleDetailGet(

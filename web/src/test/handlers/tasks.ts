@@ -215,6 +215,70 @@ export function taskCreateFixed(task: Task) {
   return taskCreate(() => task);
 }
 
+/** POST /tasks — 4xx/5xx create failure (modal stays open; list unchanged). */
+export function taskCreateFail(status: number, error = "Could not create task") {
+  return http.post("/tasks", () => HttpResponse.json({ error }, { status }));
+}
+
+/** PATCH /tasks/:id — success; returns updated task JSON. */
+export function taskPatch(
+  taskId: string,
+  options: {
+    onPatch?: (body: string) => void;
+    response?: Task | (() => Task);
+  } = {},
+) {
+  return http.patch(`/tasks/${taskId}`, async ({ request }) => {
+    const body = await request.text();
+    options.onPatch?.(body);
+    const task =
+      typeof options.response === "function"
+        ? options.response()
+        : (options.response ?? defaultTask(taskId));
+    return HttpResponse.json(task);
+  });
+}
+
+/** PATCH /tasks/:id — 4xx/5xx failure. */
+export function taskPatchError(
+  taskId: string,
+  status: number,
+  error = "Could not save task",
+) {
+  return http.patch(`/tasks/${taskId}`, () =>
+    HttpResponse.json({ error }, { status }),
+  );
+}
+
+/** DELETE /tasks/:id — success (204). */
+export function taskDelete(
+  taskId: string,
+  onDelete?: () => void,
+) {
+  return http.delete(`/tasks/${taskId}`, () => {
+    onDelete?.();
+    return new HttpResponse(null, { status: 204 });
+  });
+}
+
+/** DELETE /tasks/:id — 4xx/5xx failure. */
+export function taskDeleteError(
+  taskId: string,
+  status: number,
+  error = "Could not delete task",
+) {
+  return http.delete(`/tasks/${taskId}`, () =>
+    HttpResponse.json({ error }, { status }),
+  );
+}
+
+/** Keeps DELETE /tasks/:id pending until deferred.resolve/reject. */
+export function taskDeletePending(taskId: string) {
+  const deferred = createDeferred<Response>();
+  const handler = http.delete(`/tasks/${taskId}`, () => deferred.promise);
+  return [handler, deferred] as const;
+}
+
 export function checklistItemCreate(taskId: string) {
   return http.post(`/tasks/${taskId}/checklist/items`, () =>
     new HttpResponse(null, { status: 204 }),

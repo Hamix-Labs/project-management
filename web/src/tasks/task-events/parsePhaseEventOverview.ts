@@ -1,4 +1,8 @@
-import type { TaskEventType } from "@/types/task";
+import type {
+  CycleLifecycleEventData,
+  PhaseLifecycleEventData,
+  TaskEventType,
+} from "@/types/task";
 import {
   parseVerificationSnapshot,
   type VerificationSnapshot,
@@ -109,22 +113,23 @@ export type CycleTerminalOverviewModel = {
  */
 export function parseCycleTerminalOverview(
   type: TaskEventType,
-  data: Record<string, unknown>,
+  data: CycleLifecycleEventData,
 ): CycleTerminalOverviewModel | null {
   if (!CYCLE_TERMINAL_OVERVIEW_TYPES.has(type)) return null;
   const cycleId = str(data.cycle_id);
-  const attemptSeq = num(data.attempt_seq);
+  const attemptSeq =
+    data.attempt_seq !== undefined && Number.isFinite(data.attempt_seq)
+      ? data.attempt_seq
+      : undefined;
   const status = str(data.status);
   if (!cycleId || attemptSeq === undefined || !status) return null;
-  const reason = str(data.reason);
-  const failureSummary = str(data.failure_summary);
   return {
     terminal: type === "cycle_failed" ? "failed" : "succeeded",
     cycleId,
     attemptSeq,
     status,
-    reason,
-    failureSummary,
+    reason: str(data.reason),
+    failureSummary: str(data.failure_summary),
   };
 }
 
@@ -145,7 +150,7 @@ export function normalizePhaseSummaryMarkdown(raw: string): string {
  */
 export function parsePhaseEventOverview(
   type: TaskEventType,
-  data: Record<string, unknown>,
+  data: PhaseLifecycleEventData,
 ): PhaseEventOverviewModel | null {
   if (!PHASE_OVERVIEW_TYPES.has(type)) return null;
   const phase = str(data.phase);
@@ -154,7 +159,10 @@ export function parsePhaseEventOverview(
 
   const summary = str(data.summary);
   const cycleId = str(data.cycle_id);
-  const phaseSeq = num(data.phase_seq);
+  const phaseSeq =
+    data.phase_seq !== undefined && Number.isFinite(data.phase_seq)
+      ? data.phase_seq
+      : undefined;
 
   const det = readDetailsBlob(data.details);
   const verification =

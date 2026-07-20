@@ -64,31 +64,45 @@ export function formatPhaseSummaryCompact(
  * ids — callers link to the full event page for payload inspection.
  */
 export function formatEventSummaryCompact(ev: TaskEvent): string | null {
-  const cycleOverview = parseCycleTerminalOverview(ev.type, ev.data);
-  if (cycleOverview) {
-    if (cycleOverview.failureSummary) {
-      return truncate(cycleOverview.failureSummary, 140);
+  if (ev.type === "cycle_failed" || ev.type === "cycle_completed") {
+    const cycleOverview = parseCycleTerminalOverview(ev.type, ev.data);
+    if (cycleOverview) {
+      if (cycleOverview.failureSummary) {
+        return truncate(cycleOverview.failureSummary, 140);
+      }
+      if (cycleOverview.reason) return truncate(cycleOverview.reason, 140);
+      return null;
     }
-    if (cycleOverview.reason) return truncate(cycleOverview.reason, 140);
-    return null;
   }
 
-  const phaseOverview = parsePhaseEventOverview(ev.type, ev.data);
-  if (phaseOverview) {
-    if (phaseOverview.standardizedMessage) {
-      return truncate(phaseOverview.standardizedMessage, 140);
+  if (ev.type === "phase_completed" || ev.type === "phase_failed") {
+    const phaseOverview = parsePhaseEventOverview(ev.type, ev.data);
+    if (phaseOverview) {
+      if (phaseOverview.standardizedMessage) {
+        return truncate(phaseOverview.standardizedMessage, 140);
+      }
+      if (phaseOverview.summary) {
+        return formatPhaseSummaryCompact(phaseOverview.summary, 140);
+      }
+      return null;
     }
-    if (phaseOverview.summary) {
-      return formatPhaseSummaryCompact(phaseOverview.summary, 140);
-    }
-    return null;
   }
 
   if (TRANSITION_TYPES.has(ev.type)) {
-    const from = ev.data.from;
-    const to = ev.data.to;
-    if (typeof from === "string" && typeof to === "string") {
-      return `${from} → ${to}`;
+    switch (ev.type) {
+      case "status_changed":
+      case "priority_changed":
+      case "message_added":
+      case "prompt_appended": {
+        const from = ev.data.from;
+        const to = ev.data.to;
+        if (typeof from === "string" && typeof to === "string") {
+          return `${from} → ${to}`;
+        }
+        break;
+      }
+      default:
+        break;
     }
   }
 
@@ -100,7 +114,11 @@ export function formatEventSummaryCompact(ev: TaskEvent): string | null {
   if (ev.type === "task_retry_requested") {
     const mode = ev.data.mode;
     if (typeof mode === "string" && mode.trim()) {
-      return mode === "fresh" ? "Start over" : mode === "resume" ? "Resume from failure" : mode;
+      return mode === "fresh"
+        ? "Start over"
+        : mode === "resume"
+          ? "Resume from failure"
+          : mode;
     }
   }
 
@@ -123,12 +141,21 @@ export function formatEventSummaryCompact(ev: TaskEvent): string | null {
  */
 export function formatAttemptAuditPreview(ev: TaskEvent): string | null {
   if (PHASE_LIFECYCLE_TYPES.has(ev.type)) {
-    const phase = ev.data.phase;
-    if (phase === "verify") {
-      const seq = ev.data.phase_seq;
-      if (typeof seq === "number" && Number.isFinite(seq)) {
-        return `PHASE ${seq}`;
+    switch (ev.type) {
+      case "phase_started":
+      case "phase_completed":
+      case "phase_failed":
+      case "phase_skipped": {
+        if (ev.data.phase === "verify") {
+          const seq = ev.data.phase_seq;
+          if (typeof seq === "number" && Number.isFinite(seq)) {
+            return `PHASE ${seq}`;
+          }
+        }
+        break;
       }
+      default:
+        break;
     }
   }
 
@@ -153,11 +180,20 @@ export function formatAttemptAuditPreview(ev: TaskEvent): string | null {
   }
 
   if (PHASE_LIFECYCLE_TYPES.has(ev.type)) {
-    const seq = ev.data.phase_seq;
-    if (typeof seq === "number" && Number.isFinite(seq)) {
-      return `PHASE ${seq}`;
+    switch (ev.type) {
+      case "phase_started":
+      case "phase_completed":
+      case "phase_failed":
+      case "phase_skipped": {
+        const seq = ev.data.phase_seq;
+        if (typeof seq === "number" && Number.isFinite(seq)) {
+          return `PHASE ${seq}`;
+        }
+        return null;
+      }
+      default:
+        break;
     }
-    return null;
   }
 
   return formatEventSummaryCompact(ev);
@@ -195,6 +231,9 @@ export type VerificationScoreBadge = {
 export function resolveVerificationScoreBadge(
   ev: TaskEvent,
 ): VerificationScoreBadge | null {
+  if (ev.type !== "phase_completed" && ev.type !== "phase_failed") {
+    return null;
+  }
   const overview = parsePhaseEventOverview(ev.type, ev.data);
   const verification = overview?.verification;
   if (!verification || overview?.phase !== "verify") return null;
