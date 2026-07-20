@@ -5,8 +5,6 @@ import (
 	"net/http"
 	"strings"
 	"time"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
 )
 
 const (
@@ -30,9 +28,9 @@ func taskCreateInputFields(body *taskCreateJSON, actor string) []any {
 		"body_status", string(body.Status),
 		"body_priority", string(body.Priority),
 		"body_title_len", len(body.Title),
-		"body_title_preview", handlerhttp.TruncateRunes(body.Title, maxHTTPLogTitleRunes),
+		"body_title_preview", truncateRunes(body.Title, maxHTTPLogTitleRunes),
 		"body_initial_prompt_len", len(body.InitialPrompt),
-		"body_initial_prompt_preview", handlerhttp.TruncateRunes(body.InitialPrompt, maxHTTPLogPromptRunes),
+		"body_initial_prompt_preview", truncateRunes(body.InitialPrompt, maxHTTPLogPromptRunes),
 		"body_project_id_set", body.ProjectID != nil,
 		"actor", actor,
 	}
@@ -59,11 +57,11 @@ func taskPatchInputFields(body *taskPatchJSON) []any {
 	}
 	out := []any{}
 	if body.Title != nil {
-		out = append(out, "patch_title", true, "patch_title_len", len(*body.Title), "patch_title_preview", handlerhttp.TruncateRunes(*body.Title, maxHTTPLogTitleRunes))
+		out = append(out, "patch_title", true, "patch_title_len", len(*body.Title), "patch_title_preview", truncateRunes(*body.Title, maxHTTPLogTitleRunes))
 	}
 	if body.InitialPrompt != nil {
 		out = append(out, "patch_initial_prompt", true, "patch_initial_prompt_len", len(*body.InitialPrompt),
-			"patch_initial_prompt_preview", handlerhttp.TruncateRunes(*body.InitialPrompt, maxHTTPLogPromptRunes))
+			"patch_initial_prompt_preview", truncateRunes(*body.InitialPrompt, maxHTTPLogPromptRunes))
 	}
 	if body.Status != nil {
 		out = append(out, "patch_status", string(*body.Status))
@@ -91,12 +89,36 @@ func taskPatchInputFields(body *taskPatchJSON) []any {
 	return out
 }
 
-//funclogmeasure:skip category=hot-path reason="Thin re-export of handlerhttp.DebugHTTPRequest; shared package emits the http.io trace."
-func debugHTTPRequest(r *http.Request, op string, extra ...any) {
-	handlerhttp.DebugHTTPRequest(r, op, extra...)
+//funclogmeasure:skip category=hot-path reason="Delegates to injected HTTPHelpers; shared package emits the http.io trace."
+func (h *Handler) debugHTTPRequest(r *http.Request, op string, extra ...any) {
+	if h.httpPort != nil {
+		h.httpPort.DebugHTTPRequest(r, op, extra...)
+	}
 }
 
-//funclogmeasure:skip category=hot-path reason="Thin re-export of handlerhttp.DebugHTTPOut; shared package emits the http.io trace."
-func debugHTTPOut(ctx context.Context, op string, httpStatus int, extra ...any) {
-	handlerhttp.DebugHTTPOut(ctx, op, httpStatus, extra...)
+//funclogmeasure:skip category=hot-path reason="Delegates to injected HTTPHelpers; shared package emits the http.io trace."
+func (h *Handler) debugHTTPOut(ctx context.Context, op string, httpStatus int, extra ...any) {
+	if h.httpPort != nil {
+		h.httpPort.DebugHTTPOut(ctx, op, httpStatus, extra...)
+	}
+}
+
+// truncateRunes limits s to maxRunes runes and appends "…" when truncated.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func truncateRunes(s string, maxRunes int) string {
+	if maxRunes <= 0 {
+		return ""
+	}
+	var b strings.Builder
+	n := 0
+	for _, r := range s {
+		if n >= maxRunes {
+			b.WriteString("…")
+			break
+		}
+		b.WriteRune(r)
+		n++
+	}
+	return b.String()
 }

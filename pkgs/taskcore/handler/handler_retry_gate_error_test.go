@@ -65,7 +65,7 @@ func TestPostTaskRetry_mapsStoreErrorsToHTTPStatus(t *testing.T) {
 			t.Parallel()
 			fake := &retryGateFake{TaskCRUDFake: storefake.NewTaskCRUD(), retryErr: tc.retryErr}
 			mux := http.NewServeMux()
-			handler.Register(mux, handler.Deps{Tasks: fake})
+			handler.Register(mux, testDeps(fake))
 
 			req := httptest.NewRequest(http.MethodPost, "/tasks/"+taskID+"/retry", bytes.NewReader([]byte(`{"mode":"fresh","parent_cycle_id":"c1"}`)))
 			req.Header.Set("Content-Type", "application/json")
@@ -85,7 +85,7 @@ func TestPostTaskRetry_rejectsNonUserActor(t *testing.T) {
 	taskID := uuid.NewString()
 	fake := &retryGateFake{TaskCRUDFake: storefake.NewTaskCRUD()}
 	mux := http.NewServeMux()
-	handler.Register(mux, handler.Deps{Tasks: fake})
+	handler.Register(mux, testDeps(fake))
 
 	req := httptest.NewRequest(http.MethodPost, "/tasks/"+taskID+"/retry", bytes.NewReader([]byte(`{"mode":"fresh","parent_cycle_id":"c1"}`)))
 	req.Header.Set("Content-Type", "application/json")
@@ -116,7 +116,7 @@ func TestPatchTaskGate_mapsStoreErrorsToHTTPStatus(t *testing.T) {
 			t.Parallel()
 			fake := &retryGateFake{TaskCRUDFake: storefake.NewTaskCRUD(), gateErr: tc.gateErr}
 			mux := http.NewServeMux()
-			handler.Register(mux, handler.Deps{Tasks: fake})
+			handler.Register(mux, testDeps(fake))
 
 			body, _ := json.Marshal(map[string]string{"action": "release"})
 			req := httptest.NewRequest(http.MethodPatch, "/tasks/"+taskID+"/gate", bytes.NewReader(body))
@@ -147,7 +147,7 @@ func TestPatchTaskGate_okReturnsTask(t *testing.T) {
 	fake.OnGet(task)
 
 	mux := http.NewServeMux()
-	handler.Register(mux, handler.Deps{Tasks: fake})
+	handler.Register(mux, testDeps(fake))
 
 	body, _ := json.Marshal(map[string]string{"action": "release"})
 	req := httptest.NewRequest(http.MethodPatch, "/tasks/"+taskID+"/gate", bytes.NewReader(body))

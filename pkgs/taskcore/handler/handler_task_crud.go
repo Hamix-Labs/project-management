@@ -3,17 +3,15 @@ package handler
 import (
 	"context"
 	"fmt"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
 	"log/slog"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler/readpolicy"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
+	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
+	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/google/uuid"
 )
 
@@ -40,41 +38,41 @@ func (h *Handler) create(w http.ResponseWriter, r *http.Request) {
 	const op = "tasks.create"
 	r = calltrace.WithRequestRoot(r, op)
 	var body taskCreateJSON
-	if err := handlerhttp.DecodeJSON(r.Context(), r.Body, &body); err != nil {
-		debugHTTPRequest(r, op, "json_decode_failed", true)
-		handlerhttp.WriteError(w, r, op, err, http.StatusBadRequest)
+	if err := h.httpPort.DecodeJSON(r.Context(), r.Body, &body); err != nil {
+		h.debugHTTPRequest(r, op, "json_decode_failed", true)
+		h.httpPort.WriteError(w, r, op, err, http.StatusBadRequest)
 		return
 	}
-	by := handlerhttp.ActorFromRequest(r)
-	debugHTTPRequest(r, op, taskCreateInputFields(&body, string(by))...)
+	by := h.httpPort.ActorFromRequest(r)
+	h.debugHTTPRequest(r, op, taskCreateInputFields(&body, string(by))...)
 	task, err := h.CreateTaskFromComposeJSON(r.Context(), r, op, taskCreateJSONToCompose(body), CreateTaskComposeOpts{
 		ID:      body.ID,
 		DraftID: body.DraftID,
 		Gate:    body.Gate,
 	}, by)
 	if err != nil {
-		handlerhttp.WriteStoreError(w, r, op, err)
+		h.httpPort.WriteStoreError(w, r, op, err)
 		return
 	}
-	handlerhttp.WriteJSON(w, r, op, http.StatusCreated, task)
+	h.httpPort.WriteJSON(w, r, op, http.StatusCreated, task)
 }
 
 func (h *Handler) get(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.get")
 	const op = "tasks.get"
 	r = calltrace.WithRequestRoot(r, op)
-	id, err := parseTaskPathID(r.PathValue("id"))
+	id, err := h.parseTaskPathID(r.PathValue("id"))
 	if err != nil {
-		handlerhttp.WriteStoreError(w, r, op, err)
+		h.httpPort.WriteStoreError(w, r, op, err)
 		return
 	}
-	debugHTTPRequest(r, op, "task_id", id)
+	h.debugHTTPRequest(r, op, "task_id", id)
 	t, err := h.tasks.Get(r.Context(), id)
 	if err != nil {
-		handlerhttp.WriteStoreError(w, r, op, err)
+		h.httpPort.WriteStoreError(w, r, op, err)
 		return
 	}
-	handlerhttp.WriteJSONWithETag(w, r, op, http.StatusOK, t)
+	h.httpPort.WriteJSONWithETag(w, r, op, http.StatusOK, t)
 }
 
 // list serves GET /tasks — the hottest read path in taskapi (SPA initial load
@@ -97,8 +95,8 @@ func (h *Handler) list(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	limit, offset, afterID, err := parseListParams(r.Context(), q)
 	if err != nil {
-		debugHTTPRequest(r, op, "list_params_invalid", true)
-		handlerhttp.WriteStoreError(w, r, op, err,
+		h.debugHTTPRequest(r, op, "list_params_invalid", true)
+		h.httpPort.WriteStoreError(w, r, op, err,
 			"failure_stage", "parse_list_params",
 			"limit_q", q.Get("limit"),
 			"offset_q", q.Get("offset"),
@@ -106,7 +104,7 @@ func (h *Handler) list(w http.ResponseWriter, r *http.Request) {
 		)
 		return
 	}
-	debugHTTPRequest(r, op, "limit", limit, "offset", offset, "after_id", afterID)
+	h.debugHTTPRequest(r, op, "limit", limit, "offset", offset, "after_id", afterID)
 	var tasks []domain.Task
 	var hasMore bool
 	if afterID != "" {
@@ -120,7 +118,7 @@ func (h *Handler) list(w http.ResponseWriter, r *http.Request) {
 		if afterID != "" {
 			mode = "keyset"
 		}
-		handlerhttp.WriteStoreError(w, r, op, err,
+		h.httpPort.WriteStoreError(w, r, op, err,
 			"failure_stage", "store_list",
 			"limit", limit,
 			"offset", offset,
@@ -129,43 +127,43 @@ func (h *Handler) list(w http.ResponseWriter, r *http.Request) {
 		)
 		return
 	}
-	handlerhttp.WriteJSONWithETag(w, r, op, http.StatusOK, buildListResponse(tasks, limit, offset, hasMore))
+	h.httpPort.WriteJSONWithETag(w, r, op, http.StatusOK, buildListResponse(tasks, limit, offset, hasMore))
 }
 
 func (h *Handler) stats(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.stats")
 	const op = "tasks.stats"
 	r = calltrace.WithRequestRoot(r, op)
-	debugHTTPRequest(r, op)
+	h.debugHTTPRequest(r, op)
 	stats, err := h.tasks.TaskStats(r.Context())
 	if err != nil {
-		handlerhttp.WriteStoreError(w, r, op, err)
+		h.httpPort.WriteStoreError(w, r, op, err)
 		return
 	}
-	handlerhttp.WriteJSONWithETag(w, r, op, http.StatusOK, taskStatsResponseFromStore(stats))
+	h.httpPort.WriteJSONWithETag(w, r, op, http.StatusOK, taskStatsResponseFromStore(stats))
 }
 
 func (h *Handler) delete(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.delete")
 	const op = "tasks.delete"
 	r = calltrace.WithRequestRoot(r, op)
-	id, err := parseTaskPathID(r.PathValue("id"))
+	id, err := h.parseTaskPathID(r.PathValue("id"))
 	if err != nil {
-		handlerhttp.WriteStoreError(w, r, op, err)
+		h.httpPort.WriteStoreError(w, r, op, err)
 		return
 	}
-	debugHTTPRequest(r, op, "task_id", id)
-	by := handlerhttp.ActorFromRequest(r)
+	h.debugHTTPRequest(r, op, "task_id", id)
+	by := h.httpPort.ActorFromRequest(r)
 	deletedIDs, err := h.tasks.Delete(r.Context(), id, by)
 	if err != nil {
-		handlerhttp.WriteStoreError(w, r, op, err)
+		h.httpPort.WriteStoreError(w, r, op, err)
 		return
 	}
 	for _, deletedID := range deletedIDs {
-		h.notifyChangeSafe(realtime.TaskDeleted, deletedID)
+		h.notifyChangeSafe(contract.ChangeTaskDeleted, deletedID)
 		taskapiDomainTasksDeletedTotal.Inc()
 	}
-	debugHTTPOut(r.Context(), op, http.StatusNoContent,
+	h.debugHTTPOut(r.Context(), op, http.StatusNoContent,
 		"task_id", id,
 		"deleted_count", len(deletedIDs),
 		"response_empty", true)
@@ -179,7 +177,7 @@ func parseListParams(ctx context.Context, q url.Values) (limit, offset int, afte
 	defer func() {
 		calltrace.HelperIOOut(ctx, "parseListParams", "limit", limit, "offset", offset, "after_id", afterID, "err", err)
 	}()
-	limit = readpolicy.TaskListDefaultLimit
+	limit = contract.TaskListDefaultLimit
 	offset = 0
 	afterID = strings.TrimSpace(q.Get("after_id"))
 	if afterID != "" && len(afterID) > maxListAfterIDParamBytes {
@@ -198,13 +196,13 @@ func parseListParams(ctx context.Context, q url.Values) (limit, offset int, afte
 			return 0, 0, "", fmt.Errorf("%w: limit value too long", domain.ErrInvalidInput)
 		}
 		n, e := strconv.Atoi(v)
-		if e != nil || n < 0 || n > readpolicy.TaskListMaxLimit {
-			return 0, 0, "", fmt.Errorf("%w: limit must be integer 0..%d", domain.ErrInvalidInput, readpolicy.TaskListMaxLimit)
+		if e != nil || n < 0 || n > contract.TaskListMaxLimit {
+			return 0, 0, "", fmt.Errorf("%w: limit must be integer 0..%d", domain.ErrInvalidInput, contract.TaskListMaxLimit)
 		}
 		limit = n
 	}
 	if limit <= 0 {
-		limit = readpolicy.TaskListDefaultLimit
+		limit = contract.TaskListDefaultLimit
 	}
 	if v := q.Get("offset"); v != "" {
 		if len(v) > maxListIntQueryParamBytes {

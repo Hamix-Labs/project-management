@@ -7,7 +7,6 @@ import (
 
 	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 )
 
 // SettingsReader loads app settings for task create validation.
@@ -24,17 +23,18 @@ type ComposeGitValidator interface {
 	ValidatePromptMentionsForWorktree(ctx context.Context, worktreeID *string, prompt string) error
 }
 
-// NotifyChangeFunc aliases the shared hint-with-id SSE notify type.
-type NotifyChangeFunc = realtime.NotifyChangeFunc
+// NotifyChangeFunc aliases the contract hint-with-id SSE notify type.
+type NotifyChangeFunc = contract.NotifyChangeFunc
 
-// NotifyTaskChangedFunc aliases the shared enriched-task SSE notify type.
-type NotifyTaskChangedFunc = realtime.NotifyTaskChangedFunc
+// NotifyTaskChangedFunc aliases the contract enriched-task SSE notify type.
+type NotifyTaskChangedFunc = contract.NotifyTaskChangedFunc
 
 // Deps wires taskcore HTTP handlers into the taskapi mux.
 type Deps struct {
 	Tasks             contract.TaskCRUDStore
 	Settings          SettingsReader
 	GitCompose        ComposeGitValidator
+	HTTP              contract.HTTPHelpers
 	NotifyChange      NotifyChangeFunc
 	NotifyTaskChanged NotifyTaskChangedFunc
 }
@@ -44,6 +44,7 @@ type Handler struct {
 	tasks             contract.TaskCRUDStore
 	settings          SettingsReader
 	gitCompose        ComposeGitValidator
+	httpPort          contract.HTTPHelpers
 	notifyChange      NotifyChangeFunc
 	notifyTaskChanged NotifyTaskChangedFunc
 }
@@ -56,6 +57,7 @@ func New(deps Deps) *Handler {
 		tasks:             deps.Tasks,
 		settings:          deps.Settings,
 		gitCompose:        deps.GitCompose,
+		httpPort:          deps.HTTP,
 		notifyChange:      deps.NotifyChange,
 		notifyTaskChanged: deps.NotifyTaskChanged,
 	}
@@ -65,13 +67,7 @@ func New(deps Deps) *Handler {
 //
 //funclogmeasure:skip category=hot-path reason="Route table wiring only; operation trace is emitted by registered handlers."
 func Register(m *http.ServeMux, deps Deps) {
-	h := &Handler{
-		tasks:             deps.Tasks,
-		settings:          deps.Settings,
-		gitCompose:        deps.GitCompose,
-		notifyChange:      deps.NotifyChange,
-		notifyTaskChanged: deps.NotifyTaskChanged,
-	}
+	h := New(deps)
 	m.Handle("POST /tasks", http.HandlerFunc(h.create))
 	m.Handle("GET /tasks", http.HandlerFunc(h.list))
 	m.Handle("GET /tasks/stats", http.HandlerFunc(h.stats))
@@ -86,14 +82,14 @@ func Register(m *http.ServeMux, deps Deps) {
 }
 
 //funclogmeasure:skip category=delegate-already-logs reason="SSE notify callback; HTTP handler chokepoint emits trace."
-func (h *Handler) notifyChangeSafe(typ realtime.ChangeType, id string) {
+func (h *Handler) notifyChangeSafe(typ contract.ChangeType, id string) {
 	if h.notifyChange != nil {
 		h.notifyChange(typ, id)
 	}
 }
 
 //funclogmeasure:skip category=delegate-already-logs reason="SSE notify callback; HTTP handler chokepoint emits trace."
-func (h *Handler) notifyTaskChangedSafe(typ realtime.ChangeType, id string, data any) {
+func (h *Handler) notifyTaskChangedSafe(typ contract.ChangeType, id string, data any) {
 	if h.notifyTaskChanged != nil {
 		h.notifyTaskChanged(typ, id, data)
 	}
