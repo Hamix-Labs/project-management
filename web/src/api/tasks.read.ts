@@ -10,7 +10,6 @@ import {
   type CycleFailuresListResponse,
   type TaskDependencyEdge,
 } from "@/types";
-import { parseNonEmptyString } from "./parseTaskApiCore";
 import {
   parseTask,
   parseTaskDraftDetail,
@@ -22,6 +21,9 @@ import {
   parseTaskStatsResponse,
   parseCycleFailuresListResponse,
 } from "./parseTaskApi";
+import {
+  parseDependenciesEnvelope,
+} from "./parseTaskApiTasks";
 import { fetchNamedEntityJson } from "./namedEntityClient";
 import { fetchWithTimeout, apiErrorFromResponse } from "./shared";
 import {
@@ -210,26 +212,6 @@ export async function getTaskDraft(
   );
 }
 
-export function parseDependsOnList(raw: unknown): TaskDependencyEdge[] {
-  if (!Array.isArray(raw)) {
-    return [];
-  }
-  return raw.map((edge, i) => {
-    if (typeof edge === "string") {
-      return { task_id: parseNonEmptyString(edge, `depends_on[${i}]`), satisfies: "done" as const };
-    }
-    if (edge !== null && typeof edge === "object" && !Array.isArray(edge)) {
-      const obj = edge as Record<string, unknown>;
-      const satisfies = "done" as const;
-      return {
-        task_id: parseNonEmptyString(obj.task_id, `depends_on[${i}].task_id`),
-        satisfies,
-      };
-    }
-    throw new Error(`Invalid API response: depends_on[${i}] must be string or object`);
-  });
-}
-
 export async function listTaskDependencies(
   taskId: string,
   options?: { signal?: AbortSignal },
@@ -240,8 +222,7 @@ export async function listTaskDependencies(
     { headers: { Accept: "application/json" }, signal: options?.signal },
   );
   if (!res.ok) throw await apiErrorFromResponse(res);
-  const raw = (await res.json()) as { depends_on?: unknown };
-  return parseDependsOnList(raw.depends_on);
+  return parseDependenciesEnvelope(await res.json());
 }
 
 export async function listChecklist(
