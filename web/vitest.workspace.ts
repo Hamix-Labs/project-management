@@ -51,6 +51,9 @@ const sharedVite = {
 const fullAppTest = {
   ...sharedTest,
   testTimeout: 15_000,
+  // Fail loud when a harness forgets an MSW handler (F-09-05 / Wave G1).
+  // unit/components omit this so legacy vi.spyOn(fetch) suites keep working.
+  env: { HAMIX_MSW_UNHANDLED: "error" },
 };
 
 export default defineWorkspace([

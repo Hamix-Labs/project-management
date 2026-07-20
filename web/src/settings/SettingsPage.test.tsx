@@ -151,7 +151,7 @@ describe("SettingsPage", () => {
     // `agent_paused` is owned by automation (agents/scripts hitting
     // PATCH /settings directly). The SettingsPage must:
     //   1. Not surface a "status" row for it — the top-bar
-    //      SystemStatusChip is the single source of live agent
+    //      live agent status chrome (when wired) is the single source of live agent
     //      status, and duplicating it on a configuration form
     //      confused operators (read-only row mixed into an editable
     //      form) and didn't generalize to multi-agent anyway.

@@ -81,7 +81,7 @@ Use the smallest render helper from [`appHarness.tsx`](../../web/src/test/integr
 | `renderTasksHome()` / `renderTasksAt()` | Home, drafts, create modals — no bootstrap or SSE (`test-task-create`) |
 | Direct page `render()` + MSW | Single page when routing is not under test (`test-task-pages`) |
 
-MSW uses `onUnhandledRequest: "bypass"` in [`setup.ts`](../../web/src/test/setup.ts) so component tests that still spy on `fetch` can coexist with MSW. Integration tests in task-pages and task-create should still register handlers via `appDefaultHandlers()` for every endpoint they trigger.
+MSW uses `onUnhandledRequest: "error"` for full-app Vitest projects (`app`, `task-pages`, `task-create`, `settings`, `projects`, `worktrees`) via `HAMIX_MSW_UNHANDLED=error`. The `unit` and `components` projects keep `bypass` so legacy `vi.spyOn(fetch)` suites still work until migrated. Integration tests must still register handlers via `appDefaultHandlers()` for every endpoint they trigger.
 
 ## Five rules
 
