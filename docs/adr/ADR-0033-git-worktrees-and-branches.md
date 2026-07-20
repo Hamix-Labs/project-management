@@ -50,5 +50,5 @@ We evaluated [Worktrunk](https://github.com/max-sixty/worktrunk) as an external 
 
 ## See also
 
-- [docs/plans/issue-39-git-workflow-roadmap.md](../plans/issue-39-git-workflow-roadmap.md)
+- [Issue #39](https://github.com/AlexsanderHamir/Hamix/issues/39) — tracking issue
 - [docs/domain/worktrees-and-branches.md](../domain/worktrees-and-branches.md)
