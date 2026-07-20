@@ -1,4 +1,7 @@
-package model
+// Package parity holds domain↔model field-parity helpers shared by BC
+// store/model packages. Kept as a leaf package so model packages can import
+// it without cycling through storekernel (which imports some BC models).
+package parity
 
 import (
 	"encoding/json"
@@ -10,6 +13,18 @@ import (
 	"gorm.io/datatypes"
 	"gorm.io/gorm/schema"
 )
+
+// Pair binds a domain struct prototype to its model counterpart for
+// schema- and field-parity guards.
+type Pair struct {
+	Name   string
+	Domain any
+	Model  any
+	Table  string
+	// ModelMigrateExtra lists additional model structs AutoMigrate must run
+	// before the primary model type (e.g. parent tables for association FKs).
+	ModelMigrateExtra []any
+}
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func gormColumnName(sf reflect.StructField) (string, bool) {
@@ -109,11 +124,11 @@ func typesCompatible(domainType, modelType reflect.Type) bool {
 	return false
 }
 
-// assertFieldParity reports whether every persisted model column has a domain
+// AssertFieldParity reports whether every persisted model column has a domain
 // counterpart with a compatible Go type (json.RawMessage pairs with datatypes.JSON).
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func assertFieldParity(pair ParityPair) error {
+func AssertFieldParity(pair Pair) error {
 	dt := reflect.TypeOf(pair.Domain)
 	if dt.Kind() == reflect.Pointer {
 		dt = dt.Elem()
@@ -144,8 +159,10 @@ func assertFieldParity(pair ParityPair) error {
 	return nil
 }
 
+// SortedStrings returns a sorted copy of ss.
+//
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func sortedStrings(ss []string) []string {
+func SortedStrings(ss []string) []string {
 	cp := append([]string(nil), ss...)
 	sort.Strings(cp)
 	return cp

@@ -11,6 +11,7 @@ Shared persistence helpers used by bounded-context stores and `internal/taskapi/
 | Validation | `validate.go`, `constraints.go` | `ValidateActor`, enum/check helpers |
 | IDs + errors | `ids.go`, `errors.go`, `persistence_errors.go` | `ResolveID`, `MapNotFound`, duplicate-key mapping |
 | JSON | `json.go`, `jsonmap/` | `NormalizeJSONObject`, `EventPairJSON`; RawMessage↔datatypes helpers in `jsonmap` |
+| Field parity | `parity/` | Domain↔model field-parity assertion helpers (`AssertFieldParity`) |
 | Task load | `taskload/` | Shared GORM task-row load helpers |
 
 ## Dependency rules

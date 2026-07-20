@@ -8,6 +8,7 @@ import (
 
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
+	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel/parity"
 	"gorm.io/gorm/logger"
 )
 
@@ -71,7 +72,7 @@ func readIndexSQL(t *testing.T, db *gorm.DB, table string) []string {
 		}
 		out = append(out, r.SQL)
 	}
-	return sortedStrings(out)
+	return parity.SortedStrings(out)
 }
 
 func formatColumns(cols []tableColumn) []string {

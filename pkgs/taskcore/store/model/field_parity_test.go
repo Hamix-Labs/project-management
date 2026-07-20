@@ -1,6 +1,10 @@
 package model
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel/parity"
+)
 
 func TestFieldParity(t *testing.T) {
 	t.Parallel()
@@ -8,7 +12,7 @@ func TestFieldParity(t *testing.T) {
 		pair := pair
 		t.Run(pair.Name, func(t *testing.T) {
 			t.Parallel()
-			if err := assertFieldParity(pair); err != nil {
+			if err := parity.AssertFieldParity(pair); err != nil {
 				t.Fatal(err)
 			}
 		})

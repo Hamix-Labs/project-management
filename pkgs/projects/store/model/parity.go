@@ -2,17 +2,11 @@ package model
 
 import (
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel/parity"
 )
 
-// ParityPair binds a domain struct prototype to its model counterpart for
-// schema- and field-parity guards.
-type ParityPair struct {
-	Name              string
-	Domain            any
-	Model             any
-	Table             string
-	ModelMigrateExtra []any
-}
+// ParityPair is the BC-local name for the shared parity registry entry type.
+type ParityPair = parity.Pair
 
 // ParityPairs is the projects registry for field-parity tests in this package.
 var ParityPairs = []ParityPair{
