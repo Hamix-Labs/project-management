@@ -30,8 +30,8 @@ type HandlerStoreFake struct {
 
 	mu sync.Mutex
 
-	listCyclesErr  error
-	listCycles     []cyclesdomain.TaskCycle
+	listCyclesErr   error
+	listCycles      []cyclesdomain.TaskCycle
 	listCyclesCalls []ListCyclesCall
 
 	listEventsErr   error
