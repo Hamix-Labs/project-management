@@ -22,7 +22,7 @@ import (
 // ValidateCanAddCriterionInTx because the row was just inserted.
 func SeedDefinitionItemsAtCreateInTx(tx *gorm.DB, taskID string, items []CreateChecklistItemInput, by taskcoredomain.Actor) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.checklist.SeedDefinitionItemsAtCreateInTx")
-	if err := storekernel.ValidateActor(by); err != nil {
+	if err := taskcoredomain.ValidateActor(by); err != nil {
 		return err
 	}
 	taskID = strings.TrimSpace(taskID)

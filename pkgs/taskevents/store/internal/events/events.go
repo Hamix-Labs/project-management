@@ -33,7 +33,7 @@ import (
 func Append(ctx context.Context, db *gorm.DB, taskID string, typ taskeventsdomain.EventType, by taskeventsdomain.Actor, data []byte) error {
 	defer storekernel.DeferLatency(storekernel.OpAppendTaskEvent)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskevents.store.events.Append")
-	if err := storekernel.ValidateActor(by); err != nil {
+	if err := taskcoredomain.ValidateActor(by); err != nil {
 		return err
 	}
 	taskID = strings.TrimSpace(taskID)

@@ -84,7 +84,7 @@ func Create(ctx context.Context, db *gorm.DB, in CreateInput, by domain.Actor) (
 func Update(ctx context.Context, db *gorm.DB, id string, in UpdateInput, by domain.Actor) (*domain.Task, domain.Status, error) {
 	defer storekernel.DeferLatency(storekernel.OpUpdateTask)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.tasks.Update")
-	if err := storekernel.ValidateActor(by); err != nil {
+	if err := domain.ValidateActor(by); err != nil {
 		return nil, "", err
 	}
 	id = strings.TrimSpace(id)
@@ -136,7 +136,7 @@ func Update(ctx context.Context, db *gorm.DB, id string, in UpdateInput, by doma
 func Delete(ctx context.Context, db *gorm.DB, id string, by domain.Actor) (deletedIDs []string, err error) {
 	defer storekernel.DeferLatency(storekernel.OpDeleteTask)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.tasks.Delete")
-	if err := storekernel.ValidateActor(by); err != nil {
+	if err := domain.ValidateActor(by); err != nil {
 		return nil, err
 	}
 	id = strings.TrimSpace(id)
@@ -162,7 +162,7 @@ func Delete(ctx context.Context, db *gorm.DB, id string, by domain.Actor) (delet
 
 func buildCreateTaskFromInput(in CreateInput, by domain.Actor) (t *domain.Task, title string, st domain.Status, err error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.tasks.buildCreateTaskFromInput")
-	if err := storekernel.ValidateActor(by); err != nil {
+	if err := domain.ValidateActor(by); err != nil {
 		return nil, "", "", err
 	}
 	title = strings.TrimSpace(in.Title)
@@ -173,14 +173,14 @@ func buildCreateTaskFromInput(in CreateInput, by domain.Actor) (t *domain.Task, 
 	if st == "" {
 		st = domain.StatusReady
 	}
-	if !storekernel.ValidClientWritableStatus(st) {
+	if !domain.ValidClientWritableStatus(st) {
 		return nil, "", "", fmt.Errorf("%w: status", domain.ErrInvalidInput)
 	}
 	pr := in.Priority
 	if pr == "" {
 		return nil, "", "", fmt.Errorf("%w: priority required", domain.ErrInvalidInput)
 	}
-	if !storekernel.ValidPriority(pr) {
+	if !domain.ValidPriority(pr) {
 		return nil, "", "", fmt.Errorf("%w: priority", domain.ErrInvalidInput)
 	}
 	id := storekernel.ResolveID(in.ID)

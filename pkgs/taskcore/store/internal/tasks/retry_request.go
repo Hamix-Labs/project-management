@@ -29,7 +29,7 @@ type RequestRetryInput = contract.RequestRetryInput
 func RequestTaskRetry(ctx context.Context, db *gorm.DB, in RequestRetryInput, by domain.Actor) (*domain.Task, domain.Status, error) {
 	defer storekernel.DeferLatency(storekernel.OpUpdateTask)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.tasks.RequestTaskRetry", "task_id", in.TaskID)
-	if err := storekernel.ValidateActor(by); err != nil {
+	if err := domain.ValidateActor(by); err != nil {
 		return nil, "", err
 	}
 	taskID := strings.TrimSpace(in.TaskID)

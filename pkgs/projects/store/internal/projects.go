@@ -209,7 +209,7 @@ func CreateContext(ctx context.Context, db *gorm.DB, projectID string, input Cre
 	if actor == "" {
 		actor = domain.ActorUser
 	}
-	if err := storekernel.ValidateActor(taskcoredomain.Actor(actor)); err != nil {
+	if err := taskcoredomain.ValidateActor(taskcoredomain.Actor(actor)); err != nil {
 		return domain.ProjectContextItem{}, err
 	}
 	now := time.Now().UTC()

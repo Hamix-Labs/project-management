@@ -26,7 +26,7 @@ import (
 func Add(ctx context.Context, db *gorm.DB, taskID, text string, verifyCommands []VerifyCommandInput, by taskcoredomain.Actor) (*checklistdomain.TaskChecklistItem, error) {
 	defer storekernel.DeferLatency(storekernel.OpAddChecklistItem)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.checklist.Add")
-	if err := storekernel.ValidateActor(by); err != nil {
+	if err := taskcoredomain.ValidateActor(by); err != nil {
 		return nil, err
 	}
 	text = strings.TrimSpace(text)
@@ -90,7 +90,7 @@ func Add(ctx context.Context, db *gorm.DB, taskID, text string, verifyCommands [
 func Delete(ctx context.Context, db *gorm.DB, taskID, itemID string, by taskcoredomain.Actor) error {
 	defer storekernel.DeferLatency(storekernel.OpDeleteChecklistItem)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.checklist.Delete")
-	if err := storekernel.ValidateActor(by); err != nil {
+	if err := taskcoredomain.ValidateActor(by); err != nil {
 		return err
 	}
 	taskID = strings.TrimSpace(taskID)
@@ -169,7 +169,7 @@ func Delete(ctx context.Context, db *gorm.DB, taskID, itemID string, by taskcore
 func UpdateText(ctx context.Context, db *gorm.DB, taskID, itemID, text string, by taskcoredomain.Actor) error {
 	defer storekernel.DeferLatency(storekernel.OpUpdateChecklistItemText)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.checklist.UpdateText")
-	if err := storekernel.ValidateActor(by); err != nil {
+	if err := taskcoredomain.ValidateActor(by); err != nil {
 		return err
 	}
 	taskID = strings.TrimSpace(taskID)
@@ -244,7 +244,7 @@ func UpdateText(ctx context.Context, db *gorm.DB, taskID, itemID, text string, b
 func SetDone(ctx context.Context, db *gorm.DB, subjectTaskID, itemID string, done bool, by taskcoredomain.Actor) error {
 	defer storekernel.DeferLatency(storekernel.OpSetChecklistItemDone)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.checklist.SetDone")
-	if err := storekernel.ValidateActor(by); err != nil {
+	if err := taskcoredomain.ValidateActor(by); err != nil {
 		return err
 	}
 	if by != taskcoredomain.ActorAgent {

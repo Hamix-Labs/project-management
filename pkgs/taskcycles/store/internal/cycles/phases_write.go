@@ -41,14 +41,14 @@ const maxPhaseEventDetailRunes = 8192
 func StartPhase(ctx context.Context, db *gorm.DB, cycleID string, phase cyclesdomain.Phase, by taskcoredomain.Actor) (*cyclesdomain.TaskCyclePhase, error) {
 	defer storekernel.DeferLatency(storekernel.OpStartCyclePhase)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.cycles.StartPhase")
-	if err := storekernel.ValidateActor(by); err != nil {
+	if err := taskcoredomain.ValidateActor(by); err != nil {
 		return nil, err
 	}
 	cycleID = strings.TrimSpace(cycleID)
 	if cycleID == "" {
 		return nil, fmt.Errorf("%w: cycle_id", taskcoredomain.ErrInvalidInput)
 	}
-	if !storekernel.ValidPhase(phase) {
+	if !cyclesdomain.ValidPhase(phase) {
 		return nil, fmt.Errorf("%w: phase", taskcoredomain.ErrInvalidInput)
 	}
 	var created *cyclesdomain.TaskCyclePhase
@@ -136,7 +136,7 @@ func StartPhase(ctx context.Context, db *gorm.DB, cycleID string, phase cyclesdo
 func CompletePhase(ctx context.Context, db *gorm.DB, in CompletePhaseInput) (*cyclesdomain.TaskCyclePhase, error) {
 	defer storekernel.DeferLatency(storekernel.OpCompleteCyclePhase)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.cycles.CompletePhase")
-	if err := storekernel.ValidateActor(in.By); err != nil {
+	if err := taskcoredomain.ValidateActor(in.By); err != nil {
 		return nil, err
 	}
 	cycleID := strings.TrimSpace(in.CycleID)
@@ -146,7 +146,7 @@ func CompletePhase(ctx context.Context, db *gorm.DB, in CompletePhaseInput) (*cy
 	if in.PhaseSeq <= 0 {
 		return nil, fmt.Errorf("%w: phase_seq", taskcoredomain.ErrInvalidInput)
 	}
-	if !storekernel.ValidTerminalPhaseStatus(in.Status) {
+	if !cyclesdomain.TerminalPhaseStatus(in.Status) {
 		return nil, fmt.Errorf("%w: status must be a terminal phase status", taskcoredomain.ErrInvalidInput)
 	}
 	details, err := storekernel.NormalizeJSONObject(in.Details, "details", taskcoredomain.ErrInvalidInput)

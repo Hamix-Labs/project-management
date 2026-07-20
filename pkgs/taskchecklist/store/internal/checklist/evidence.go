@@ -34,7 +34,7 @@ func SetDoneWithEvidenceInTx(
 	by taskcoredomain.Actor,
 ) (CriteriaFlagChange, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.checklist.SetDoneWithEvidenceInTx")
-	if err := storekernel.ValidateActor(by); err != nil {
+	if err := taskcoredomain.ValidateActor(by); err != nil {
 		return CriteriaFlagChange{}, err
 	}
 	if by != taskcoredomain.ActorAgent {

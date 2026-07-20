@@ -34,7 +34,7 @@ import (
 func Start(ctx context.Context, db *gorm.DB, in StartCycleInput) (*cyclesdomain.TaskCycle, error) {
 	defer storekernel.DeferLatency(storekernel.OpStartCycle)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.cycles.Start")
-	if err := storekernel.ValidateActor(in.TriggeredBy); err != nil {
+	if err := taskcoredomain.ValidateActor(in.TriggeredBy); err != nil {
 		return nil, err
 	}
 	taskID := strings.TrimSpace(in.TaskID)
@@ -118,14 +118,14 @@ func Start(ctx context.Context, db *gorm.DB, in StartCycleInput) (*cyclesdomain.
 func Terminate(ctx context.Context, db *gorm.DB, cycleID string, status cyclesdomain.CycleStatus, reason string, by taskcoredomain.Actor) (*cyclesdomain.TaskCycle, error) {
 	defer storekernel.DeferLatency(storekernel.OpTerminateCycle)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.cycles.Terminate")
-	if err := storekernel.ValidateActor(by); err != nil {
+	if err := taskcoredomain.ValidateActor(by); err != nil {
 		return nil, err
 	}
 	cycleID = strings.TrimSpace(cycleID)
 	if cycleID == "" {
 		return nil, fmt.Errorf("%w: cycle_id", taskcoredomain.ErrInvalidInput)
 	}
-	if !storekernel.ValidTerminalCycleStatus(status) {
+	if !cyclesdomain.TerminalCycleStatus(status) {
 		return nil, fmt.Errorf("%w: status must be a terminal cycle status", taskcoredomain.ErrInvalidInput)
 	}
 	reason = strings.TrimSpace(reason)

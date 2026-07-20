@@ -26,7 +26,7 @@ type AgentPickupResult = taskcorecontract.AgentPickupResult
 func AgentPickup(ctx context.Context, db *gorm.DB, taskID string, by domain.Actor) (*AgentPickupResult, error) {
 	defer storekernel.DeferLatency(storekernel.OpUpdateTask)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.tasks.AgentPickup", "task_id", taskID)
-	if err := storekernel.ValidateActor(by); err != nil {
+	if err := domain.ValidateActor(by); err != nil {
 		return nil, err
 	}
 	taskID = strings.TrimSpace(taskID)

@@ -217,7 +217,7 @@ func applyPriorityPatch(tx *gorm.DB, taskID string, cur *domain.Task, pr *domain
 	if pr == nil {
 		return nil
 	}
-	if !storekernel.ValidPriority(*pr) {
+	if !domain.ValidPriority(*pr) {
 		return fmt.Errorf("%w: priority", domain.ErrInvalidInput)
 	}
 	if *pr == cur.Priority {
@@ -240,7 +240,7 @@ func applyStatusPatch(tx *gorm.DB, taskID string, cur *domain.Task, st *domain.S
 	if st == nil {
 		return nil
 	}
-	if !storekernel.ValidStatus(*st) {
+	if !domain.ValidStatus(*st) {
 		return fmt.Errorf("%w: status", domain.ErrInvalidInput)
 	}
 	if *st == cur.Status {

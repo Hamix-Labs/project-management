@@ -112,7 +112,7 @@ func statusChanged(tx *gorm.DB, taskID string, t *domain.Task, data []byte) (map
 	}
 	up := map[string]any{}
 	st := domain.Status(m["to"])
-	if storekernel.ValidStatus(st) && st != t.Status {
+	if domain.ValidStatus(st) && st != t.Status {
 		if st == domain.StatusDone {
 			if err := checkliststore.ValidateCanMarkDoneInTx(tx, taskID); err != nil {
 				return nil, err
@@ -131,7 +131,7 @@ func priorityChanged(t *domain.Task, data []byte) (map[string]any, error) {
 	}
 	up := map[string]any{}
 	pr := domain.Priority(m["to"])
-	if storekernel.ValidPriority(pr) && pr != t.Priority {
+	if domain.ValidPriority(pr) && pr != t.Priority {
 		up["priority"] = string(pr)
 	}
 	return up, nil
