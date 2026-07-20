@@ -1,12 +1,24 @@
 import { useMutation } from "@tanstack/react-query";
-import type { MutableRefObject } from "react";
+import { useCallback, useEffect, useRef, type MutableRefObject } from "react";
 import {
   deleteTaskDraft as apiDeleteDraft,
   getTaskDraft as apiGetDraft,
   saveTaskDraft as apiSaveDraft,
 } from "@/api";
+import { isAbortError } from "@/lib/isAbortError";
 import type { PriorityChoice } from "@/types";
 import { invalidateTaskCacheAsync } from "@/tasks/mutations";
+
+type DraftSavePayload = {
+  title: string;
+  initial_prompt: string;
+  priority: PriorityChoice;
+  runner: string;
+  cursor_model: string;
+  project_id: string;
+  project_context_item_ids: string[];
+  checklist_items: import("@/types").TaskDraftChecklistItem[];
+};
 
 export function useTaskCreateDraftMutations(input: {
   queryClient: import("@tanstack/react-query").QueryClient;
@@ -16,23 +28,39 @@ export function useTaskCreateDraftMutations(input: {
   setDraftAutosaveBaseline: (baseline: string) => void;
   setDraftAutosaveBaselineID: (id: string) => void;
   setLastDraftSavedAt: (timestamp: number | null) => void;
+  createModalOpen: boolean;
 }) {
+  const saveAbortRef = useRef<AbortController | null>(null);
+
+  const cancelInFlightSave = useCallback(() => {
+    saveAbortRef.current?.abort();
+    saveAbortRef.current = null;
+  }, []);
+
   const saveDraftMutation = useMutation({
-    mutationFn: (mutationInput: {
+    mutationFn: async (mutationInput: {
       id: string;
       name: string;
-      payload: {
-        title: string;
-        initial_prompt: string;
-        priority: PriorityChoice;
-        runner: string;
-        cursor_model: string;
-        project_id: string;
-        project_context_item_ids: string[];
-        checklist_items: import("@/types").TaskDraftChecklistItem[];
-      };
+      payload: DraftSavePayload;
       signature: string;
-    }) => apiSaveDraft(mutationInput),
+    }) => {
+      // Supersede any prior in-flight save (draft change or rapid autosave).
+      cancelInFlightSave();
+      const ac = new AbortController();
+      saveAbortRef.current = ac;
+      try {
+        return await apiSaveDraft({
+          id: mutationInput.id,
+          name: mutationInput.name,
+          payload: mutationInput.payload,
+          signal: ac.signal,
+        });
+      } finally {
+        if (saveAbortRef.current === ac) {
+          saveAbortRef.current = null;
+        }
+      }
+    },
     onSuccess: async (saved, variables) => {
       // I2 - baseline stamp only when save response matches active draft ref.
       if (input.newDraftIDRef.current !== saved.id) {
@@ -60,5 +88,34 @@ export function useTaskCreateDraftMutations(input: {
     mutationFn: (id: string) => apiGetDraft(id),
   });
 
-  return { saveDraftMutation, deleteDraftMutation, resumeDraftMutation };
+  // Abort in-flight save when the modal closes.
+  useEffect(() => {
+    if (!input.createModalOpen) {
+      cancelInFlightSave();
+    }
+  }, [input.createModalOpen, cancelInFlightSave]);
+
+  // Abort when the active draft id changes (resume / fresh) and on unmount.
+  useEffect(() => {
+    return () => {
+      cancelInFlightSave();
+    };
+  }, [input.newDraftID, cancelInFlightSave]);
+
+  // Aborted saves must not linger as mutation errors (UI treats them as no-ops).
+  useEffect(() => {
+    if (
+      saveDraftMutation.isError &&
+      isAbortError(saveDraftMutation.error)
+    ) {
+      saveDraftMutation.reset();
+    }
+  }, [saveDraftMutation]);
+
+  return {
+    saveDraftMutation,
+    deleteDraftMutation,
+    resumeDraftMutation,
+    cancelInFlightSave,
+  };
 }

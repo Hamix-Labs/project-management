@@ -152,6 +152,7 @@ export async function saveTaskDraft(input: {
   id?: string;
   name: string;
   payload: TaskDraftPayload;
+  signal?: AbortSignal;
 }): Promise<{ id: string; name: string }> {
   const sid = assertOptionalTaskPathId(input.id, "id");
   const res = await fetchWithTimeout("/task-drafts", {
@@ -162,6 +163,7 @@ export async function saveTaskDraft(input: {
       payload: input.payload,
       ...(sid !== undefined ? { id: sid } : {}),
     }),
+    signal: input.signal,
   });
   if (!res.ok) throw await apiErrorFromResponse(res);
   return parseTaskDraftSaveResponse(await res.json());

@@ -10,6 +10,7 @@ import {
   maxTaskPathIDBytes,
   patchTask,
   patchTaskEventUserResponse,
+  saveTaskDraft,
 } from "./index";
 
 describe("listTasks", () => {
@@ -459,6 +460,34 @@ describe("deleteTask", () => {
     expect(spy).toHaveBeenCalledWith(
       "/tasks/ab%2Fc",
       expect.objectContaining({ method: "DELETE" }),
+    );
+  });
+});
+
+describe("saveTaskDraft", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("forwards AbortSignal to fetch when provided", async () => {
+    const spy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ id: "d1", name: "Draft" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    const ac = new AbortController();
+    await saveTaskDraft({
+      name: "Draft",
+      payload: { title: "T", initial_prompt: "" },
+      signal: ac.signal,
+    });
+    expect(spy).toHaveBeenCalledWith(
+      "/task-drafts",
+      expect.objectContaining({
+        method: "POST",
+        signal: ac.signal,
+      }),
     );
   });
 });

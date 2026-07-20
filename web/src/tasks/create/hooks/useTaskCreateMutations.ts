@@ -32,6 +32,7 @@ export function useTaskCreateMutations(input: {
       setDraftAutosaveBaseline: input.setDraftAutosaveBaseline,
       setDraftAutosaveBaselineID: input.setDraftAutosaveBaselineID,
       setLastDraftSavedAt: input.setLastDraftSavedAt,
+      createModalOpen: input.createModalOpen,
     });
 
   const {
