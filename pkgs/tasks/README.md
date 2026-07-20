@@ -14,7 +14,8 @@ Package comment: [`doc.go`](./doc.go). Persistence wiring: `internal/taskapi/com
 | [`postgres/`](./postgres/) | GORM open + AutoMigrate orchestration (BC models registered here) |
 | [`realtime/`](./realtime/) | SSE wire types, Publisher, coalesce |
 | [`scheduling/`](./scheduling/) | Worker readiness / pickup predicates (pure Decide) |
-| [`apijson/`](./apijson/), [`calltrace/`](./calltrace/), [`logctx/`](./logctx/) | JSON errors and observability kernels |
+| [`apijson/`](./apijson/), [`logctx/`](./logctx/) | JSON errors and request log context |
+| [`pkgs/obs/calltrace/`](../obs/calltrace/) | Per-request call stack (`call_path`, helper.io) — not under this tree |
 | [`service/`](./service/) | HTTP-agnostic bootstrap/git/retry orchestration used by the shell |
 | [`wire/`](./wire/) | `HandlerAPI` composition interface (implemented by `internal/taskapi/composition`) |
 | [`devsim/`](./devsim/) | `HAMIX_SSE_TEST` synthetic events |

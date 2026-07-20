@@ -6,7 +6,7 @@ Structured log trace-line contract enforced by `cmd/funclogmeasure` on productio
 | --- | --- |
 | **Applies to** | Go production packages scanned by `cmd/funclogmeasure`; handlers, store, harness, worker |
 | **Audience** | Contributors adding or refactoring logged operation boundaries |
-| **Prerequisite** | [calltrace README](../../pkgs/tasks/calltrace/README.md) — `RunObserved`, `call_path` |
+| **Prerequisite** | [calltrace README](../../pkgs/obs/calltrace/README.md) — `RunObserved`, `call_path` |
 
 ## In this article
 
@@ -114,7 +114,7 @@ func normalizeTitle(s string) string { ... }
 
 ## See also
 
-- [calltrace README](../../pkgs/tasks/calltrace/README.md) — `RunObserved`, `HelperIOIn`/`Out`, `call_path`
+- [calltrace README](../../pkgs/obs/calltrace/README.md) — `RunObserved`, `HelperIOIn`/`Out`, `call_path`
 - [logctx README](../../pkgs/tasks/logctx/README.md) — `request_id`, log sequence
 - [ADR-0029](../adr/ADR-0029-funclogmeasure-category-driven.md) — deletion of central skip map
 - `cmd/funclogmeasure/` — analyzer implementation and minimod fixtures

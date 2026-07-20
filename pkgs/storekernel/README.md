@@ -17,7 +17,7 @@ Shared persistence helpers used by bounded-context stores and `internal/taskapi/
 
 | May import | Must not import |
 | --- | --- |
-| `pkgs/taskcore/domain`, `pkgs/taskcore/store/model`, `pkgs/taskcycles/domain`, `pkgs/taskevents/domain` + `store/model`, `pkgs/tasks/calltrace`, stdlib, GORM | `pkgs/tasks/handler`, BC `handler` packages, `internal/taskapi/composition` |
+| `pkgs/taskcore/domain`, `pkgs/taskcore/store/model`, `pkgs/taskcycles/domain`, `pkgs/taskevents/domain` + `store/model`, `pkgs/obs/calltrace`, stdlib, GORM | `pkgs/tasks/handler`, BC `handler` packages, `internal/taskapi/composition` |
 
 `MapNotFound` / `MapWriteError` emit **taskcore** sentinels (`ErrNotFound`, `ErrConflict`, `ErrInvalidInput`) so HTTP mappers can use `errors.Is` without importing GORM.
 

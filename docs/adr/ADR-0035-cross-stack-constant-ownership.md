@@ -16,8 +16,8 @@ Hardcoded wire values and observability field strings had drifted across Go and 
 
 | Surface | Authoritative source | Web mirror (when applicable) | Drift guard |
 | --- | --- | --- | --- |
-| slog `cmd` for taskapi HTTP/store/agent traces | [`pkgs/tasks/calltrace/const.go`](../../pkgs/tasks/calltrace/const.go) `LogCmd` | — | `logctx.TraceCmd` aliases `calltrace.LogCmd` |
-| helper.io `obs_category` / `phase` | [`pkgs/tasks/calltrace/const.go`](../../pkgs/tasks/calltrace/const.go) | — | `pkgs/tasks/calltrace/observe_test.go` |
+| slog `cmd` for taskapi HTTP/store/agent traces | [`pkgs/obs/calltrace/const.go`](../../pkgs/obs/calltrace/const.go) `LogCmd` | — | `logctx.TraceCmd` aliases `calltrace.LogCmd` |
+| helper.io `obs_category` / `phase` | [`pkgs/obs/calltrace/const.go`](../../pkgs/obs/calltrace/const.go) | — | `pkgs/obs/calltrace/observe_test.go` |
 | http_io observability | [`pkgs/tasks/handlerhttp/httplog.go`](../../pkgs/tasks/handlerhttp/httplog.go) | — | handler observability tests |
 | SSE `change` types | [`pkgs/tasks/realtime/wire.go`](../../pkgs/tasks/realtime/wire.go) | [`web/src/types/task.ts`](../../web/src/types/task.ts) `SSE_CHANGE_TYPES` | `pkgs/tasks/realtime/wire_test.go`, `web/src/types/contractManifest.test.ts` |
 | Audit / task event types | [`pkgs/tasks/domain/enums.go`](../../pkgs/tasks/domain/enums.go) | [`web/src/types/task.ts`](../../web/src/types/task.ts) `TASK_EVENT_TYPES` | `pkgs/tasks/domain/event_types_manifest_test.go`, `contractManifest.test.ts` |

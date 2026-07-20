@@ -27,8 +27,8 @@ HTTP routes (`/tasks/{id}/checklist*`) and JSON shapes are unchanged from the pr
 | --- | --- | --- |
 | `domain` | stdlib | GORM, `pkgs/tasks/*` |
 | `contract` | `taskchecklist/domain`, `pkgs/taskcore/domain` (`Actor`) | `pkgs/tasks/handler`, `internal/taskapi/composition` |
-| `store` | `taskchecklist/domain`, `taskchecklist/contract`, `taskchecklist/store/model`, GORM, `pkgs/storekernel`, `pkgs/taskcore/domain`, `pkgs/taskcore/store/model` (task/cycle FK), `pkgs/tasks/calltrace` | `pkgs/tasks/handler`, `internal/taskapi/composition` |
-| `handler` | `taskchecklist/domain`, `taskchecklist/contract`, `pkgs/tasks/handlerhttp`, `pkgs/tasks/apijson`, `pkgs/tasks/calltrace`, `pkgs/tasks/logctx`, `pkgs/taskcore/domain` | `internal/taskapi/composition`, `pkgs/tasks/handler` |
+| `store` | `taskchecklist/domain`, `taskchecklist/contract`, `taskchecklist/store/model`, GORM, `pkgs/storekernel`, `pkgs/taskcore/domain`, `pkgs/taskcore/store/model` (task/cycle FK), `pkgs/obs/calltrace` | `pkgs/tasks/handler`, `internal/taskapi/composition` |
+| `handler` | `taskchecklist/domain`, `taskchecklist/contract`, `pkgs/tasks/handlerhttp`, `pkgs/tasks/apijson`, `pkgs/obs/calltrace`, `pkgs/tasks/logctx`, `pkgs/taskcore/domain` | `internal/taskapi/composition`, `pkgs/tasks/handler` |
 
 Enforced in CI: `scripts/check-go.sh` → `step_taskchecklist_boundary`.
 

@@ -25,8 +25,8 @@ HTTP routes (`/projects`, `/projects/{id}/context`, …) and JSON shapes are unc
 | Package | May import | Must not import |
 | --- | --- | --- |
 | `domain` | stdlib | `pkgs/tasks/*`, GORM |
-| `store` | `projects/domain`, `projects/contract`, GORM, `pkgs/storekernel`, `pkgs/taskcore/store/model` (task FK checks), `pkgs/tasks/calltrace` | `pkgs/tasks/handler`, `internal/taskapi/composition` |
-| `handler` | `projects/domain`, `projects/contract`, `pkgs/tasks/handlerhttp`, `pkgs/tasks/apijson`, `pkgs/tasks/calltrace`, `pkgs/tasks/logctx`, `pkgs/tasks/realtime` | `internal/taskapi/composition`, `pkgs/tasks/handler` |
+| `store` | `projects/domain`, `projects/contract`, GORM, `pkgs/storekernel`, `pkgs/taskcore/store/model` (task FK checks), `pkgs/obs/calltrace` | `pkgs/tasks/handler`, `internal/taskapi/composition` |
+| `handler` | `projects/domain`, `projects/contract`, `pkgs/tasks/handlerhttp`, `pkgs/tasks/apijson`, `pkgs/obs/calltrace`, `pkgs/tasks/logctx`, `pkgs/tasks/realtime` | `internal/taskapi/composition`, `pkgs/tasks/handler` |
 
 Enforced in CI: `scripts/check-go.sh` → `step_projects_boundary`.
 

@@ -26,8 +26,8 @@ HTTP routes (`/git/repositories`, `/git/worktrees`, …) and JSON shapes are unc
 | Package | May import | Must not import |
 | --- | --- | --- |
 | `domain` | stdlib | `pkgs/tasks/*`, GORM |
-| `store` | `gitinventory/domain`, `gitinventory/contract`, GORM, `pkgs/storekernel`, `pkgs/gitwork`, `pkgs/tasks/calltrace` | `pkgs/tasks/handler`, `internal/taskapi/composition` |
-| `handler` | `gitinventory/domain`, `pkgs/projects/domain`, `gitinventory/contract`, `pkgs/tasks/apijson`, `pkgs/tasks/calltrace`, `pkgs/tasks/logctx`, `pkgs/gitwork` | `internal/taskapi/composition`, `pkgs/tasks/handler` |
+| `store` | `gitinventory/domain`, `gitinventory/contract`, GORM, `pkgs/storekernel`, `pkgs/gitwork`, `pkgs/obs/calltrace` | `pkgs/tasks/handler`, `internal/taskapi/composition` |
+| `handler` | `gitinventory/domain`, `pkgs/projects/domain`, `gitinventory/contract`, `pkgs/tasks/apijson`, `pkgs/obs/calltrace`, `pkgs/tasks/logctx`, `pkgs/gitwork` | `internal/taskapi/composition`, `pkgs/tasks/handler` |
 
 Enforced in CI: `scripts/check-go.sh` → `step_gitinventory_boundary`.
 
