@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/contract"
-	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 )
@@ -19,7 +18,7 @@ const WorktreeStaleAfter = 24 * time.Hour
 
 // SyncGitRepository fetches origin and refreshes Hamix metadata without
 // discovering/registering operator worktrees.
-func (s *Store) SyncGitRepository(ctx context.Context, repoID string, gitSvc gitwork.Service) (contract.ReconcileGitOutput, error) {
+func (s *Store) SyncGitRepository(ctx context.Context, repoID string) (contract.ReconcileGitOutput, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "gitinventory.store.SyncGitRepository")
 	repoID = strings.TrimSpace(repoID)
 	if repoID == "" {
@@ -29,21 +28,18 @@ func (s *Store) SyncGitRepository(ctx context.Context, repoID string, gitSvc git
 	if err != nil {
 		return contract.ReconcileGitOutput{}, err
 	}
-	if gitSvc == nil {
-		gitSvc = gitwork.New()
-	}
-	opened, err := gitSvc.OpenRepository(ctx, repo.Path)
+	opened, err := s.gitSvc().OpenRepository(ctx, repo.Path)
 	if err != nil {
 		return contract.ReconcileGitOutput{}, fmt.Errorf("open repository: %w", err)
 	}
-	if err := gitSvc.Fetch(ctx, opened, "origin"); err != nil {
+	if err := s.gitSvc().Fetch(ctx, opened, "origin"); err != nil {
 		return contract.ReconcileGitOutput{}, fmt.Errorf("%w: fetch origin failed: %v", taskcoredomain.ErrInvalidInput, err)
 	}
 	return s.ReconcileGitRepository(ctx, "", repoID, contract.ReconcileGitInput{
 		AllowRemove:           true,
 		AllowCheckoutDiscover: false,
 		AllowDiscover:         false,
-	}, gitSvc)
+	})
 }
 
 // WorktreeStaleMap reports which worktree IDs are stale for the given repo.

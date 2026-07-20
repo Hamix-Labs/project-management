@@ -13,7 +13,6 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	gitinventorystore "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store"
-	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 )
 
 // SkipIfNoGit skips t when the git binary is not on PATH.
@@ -136,10 +135,9 @@ func SeedWorktree(t *testing.T, st *composition.API, repoDir string) (worktreeID
 	EnsureMain(t, repoDir)
 	AttachOrigin(t, repoDir)
 	ctx := context.Background()
-	gitSvc := gitwork.New()
 	repoRow, err := st.CreateGlobalGitRepository(ctx, gitinventorystore.CreateGitRepositoryInput{
 		Path: repoDir,
-	}, gitSvc)
+	})
 	if err != nil {
 		t.Fatalf("CreateGlobalGitRepository: %v", err)
 	}
@@ -162,10 +160,9 @@ func SeedWorktreeTemp(t *testing.T, st *composition.API) (worktreeID, workDir st
 	dir := t.TempDir()
 	InitMain(t, dir)
 	ctx := context.Background()
-	gitSvc := gitwork.New()
 	repoRow, err := st.CreateGlobalGitRepository(ctx, gitinventorystore.CreateGitRepositoryInput{
 		Path: dir,
-	}, gitSvc)
+	})
 	if err != nil {
 		t.Fatalf("CreateGlobalGitRepository: %v", err)
 	}
@@ -175,7 +172,7 @@ func SeedWorktreeTemp(t *testing.T, st *composition.API) (worktreeID, workDir st
 		Branch:       "hamix/task-test",
 		CreateBranch: true,
 		StartPoint:   "main",
-	}, gitSvc)
+	})
 	if err != nil {
 		t.Fatalf("CreateGitWorktreeForRepo: %v", err)
 	}

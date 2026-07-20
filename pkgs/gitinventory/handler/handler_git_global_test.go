@@ -15,7 +15,6 @@ import (
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	gitinventorystore "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store"
-	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/apijson"
 )
@@ -55,7 +54,7 @@ func seedLinkedWorktreeViaStore(t *testing.T, st *composition.API, repoID, main,
 		Branch:       branch,
 		CreateBranch: true,
 		StartPoint:   "main",
-	}, gitwork.New())
+	})
 	if err != nil {
 		t.Fatalf("CreateGitWorktreeForRepo: %v", err)
 	}

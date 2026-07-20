@@ -10,10 +10,10 @@ import (
 )
 
 func TestStore_UnregisterGitWorktreeByID_preservesDiskCheckout(t *testing.T) {
-	s, ctx, gitSvc := gitTestStore(t)
+	s, ctx, _ := gitTestStore(t)
 	main := initGitRepo(t)
 
-	repo, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main}, gitSvc)
+	repo, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main})
 	if err != nil {
 		t.Fatalf("CreateGlobalGitRepository: %v", err)
 	}
@@ -22,7 +22,7 @@ func TestStore_UnregisterGitWorktreeByID_preservesDiskCheckout(t *testing.T) {
 		Path:         wtPath,
 		Branch:       "feature-persist",
 		CreateBranch: true,
-	}, gitSvc)
+	})
 	if err != nil {
 		t.Fatalf("CreateGitWorktreeForRepo: %v", err)
 	}
@@ -39,7 +39,7 @@ func TestStore_UnregisterGitWorktreeByID_preservesDiskCheckout(t *testing.T) {
 	if _, err := os.Stat(wtPath); err != nil {
 		t.Fatalf("checkout path should remain on disk after unregister: %v", err)
 	}
-	inventory, err := s.RepoWorktreeInventory(ctx, repo, gitSvc)
+	inventory, err := s.RepoWorktreeInventory(ctx, repo)
 	if err != nil {
 		t.Fatalf("RepoWorktreeInventory: %v", err)
 	}
@@ -53,10 +53,10 @@ func TestStore_UnregisterGitWorktreeByID_preservesDiskCheckout(t *testing.T) {
 }
 
 func TestStore_RemoveGitWorktreeFromDiskByID_removesCheckout(t *testing.T) {
-	s, ctx, gitSvc := gitTestStore(t)
+	s, ctx, _ := gitTestStore(t)
 	main := initGitRepo(t)
 
-	repo, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main}, gitSvc)
+	repo, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main})
 	if err != nil {
 		t.Fatalf("CreateGlobalGitRepository: %v", err)
 	}
@@ -65,11 +65,11 @@ func TestStore_RemoveGitWorktreeFromDiskByID_removesCheckout(t *testing.T) {
 		Path:         wtPath,
 		Branch:       "feature-remove-disk",
 		CreateBranch: true,
-	}, gitSvc)
+	})
 	if err != nil {
 		t.Fatalf("CreateGitWorktreeForRepo: %v", err)
 	}
-	if err := s.RemoveGitWorktreeFromDiskByID(ctx, wt.ID, false, gitSvc); err != nil {
+	if err := s.RemoveGitWorktreeFromDiskByID(ctx, wt.ID, false); err != nil {
 		t.Fatalf("RemoveGitWorktreeFromDiskByID: %v", err)
 	}
 	wts, err := s.ListGitWorktreesByRepo(ctx, repo.ID)
@@ -85,10 +85,10 @@ func TestStore_RemoveGitWorktreeFromDiskByID_removesCheckout(t *testing.T) {
 }
 
 func TestStore_RemoveGitWorktreeFromDiskByID_rejectsMain(t *testing.T) {
-	s, ctx, gitSvc := gitTestStore(t)
+	s, ctx, _ := gitTestStore(t)
 	main := initGitRepo(t)
 
-	repo, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main}, gitSvc)
+	repo, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main})
 	if err != nil {
 		t.Fatalf("CreateGlobalGitRepository: %v", err)
 	}
@@ -106,16 +106,16 @@ func TestStore_RemoveGitWorktreeFromDiskByID_rejectsMain(t *testing.T) {
 	if mainWt.ID == "" {
 		t.Fatal("main worktree not found")
 	}
-	err = s.RemoveGitWorktreeFromDiskByID(ctx, mainWt.ID, false, gitSvc)
+	err = s.RemoveGitWorktreeFromDiskByID(ctx, mainWt.ID, false)
 	if !errors.Is(err, taskcoredomain.ErrInvalidInput) {
 		t.Fatalf("got %v want ErrInvalidInput", err)
 	}
 }
 
 func TestRelocateGitWorktree_updatesRegisteredPath(t *testing.T) {
-	s, ctx, gitSvc := gitTestStore(t)
+	s, ctx, _ := gitTestStore(t)
 	main := initGitRepo(t)
-	repo, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main}, gitSvc)
+	repo, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -124,7 +124,7 @@ func TestRelocateGitWorktree_updatesRegisteredPath(t *testing.T) {
 		Path:         wtPath,
 		Branch:       "reloc-store",
 		CreateBranch: true,
-	}, gitSvc)
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -132,7 +132,7 @@ func TestRelocateGitWorktree_updatesRegisteredPath(t *testing.T) {
 	runGitStore(t, main, "worktree", "move", wtPath, movedPath)
 	t.Cleanup(func() { _ = os.RemoveAll(movedPath) })
 
-	got, err := s.RelocateGitWorktree(ctx, wt.ID, movedPath, gitSvc)
+	got, err := s.RelocateGitWorktree(ctx, wt.ID, movedPath)
 	if err != nil {
 		t.Fatalf("RelocateGitWorktree: %v", err)
 	}
@@ -142,16 +142,16 @@ func TestRelocateGitWorktree_updatesRegisteredPath(t *testing.T) {
 }
 
 func TestCreateGitBranchForRepo_global(t *testing.T) {
-	s, ctx, gitSvc := gitTestStore(t)
+	s, ctx, _ := gitTestStore(t)
 	main := initGitRepo(t)
-	repo, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main}, gitSvc)
+	repo, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main})
 	if err != nil {
 		t.Fatal(err)
 	}
 	br, err := s.CreateGitBranchForRepo(ctx, repo.ID, CreateGitBranchInput{
 		Name:       "feature-global-branch",
 		StartPoint: "main",
-	}, gitSvc)
+	})
 	if err != nil {
 		t.Fatalf("CreateGitBranchForRepo: %v", err)
 	}

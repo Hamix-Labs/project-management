@@ -75,7 +75,7 @@ func (h *Handler) validateTaskRepositoryBinding(
 
 func (h *Handler) allocateTaskWorktree(ctx context.Context, repositoryID, taskID string) (string, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.allocateTaskWorktree")
-	wt, err := h.store.AllocateTaskWorktree(ctx, repositoryID, taskID, h.gitService())
+	wt, err := h.store.AllocateTaskWorktree(ctx, repositoryID, taskID)
 	if err != nil {
 		return "", err
 	}

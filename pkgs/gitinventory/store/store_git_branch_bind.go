@@ -12,7 +12,6 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
-	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/google/uuid"
@@ -27,7 +26,6 @@ func (s *Store) ResolveOrCreateBranchForRepo(
 	ctx context.Context,
 	repo gitdomain.GitRepository,
 	input BindBranchInput,
-	gitSvc gitwork.Service,
 ) (gitdomain.GitBranch, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "gitinventory.store.ResolveOrCreateBranchForRepo")
 	name := strings.TrimSpace(input.Name)
@@ -38,7 +36,7 @@ func (s *Store) ResolveOrCreateBranchForRepo(
 		return s.CreateGitBranchForRepo(ctx, repo.ID, CreateGitBranchInput{
 			Name:       name,
 			StartPoint: input.StartPoint,
-		}, gitSvc)
+		})
 	}
 	var existing model.GitBranch
 	err := s.db.WithContext(ctx).
@@ -50,14 +48,11 @@ func (s *Store) ResolveOrCreateBranchForRepo(
 	if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return gitdomain.GitBranch{}, fmt.Errorf("lookup git branch: %w", err)
 	}
-	if gitSvc == nil {
-		gitSvc = gitwork.New()
-	}
-	opened, err := gitSvc.OpenRepository(ctx, repo.Path)
+	opened, err := s.gitSvc().OpenRepository(ctx, repo.Path)
 	if err != nil {
 		return gitdomain.GitBranch{}, fmt.Errorf("open repository: %w", err)
 	}
-	live, err := gitSvc.ListBranches(ctx, opened)
+	live, err := s.gitSvc().ListBranches(ctx, opened)
 	if err != nil {
 		return gitdomain.GitBranch{}, fmt.Errorf("list branches: %w", err)
 	}
@@ -102,9 +97,8 @@ func (s *Store) resolveBranchForWorktree(
 	repo gitdomain.GitRepository,
 	worktreeID string,
 	input BindBranchInput,
-	gitSvc gitwork.Service,
 ) (gitdomain.GitBranch, error) {
-	br, err := s.ResolveOrCreateBranchForRepo(ctx, repo, input, gitSvc)
+	br, err := s.ResolveOrCreateBranchForRepo(ctx, repo, input)
 	if err != nil {
 		return gitdomain.GitBranch{}, err
 	}

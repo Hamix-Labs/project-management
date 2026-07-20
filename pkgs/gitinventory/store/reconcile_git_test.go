@@ -16,9 +16,9 @@ import (
 )
 
 func TestReconcileGitRepository_needsBootstrapWhenPathMissing(t *testing.T) {
-	s, ctx, gitSvc := gitTestStore(t)
+	s, ctx, _ := gitTestStore(t)
 	main := initGitRepo(t)
-	repo, err := s.CreateGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, CreateGitRepositoryInput{Path: main}, gitSvc)
+	repo, err := s.CreateGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, CreateGitRepositoryInput{Path: main})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -30,7 +30,7 @@ func TestReconcileGitRepository_needsBootstrapWhenPathMissing(t *testing.T) {
 
 	out, err := s.ReconcileGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, repo.ID, ReconcileGitInput{
 		AllowRemove: true,
-	}, gitSvc)
+	})
 	if err != nil {
 		t.Fatalf("ReconcileGitRepository: %v", err)
 	}
@@ -40,9 +40,9 @@ func TestReconcileGitRepository_needsBootstrapWhenPathMissing(t *testing.T) {
 }
 
 func TestReconcileGitRepository_mainRenamed_autoDiscover(t *testing.T) {
-	s, ctx, gitSvc := gitTestStore(t)
+	s, ctx, _ := gitTestStore(t)
 	main := initGitRepo(t)
-	repo, err := s.CreateGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, CreateGitRepositoryInput{Path: main}, gitSvc)
+	repo, err := s.CreateGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, CreateGitRepositoryInput{Path: main})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,7 +56,7 @@ func TestReconcileGitRepository_mainRenamed_autoDiscover(t *testing.T) {
 		AllowCheckoutDiscover: true,
 		RepairGit:             true,
 		AllowRemove:           true,
-	}, gitSvc)
+	})
 	if err != nil {
 		t.Fatalf("ReconcileGitRepository: %v", err)
 	}
@@ -81,7 +81,7 @@ func TestReconcileGitRepository_mainRenamed_autoDiscover(t *testing.T) {
 func TestReconcileGitRepository_mainRenamed_withLinkedWorktreeSibling(t *testing.T) {
 	s, ctx, gitSvc := gitTestStore(t)
 	main := initGitRepo(t)
-	repo, err := s.CreateGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, CreateGitRepositoryInput{Path: main}, gitSvc)
+	repo, err := s.CreateGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, CreateGitRepositoryInput{Path: main})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -107,7 +107,7 @@ func TestReconcileGitRepository_mainRenamed_withLinkedWorktreeSibling(t *testing
 		AllowCheckoutDiscover: true,
 		RepairGit:             true,
 		AllowRemove:           true,
-	}, gitSvc)
+	})
 	if err != nil {
 		t.Fatalf("ReconcileGitRepository: %v", err)
 	}
@@ -124,9 +124,9 @@ func TestReconcileGitRepository_mainRenamed_withLinkedWorktreeSibling(t *testing
 }
 
 func TestReconcileGitRepository_mainRenamed_withBootstrap(t *testing.T) {
-	s, ctx, gitSvc := gitTestStore(t)
+	s, ctx, _ := gitTestStore(t)
 	main := initGitRepo(t)
-	repo, err := s.CreateGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, CreateGitRepositoryInput{Path: main}, gitSvc)
+	repo, err := s.CreateGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, CreateGitRepositoryInput{Path: main})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -146,7 +146,7 @@ func TestReconcileGitRepository_mainRenamed_withBootstrap(t *testing.T) {
 		BootstrapPath: renamed,
 		RepairGit:     true,
 		AllowRemove:   true,
-	}, gitSvc)
+	})
 	if err != nil {
 		t.Fatalf("ReconcileGitRepository: %v", err)
 	}
@@ -177,9 +177,9 @@ func TestReconcileGitRepository_mainRenamed_withBootstrap(t *testing.T) {
 }
 
 func TestReconcileGitRepository_linkedWorktreeMoved_preservesID(t *testing.T) {
-	s, ctx, gitSvc := gitTestStore(t)
+	s, ctx, _ := gitTestStore(t)
 	main := initGitRepo(t)
-	repo, err := s.CreateGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, CreateGitRepositoryInput{Path: main}, gitSvc)
+	repo, err := s.CreateGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, CreateGitRepositoryInput{Path: main})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -188,7 +188,7 @@ func TestReconcileGitRepository_linkedWorktreeMoved_preservesID(t *testing.T) {
 		Path:         wtPath,
 		Branch:       "feature-move",
 		CreateBranch: true,
-	}, gitSvc)
+	})
 	if err != nil {
 		t.Fatalf("CreateGitWorktree: %v", err)
 	}
@@ -201,7 +201,7 @@ func TestReconcileGitRepository_linkedWorktreeMoved_preservesID(t *testing.T) {
 	out, err := s.ReconcileGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, repo.ID, ReconcileGitInput{
 		RepairGit:   true,
 		AllowRemove: true,
-	}, gitSvc)
+	})
 	if err != nil {
 		t.Fatalf("ReconcileGitRepository: %v", err)
 	}
@@ -221,9 +221,9 @@ func TestReconcileGitRepository_linkedWorktreeMoved_preservesID(t *testing.T) {
 }
 
 func TestReconcileGitRepository_skipsUnregisteredLiveWorktrees(t *testing.T) {
-	s, ctx, gitSvc := gitTestStore(t)
+	s, ctx, _ := gitTestStore(t)
 	main := initGitRepo(t)
-	repo, err := s.CreateGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, CreateGitRepositoryInput{Path: main}, gitSvc)
+	repo, err := s.CreateGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, CreateGitRepositoryInput{Path: main})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -234,7 +234,7 @@ func TestReconcileGitRepository_skipsUnregisteredLiveWorktrees(t *testing.T) {
 	out, err := s.ReconcileGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, repo.ID, ReconcileGitInput{
 		RepairGit:   true,
 		AllowRemove: true,
-	}, gitSvc)
+	})
 	if err != nil {
 		t.Fatalf("ReconcileGitRepository: %v", err)
 	}
@@ -251,10 +251,10 @@ func TestReconcileGitRepository_skipsUnregisteredLiveWorktrees(t *testing.T) {
 }
 
 func TestReconcileGitRepository_bootstrapWrongRepo(t *testing.T) {
-	s, ctx, gitSvc := gitTestStore(t)
+	s, ctx, _ := gitTestStore(t)
 	mainA := initGitRepo(t)
 	runGitStore(t, mainA, "commit", "--allow-empty", "-m", "marker-a")
-	repoA, err := s.CreateGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, CreateGitRepositoryInput{Path: mainA}, gitSvc)
+	repoA, err := s.CreateGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, CreateGitRepositoryInput{Path: mainA})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -272,17 +272,17 @@ func TestReconcileGitRepository_bootstrapWrongRepo(t *testing.T) {
 	_, err = s.ReconcileGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, repoA.ID, ReconcileGitInput{
 		BootstrapPath: mainB,
 		AllowRemove:   true,
-	}, gitSvc)
+	})
 	if domain.GitErrCode(err) != domain.GitCodeBootstrapMismatch {
 		t.Fatalf("got %v want bootstrap_mismatch", err)
 	}
 }
 
 func TestStore_CreateGitRepository_setsGitCommonDirAndSingleBranch(t *testing.T) {
-	s, ctx, gitSvc := gitTestStore(t)
+	s, ctx, _ := gitTestStore(t)
 	main := initGitRepo(t)
 	runGitStore(t, main, "branch", "extra")
-	repo, err := s.CreateGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, CreateGitRepositoryInput{Path: main}, gitSvc)
+	repo, err := s.CreateGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, CreateGitRepositoryInput{Path: main})
 	if err != nil {
 		t.Fatalf("CreateGitRepository: %v", err)
 	}
@@ -302,9 +302,9 @@ func TestStore_CreateGitRepository_setsGitCommonDirAndSingleBranch(t *testing.T)
 }
 
 func TestReconcileGitRepository_pathMatch_reportsCheckoutMismatch(t *testing.T) {
-	s, ctx, gitSvc := gitTestStore(t)
+	s, ctx, _ := gitTestStore(t)
 	main := initGitRepo(t)
-	repo, err := s.CreateGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, CreateGitRepositoryInput{Path: main}, gitSvc)
+	repo, err := s.CreateGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, CreateGitRepositoryInput{Path: main})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -313,13 +313,13 @@ func TestReconcileGitRepository_pathMatch_reportsCheckoutMismatch(t *testing.T) 
 		Path:         wtPath,
 		Branch:       "feature-bound",
 		CreateBranch: true,
-	}, gitSvc)
+	})
 	if err != nil {
 		t.Fatalf("CreateGitWorktree: %v", err)
 	}
 	runGitStore(t, wtPath, "checkout", "-b", "other-branch")
 
-	out, err := s.ReconcileGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, repo.ID, ReconcileGitInput{}, gitSvc)
+	out, err := s.ReconcileGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, repo.ID, ReconcileGitInput{})
 	if err != nil {
 		t.Fatalf("ReconcileGitRepository: %v", err)
 	}
@@ -339,9 +339,9 @@ func TestReconcileGitRepository_pathMatch_reportsCheckoutMismatch(t *testing.T) 
 }
 
 func TestReconcileGitRepository_dryRun_noWrites(t *testing.T) {
-	s, ctx, gitSvc := gitTestStore(t)
+	s, ctx, _ := gitTestStore(t)
 	main := initGitRepo(t)
-	repo, err := s.CreateGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, CreateGitRepositoryInput{Path: main}, gitSvc)
+	repo, err := s.CreateGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, CreateGitRepositoryInput{Path: main})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -352,7 +352,7 @@ func TestReconcileGitRepository_dryRun_noWrites(t *testing.T) {
 	out, err := s.ReconcileGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, repo.ID, ReconcileGitInput{
 		DryRun:      true,
 		AllowRemove: true,
-	}, gitSvc)
+	})
 	if err != nil {
 		t.Fatalf("ReconcileGitRepository: %v", err)
 	}
@@ -369,9 +369,9 @@ func TestReconcileGitRepository_dryRun_noWrites(t *testing.T) {
 }
 
 func TestReconcileGitRepository_removesIncompleteDiscoverStubAtMainPath(t *testing.T) {
-	s, ctx, gitSvc := gitTestStore(t)
+	s, ctx, _ := gitTestStore(t)
 	main := initGitRepo(t)
-	repo, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main}, gitSvc)
+	repo, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -400,7 +400,7 @@ func TestReconcileGitRepository_removesIncompleteDiscoverStubAtMainPath(t *testi
 	out, err := s.ReconcileGitRepository(ctx, "", repo.ID, ReconcileGitInput{
 		AllowRemove: true,
 		RepairGit:   true,
-	}, gitSvc)
+	})
 	if err != nil {
 		t.Fatalf("ReconcileGitRepository: %v", err)
 	}
@@ -417,16 +417,16 @@ func TestReconcileGitRepository_removesIncompleteDiscoverStubAtMainPath(t *testi
 }
 
 func TestReconcileGitRepository_preservesRegisteredMainWorktree(t *testing.T) {
-	s, ctx, gitSvc := gitTestStore(t)
+	s, ctx, _ := gitTestStore(t)
 	main := initGitRepo(t)
-	repo, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main}, gitSvc)
+	repo, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main})
 	if err != nil {
 		t.Fatal(err)
 	}
 	out, err := s.ReconcileGitRepository(ctx, "", repo.ID, ReconcileGitInput{
 		AllowRemove: true,
 		RepairGit:   true,
-	}, gitSvc)
+	})
 	if err != nil {
 		t.Fatalf("ReconcileGitRepository: %v", err)
 	}
@@ -443,9 +443,9 @@ func TestReconcileGitRepository_preservesRegisteredMainWorktree(t *testing.T) {
 }
 
 func TestReconcileGitRepository_doesNotDiscoverAtMainCheckoutPath(t *testing.T) {
-	s, ctx, gitSvc := gitTestStore(t)
+	s, ctx, _ := gitTestStore(t)
 	main := initGitRepo(t)
-	repo, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main}, gitSvc)
+	repo, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -453,7 +453,7 @@ func TestReconcileGitRepository_doesNotDiscoverAtMainCheckoutPath(t *testing.T) 
 		AllowDiscover: true,
 		AllowRemove:   true,
 		RepairGit:     true,
-	}, gitSvc); err != nil {
+	}); err != nil {
 		t.Fatalf("ReconcileGitRepository: %v", err)
 	}
 	rows, err := s.ListGitWorktreesByRepo(ctx, repo.ID)
@@ -474,9 +474,9 @@ func TestReconcileGitRepository_doesNotDiscoverAtMainCheckoutPath(t *testing.T) 
 }
 
 func TestRelocateGitRepository_globalUpdatesRepoPath(t *testing.T) {
-	s, ctx, gitSvc := gitTestStore(t)
+	s, ctx, _ := gitTestStore(t)
 	main := initGitRepo(t)
-	repo, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main}, gitSvc)
+	repo, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -486,7 +486,7 @@ func TestRelocateGitRepository_globalUpdatesRepoPath(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = os.Rename(renamed, main) })
 
-	out, err := s.RelocateGitRepository(ctx, "", repo.ID, renamed, gitSvc)
+	out, err := s.RelocateGitRepository(ctx, "", repo.ID, renamed)
 	if err != nil {
 		t.Fatalf("RelocateGitRepository: %v", err)
 	}
@@ -533,9 +533,9 @@ func insertTaskOnWorktree(t *testing.T, s *Store, worktreeID string, status task
 }
 
 func TestReconcileGitRepository_vanishedLinkedWorktree_removesRow(t *testing.T) {
-	s, ctx, gitSvc := gitTestStore(t)
+	s, ctx, _ := gitTestStore(t)
 	main := initGitRepo(t)
-	repo, err := s.CreateGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, CreateGitRepositoryInput{Path: main}, gitSvc)
+	repo, err := s.CreateGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, CreateGitRepositoryInput{Path: main})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -544,7 +544,7 @@ func TestReconcileGitRepository_vanishedLinkedWorktree_removesRow(t *testing.T) 
 		Path:         wtPath,
 		Branch:       "feature-vanished",
 		CreateBranch: true,
-	}, gitSvc)
+	})
 	if err != nil {
 		t.Fatalf("CreateGitWorktree: %v", err)
 	}
@@ -555,7 +555,7 @@ func TestReconcileGitRepository_vanishedLinkedWorktree_removesRow(t *testing.T) 
 	out, err := s.ReconcileGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, repo.ID, ReconcileGitInput{
 		RepairGit:   true,
 		AllowRemove: true,
-	}, gitSvc)
+	})
 	if err != nil {
 		t.Fatalf("ReconcileGitRepository: %v", err)
 	}
@@ -576,9 +576,9 @@ func TestReconcileGitRepository_vanishedLinkedWorktree_removesRow(t *testing.T) 
 }
 
 func TestReconcileGitRepository_ghostPathInLiveList_removesRow(t *testing.T) {
-	s, ctx, gitSvc := gitTestStore(t)
+	s, ctx, _ := gitTestStore(t)
 	main := initGitRepo(t)
-	repo, err := s.CreateGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, CreateGitRepositoryInput{Path: main}, gitSvc)
+	repo, err := s.CreateGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, CreateGitRepositoryInput{Path: main})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -587,7 +587,7 @@ func TestReconcileGitRepository_ghostPathInLiveList_removesRow(t *testing.T) {
 		Path:         wtPath,
 		Branch:       "feature-ghost",
 		CreateBranch: true,
-	}, gitSvc)
+	})
 	if err != nil {
 		t.Fatalf("CreateGitWorktree: %v", err)
 	}
@@ -598,7 +598,7 @@ func TestReconcileGitRepository_ghostPathInLiveList_removesRow(t *testing.T) {
 	// No RepairGit/prune: git still lists the missing path (often prunable); FilterLiveWorktrees must drop it.
 	out, err := s.ReconcileGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, repo.ID, ReconcileGitInput{
 		AllowRemove: true,
-	}, gitSvc)
+	})
 	if err != nil {
 		t.Fatalf("ReconcileGitRepository: %v", err)
 	}
@@ -612,9 +612,9 @@ func TestReconcileGitRepository_ghostPathInLiveList_removesRow(t *testing.T) {
 }
 
 func TestReconcileGitRepository_vanishedWithNonRunningTask_stillRemoves(t *testing.T) {
-	s, ctx, gitSvc := gitTestStore(t)
+	s, ctx, _ := gitTestStore(t)
 	main := initGitRepo(t)
-	repo, err := s.CreateGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, CreateGitRepositoryInput{Path: main}, gitSvc)
+	repo, err := s.CreateGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, CreateGitRepositoryInput{Path: main})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -623,7 +623,7 @@ func TestReconcileGitRepository_vanishedWithNonRunningTask_stillRemoves(t *testi
 		Path:         wtPath,
 		Branch:       "feature-nonrunning",
 		CreateBranch: true,
-	}, gitSvc)
+	})
 	if err != nil {
 		t.Fatalf("CreateGitWorktree: %v", err)
 	}
@@ -635,7 +635,7 @@ func TestReconcileGitRepository_vanishedWithNonRunningTask_stillRemoves(t *testi
 	out, err := s.ReconcileGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, repo.ID, ReconcileGitInput{
 		RepairGit:   true,
 		AllowRemove: true,
-	}, gitSvc)
+	})
 	if err != nil {
 		t.Fatalf("ReconcileGitRepository: %v", err)
 	}
@@ -654,9 +654,9 @@ func TestReconcileGitRepository_vanishedWithNonRunningTask_stillRemoves(t *testi
 }
 
 func TestReconcileGitRepository_vanishedWithRunningTask_skipsHasRunningTask(t *testing.T) {
-	s, ctx, gitSvc := gitTestStore(t)
+	s, ctx, _ := gitTestStore(t)
 	main := initGitRepo(t)
-	repo, err := s.CreateGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, CreateGitRepositoryInput{Path: main}, gitSvc)
+	repo, err := s.CreateGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, CreateGitRepositoryInput{Path: main})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -665,7 +665,7 @@ func TestReconcileGitRepository_vanishedWithRunningTask_skipsHasRunningTask(t *t
 		Path:         wtPath,
 		Branch:       "feature-running",
 		CreateBranch: true,
-	}, gitSvc)
+	})
 	if err != nil {
 		t.Fatalf("CreateGitWorktree: %v", err)
 	}
@@ -677,7 +677,7 @@ func TestReconcileGitRepository_vanishedWithRunningTask_skipsHasRunningTask(t *t
 	out, err := s.ReconcileGitRepository(ctx, projectsdomain.LegacyGlobalDefaultProjectID, repo.ID, ReconcileGitInput{
 		RepairGit:   true,
 		AllowRemove: true,
-	}, gitSvc)
+	})
 	if err != nil {
 		t.Fatalf("ReconcileGitRepository: %v", err)
 	}

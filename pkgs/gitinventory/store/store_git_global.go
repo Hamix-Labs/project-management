@@ -100,13 +100,13 @@ func (s *Store) ListAllGitRepositoriesWithSummary(ctx context.Context) ([]GitRep
 
 // CreateGlobalGitRepository registers a main checkout without project scoping and
 // seeds the main worktree row with the checkout's current branch.
-func (s *Store) CreateGlobalGitRepository(ctx context.Context, input CreateGitRepositoryInput, gitSvc gitwork.Service) (gitdomain.GitRepository, error) {
+func (s *Store) CreateGlobalGitRepository(ctx context.Context, input CreateGitRepositoryInput) (gitdomain.GitRepository, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "gitinventory.store.CreateGlobalGitRepository")
-	repo, err := s.registerGitRepository(ctx, input, gitSvc)
+	repo, err := s.registerGitRepository(ctx, input)
 	if err != nil {
 		return gitdomain.GitRepository{}, err
 	}
-	if err := s.seedMainWorktreeWithCurrentBranch(ctx, repo, gitSvc); err != nil {
+	if err := s.seedMainWorktreeWithCurrentBranch(ctx, repo); err != nil {
 		return gitdomain.GitRepository{}, err
 	}
 	return repo, nil
@@ -151,13 +151,13 @@ func (s *Store) ListGitWorktreesByRepo(ctx context.Context, repoID string) ([]gi
 }
 
 // CreateGitWorktreeForRepo adds a linked worktree via git under a repository.
-func (s *Store) CreateGitWorktreeForRepo(ctx context.Context, repoID string, input CreateGitWorktreeInput, gitSvc gitwork.Service) (gitdomain.GitWorktree, error) {
+func (s *Store) CreateGitWorktreeForRepo(ctx context.Context, repoID string, input CreateGitWorktreeInput) (gitdomain.GitWorktree, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "gitinventory.store.CreateGitWorktreeForRepo")
 	repo, err := s.GetGitRepositoryByID(ctx, repoID)
 	if err != nil {
 		return gitdomain.GitWorktree{}, err
 	}
-	return s.createGitWorktreeOnRepo(ctx, repo, input, gitSvc)
+	return s.createGitWorktreeOnRepo(ctx, repo, input)
 }
 
 // RegisterExistingGitWorktree validates path is a linked worktree of repo, inserts a row,
@@ -167,7 +167,6 @@ func (s *Store) RegisterExistingGitWorktree(
 	repoID string,
 	path, name string,
 	bind BindBranchInput,
-	gitSvc gitwork.Service,
 ) (gitdomain.GitWorktree, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "gitinventory.store.RegisterExistingGitWorktree")
 	repo, err := s.GetGitRepositoryByID(ctx, repoID)
@@ -178,10 +177,7 @@ func (s *Store) RegisterExistingGitWorktree(
 	if path == "" {
 		return gitdomain.GitWorktree{}, fmt.Errorf("%w: path required", taskcoredomain.ErrInvalidInput)
 	}
-	if gitSvc == nil {
-		gitSvc = gitwork.New()
-	}
-	inventory, err := s.RepoWorktreeInventory(ctx, repo, gitSvc)
+	inventory, err := s.RepoWorktreeInventory(ctx, repo)
 	if err != nil {
 		return gitdomain.GitWorktree{}, err
 	}
@@ -207,7 +203,7 @@ func (s *Store) RegisterExistingGitWorktree(
 		Name:         bindName,
 		CreateBranch: bind.CreateBranch,
 		StartPoint:   bind.StartPoint,
-	}, gitSvc)
+	})
 	if err != nil {
 		return gitdomain.GitWorktree{}, err
 	}
@@ -285,7 +281,7 @@ func (s *Store) ListGitBranchesByRepo(ctx context.Context, repoID string) ([]git
 }
 
 // CreateGitBranchForRepo creates a branch via git under a repository (no project scope).
-func (s *Store) CreateGitBranchForRepo(ctx context.Context, repoID string, input CreateGitBranchInput, gitSvc gitwork.Service) (gitdomain.GitBranch, error) {
+func (s *Store) CreateGitBranchForRepo(ctx context.Context, repoID string, input CreateGitBranchInput) (gitdomain.GitBranch, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "gitinventory.store.CreateGitBranchForRepo")
 	repo, err := s.GetGitRepositoryByID(ctx, repoID)
 	if err != nil {
@@ -295,14 +291,11 @@ func (s *Store) CreateGitBranchForRepo(ctx context.Context, repoID string, input
 	if name == "" {
 		return gitdomain.GitBranch{}, fmt.Errorf("%w: name required", taskcoredomain.ErrInvalidInput)
 	}
-	if gitSvc == nil {
-		gitSvc = gitwork.New()
-	}
-	opened, err := gitSvc.OpenRepository(ctx, repo.Path)
+	opened, err := s.gitSvc().OpenRepository(ctx, repo.Path)
 	if err != nil {
 		return gitdomain.GitBranch{}, fmt.Errorf("open repository: %w", err)
 	}
-	created, err := gitSvc.CreateBranch(ctx, opened, name, strings.TrimSpace(input.StartPoint))
+	created, err := s.gitSvc().CreateBranch(ctx, opened, name, strings.TrimSpace(input.StartPoint))
 	if err != nil {
 		if errors.Is(err, gitwork.ErrBranchExists) {
 			return gitdomain.GitBranch{}, gitdomain.NewGitErr(gitdomain.GitCodeBranchExists, "branch already exists")
@@ -327,27 +320,24 @@ func (s *Store) CreateGitBranchForRepo(ctx context.Context, repoID string, input
 }
 
 //funclogmeasure:skip category=hot-path reason="Internal helper; trace emitted by calling chokepoint."
-func (s *Store) createGitWorktreeOnRepo(ctx context.Context, repo gitdomain.GitRepository, input CreateGitWorktreeInput, gitSvc gitwork.Service) (gitdomain.GitWorktree, error) {
+func (s *Store) createGitWorktreeOnRepo(ctx context.Context, repo gitdomain.GitRepository, input CreateGitWorktreeInput) (gitdomain.GitWorktree, error) {
 	path := strings.TrimSpace(input.Path)
 	branch := strings.TrimSpace(input.Branch)
 	if path == "" || branch == "" {
 		return gitdomain.GitWorktree{}, fmt.Errorf("%w: path and branch required", taskcoredomain.ErrInvalidInput)
 	}
-	if gitSvc == nil {
-		gitSvc = gitwork.New()
-	}
 	if br, lookupErr := s.ResolveOrCreateBranchForRepo(ctx, repo, BindBranchInput{
 		Name: branch, CreateBranch: false,
-	}, gitSvc); lookupErr == nil {
+	}); lookupErr == nil {
 		if err := s.GuardBranchNotBoundToOtherWorktree(ctx, br.ID, ""); err != nil {
 			return gitdomain.GitWorktree{}, err
 		}
 	}
-	opened, err := gitSvc.OpenRepository(ctx, repo.Path)
+	opened, err := s.gitSvc().OpenRepository(ctx, repo.Path)
 	if err != nil {
 		return gitdomain.GitWorktree{}, fmt.Errorf("open repository: %w", err)
 	}
-	wt, err := gitSvc.AddWorktree(ctx, opened, path, gitwork.AddWorktreeOptions{
+	wt, err := s.gitSvc().AddWorktree(ctx, opened, path, gitwork.AddWorktreeOptions{
 		Branch:       branch,
 		CreateBranch: input.CreateBranch,
 		StartPoint:   strings.TrimSpace(input.StartPoint),
@@ -363,9 +353,9 @@ func (s *Store) createGitWorktreeOnRepo(ctx context.Context, repo gitdomain.GitR
 		Name:         branch,
 		CreateBranch: false,
 		StartPoint:   strings.TrimSpace(input.StartPoint),
-	}, gitSvc)
+	})
 	if err != nil {
-		_ = gitSvc.RemoveWorktree(ctx, opened, wt.Path, true)
+		_ = s.gitSvc().RemoveWorktree(ctx, opened, wt.Path, true)
 		return gitdomain.GitWorktree{}, err
 	}
 	now := time.Now().UTC()
@@ -389,7 +379,7 @@ func (s *Store) createGitWorktreeOnRepo(ctx context.Context, repo gitdomain.GitR
 		return nil
 	})
 	if err != nil {
-		_ = gitSvc.RemoveWorktree(ctx, opened, wt.Path, true)
+		_ = s.gitSvc().RemoveWorktree(ctx, opened, wt.Path, true)
 		return gitdomain.GitWorktree{}, err
 	}
 	return row, nil

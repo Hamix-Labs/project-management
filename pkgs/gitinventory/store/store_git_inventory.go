@@ -12,7 +12,6 @@ import (
 	"sync"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/contract"
-	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 )
 
@@ -54,12 +53,8 @@ type GitWorktreeProbeResult = contract.GitWorktreeProbeResult
 func (s *Store) RepoWorktreeInventory(
 	ctx context.Context,
 	repo gitdomain.GitRepository,
-	gitSvc gitwork.Service,
 ) ([]WorktreeInventoryRow, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "gitinventory.store.RepoWorktreeInventory")
-	if gitSvc == nil {
-		gitSvc = gitwork.New()
-	}
 	registered, err := s.ListGitWorktreesByRepo(ctx, repo.ID)
 	if err != nil {
 		return nil, err
@@ -71,11 +66,11 @@ func (s *Store) RepoWorktreeInventory(
 		}
 		registeredPaths[worktreePathKey(wt.Path)] = struct{}{}
 	}
-	opened, err := gitSvc.OpenRepository(ctx, repo.Path)
+	opened, err := s.gitSvc().OpenRepository(ctx, repo.Path)
 	if err != nil {
 		return nil, fmt.Errorf("open repository: %w", err)
 	}
-	live, err := gitSvc.ListWorktrees(ctx, opened)
+	live, err := s.gitSvc().ListWorktrees(ctx, opened)
 	if err != nil {
 		return nil, fmt.Errorf("list worktrees: %w", err)
 	}
@@ -117,12 +112,8 @@ const worktreeCheckoutStatusParallel = 4
 func (s *Store) RepoWorktreeCheckoutStatus(
 	ctx context.Context,
 	repo gitdomain.GitRepository,
-	gitSvc gitwork.Service,
 ) ([]WorktreeCheckoutStatusRow, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "gitinventory.store.RepoWorktreeCheckoutStatus")
-	if gitSvc == nil {
-		gitSvc = gitwork.New()
-	}
 	registered, err := s.ListGitWorktreesByRepo(ctx, repo.ID)
 	if err != nil {
 		return nil, err
@@ -136,7 +127,7 @@ func (s *Store) RepoWorktreeCheckoutStatus(
 	if len(filtered) == 0 {
 		return []WorktreeCheckoutStatusRow{}, nil
 	}
-	if _, err := gitSvc.OpenRepository(ctx, repo.Path); err != nil {
+	if _, err := s.gitSvc().OpenRepository(ctx, repo.Path); err != nil {
 		return nil, fmt.Errorf("open repository: %w", err)
 	}
 
@@ -149,7 +140,7 @@ func (s *Store) RepoWorktreeCheckoutStatus(
 			defer wg.Done()
 			sem <- struct{}{}
 			defer func() { <-sem }()
-			out[i] = s.checkoutStatusForWorktree(ctx, wt, gitSvc)
+			out[i] = s.checkoutStatusForWorktree(ctx, wt)
 		}(i, wt)
 	}
 	wg.Wait()
@@ -159,7 +150,6 @@ func (s *Store) RepoWorktreeCheckoutStatus(
 func (s *Store) checkoutStatusForWorktree(
 	ctx context.Context,
 	wt gitdomain.GitWorktree,
-	gitSvc gitwork.Service,
 ) WorktreeCheckoutStatusRow {
 	row := WorktreeCheckoutStatusRow{WorktreeID: wt.ID}
 	if _, err := os.Stat(wt.Path); err != nil {
@@ -170,7 +160,7 @@ func (s *Store) checkoutStatusForWorktree(
 		row.Reason = "git_error"
 		return row
 	}
-	st, err := gitSvc.CheckoutStatus(ctx, wt.Path)
+	st, err := s.gitSvc().CheckoutStatus(ctx, wt.Path)
 	if err != nil {
 		slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "gitinventory.store.checkoutStatusForWorktree.err",
 			"worktree_id", wt.ID, "path", wt.Path, "err", err)
@@ -186,7 +176,6 @@ func (s *Store) checkoutStatusForWorktree(
 func (s *Store) ProbeGitWorktree(
 	ctx context.Context,
 	repoID, path string,
-	gitSvc gitwork.Service,
 ) (GitWorktreeProbeResult, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "gitinventory.store.ProbeGitWorktree")
 	path = strings.TrimSpace(path)
@@ -197,17 +186,14 @@ func (s *Store) ProbeGitWorktree(
 	if err != nil {
 		return GitWorktreeProbeResult{}, err
 	}
-	if gitSvc == nil {
-		gitSvc = gitwork.New()
-	}
-	belongs, err := gitSvc.BelongsToRepository(ctx, path, repo.Path)
+	belongs, err := s.gitSvc().BelongsToRepository(ctx, path, repo.Path)
 	if err != nil {
 		return GitWorktreeProbeResult{}, fmt.Errorf("belongs to repository: %w", err)
 	}
 	if !belongs {
 		return GitWorktreeProbeResult{Path: filepath.Clean(path), Linked: false}, nil
 	}
-	inventory, err := s.RepoWorktreeInventory(ctx, repo, gitSvc)
+	inventory, err := s.RepoWorktreeInventory(ctx, repo)
 	if err != nil {
 		return GitWorktreeProbeResult{}, err
 	}

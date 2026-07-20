@@ -8,7 +8,6 @@ import (
 
 	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	gitinventorystore "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store"
-	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 )
 
@@ -29,9 +28,9 @@ func (a *API) ListAllGitRepositoriesWithSummary(ctx context.Context) ([]gitinven
 
 // CreateGlobalGitRepository registers a repository without project scoping and
 // seeds the system default project (cross-BC write owned by composition).
-func (a *API) CreateGlobalGitRepository(ctx context.Context, input gitinventorystore.CreateGitRepositoryInput, gitSvc gitwork.Service) (gitdomain.GitRepository, error) {
+func (a *API) CreateGlobalGitRepository(ctx context.Context, input gitinventorystore.CreateGitRepositoryInput) (gitdomain.GitRepository, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.CreateGlobalGitRepository")
-	repo, err := a.git.CreateGlobalGitRepository(ctx, input, gitSvc)
+	repo, err := a.git.CreateGlobalGitRepository(ctx, input)
 	if err != nil {
 		return gitdomain.GitRepository{}, err
 	}
@@ -76,9 +75,9 @@ func (a *API) GetGitRepositoryByID(ctx context.Context, repoID string) (gitdomai
 
 // CreateGitRepository validates path with git, then inserts repository + main worktree + current branch
 // and seeds the system default project (cross-BC write owned by composition).
-func (a *API) CreateGitRepository(ctx context.Context, projectID string, input gitinventorystore.CreateGitRepositoryInput, gitSvc gitwork.Service) (gitdomain.GitRepository, error) {
+func (a *API) CreateGitRepository(ctx context.Context, projectID string, input gitinventorystore.CreateGitRepositoryInput) (gitdomain.GitRepository, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.CreateGitRepository")
-	repo, err := a.git.CreateGitRepository(ctx, projectID, input, gitSvc)
+	repo, err := a.git.CreateGitRepository(ctx, projectID, input)
 	if err != nil {
 		return gitdomain.GitRepository{}, err
 	}
@@ -122,21 +121,21 @@ func (a *API) GetGitWorktreeByID(ctx context.Context, worktreeID string) (gitdom
 }
 
 // CreateGitWorktreeForRepo adds a worktree on disk and persists the row.
-func (a *API) CreateGitWorktreeForRepo(ctx context.Context, repoID string, input gitinventorystore.CreateGitWorktreeInput, gitSvc gitwork.Service) (gitdomain.GitWorktree, error) {
+func (a *API) CreateGitWorktreeForRepo(ctx context.Context, repoID string, input gitinventorystore.CreateGitWorktreeInput) (gitdomain.GitWorktree, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.CreateGitWorktreeForRepo")
-	return a.git.CreateGitWorktreeForRepo(ctx, repoID, input, gitSvc)
+	return a.git.CreateGitWorktreeForRepo(ctx, repoID, input)
 }
 
 // AllocateTaskWorktree fetches origin and creates a Hamix-managed worktree for a task.
-func (a *API) AllocateTaskWorktree(ctx context.Context, repoID, taskID string, gitSvc gitwork.Service) (gitdomain.GitWorktree, error) {
+func (a *API) AllocateTaskWorktree(ctx context.Context, repoID, taskID string) (gitdomain.GitWorktree, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.AllocateTaskWorktree")
-	return a.git.AllocateTaskWorktree(ctx, repoID, taskID, gitSvc)
+	return a.git.AllocateTaskWorktree(ctx, repoID, taskID)
 }
 
 // SyncGitRepository fetches origin and refreshes metadata without discover.
-func (a *API) SyncGitRepository(ctx context.Context, repoID string, gitSvc gitwork.Service) (gitinventorystore.ReconcileGitOutput, error) {
+func (a *API) SyncGitRepository(ctx context.Context, repoID string) (gitinventorystore.ReconcileGitOutput, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.SyncGitRepository")
-	return a.git.SyncGitRepository(ctx, repoID, gitSvc)
+	return a.git.SyncGitRepository(ctx, repoID)
 }
 
 // WorktreeStaleMap reports stale managed worktrees for a repository.
@@ -147,15 +146,15 @@ func (a *API) WorktreeStaleMap(ctx context.Context, repoID string, now time.Time
 }
 
 // CreateGitWorktree adds a worktree on disk and persists the row (project-scoped route compat).
-func (a *API) CreateGitWorktree(ctx context.Context, projectID, repoID string, input gitinventorystore.CreateGitWorktreeInput, gitSvc gitwork.Service) (gitdomain.GitWorktree, error) {
+func (a *API) CreateGitWorktree(ctx context.Context, projectID, repoID string, input gitinventorystore.CreateGitWorktreeInput) (gitdomain.GitWorktree, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.CreateGitWorktree")
-	return a.git.CreateGitWorktree(ctx, projectID, repoID, input, gitSvc)
+	return a.git.CreateGitWorktree(ctx, projectID, repoID, input)
 }
 
 // RegisterExistingGitWorktree links a live checkout and optionally binds a branch.
-func (a *API) RegisterExistingGitWorktree(ctx context.Context, repoID, path, name string, bind gitinventorystore.BindBranchInput, gitSvc gitwork.Service) (gitdomain.GitWorktree, error) {
+func (a *API) RegisterExistingGitWorktree(ctx context.Context, repoID, path, name string, bind gitinventorystore.BindBranchInput) (gitdomain.GitWorktree, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.RegisterExistingGitWorktree")
-	return a.git.RegisterExistingGitWorktree(ctx, repoID, path, name, bind, gitSvc)
+	return a.git.RegisterExistingGitWorktree(ctx, repoID, path, name, bind)
 }
 
 // UnregisterGitWorktreeByID removes the Hamix row without deleting the checkout.
@@ -171,15 +170,15 @@ func (a *API) UnregisterGitWorktree(ctx context.Context, projectID, worktreeID s
 }
 
 // RemoveGitWorktreeFromDiskByID removes the checkout from disk and the Hamix row.
-func (a *API) RemoveGitWorktreeFromDiskByID(ctx context.Context, worktreeID string, force bool, gitSvc gitwork.Service) error {
+func (a *API) RemoveGitWorktreeFromDiskByID(ctx context.Context, worktreeID string, force bool) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.RemoveGitWorktreeFromDiskByID")
-	return a.git.RemoveGitWorktreeFromDiskByID(ctx, worktreeID, force, gitSvc)
+	return a.git.RemoveGitWorktreeFromDiskByID(ctx, worktreeID, force)
 }
 
 // RemoveGitWorktreeFromDisk removes the checkout from disk and the Hamix row.
-func (a *API) RemoveGitWorktreeFromDisk(ctx context.Context, projectID, worktreeID string, force bool, gitSvc gitwork.Service) error {
+func (a *API) RemoveGitWorktreeFromDisk(ctx context.Context, projectID, worktreeID string, force bool) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.RemoveGitWorktreeFromDisk")
-	return a.git.RemoveGitWorktreeFromDisk(ctx, projectID, worktreeID, force, gitSvc)
+	return a.git.RemoveGitWorktreeFromDisk(ctx, projectID, worktreeID, force)
 }
 
 // ListGitBranchesByRepo returns branches for a repository.
@@ -207,21 +206,21 @@ func (a *API) GetGitBranchByID(ctx context.Context, branchID string) (gitdomain.
 }
 
 // CreateGitBranchForRepo creates a local branch via git.
-func (a *API) CreateGitBranchForRepo(ctx context.Context, repoID string, input gitinventorystore.CreateGitBranchInput, gitSvc gitwork.Service) (gitdomain.GitBranch, error) {
+func (a *API) CreateGitBranchForRepo(ctx context.Context, repoID string, input gitinventorystore.CreateGitBranchInput) (gitdomain.GitBranch, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.CreateGitBranchForRepo")
-	return a.git.CreateGitBranchForRepo(ctx, repoID, input, gitSvc)
+	return a.git.CreateGitBranchForRepo(ctx, repoID, input)
 }
 
 // CreateGitBranch creates a local branch via git (project-scoped route compat).
-func (a *API) CreateGitBranch(ctx context.Context, projectID, repoID string, input gitinventorystore.CreateGitBranchInput, gitSvc gitwork.Service) (gitdomain.GitBranch, error) {
+func (a *API) CreateGitBranch(ctx context.Context, projectID, repoID string, input gitinventorystore.CreateGitBranchInput) (gitdomain.GitBranch, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.CreateGitBranch")
-	return a.git.CreateGitBranch(ctx, projectID, repoID, input, gitSvc)
+	return a.git.CreateGitBranch(ctx, projectID, repoID, input)
 }
 
 // DeleteGitBranch deletes a branch row and optionally the git ref.
-func (a *API) DeleteGitBranch(ctx context.Context, projectID, branchID string, force bool, gitSvc gitwork.Service) error {
+func (a *API) DeleteGitBranch(ctx context.Context, projectID, branchID string, force bool) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.DeleteGitBranch")
-	return a.git.DeleteGitBranch(ctx, projectID, branchID, force, gitSvc)
+	return a.git.DeleteGitBranch(ctx, projectID, branchID, force)
 }
 
 // GuardBranchNotBoundToOtherWorktree rejects when branchID is already assigned to another worktree.
@@ -231,43 +230,43 @@ func (a *API) GuardBranchNotBoundToOtherWorktree(ctx context.Context, branchID, 
 }
 
 // RepoWorktreeInventory returns live git worktrees plus Hamix registration state.
-func (a *API) RepoWorktreeInventory(ctx context.Context, repo gitdomain.GitRepository, gitSvc gitwork.Service) ([]gitinventorystore.WorktreeInventoryRow, error) {
+func (a *API) RepoWorktreeInventory(ctx context.Context, repo gitdomain.GitRepository) ([]gitinventorystore.WorktreeInventoryRow, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.RepoWorktreeInventory")
-	return a.git.RepoWorktreeInventory(ctx, repo, gitSvc)
+	return a.git.RepoWorktreeInventory(ctx, repo)
 }
 
 // RepoWorktreeCheckoutStatus returns live checkout git state for registered worktrees.
-func (a *API) RepoWorktreeCheckoutStatus(ctx context.Context, repo gitdomain.GitRepository, gitSvc gitwork.Service) ([]gitinventorystore.WorktreeCheckoutStatusRow, error) {
+func (a *API) RepoWorktreeCheckoutStatus(ctx context.Context, repo gitdomain.GitRepository) ([]gitinventorystore.WorktreeCheckoutStatusRow, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.RepoWorktreeCheckoutStatus")
-	return a.git.RepoWorktreeCheckoutStatus(ctx, repo, gitSvc)
+	return a.git.RepoWorktreeCheckoutStatus(ctx, repo)
 }
 
 // ProbeGitWorktree describes whether a path is a linked, registerable worktree.
-func (a *API) ProbeGitWorktree(ctx context.Context, repoID, path string, gitSvc gitwork.Service) (gitinventorystore.GitWorktreeProbeResult, error) {
+func (a *API) ProbeGitWorktree(ctx context.Context, repoID, path string) (gitinventorystore.GitWorktreeProbeResult, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ProbeGitWorktree")
-	return a.git.ProbeGitWorktree(ctx, repoID, path, gitSvc)
+	return a.git.ProbeGitWorktree(ctx, repoID, path)
 }
 
 // ReconcileGitRepository syncs repository/worktree paths with live git state.
-func (a *API) ReconcileGitRepository(ctx context.Context, projectID, repoID string, input gitinventorystore.ReconcileGitInput, gitSvc gitwork.Service) (gitinventorystore.ReconcileGitOutput, error) {
+func (a *API) ReconcileGitRepository(ctx context.Context, projectID, repoID string, input gitinventorystore.ReconcileGitInput) (gitinventorystore.ReconcileGitOutput, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ReconcileGitRepository")
-	return a.git.ReconcileGitRepository(ctx, projectID, repoID, input, gitSvc)
+	return a.git.ReconcileGitRepository(ctx, projectID, repoID, input)
 }
 
 // RelocateGitRepository updates the main repository path after a filesystem move.
-func (a *API) RelocateGitRepository(ctx context.Context, projectID, repoID, path string, gitSvc gitwork.Service) (gitinventorystore.ReconcileGitOutput, error) {
+func (a *API) RelocateGitRepository(ctx context.Context, projectID, repoID, path string) (gitinventorystore.ReconcileGitOutput, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.RelocateGitRepository")
-	return a.git.RelocateGitRepository(ctx, projectID, repoID, path, gitSvc)
+	return a.git.RelocateGitRepository(ctx, projectID, repoID, path)
 }
 
 // RelocateGitWorktree updates a registered worktree path after a filesystem move.
-func (a *API) RelocateGitWorktree(ctx context.Context, worktreeID, path string, gitSvc gitwork.Service) (gitdomain.GitWorktree, error) {
+func (a *API) RelocateGitWorktree(ctx context.Context, worktreeID, path string) (gitdomain.GitWorktree, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.RelocateGitWorktree")
-	return a.git.RelocateGitWorktree(ctx, worktreeID, path, gitSvc)
+	return a.git.RelocateGitWorktree(ctx, worktreeID, path)
 }
 
 // ReconcileGitRepositoriesOnStartup runs best-effort reconcile for all registered repos.
-func (a *API) ReconcileGitRepositoriesOnStartup(ctx context.Context, gitSvc gitwork.Service) {
+func (a *API) ReconcileGitRepositoriesOnStartup(ctx context.Context) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ReconcileGitRepositoriesOnStartup")
-	a.git.ReconcileGitRepositoriesOnStartup(ctx, gitSvc)
+	a.git.ReconcileGitRepositoriesOnStartup(ctx)
 }
