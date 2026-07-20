@@ -71,6 +71,17 @@ Contract-tier tests call `harness.Run` directly with fakes. They do **not** impo
 
 Local: `go test ./pkgs/agents/harness/... -count=1 -timeout 120s` or `.\scripts\check.ps1 -GoOnly` (`--group=harness` in CI).
 
+## Legacy verify / checklist paths (retirement criteria)
+
+"Legacy" names mark **compatibility** paths, not dead code:
+
+| Path | Why retained | Delete when |
+| --- | --- | --- |
+| `completeChecklistLegacy` / `DecideVerifyDisabledLegacy` / `applyVerifyDisabledLegacyEffects` | Tasks (or settings) with verification disabled still need a deterministic cycle completion that marks checklist items without running the verify agent | Product removes verify-disabled mode **and** a one-time migrate has rewritten historical rows / MetaJSON that encode the old path |
+| `taskchecklist` `VerifierLegacy` | Historical completions and store writes that predate typed verifier kinds | No remaining `verified_by = 'legacy'` rows in production DBs **and** create/update APIs reject new legacy writes (already blocked on HTTP create) |
+
+Do not add new call sites to these helpers. Prefer the modern verify loop and typed `VerifierKind` values.
+
 ## Checkpoint derivation (resume)
 
 No dedicated checkpoint table. `internal/resume` reconstructs checkpoint from:

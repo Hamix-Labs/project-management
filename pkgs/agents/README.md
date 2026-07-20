@@ -8,10 +8,11 @@ Domain overview: [docs/domain/agent-queue.md](../../docs/domain/agent-queue.md),
 
 | Path | Role |
 | --- | --- |
-| Root (`memory_queue.go`, …) | In-process ready-task queue + reconcile helpers (`NotifyReadyTask`, `ReconcileReadyTasksNotQueued`) |
+| Root (`memory_queue.go`, `pickup_wake.go`, `reconcile.go`, …) | In-process ready-task queue + reconcile + pickup-wake (`NotifyReadyTask`, `ReconcileReadyTasksNotQueued`, `PickupWakeScheduler`) — keep under root until a dedicated `queue/` package peel (B-39) |
 | [`worker/`](./worker/) | Queue consumer: admission, ready→running, orphan sweep; calls harness |
 | [`harness/`](./harness/) | Execute/verify loop, resume, verify retry, git integrity — [harness README](./harness/README.md) |
-| [`runner/`](./runner/) | `Runner` interface, cursor/claude adapters, registry, `runnerfake` |
+| [`runner/`](./runner/) | `Runner` interface, cursor adapter, registry, `runnerfake` |
+| [`agentsmoke/`](./agentsmoke/) | Shared real-cursor smoke fixtures for harness/runner integration tests |
 
 Supervisor boot/reload lives in `internal/taskapi/agentworker/` (not under this tree).
 
