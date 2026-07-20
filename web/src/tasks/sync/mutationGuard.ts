@@ -30,12 +30,17 @@ export function beginTaskMutationGuard(taskId: string): number {
 }
 
 /** Mark the SSE echo for a given task as observed. Returns true if the
- * caller should SUPPRESS the echo (i.e. an in-flight mutation is still ahead). */
+ * caller should SUPPRESS the echo (i.e. an in-flight mutation is still ahead).
+ *
+ * Each beginTaskMutationGuard call grants one suppress credit. Consuming
+ * jumps lastSeen by 1 (not to the full version watermark), so overlapping
+ * begins continue to suppress subsequent echoes until credits are exhausted
+ * or endTaskMutationGuard drops the in-flight count. */
 export function shouldSuppressTaskMutationEcho(taskId: string): boolean {
   const v = versions.get(taskId) ?? 0;
   const seen = lastSeen.get(taskId) ?? 0;
   if (v > seen) {
-    lastSeen.set(taskId, v);
+    lastSeen.set(taskId, seen + 1);
     return true;
   }
   return false;
