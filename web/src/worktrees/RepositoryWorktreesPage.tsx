@@ -28,7 +28,6 @@ export function RepositoryWorktreesPage() {
   const repository = repositoryQuery.data;
 
   const actions = useRepositoryGitActions({
-    repository,
     onRepositoryDeleted: () => navigate("/worktrees"),
   });
 
@@ -67,9 +66,9 @@ export function RepositoryWorktreesPage() {
             <RepositoryDetailHeader
               repository={repository}
               headingId={HEADING_ID}
-              reconcilePending={actions.manualReconcilePending}
+              reconcilePending={actions.isManualReconciling(repository.id)}
               onReconcile={() => void actions.handleReconcile(repository)}
-              onDeleteRepository={actions.openDeleteRepository}
+              onDeleteRepository={() => actions.openDeleteRepository(repository)}
             />
             <RepositoryWorktreesSearch value={searchInput} onChange={setSearchInput} />
           </>
@@ -103,10 +102,14 @@ export function RepositoryWorktreesPage() {
               repository={repository}
               searchQuery={debouncedQ}
               onClearSearch={() => setSearchInput("")}
-              reconcilePending={actions.manualReconcilePending}
-              reconcileError={actions.reconcileError}
-              onUnregisterWorktree={actions.openDeleteWorktree}
-              onDeleteWorktreeFromDisk={actions.openRemoveWorktreeFromDisk}
+              reconcilePending={actions.isManualReconciling(repository.id)}
+              reconcileError={actions.reconcileErrorFor(repository.id)}
+              onUnregisterWorktree={(worktreeId, label) =>
+                actions.openDeleteWorktree(repository.id, worktreeId, label)
+              }
+              onDeleteWorktreeFromDisk={(worktreeId, label) =>
+                actions.openRemoveWorktreeFromDisk(repository.id, worktreeId, label)
+              }
             />
           ) : null}
           {!repositoryQuery.isLoading && !repositoryQuery.isError && !repository ? (

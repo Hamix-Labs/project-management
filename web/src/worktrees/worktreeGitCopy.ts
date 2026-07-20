@@ -26,6 +26,7 @@ export const worktreeGitCopy = {
   hostPathLabel: "Host path",
   listColumnName: "Name",
   listColumnBranch: "Branch",
+  listColumnActions: "Actions",
   listColumnWorktreeCount: "Worktrees",
   searchRepositoriesPlaceholder: "Search by name or path…",
   repositoriesPageSubtitle:

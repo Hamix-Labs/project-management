@@ -9,11 +9,11 @@ type ReconcileFlowOutcome = "ok" | "needs_bootstrap" | "error";
 type ReconcileIntent = "manual" | "silent";
 
 type Options = {
-  repository: GitRepository | null | undefined;
   onRepositoryDeleted?: () => void;
 };
 
-export function useRepositoryGitActions({ repository, onRepositoryDeleted }: Options) {
+export function useRepositoryGitActions(options?: Options) {
+  const onRepositoryDeleted = options?.onRepositoryDeleted;
   const mutations = useGlobalGitMutations();
   const toast = useOptionalToast();
 
@@ -67,8 +67,8 @@ export function useRepositoryGitActions({ repository, onRepositoryDeleted }: Opt
 
   const reconcilingRepositoryId =
     mutations.reconcile.isPending || mutations.relocateRepository.isPending
-      ? mutations.reconcile.variables?.repositoryId ??
-        mutations.relocateRepository.variables?.repositoryId
+      ? (mutations.reconcile.variables?.repositoryId ??
+        mutations.relocateRepository.variables?.repositoryId)
       : undefined;
 
   const handleReconcile = useCallback(
@@ -131,43 +131,45 @@ export function useRepositoryGitActions({ repository, onRepositoryDeleted }: Opt
     mutations.relocateRepository.reset();
   };
 
-  const reconcilePending = repository != null && reconcilingRepositoryId === repository.id;
-  const inventoryRefreshPending = reconcilePending && reconcileIntent === "silent";
-  const manualReconcilePending = reconcilePending && reconcileIntent === "manual";
-  const reconcileError =
-    repository != null ? reconcileErrors[repository.id] : undefined;
-  const reconcileBlocked =
-    repository != null && autoReconcileBlocked[repository.id] === true;
+  const isManualReconciling = (repositoryId: string) =>
+    reconcilingRepositoryId === repositoryId && reconcileIntent === "manual";
 
-  const openDeleteRepository = () => {
-    if (!repository) return;
+  const reconcileErrorFor = (repositoryId: string) => reconcileErrors[repositoryId];
+
+  const openDeleteRepository = (repo: GitRepository) => {
     setDeleteTarget({
       kind: "repository",
-      id: repository.id,
-      label: repository.path,
-      repositoryId: repository.id,
+      id: repo.id,
+      label: repo.path,
+      repositoryId: repo.id,
     });
   };
 
-  const openDeleteWorktree = (worktreeId: string, label: string) => {
-    if (!repository) return;
+  const openDeleteWorktree = (
+    repositoryId: string,
+    worktreeId: string,
+    label: string,
+  ) => {
     setDeleteTarget({
       kind: "worktree",
       mode: "unregister",
       id: worktreeId,
       label,
-      repositoryId: repository.id,
+      repositoryId,
     });
   };
 
-  const openRemoveWorktreeFromDisk = (worktreeId: string, label: string) => {
-    if (!repository) return;
+  const openRemoveWorktreeFromDisk = (
+    repositoryId: string,
+    worktreeId: string,
+    label: string,
+  ) => {
     setDeleteTarget({
       kind: "worktree",
       mode: "remove_from_disk",
       id: worktreeId,
       label,
-      repositoryId: repository.id,
+      repositoryId,
     });
   };
 
@@ -177,11 +179,9 @@ export function useRepositoryGitActions({ repository, onRepositoryDeleted }: Opt
     deleteError,
     deletePending,
     relocateRepository,
-    reconcilePending,
-    inventoryRefreshPending,
-    manualReconcilePending,
-    reconcileError,
-    reconcileBlocked,
+    reconcilingRepositoryId,
+    isManualReconciling,
+    reconcileErrorFor,
     closeDelete,
     runDelete,
     closeRelocateModal,

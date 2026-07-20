@@ -1,54 +1,39 @@
-import type { KeyboardEvent, MouseEvent } from "react";
+import type { MouseEvent } from "react";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import type { GitRepository } from "@/types/git";
 import {
   repositoryDisplayName,
   repositoryPathsEquivalent,
 } from "../repositoryDisplay";
-import {
-  worktreeGitCopy,
-  repositoryListWorktreeCountDisplay,
-  worktreeCountLabel,
-} from "../worktreeGitCopy";
+import { worktreeGitCopy } from "../worktreeGitCopy";
 import {
   WorktreesBranchIcon,
   WorktreesCheckIcon,
-  WorktreesChevronRightIcon,
   WorktreesCopyIcon,
   WorktreesFolderGitIcon,
+  WorktreesRefreshIcon,
+  WorktreesTrashIcon,
 } from "./WorktreesIcons";
 
 type Props = {
   repository: GitRepository;
+  reconcilePending: boolean;
+  onReconcile: (repository: GitRepository) => void;
+  onDelete: (repository: GitRepository) => void;
 };
 
-function isRowActionExcluded(target: EventTarget | null): boolean {
-  if (!(target instanceof Element)) return true;
-  return Boolean(target.closest("button, a, input, label"));
-}
-
-export function RepositoryListRow({ repository }: Props) {
-  const navigate = useNavigate();
+export function RepositoryListRow({
+  repository,
+  reconcilePending,
+  onReconcile,
+  onDelete,
+}: Props) {
   const [copied, setCopied] = useState(false);
   const repoName = repositoryDisplayName(repository.path);
   const showHostPath =
     repository.host_path.trim() !== "" &&
     !repositoryPathsEquivalent(repository.path, repository.host_path);
   const branchName = repository.main_branch_name.trim();
-  const worktreeCount = repository.linked_worktree_count;
-  const worktreeCountText = worktreeCountLabel(worktreeCount);
-
-  const openDetail = () => {
-    navigate(`/worktrees/${repository.id}`);
-  };
-
-  const onKeyDown = (event: KeyboardEvent<HTMLLIElement>) => {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      openDetail();
-    }
-  };
 
   const onCopyPath = async (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
@@ -62,17 +47,7 @@ export function RepositoryListRow({ repository }: Props) {
   };
 
   return (
-    <li
-      className="repositories-list-row"
-      role="row"
-      tabIndex={0}
-      aria-label={`${repoName}, ${worktreeCountText}`}
-      onClick={(event) => {
-        if (isRowActionExcluded(event.target)) return;
-        openDetail();
-      }}
-      onKeyDown={onKeyDown}
-    >
+    <li className="repositories-list-row" role="row" aria-label={repoName}>
       <div className="repositories-list-row__main" role="gridcell">
         <span className="repositories-list-row__icon-wrap" aria-hidden>
           <WorktreesFolderGitIcon className="repositories-list-row__icon" />
@@ -121,12 +96,27 @@ export function RepositoryListRow({ repository }: Props) {
         </div>
       </div>
       <div className="repositories-list-row__aside" role="gridcell">
-        <span className="repositories-list-row__count-pill" aria-label={worktreeCountText}>
-          {repositoryListWorktreeCountDisplay(worktreeCount)}
-        </span>
-        <span className="repositories-list-row__chevron" aria-hidden="true">
-          <WorktreesChevronRightIcon />
-        </span>
+        <div className="repositories-list-row__actions">
+          <button
+            type="button"
+            className="task-list-icon-btn"
+            aria-label={`${worktreeGitCopy.reconcile} ${repoName}`}
+            aria-busy={reconcilePending || undefined}
+            disabled={reconcilePending}
+            onClick={() => onReconcile(repository)}
+          >
+            <WorktreesRefreshIcon className="repositories-list-row__action-icon" />
+          </button>
+          <button
+            type="button"
+            className="task-list-icon-btn task-list-icon-btn--delete"
+            aria-label={`${worktreeGitCopy.deleteRepository} ${repoName}`}
+            disabled={reconcilePending}
+            onClick={() => onDelete(repository)}
+          >
+            <WorktreesTrashIcon className="repositories-list-row__action-icon" />
+          </button>
+        </div>
       </div>
     </li>
   );

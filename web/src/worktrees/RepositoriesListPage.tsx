@@ -2,21 +2,25 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui";
 import { useDocumentTitle } from "@/shared/useDocumentTitle";
+import { useOptionalToast } from "@/shared/toast";
 import { EmptyState } from "@/shared/EmptyState";
 import { useDelayedTrue } from "@/lib/useDelayedTrue";
 import { useDebouncedTrimmedValue } from "@/hooks/useDebouncedTrimmedValue";
 import { TASK_TIMINGS } from "@/constants/tasks";
 import { TaskDraftsListSkeleton } from "@/components/skeletons/TaskDraftsListSkeleton";
 import { useGlobalRepositories } from "./hooks/useGlobalRepositories";
-import { useGlobalGitMutations } from "./hooks/useGlobalGitMutations";
+import { useRepositoryGitActions } from "./hooks/useRepositoryGitActions";
 import { RepositoriesListTable } from "./components/RepositoriesListTable";
+import { DeleteConfirmDialog } from "./components/DeleteConfirmDialog";
 import { RegisterRepositoryModal } from "./modals/RegisterRepositoryModal";
+import { RelocateRepositoryModal } from "./modals/RelocateRepositoryModal";
 import {
   deriveWorktreesPageMode,
   worktreesPageErrorMessage,
   worktreesPageTitle,
 } from "./worktreesPageMode";
 import { repositoryMatchesSearchQuery } from "./repositoryDisplay";
+import { formatReconcileSuccess } from "./gitReconcileErrors";
 import { worktreeGitCopy } from "./worktreeGitCopy";
 import {
   WorktreesPlusIcon,
@@ -26,7 +30,8 @@ import {
 
 export function RepositoriesListPage() {
   const repositoriesQuery = useGlobalRepositories();
-  const mutations = useGlobalGitMutations();
+  const toast = useOptionalToast();
+  const actions = useRepositoryGitActions();
   const [searchParams, setSearchParams] = useSearchParams();
   const [registerOpen, setRegisterOpen] = useState(false);
   const [searchInput, setSearchInput] = useState("");
@@ -180,7 +185,17 @@ export function RepositoriesListPage() {
                 </div>
               ) : null}
               {pageMode === "manage" && filteredRepositories.length > 0 ? (
-                <RepositoriesListTable repositories={filteredRepositories} />
+                <RepositoriesListTable
+                  repositories={filteredRepositories}
+                  reconcilingRepositoryId={
+                    actions.reconcilingRepositoryId != null &&
+                    actions.isManualReconciling(actions.reconcilingRepositoryId)
+                      ? actions.reconcilingRepositoryId
+                      : undefined
+                  }
+                  onReconcile={(repo) => void actions.handleReconcile(repo)}
+                  onDelete={actions.openDeleteRepository}
+                />
               ) : null}
             </>
           ) : null}
@@ -188,20 +203,50 @@ export function RepositoriesListPage() {
 
         <RegisterRepositoryModal
           open={registerOpen}
-          pending={mutations.createRepository.isPending}
-          error={mutations.createRepository.error}
+          pending={actions.mutations.createRepository.isPending}
+          error={actions.mutations.createRepository.error}
           onClose={() => {
             setRegisterOpen(false);
-            mutations.createRepository.reset();
+            actions.mutations.createRepository.reset();
           }}
           onSubmit={(input) => {
-            void mutations.createRepository
+            void actions.mutations.createRepository
               .mutateAsync(input)
               .then(() => setRegisterOpen(false));
+          }}
+        />
+
+        <DeleteConfirmDialog
+          target={actions.deleteTarget}
+          pending={actions.deletePending}
+          error={actions.deleteError}
+          onClose={actions.closeDelete}
+          onConfirm={(options) => void actions.runDelete(options)}
+        />
+
+        <RelocateRepositoryModal
+          open={actions.relocateRepository != null}
+          pending={actions.mutations.relocateRepository.isPending}
+          error={actions.mutations.relocateRepository.error}
+          storedPath={actions.relocateRepository?.path ?? ""}
+          onClose={actions.closeRelocateModal}
+          onSubmit={(input) => {
+            const repo = actions.relocateRepository;
+            if (!repo) return;
+            void actions.mutations.relocateRepository
+              .mutateAsync({ repositoryId: repo.id, input })
+              .then((result) => {
+                actions.setAutoReconcileBlocked((prev) => {
+                  const next = { ...prev };
+                  delete next[repo.id];
+                  return next;
+                });
+                actions.closeRelocateModal();
+                toast?.success(formatReconcileSuccess(result));
+              });
           }}
         />
       </section>
     </div>
   );
 }
-
