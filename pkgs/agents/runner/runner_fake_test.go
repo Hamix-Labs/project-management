@@ -94,6 +94,107 @@ func TestRunnerFake_returnsScriptedResult(t *testing.T) {
 	}
 }
 
+// TestRunnerFake_ScriptAttempt_prefersExactOverWildcard pins multi-attempt
+// scripting: an exact AttemptSeq entry wins over the wildcard Script.
+func TestRunnerFake_ScriptAttempt_prefersExactOverWildcard(t *testing.T) {
+	t.Parallel()
+
+	r := runnerfake.New()
+	r.Script("task-A", cyclesdomain.PhaseExecute, runner.NewResult(
+		cyclesdomain.PhaseStatusSucceeded, "any", nil, ""))
+	r.ScriptAttempt("task-A", cyclesdomain.PhaseExecute, 2, runner.NewResult(
+		cyclesdomain.PhaseStatusFailed, "attempt-2", nil, ""))
+
+	got1, err := r.Run(context.Background(), runner.Request{
+		TaskID: "task-A", AttemptSeq: 1, Phase: cyclesdomain.PhaseExecute,
+	})
+	if err != nil {
+		t.Fatalf("attempt 1: %v", err)
+	}
+	if got1.Summary != "any" {
+		t.Fatalf("attempt 1 summary = %q, want any", got1.Summary)
+	}
+
+	got2, err := r.Run(context.Background(), runner.Request{
+		TaskID: "task-A", AttemptSeq: 2, Phase: cyclesdomain.PhaseExecute,
+	})
+	if err != nil {
+		t.Fatalf("attempt 2: %v", err)
+	}
+	if got2.Summary != "attempt-2" || got2.Status != cyclesdomain.PhaseStatusFailed {
+		t.Fatalf("attempt 2 = %+v, want failed/attempt-2", got2)
+	}
+}
+
+// TestRunnerFake_ScriptProgress_invokesOnProgress ensures mid-run progress
+// callbacks fire before the scripted result is returned.
+func TestRunnerFake_ScriptProgress_invokesOnProgress(t *testing.T) {
+	t.Parallel()
+
+	r := runnerfake.New()
+	r.Script("task-P", cyclesdomain.PhaseExecute, runner.NewResult(
+		cyclesdomain.PhaseStatusSucceeded, "done", nil, ""))
+	r.ScriptProgress("task-P", cyclesdomain.PhaseExecute,
+		runner.ProgressEvent{Kind: "tool_call", Subtype: "started", Tool: "Read", Message: "reading"},
+		runner.ProgressEvent{Kind: "assistant", Message: "ok"},
+	)
+
+	var seen []runner.ProgressEvent
+	got, err := r.Run(context.Background(), runner.Request{
+		TaskID: "task-P", AttemptSeq: 1, Phase: cyclesdomain.PhaseExecute,
+		OnProgress: func(ev runner.ProgressEvent) {
+			seen = append(seen, ev)
+		},
+	})
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if got.Summary != "done" {
+		t.Fatalf("summary = %q, want done", got.Summary)
+	}
+	if len(seen) != 2 {
+		t.Fatalf("progress events = %d, want 2 (%+v)", len(seen), seen)
+	}
+	if seen[0].Tool != "Read" || seen[1].Kind != "assistant" {
+		t.Fatalf("progress = %+v", seen)
+	}
+}
+
+// TestRunnerFake_ScriptProgress_nilOnProgressIsSafe covers runs without a
+// progress callback (worker paths that omit live updates).
+func TestRunnerFake_ScriptProgress_nilOnProgressIsSafe(t *testing.T) {
+	t.Parallel()
+
+	r := runnerfake.New()
+	r.Script("task-N", cyclesdomain.PhaseExecute, runner.NewResult(
+		cyclesdomain.PhaseStatusSucceeded, "ok", nil, ""))
+	r.ScriptProgress("task-N", cyclesdomain.PhaseExecute,
+		runner.ProgressEvent{Kind: "stream", Message: "ignored"})
+
+	if _, err := r.Run(context.Background(), runner.Request{
+		TaskID: "task-N", Phase: cyclesdomain.PhaseExecute,
+	}); err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+}
+
+// TestRunnerFake_ScriptProgressAlone_notRunnable ensures progress without a
+// Script/Fail outcome still fails loudly.
+func TestRunnerFake_ScriptProgressAlone_notRunnable(t *testing.T) {
+	t.Parallel()
+
+	r := runnerfake.New()
+	r.ScriptProgress("task-X", cyclesdomain.PhaseExecute,
+		runner.ProgressEvent{Kind: "stream", Message: "orphan"})
+
+	_, err := r.Run(context.Background(), runner.Request{
+		TaskID: "task-X", Phase: cyclesdomain.PhaseExecute,
+	})
+	if !errors.Is(err, runner.ErrInvalidOutput) {
+		t.Fatalf("got %v, want ErrInvalidOutput", err)
+	}
+}
+
 // TestRunnerFake_unknownScriptReturnsErrInvalidOutput keeps the fake honest:
 // missing scripts must be loud failures so worker tests don't pass on the
 // wrong code path.

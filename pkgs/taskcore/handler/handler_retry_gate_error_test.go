@@ -2,50 +2,16 @@ package handler_test
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/handler"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler/storefake"
 	"github.com/google/uuid"
 )
-
-// retryGateFake scripts RequestTaskRetry / ApplyTaskGateAction / Get for thin
-// handler error→status mapping tests without SQLite.
-type retryGateFake struct {
-	*storefake.TaskCRUDFake
-
-	retryErr error
-	retryOut *domain.Task
-
-	gateErr error
-	gateOut *domain.Task
-}
-
-func (f *retryGateFake) RequestTaskRetry(ctx context.Context, in contract.RequestRetryInput, by domain.Actor) (*domain.Task, error) {
-	if f.retryErr != nil {
-		return nil, f.retryErr
-	}
-	if f.retryOut != nil {
-		return f.retryOut, nil
-	}
-	return &domain.Task{ID: in.TaskID, Status: domain.StatusReady}, nil
-}
-
-func (f *retryGateFake) ApplyTaskGateAction(ctx context.Context, taskID, action string, by domain.Actor) (*domain.Task, error) {
-	if f.gateErr != nil {
-		return nil, f.gateErr
-	}
-	if f.gateOut != nil {
-		return f.gateOut, nil
-	}
-	return &domain.Task{ID: taskID}, nil
-}
 
 func TestPostTaskRetry_mapsStoreErrorsToHTTPStatus(t *testing.T) {
 	t.Parallel()
@@ -63,7 +29,8 @@ func TestPostTaskRetry_mapsStoreErrorsToHTTPStatus(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			fake := &retryGateFake{TaskCRUDFake: storefake.NewTaskCRUD(), retryErr: tc.retryErr}
+			fake := storefake.NewTaskCRUD()
+			fake.FailRetry(tc.retryErr)
 			mux := http.NewServeMux()
 			handler.Register(mux, testDeps(fake))
 
@@ -83,7 +50,7 @@ func TestPostTaskRetry_mapsStoreErrorsToHTTPStatus(t *testing.T) {
 func TestPostTaskRetry_rejectsNonUserActor(t *testing.T) {
 	t.Parallel()
 	taskID := uuid.NewString()
-	fake := &retryGateFake{TaskCRUDFake: storefake.NewTaskCRUD()}
+	fake := storefake.NewTaskCRUD()
 	mux := http.NewServeMux()
 	handler.Register(mux, testDeps(fake))
 
@@ -114,7 +81,8 @@ func TestPatchTaskGate_mapsStoreErrorsToHTTPStatus(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			fake := &retryGateFake{TaskCRUDFake: storefake.NewTaskCRUD(), gateErr: tc.gateErr}
+			fake := storefake.NewTaskCRUD()
+			fake.FailGate(tc.gateErr)
 			mux := http.NewServeMux()
 			handler.Register(mux, testDeps(fake))
 
@@ -143,7 +111,8 @@ func TestPatchTaskGate_okReturnsTask(t *testing.T) {
 			Status: domain.GateStatusReleased,
 		},
 	}
-	fake := &retryGateFake{TaskCRUDFake: storefake.NewTaskCRUD(), gateOut: task}
+	fake := storefake.NewTaskCRUD()
+	fake.OnGate(task)
 	fake.OnGet(task)
 
 	mux := http.NewServeMux()

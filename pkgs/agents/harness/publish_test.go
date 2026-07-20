@@ -69,20 +69,16 @@ func TestHarness_PublishesRunnerProgressWithCycleAndPhaseContext(t *testing.T) {
 
 	tsk := env.TransitionRunning(ctx, env.CreateReadyTask(ctx, "live-progress"))
 	progress := notifierfake.NewRecordingProgressNotifier()
-	r := harnesstest.NewBlockingRunner()
-	r.Result = runner.NewResult(cyclesdomain.PhaseStatusSucceeded, "all green", nil, "")
-	r.OnStart = func(req runner.Request) {
-		if req.OnProgress != nil {
-			req.OnProgress(runner.ProgressEvent{
-				Kind:    "tool_call",
-				Subtype: "started",
-				Tool:    "ReadFile",
-				Message: "Started ReadFile",
-				Payload: json.RawMessage(`{"type":"tool_call","name":"ReadFile","input":{"path":"README.md"}}`),
-			})
-		}
-		close(r.Release)
-	}
+	r := runnerfake.New()
+	r.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(
+		cyclesdomain.PhaseStatusSucceeded, "all green", nil, ""))
+	r.ScriptProgress(tsk.ID, cyclesdomain.PhaseExecute, runner.ProgressEvent{
+		Kind:    "tool_call",
+		Subtype: "started",
+		Tool:    "ReadFile",
+		Message: "Started ReadFile",
+		Payload: json.RawMessage(`{"type":"tool_call","name":"ReadFile","input":{"path":"README.md"}}`),
+	})
 
 	done := env.RunHarness(ctx, env.NewHarness(r, harness.Options{ProgressNotifier: progress}), tsk)
 	<-done

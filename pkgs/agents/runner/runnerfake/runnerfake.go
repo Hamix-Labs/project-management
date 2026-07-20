@@ -1,8 +1,8 @@
 // Package runnerfake provides a deterministic in-memory implementation of
 // runner.Runner used by every V1 worker test (contract:
-// docs/architecture.md). The fake is keyed on (TaskID, Phase) so tests
-// can script the outcome of each phase without depending on a real
-// CLI.
+// docs/architecture.md). Scripts are keyed on (TaskID, Phase, AttemptSeq)
+// with AttemptSeq 0 as a wildcard so tests can pin multi-attempt outcomes
+// or script a phase for any attempt.
 //
 // The fake is exported (capital R Runner) so test files in other packages
 // can construct it directly: runnerfake.New() returns a *Runner that
@@ -21,6 +21,10 @@ import (
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
+// anyAttemptSeq is the wildcard AttemptSeq for Script/Fail/ScriptProgress.
+// Exact ScriptAttempt keys take precedence over the wildcard on lookup.
+const anyAttemptSeq int64 = 0
+
 // Runner is a deterministic fake implementation of runner.Runner.
 //
 // Tests register expected outcomes with Script (success) or Fail (error
@@ -38,13 +42,16 @@ type Runner struct {
 }
 
 type scriptKey struct {
-	taskID string
-	phase  cyclesdomain.Phase
+	taskID     string
+	phase      cyclesdomain.Phase
+	attemptSeq int64
 }
 
 type scripted struct {
-	result runner.Result
-	err    error
+	result     runner.Result
+	err        error
+	progress   []runner.ProgressEvent
+	hasOutcome bool // true after Script/Fail*; progress-only entries are not runnable
 }
 
 // New returns a fake runner with default name "fake" and version "v0".
@@ -90,44 +97,100 @@ func (r *Runner) WithDefaultModel(model string) *Runner {
 	return r
 }
 
-// Script registers result as the value Run will return for (taskID, phase).
-// Last write wins. Result is stored as-is; tests should typically build it
-// via runner.NewResult so caps are applied.
+// Script registers result as the value Run will return for (taskID, phase)
+// on any AttemptSeq. Last write wins for the wildcard key; exact
+// ScriptAttempt entries still take precedence at lookup time.
+// Result is stored as-is; tests should typically build it via
+// runner.NewResult so caps are applied.
 func (r *Runner) Script(taskID string, phase cyclesdomain.Phase, result runner.Result) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "runnerfake.Runner.Script",
-		"task_id", taskID, "phase", string(phase))
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	r.scripts[scriptKey{taskID: taskID, phase: phase}] = scripted{result: result}
+	r.ScriptAttempt(taskID, phase, anyAttemptSeq, result)
 }
 
-// Fail registers err as the error Run will return for (taskID, phase). The
-// accompanying result is the zero Result (mirroring the contract of
-// runner.ErrInvalidOutput).
+// ScriptAttempt registers result for an exact (taskID, phase, attemptSeq).
+func (r *Runner) ScriptAttempt(taskID string, phase cyclesdomain.Phase, attemptSeq int64, result runner.Result) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "runnerfake.Runner.ScriptAttempt",
+		"task_id", taskID, "phase", string(phase), "attempt_seq", attemptSeq)
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	key := scriptKey{taskID: taskID, phase: phase, attemptSeq: attemptSeq}
+	entry := r.scripts[key]
+	entry.result = result
+	entry.err = nil
+	entry.hasOutcome = true
+	r.scripts[key] = entry
+}
+
+// Fail registers err as the error Run will return for (taskID, phase) on
+// any AttemptSeq. The accompanying result is the zero Result (mirroring
+// the contract of runner.ErrInvalidOutput).
 func (r *Runner) Fail(taskID string, phase cyclesdomain.Phase, err error) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "runnerfake.Runner.Fail",
-		"task_id", taskID, "phase", string(phase), "err", err)
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	r.scripts[scriptKey{taskID: taskID, phase: phase}] = scripted{err: err}
+	r.FailAttempt(taskID, phase, anyAttemptSeq, err)
 }
 
-// FailWithResult registers (result, err) as the pair Run will return. Used
-// when the adapter contract requires both a partial Result and a typed
-// error (e.g. ErrNonZeroExit with the captured RawOutput).
+// FailAttempt registers err for an exact (taskID, phase, attemptSeq).
+func (r *Runner) FailAttempt(taskID string, phase cyclesdomain.Phase, attemptSeq int64, err error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "runnerfake.Runner.FailAttempt",
+		"task_id", taskID, "phase", string(phase), "attempt_seq", attemptSeq, "err", err)
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	key := scriptKey{taskID: taskID, phase: phase, attemptSeq: attemptSeq}
+	entry := r.scripts[key]
+	entry.err = err
+	entry.result = runner.Result{}
+	entry.hasOutcome = true
+	r.scripts[key] = entry
+}
+
+// FailWithResult registers (result, err) as the pair Run will return for
+// (taskID, phase) on any AttemptSeq. Used when the adapter contract
+// requires both a partial Result and a typed error (e.g. ErrNonZeroExit
+// with the captured RawOutput).
 func (r *Runner) FailWithResult(taskID string, phase cyclesdomain.Phase, result runner.Result, err error) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "runnerfake.Runner.FailWithResult",
-		"task_id", taskID, "phase", string(phase), "err", err)
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	r.scripts[scriptKey{taskID: taskID, phase: phase}] = scripted{result: result, err: err}
+	r.FailWithResultAttempt(taskID, phase, anyAttemptSeq, result, err)
 }
 
-// Run looks up the scripted outcome for (req.TaskID, req.Phase). When no
-// script is registered it returns runner.ErrInvalidOutput so missing
-// expectations fail tests loudly. Run honours ctx cancellation: a cancelled
-// context returns ctx.Err() wrapped with runner.ErrTimeout so callers can
-// errors.Is against the typed-error contract.
+// FailWithResultAttempt registers (result, err) for an exact attempt.
+func (r *Runner) FailWithResultAttempt(taskID string, phase cyclesdomain.Phase, attemptSeq int64, result runner.Result, err error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "runnerfake.Runner.FailWithResultAttempt",
+		"task_id", taskID, "phase", string(phase), "attempt_seq", attemptSeq, "err", err)
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	key := scriptKey{taskID: taskID, phase: phase, attemptSeq: attemptSeq}
+	entry := r.scripts[key]
+	entry.result = result
+	entry.err = err
+	entry.hasOutcome = true
+	r.scripts[key] = entry
+}
+
+// ScriptProgress registers progress events that Run will invoke via
+// req.OnProgress (when non-nil) before returning the scripted outcome
+// for (taskID, phase) on any AttemptSeq. Events are stored even when no
+// result has been scripted yet; Run still requires a Script/Fail entry.
+func (r *Runner) ScriptProgress(taskID string, phase cyclesdomain.Phase, events ...runner.ProgressEvent) {
+	r.ScriptProgressAttempt(taskID, phase, anyAttemptSeq, events...)
+}
+
+// ScriptProgressAttempt registers progress events for an exact attempt.
+func (r *Runner) ScriptProgressAttempt(taskID string, phase cyclesdomain.Phase, attemptSeq int64, events ...runner.ProgressEvent) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "runnerfake.Runner.ScriptProgressAttempt",
+		"task_id", taskID, "phase", string(phase), "attempt_seq", attemptSeq, "events", len(events))
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	key := scriptKey{taskID: taskID, phase: phase, attemptSeq: attemptSeq}
+	entry := r.scripts[key]
+	entry.progress = append([]runner.ProgressEvent(nil), events...)
+	r.scripts[key] = entry
+}
+
+// Run looks up the scripted outcome for (req.TaskID, req.Phase, req.AttemptSeq),
+// falling back to the AttemptSeq-wildcard script when no exact match exists.
+// Scripted progress events are delivered via req.OnProgress before the
+// result is returned. When no script is registered it returns
+// runner.ErrInvalidOutput so missing expectations fail tests loudly.
+// Run honours ctx cancellation: a cancelled context returns ctx.Err()
+// wrapped with runner.ErrTimeout so callers can errors.Is against the
+// typed-error contract.
 func (r *Runner) Run(ctx context.Context, req runner.Request) (runner.Result, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "runnerfake.Runner.Run",
 		"task_id", req.TaskID, "phase", string(req.Phase), "attempt_seq", req.AttemptSeq)
@@ -138,14 +201,31 @@ func (r *Runner) Run(ctx context.Context, req runner.Request) (runner.Result, er
 
 	r.mu.Lock()
 	r.calls = append(r.calls, req)
-	entry, ok := r.scripts[scriptKey{taskID: req.TaskID, phase: req.Phase}]
+	entry, ok := r.lookupLocked(req.TaskID, req.Phase, req.AttemptSeq)
 	r.mu.Unlock()
 
 	if !ok {
-		return runner.Result{}, fmt.Errorf("runnerfake: %w: no script for (task_id=%s, phase=%s)",
-			runner.ErrInvalidOutput, req.TaskID, req.Phase)
+		return runner.Result{}, fmt.Errorf("runnerfake: %w: no script for (task_id=%s, phase=%s, attempt_seq=%d)",
+			runner.ErrInvalidOutput, req.TaskID, req.Phase, req.AttemptSeq)
+	}
+	if req.OnProgress != nil {
+		for _, ev := range entry.progress {
+			req.OnProgress(ev)
+		}
 	}
 	return entry.result, entry.err
+}
+
+func (r *Runner) lookupLocked(taskID string, phase cyclesdomain.Phase, attemptSeq int64) (scripted, bool) {
+	if entry, ok := r.scripts[scriptKey{taskID: taskID, phase: phase, attemptSeq: attemptSeq}]; ok && entry.hasOutcome {
+		return entry, true
+	}
+	if attemptSeq != anyAttemptSeq {
+		if entry, ok := r.scripts[scriptKey{taskID: taskID, phase: phase, attemptSeq: anyAttemptSeq}]; ok && entry.hasOutcome {
+			return entry, true
+		}
+	}
+	return scripted{}, false
 }
 
 // Name returns the configured runner name (default "fake").
