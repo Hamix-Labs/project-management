@@ -86,12 +86,26 @@ func TestProjectsStore_CreateContext_rejectsOversizeTitleAndBody(t *testing.T) {
 		t.Fatalf("oversize body err = %v, want ErrInvalidInput", err)
 	}
 
+	overDesc := strings.Repeat("d", domain.MaxProjectContextDescriptionChars+1)
+	_, err = s.CreateProjectContext(ctx, project.ID, CreateProjectContextInput{
+		Title:       "ok",
+		Description: overDesc,
+		Body:        "ok",
+	})
+	if !errors.Is(err, domain.ErrInvalidInput) {
+		t.Fatalf("oversize description err = %v, want ErrInvalidInput", err)
+	}
+
 	item, err := s.CreateProjectContext(ctx, project.ID, CreateProjectContextInput{
-		Title: "alias",
-		Body:  "imported content",
+		Title:       "alias",
+		Description: "when to use this memory",
+		Body:        "imported content",
 	})
 	if err != nil {
 		t.Fatalf("valid create: %v", err)
+	}
+	if item.Description != "when to use this memory" {
+		t.Fatalf("description = %q", item.Description)
 	}
 
 	_, err = s.UpdateProjectContext(ctx, project.ID, item.ID, UpdateProjectContextInput{
@@ -99,6 +113,24 @@ func TestProjectsStore_CreateContext_rejectsOversizeTitleAndBody(t *testing.T) {
 	})
 	if !errors.Is(err, domain.ErrInvalidInput) {
 		t.Fatalf("oversize patch body err = %v, want ErrInvalidInput", err)
+	}
+
+	_, err = s.UpdateProjectContext(ctx, project.ID, item.ID, UpdateProjectContextInput{
+		Description: &overDesc,
+	})
+	if !errors.Is(err, domain.ErrInvalidInput) {
+		t.Fatalf("oversize patch description err = %v, want ErrInvalidInput", err)
+	}
+
+	patchedDesc := "updated blurb"
+	got, err := s.UpdateProjectContext(ctx, project.ID, item.ID, UpdateProjectContextInput{
+		Description: &patchedDesc,
+	})
+	if err != nil {
+		t.Fatalf("patch description: %v", err)
+	}
+	if got.Description != patchedDesc {
+		t.Fatalf("patched description = %q", got.Description)
 	}
 }
 

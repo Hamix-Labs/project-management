@@ -199,6 +199,10 @@ func CreateContext(ctx context.Context, db *gorm.DB, projectID string, input Cre
 	if err := domain.ValidateProjectContextTitle(title); err != nil {
 		return domain.ProjectContextItem{}, err
 	}
+	description := strings.TrimSpace(input.Description)
+	if err := domain.ValidateProjectContextDescription(description); err != nil {
+		return domain.ProjectContextItem{}, err
+	}
 	body := strings.TrimSpace(input.Body)
 	if err := domain.ValidateProjectContextBody(body); err != nil {
 		return domain.ProjectContextItem{}, err
@@ -216,6 +220,7 @@ func CreateContext(ctx context.Context, db *gorm.DB, projectID string, input Cre
 		ProjectID:     projectID,
 		Kind:          kind,
 		Title:         title,
+		Description:   description,
 		Body:          body,
 		SourceTaskID:  trimOptional(input.SourceTaskID),
 		SourceCycleID: trimOptional(input.SourceCycleID),
@@ -454,6 +459,11 @@ func validateContextPatch(input UpdateContextInput) error {
 			return err
 		}
 	}
+	if input.Description != nil {
+		if err := domain.ValidateProjectContextDescription(strings.TrimSpace(*input.Description)); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -464,6 +474,9 @@ func applyContextPatch(row *domain.ProjectContextItem, input UpdateContextInput)
 	}
 	if input.Title != nil {
 		row.Title = strings.TrimSpace(*input.Title)
+	}
+	if input.Description != nil {
+		row.Description = strings.TrimSpace(*input.Description)
 	}
 	if input.Body != nil {
 		row.Body = strings.TrimSpace(*input.Body)

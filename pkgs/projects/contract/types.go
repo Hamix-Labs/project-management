@@ -26,6 +26,7 @@ type CreateProjectContextInput struct {
 	ID            string
 	Kind          domain.ProjectContextKind
 	Title         string
+	Description   string
 	Body          string
 	SourceTaskID  *string
 	SourceCycleID *string
@@ -35,10 +36,11 @@ type CreateProjectContextInput struct {
 
 // UpdateProjectContextInput is a partial patch for one project context item.
 type UpdateProjectContextInput struct {
-	Kind   *domain.ProjectContextKind
-	Title  *string
-	Body   *string
-	Pinned *bool
+	Kind        *domain.ProjectContextKind
+	Title       *string
+	Description *string
+	Body        *string
+	Pinned      *bool
 }
 
 // CreateProjectContextEdgeInput is the store input for connecting two context nodes.
