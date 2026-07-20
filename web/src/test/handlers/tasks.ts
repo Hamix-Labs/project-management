@@ -142,6 +142,32 @@ export function taskEventGetFlaky(taskId: string, seq: number, body: JsonBodyTyp
   });
 }
 
+/** PATCH /tasks/:id/events/:seq — user reply success. */
+export function taskEventUserResponsePatch(
+  taskId: string,
+  seq: number,
+  onPatch: (body: string) => void,
+  responseBody: JsonBodyType,
+) {
+  return http.patch(`/tasks/${taskId}/events/${seq}`, async ({ request }) => {
+    const body = await request.text();
+    onPatch(body);
+    return HttpResponse.json(responseBody);
+  });
+}
+
+/** PATCH /tasks/:id/events/:seq — 4xx/5xx failure. */
+export function taskEventUserResponsePatchError(
+  taskId: string,
+  seq: number,
+  status: number,
+  error = "Could not save response",
+) {
+  return http.patch(`/tasks/${taskId}/events/${seq}`, () =>
+    HttpResponse.json({ error }, { status }),
+  );
+}
+
 export function taskChecklistEmpty(taskId: string) {
   return http.get(`/tasks/${taskId}/checklist`, () =>
     HttpResponse.json({ items: [] }),
