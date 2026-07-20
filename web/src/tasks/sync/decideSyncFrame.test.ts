@@ -12,9 +12,9 @@ describe("decideSyncFrame", () => {
   const noSuppress = () => false;
   const alwaysSuppress = () => true;
 
-  it("schedules debounce for malformed frames", () => {
+  it("ignores malformed frames without scheduling debounce", () => {
     const decision = decideSyncFrame({ frame: null, shouldSuppressTaskEcho: noSuppress });
-    expect(decision.schedule).toBe("debounce");
+    expect(decision.schedule).toBe("ignore");
     expect(decision.effects).toEqual([]);
     expect(decision.pendingDelta).toEqual({});
   });

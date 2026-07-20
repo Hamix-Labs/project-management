@@ -112,7 +112,8 @@ export type ListCursorModelsResult = {
   error?: string;
 };
 
-function assertSettings(raw: unknown): AppSettings {
+/** Parse GET/PATCH /settings (and bootstrap.settings) into AppSettings. */
+export function parseAppSettings(raw: unknown): AppSettings {
   if (raw === null || typeof raw !== "object") {
     throw new Error("unexpected settings response shape");
   }
@@ -187,6 +188,11 @@ function assertSettings(raw: unknown): AppSettings {
     out.updated_at = o.updated_at;
   }
   return out;
+}
+
+/** @deprecated Prefer parseAppSettings — kept as internal alias during migration. */
+function assertSettings(raw: unknown): AppSettings {
+  return parseAppSettings(raw);
 }
 
 export async function listCursorModels(

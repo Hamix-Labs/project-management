@@ -22,7 +22,7 @@ import {
   parseTaskStatsResponse,
 } from "./parseTaskApi";
 import { parseTaskDraftSummaryList } from "./parseTaskApi";
-import type { AppSettings } from "./settings";
+import { parseAppSettings, type AppSettings } from "./settings";
 import type {
   TaskListResponse,
   TaskStatsResponse,
@@ -42,78 +42,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-// Local settings parser. We duplicate the structure here rather than
-// exporting assertSettings from settings.ts because (a) bootstrap is the
-// only secondary consumer today and (b) duplicating the assertions keeps
-// the boundary explicit when the wire shape evolves — the call site is
-// where contract drift surfaces fastest.
-function parseSettingsField(raw: unknown): AppSettings {
-  if (!isRecord(raw)) {
-    throw new Error("Invalid API response: bootstrap.settings must be object");
-  }
-  const o = raw;
-  const paused = typeof o.agent_paused === "boolean" ? o.agent_paused : false;
-  const runner = o.runner;
-  const cursorBin = o.cursor_bin;
-  const cursorModel = o.cursor_model;
-  const maxDur = o.max_run_duration_seconds;
-  const streamIdleStuck = o.stream_idle_stuck_seconds;
-  const pickupDelay = o.agent_pickup_delay_seconds;
-  const tz = typeof o.display_timezone === "string" ? o.display_timezone : "";
-  const optimistic = typeof o.optimistic_mutations_enabled === "boolean"
-    ? o.optimistic_mutations_enabled
-    : true;
-  const sseReplay = typeof o.sse_replay_enabled === "boolean"
-    ? o.sse_replay_enabled
-    : true;
-  const verifyMaxRetries =
-    typeof o.verify_max_retries === "number" ? o.verify_max_retries : 1;
-  const verifyRunnerName =
-    typeof o.verify_runner_name === "string" ? o.verify_runner_name : "";
-  const verifyRunnerModel =
-    typeof o.verify_runner_model === "string" ? o.verify_runner_model : "";
-  const verifyCommandTimeoutSeconds =
-    typeof o.verify_command_timeout_seconds === "number"
-      ? o.verify_command_timeout_seconds
-      : 120;
-  if (
-    typeof runner !== "string" ||
-    typeof cursorBin !== "string" ||
-    typeof cursorModel !== "string" ||
-    typeof maxDur !== "number" ||
-    typeof streamIdleStuck !== "number" ||
-    typeof pickupDelay !== "number"
-  ) {
-    throw new Error("Invalid API response: bootstrap.settings shape");
-  }
-  const out: AppSettings = {
-    agent_paused: paused,
-    runner,
-    cursor_bin: cursorBin,
-    cursor_model: cursorModel,
-    max_run_duration_seconds: maxDur,
-    stream_idle_stuck_seconds: streamIdleStuck,
-    agent_pickup_delay_seconds: pickupDelay,
-    display_timezone: tz,
-    optimistic_mutations_enabled: optimistic,
-    sse_replay_enabled: sseReplay,
-    verify_max_retries: verifyMaxRetries,
-    verify_runner_name: verifyRunnerName,
-    verify_runner_model: verifyRunnerModel,
-    verify_command_timeout_seconds: verifyCommandTimeoutSeconds,
-  };
-  if (typeof o.updated_at === "string") {
-    out.updated_at = o.updated_at;
-  }
-  return out;
-}
-
 function parseBootstrap(value: unknown): Bootstrap {
   if (!isRecord(value)) {
     throw new Error("Invalid API response: bootstrap must be an object");
   }
   return {
-    settings: parseSettingsField(value.settings),
+    settings: parseAppSettings(value.settings),
     tasks: parseTaskListResponse(value.tasks),
     stats: parseTaskStatsResponse(value.stats),
     projects: parseProjectListResponse(value.projects),

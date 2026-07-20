@@ -1,6 +1,6 @@
 import type { TaskChangeFrame } from "../task-query/sseInvalidate";
 
-export type SyncSchedule = "debounce" | "immediate" | "resync";
+export type SyncSchedule = "debounce" | "immediate" | "resync" | "ignore";
 
 export type PendingDelta = {
   addTaskId?: string;

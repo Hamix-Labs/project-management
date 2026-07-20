@@ -1,12 +1,17 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it } from "vitest";
 import { ROUTER_FUTURE_FLAGS } from "../../lib/routerFutureFlags";
 import { DEFAULT_DOCUMENT_TITLE } from "../../shared/useDocumentTitle";
 import { setupAppTest } from "@/test/integration/appHarness";
-import { taskEventGet, taskEventGetFlaky } from "@/test/handlers/tasks";
+import {
+  taskEventGet,
+  taskEventGetFlaky,
+  taskEventUserResponsePatch,
+  taskEventUserResponsePatchError,
+} from "@/test/handlers/tasks";
 import { server } from "@/test/server";
 import { TaskEventDetailPage } from "./TaskEventDetailPage";
 
@@ -123,6 +128,83 @@ describe("TaskEventDetailPage", () => {
       "data-awaiting-response",
       "true",
     );
+  });
+
+  it("submits a user reply via PATCH and leaves awaiting state", async () => {
+    const user = userEvent.setup();
+    let patchBody: string | null = null;
+    const baseEvent = {
+      task_id: "t1",
+      seq: 2,
+      at: "2026-03-01T10:00:00.000Z",
+      type: "approval_requested" as const,
+      by: "agent" as const,
+      data: {},
+    };
+    server.use(
+      taskEventGet("t1", 2, baseEvent),
+      taskEventUserResponsePatch("t1", 2, (body) => {
+        patchBody = body;
+      }, {
+        ...baseEvent,
+        user_response: "Looks good",
+        user_response_at: "2026-03-01T10:05:00.000Z",
+      }),
+    );
+
+    renderEventPage("/tasks/t1/events/2");
+
+    const textbox = await screen.findByRole("textbox", {
+      name: /^add a message$/i,
+    });
+    expect(screen.getByText("Agent needs input")).toHaveAttribute(
+      "data-awaiting-response",
+      "true",
+    );
+
+    await user.type(textbox, "Looks good");
+    await user.click(screen.getByRole("button", { name: /^send$/i }));
+
+    await waitFor(() => {
+      expect(patchBody).toBe(JSON.stringify({ user_response: "Looks good" }));
+    });
+    expect(
+      await screen.findByText("You replied — waiting on agent"),
+    ).not.toHaveAttribute("data-awaiting-response");
+    expect(textbox).toHaveValue("");
+    expect(
+      screen.getByRole("log", { name: /conversation on this event/i }),
+    ).toHaveTextContent("Looks good");
+  });
+
+  it("shows an error alert when PATCH user reply fails", async () => {
+    const user = userEvent.setup();
+    server.use(
+      taskEventGet("t1", 2, {
+        task_id: "t1",
+        seq: 2,
+        at: "2026-03-01T10:00:00.000Z",
+        type: "approval_requested",
+        by: "agent",
+        data: {},
+      }),
+      taskEventUserResponsePatchError("t1", 2, 500, "reply rejected"),
+    );
+
+    renderEventPage("/tasks/t1/events/2");
+
+    const textbox = await screen.findByRole("textbox", {
+      name: /^add a message$/i,
+    });
+    await user.type(textbox, "Looks good");
+    await user.click(screen.getByRole("button", { name: /^send$/i }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/reply rejected/i);
+    expect(screen.getByText("Agent needs input")).toHaveAttribute(
+      "data-awaiting-response",
+      "true",
+    );
+    expect(textbox).toHaveValue("Looks good");
   });
 
   it("does not mark awaiting when user has replied (legacy user_response)", async () => {

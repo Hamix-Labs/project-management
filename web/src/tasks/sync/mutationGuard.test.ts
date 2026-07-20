@@ -28,17 +28,30 @@ describe("mutationGuard", () => {
     beginTaskMutationGuard("t1");
     beginTaskMutationGuard("t1");
     expect(shouldSuppressTaskMutationEcho("t1")).toBe(true);
+    expect(shouldSuppressTaskMutationEcho("t1")).toBe(true);
+    expect(shouldSuppressTaskMutationEcho("t1")).toBe(true);
     expect(shouldSuppressTaskMutationEcho("t1")).toBe(false);
     beginTaskMutationGuard("t1");
     expect(shouldSuppressTaskMutationEcho("t1")).toBe(true);
+    expect(shouldSuppressTaskMutationEcho("t1")).toBe(false);
   });
 
   it("endTaskMutationGuard decrements without dropping unrelated bumps", () => {
     beginTaskMutationGuard("t1");
     beginTaskMutationGuard("t1");
     endTaskMutationGuard("t1");
+    // one credit remains (v=1, seen=0)
     expect(shouldSuppressTaskMutationEcho("t1")).toBe(true);
+    expect(shouldSuppressTaskMutationEcho("t1")).toBe(false);
     endTaskMutationGuard("t1");
+    expect(shouldSuppressTaskMutationEcho("t1")).toBe(false);
+  });
+
+  it("keeps detail optimistic across two begins and two SSE echoes", () => {
+    beginTaskMutationGuard("t1");
+    beginTaskMutationGuard("t1");
+    expect(shouldSuppressTaskMutationEcho("t1")).toBe(true);
+    expect(shouldSuppressTaskMutationEcho("t1")).toBe(true);
     expect(shouldSuppressTaskMutationEcho("t1")).toBe(false);
   });
 
