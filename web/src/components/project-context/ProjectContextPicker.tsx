@@ -1,13 +1,13 @@
 import { useCallback, useMemo, useState } from "react";
 import type { ProjectContextItem } from "@/types";
 import { Modal } from "@/shared/Modal";
-import { ProjectContextListView } from "@/projects/ProjectContextListView";
+import { ProjectContextSelectList } from "./ProjectContextSelectList";
 import {
   mergeProjectContextSelection,
   projectContextShortId,
   selectedProjectContextItems,
 } from "@/lib/projectContextRefs";
-import { useProjectContext } from "@/projects/hooks";
+import { useProjectContext } from "@/hooks/useProjectContext";
 
 interface ProjectContextPickerProps {
   projectId: string;
@@ -28,6 +28,9 @@ const EMPTY_CONTEXT_ITEMS: ProjectContextItem[] = [];
  * The displayed labels intentionally include a 6-character short id so
  * operators can disambiguate same-titled nodes from different projects
  * without opening every detail panel.
+ *
+ * Data comes from the inner-ring `useProjectContext` hook (api + query keys)
+ * so this component does not import the projects vertical.
  */
 export function ProjectContextPicker({
   projectId,
@@ -264,13 +267,11 @@ export function ProjectContextPicker({
                   </span>
                 </div>
               ) : (
-                <ProjectContextListView
+                <ProjectContextSelectList
                   items={items}
-                  selection={{
-                    selectedIds: selected,
-                    disabled,
-                    onToggle: handleToggle,
-                  }}
+                  selectedIds={selected}
+                  disabled={disabled}
+                  onToggle={handleToggle}
                 />
               )}
             </div>
