@@ -26,6 +26,7 @@ type ProjectContextItem struct {
 	ProjectID     string             `json:"project_id"`
 	Kind          ProjectContextKind `json:"kind"`
 	Title         string             `json:"title"`
+	Description   string             `json:"description"`
 	Body          string             `json:"body"`
 	SourceTaskID  *string            `json:"source_task_id,omitempty"`
 	SourceCycleID *string            `json:"source_cycle_id,omitempty"`
