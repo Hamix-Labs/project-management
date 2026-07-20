@@ -32,11 +32,3 @@ func DecideVerifyRetryWithValidity(attempt, maxRetries int, result VerifyResult,
 	}
 	return effects
 }
-
-// VerifyDisabled indicates verify is off for this task; the harness runs the
-// legacy checklist completion path instead of the adversarial pipeline.
-//
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func VerifyDisabled(enabled bool) bool {
-	return !enabled
-}

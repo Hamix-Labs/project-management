@@ -187,7 +187,7 @@ func (h *Harness) runCycleLoopVerify(
 	cycle *cyclesdomain.TaskCycle,
 	state *processState,
 ) (retryLoop bool, terminalFailure bool, skipNextExecute bool) {
-	if orchestration.VerifyDisabled(state.verify.verifySnap.Enabled) {
+	if !state.verify.verifySnap.Enabled {
 		checklistErr := h.completeChecklistLegacy(parentCtx, task.ID)
 		if checklistErr != nil {
 			slog.Warn("agent harness checklist completion failed",

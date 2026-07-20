@@ -31,36 +31,9 @@ func (h *Harness) Resume(parentCtx context.Context, task *taskcoredomain.Task, c
 			startedAt:      startedAt,
 			effectiveModel: effectiveModelFromCycleMeta(h.runner, task, cycle),
 		},
-		verify: verifyLifecycleState{
-			previouslyPassed: cloneVerdictMap(cp.PreviouslyPassed),
-			verifyAttempt:    cp.VerifyAttempt,
-			verifyFeedback:   cp.VerifyFeedback,
-		},
+		verify: verifyLifecycleFromCheckpoint(cp, false),
 	}
-	snap, err := h.loadVerificationSnapshot(parentCtx, task.ID)
-	if err != nil {
-		slog.Error("agent harness resume verification snapshot failed", "cmd", calltrace.LogCmd,
-			"operation", "agent.harness.Harness.Resume.verify_snap_err",
-			"task_id", task.ID, "cycle_id", cycle.ID, "err", err)
-		h.bestEffortTerminate(parentCtx, &state, task.ID, cyclesdomain.CycleStatusFailed, "verification_snapshot_load_failed")
-		return
-	}
-	state.verify.verifySnap = snap
-
 	defer h.recoverFromPanic(&state, *task)
-
-	opts := cycleLoopOpts{knownCommits: cp.KnownCommits}
-	switch cp.Entry {
-	case resumeEntryExecute:
-		opts.resumeNotice = true
-		opts.interruptedPhase = cyclesdomain.PhaseExecute
-	case resumeEntryVerifyOnly:
-		opts.resumeNotice = false
-		opts.skipFirstExecute = true
-		opts.interruptedPhase = cyclesdomain.PhaseVerify
-	case resumeEntryAfterExecuteSuccess:
-		opts.skipFirstExecute = true
-	}
 
 	slog.Info("agent harness resume branch", "cmd", calltrace.LogCmd,
 		"operation", "agent.harness.Harness.Resume.branch",
@@ -68,5 +41,5 @@ func (h *Harness) Resume(parentCtx context.Context, task *taskcoredomain.Task, c
 		"entry", cp.Entry, "locked_count", len(cp.PreviouslyPassed),
 		"verify_attempt", cp.VerifyAttempt)
 
-	h.runCycleLoop(parentCtx, task, cycle, &state, opts)
+	h.enterCycleLoopFromCheckpoint(parentCtx, task, cycle, &state, cp, cycleLoopEntryInterrupt)
 }
