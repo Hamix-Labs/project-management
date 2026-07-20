@@ -2,11 +2,10 @@ package agentworker_test
 
 import (
 	"context"
-	gitinventorystore "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store"
 	"os/exec"
 	"testing"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
+	gitinventorystore "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store"
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 )
 

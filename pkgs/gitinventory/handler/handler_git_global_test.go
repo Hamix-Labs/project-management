@@ -15,6 +15,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	gitinventorystore "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store"
+	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/apijson"
 )
@@ -226,6 +227,9 @@ func TestHandler_gitErrHTTP_domainSentinels(t *testing.T) {
 		{"not found", taskcoredomain.ErrNotFound, http.StatusNotFound},
 		{"invalid input", taskcoredomain.ErrInvalidInput, http.StatusBadRequest},
 		{"conflict", taskcoredomain.ErrConflict, http.StatusConflict},
+		{"projects not found", projectsdomain.ErrNotFound, http.StatusNotFound},
+		{"projects invalid input", projectsdomain.ErrInvalidInput, http.StatusBadRequest},
+		{"projects conflict", projectsdomain.ErrConflict, http.StatusConflict},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
