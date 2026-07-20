@@ -109,8 +109,32 @@ describe("project API parsers", () => {
     });
 
     expect(out.items[0].kind).toBe("risk");
+    expect(out.items[0].description).toBe("");
     // Legacy edge payloads are ignored; the client always stores [].
     expect(out.edges).toEqual([]);
+  });
+
+  it("parses project context description when present", () => {
+    const out = parseProjectContextListResponse({
+      items: [
+        {
+          id: "ctx-1",
+          project_id: projectWire.id,
+          kind: "note",
+          title: "CONTRIBUTING",
+          description: "Repo contribution guide",
+          body: "# Contributing\n...",
+          created_by: "user",
+          pinned: false,
+          created_at: "2026-04-26T00:00:00Z",
+          updated_at: "2026-04-26T00:00:00Z",
+        },
+      ],
+      edges: [],
+      limit: 50,
+    });
+
+    expect(out.items[0].description).toBe("Repo contribution guide");
   });
 
   it("defaults missing project context edges to an empty list", () => {
