@@ -137,6 +137,11 @@ func (s *Store) ListRunningCyclePhases(ctx context.Context) ([]cyclesdomain.Task
 	return cycles.ListRunningPhases(ctx, s.db)
 }
 
+func (s *Store) IsTaskCycleRunning(ctx context.Context, taskID string) (bool, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.IsTaskCycleRunning")
+	return cycles.IsTaskCycleRunning(ctx, s.db, taskID)
+}
+
 func (s *Store) UpsertCycleCommits(ctx context.Context, taskID, cycleID string, entries []CycleCommitEntry) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.UpsertCycleCommits")
 	return commits.UpsertCycleCommits(ctx, s.db, taskID, cycleID, cycleCommitEntries(entries))

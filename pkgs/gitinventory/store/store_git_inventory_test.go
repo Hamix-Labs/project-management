@@ -57,7 +57,7 @@ func TestStore_CreateGlobalGitRepository_normalizesMainPath(t *testing.T) {
 	if _, err := gitSvc.AddWorktree(ctx, repo, wtPath, addWorktreeOpts("from-linked", true)); err != nil {
 		t.Fatalf("AddWorktree: %v", err)
 	}
-	created, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: wtPath}, gitSvc)
+	created, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: wtPath})
 	if err != nil {
 		t.Fatalf("CreateGlobalGitRepository from linked path: %v", err)
 	}
@@ -73,7 +73,7 @@ func TestStore_CreateGlobalGitRepository_normalizesMainPath(t *testing.T) {
 func TestStore_CreateGlobalGitRepository_duplicateCommonDir(t *testing.T) {
 	s, ctx, gitSvc := gitTestStore(t)
 	main := initGitRepo(t)
-	if _, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main}, gitSvc); err != nil {
+	if _, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main}); err != nil {
 		t.Fatalf("first register: %v", err)
 	}
 	repo := openGitRepo(t, main)
@@ -81,7 +81,7 @@ func TestStore_CreateGlobalGitRepository_duplicateCommonDir(t *testing.T) {
 	if _, err := gitSvc.AddWorktree(ctx, repo, wtPath, addWorktreeOpts("dup", true)); err != nil {
 		t.Fatalf("AddWorktree: %v", err)
 	}
-	_, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: wtPath}, gitSvc)
+	_, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: wtPath})
 	if domain.GitErrCode(err) != domain.GitCodeDuplicate {
 		t.Fatalf("duplicate common dir: got %v want duplicate", err)
 	}
@@ -90,7 +90,7 @@ func TestStore_CreateGlobalGitRepository_duplicateCommonDir(t *testing.T) {
 func TestStore_ProbeGitWorktree(t *testing.T) {
 	s, ctx, gitSvc := gitTestStore(t)
 	main := initGitRepo(t)
-	repoRow, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main}, gitSvc)
+	repoRow, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -100,15 +100,15 @@ func TestStore_ProbeGitWorktree(t *testing.T) {
 		t.Fatal(err)
 	}
 	foreign := initGitRepo(t)
-	linked, err := s.ProbeGitWorktree(ctx, repoRow.ID, wtPath, gitSvc)
+	linked, err := s.ProbeGitWorktree(ctx, repoRow.ID, wtPath)
 	if err != nil || !linked.Linked || linked.Registered {
 		t.Fatalf("linked unregistered: %+v err=%v", linked, err)
 	}
-	mainProbe, err := s.ProbeGitWorktree(ctx, repoRow.ID, main, gitSvc)
+	mainProbe, err := s.ProbeGitWorktree(ctx, repoRow.ID, main)
 	if err != nil || !mainProbe.Linked || !mainProbe.Registered || !mainProbe.IsMain {
 		t.Fatalf("seeded main: %+v err=%v", mainProbe, err)
 	}
-	unlinked, err := s.ProbeGitWorktree(ctx, repoRow.ID, foreign, gitSvc)
+	unlinked, err := s.ProbeGitWorktree(ctx, repoRow.ID, foreign)
 	if err != nil || unlinked.Linked {
 		t.Fatalf("foreign repo: %+v err=%v", unlinked, err)
 	}
@@ -117,7 +117,7 @@ func TestStore_ProbeGitWorktree(t *testing.T) {
 func TestRepoWorktreeInventory_incompleteDiscoverRowNotRegistered(t *testing.T) {
 	s, ctx, gitSvc := gitTestStore(t)
 	main := initGitRepo(t)
-	repo, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main}, gitSvc)
+	repo, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -128,14 +128,14 @@ func TestRepoWorktreeInventory_incompleteDiscoverRowNotRegistered(t *testing.T) 
 	}
 	out, err := s.ReconcileGitRepository(ctx, "", repo.ID, ReconcileGitInput{
 		AllowDiscover: true,
-	}, gitSvc)
+	})
 	if err != nil {
 		t.Fatalf("ReconcileGitRepository: %v", err)
 	}
 	if out.Report.WorktreesAdded != 1 {
 		t.Fatalf("worktrees_added=%d want 1 (linked only, not main)", out.Report.WorktreesAdded)
 	}
-	rows, err := s.RepoWorktreeInventory(ctx, repo, gitSvc)
+	rows, err := s.RepoWorktreeInventory(ctx, repo)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -157,7 +157,7 @@ func TestRepoWorktreeInventory_incompleteDiscoverRowNotRegistered(t *testing.T) 
 func TestRegisterExistingGitWorktree_completesIncompleteDiscoverRow(t *testing.T) {
 	s, ctx, gitSvc := gitTestStore(t)
 	main := initGitRepo(t)
-	repo, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main}, gitSvc)
+	repo, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -166,12 +166,12 @@ func TestRegisterExistingGitWorktree_completesIncompleteDiscoverRow(t *testing.T
 	if _, err := gitSvc.AddWorktree(ctx, repoGit, wtPath, addWorktreeOpts("complete-me", true)); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.ReconcileGitRepository(ctx, "", repo.ID, ReconcileGitInput{AllowDiscover: true}, gitSvc); err != nil {
+	if _, err := s.ReconcileGitRepository(ctx, "", repo.ID, ReconcileGitInput{AllowDiscover: true}); err != nil {
 		t.Fatal(err)
 	}
 	wt, err := s.RegisterExistingGitWorktree(ctx, repo.ID, wtPath, "feature", BindBranchInput{
 		Name: "complete-me",
-	}, gitSvc)
+	})
 	if err != nil {
 		t.Fatalf("RegisterExistingGitWorktree: %v", err)
 	}
@@ -181,7 +181,7 @@ func TestRegisterExistingGitWorktree_completesIncompleteDiscoverRow(t *testing.T
 	if wt.Name != "feature" {
 		t.Fatalf("name=%q want feature", wt.Name)
 	}
-	probe, err := s.ProbeGitWorktree(ctx, repo.ID, wtPath, gitSvc)
+	probe, err := s.ProbeGitWorktree(ctx, repo.ID, wtPath)
 	if err != nil || !probe.Registered {
 		t.Fatalf("probe after register: %+v err=%v", probe, err)
 	}
@@ -190,7 +190,7 @@ func TestRegisterExistingGitWorktree_completesIncompleteDiscoverRow(t *testing.T
 func TestRegisterExistingGitWorktree_rejectsDuplicateRegisteredPath(t *testing.T) {
 	s, ctx, gitSvc := gitTestStore(t)
 	main := initGitRepo(t)
-	repo, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main}, gitSvc)
+	repo, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -201,12 +201,12 @@ func TestRegisterExistingGitWorktree_rejectsDuplicateRegisteredPath(t *testing.T
 	}
 	if _, err := s.RegisterExistingGitWorktree(ctx, repo.ID, wtPath, "first", BindBranchInput{
 		Name: "dup-branch",
-	}, gitSvc); err != nil {
+	}); err != nil {
 		t.Fatalf("first register: %v", err)
 	}
 	_, err = s.RegisterExistingGitWorktree(ctx, repo.ID, wtPath, "second", BindBranchInput{
 		Name: "dup-branch",
-	}, gitSvc)
+	})
 	if domain.GitErrCode(err) != domain.GitCodePathExists {
 		t.Fatalf("duplicate register: got %v want path_exists", err)
 	}
@@ -215,11 +215,11 @@ func TestRegisterExistingGitWorktree_rejectsDuplicateRegisteredPath(t *testing.T
 func TestRepoWorktreeInventory_registeredOnlyWhenBranchBound(t *testing.T) {
 	s, ctx, gitSvc := gitTestStore(t)
 	main := initGitRepo(t)
-	repo, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main}, gitSvc)
+	repo, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main})
 	if err != nil {
 		t.Fatal(err)
 	}
-	rows, err := s.RepoWorktreeInventory(ctx, repo, gitSvc)
+	rows, err := s.RepoWorktreeInventory(ctx, repo)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -241,7 +241,7 @@ func TestRepoWorktreeInventory_registeredOnlyWhenBranchBound(t *testing.T) {
 	if _, err := gitSvc.AddWorktree(ctx, repoGit, wtPath, addWorktreeOpts("unreg-inv", true)); err != nil {
 		t.Fatal(err)
 	}
-	rows, err = s.RepoWorktreeInventory(ctx, repo, gitSvc)
+	rows, err = s.RepoWorktreeInventory(ctx, repo)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -14,7 +14,8 @@ func gitTestStore(t *testing.T) (*Store, context.Context, gitwork.Service) {
 	if _, err := exec.LookPath("git"); err != nil {
 		t.Skip("git not on PATH")
 	}
-	return NewStore(tasktestdb.OpenSQLite(t)), context.Background(), gitwork.New()
+	gitSvc := gitwork.New()
+	return NewStore(tasktestdb.OpenSQLite(t), gitSvc), context.Background(), gitSvc
 }
 
 func initGitRepo(t *testing.T) string {

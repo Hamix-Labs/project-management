@@ -2,8 +2,10 @@
 package handler
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	gitcontract "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
@@ -20,7 +22,19 @@ type Deps struct {
 	GitInventory gitcontract.GitInventoryStore
 	Agent        contract.AgentWorkerControl
 	Git          gitwork.Service
+	RunnerModels RunnerModelLister
 	Notify       NotifyFunc
+}
+
+// RunnerModel is a runner-agnostic model choice for deprecated settings list-models.
+type RunnerModel struct {
+	ID    string
+	Label string
+}
+
+// RunnerModelLister lists models for a runner without importing agents/runner.
+type RunnerModelLister interface {
+	ListModels(ctx context.Context, runnerID, binaryPath string, timeout time.Duration) (models []RunnerModel, resolvedBinary string, err error)
 }
 
 // Handler serves /settings* REST routes.
@@ -29,6 +43,7 @@ type Handler struct {
 	gitInventory gitcontract.GitInventoryStore
 	agent        contract.AgentWorkerControl
 	git          gitwork.Service
+	runnerModels RunnerModelLister
 	notify       NotifyFunc
 }
 
@@ -46,6 +61,7 @@ func Register(m *http.ServeMux, deps Deps) {
 		gitInventory: deps.GitInventory,
 		agent:        deps.Agent,
 		git:          deps.Git,
+		runnerModels: deps.RunnerModels,
 		notify:       deps.Notify,
 	}
 	m.Handle("GET /settings", http.HandlerFunc(h.getSettings))

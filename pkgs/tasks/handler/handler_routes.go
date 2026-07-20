@@ -35,10 +35,11 @@ func (h *Handler) registerRoutes(m *http.ServeMux) {
 		GitService: h.git,
 	})
 	settingshandler.Register(m, settingshandler.Deps{
-		Settings: h.store,
-		GitInventory:  h.store,
-		Agent:    h.agent,
-		Git:      h.git,
+		Settings:     h.store,
+		GitInventory: h.store,
+		Agent:        h.agent,
+		Git:          h.git,
+		RunnerModels: registryRunnerPorts{},
 		Notify: func(typ realtime.ChangeType) {
 			h.notifyScopelessChange(realtime.ChangeType(typ))
 		},
@@ -66,7 +67,8 @@ func (h *Handler) registerRoutes(m *http.ServeMux) {
 		},
 	})
 	checklisthandler.Register(m, checklisthandler.Deps{
-		Checklist: h.store,
+		Checklist:    h.store,
+		CycleRunning: h.store,
 		NotifyTaskUpdated: func(ctx context.Context, taskID string) error {
 			return h.notifyTaskUpdatedEnriched(ctx, taskID)
 		},

@@ -64,7 +64,7 @@ func (h *Handler) CreateTaskFromComposeJSON(
 	}); err != nil {
 		return nil, err
 	}
-	runner, cursorModel, err := resolveRunnerModelFields(payload.Runner, payload.CursorModel, settings)
+	runner, cursorModel, err := resolveRunnerModelFields(payload.Runner, payload.CursorModel, settings, h.runners)
 	if err != nil {
 		return nil, err
 	}
@@ -191,7 +191,7 @@ func (h *Handler) ValidateCompose(ctx context.Context, payload TaskComposePayloa
 			return err
 		}
 	}
-	if _, _, err := resolveRunnerModelFields(payload.Runner, payload.CursorModel, settings); err != nil {
+	if _, _, err := resolveRunnerModelFields(payload.Runner, payload.CursorModel, settings, h.runners); err != nil {
 		return err
 	}
 	if _, err := resolvePickupNotBeforeForCreate(payload.PickupNotBefore, payload.Status, settings); err != nil {

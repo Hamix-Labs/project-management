@@ -10,6 +10,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/claudecode"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/registry"
+	_ "github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/registry/scaffold"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

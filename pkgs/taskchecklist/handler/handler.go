@@ -11,15 +11,22 @@ import (
 // NotifyTaskUpdatedFunc publishes an enriched task_updated SSE frame after checklist mutations.
 type NotifyTaskUpdatedFunc func(ctx context.Context, taskID string) error
 
+// CycleRunningChecker reports whether a task currently has a running cycle.
+type CycleRunningChecker interface {
+	IsTaskCycleRunning(ctx context.Context, taskID string) (bool, error)
+}
+
 // Deps wires checklist HTTP handlers into the taskapi mux.
 type Deps struct {
 	Checklist         contract.ChecklistStore
+	CycleRunning      CycleRunningChecker
 	NotifyTaskUpdated NotifyTaskUpdatedFunc
 }
 
 // Handler serves task checklist REST routes.
 type Handler struct {
 	checklist         contract.ChecklistStore
+	cycleRunning      CycleRunningChecker
 	notifyTaskUpdated NotifyTaskUpdatedFunc
 }
 
@@ -29,6 +36,7 @@ type Handler struct {
 func Register(m *http.ServeMux, deps Deps) {
 	h := &Handler{
 		checklist:         deps.Checklist,
+		cycleRunning:      deps.CycleRunning,
 		notifyTaskUpdated: deps.NotifyTaskUpdated,
 	}
 	m.Handle("GET /tasks/{id}/checklist", http.HandlerFunc(h.getChecklist))

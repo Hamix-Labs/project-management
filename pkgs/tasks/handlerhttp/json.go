@@ -12,11 +12,11 @@ import (
 	"strings"
 
 	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
-	gitinventoryhandler "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/handler"
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/apijson"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/httperr"
 	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/logctx"
 )
@@ -215,7 +215,7 @@ func StoreErrorClientMessage(err error) string {
 	case errors.Is(err, taskcoredomain.ErrNotFound), errors.Is(err, projectsdomain.ErrNotFound):
 		return "not found"
 	case errors.Is(err, taskcoredomain.ErrConflict), errors.Is(err, projectsdomain.ErrConflict):
-		if d := conflictDetail(err); d != "" {
+		if d := ConflictDetail(err); d != "" {
 			return d
 		}
 		if errors.Is(err, projectsdomain.ErrConflict) {
@@ -236,8 +236,7 @@ func StoreErrorClientMessage(err error) string {
 
 // InvalidInputDetail extracts the client-facing suffix after a known
 // invalid-input mark (projects, settings, or tasks). Implementation lives in
-// apijson so gitinventory can share it without importing this package
-// (import-cycle exception).
+// apijson (cycle-safe shared helper).
 func InvalidInputDetail(err error) string {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handlerhttp.InvalidInputDetail")
 	return apijson.InvalidInputDetail(err,
@@ -247,15 +246,10 @@ func InvalidInputDetail(err error) string {
 	)
 }
 
-func conflictDetail(err error) string {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handlerhttp.conflictDetail")
-	s := err.Error()
-	for _, mark := range []string{"projects: conflict: ", "tasks: conflict: "} {
-		if i := strings.Index(s, mark); i >= 0 {
-			return strings.TrimSpace(s[i+len(mark):])
-		}
-	}
-	return ""
+// ConflictDetail extracts the client-facing suffix after a known conflict mark.
+func ConflictDetail(err error) string {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handlerhttp.ConflictDetail")
+	return apijson.ConflictDetail(err, apijson.ProjectsConflictMark, apijson.TasksConflictMark)
 }
 
 // WriteError writes a JSON error for non-store failures (decode, max body, etc.).
@@ -320,7 +314,7 @@ func StoreErrHTTPResponse(ctx context.Context, err error) (code int, msg string)
 func WriteStoreError(w http.ResponseWriter, r *http.Request, op string, err error, logExtras ...any) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handlerhttp.WriteStoreError", "http_op", op)
 	if gitdomain.GitErrCode(err) != "" {
-		gitinventoryhandler.WriteGitStoreError(w, r, op, err)
+		httperr.WriteGitStoreError(w, r, op, err)
 		return
 	}
 	ctxErr := calltrace.Push(RequestCtx(r), "writeStoreError")

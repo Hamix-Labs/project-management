@@ -13,7 +13,10 @@ const (
 	DefaultBinaryHint = "claude"
 )
 
-func init() {
+// Register adds the scaffold Claude Code adapter to the global registry.
+// It is not called from registry/all — import
+// pkgs/agents/runner/registry/scaffold (or call Register explicitly) to opt in.
+func Register() {
 	slog.Debug("trace", "cmd", "claudecode", "operation", "agents.runner.claudecode.register")
 	registry.Register(
 		registry.Descriptor{

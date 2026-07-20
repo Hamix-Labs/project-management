@@ -32,7 +32,7 @@ func seedSecondWorktreeOnRepo(t *testing.T, st *composition.API, firstWorktreeID
 		Path:         wt2Path,
 		Branch:       "feature-b",
 		CreateBranch: false,
-	}, gitSvc)
+	})
 	if err != nil {
 		t.Fatalf("CreateGitWorktreeForRepo feature-b: %v", err)
 	}

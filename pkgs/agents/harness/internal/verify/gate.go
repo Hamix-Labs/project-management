@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"strings"
 
+	checklistcontract "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/contract"
 	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 )
@@ -63,7 +64,15 @@ func (s *Service) ApplyVerifiedCompletions(ctx context.Context, taskID, cycleID 
 		if !v.Passed {
 			continue
 		}
-		err := s.store.SetChecklistItemDoneWithEvidence(ctx, taskID, v.ID, v.Evidence, v.Verifier, v.Reasoning, cycleID, taskcoredomain.ActorAgent)
+		err := s.store.SetChecklistItemDoneWithEvidence(ctx, checklistcontract.SetDoneWithEvidenceInput{
+			TaskID:    taskID,
+			ItemID:    v.ID,
+			Evidence:  v.Evidence,
+			Verifier:  v.Verifier,
+			Reasoning: v.Reasoning,
+			CycleID:   cycleID,
+			By:        taskcoredomain.ActorAgent,
+		})
 		if err != nil && !errors.Is(err, taskcoredomain.ErrNotFound) {
 			return err
 		}

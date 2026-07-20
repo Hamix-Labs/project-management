@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/contract"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 )
@@ -27,7 +28,9 @@ func (h *Handler) listTaskTemplates(w http.ResponseWriter, r *http.Request) {
 		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
-	rows, err := h.compose.ListTemplates(r.Context(), limit, q, sort, order, tag)
+	rows, err := h.compose.ListTemplates(r.Context(), contract.ListTemplatesInput{
+		Limit: limit, Q: q, Sort: sort, Order: order, Tag: tag,
+	})
 	if err != nil {
 		handlerhttp.WriteStoreError(w, r, op, err)
 		return

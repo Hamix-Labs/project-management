@@ -28,7 +28,7 @@ func (unimplementedHandlerStore) DeleteDraft(context.Context, string) error {
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) ListTemplates(context.Context, int, string, string, string, string) ([]composecontract.TemplateSummary, error) {
+func (unimplementedHandlerStore) ListTemplates(context.Context, composecontract.ListTemplatesInput) ([]composecontract.TemplateSummary, error) {
 	return nil, errNotImplemented
 }
 

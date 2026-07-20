@@ -107,18 +107,14 @@ func (s *Store) ReconcileGitRepository(
 	ctx context.Context,
 	projectID, repoID string,
 	input ReconcileGitInput,
-	gitSvc gitwork.Service,
 ) (ReconcileGitOutput, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "gitinventory.store.ReconcileGitRepository")
 	repo, err := s.GetGitRepository(ctx, projectID, repoID)
 	if err != nil {
 		return ReconcileGitOutput{}, err
 	}
-	if gitSvc == nil {
-		gitSvc = gitwork.New()
-	}
 
-	opened, resolveMeta, err := s.openRepoForReconcile(ctx, repo, strings.TrimSpace(input.BootstrapPath), input.AllowCheckoutDiscover, gitSvc)
+	opened, resolveMeta, err := s.openRepoForReconcile(ctx, repo, strings.TrimSpace(input.BootstrapPath), input.AllowCheckoutDiscover)
 	if err != nil {
 		return ReconcileGitOutput{}, err
 	}
@@ -130,20 +126,20 @@ func (s *Store) ReconcileGitRepository(
 	}
 
 	if input.RepairGit {
-		if err := gitSvc.RepairWorktrees(ctx, opened); err != nil {
+		if err := s.gitSvc().RepairWorktrees(ctx, opened); err != nil {
 			return ReconcileGitOutput{}, fmt.Errorf("repair worktrees: %w", err)
 		}
-		if err := gitSvc.PruneWorktrees(ctx, opened); err != nil {
+		if err := s.gitSvc().PruneWorktrees(ctx, opened); err != nil {
 			return ReconcileGitOutput{}, fmt.Errorf("prune worktrees: %w", err)
 		}
 	}
 
-	mainRoot, commonDir, err := gitSvc.ResolveRegistration(ctx, opened.Root)
+	mainRoot, commonDir, err := s.gitSvc().ResolveRegistration(ctx, opened.Root)
 	if err != nil {
 		return ReconcileGitOutput{}, fmt.Errorf("resolve registration: %w", err)
 	}
 
-	live, err := gitSvc.ListWorktrees(ctx, opened)
+	live, err := s.gitSvc().ListWorktrees(ctx, opened)
 	if err != nil {
 		return ReconcileGitOutput{}, fmt.Errorf("list worktrees: %w", err)
 	}
@@ -322,7 +318,7 @@ func (s *Store) ReconcileGitRepository(
 		}
 
 		for _, br := range branches {
-			head, err := gitSvc.BranchHead(ctx, opened, br.Name)
+			head, err := s.gitSvc().BranchHead(ctx, opened, br.Name)
 			if err != nil {
 				continue
 			}
@@ -352,7 +348,6 @@ func (s *Store) ReconcileGitRepository(
 func (s *Store) RelocateGitRepository(
 	ctx context.Context,
 	projectID, repoID, path string,
-	gitSvc gitwork.Service,
 ) (ReconcileGitOutput, error) {
 	return s.ReconcileGitRepository(ctx, projectID, repoID, ReconcileGitInput{
 		BootstrapPath:         path,
@@ -360,22 +355,18 @@ func (s *Store) RelocateGitRepository(
 		AllowRemove:           true,
 		AllowCheckoutDiscover: true,
 		AllowDiscover:         false,
-	}, gitSvc)
+	})
 }
 
 // RelocateGitWorktree updates a registered worktree path after verifying it belongs to the repo.
 func (s *Store) RelocateGitWorktree(
 	ctx context.Context,
 	worktreeID, path string,
-	gitSvc gitwork.Service,
 ) (gitdomain.GitWorktree, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "gitinventory.store.RelocateGitWorktree")
 	path = strings.TrimSpace(path)
 	if path == "" {
 		return gitdomain.GitWorktree{}, fmt.Errorf("%w: path required", taskcoredomain.ErrInvalidInput)
-	}
-	if gitSvc == nil {
-		gitSvc = gitwork.New()
 	}
 	wt, err := s.GetGitWorktreeByID(ctx, worktreeID)
 	if err != nil {
@@ -385,12 +376,12 @@ func (s *Store) RelocateGitWorktree(
 	if err != nil {
 		return gitdomain.GitWorktree{}, err
 	}
-	opened, _, err := s.openRegisteredRepo(ctx, repo, "", false, gitSvc)
+	opened, _, err := s.openRegisteredRepo(ctx, repo, "", false)
 	if err != nil {
 		return gitdomain.GitWorktree{}, err
 	}
 	if opened == nil {
-		opened, err = gitSvc.OpenRepository(ctx, path)
+		opened, err = s.gitSvc().OpenRepository(ctx, path)
 		if err != nil {
 			return gitdomain.GitWorktree{}, fmt.Errorf("open repository: %w", err)
 		}
@@ -398,18 +389,18 @@ func (s *Store) RelocateGitWorktree(
 		if err != nil {
 			return gitdomain.GitWorktree{}, err
 		}
-		if err := gitSvc.VerifySameRepository(ctx, registeredCheckoutFromRepo(repo, branches), opened); err != nil {
+		if err := s.gitSvc().VerifySameRepository(ctx, registeredCheckoutFromRepo(repo, branches), opened); err != nil {
 			return gitdomain.GitWorktree{}, git.MapGitworkBootstrapErr(err)
 		}
 	}
-	belongs, err := gitSvc.BelongsToRepository(ctx, path, opened.Root)
+	belongs, err := s.gitSvc().BelongsToRepository(ctx, path, opened.Root)
 	if err != nil {
 		return gitdomain.GitWorktree{}, fmt.Errorf("belongs to repository: %w", err)
 	}
 	if !belongs {
 		return gitdomain.GitWorktree{}, fmt.Errorf("%w: path is not a linked worktree of this repository", taskcoredomain.ErrInvalidInput)
 	}
-	live, err := gitSvc.ListWorktrees(ctx, opened)
+	live, err := s.gitSvc().ListWorktrees(ctx, opened)
 	if err != nil {
 		return gitdomain.GitWorktree{}, fmt.Errorf("list worktrees: %w", err)
 	}
@@ -446,9 +437,8 @@ func (s *Store) openRepoForReconcile(
 	repo gitdomain.GitRepository,
 	bootstrap string,
 	allowDiscover bool,
-	gitSvc gitwork.Service,
 ) (*gitwork.Repository, gitwork.ResolveResult, error) {
-	return s.openRegisteredRepo(ctx, repo, bootstrap, allowDiscover, gitSvc)
+	return s.openRegisteredRepo(ctx, repo, bootstrap, allowDiscover)
 }
 
 func (s *Store) openRegisteredRepo(
@@ -456,14 +446,13 @@ func (s *Store) openRegisteredRepo(
 	repo gitdomain.GitRepository,
 	candidatePath string,
 	allowDiscover bool,
-	gitSvc gitwork.Service,
 ) (*gitwork.Repository, gitwork.ResolveResult, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "gitinventory.store.openRegisteredRepo")
 	branches, err := s.ListGitBranchesByRepo(ctx, repo.ID)
 	if err != nil {
 		return nil, gitwork.ResolveResult{}, err
 	}
-	result, err := gitSvc.OpenRegisteredCheckout(ctx, gitwork.ResolveInput{
+	result, err := s.gitSvc().OpenRegisteredCheckout(ctx, gitwork.ResolveInput{
 		Registered:    registeredCheckoutFromRepo(repo, branches),
 		CandidatePath: candidatePath,
 		AllowDiscover: allowDiscover,
@@ -504,15 +493,12 @@ func registeredCheckoutFromRepo(repo gitdomain.GitRepository, branches []gitdoma
 }
 
 // ReconcileGitRepositoriesOnStartup runs conservative reconcile for repositories whose stored main path exists.
-func (s *Store) ReconcileGitRepositoriesOnStartup(ctx context.Context, gitSvc gitwork.Service) {
+func (s *Store) ReconcileGitRepositoriesOnStartup(ctx context.Context) {
 	repos, err := s.ListGitRepositories(ctx, "")
 	if err != nil {
 		slog.Warn("git startup reconcile list failed", "cmd", calltrace.LogCmd,
 			"operation", "gitinventory.store.ReconcileGitRepositoriesOnStartup", "err", err)
 		return
-	}
-	if gitSvc == nil {
-		gitSvc = gitwork.New()
 	}
 	for _, repo := range repos {
 		path := strings.TrimSpace(repo.Path)
@@ -529,7 +515,7 @@ func (s *Store) ReconcileGitRepositoriesOnStartup(ctx context.Context, gitSvc gi
 		out, recErr := s.ReconcileGitRepository(ctx, "", repo.ID, ReconcileGitInput{
 			AllowRemove: false,
 			RepairGit:   false,
-		}, gitSvc)
+		})
 		if recErr != nil {
 			slog.Warn("git startup reconcile failed", "cmd", calltrace.LogCmd,
 				"operation", "gitinventory.store.ReconcileGitRepositoriesOnStartup",

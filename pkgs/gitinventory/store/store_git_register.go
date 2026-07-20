@@ -20,16 +20,13 @@ import (
 
 // registerGitRepository resolves git identity and inserts a repository row.
 // Duplicate detection uses git_common_dir, not path.
-func (s *Store) registerGitRepository(ctx context.Context, input CreateGitRepositoryInput, gitSvc gitwork.Service) (gitdomain.GitRepository, error) {
+func (s *Store) registerGitRepository(ctx context.Context, input CreateGitRepositoryInput) (gitdomain.GitRepository, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "gitinventory.store.registerGitRepository")
 	path := strings.TrimSpace(input.Path)
 	if path == "" {
 		return gitdomain.GitRepository{}, fmt.Errorf("%w: path required", taskcoredomain.ErrInvalidInput)
 	}
-	if gitSvc == nil {
-		gitSvc = gitwork.New()
-	}
-	mainRoot, commonDir, err := gitSvc.ResolveRegistration(ctx, path)
+	mainRoot, commonDir, err := s.gitSvc().ResolveRegistration(ctx, path)
 	if err != nil {
 		if errors.Is(err, gitwork.ErrNotARepository) {
 			return gitdomain.GitRepository{}, gitdomain.NewGitErr(gitdomain.GitCodeNotARepository, "path is not a git repository")
@@ -47,11 +44,11 @@ func (s *Store) registerGitRepository(ctx context.Context, input CreateGitReposi
 	}
 	defaultBranch := strings.TrimSpace(input.DefaultBranch)
 	if defaultBranch == "" {
-		opened, openErr := gitSvc.OpenRepository(ctx, mainRoot)
+		opened, openErr := s.gitSvc().OpenRepository(ctx, mainRoot)
 		if openErr != nil {
 			return gitdomain.GitRepository{}, fmt.Errorf("open repository for default branch: %w", openErr)
 		}
-		resolved, resolveErr := gitSvc.ResolveDefaultBranch(ctx, opened, "origin")
+		resolved, resolveErr := s.gitSvc().ResolveDefaultBranch(ctx, opened, "origin")
 		if resolveErr != nil {
 			return gitdomain.GitRepository{}, fmt.Errorf("resolve default branch: %w", resolveErr)
 		}
@@ -88,16 +85,13 @@ func (s *Store) registerGitRepository(ctx context.Context, input CreateGitReposi
 
 // seedMainWorktreeWithCurrentBranch inserts the main worktree row and one branch
 // row for the checkout branch currently at the main root.
-func (s *Store) seedMainWorktreeWithCurrentBranch(ctx context.Context, repo gitdomain.GitRepository, gitSvc gitwork.Service) error {
+func (s *Store) seedMainWorktreeWithCurrentBranch(ctx context.Context, repo gitdomain.GitRepository) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "gitinventory.store.seedMainWorktreeWithCurrentBranch")
-	if gitSvc == nil {
-		gitSvc = gitwork.New()
-	}
-	opened, err := gitSvc.OpenRepository(ctx, repo.Path)
+	opened, err := s.gitSvc().OpenRepository(ctx, repo.Path)
 	if err != nil {
 		return fmt.Errorf("open repository: %w", err)
 	}
-	branches, err := gitSvc.ListBranches(ctx, opened)
+	branches, err := s.gitSvc().ListBranches(ctx, opened)
 	if err != nil {
 		return fmt.Errorf("list branches: %w", err)
 	}

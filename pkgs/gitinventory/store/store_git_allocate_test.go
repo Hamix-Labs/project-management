@@ -18,7 +18,7 @@ func TestTaskBranchName(t *testing.T) {
 }
 
 func TestAllocateTaskWorktree(t *testing.T) {
-	s, ctx, gitSvc := gitTestStore(t)
+	s, ctx, _ := gitTestStore(t)
 	remote := t.TempDir()
 	runGitStore(t, remote, "init", "--bare", "-b", "main")
 	parent := t.TempDir()
@@ -29,12 +29,12 @@ func TestAllocateTaskWorktree(t *testing.T) {
 	runGitStore(t, main, "commit", "--allow-empty", "-m", "init")
 	runGitStore(t, main, "push", "-u", "origin", "main")
 
-	repo, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main}, gitSvc)
+	repo, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main})
 	if err != nil {
 		t.Fatalf("CreateGlobalGitRepository: %v", err)
 	}
 	taskID := uuid.NewString()
-	wt, err := s.AllocateTaskWorktree(ctx, repo.ID, taskID, gitSvc)
+	wt, err := s.AllocateTaskWorktree(ctx, repo.ID, taskID)
 	if err != nil {
 		t.Fatalf("AllocateTaskWorktree: %v", err)
 	}
@@ -59,13 +59,13 @@ func TestAllocateTaskWorktree(t *testing.T) {
 }
 
 func TestAllocateTaskWorktree_fetchFailure(t *testing.T) {
-	s, ctx, gitSvc := gitTestStore(t)
+	s, ctx, _ := gitTestStore(t)
 	main := initGitRepo(t)
-	repo, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main}, gitSvc)
+	repo, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main})
 	if err != nil {
 		t.Fatalf("CreateGlobalGitRepository: %v", err)
 	}
-	_, err = s.AllocateTaskWorktree(ctx, repo.ID, uuid.NewString(), gitSvc)
+	_, err = s.AllocateTaskWorktree(ctx, repo.ID, uuid.NewString())
 	if err == nil {
 		t.Fatal("expected fetch failure without origin")
 	}
