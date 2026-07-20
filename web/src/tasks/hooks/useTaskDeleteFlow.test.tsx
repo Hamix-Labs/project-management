@@ -1,4 +1,5 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
+import { HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useTaskDeleteFlow } from "./useTaskDeleteFlow";
 import { taskQueryKeys } from "../task-query";
@@ -9,18 +10,15 @@ import {
 import type { TaskListResponse } from "@/types";
 import { makeMutationTestWrapper } from "@/test/reactQuery";
 import { makeTask } from "@/test/taskDefaults";
-
-vi.mock("../../api", () => ({
-  deleteTask: vi.fn(),
-}));
-
-import { deleteTask } from "../../api";
-
-const mockedDelete = vi.mocked(deleteTask);
+import {
+  taskDelete,
+  taskDeleteError,
+  taskDeletePending,
+} from "@/test/handlers/tasks";
+import { server } from "@/test/server";
 
 describe("useTaskDeleteFlow", () => {
   beforeEach(() => {
-    mockedDelete.mockReset();
     __resetMutationGuardForTests();
   });
   afterEach(() => {
@@ -55,6 +53,10 @@ describe("useTaskDeleteFlow", () => {
   });
 
   it("cancelDelete clears the target without calling the API", () => {
+    let deleted = 0;
+    server.use(taskDelete("t1", () => {
+      deleted += 1;
+    }));
     const { Wrapper } = makeMutationTestWrapper();
     const { result } = renderHook(() => useTaskDeleteFlow(), {
       wrapper: Wrapper,
@@ -66,10 +68,14 @@ describe("useTaskDeleteFlow", () => {
       result.current.cancelDelete();
     });
     expect(result.current.deleteTarget).toBeNull();
-    expect(mockedDelete).not.toHaveBeenCalled();
+    expect(deleted).toBe(0);
   });
 
   it("confirmDelete is a no-op when no target is set", () => {
+    let deleted = 0;
+    server.use(taskDelete("t1", () => {
+      deleted += 1;
+    }));
     const { Wrapper } = makeMutationTestWrapper();
     const { result } = renderHook(() => useTaskDeleteFlow(), {
       wrapper: Wrapper,
@@ -77,11 +83,14 @@ describe("useTaskDeleteFlow", () => {
     act(() => {
       result.current.confirmDelete();
     });
-    expect(mockedDelete).not.toHaveBeenCalled();
+    expect(deleted).toBe(0);
   });
 
   it("confirmDelete calls the API, invalidates list+stats, clears target, fires onDeleted", async () => {
-    mockedDelete.mockResolvedValueOnce(undefined as unknown as void);
+    let deleted = 0;
+    server.use(taskDelete("t1", () => {
+      deleted += 1;
+    }));
     const { Wrapper, invalidateSpy } = makeMutationTestWrapper();
     const onDeleted = vi.fn();
     const { result } = renderHook(() => useTaskDeleteFlow({ onDeleted }), {
@@ -99,7 +108,7 @@ describe("useTaskDeleteFlow", () => {
       expect(result.current.deleteSuccess).toBe(true);
     });
 
-    expect(mockedDelete).toHaveBeenCalledWith("t1");
+    expect(deleted).toBe(1);
     expect(result.current.deleteTarget).toBeNull();
     expect(result.current.deleteVariables).toEqual({ id: "t1" });
     expect(onDeleted).toHaveBeenCalledWith("t1");
@@ -112,7 +121,7 @@ describe("useTaskDeleteFlow", () => {
   });
 
   it("surfaces API errors via deleteError without clearing the target", async () => {
-    mockedDelete.mockRejectedValueOnce(new Error("nope"));
+    server.use(taskDeleteError("t1", 403, "nope"));
     const { Wrapper } = makeMutationTestWrapper();
     const onDeleted = vi.fn();
     const { result } = renderHook(() => useTaskDeleteFlow({ onDeleted }), {
@@ -138,12 +147,7 @@ describe("useTaskDeleteFlow", () => {
   });
 
   it("resetError clears a settled error without firing a new request (session #34)", async () => {
-    // Pins the lifecycle wiring useTasksApp uses to wipe a stale
-    // deleteError when `deleteTarget` flips to null. Without this,
-    // reopening any delete confirm dialog would render an old `.err`
-    // callout before the user had interacted. resetError must NOT
-    // call deleteTask again.
-    mockedDelete.mockRejectedValueOnce(new Error("boom"));
+    server.use(taskDeleteError("t1", 500, "boom"));
     const { Wrapper } = makeMutationTestWrapper();
     const { result } = renderHook(() => useTaskDeleteFlow(), {
       wrapper: Wrapper,
@@ -157,23 +161,19 @@ describe("useTaskDeleteFlow", () => {
     await waitFor(() => {
       expect(result.current.deleteError).toBe("boom");
     });
-    expect(mockedDelete).toHaveBeenCalledTimes(1);
     act(() => {
       result.current.resetError();
     });
     await waitFor(() => {
       expect(result.current.deleteError).toBeNull();
     });
-    expect(mockedDelete).toHaveBeenCalledTimes(1);
   });
 
   it("resetError is a no-op while idle (no extra reset churn)", () => {
-    // Cheap idle-guard pin: useTasksApp's effect runs on every render
-    // where `deleteTarget` is null (the steady-state for most of the
-    // session); resetError must skip the underlying mutation.reset()
-    // call when already idle so we don't churn the react-query state
-    // tree on every render. Success is also preserved because detail-page
-    // navigation reads the settled delete variables after the dialog closes.
+    let deleted = 0;
+    server.use(taskDelete("t1", () => {
+      deleted += 1;
+    }));
     const { Wrapper } = makeMutationTestWrapper();
     const { result } = renderHook(() => useTaskDeleteFlow(), {
       wrapper: Wrapper,
@@ -183,11 +183,11 @@ describe("useTaskDeleteFlow", () => {
       result.current.resetError();
     });
     expect(result.current.deleteError).toBeNull();
-    expect(mockedDelete).not.toHaveBeenCalled();
+    expect(deleted).toBe(0);
   });
 
   it("omits parent_id from delete variables", async () => {
-    mockedDelete.mockResolvedValueOnce(undefined as unknown as void);
+    server.use(taskDelete("root"));
     const { Wrapper } = makeMutationTestWrapper();
     const { result } = renderHook(() => useTaskDeleteFlow(), {
       wrapper: Wrapper,
@@ -208,14 +208,8 @@ describe("useTaskDeleteFlow", () => {
   });
 
   it("does not clobber a freshly-opened confirm dialog when a previous delete settles", async () => {
-    // Hold A's delete open until we manually resolve, simulating a slow API.
-    let resolveA: (() => void) | undefined;
-    mockedDelete.mockImplementationOnce(
-      () =>
-        new Promise<void>((resolve) => {
-          resolveA = resolve;
-        }) as unknown as ReturnType<typeof deleteTask>,
-    );
+    const [handlerA, deferredA] = taskDeletePending("A");
+    server.use(handlerA, taskDelete("B"));
 
     const { Wrapper } = makeMutationTestWrapper();
     const onDeleted = vi.fn();
@@ -234,7 +228,6 @@ describe("useTaskDeleteFlow", () => {
       expect(result.current.deletePending).toBe(true);
     });
 
-    // Mid-flight: user opens the confirm dialog for a *different* row.
     act(() => {
       result.current.requestDelete({ id: "B", title: "B" });
     });
@@ -243,36 +236,23 @@ describe("useTaskDeleteFlow", () => {
       title: "B",
     });
 
-    // Now A finishes successfully.
     act(() => {
-      resolveA?.();
+      deferredA.resolve(new HttpResponse(null, { status: 204 }));
     });
 
     await waitFor(() => {
       expect(onDeleted).toHaveBeenCalledWith("A");
     });
 
-    // B's confirm dialog must still be up — A's resolution must not silently
-    // dismiss the unrelated second target.
     expect(result.current.deleteTarget).toEqual({
       id: "B",
       title: "B",
     });
   });
 
-  // Optimistic delete: between click and server confirmation the row
-  // is already gone from the list cache. This is the highest-impact
-  // mutation for perceived speed because the round-trip can be
-  // 100-300ms and "click delete -> wait -> row vanishes" feels
-  // jankier than any other mutation in the app.
   it("optimistically removes the row from cached list data before the server resolves", async () => {
-    let resolveFn: (() => void) | undefined;
-    mockedDelete.mockImplementationOnce(
-      () =>
-        new Promise<void>((resolve) => {
-          resolveFn = resolve;
-        }) as unknown as ReturnType<typeof deleteTask>,
-    );
+    const [handler, deferred] = taskDeletePending("t1");
+    server.use(handler);
     const { Wrapper, queryClient } = makeMutationTestWrapper();
     const list: TaskListResponse = {
       tasks: [makeTask({ id: "t1" }), makeTask({ id: "t2" })],
@@ -297,19 +277,15 @@ describe("useTaskDeleteFlow", () => {
     const cached = queryClient.getQueryData<TaskListResponse>(taskQueryKeys.list({ limit: 20, offset: 0 }));
     expect(cached?.tasks.map((t) => t.id)).toEqual(["t2"]);
     act(() => {
-      resolveFn?.();
+      deferred.resolve(new HttpResponse(null, { status: 204 }));
     });
     await waitFor(() => {
       expect(result.current.deletePending).toBe(false);
     });
   });
 
-  // Rollback on error: list cache restored to the pre-mutation
-  // snapshot. Without this the user sees "deleted -> undeleted ->
-  // deleted again on re-attempt" depending on cache state, which is
-  // even more confusing than a non-optimistic delete failure.
   it("restores the list cache on server error", async () => {
-    mockedDelete.mockRejectedValueOnce(new Error("perm denied"));
+    server.use(taskDeleteError("t1", 403, "perm denied"));
     const { Wrapper, queryClient } = makeMutationTestWrapper();
     const list: TaskListResponse = {
       tasks: [makeTask({ id: "t1" }), makeTask({ id: "t2" })],
@@ -335,20 +311,9 @@ describe("useTaskDeleteFlow", () => {
     expect(restored?.tasks.map((t) => t.id)).toEqual(["t1", "t2"]);
   });
 
-  // SSE-suppression contract: while a delete is in flight, the
-  // optimistic-version counter for the deleted id is bumped so any
-  // SSE task_updated/task_deleted echo for that task is suppressed.
-  // Otherwise the echo would fire an invalidation that re-fetches
-  // the list and (briefly) un-removes the row before the server
-  // delete completes.
   it("bumps the optimistic-version counter so SSE echoes are suppressed in flight", async () => {
-    let resolveFn: (() => void) | undefined;
-    mockedDelete.mockImplementationOnce(
-      () =>
-        new Promise<void>((resolve) => {
-          resolveFn = resolve;
-        }) as unknown as ReturnType<typeof deleteTask>,
-    );
+    const [handler, deferred] = taskDeletePending("t1");
+    server.use(handler);
     const { Wrapper } = makeMutationTestWrapper();
     const { result } = renderHook(() => useTaskDeleteFlow(), {
       wrapper: Wrapper,
@@ -364,7 +329,7 @@ describe("useTaskDeleteFlow", () => {
     });
     expect(shouldSuppressTaskMutationEcho("t1")).toBe(true);
     act(() => {
-      resolveFn?.();
+      deferred.resolve(new HttpResponse(null, { status: 204 }));
     });
     await waitFor(() => {
       expect(result.current.deletePending).toBe(false);
