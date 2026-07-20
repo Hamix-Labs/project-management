@@ -29,5 +29,7 @@ func (h *Handler) ValidatePromptMentionsForWorktree(ctx context.Context, worktre
 
 //funclogmeasure:skip category=delegate-already-logs reason="Validation delegate; taskcore handler emits trace at the HTTP chokepoint."
 func (h *Handler) validateComposePayload(ctx context.Context, payload taskcorehandler.TaskComposePayloadJSON, settings settingsdomain.AppSettings) error {
-	return h.taskcoreHandler().ValidateComposePayload(ctx, taskcorehandler.TaskComposePayloadJSON(payload), settings)
+	return h.taskcoreHandler().ValidateCompose(ctx, taskcorehandler.TaskComposePayloadJSON(payload), settings, taskcorehandler.ValidateComposeOpts{
+		GitMode: taskcorehandler.ComposeGitBinding,
+	})
 }
