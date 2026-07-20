@@ -1,5 +1,6 @@
 import type { TaskCycleStreamEvent } from "@/types";
 import type { TaskEvent } from "@/types/task";
+import { taskEventPhaseSeq } from "@/tasks/task-events/taskEventFields";
 
 export function filterStreamEventsByPhase(
   events: readonly TaskCycleStreamEvent[],
@@ -18,10 +19,7 @@ export function filterAuditEventsByPhase(
   if (phaseSeq === null) {
     return [...events];
   }
-  return events.filter((ev) => {
-    const seq = ev.data?.phase_seq;
-    return typeof seq === "number" && seq === phaseSeq;
-  });
+  return events.filter((ev) => taskEventPhaseSeq(ev) === phaseSeq);
 }
 
 export function activityCountCaption(

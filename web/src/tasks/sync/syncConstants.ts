@@ -1,6 +1,6 @@
 /**
  * Debounce and max-wait tuning for SSE-driven React Query invalidation.
- * See useTaskEventStream for workload rationale.
+ * Scheduling lives in `taskSyncCoordinator` (ADR-0022).
  */
 export const SSE_INVALIDATE_WINDOW_MS = 900;
 export const SSE_INVALIDATE_MAX_WAIT_MS = 2500;

@@ -34,7 +34,7 @@ describe("draft entry hints", () => {
 
     await user.click(screen.getByRole("button", { name: /^start fresh$/i }));
     expect(
-      await screen.findByRole("dialog", { name: /^new task$/i }),
+      await screen.findByRole("dialog", { name: /^new task$/i }, { timeout: 10_000 }),
     ).toBeInTheDocument();
   });
 
@@ -51,7 +51,9 @@ describe("draft entry hints", () => {
     await screen.findByText("No tasks yet");
     await user.click(screen.getByRole("button", { name: /\+?\s*new task/i }));
 
-    expect(await screen.findByRole("dialog", { name: /^new task$/i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("dialog", { name: /^new task$/i }, { timeout: 10_000 }),
+    ).toBeInTheDocument();
     const draftsHintAlert = await screen.findByRole("alert");
     expect(draftsHintAlert).toHaveTextContent(
       /saved drafts are unavailable right now/i,

@@ -8,7 +8,7 @@ import {
 } from "react";
 import type { QueryClient } from "@tanstack/react-query";
 import type { ChecklistItemDraft, PriorityChoice, Task } from "@/types";
-import { settingsQueryKeys } from "@/settings/settingsQueryKeys";
+import { settingsQueryKeys } from "@/lib/settingsQueryKeys";
 import {
   buildFreshDraftAutosaveBaseline,
   defaultCursorModelFromSettings,

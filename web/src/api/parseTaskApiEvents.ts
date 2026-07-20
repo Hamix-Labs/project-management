@@ -13,14 +13,7 @@ import {
   parseNonEmptyString,
   parseString,
 } from "./parseTaskApiCore";
-
-function parseEventData(v: unknown): Record<string, unknown> {
-  if (v == null) return {};
-  if (typeof v !== "object" || Array.isArray(v)) {
-    throw new Error("Invalid API response: event data must be an object");
-  }
-  return v as Record<string, unknown>;
-}
+import { parseTaskEventData } from "./parseTaskApiEventData";
 
 function parseOptionalUserResponse(
   value: unknown,
@@ -89,13 +82,15 @@ function parseTaskEventRecord(item: Record<string, unknown>): TaskEvent {
   if (Number.isNaN(Date.parse(at))) {
     throw new Error("at must be a parseable date");
   }
-  const base: TaskEvent = {
+  const type = parseEventType(item.type);
+  const data = parseTaskEventData(type, "data" in item ? item.data : {});
+  const base = {
     seq: parseFiniteNumber(item.seq, "seq"),
     at,
-    type: parseEventType(item.type),
+    type,
     by: parseActor(item.by),
-    data: parseEventData("data" in item ? item.data : {}),
-  };
+    data,
+  } as TaskEvent;
   const ur = parseOptionalUserResponse(item.user_response, "user_response");
   if (ur !== undefined) {
     base.user_response = ur;

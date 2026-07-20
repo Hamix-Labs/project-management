@@ -1,4 +1,5 @@
 import { rumSSEReconnected } from "@/observability";
+import { openTaskEventsSource } from "@/api/events";
 
 /** Wait this long after an error before showing disconnected (browser may reconnect). */
 export const SSE_DISCONNECT_UI_MS = 900;
@@ -14,7 +15,7 @@ export type TaskEventSourceHandlers = {
  * that closes the source and clears disconnect UI timers.
  */
 export function connectTaskEventSource(handlers: TaskEventSourceHandlers): () => void {
-  const es = new EventSource("/events");
+  const es = openTaskEventsSource("/events");
   let disconnectedAt: number | null = null;
   let hasOpenedOnce = false;
   let disconnectUiTimer: ReturnType<typeof setTimeout> | undefined;

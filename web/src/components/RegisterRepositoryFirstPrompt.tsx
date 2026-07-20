@@ -1,14 +1,22 @@
-import { useNavigate } from "react-router-dom";
 import { Modal } from "@/shared/Modal";
+import { Button } from "@/components/ui";
 
 type Props = {
   open: boolean;
   onClose: () => void;
+  /** Navigate or open register flow — owned by the caller (vertical / app). */
+  onRegister: () => void;
 };
 
-export function RepositorySetupPrompt({ open, onClose }: Props) {
-  const navigate = useNavigate();
-
+/**
+ * Presentational “register a repository first” confirm. Callers supply
+ * `onRegister` so this shell stays vertical-free (no `/worktrees` coupling).
+ */
+export function RegisterRepositoryFirstPrompt({
+  open,
+  onClose,
+  onRegister,
+}: Props) {
   if (!open) return null;
 
   return (
@@ -26,19 +34,12 @@ export function RepositorySetupPrompt({ open, onClose }: Props) {
           </p>
         </header>
         <div className="row stack-row-actions">
-          <button type="button" className="secondary" onClick={onClose}>
+          <Button type="button" variant="secondary" onClick={onClose}>
             Cancel
-          </button>
-          <button
-            type="button"
-            className="btn-primary"
-            onClick={() => {
-              onClose();
-              navigate("/repositories?register=1");
-            }}
-          >
+          </Button>
+          <Button type="button" variant="primary" onClick={onRegister}>
             Register repository
-          </button>
+          </Button>
         </div>
       </section>
     </Modal>

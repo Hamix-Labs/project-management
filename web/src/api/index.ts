@@ -8,6 +8,7 @@ export * from "./projects";
 export * from "./settings";
 export * from "./settingsBrowse";
 export * from "./runners";
+export * from "./events";
 export * from "./rum";
 export * from "./bootstrap";
 export * from "./taskTemplates";

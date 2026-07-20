@@ -1,21 +1,16 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 import { deleteTask } from "../../api";
 import { errorMessage } from "@/lib/errorMessage";
-import {
-  rumMutationRolledBack,
-  rumMutationSettled,
-} from "@/observability";
-import { useOptionalToast } from "@/shared/toast";
-import { useRolloutFlags } from "@/settings";
 import { taskQueryKeys } from "../task-query";
 import {
-  beginGuardedTaskWrite,
   cancelQueriesForKeys,
-  endGuardedTaskWrite,
-  invalidateTaskCacheAsync,
   recordOptimisticApplied,
+  removeTaskFromList,
 } from "@/tasks/mutations";
+import {
+  useGuardedTaskMutation,
+  type GuardedMutationContextBase,
+} from "./useGuardedTaskMutation";
 import type { Task, TaskListResponse } from "@/types";
 
 /** Subset of `Task` the confirm dialog needs; widened so callers can pass plain rows. */
@@ -55,62 +50,31 @@ export type UseTaskDeleteFlowResult = {
   resetError: () => void;
 };
 
-/**
- * Owns the in-app delete-confirmation flow that used to live inline in
- * `useTasksApp`. We avoid `window.confirm` because it breaks input focus in
- * some browsers (see comment on the original `deleteTarget` state).
- *
- * The hook does **not** know about `editing`, the routing, or the global
- * error banner. Cross-cutting concerns are wired through `onDeleted` so the
- * parent can react (e.g. clear the edit form for the just-deleted task)
- * without this hook depending on the rest of `useTasksApp`'s state.
- *
- * Query invalidation is handled here because the list + stats refresh is
- * intrinsic to "a delete succeeded".
- *
- * The internal `deleteTarget` clear on success is id-aware (mirrors the
- * `useTaskPatchFlow` race fix): if a delete settles *after* the user has
- * already opened the confirm dialog for a *different* row, we leave that
- * second confirm dialog up instead of silently dismissing it.
- */
-interface DeleteSnapshot {
+interface DeleteSnapshot extends GuardedMutationContextBase {
   detail: Task | undefined;
-  /** Per-list-key snapshots so we can restore each cached page on rollback. */
   lists: Array<{ key: readonly unknown[]; data: TaskListResponse }>;
-  startedAtMs: number;
-  guarded: boolean;
 }
 
-/** Remove the task with id `removeId` from a cached TaskListResponse.
- * Returns null when the id wasn't found so callers can skip the cache write. */
-function removeTaskFromList(
-  list: TaskListResponse,
-  removeId: string,
-): TaskListResponse | null {
-  const nextTasks = list.tasks.filter((t) => t.id !== removeId);
-  if (nextTasks.length === list.tasks.length) return null;
-  return { ...list, tasks: nextTasks };
-}
-
+/**
+ * Owns the in-app delete-confirmation flow and guarded optimistic delete.
+ */
 export function useTaskDeleteFlow(opts: {
   onDeleted?: (id: string) => void;
 } = {}): UseTaskDeleteFlowResult {
-  const queryClient = useQueryClient();
-  const toast = useOptionalToast();
-  const { optimisticMutationsEnabled } = useRolloutFlags();
   const { onDeleted } = opts;
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
 
-  const mutation = useMutation<unknown, unknown, DeleteVariables, DeleteSnapshot>({
+  const guarded = useGuardedTaskMutation<DeleteVariables, DeleteSnapshot>({
+    rumKind: "task_delete",
     mutationFn: (input) => deleteTask(input.id),
-    onMutate: async (input) => {
-      const guard = beginGuardedTaskWrite({
-        taskId: input.id,
-        optimisticEnabled: optimisticMutationsEnabled,
-        rumKind: "task_delete",
-      });
+    applyOptimistic: async ({ queryClient, variables: input, guard }) => {
       if (!guard.guarded) {
-        return { detail: undefined, lists: [], startedAtMs: guard.startedAtMs, guarded: false };
+        return {
+          detail: undefined,
+          lists: [],
+          startedAtMs: guard.startedAtMs,
+          guarded: false,
+        };
       }
 
       await cancelQueriesForKeys(queryClient, [
@@ -143,47 +107,21 @@ export function useTaskDeleteFlow(opts: {
         guarded: true,
       };
     },
-    onError: (_err, input, context) => {
-      const rolledBackSomething =
-        !!context && (!!context.detail || context.lists.length > 0);
-      if (context) {
-        if (context.detail) {
-          queryClient.setQueryData(taskQueryKeys.detail(input.id), context.detail);
-        }
-        for (const snap of context.lists) {
-          queryClient.setQueryData(snap.key, snap.data);
-        }
-        if (rolledBackSomething) {
-          rumMutationRolledBack(
-            "task_delete",
-            performance.now() - context.startedAtMs,
-          );
-        }
+    restoreOptimistic: ({ queryClient, variables: input, context }) => {
+      if (context.detail) {
+        queryClient.setQueryData(taskQueryKeys.detail(input.id), context.detail);
       }
-      toast.error("Couldn't delete - reverted.");
-      rumMutationSettled(
-        "task_delete",
-        context ? performance.now() - context.startedAtMs : 0,
-        0,
-      );
+      for (const snap of context.lists) {
+        queryClient.setQueryData(snap.key, snap.data);
+      }
     },
-    onSuccess: async (_, variables, context) => {
+    didRollBack: (context) =>
+      !!context.detail || context.lists.length > 0,
+    errorToast: "Couldn't delete - reverted.",
+    onSuccessSideEffect: ({ variables }) => {
       const deletedId = variables.id;
       setDeleteTarget((prev) => (prev?.id === deletedId ? null : prev));
-      await invalidateTaskCacheAsync(queryClient, { scope: "listStats" });
       onDeleted?.(deletedId);
-      if (context) {
-        rumMutationSettled(
-          "task_delete",
-          performance.now() - context.startedAtMs,
-          200,
-        );
-      }
-    },
-    onSettled: (_data, _err, variables, context) => {
-      if (context?.guarded) {
-        endGuardedTaskWrite(variables.id);
-      }
     },
   });
 
@@ -200,25 +138,25 @@ export function useTaskDeleteFlow(opts: {
 
   const confirmDelete = useCallback(() => {
     if (!deleteTarget) return;
-    mutation.mutate({
+    guarded.mutate({
       id: deleteTarget.id,
     });
-  }, [deleteTarget, mutation]);
+  }, [deleteTarget, guarded]);
 
   const resetError = useCallback(() => {
-    if (!mutation.isError) return;
-    mutation.reset();
-  }, [mutation]);
+    if (!guarded.isError) return;
+    guarded.reset();
+  }, [guarded]);
 
   return {
     deleteTarget,
     requestDelete,
     cancelDelete,
     confirmDelete,
-    deletePending: mutation.isPending,
-    deleteError: mutation.isError ? errorMessage(mutation.error) : null,
-    deleteSuccess: mutation.isSuccess,
-    deleteVariables: mutation.variables,
+    deletePending: guarded.isPending,
+    deleteError: guarded.isError ? errorMessage(guarded.error) : null,
+    deleteSuccess: guarded.isSuccess,
+    deleteVariables: guarded.variables,
     resetError,
   };
 }

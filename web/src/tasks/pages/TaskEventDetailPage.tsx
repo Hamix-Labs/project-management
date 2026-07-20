@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getTaskEvent } from "@/api";
 import { useDocumentTitle } from "@/shared/useDocumentTitle";
-import { FieldRequirementBadge } from "@/shared/FieldLabel";
 import { errorMessage } from "@/lib/errorMessage";
 import { useRolloutFlags } from "@/settings";
 import { buildPatchTaskEventUserResponseMutationOptions } from "@/tasks/mutations/patchTaskEventUserResponseMutation";
@@ -12,8 +11,10 @@ import {
   eventTypeLabel,
   eventTypeNeedsUserInput,
 } from "../task-events";
-import { CopyableId } from "@/shared/CopyableId";
 import { TaskEventDataPanel } from "../components/task-event-detail/TaskEventDataPanel";
+import { TaskEventDetailLoadedHeader } from "../components/task-event-detail/TaskEventDetailLoadedHeader";
+import { TaskEventDetailReplyForm } from "../components/task-event-detail/TaskEventDetailReplyForm";
+import { TaskEventDetailThread } from "../components/task-event-detail/TaskEventDetailThread";
 import { TaskEventDetailSkeleton } from "../components/skeletons";
 import { taskQueryKeys } from "../task-query";
 
@@ -125,164 +126,22 @@ export function TaskEventDetailPage() {
 
   return (
     <section className="panel task-detail-panel task-event-detail-panel task-detail-content--enter">
-      <nav className="task-detail-nav" aria-label="Event navigation">
-        <Link to="/" className="pd__back project-context-back-link">
-          <span aria-hidden="true">&#8249;</span>
-          All tasks
-        </Link>
-        <Link
-          to={`/tasks/${encodeURIComponent(taskId)}`}
-          className="pd__back project-context-back-link"
-        >
-          <span aria-hidden="true">&#8249;</span>
-          Task
-        </Link>
-      </nav>
-
-      <header className="task-event-detail-header">
-        <h2 className="task-detail-title term-arrow">
-          <span>Event #{ev.seq}</span>
-        </h2>
-        <p
-          className="task-event-detail-stance"
-          role="status"
-          data-stance={
-            needsInput ? "needs-user" : "informational"
-          }
-          data-awaiting-response={awaitingUser ? "true" : undefined}
-        >
-          {needsInput
-            ? awaitingUser
-              ? "Agent needs input"
-              : "You replied — waiting on agent"
-            : "Informational"}
-        </p>
-        <p className="task-event-detail-task-id">
-          <span className="task-event-detail-task-id-label">Task</span>{" "}
-          <CopyableId value={ev.task_id} />
-        </p>
-      </header>
-
-      <dl className="task-event-detail-dl task-event-detail-dl--readable">
-        <div>
-          <dt>Type</dt>
-          <dd>
-            <code
-              className="task-timeline-type-pill"
-              data-event-type={ev.type}
-              data-needs-user={needsInput ? "true" : undefined}
-              title={eventTypeLabel(ev.type)}
-            >
-              {ev.type}
-            </code>
-          </dd>
-        </div>
-        <div>
-          <dt>When</dt>
-          <dd>
-            <time dateTime={ev.at}>{new Date(ev.at).toLocaleString()}</time>
-          </dd>
-        </div>
-        <div>
-          <dt>By</dt>
-          <dd className="task-timeline-by">{ev.by}</dd>
-        </div>
-      </dl>
-
+      <TaskEventDetailLoadedHeader
+        taskId={taskId}
+        event={ev}
+        needsInput={needsInput}
+        awaitingUser={awaitingUser}
+      />
       {needsInput ? (
-        <div className="task-event-detail-response-block">
-          <div className="field-heading-with-req task-event-response-heading-row">
-            <h3
-              className="task-detail-subheading"
-              id="task-event-response-heading"
-            >
-              Add a message
-            </h3>
-            <FieldRequirementBadge requirement="required" />
-          </div>
-          <p className="muted task-event-detail-thread-hint">
-            Each send appends to this conversation and appears on the task timeline.
-          </p>
-          {saveMutation.isError ? (
-            <div className="err" role="alert">
-              <p>
-                {errorMessage(saveMutation.error, "Could not send message.")}
-              </p>
-            </div>
-          ) : null}
-          <textarea
-            id="task-event-user-response"
-            className="task-event-detail-response-field"
-            rows={5}
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            disabled={saveMutation.isPending}
-            aria-labelledby="task-event-response-heading"
-            aria-required="true"
-            placeholder="Type a message and send. It is stored on this event and shown on the task timeline."
-          />
-          <div className="task-event-detail-response-actions">
-            <button
-              type="button"
-              onClick={() => {
-                const t = draft.trim();
-                if (t) saveMutation.mutate(t);
-              }}
-              disabled={saveMutation.isPending || !draft.trim()}
-            >
-              {saveMutation.isPending ? "Sending…" : "Send"}
-            </button>
-          </div>
-        </div>
+        <TaskEventDetailReplyForm
+          draft={draft}
+          onDraftChange={setDraft}
+          saveMutation={saveMutation}
+        />
       ) : null}
-
-      <TaskEventDataPanel eventType={ev.type} data={ev.data} />
-
-      {ev.response_thread && ev.response_thread.length > 0 ? (
-        <div
-          className="task-event-detail-thread"
-          role="log"
-          aria-label="Conversation on this event"
-        >
-          <h3
-            className="task-detail-subheading"
-            id="task-event-thread-heading"
-          >
-            <span>Conversation</span>
-          </h3>
-          <ul
-            className="task-event-detail-thread-list"
-            aria-labelledby="task-event-thread-heading"
-          >
-            {ev.response_thread.map((m, i) => (
-              <li
-                key={`${m.at}-${i}`}
-                className={`task-event-detail-thread-item task-event-detail-thread-item--${m.by}`}
-              >
-                <article className="task-event-detail-thread-bubble">
-                  <header className="task-event-detail-thread-meta">
-                    <span className="task-event-detail-thread-by">
-                      {m.by === "agent" ? "Agent" : "You"}
-                    </span>
-                    <span
-                      className="task-event-detail-thread-meta-sep"
-                      aria-hidden="true"
-                    >
-                      ·
-                    </span>
-                    <time
-                      className="task-event-detail-thread-time"
-                      dateTime={m.at}
-                    >
-                      {new Date(m.at).toLocaleString()}
-                    </time>
-                  </header>
-                  <p className="task-event-detail-thread-body">{m.body}</p>
-                </article>
-              </li>
-            ))}
-          </ul>
-        </div>
+      <TaskEventDataPanel event={ev} />
+      {ev.response_thread ? (
+        <TaskEventDetailThread thread={ev.response_thread} />
       ) : null}
     </section>
   );

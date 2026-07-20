@@ -4,7 +4,8 @@ import { normalizeChecklistItems } from "../task-compose/checklistRequirement";
 import { createSubmitStatusForAutonomy, defaultCursorModelFromSettings, defaultRunnerFromSettings } from "./defaults";
 import type { TaskCreateFormFields } from "./types";
 
-function parseTagsFromCsv(csv: string): string[] {
+/** Shared tag CSV parse for create + edit (comma / semicolon / newline). */
+export function parseTagsFromCsv(csv: string): string[] {
   return csv
     .split(/[,;\n]+/)
     .map((t) => t.trim())

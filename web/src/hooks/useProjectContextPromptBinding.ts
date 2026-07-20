@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { ProjectContextItem } from "@/types";
-import { useProjectContext } from "@/projects/hooks";
+import { useProjectContext } from "@/hooks/useProjectContext";
 import type { RichPromptEditorProjectContextProps } from "@/components/rich-prompt";
 
 const EMPTY_CONTEXT_ITEMS: ProjectContextItem[] = [];
@@ -18,10 +18,7 @@ export type UseProjectContextPromptBindingOptions = {
 
 /**
  * Compose the data inputs for `RichPromptEditor.projectContext` from the
- * shared `useProjectContext` query. Lives next to the data layer so any
- * tweak to the project-context fetch contract (limit, pinned filter, etc.)
- * lands here in one place rather than spreading through every prompt
- * surface that wants `#` mentions.
+ * inner-ring `useProjectContext` query (api + lib keys — no vertical import).
  *
  * Returns `null` when no project is selected so call sites can pass
  * `projectContext={binding ?? undefined}` without juggling sentinel values.

@@ -26,10 +26,35 @@ describe("parseWorkspaceRootsResponse", () => {
           path: "/home/me",
           label: "Home",
           available: true,
-          unavailable_reason: undefined,
         },
       ],
     });
+  });
+
+  it("throws when id is empty", () => {
+    expect(() =>
+      parseWorkspaceRootsResponse({
+        environment: "native",
+        roots: [{ id: "", path: "/x", label: "X", available: true }],
+      }),
+    ).toThrow(/id must be a non-empty string/);
+  });
+
+  it("throws on unknown category", () => {
+    expect(() =>
+      parseWorkspaceRootsResponse({
+        environment: "native",
+        roots: [
+          {
+            id: "home",
+            path: "/home/me",
+            label: "Home",
+            category: "not-a-category",
+            available: true,
+          },
+        ],
+      }),
+    ).toThrow(/known browse category/);
   });
 });
 
@@ -50,7 +75,6 @@ describe("parseBrowseDirsResponse", () => {
       }),
     ).toEqual({
       path: "/home/me",
-      parent_path: undefined,
       is_git_repo: true,
       entries: [
         {
@@ -61,5 +85,13 @@ describe("parseBrowseDirsResponse", () => {
         },
       ],
     });
+  });
+
+  it("throws when entry name is missing", () => {
+    expect(() =>
+      parseBrowseDirsResponse({
+        entries: [{ path: "/x", has_children: false, is_git_repo: false }],
+      }),
+    ).toThrow(/name must be a non-empty string/);
   });
 });

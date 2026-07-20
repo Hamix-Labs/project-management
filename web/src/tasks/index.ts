@@ -12,7 +12,7 @@
  * the lazy-loader or tests.
  */
 export { AutonomyConfirmDialog, DeleteConfirmDialog } from "./components/dialogs";
-export { TaskChangeModelModal } from "./components/task-detail";
+export { TaskChangeModelModal } from "./components/task-detail/edit/TaskChangeModelModal";
 export { useTasksApp } from "./hooks/useTasksApp";
 export { TaskDraftsPage } from "./pages/TaskDraftsPage";
 export { TaskTemplatesPage } from "./pages/TaskTemplatesPage";

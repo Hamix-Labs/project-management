@@ -43,7 +43,7 @@ describe("useTaskEventStream coalescing", () => {
     expect(streamCalls).toHaveLength(1);
   });
 
-  it("falls back to broad invalidation when no recognised frame arrives", () => {
+  it("ignores unrecognised frames without scheduling invalidation", () => {
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const inv = vi.spyOn(qc, "invalidateQueries");
 
@@ -61,7 +61,7 @@ describe("useTaskEventStream coalescing", () => {
     act(() => {
       vi.advanceTimersByTime(950);
     });
-    expect(inv).toHaveBeenCalledWith({ queryKey: ["tasks"] });
+    expect(inv).not.toHaveBeenCalled();
   });
 
   it("dedupes cycle invalidation when the same task already has a broad invalidation pending", () => {

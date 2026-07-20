@@ -8,7 +8,7 @@ import type {
   GitWorktree,
   GitWorktreeCheckoutStatus,
 } from "@/types/git";
-import { isRecord, parseNonEmptyString, parseOptionalNonEmptyId, parseString } from "./parseTaskApiCore";
+import { isRecord, parseBooleanField, parseNonEmptyString, parseOptionalNonEmptyId, parseString } from "./parseTaskApiCore";
 
 function parseLinkedWorktreeCount(value: unknown, path: string): number {
   if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
@@ -52,7 +52,7 @@ function parseGitWorktreeRow(value: unknown, path: string): GitWorktree {
     repository_id: parseNonEmptyString(value.repository_id, `${path}.repository_id`),
     path: parseString(value.path, `${path}.path`),
     name: parseString(value.name, `${path}.name`),
-    is_main: Boolean(value.is_main),
+    is_main: parseBooleanField(value.is_main, `${path}.is_main`),
     created_at: parseString(value.created_at, `${path}.created_at`),
   };
   const branchID = parseOptionalNonEmptyId(value.branch_id, `${path}.branch_id`);

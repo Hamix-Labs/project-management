@@ -1,0 +1,488 @@
+/* =============================================
+   PROJECT LIST PAGE
+   ============================================= */
+
+.pl {
+  position: relative;
+  display: grid;
+  gap: var(--space-6);
+  background: var(--bg-elevated);
+}
+
+/* Per redesign brief: "No gradients on UI surfaces. Gradients are for hero
+   sections only, used sparingly." The previous brand-coloured top accent
+   stripe was decoration that read as "this is the active page" — we already
+   communicate page-level state via the nav underline. */
+
+.pl__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.95rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-hairline) 80%, transparent);
+}
+
+.pl__head-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.pl__head h2 {
+  margin: 0;
+}
+
+.pl__subtitle {
+  max-width: 58ch;
+  margin: 0.2rem 0 0;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  line-height: 1.55;
+}
+
+/* --- Header actions (stats + primary CTA) --- */
+
+.pl__head-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+/*
+ * Page-header CTA layout on top of `.ui-btn--primary` (ProjectListPage uses Button).
+ */
+.pl__new-btn {
+  flex: 0 0 auto;
+  gap: var(--space-2);
+  padding-inline: var(--space-4);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+
+/* --- Create project dialog --- */
+
+.pl__create-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-6);
+}
+
+.pl__create-dialog-head h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.pl__create-dialog-help {
+  margin: var(--space-2) 0 0;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.pl__create-dialog-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.pl__create-dialog-form .field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.pl__create-dialog-form label {
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--text-secondary);
+  letter-spacing: 0.01em;
+}
+
+.pl__create-dialog-optional {
+  color: var(--text-tertiary);
+  font-weight: 400;
+}
+
+.pl__create-dialog-form input,
+.pl__create-dialog-form textarea {
+  min-height: 2.25rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-sm);
+  transition:
+    border-color 150ms var(--ease-default),
+    box-shadow 150ms var(--ease-default);
+}
+
+.pl__create-dialog-form textarea {
+  min-height: 5.5rem;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.pl__create-dialog-form input::placeholder,
+.pl__create-dialog-form textarea::placeholder {
+  color: var(--text-tertiary);
+}
+
+.pl__create-dialog-form input:hover,
+.pl__create-dialog-form textarea:hover {
+  border-color: var(--border-strong);
+}
+
+.pl__create-dialog-form input:focus,
+.pl__create-dialog-form textarea:focus {
+  outline: none;
+  border-color: var(--border-interactive-hover);
+  box-shadow: var(--shadow-focus);
+}
+
+.pl__create-dialog-actions {
+  margin-top: var(--space-2);
+}
+
+.pl__create-dialog-err {
+  margin: 0;
+}
+
+/* --- List section --- */
+
+.pl__list-section {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.pl__list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  /* Align with row text: row padding-x + marker + column gap */
+  padding-left: calc(var(--space-2) + 0.5rem + var(--space-4));
+}
+
+/* --- Stats --- */
+
+.pl__stats {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.pl__stat {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-1);
+}
+
+.pl__stat dd {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.pl__stat--active dd {
+  color: var(--success);
+}
+
+.pl__stat dt {
+  color: var(--text-tertiary);
+  font-size: 0.75rem;
+  font-weight: 450;
+}
+
+.pl__stat-sep {
+  width: 1px;
+  height: 0.75rem;
+  background: var(--border-hairline);
+}
+
+/* --- Project list --- */
+
+.pl__list {
+  display: flex;
+  flex-direction: column;
+}
+
+.pl__row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  gap: var(--space-4);
+  align-items: center;
+  padding: var(--space-3) var(--space-2);
+  border: none;
+  border-bottom: 1px solid var(--border-hairline);
+  border-radius: var(--radius-md);
+  color: inherit;
+  text-decoration: none;
+  animation: pl-row-in 250ms var(--ease-out) both;
+  transition: background-color var(--duration-normal) var(--ease-out);
+  box-shadow: none;
+}
+
+.pl__list .pl__row:last-child {
+  border-bottom: none;
+}
+
+@keyframes pl-row-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (hover: hover) {
+  .pl__row:hover {
+    background: var(--bg-subtle);
+  }
+}
+
+.pl__row:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-primary) 12%, transparent);
+}
+
+.pl__row--skeleton {
+  pointer-events: none;
+  animation: none;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+/* --- Row marker --- */
+
+.pl__row-marker {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+  background: var(--text-tertiary);
+  opacity: 0.4;
+}
+
+.pl__row--active .pl__row-marker {
+  background: var(--success);
+  opacity: 1;
+}
+
+.pl__row--archived .pl__row-marker {
+  background: var(--text-tertiary);
+  opacity: 0.75;
+}
+
+.pl__row--skeleton .pl__row-marker {
+  opacity: 0.35;
+}
+
+.pl__row-main {
+  display: grid;
+  min-width: 0;
+  gap: 0.2rem;
+}
+
+.pl__row-name {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 150ms var(--ease-default);
+}
+
+@media (hover: hover) {
+  .pl__row:hover .pl__row-name {
+    color: var(--text-primary);
+  }
+}
+
+.pl__row-desc {
+  overflow: hidden;
+  color: var(--text-tertiary);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pl__row-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: 0 0 auto;
+}
+
+.pl__row-date {
+  color: var(--text-tertiary);
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.pl__row-arrow {
+  flex: 0 0 auto;
+  color: var(--text-tertiary);
+  opacity: 0;
+  transition:
+    opacity var(--duration-normal) var(--ease-out),
+    transform var(--duration-normal) var(--ease-out),
+    color var(--duration-normal) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .pl__row:hover .pl__row-arrow {
+    opacity: 1;
+    color: var(--text-secondary);
+    transform: translateX(1px);
+  }
+}
+
+/* Legacy classes kept for other consumers */
+.project-page {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.project-create-form,
+.project-edit-form,
+.project-context-form,
+.project-context-item-form {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.project-status-pill {
+  width: fit-content;
+  min-height: 1.625rem;
+  padding: 0 var(--space-2);
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 10%, transparent);
+}
+
+.project-status-pill--archived {
+  color: var(--muted);
+  background: var(--bg-subtle);
+}
+
+.project-context-form {
+  margin-bottom: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-lg);
+  background: var(--bg-elevated);
+}
+
+.project-context-page {
+  gap: var(--space-5);
+  background:
+    radial-gradient(
+      circle at top right,
+      color-mix(in srgb, var(--brand-muted) 46%, transparent),
+      transparent 34rem
+    ),
+    var(--bg-elevated);
+}
+
+.project-context-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.project-context-hero__project {
+  display: inline-flex;
+  max-width: min(28rem, 58%);
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid color-mix(in srgb, var(--accent, var(--brand)) 20%, var(--border-hairline));
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--brand-muted) 38%, var(--bg-elevated));
+  color: var(--text);
+}
+
+.project-context-hero__project h2 {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 760;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-context-page a,
+.project-context-page button,
+.project-context-page input,
+.project-context-page select,
+.project-context-page summary {
+  transition: all 150ms ease;
+}
+
+.project-context-page .back-link {
+  color: var(--accent, var(--brand));
+}
+
+.project-context-back-link {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 2rem;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.project-context-back-link span {
+  color: var(--accent, var(--brand));
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1;
+  transform: translateY(-0.03em);
+}
+
+.project-context-back-link:hover {
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+}
+
+.project-context-back-link:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+

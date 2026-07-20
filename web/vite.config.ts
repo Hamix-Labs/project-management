@@ -16,21 +16,26 @@ export default defineConfig({
     },
   },
   build: {
-    rollupOptions: {
+    rolldownOptions: {
       output: {
-        manualChunks(id) {
-          if (!id.includes("node_modules")) return;
-          if (id.includes("@tanstack/react-query")) return "rq";
-          if (
-            id.includes("@tiptap") ||
-            id.includes("prosemirror") ||
-            id.includes("tippy.js")
-          ) {
-            return "editor";
-          }
-          if (id.includes("react-dom") || id.includes("/react/")) {
-            return "react";
-          }
+        // Vite 8 / Rolldown: prefer codeSplitting over deprecated manualChunks.
+        // Capture react* before editor so TipTap does not recursively absorb
+        // React into the editor chunk (which would keep TipTap on cold start).
+        codeSplitting: {
+          groups: [
+            {
+              name: "rq",
+              test: /node_modules[/\\]@tanstack[/\\]react-query/,
+            },
+            {
+              name: "react",
+              test: /node_modules[/\\](react-dom|react)[/\\]/,
+            },
+            {
+              name: "editor",
+              test: /node_modules[/\\](@tiptap|prosemirror|tippy\.js)/,
+            },
+          ],
         },
       },
     },

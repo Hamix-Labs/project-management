@@ -95,12 +95,15 @@ describe("useBootstrap", () => {
       SAMPLE_BOOTSTRAP as unknown as Awaited<ReturnType<typeof fetchBootstrap>>,
     );
     const queryClient = makeQueryClient();
-    renderHook(() => useBootstrap(), {
+    const { result } = renderHook(() => useBootstrap(), {
       wrapper: makeWrapper(queryClient),
     });
 
     await waitFor(() => {
       expect(mockedFetchBootstrap).toHaveBeenCalledTimes(1);
+    });
+    await waitFor(() => {
+      expect(result.current).toBe(true);
     });
     await waitFor(() => {
       expect(queryClient.getQueryData(settingsQueryKeys.app())).toEqual(
@@ -126,12 +129,15 @@ describe("useBootstrap", () => {
   it("silently does nothing when the endpoint is unavailable (null)", async () => {
     mockedFetchBootstrap.mockResolvedValue(null);
     const queryClient = makeQueryClient();
-    renderHook(() => useBootstrap(), {
+    const { result } = renderHook(() => useBootstrap(), {
       wrapper: makeWrapper(queryClient),
     });
 
     await waitFor(() => {
       expect(mockedFetchBootstrap).toHaveBeenCalledTimes(1);
+    });
+    await waitFor(() => {
+      expect(result.current).toBe(true);
     });
     expect(queryClient.getQueryData(settingsQueryKeys.app())).toBeUndefined();
     expect(
@@ -142,12 +148,15 @@ describe("useBootstrap", () => {
   it("does not seed anything when the request fails", async () => {
     mockedFetchBootstrap.mockRejectedValue(new Error("network down"));
     const queryClient = makeQueryClient();
-    renderHook(() => useBootstrap(), {
+    const { result } = renderHook(() => useBootstrap(), {
       wrapper: makeWrapper(queryClient),
     });
 
     await waitFor(() => {
       expect(mockedFetchBootstrap).toHaveBeenCalledTimes(1);
+    });
+    await waitFor(() => {
+      expect(result.current).toBe(true);
     });
     expect(queryClient.getQueryData(settingsQueryKeys.app())).toBeUndefined();
   });

@@ -6,151 +6,42 @@ import {
   createTaskSyncCoordinator,
   type TaskSyncCoordinator,
 } from "../sync/taskSyncCoordinator";
-import {
-  debounceDelayMs,
-  PROGRESS_STREAM_INVALIDATE_MAX_WAIT_MS,
-  PROGRESS_STREAM_INVALIDATE_WINDOW_MS,
-  SSE_INVALIDATE_MAX_WAIT_MS,
-  SSE_INVALIDATE_WINDOW_MS,
-} from "../sync/syncConstants";
 
 /**
- * Coalesce window for trailing-debounced SSE invalidations. The agent
- * worker emits ~4 `task_cycle_changed` frames per task run (StartCycle
- * → execute start/complete → terminate), spaced ~1–1.5s apart in real
- * workloads. A short 400ms debounce never actually batched them — every
- * frame fired its own flush, kicking off a refetch storm on the open
- * task detail page roughly every second.
+ * App-wide task SSE transport. Debounce timers and pending maps live in
+ * `taskSyncCoordinator` (ADR-0022). This hook connects EventSource and
+ * publishes the live flag for refetch-on-focus policy.
  *
- * 900ms clusters typical worker bursts; `MAX_WAIT_MS` forces a flush at
- * least every 2.5s under continuous frames. Policy lives in
- * `web/src/tasks/sync/`; this hook owns transport and debounce timers.
+ * Unmount disposes the coordinator without flushing (drop pending).
  */
 export function useTaskEventStream(): boolean {
   const queryClient = useQueryClient();
-  const sseDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>();
-  const progressStreamDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>();
   const coordinatorRef = useRef<TaskSyncCoordinator | null>(null);
-  if (coordinatorRef.current === null) {
-    coordinatorRef.current = createTaskSyncCoordinator(queryClient);
-  }
-  const firstQueuedAtRef = useRef<number | null>(null);
-  const firstProgressStreamQueuedAtRef = useRef<number | null>(null);
   const streamEffectActiveRef = useRef(false);
   const [sseLive, setSseLive] = useState(false);
 
-  const runFlushStreamInvalidation = useCallback(() => {
-    firstQueuedAtRef.current = null;
-    coordinatorRef.current?.flushStreamInvalidation();
+  const onMessage = useCallback((data: string) => {
+    coordinatorRef.current?.handleRawFrame(data);
   }, []);
-
-  const runFlushProgressStreamInvalidation = useCallback(() => {
-    firstProgressStreamQueuedAtRef.current = null;
-    coordinatorRef.current?.flushProgressStreamInvalidation();
-  }, []);
-
-  const scheduleProgressStreamInvalidation = useCallback(
-    (taskId: string, cycleId: string) => {
-      const coordinator = coordinatorRef.current;
-      if (coordinator === null) {
-        return;
-      }
-      const streamKey = `${taskId}\u0000${cycleId}`;
-      coordinator.pendingProgressStreams.set(streamKey, { taskId, cycleId });
-      const now = Date.now();
-      if (firstProgressStreamQueuedAtRef.current === null) {
-        firstProgressStreamQueuedAtRef.current = now;
-      }
-      const delay = debounceDelayMs(
-        now,
-        firstProgressStreamQueuedAtRef.current,
-        PROGRESS_STREAM_INVALIDATE_WINDOW_MS,
-        PROGRESS_STREAM_INVALIDATE_MAX_WAIT_MS,
-      );
-      if (progressStreamDebounceRef.current !== undefined) {
-        clearTimeout(progressStreamDebounceRef.current);
-      }
-      progressStreamDebounceRef.current = setTimeout(() => {
-        progressStreamDebounceRef.current = undefined;
-        if (!streamEffectActiveRef.current) {
-          return;
-        }
-        runFlushProgressStreamInvalidation();
-      }, delay);
-    },
-    [runFlushProgressStreamInvalidation],
-  );
-
-  const scheduleDebouncedFlush = useCallback(() => {
-    const now = Date.now();
-    if (firstQueuedAtRef.current === null) {
-      firstQueuedAtRef.current = now;
-    }
-    const delay = debounceDelayMs(
-      now,
-      firstQueuedAtRef.current,
-      SSE_INVALIDATE_WINDOW_MS,
-      SSE_INVALIDATE_MAX_WAIT_MS,
-    );
-    if (sseDebounceRef.current !== undefined) {
-      clearTimeout(sseDebounceRef.current);
-    }
-    sseDebounceRef.current = setTimeout(() => {
-      sseDebounceRef.current = undefined;
-      if (!streamEffectActiveRef.current) {
-        return;
-      }
-      runFlushStreamInvalidation();
-    }, delay);
-  }, [runFlushStreamInvalidation]);
-
-  const scheduleInvalidateFromStream = useCallback(
-    (data: string) => {
-      const coordinator = coordinatorRef.current;
-      if (coordinator === null) {
-        return;
-      }
-      const result = coordinator.handleRawFrame(data, scheduleProgressStreamInvalidation);
-      if (result.kind === "immediate" || result.kind === "ignore") {
-        return;
-      }
-      if (result.kind === "resync") {
-        if (sseDebounceRef.current !== undefined) {
-          clearTimeout(sseDebounceRef.current);
-          sseDebounceRef.current = undefined;
-        }
-        firstQueuedAtRef.current = null;
-        return;
-      }
-      scheduleDebouncedFlush();
-    },
-    [scheduleDebouncedFlush, scheduleProgressStreamInvalidation],
-  );
 
   useEffect(() => {
     streamEffectActiveRef.current = true;
+    const coordinator = createTaskSyncCoordinator(queryClient);
+    coordinatorRef.current = coordinator;
     const disconnect = connectTaskEventSource({
       isActive: () => streamEffectActiveRef.current,
-      onMessage: scheduleInvalidateFromStream,
+      onMessage,
       onLiveChange: setSseLive,
     });
-    const coordinator = coordinatorRef.current;
     return () => {
       streamEffectActiveRef.current = false;
       disconnect();
-      if (sseDebounceRef.current !== undefined) {
-        clearTimeout(sseDebounceRef.current);
-        sseDebounceRef.current = undefined;
+      coordinator.dispose();
+      if (coordinatorRef.current === coordinator) {
+        coordinatorRef.current = null;
       }
-      if (progressStreamDebounceRef.current !== undefined) {
-        clearTimeout(progressStreamDebounceRef.current);
-        progressStreamDebounceRef.current = undefined;
-      }
-      firstQueuedAtRef.current = null;
-      firstProgressStreamQueuedAtRef.current = null;
-      coordinator?.dispose();
     };
-  }, [scheduleInvalidateFromStream]);
+  }, [queryClient, onMessage]);
 
   useEffect(() => {
     setSseLiveForQueries(sseLive);

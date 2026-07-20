@@ -1,3 +1,5 @@
+import { Button } from "@/components/ui";
+
 type TemplatePageHeaderProps = {
   onNewTemplate: () => void;
 };
@@ -26,14 +28,15 @@ export function TemplatePageHeader({ onNewTemplate }: TemplatePageHeaderProps) {
           Reusable task definitions. Select a few and spin up tasks in bulk.
         </p>
       </div>
-      <button
+      <Button
         type="button"
+        variant="primary"
         className="templates-page-header__new-btn"
         onClick={onNewTemplate}
       >
         <PlusIcon />
         New template
-      </button>
+      </Button>
     </header>
   );
 }

@@ -2,7 +2,7 @@ import {
   cycleStatusFillClass,
   cycleStatusLabel,
   formatRunnerModel,
-} from "@/observability";
+} from "@/tasks/cycleDisplay/cyclesViewModel";
 import type { TaskCycleDetail } from "@/types";
 import type { AttemptTimelineDisplay } from "./attemptTimelineDisplay";
 

@@ -5,6 +5,7 @@ import { draftsListEmpty } from "@/test/handlers/drafts";
 import { listCursorModelsOk } from "@/test/handlers/settings";
 import {
   defaultTask,
+  taskCreateFail,
   taskCreateFlowHandlers,
   tasksList,
 } from "@/test/handlers/tasks";
@@ -219,5 +220,36 @@ describe("create task from home", () => {
     };
     expect(posted.title).toBe("Standalone task");
     expect(posted.parent_id).toBeUndefined();
+  });
+
+  it("surfaces create POST failure, keeps modal open, and leaves the list unchanged", async () => {
+    const user = userEvent.setup();
+    server.use(
+      tasksList([defaultTask("seed", "Existing task")]),
+      taskCreateFail(500, "server returned 500"),
+    );
+
+    renderTasksHome();
+    expect(await screen.findByText("Existing task")).toBeInTheDocument();
+
+    const dialog = await openNewTaskModal(user);
+    await user.type(within(dialog).getByLabelText(/^title$/i), "Will fail");
+    await choosePriorityInDialog(user, dialog);
+    await addCriterionInDialog(user, dialog, "Criterion");
+    await waitForCreateTaskEnabled(dialog);
+    await user.click(
+      within(dialog).getByRole("button", { name: /^create task$/i }),
+    );
+
+    expect(
+      await within(dialog).findByRole("alert"),
+    ).toHaveTextContent(/server returned 500/i);
+    expect(dialog).toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: /will fail/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /existing task/i }),
+    ).toBeInTheDocument();
   });
 });

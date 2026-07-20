@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { cycleRunnerChipClass, runnerLabel } from "@/observability";
+import { cycleRunnerChipClass, runnerLabel } from "@/tasks/cycleDisplay/cyclesViewModel";
 import { Badge } from "@/components/ui";
 import type { Task } from "@/types";
 import {

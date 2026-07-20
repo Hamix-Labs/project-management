@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo, useRef } from "react";
 import { taskQueryKeys } from "@/tasks/task-query";
 import { QUERY_POLICY } from "@/lib/queryPolicy";
-import { projectQueryKeys } from "@/projects/queryKeys";
+import { projectQueryKeys } from "@/lib/projectQueryKeys";
 
 /**
  * "Intent" event handlers fired on the kinds of events that signal a

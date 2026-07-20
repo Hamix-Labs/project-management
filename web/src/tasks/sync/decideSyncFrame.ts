@@ -1,5 +1,5 @@
 import { decideProjectInvalidationKeys } from "@/lib/queryInvalidation";
-import { settingsQueryKeys } from "@/settings/settingsQueryKeys";
+import { settingsQueryKeys } from "@/lib/settingsQueryKeys";
 import { taskQueryKeys } from "../task-query";
 import type { DecideSyncFrameInput, SyncFrameDecision } from "./syncTypes";
 

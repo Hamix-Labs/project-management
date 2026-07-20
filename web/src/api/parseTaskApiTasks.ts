@@ -63,7 +63,7 @@ function parseDependencySatisfies(
   throw new Error(`Invalid API response: ${field} must be done`);
 }
 
-function parseDependsOnEdge(raw: unknown, path: string): TaskDependencyEdge {
+export function parseDependsOnEdge(raw: unknown, path: string): TaskDependencyEdge {
   if (typeof raw === "string") {
     return { task_id: parseNonEmptyString(raw, path), satisfies: "done" };
   }
@@ -74,6 +74,36 @@ function parseDependsOnEdge(raw: unknown, path: string): TaskDependencyEdge {
     task_id: parseNonEmptyString(raw.task_id, `${path}.task_id`),
     satisfies: parseDependencySatisfies(raw.satisfies, `${path}.satisfies`),
   };
+}
+
+/** Validates a `depends_on` array; throws when the value is not an array. */
+export function parseDependsOnList(
+  raw: unknown,
+  path = "depends_on",
+): TaskDependencyEdge[] {
+  if (!Array.isArray(raw)) {
+    throw new Error(`Invalid API response: ${path} must be an array`);
+  }
+  return raw.map((edge, i) => parseDependsOnEdge(edge, `${path}[${i}]`));
+}
+
+/**
+ * Validates GET/POST `/tasks/{id}/dependencies` JSON.
+ * `depends_on: null` is treated as an empty list; a missing key is a contract error.
+ */
+export function parseDependenciesEnvelope(value: unknown): TaskDependencyEdge[] {
+  if (!isRecord(value)) {
+    throw new Error(
+      "Invalid API response: dependencies payload must be an object",
+    );
+  }
+  if (!("depends_on" in value)) {
+    throw new Error("Invalid API response: depends_on is required");
+  }
+  if (value.depends_on === null) {
+    return [];
+  }
+  return parseDependsOnList(value.depends_on);
 }
 
 /** Validates a single task object from POST/PATCH responses. */

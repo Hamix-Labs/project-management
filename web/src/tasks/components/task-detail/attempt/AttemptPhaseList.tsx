@@ -3,7 +3,7 @@ import {
   phaseLabel,
   phaseStatusFillClass,
   phaseStatusLabel,
-} from "@/observability";
+} from "@/tasks/cycleDisplay/cyclesViewModel";
 import { useNow } from "@/shared/useNow";
 import { CycleLiveProgressList } from "../cycles/CycleLiveProgressList";
 import { useAgentRunProgress } from "@/tasks/hooks/useAgentRunProgress";
