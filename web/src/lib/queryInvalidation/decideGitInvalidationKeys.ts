@@ -13,7 +13,6 @@ export function decideGitInvalidationKeys(
         gitQueryKeys.globalRepository(input.repositoryId),
         gitQueryKeys.globalWorktrees(input.repositoryId),
         gitQueryKeys.globalBranches(input.repositoryId),
-        gitQueryKeys.globalWorktreeCheckoutStatus(input.repositoryId),
         gitQueryKeys.projectsByRepo(input.repositoryId),
       ];
   }

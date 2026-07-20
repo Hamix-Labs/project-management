@@ -3,7 +3,6 @@ import type {
   GitReconcileResult,
   GitRepository,
   GitWorktree,
-  GitWorktreeCheckoutStatus,
 } from "@/types/git";
 import type { ProjectListResponse } from "@/types/project";
 import { parseProjectListResponse } from "./projects";
@@ -12,7 +11,6 @@ import {
   parseGitRepository,
   parseGitRepositoryList,
   parseGitWorktreeList,
-  parseGitWorktreeCheckoutStatusList,
   parseGitReconcileResult,
 } from "./parseGitApi";
 import { assertTaskPathId } from "./taskRequestBounds";
@@ -43,18 +41,6 @@ export async function createGlobalGitRepository(input: {
   return parseGitRepository(raw);
 }
 
-export async function getGlobalGitRepository(
-  repositoryId: string,
-  options?: { signal?: AbortSignal },
-): Promise<GitRepository> {
-  const repoId = assertTaskPathId(repositoryId, "repository id");
-  const raw = await gitFetchJson(
-    `${gitRoot}/repositories/${encodeURIComponent(repoId)}`,
-    gitJsonGetInit(options?.signal),
-  );
-  return parseGitRepository(raw);
-}
-
 export async function deleteGlobalGitRepository(repositoryId: string): Promise<void> {
   const repoId = assertTaskPathId(repositoryId, "repository id");
   await gitFetchVoid(`${gitRoot}/repositories/${encodeURIComponent(repoId)}`, gitDeleteInit());
@@ -70,38 +56,6 @@ export async function listGlobalGitWorktrees(
     gitJsonGetInit(options?.signal),
   );
   return parseGitWorktreeList(raw);
-}
-
-export async function listGlobalGitWorktreeCheckoutStatus(
-  repositoryId: string,
-  options?: { signal?: AbortSignal },
-): Promise<GitWorktreeCheckoutStatus[]> {
-  const repoId = assertTaskPathId(repositoryId, "repository id");
-  const raw = await gitFetchJson(
-    `${gitRoot}/repositories/${encodeURIComponent(repoId)}/worktrees/checkout-status`,
-    gitJsonGetInit(options?.signal),
-  );
-  return parseGitWorktreeCheckoutStatusList(raw);
-}
-
-export async function unregisterGlobalGitWorktree(worktreeId: string): Promise<void> {
-  const wtId = assertTaskPathId(worktreeId, "worktree id");
-  await gitFetchVoid(`${gitRoot}/worktrees/${encodeURIComponent(wtId)}`, gitDeleteInit());
-}
-
-export async function deleteGlobalGitWorktreeFromDisk(
-  worktreeId: string,
-  options?: { force?: boolean },
-): Promise<void> {
-  const wtId = assertTaskPathId(worktreeId, "worktree id");
-  const params = new URLSearchParams({ remove_from_disk: "true" });
-  if (options?.force) {
-    params.set("force", "true");
-  }
-  await gitFetchVoid(
-    `${gitRoot}/worktrees/${encodeURIComponent(wtId)}?${params.toString()}`,
-    gitDeleteInit(),
-  );
 }
 
 export async function listGlobalGitBranches(

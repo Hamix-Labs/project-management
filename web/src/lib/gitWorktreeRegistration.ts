@@ -13,12 +13,7 @@ export function isLinkedWorktreeForDisplay(worktree: GitWorktree): boolean {
   return isFullyRegisteredWorktree(worktree) && !worktree.is_main;
 }
 
-/** Rows shown on /worktrees/:repositoryId — same as linked display (no primary). */
-export function isDetailPageWorktree(worktree: GitWorktree): boolean {
-  return isLinkedWorktreeForDisplay(worktree);
-}
-
-export function sortDetailPageWorktrees(worktrees: GitWorktree[]): GitWorktree[] {
+function sortLinkedWorktrees(worktrees: GitWorktree[]): GitWorktree[] {
   return [...worktrees].sort((a, b) =>
     a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
   );
@@ -28,5 +23,5 @@ export function sortDetailPageWorktrees(worktrees: GitWorktree[]): GitWorktree[]
 export function pickDefaultWorktreeId(worktrees: GitWorktree[]): string {
   const managed = worktrees.filter(isLinkedWorktreeForDisplay);
   if (managed.length === 0) return "";
-  return sortDetailPageWorktrees(managed)[0]!.id;
+  return sortLinkedWorktrees(managed)[0]!.id;
 }

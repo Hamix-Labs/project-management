@@ -221,7 +221,7 @@ export function RepositoriesListPage() {
           pending={actions.deletePending}
           error={actions.deleteError}
           onClose={actions.closeDelete}
-          onConfirm={(options) => void actions.runDelete(options)}
+          onConfirm={() => void actions.runDelete()}
         />
 
         <RelocateRepositoryModal
@@ -236,11 +236,6 @@ export function RepositoriesListPage() {
             void actions.mutations.relocateRepository
               .mutateAsync({ repositoryId: repo.id, input })
               .then((result) => {
-                actions.setAutoReconcileBlocked((prev) => {
-                  const next = { ...prev };
-                  delete next[repo.id];
-                  return next;
-                });
                 actions.closeRelocateModal();
                 toast?.success(formatReconcileSuccess(result));
               });

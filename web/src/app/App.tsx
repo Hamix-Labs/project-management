@@ -65,11 +65,6 @@ const RepositoriesListPage = lazy(() =>
     default: m.RepositoriesListPage,
   })),
 );
-const RepositoryWorktreesPage = lazy(() =>
-  import("@/worktrees").then((m) => ({
-    default: m.RepositoryWorktreesPage,
-  })),
-);
 import { UiTestModeBanner } from "@/dev/UiTestModeBanner";
 import { ErrorBanner } from "../shared/ErrorBanner";
 import { ModalStackProvider } from "../shared/ModalStackContext";
@@ -278,7 +273,6 @@ export default function App() {
             <Route path="drafts" element={<TaskDraftsPage />} />
             <Route path="templates" element={<TaskTemplatesPage />} />
             <Route path="worktrees" element={<RepositoriesListPage />} />
-            <Route path="worktrees/:repositoryId" element={<RepositoryWorktreesPage />} />
           {projectsUiEnabled ? (
             <>
               <Route path="projects" element={<ProjectListPage />} />

@@ -18,7 +18,6 @@ const projectsIncludes = [
 ];
 const worktreesIncludes = [
   "src/worktrees/RepositoriesListPage.test.tsx",
-  "src/worktrees/RepositoryWorktreesPage.test.tsx",
 ];
 
 const fullAppIncludes = [
