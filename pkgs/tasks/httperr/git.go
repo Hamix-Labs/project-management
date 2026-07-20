@@ -5,9 +5,10 @@ import (
 	"net/http"
 
 	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
+	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/apijson"
-	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 )
 
 // GitErrHTTP maps git and domain store errors to HTTP status, code, and message.
@@ -36,12 +37,14 @@ func GitErrHTTP(err error) (status int, code, msg string) {
 		return status, code, msg
 	}
 	switch {
-	case errors.Is(err, taskcoredomain.ErrNotFound):
+	case errors.Is(err, taskcoredomain.ErrNotFound), errors.Is(err, projectsdomain.ErrNotFound):
 		return http.StatusNotFound, "", "not found"
-	case errors.Is(err, taskcoredomain.ErrInvalidInput):
-		return http.StatusBadRequest, "", apijson.InvalidInputDetail(err, apijson.TasksInvalidInputMark)
-	case errors.Is(err, taskcoredomain.ErrConflict):
-		return http.StatusConflict, "", apijson.ConflictDetail(err, apijson.TasksConflictMark)
+	case errors.Is(err, taskcoredomain.ErrInvalidInput), errors.Is(err, projectsdomain.ErrInvalidInput):
+		return http.StatusBadRequest, "", apijson.InvalidInputDetail(err,
+			apijson.ProjectsInvalidInputMark, apijson.TasksInvalidInputMark)
+	case errors.Is(err, taskcoredomain.ErrConflict), errors.Is(err, projectsdomain.ErrConflict):
+		return http.StatusConflict, "", apijson.ConflictDetail(err,
+			apijson.ProjectsConflictMark, apijson.TasksConflictMark)
 	default:
 		return status, code, msg
 	}

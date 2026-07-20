@@ -2,13 +2,12 @@ package agentreconcile
 
 import (
 	"context"
-	gitinventorystore "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store"
 	"os/exec"
 	"path/filepath"
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
-	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
+	gitinventorystore "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store"
 )
 
 // seedSecondWorktreeOnRepo adds a linked worktree on a new branch in the same repo.
@@ -23,7 +22,6 @@ func seedSecondWorktreeOnRepo(t *testing.T, st *composition.API, firstWorktreeID
 	if err != nil {
 		t.Fatalf("GetGitRepositoryByID: %v", err)
 	}
-	gitSvc := gitwork.New()
 	if out, err := exec.Command("git", "-C", repo.Path, "branch", "feature-b").CombinedOutput(); err != nil {
 		t.Fatalf("git branch feature-b: %v %s", err, out)
 	}
