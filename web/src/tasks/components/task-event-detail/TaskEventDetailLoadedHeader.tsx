@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { CopyableId } from "@/shared/CopyableId";
 import type { TaskEvent } from "@/types";
-import { eventTypeLabel, eventTypeNeedsUserInput } from "../../task-events";
+import { eventTypeLabel } from "../../task-events";
 
 export function TaskEventDetailLoadedHeader(props: {
   taskId: string;
@@ -44,7 +44,7 @@ export function TaskEventDetailLoadedHeader(props: {
         </p>
         <p className="task-event-detail-task-id">
           <span className="task-event-detail-task-id-label">Task</span>{" "}
-          <CopyableId value={ev.task_id} />
+          <CopyableId value={taskId} />
         </p>
       </header>
 

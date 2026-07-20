@@ -24,6 +24,10 @@ const baseInput: TaskPatchInput = {
   initial_prompt: "<p>hi</p>",
   status: "ready",
   priority: "medium",
+  project_id: null,
+  project_context_item_ids: [],
+  tags: [],
+  milestone: null,
   cursor_model: "",
 };
 

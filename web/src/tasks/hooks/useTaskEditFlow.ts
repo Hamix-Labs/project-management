@@ -104,6 +104,8 @@ export function useTaskEditFlow(opts: UseTaskEditFlowOptions) {
         priority: t.priority,
         project_id: t.project_id ?? null,
         project_context_item_ids: t.project_context_item_ids ?? [],
+        tags: t.tags ?? [],
+        milestone: t.milestone ?? null,
         cursor_model: changeModelDraft.trim(),
       });
     },
