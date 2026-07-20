@@ -44,7 +44,7 @@ Primary nav links: Tasks, Templates, Drafts, Projects, Repositories (Settings is
 
 ## Task sync (SSE cache coherence)
 
-Live task UI cache policy lives in [`web/src/tasks/sync/`](../../web/src/tasks/sync/). Read order:
+Live task UI cache policy lives in [`web/src/tasks/sync/`](../web/src/tasks/sync/). Read order:
 
 1. [ADR-0022](./adr/ADR-0022-task-sync-policy.md) — Decide vs Apply boundaries
 2. `decideSyncFrame.ts` — per-frame schedule, suppression, enrichment effects
