@@ -3,8 +3,8 @@
   margin: 0;
   padding: 0;
   flex: 1;
-  min-height: 14rem;
-  max-height: min(50vh, 26rem);
+  min-height: 18rem;
+  max-height: min(58vh, 32rem);
   overflow: auto;
   border: 1px solid var(--border-hairline);
   border-radius: var(--radius-xl);
