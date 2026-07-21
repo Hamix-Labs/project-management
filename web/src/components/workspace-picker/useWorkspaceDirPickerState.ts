@@ -94,6 +94,7 @@ export function useWorkspaceDirPickerState({
   const [resolvedSelection, setResolvedSelection] = useState<ResolvedGitSelection | null>(null);
   const [probePending, setProbePending] = useState(false);
   const [probeError, setProbeError] = useState<string | null>(null);
+  const [folderFilter, setFolderFilter] = useState("");
 
   const atRoots = currentBrowsePath.trim() === "";
 
@@ -136,6 +137,7 @@ export function useWorkspaceDirPickerState({
     async (path: string) => {
       setListingPending(true);
       setListingError(null);
+      setFolderFilter("");
       if (requireGitRepository) {
         clearResolvedSelection();
       }
@@ -170,6 +172,7 @@ export function useWorkspaceDirPickerState({
     setListingError(null);
     setPathValidation(null);
     setValidatingPath(false);
+    setFolderFilter("");
     clearResolvedSelection();
     void fetchWorkspaceRoots({ scope: rootsScope })
       .then((roots) => {
@@ -240,6 +243,7 @@ export function useWorkspaceDirPickerState({
     setParentPath("");
     setCurrentPathIsGitRepo(false);
     setListingError(null);
+    setFolderFilter("");
     if (requireGitRepository) {
       clearResolvedSelection();
     }
@@ -296,8 +300,33 @@ export function useWorkspaceDirPickerState({
     ? hasResolvedRepo && !listingPending && !probePending && customValidationMet
     : hasOpenFolder && !listingPending && customValidationMet;
 
-  const rootGroups =
-    loadState.kind === "ready" ? partitionBrowseRoots(loadState.roots) : null;
+  const filterQuery = folderFilter.trim().toLowerCase();
+
+  const filteredEntries = useMemo(() => {
+    if (filterQuery === "") return entries;
+    return entries.filter((entry) => entry.name.toLowerCase().includes(filterQuery));
+  }, [entries, filterQuery]);
+
+  const rootGroups = useMemo(() => {
+    if (loadState.kind !== "ready") return null;
+    const partitioned = partitionBrowseRoots(loadState.roots);
+    if (filterQuery === "") return partitioned;
+    const matchRoot = (root: WorkspaceBrowseRoot) =>
+      root.label.toLowerCase().includes(filterQuery) ||
+      root.path.toLowerCase().includes(filterQuery);
+    return {
+      workspace: partitioned.workspace.filter(matchRoot),
+      userFolders: partitioned.userFolders.filter(matchRoot),
+    };
+  }, [loadState, filterQuery]);
+
+  const filterActive = filterQuery !== "";
+  const filterEmpty =
+    filterActive &&
+    ((atRoots &&
+      (rootGroups?.workspace.length ?? 0) === 0 &&
+      (rootGroups?.userFolders.length ?? 0) === 0) ||
+      (!atRoots && filteredEntries.length === 0));
 
   const backToRoots =
     loadState.kind === "ready" && isBrowseRootPath(loadState.roots, currentBrowsePath);
@@ -305,7 +334,7 @@ export function useWorkspaceDirPickerState({
   return {
     resolvedLead,
     loadState,
-    entries,
+    entries: filteredEntries,
     currentBrowsePath,
     currentPathIsGitRepo,
     listingError,
@@ -333,5 +362,9 @@ export function useWorkspaceDirPickerState({
     probeError,
     canConfirm,
     requireGitRepository,
+    folderFilter,
+    setFolderFilter,
+    filterActive,
+    filterEmpty,
   };
 }

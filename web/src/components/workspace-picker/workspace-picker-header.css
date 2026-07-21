@@ -263,3 +263,49 @@
   color: var(--text-tertiary);
   opacity: 0.7;
 }
+
+.workspace-picker-filter {
+  position: relative;
+  flex-shrink: 0;
+  width: 100%;
+}
+
+@media (min-width: 40rem) {
+  .workspace-picker-filter {
+    width: 13rem;
+  }
+}
+
+.workspace-picker-filter-icon {
+  position: absolute;
+  left: var(--space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-tertiary);
+  pointer-events: none;
+}
+
+.workspace-picker-filter-input {
+  width: 100%;
+  height: 2.25rem;
+  padding: 0 var(--space-3) 0 2.25rem;
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--text-sm);
+  outline: none;
+  transition:
+    border-color var(--duration-normal) var(--ease-default),
+    box-shadow var(--duration-normal) var(--ease-default);
+}
+
+.workspace-picker-filter-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.workspace-picker-filter-input:focus-visible {
+  border-color: var(--border-interactive-hover);
+  box-shadow: var(--shadow-focus);
+}
