@@ -7,7 +7,6 @@ import {
 } from "../repositoryDisplay";
 import { worktreeGitCopy } from "../worktreeGitCopy";
 import {
-  WorktreesBranchIcon,
   WorktreesCheckIcon,
   WorktreesCopyIcon,
   WorktreesFolderGitIcon,
@@ -25,7 +24,6 @@ export function RepositoryListRow({ repository, onDelete }: Props) {
   const showHostPath =
     repository.host_path.trim() !== "" &&
     !repositoryPathsEquivalent(repository.path, repository.host_path);
-  const branchName = repository.main_branch_name.trim();
 
   const onCopyPath = async (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
@@ -49,12 +47,6 @@ export function RepositoryListRow({ repository, onDelete }: Props) {
             <span className="repositories-list-row__name" title={repoName}>
               {repoName}
             </span>
-            {branchName ? (
-              <span className="repositories-list-row__branch">
-                <WorktreesBranchIcon className="repositories-list-row__branch-icon" />
-                {branchName}
-              </span>
-            ) : null}
           </div>
           <div className="repositories-list-row__path-row">
             <code className="repositories-list-row__path" title={repository.path}>

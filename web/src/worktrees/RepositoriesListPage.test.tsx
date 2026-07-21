@@ -199,7 +199,7 @@ describe("RepositoriesListPage", () => {
     expect(screen.getByRole("button", { name: /^Register$/i })).toBeDisabled();
   });
 
-  it("lists one repository with branch badge and delete action", async () => {
+  it("lists one repository with delete action", async () => {
     server.use(
       gitRepositoriesListOk([
         gitRepositoryFactory({
@@ -214,7 +214,7 @@ describe("RepositoriesListPage", () => {
       await screen.findByRole("heading", { level: 1, name: /^repositories$/i }),
     ).toBeInTheDocument();
     expect(await screen.findByText("main", { selector: ".repositories-list-row__name" })).toBeInTheDocument();
-    expect(await screen.findByText("main", { selector: ".repositories-list-row__branch" })).toBeInTheDocument();
+    expect(screen.queryByText("main", { selector: ".repositories-list-row__branch" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /sync main/i })).not.toBeInTheDocument();
     expect(await screen.findByRole("button", { name: /delete main/i })).toBeInTheDocument();
     expect(await screen.findByText("1 of 1 repository")).toBeInTheDocument();
