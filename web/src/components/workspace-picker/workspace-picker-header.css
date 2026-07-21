@@ -1,13 +1,35 @@
 .workspace-picker-header {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
+  align-items: flex-start;
+  gap: var(--space-3);
   margin: 0;
+  padding: 0 0 var(--space-5);
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.workspace-picker-header-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--radius-lg);
+  background: var(--text-primary);
+  color: var(--bg-elevated);
+}
+
+.workspace-picker-header-copy {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  flex: 1;
 }
 
 .workspace-picker-title {
   margin: 0;
-  font-size: var(--text-xl);
+  font-size: var(--text-lg);
   font-weight: 600;
   letter-spacing: -0.022em;
   color: var(--text-primary);
@@ -16,8 +38,39 @@
 .workspace-picker-lead {
   margin: 0;
   font-size: var(--text-sm);
-  line-height: 1.5;
+  line-height: 1.55;
   color: var(--text-secondary);
+  text-wrap: pretty;
+}
+
+.workspace-picker-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  margin: calc(var(--space-1) * -1) calc(var(--space-2) * -1) 0 0;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  box-shadow: none;
+  min-height: auto;
+}
+
+.workspace-picker-close:hover {
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+  box-shadow: none;
+  transform: none;
+}
+
+.workspace-picker-close:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
 }
 
 .workspace-picker-hint {
@@ -34,6 +87,20 @@
 .workspace-picker-hint code {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
+}
+
+.workspace-picker-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+@media (min-width: 40rem) {
+  .workspace-picker-toolbar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
 }
 
 /* At the roots view there is no path yet — show a plain heading instead
@@ -78,36 +145,30 @@
   width: 100%;
 }
 
-/* Breadcrumb bar: persistent context for "where am I." Back + the full
-   crumb chain live together so the user can either step up one or jump
-   to any ancestor without re-clicking through folders. */
 .workspace-picker-crumbs {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--border-hairline);
-  border-radius: var(--radius-md);
-  background: var(--bg-subtle);
-  min-height: 2.75rem;
+  min-width: 0;
+  flex: 1;
 }
 
 .workspace-picker-back {
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
-  padding: var(--space-1) var(--space-2);
+  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-2);
   border: 1px solid var(--border-hairline);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: var(--surface-1);
   color: var(--text-secondary);
   font: inherit;
-  font-size: var(--text-xs);
+  font-size: var(--text-sm);
   font-weight: 500;
   line-height: 1.3;
   cursor: pointer;
   flex-shrink: 0;
-  min-height: auto;
+  min-height: 2.25rem;
   box-shadow: none;
   transform: none;
   transition:
@@ -161,8 +222,8 @@
   border: none;
   background: transparent;
   color: var(--text-secondary);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
+  font: inherit;
+  font-size: var(--text-sm);
   border-radius: var(--radius-sm);
   cursor: pointer;
   min-height: auto;
@@ -176,7 +237,7 @@
 }
 
 .workspace-picker-crumb:not(:disabled):hover {
-  background: var(--bg-elevated);
+  background: var(--bg-subtle);
   color: var(--text-primary);
 }
 
@@ -187,7 +248,7 @@
 
 .workspace-picker-crumb[aria-current="location"] {
   color: var(--text-primary);
-  font-weight: 500;
+  font-weight: 600;
   cursor: default;
 }
 
@@ -197,7 +258,8 @@
 }
 
 .workspace-picker-crumb-sep {
+  display: inline-flex;
+  align-items: center;
   color: var(--text-tertiary);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
+  opacity: 0.7;
 }

@@ -5,6 +5,11 @@ import {
   RootGroup,
 } from "./WorkspacePickerListParts";
 import {
+  PickerHeaderGitIcon,
+  PickerCloseIcon,
+  PickerInfoIcon,
+} from "./WorkspacePickerIcons";
+import {
   useWorkspaceDirPickerState,
   type WorkspaceDirPickerModalProps,
 } from "./useWorkspaceDirPickerState";
@@ -14,7 +19,7 @@ export function WorkspaceDirPickerModal({
   open,
   onClose,
   nested = false,
-  title = "Choose folder",
+  title,
   ...pickerProps
 }: WorkspaceDirPickerModalProps) {
   const picker = useWorkspaceDirPickerState({
@@ -22,6 +27,10 @@ export function WorkspaceDirPickerModal({
     onClose,
     ...pickerProps,
   });
+
+  const resolvedTitle =
+    title ??
+    (picker.requireGitRepository ? "Choose a repository" : "Choose folder");
 
   if (!open) return null;
 
@@ -36,12 +45,28 @@ export function WorkspaceDirPickerModal({
     >
       <div className="panel modal-sheet workspace-picker-modal">
         <header className="workspace-picker-header">
-          <h2 id="workspace-dir-picker-title" className="workspace-picker-title">
-            {title}
-          </h2>
-          <p id="workspace-dir-picker-lead" className="workspace-picker-lead">
-            {picker.resolvedLead}
-          </p>
+          <div
+            className="workspace-picker-header-icon"
+            aria-hidden="true"
+          >
+            <PickerHeaderGitIcon />
+          </div>
+          <div className="workspace-picker-header-copy">
+            <h2 id="workspace-dir-picker-title" className="workspace-picker-title">
+              {resolvedTitle}
+            </h2>
+            <p id="workspace-dir-picker-lead" className="workspace-picker-lead">
+              {picker.resolvedLead}
+            </p>
+          </div>
+          <button
+            type="button"
+            className="workspace-picker-close"
+            onClick={onClose}
+            aria-label="Close"
+          >
+            <PickerCloseIcon />
+          </button>
         </header>
 
         {picker.loadState.kind === "loading" ? (
@@ -59,19 +84,21 @@ export function WorkspaceDirPickerModal({
 
         {picker.loadState.kind === "ready" ? (
           <>
-            {picker.atRoots ? (
-              <p className="workspace-picker-section-label">
-                Choose a folder to browse from
-              </p>
-            ) : (
-              <PickerBreadcrumb
-                crumbs={picker.crumbs}
-                listingPending={picker.listingPending}
-                backToRoots={picker.backToRoots}
-                onBack={picker.goBack}
-                onJump={(path) => void picker.loadListing(path)}
-              />
-            )}
+            <div className="workspace-picker-toolbar">
+              {picker.atRoots ? (
+                <p className="workspace-picker-section-label">
+                  Choose a folder to browse from
+                </p>
+              ) : (
+                <PickerBreadcrumb
+                  crumbs={picker.crumbs}
+                  listingPending={picker.listingPending}
+                  backToRoots={picker.backToRoots}
+                  onBack={picker.goBack}
+                  onJump={(path) => void picker.loadListing(path)}
+                />
+              )}
+            </div>
 
             {picker.listingError ? (
               <p
@@ -82,7 +109,10 @@ export function WorkspaceDirPickerModal({
               </p>
             ) : null}
 
-            <ul className="workspace-picker-list" aria-busy={picker.listingPending || picker.probePending}>
+            <ul
+              className="workspace-picker-list"
+              aria-busy={picker.listingPending || picker.probePending}
+            >
               {picker.atRoots && picker.rootGroups ? (
                 <>
                   {picker.rootGroups.workspace.length > 0 ? (
@@ -142,7 +172,9 @@ export function WorkspaceDirPickerModal({
                     );
                   })
                 : null}
-              {!picker.atRoots && !picker.listingPending && picker.entries.length === 0 ? (
+              {!picker.atRoots &&
+              !picker.listingPending &&
+              picker.entries.length === 0 ? (
                 <li className="workspace-picker-empty">
                   <p className="workspace-picker-empty-title">
                     No subfolders inside this folder.
@@ -159,21 +191,28 @@ export function WorkspaceDirPickerModal({
             </ul>
 
             <footer className="workspace-picker-footer">
-              <div className="workspace-picker-selection" aria-live="polite">
-                <span className="workspace-picker-selection-label">
-                  {picker.selectionLabel}
-                </span>
+              <div className="workspace-picker-summary" aria-live="polite">
+                <div className="workspace-picker-summary-label">
+                  <PickerInfoIcon />
+                  <span>{picker.selectionLabel}</span>
+                </div>
                 <code
                   className="workspace-picker-selection-path"
                   data-empty={!picker.footerPath}
                 >
                   {picker.footerPath || picker.footerEmptyHint}
                 </code>
+                {picker.footerPath && picker.requireGitRepository ? (
+                  <p className="workspace-picker-summary-note">
+                    This folder is registered as the primary checkout. Linked
+                    worktrees will resolve to the same repository.
+                  </p>
+                ) : null}
                 {picker.remapped ? (
                   <>
                     <p className="workspace-picker-remap">
-                      You opened a linked folder. Hamix registers the repository at the path
-                      above.
+                      You opened a linked folder. Hamix registers the repository
+                      at the path above.
                     </p>
                     <p className="workspace-picker-opened">
                       Opened: <code>{picker.probedPath}</code>
@@ -181,7 +220,9 @@ export function WorkspaceDirPickerModal({
                   </>
                 ) : null}
                 {picker.probePending ? (
-                  <p className="workspace-picker-validation">Resolving repository…</p>
+                  <p className="workspace-picker-validation">
+                    Resolving repository…
+                  </p>
                 ) : null}
                 {!picker.probePending && picker.probeError ? (
                   <p
@@ -194,8 +235,14 @@ export function WorkspaceDirPickerModal({
                 {picker.validatingPath ? (
                   <p className="workspace-picker-validation">Checking folder…</p>
                 ) : null}
-                {!picker.validatingPath && picker.pathValidation && !picker.pathValidation.ok && picker.pathValidation.message ? (
-                  <p className="workspace-picker-validation workspace-picker-validation--error" role="alert">
+                {!picker.validatingPath &&
+                picker.pathValidation &&
+                !picker.pathValidation.ok &&
+                picker.pathValidation.message ? (
+                  <p
+                    className="workspace-picker-validation workspace-picker-validation--error"
+                    role="alert"
+                  >
                     {picker.pathValidation.message}
                   </p>
                 ) : null}

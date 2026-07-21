@@ -77,7 +77,7 @@ export function useWorkspaceDirPickerState({
   const resolvedLead =
     lead ??
     (requireGitRepository
-      ? "If you have multiple worktrees for the same Git repository, you can select any of them. Hamix identifies repositories by their primary checkout (the main working tree), so all linked worktrees are treated as part of the same repository."
+      ? "Select any worktree of a Git repository. Repositories are identified by their primary checkout, so all linked worktrees count as one."
       : "Open a folder to browse inside it. Confirm the folder you're in to register it.");
 
   const [loadState, setLoadState] = useState<LoadState>({ kind: "idle" });
@@ -289,7 +289,7 @@ export function useWorkspaceDirPickerState({
     ? (resolvedSelection?.mainPath ?? "")
     : currentBrowsePath;
   const footerEmptyHint = requireGitRepository
-    ? "Select a git repository"
+    ? "Select a repository above to continue."
     : "Open a folder to register it";
   const customValidationMet = !validatePath || (pathValidation?.ok === true && !validatingPath);
   const canConfirm = requireGitRepository

@@ -14,8 +14,13 @@
 @media (prefers-reduced-motion: reduce) {
   .workspace-picker-row,
   .workspace-picker-row-chevron,
+  .workspace-picker-row-open,
   .workspace-picker-crumb,
   .workspace-picker-back {
     transition: none;
+  }
+
+  .workspace-picker-row-open {
+    opacity: 1;
   }
 }
