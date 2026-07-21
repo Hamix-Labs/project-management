@@ -3,7 +3,14 @@ import { Button } from "@/components/ui";
 import { Modal } from "@/shared/Modal";
 import { MutationErrorBanner } from "@/shared/MutationErrorBanner";
 import { WorkspaceDirPickerModal } from "@/components/workspace-picker";
-import { gitDeleteErrorMessage } from "../gitDeleteErrors";
+import {
+  gitRegisterErrorMessage,
+  isDuplicateRegisterError,
+} from "../gitRegisterErrors";
+import {
+  isRepositoryAlreadyRegistered,
+  type RegisteredRepositoryPaths,
+} from "../isRepositoryAlreadyRegistered";
 import {
   RegisterAlertIcon,
   RegisterCheckIcon,
@@ -18,8 +25,10 @@ type Props = {
   open: boolean;
   pending: boolean;
   error: unknown;
+  registeredRepositories: readonly RegisteredRepositoryPaths[];
   onClose: () => void;
   onSubmit: (input: { path: string }) => void;
+  onClearError?: () => void;
 };
 
 function repoBasename(path: string): string {
@@ -32,8 +41,10 @@ export function RegisterRepositoryModal({
   open,
   pending,
   error,
+  registeredRepositories,
   onClose,
   onSubmit,
+  onClearError,
 }: Props) {
   const [path, setPath] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -50,7 +61,14 @@ export function RegisterRepositoryModal({
 
   const trimmed = path.trim();
   const hasSelection = trimmed !== "";
-  const errorMessage = error != null ? gitDeleteErrorMessage(error) : null;
+  const alreadyRegistered =
+    hasSelection && isRepositoryAlreadyRegistered(trimmed, registeredRepositories);
+  const duplicateError = isDuplicateRegisterError(error);
+  const blocked = alreadyRegistered || duplicateError;
+  const errorMessage =
+    error != null && !alreadyRegistered && !duplicateError
+      ? gitRegisterErrorMessage(error)
+      : null;
   const repoName = hasSelection ? repoBasename(trimmed) : null;
 
   return (
@@ -66,7 +84,7 @@ export function RegisterRepositoryModal({
           className="panel modal-sheet register-repo-modal"
           onSubmit={(e) => {
             e.preventDefault();
-            if (!trimmed) return;
+            if (!trimmed || blocked) return;
             onSubmit({ path: trimmed });
           }}
         >
@@ -133,12 +151,25 @@ export function RegisterRepositoryModal({
               </span>
             </button>
 
-            <div className="register-repo-modal__status">
+            <div
+              className={
+                blocked
+                  ? "register-repo-modal__status register-repo-modal__status--blocked"
+                  : "register-repo-modal__status"
+              }
+            >
               {hasSelection ? (
-                <>
-                  <RegisterStatusCheckIcon className="register-repo-modal__status-icon register-repo-modal__status-icon--ready" />
-                  <span>Ready to register this repository.</span>
-                </>
+                blocked ? (
+                  <>
+                    <RegisterAlertIcon className="register-repo-modal__status-icon register-repo-modal__status-icon--blocked" />
+                    <span>This repository is already registered.</span>
+                  </>
+                ) : (
+                  <>
+                    <RegisterStatusCheckIcon className="register-repo-modal__status-icon register-repo-modal__status-icon--ready" />
+                    <span>Ready to register this repository.</span>
+                  </>
+                )
               ) : (
                 <>
                   <RegisterAlertIcon className="register-repo-modal__status-icon" />
@@ -159,7 +190,7 @@ export function RegisterRepositoryModal({
             <Button
               type="submit"
               variant="primary"
-              disabled={pending || !hasSelection}
+              disabled={pending || !hasSelection || blocked}
               loading={pending}
             >
               Register
@@ -181,6 +212,7 @@ export function RegisterRepositoryModal({
         onSelect={(next) => {
           setPath(next);
           setPickerOpen(false);
+          onClearError?.();
         }}
       />
     </>
