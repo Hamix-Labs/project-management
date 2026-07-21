@@ -68,7 +68,7 @@ describe("WorkspaceDirPickerModal requireGit", () => {
     await waitFor(() => {
       expect(screen.getByRole("button", { name: /Use this repository/ })).toBeDisabled();
     });
-    expect(screen.getByText("Select a git repository")).toBeInTheDocument();
+    expect(screen.getByText("Select a repository above to continue.")).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: /^my-app/ }));
 
@@ -236,7 +236,7 @@ describe("WorkspaceDirPickerModal requireGit", () => {
               id: "repo-main",
               path: "/stale/repo",
               label: "my-repo",
-              category: "repository",
+              category: "install",
               available: false,
               unavailable_reason: "directory is not accessible",
             },

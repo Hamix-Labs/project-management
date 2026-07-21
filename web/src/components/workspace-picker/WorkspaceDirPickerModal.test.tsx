@@ -342,4 +342,77 @@ describe("WorkspaceDirPickerModal", () => {
     expect(screen.queryByText("Choose a folder to browse from")).not.toBeInTheDocument();
     fetchMock.mockRestore();
   });
+
+  it("filters folders in the current listing and clears filter on navigate", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.endsWith("/settings/workspace-roots")) {
+        return jsonResponse({
+          environment: "native",
+          roots: [{ id: "home", path: "/roots", label: "Home", category: "home", available: true }],
+        });
+      }
+      if (url.includes("/settings/browse-dirs")) {
+        return browseRouter({
+          "/roots": {
+            path: "/roots",
+            parent_path: "",
+            entries: [
+              {
+                name: "alpha-app",
+                path: "/roots/alpha-app",
+                has_children: false,
+                is_git_repo: true,
+              },
+              {
+                name: "beta-tools",
+                path: "/roots/beta-tools",
+                has_children: false,
+                is_git_repo: false,
+              },
+            ],
+          },
+          "/roots/alpha-app": {
+            path: "/roots/alpha-app",
+            parent_path: "/roots",
+            is_git_repo: true,
+            entries: [],
+          },
+        })(url);
+      }
+      return new Response("not found", { status: 404 });
+    });
+
+    render(
+      <WorkspaceDirPickerModal
+        open
+        currentPath=""
+        onClose={() => {}}
+        onSelect={() => {}}
+      />,
+    );
+
+    await userEvent.click(await screen.findByRole("button", { name: /Home/ }));
+    expect(await screen.findByRole("button", { name: /alpha-app/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /beta-tools/ })).toBeInTheDocument();
+
+    const filter = screen.getByRole("searchbox", { name: /Filter folders/i });
+    await userEvent.type(filter, "alpha");
+
+    expect(screen.getByRole("button", { name: /alpha-app/ })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /beta-tools/ })).not.toBeInTheDocument();
+
+    await userEvent.clear(filter);
+    await userEvent.type(filter, "zzz-missing");
+    expect(screen.getByText(/No folders match/)).toBeInTheDocument();
+
+    await userEvent.clear(filter);
+    await userEvent.click(screen.getByRole("button", { name: /alpha-app/ }));
+
+    await waitFor(() => {
+      expect(screen.getByText("/roots/alpha-app")).toBeInTheDocument();
+    });
+    expect(screen.getByRole("searchbox", { name: /Filter folders/i })).toHaveValue("");
+    fetchMock.mockRestore();
+  });
 });
