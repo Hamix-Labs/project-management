@@ -535,31 +535,6 @@
   cursor: not-allowed;
 }
 
-.worktrees-form-modal__picker {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: var(--space-3);
-  padding: var(--space-4);
-  border: 1px solid var(--border-hairline);
-  border-radius: var(--radius-md);
-  background: var(--bg-subtle);
-}
-
-.worktrees-form-modal__picker-label {
-  margin: 0;
-  font-size: var(--text-sm);
-  font-weight: 500;
-  color: var(--text-secondary);
-}
-
-.worktrees-form-modal__picker-hint {
-  margin: 0 0 var(--space-2);
-  font-size: var(--text-sm);
-  line-height: 1.45;
-  color: var(--text-tertiary);
-}
-
 .worktrees-form-modal__parent-choice {
   display: flex;
   flex-direction: column;
@@ -610,31 +585,6 @@
   line-height: 1.45;
   color: var(--text-primary);
   word-break: break-all;
-}
-
-.worktrees-form-modal__selected {
-  margin: 0;
-  padding: var(--space-3);
-  border: 1px solid var(--border-hairline);
-  border-radius: var(--radius-md);
-  background: var(--bg-elevated);
-  font-size: var(--text-sm);
-  line-height: 1.45;
-  color: var(--text-secondary);
-  word-break: break-all;
-}
-
-.worktrees-form-modal__selected code {
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-  color: var(--text-primary);
-}
-
-.worktrees-form-modal__picker-empty {
-  margin: 0;
-  font-size: var(--text-sm);
-  line-height: 1.45;
-  color: var(--text-tertiary);
 }
 
 .worktrees-form-modal__inventory-prompt {
