@@ -3,6 +3,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
+import { ApiError } from "@/api";
 import { ROUTER_FUTURE_FLAGS } from "@/lib/routerFutureFlags";
 import { ModalStackProvider } from "@/shared/ModalStackContext";
 import { gitRepositoryFactory } from "@/test/factories/git";
@@ -109,6 +110,7 @@ describe("RepositoriesListPage", () => {
           open
           pending={false}
           error={null}
+          registeredRepositories={[]}
           onClose={() => {}}
           onSubmit={() => {}}
         />
@@ -131,6 +133,7 @@ describe("RepositoriesListPage", () => {
           open
           pending={false}
           error={null}
+          registeredRepositories={[]}
           onClose={() => {}}
           onSubmit={onSubmit}
         />
@@ -151,6 +154,80 @@ describe("RepositoriesListPage", () => {
     expect(onSubmit).toHaveBeenCalledWith({ path: "/repos/hamix" });
   });
 
+  it("blocks register when the selected path is already registered", async () => {
+    const onSubmit = vi.fn();
+    render(
+      <ModalStackProvider>
+        <RegisterRepositoryModal
+          open
+          pending={false}
+          error={null}
+          registeredRepositories={[
+            { path: "/repos/hamix", host_path: "C:/Users/dev/Documents/hamix" },
+          ]}
+          onClose={() => {}}
+          onSubmit={onSubmit}
+        />
+      </ModalStackProvider>,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: /Choose repository/i }));
+    await userEvent.click(screen.getByRole("button", { name: /Use this repository/i }));
+
+    expect(await screen.findByText("/repos/hamix")).toBeInTheDocument();
+    expect(screen.getByText(/This repository is already registered/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Ready to register this repository/i)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Register$/i })).toBeDisabled();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /^Register$/i }));
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("shows already-registered status for a duplicate mutation error without Ready", async () => {
+    const { rerender } = render(
+      <ModalStackProvider>
+        <RegisterRepositoryModal
+          open
+          pending={false}
+          error={null}
+          registeredRepositories={[]}
+          onClose={() => {}}
+          onSubmit={() => {}}
+        />
+      </ModalStackProvider>,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: /Choose repository/i }));
+    await userEvent.click(screen.getByRole("button", { name: /Use this repository/i }));
+    expect(await screen.findByText(/Ready to register this repository/i)).toBeInTheDocument();
+
+    rerender(
+      <ModalStackProvider>
+        <RegisterRepositoryModal
+          open
+          pending={false}
+          error={
+            new ApiError("repository already registered (request abc)", {
+              status: 409,
+              code: "duplicate",
+              requestId: "abc",
+            })
+          }
+          registeredRepositories={[]}
+          onClose={() => {}}
+          onSubmit={() => {}}
+        />
+      </ModalStackProvider>,
+    );
+
+    expect(screen.getByText(/This repository is already registered/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Ready to register this repository/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/request abc/i)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Register$/i })).toBeDisabled();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
   it("clears the selected path when the modal is closed and reopened", async () => {
     const { rerender } = render(
       <ModalStackProvider>
@@ -158,6 +235,7 @@ describe("RepositoriesListPage", () => {
           open
           pending={false}
           error={null}
+          registeredRepositories={[]}
           onClose={() => {}}
           onSubmit={() => {}}
         />
@@ -174,6 +252,7 @@ describe("RepositoriesListPage", () => {
           open={false}
           pending={false}
           error={null}
+          registeredRepositories={[]}
           onClose={() => {}}
           onSubmit={() => {}}
         />
@@ -187,6 +266,7 @@ describe("RepositoriesListPage", () => {
           open
           pending={false}
           error={null}
+          registeredRepositories={[]}
           onClose={() => {}}
           onSubmit={() => {}}
         />

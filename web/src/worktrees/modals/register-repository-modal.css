@@ -241,6 +241,14 @@
   color: var(--success);
 }
 
+.register-repo-modal__status--blocked {
+  color: var(--danger);
+}
+
+.register-repo-modal__status-icon--blocked {
+  color: var(--danger);
+}
+
 .register-repo-modal__error {
   margin: 0;
 }

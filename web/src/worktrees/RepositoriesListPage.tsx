@@ -194,8 +194,12 @@ export function RepositoriesListPage() {
           open={registerOpen}
           pending={actions.mutations.createRepository.isPending}
           error={actions.mutations.createRepository.error}
+          registeredRepositories={repositories}
           onClose={() => {
             setRegisterOpen(false);
+            actions.mutations.createRepository.reset();
+          }}
+          onClearError={() => {
             actions.mutations.createRepository.reset();
           }}
           onSubmit={(input) => {
