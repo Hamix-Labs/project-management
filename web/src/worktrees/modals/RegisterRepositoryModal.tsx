@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui";
 import { Modal } from "@/shared/Modal";
 import { MutationErrorBanner } from "@/shared/MutationErrorBanner";
@@ -37,6 +37,14 @@ export function RegisterRepositoryModal({
 }: Props) {
   const [path, setPath] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
+
+  // Parent keeps this mounted while closed; clear selection so reopen starts empty.
+  useEffect(() => {
+    if (!open) {
+      setPath("");
+      setPickerOpen(false);
+    }
+  }, [open]);
 
   if (!open) return null;
 

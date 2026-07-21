@@ -151,6 +151,54 @@ describe("RepositoriesListPage", () => {
     expect(onSubmit).toHaveBeenCalledWith({ path: "/repos/hamix" });
   });
 
+  it("clears the selected path when the modal is closed and reopened", async () => {
+    const { rerender } = render(
+      <ModalStackProvider>
+        <RegisterRepositoryModal
+          open
+          pending={false}
+          error={null}
+          onClose={() => {}}
+          onSubmit={() => {}}
+        />
+      </ModalStackProvider>,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: /Choose repository/i }));
+    await userEvent.click(screen.getByRole("button", { name: /Use this repository/i }));
+    expect(await screen.findByText("/repos/hamix")).toBeInTheDocument();
+
+    rerender(
+      <ModalStackProvider>
+        <RegisterRepositoryModal
+          open={false}
+          pending={false}
+          error={null}
+          onClose={() => {}}
+          onSubmit={() => {}}
+        />
+      </ModalStackProvider>,
+    );
+    expect(screen.queryByRole("heading", { name: /Register repository/i })).not.toBeInTheDocument();
+
+    rerender(
+      <ModalStackProvider>
+        <RegisterRepositoryModal
+          open
+          pending={false}
+          error={null}
+          onClose={() => {}}
+          onSubmit={() => {}}
+        />
+      </ModalStackProvider>,
+    );
+
+    expect(await screen.findByRole("button", { name: /Choose repository/i })).toBeInTheDocument();
+    expect(screen.getByText(/No repository selected yet/i)).toBeInTheDocument();
+    expect(screen.queryByText("/repos/hamix")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Register$/i })).toBeDisabled();
+  });
+
   it("lists one repository with branch badge and delete action", async () => {
     server.use(
       gitRepositoriesListOk([
