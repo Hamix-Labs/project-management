@@ -57,6 +57,11 @@
   width: min(100%, 52rem);
 }
 
+.modal-shell--wide:has(.workspace-picker-modal) {
+  width: min(100%, 48rem);
+  max-height: min(90vh, 56rem);
+}
+
 /* Modal scrollbars: match app chrome instead of OS-default contrast spikes. */
 .modal-shell,
 .modal-shell > .panel {

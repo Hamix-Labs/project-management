@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { ROUTER_FUTURE_FLAGS } from "@/lib/routerFutureFlags";
 import { ModalStackProvider } from "@/shared/ModalStackContext";
 import { gitRepositoryFactory } from "@/test/factories/git";
@@ -16,6 +16,28 @@ import { server } from "@/test/server";
 import { RepositoriesListPage } from "./RepositoriesListPage";
 import { RegisterRepositoryModal } from "./modals/RegisterRepositoryModal";
 import { worktreeGitCopy } from "./worktreeGitCopy";
+
+vi.mock("@/components/workspace-picker", () => ({
+  WorkspaceDirPickerModal: ({
+    open,
+    onSelect,
+    onClose,
+  }: {
+    open: boolean;
+    onSelect: (path: string) => void;
+    onClose: () => void;
+  }) =>
+    open ? (
+      <div role="dialog" aria-label="Choose a repository">
+        <button type="button" onClick={() => onSelect("/repos/hamix")}>
+          Use this repository
+        </button>
+        <button type="button" onClick={onClose}>
+          Cancel picker
+        </button>
+      </div>
+    ) : null,
+}));
 
 const repoId = FACTORY_GIT_REPO_ID;
 const repoId2 = "00000000-0000-4000-8000-000000000011";
@@ -55,6 +77,9 @@ describe("RepositoriesListPage", () => {
     expect(
       await screen.findByRole("button", { name: /Choose repository/i }),
     ).toBeInTheDocument();
+    expect(screen.getByText(/No repository selected yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/^Browse$/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Register$/i })).toBeDisabled();
   });
 
   it("shows only an error callout when repository fetch fails with Not Found", async () => {
@@ -77,7 +102,7 @@ describe("RepositoriesListPage", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders register repository modal when open", () => {
+  it("renders register repository modal empty chrome when open", () => {
     render(
       <ModalStackProvider>
         <RegisterRepositoryModal
@@ -89,7 +114,41 @@ describe("RepositoriesListPage", () => {
         />
       </ModalStackProvider>,
     );
+    expect(screen.getByRole("heading", { name: /Register repository/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Choose repository/i })).toBeInTheDocument();
+    expect(screen.getByText(/Browse your folders to select a Git repository/i)).toBeInTheDocument();
+    expect(screen.getByText(/^Browse$/)).toBeInTheDocument();
+    expect(screen.getByText(/No repository selected yet/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Register$/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /^Close$/i })).toBeInTheDocument();
+  });
+
+  it("shows selected chrome after choosing a repository path", async () => {
+    const onSubmit = vi.fn();
+    render(
+      <ModalStackProvider>
+        <RegisterRepositoryModal
+          open
+          pending={false}
+          error={null}
+          onClose={() => {}}
+          onSubmit={onSubmit}
+        />
+      </ModalStackProvider>,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: /Choose repository/i }));
+    await userEvent.click(screen.getByRole("button", { name: /Use this repository/i }));
+
+    expect(await screen.findByText("hamix")).toBeInTheDocument();
+    expect(screen.getByText("/repos/hamix")).toBeInTheDocument();
+    expect(screen.getByText(/^Change$/)).toBeInTheDocument();
+    expect(screen.getByText(/Ready to register this repository/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Change repository/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Register$/i })).toBeEnabled();
+
+    await userEvent.click(screen.getByRole("button", { name: /^Register$/i }));
+    expect(onSubmit).toHaveBeenCalledWith({ path: "/repos/hamix" });
   });
 
   it("lists one repository with branch badge and delete action", async () => {

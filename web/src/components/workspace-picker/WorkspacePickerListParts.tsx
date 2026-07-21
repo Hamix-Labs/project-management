@@ -1,6 +1,14 @@
 import { Fragment } from "react";
 import type { WorkspaceBrowseRoot } from "@/api/settingsBrowse";
 import type { Crumb } from "./workspacePickerPathUtils";
+import {
+  PickerCheckIcon,
+  PickerChevronLeftIcon,
+  PickerChevronRightIcon,
+  PickerFolderGitIcon,
+  PickerFolderIcon,
+  PickerGitBranchIcon,
+} from "./WorkspacePickerIcons";
 
 type RootGroupProps = {
   label: string;
@@ -56,7 +64,7 @@ export function PickerBreadcrumb({
         disabled={listingPending}
         aria-label={backToRoots ? "Back to starting locations" : "Go up one folder"}
       >
-        <BackIcon />
+        <PickerChevronLeftIcon />
         <span>Back</span>
       </button>
       <ol className="workspace-picker-crumb-path">
@@ -66,7 +74,7 @@ export function PickerBreadcrumb({
             <Fragment key={crumb.path}>
               {idx > 0 ? (
                 <li aria-hidden="true" className="workspace-picker-crumb-sep">
-                  /
+                  <PickerChevronRightIcon />
                 </li>
               ) : null}
               <li>
@@ -92,7 +100,7 @@ export function PickerBreadcrumb({
 type FolderRowProps = {
   name: string;
   sublabel?: string;
-  /** When set, shows git status before the chevron. */
+  /** When set, shows git status chrome (subtitle + badge). */
   gitRepoStatus?: boolean;
   disabled?: boolean;
   selected?: boolean;
@@ -110,6 +118,48 @@ export function FolderRow({
   onClick,
   onOpen,
 }: FolderRowProps) {
+  const resolvedSublabel =
+    sublabel ??
+    (gitRepoStatus === true
+      ? "Git repository"
+      : gitRepoStatus === false
+        ? "Not a repository"
+        : undefined);
+
+  const body = (
+    <>
+      <span
+        className={
+          selected
+            ? "workspace-picker-row-tile workspace-picker-row-tile--selected"
+            : gitRepoStatus === true
+              ? "workspace-picker-row-tile workspace-picker-row-tile--git"
+              : "workspace-picker-row-tile"
+        }
+      >
+        {selected ? (
+          <PickerCheckIcon />
+        ) : gitRepoStatus === true ? (
+          <PickerFolderGitIcon />
+        ) : (
+          <PickerFolderIcon />
+        )}
+      </span>
+      <span className="workspace-picker-row-main">
+        <span className="workspace-picker-row-name">{name}</span>
+        {resolvedSublabel ? (
+          <span className="workspace-picker-row-sub">{resolvedSublabel}</span>
+        ) : null}
+      </span>
+      {gitRepoStatus === true ? (
+        <span className="workspace-picker-git-badge" aria-label="Git repository">
+          <PickerGitBranchIcon />
+          git
+        </span>
+      ) : null}
+    </>
+  );
+
   if (onOpen) {
     return (
       <div
@@ -126,16 +176,7 @@ export function FolderRow({
           disabled={disabled}
           aria-pressed={selected}
         >
-          <FolderIcon />
-          <span className="workspace-picker-row-main">
-            <span className="workspace-picker-row-name">{name}</span>
-            {sublabel ? (
-              <span className="workspace-picker-row-sub">{sublabel}</span>
-            ) : null}
-          </span>
-          {gitRepoStatus !== undefined ? (
-            <GitRepoStatusIcon isGitRepo={gitRepoStatus} />
-          ) : null}
+          {body}
         </button>
         <button
           type="button"
@@ -144,7 +185,7 @@ export function FolderRow({
           disabled={disabled}
           aria-label={`Open ${name}`}
         >
-          <ChevronIcon />
+          <PickerChevronRightIcon className="workspace-picker-row-chevron" />
         </button>
       </div>
     );
@@ -160,115 +201,8 @@ export function FolderRow({
       disabled={disabled}
       aria-pressed={selected || undefined}
     >
-      <FolderIcon />
-      <span className="workspace-picker-row-main">
-        <span className="workspace-picker-row-name">{name}</span>
-        {sublabel ? (
-          <span className="workspace-picker-row-sub">{sublabel}</span>
-        ) : null}
-      </span>
-      {gitRepoStatus !== undefined ? (
-        <GitRepoStatusIcon isGitRepo={gitRepoStatus} />
-      ) : null}
-      <ChevronIcon />
+      {body}
+      <PickerChevronRightIcon className="workspace-picker-row-chevron" />
     </button>
-  );
-}
-
-function GitRepoStatusIcon({ isGitRepo }: { isGitRepo: boolean }) {
-  return (
-    <span
-      className={
-        isGitRepo
-          ? "workspace-picker-git-icon workspace-picker-git-icon--yes"
-          : "workspace-picker-git-icon workspace-picker-git-icon--no"
-      }
-      title={isGitRepo ? "Git repository" : "Not a git repository"}
-      aria-label={isGitRepo ? "Git repository" : "Not a git repository"}
-    >
-      {isGitRepo ? <GitRepoBadge /> : <NoGitRepoIcon />}
-    </span>
-  );
-}
-
-function FolderIcon() {
-  return (
-    <svg
-      className="workspace-picker-row-icon"
-      viewBox="0 0 20 20"
-      width="18"
-      height="18"
-      aria-hidden="true"
-    >
-      <path
-        d="M2.75 5.5A1.75 1.75 0 0 1 4.5 3.75h3.13c.46 0 .9.18 1.23.5l1.12 1.06H15.5c.97 0 1.75.78 1.75 1.75v7c0 .97-.78 1.75-1.75 1.75h-11A1.75 1.75 0 0 1 2.75 14V5.5Z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function ChevronIcon() {
-  return (
-    <svg
-      className="workspace-picker-row-chevron"
-      viewBox="0 0 16 16"
-      width="14"
-      height="14"
-      aria-hidden="true"
-    >
-      <path
-        d="m6 4 4 4-4 4"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function BackIcon() {
-  return (
-    <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">
-      <path
-        d="M10 3 5 8l5 5"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function GitRepoBadge() {
-  return <span className="workspace-picker-git-badge">git</span>;
-}
-
-function NoGitRepoIcon() {
-  return (
-    <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
-      <circle
-        cx="8"
-        cy="8"
-        r="5.75"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.25"
-      />
-      <path
-        d="M5.25 5.25 10.75 10.75"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.25"
-        strokeLinecap="round"
-      />
-    </svg>
   );
 }

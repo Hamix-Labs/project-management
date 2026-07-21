@@ -33,7 +33,6 @@ web/src/components/project-context/ProjectContextPicker.tsx
 web/src/components/rich-prompt/MentionRangePanel.tsx
 web/src/components/rich-prompt/useRichPromptEditorController.ts
 web/src/components/workspace-picker/useWorkspaceDirPickerState.ts
-web/src/components/workspace-picker/workspace-picker.css
 web/src/dev/uiTestModeDemoWire.ts
 web/src/hooks/useComposeGitAssignment.ts
 web/src/projects/ProjectContextImportMemoryModal.tsx

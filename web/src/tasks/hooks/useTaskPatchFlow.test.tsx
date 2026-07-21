@@ -67,6 +67,10 @@ describe("useTaskPatchFlow", () => {
       initial_prompt: "<p>hi</p>",
       status: "ready",
       priority: "medium",
+      project_id: null,
+      project_context_item_ids: [],
+      tags: [],
+      milestone: null,
       cursor_model: "",
     });
   });
@@ -91,6 +95,10 @@ describe("useTaskPatchFlow", () => {
       initial_prompt: "<p>hi</p>",
       status: "ready",
       priority: "medium",
+      project_id: null,
+      project_context_item_ids: [],
+      tags: [],
+      milestone: null,
       cursor_model: "",
       pickup_not_before: "2026-04-22T13:00:00.000Z",
     });
