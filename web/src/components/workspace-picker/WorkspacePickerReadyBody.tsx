@@ -172,23 +172,6 @@ function WorkspacePickerFooter({
         >
           {picker.footerPath || picker.footerEmptyHint}
         </code>
-        {picker.footerPath && picker.requireGitRepository ? (
-          <p className="workspace-picker-summary-note">
-            This folder is registered as the primary checkout. Linked worktrees
-            will resolve to the same repository.
-          </p>
-        ) : null}
-        {picker.remapped ? (
-          <>
-            <p className="workspace-picker-remap">
-              You opened a linked folder. Hamix registers the repository at the
-              path above.
-            </p>
-            <p className="workspace-picker-opened">
-              Opened: <code>{picker.probedPath}</code>
-            </p>
-          </>
-        ) : null}
         {picker.probePending ? (
           <p className="workspace-picker-validation">Resolving repository…</p>
         ) : null}

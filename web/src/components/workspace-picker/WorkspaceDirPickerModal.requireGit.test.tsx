@@ -83,7 +83,7 @@ describe("WorkspaceDirPickerModal requireGit", () => {
     fetchMock.mockRestore();
   });
 
-  it("resolves a linked git folder to the main path and shows a remap note", async () => {
+  it("resolves a linked git folder to the main path for registration", async () => {
     const onSelect = vi.fn();
     const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
       const url = String(input);
@@ -139,11 +139,7 @@ describe("WorkspaceDirPickerModal requireGit", () => {
     await waitFor(() => {
       expect(screen.getByText("/roots/my-app")).toBeInTheDocument();
     });
-    expect(
-      screen.getByText(/You opened a linked folder\. Hamix registers the repository at the path above\./),
-    ).toBeInTheDocument();
-    expect(screen.getByText(/Opened:/)).toBeInTheDocument();
-    expect(screen.getByText("/roots/wt-linked")).toBeInTheDocument();
+    expect(screen.getByText("Repository to register")).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: /Use this repository/ }));
     expect(onSelect).toHaveBeenCalledWith("/roots/my-app");
