@@ -8,6 +8,7 @@ import {
   PickerHeaderGitIcon,
   PickerCloseIcon,
   PickerInfoIcon,
+  PickerSearchIcon,
 } from "./WorkspacePickerIcons";
 import {
   useWorkspaceDirPickerState,
@@ -98,6 +99,17 @@ export function WorkspaceDirPickerModal({
                   onJump={(path) => void picker.loadListing(path)}
                 />
               )}
+              <div className="workspace-picker-filter">
+                <PickerSearchIcon className="workspace-picker-filter-icon" />
+                <input
+                  type="search"
+                  value={picker.folderFilter}
+                  onChange={(e) => picker.setFolderFilter(e.target.value)}
+                  placeholder="Filter folders"
+                  aria-label="Filter folders"
+                  className="workspace-picker-filter-input"
+                />
+              </div>
             </div>
 
             {picker.listingError ? (
@@ -113,7 +125,14 @@ export function WorkspaceDirPickerModal({
               className="workspace-picker-list"
               aria-busy={picker.listingPending || picker.probePending}
             >
-              {picker.atRoots && picker.rootGroups ? (
+              {picker.filterEmpty ? (
+                <li className="workspace-picker-empty">
+                  <p className="workspace-picker-empty-title">
+                    No folders match &ldquo;{picker.folderFilter.trim()}&rdquo;.
+                  </p>
+                </li>
+              ) : null}
+              {!picker.filterEmpty && picker.atRoots && picker.rootGroups ? (
                 <>
                   {picker.rootGroups.workspace.length > 0 ? (
                     <RootGroup
@@ -133,7 +152,7 @@ export function WorkspaceDirPickerModal({
                   ) : null}
                 </>
               ) : null}
-              {!picker.atRoots
+              {!picker.filterEmpty && !picker.atRoots
                 ? picker.entries.map((entry) => {
                     const selectGit =
                       picker.requireGitRepository && entry.is_git_repo === true;
@@ -172,7 +191,8 @@ export function WorkspaceDirPickerModal({
                     );
                   })
                 : null}
-              {!picker.atRoots &&
+              {!picker.filterEmpty &&
+              !picker.atRoots &&
               !picker.listingPending &&
               picker.entries.length === 0 ? (
                 <li className="workspace-picker-empty">
