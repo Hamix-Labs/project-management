@@ -12,7 +12,6 @@ import { DEFAULT_DOCUMENT_TITLE } from "../../shared/useDocumentTitle";
 import { setupAppTest } from "@/test/integration/appHarness";
 import {
   taskChecklist,
-  taskChecklistFlaky,
   taskChecklistItemPatch,
   taskGet,
   taskGetFlaky,
@@ -305,9 +304,16 @@ describe("TaskDetailPage", () => {
   it("shows checklist fetch error with try again and refetches", async () => {
     const user = userEvent.setup();
     const task = taskDetail("cf", "Checklist fetch");
+    // Keep failing across remount/refetch until the alert is visible, then allow success.
+    let failChecklist = true;
     server.use(
       taskGet(task.id, task),
-      taskChecklistFlaky(task.id),
+      http.get(`/tasks/${task.id}/checklist`, () => {
+        if (failChecklist) {
+          return new HttpResponse(null, { status: 500 });
+        }
+        return HttpResponse.json({ items: [] });
+      }),
       taskEventsListEmpty(task.id),
     );
 
@@ -322,6 +328,7 @@ describe("TaskDetailPage", () => {
     expect(
       await within(checklistSection as HTMLElement).findByRole("alert"),
     ).toBeInTheDocument();
+    failChecklist = false;
     await user.click(
       within(checklistSection as HTMLElement).getByRole("button", {
         name: /try again/i,

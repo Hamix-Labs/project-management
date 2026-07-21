@@ -1,8 +1,10 @@
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ROUTER_FUTURE_FLAGS } from "@/lib/routerFutureFlags";
+import { projectsListEmpty } from "@/test/handlers/projects";
+import { server } from "@/test/server";
 import type { useTasksApp } from "../hooks/useTasksApp";
 import { TasksAppProvider } from "../app/TasksAppProvider";
 import { TaskHome } from "./TaskHome";
@@ -68,6 +70,10 @@ function renderHome(app: App) {
 }
 
 describe("TaskHome", () => {
+  beforeEach(() => {
+    server.use(projectsListEmpty());
+  });
+
   it("renders the task list without KPI stats cards", () => {
     renderHome(makeApp());
 
