@@ -165,18 +165,20 @@ describe("TaskDetailPage", () => {
       screen.getByRole("button", { name: /edit task/i }),
     ).toBeInTheDocument();
 
-    const details = document.querySelector(".task-detail-prompt-details");
+    const details = document.querySelector(
+      ".task-detail-prompt .task-detail-collapsible",
+    );
     expect(details).not.toBeNull();
     expect(details).not.toHaveAttribute("open");
 
     expect(
-      await screen.findByText(/show full initial prompt/i),
+      screen.getByRole("heading", { name: /^initial prompt$/i }),
     ).toBeInTheDocument();
+    expect(screen.queryByText("Secret long body text")).not.toBeVisible();
 
-    await user.click(screen.getByText(/show full initial prompt/i));
+    await user.click(screen.getByRole("heading", { name: /^initial prompt$/i }));
     expect(details).toHaveAttribute("open");
     expect(screen.getByText("Secret long body text")).toBeVisible();
-    expect(screen.getByText(/hide initial prompt/i)).toBeInTheDocument();
   });
 
   it("sanitizes unsafe HTML from initial prompt before rendering", async () => {
@@ -210,7 +212,12 @@ describe("TaskDetailPage", () => {
     expect(
       await screen.findByRole("heading", { name: /^empty prompt$/i }),
     ).toBeInTheDocument();
-    expect(screen.queryByText(/show full initial prompt/i)).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /^initial prompt$/i }),
+    ).toBeInTheDocument();
+    expect(
+      document.querySelector(".task-detail-prompt .task-detail-collapsible"),
+    ).toBeNull();
     const empty = screen.getByText("—");
     expect(empty).toBeInTheDocument();
     expect(empty).toHaveClass("task-detail-prompt-empty");

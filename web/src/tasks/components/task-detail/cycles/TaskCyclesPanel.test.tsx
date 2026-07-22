@@ -179,4 +179,41 @@ describe("TaskCyclesPanel", () => {
     );
   });
 
+  it("defaults open and collapses the cycles body from the section header", async () => {
+    const user = userEvent.setup();
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      okJSON({
+        task_id: "task-1",
+        cycles: [
+          {
+            id: "cyc-1",
+            task_id: "task-1",
+            attempt_seq: 1,
+            status: "succeeded",
+            started_at: "2026-04-18T10:00:00.000Z",
+            ended_at: "2026-04-18T10:00:45.000Z",
+            triggered_by: "user",
+            meta: {},
+          },
+        ],
+        limit: 50,
+        has_more: false,
+      }),
+    );
+
+    renderPanel();
+
+    const list = await screen.findByTestId("task-cycles-list");
+    expect(list).toBeVisible();
+    const details = document.querySelector(
+      ".task-cycles-panel .task-detail-collapsible",
+    );
+    expect(details).toHaveAttribute("open");
+    expect(screen.getByText("1")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("heading", { name: /^execution cycles$/i }));
+    expect(details).not.toHaveAttribute("open");
+    expect(list).not.toBeVisible();
+  });
+
 });

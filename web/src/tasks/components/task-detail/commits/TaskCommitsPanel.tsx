@@ -5,6 +5,7 @@ import {
   EmptyStateCommitsGlyph,
 } from "@/shared/EmptyState";
 import { useTaskCommits } from "@/tasks/hooks/useTaskCommits";
+import { TaskDetailCollapsibleSection } from "../layout/TaskDetailCollapsibleSection";
 import { TaskDetailGitBranchGlyph } from "../layout/TaskDetailActionGlyphs";
 import { CommitList } from "./CommitList";
 
@@ -27,21 +28,18 @@ export function TaskCommitsPanel({ taskId, enabled = true }: Props) {
     return (last.branch || first.branch || "").trim();
   }, [commits]);
 
-  return (
-    <section
-      className="task-detail-section task-commits-panel"
-      data-testid="task-commits-panel"
-      aria-labelledby="task-commits-heading"
-    >
-      <h3 id="task-commits-heading" className="task-detail-section-heading">
-        <span>Commits</span>
-        {!commitsQuery.isPending && !commitsQuery.isError ? (
-          <span className="task-detail-section-count" aria-hidden="true">
-            {commits.length}
-          </span>
-        ) : null}
-      </h3>
+  const count =
+    !commitsQuery.isPending && !commitsQuery.isError ? commits.length : null;
 
+  return (
+    <TaskDetailCollapsibleSection
+      className="task-commits-panel"
+      title="Commits"
+      headingId="task-commits-heading"
+      count={count}
+      defaultOpen
+      data-testid="task-commits-panel"
+    >
       {commitsQuery.isPending ? (
         <CommitsLoading />
       ) : commitsQuery.isError ? (
@@ -87,7 +85,7 @@ export function TaskCommitsPanel({ taskId, enabled = true }: Props) {
           <CommitList taskId={taskId} commits={commits} showAttempt />
         </>
       )}
-    </section>
+    </TaskDetailCollapsibleSection>
   );
 }
 

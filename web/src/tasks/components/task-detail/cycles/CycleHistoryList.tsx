@@ -4,8 +4,6 @@ import { useNow } from "@/shared/useNow";
 import {
   cycleStatusLabel,
   cycleStatusFillClass,
-  cycleRunnerChipClass,
-  formatRunnerModel,
   phaseLabel,
   phaseStatusFillClass,
   phaseStatusLabel,
@@ -88,12 +86,6 @@ function CycleRow({
           </span>
           <span className="task-cycle-row-trigger muted">
             by {cycle.triggered_by}
-          </span>
-          <span
-            className={`cell-pill ${cycleRunnerChipClass()}`}
-            data-testid="task-cycle-row-runner"
-          >
-            {formatRunnerModel(cycle.cycle_meta)}
           </span>
           {isLiveAbove ? (
             <span

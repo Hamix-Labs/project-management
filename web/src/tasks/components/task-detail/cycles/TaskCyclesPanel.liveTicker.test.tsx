@@ -99,7 +99,7 @@ describe("TaskCyclesPanel live ticker", () => {
     expect(within(list).getByLabelText(/shown in the live ticker above/i)).toBeInTheDocument();
   });
 
-  it("renders a runner/model chip on each cycle row and the live ticker (Phase 4b of plan)", async () => {
+  it("renders a runner/model chip on the live ticker only", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
       const url = reqUrl(input);
       if (url.endsWith("/tasks/task-1/cycles")) {
@@ -174,14 +174,7 @@ describe("TaskCyclesPanel live ticker", () => {
     );
 
     const list = screen.getByTestId("task-cycles-list");
-    const rowRunners = within(list).getAllByTestId("task-cycle-row-runner");
-    // Both rows render a runner chip (running cycle is also in history).
-    expect(rowRunners.length).toBeGreaterThanOrEqual(2);
-    // The terminal history cycle resolved to sonnet-4.5 even though
-    // the task's intent was empty — chip reads the effective value.
-    expect(rowRunners.map((el) => el.textContent)).toEqual(
-      expect.arrayContaining(["Cursor CLI · opus-4", "Cursor CLI · sonnet-4.5"]),
-    );
+    expect(within(list).queryByTestId("task-cycle-row-runner")).not.toBeInTheDocument();
   });
 
   it("falls back to a 'between phases' line when the running cycle has no in-flight phase", async () => {
