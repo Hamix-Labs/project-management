@@ -76,7 +76,6 @@ export function RegisterRepositoryModal({
       <Modal
         onClose={onClose}
         labelledBy="register-repo-title"
-        describedBy="register-repo-lead"
         busy={pending}
         dismissibleWhileBusy={false}
       >
@@ -96,10 +95,6 @@ export function RegisterRepositoryModal({
               <h2 id="register-repo-title" className="register-repo-modal__title">
                 Register repository
               </h2>
-              <p id="register-repo-lead" className="register-repo-modal__lead">
-                Point Hamix at a Git repository on disk. Task workspaces are allocated later, when
-                you create a task on this repository.
-              </p>
             </div>
             <button
               type="button"

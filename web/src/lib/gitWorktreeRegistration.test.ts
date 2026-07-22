@@ -10,6 +10,7 @@ const linked: GitWorktree = {
   id: "00000000-0000-4000-8000-000000000020",
   repository_id: "00000000-0000-4000-8000-000000000010",
   path: "/repo/feature",
+  host_path: "",
   name: "feature",
   is_main: false,
   branch_id: "00000000-0000-4000-8000-000000000030",

@@ -51,7 +51,31 @@ describe("resolveTaskGitBinding", () => {
     ).resolves.toEqual({
       repo: "/repo/main",
       worktree: "/repo/feature",
+      openPath: "/repo/feature",
       branch: "feature/commits",
+    });
+  });
+
+  it("prefers host_path for openPath when present", async () => {
+    mockListWorktrees.mockResolvedValue([
+      gitWorktreeFactory({
+        id: FACTORY_GIT_WORKTREE_ID,
+        path: "/container/wt",
+        host_path: "/Users/a/.hamix/wt",
+        branch_id: FACTORY_GIT_BRANCH_ID,
+      }),
+    ]);
+    mockListBranches.mockResolvedValue([
+      gitBranchFactory({ id: FACTORY_GIT_BRANCH_ID, name: "feature/x" }),
+    ]);
+
+    await expect(
+      resolveTaskGitBinding(FACTORY_GIT_WORKTREE_ID, [
+        gitRepositoryFactory({ id: FACTORY_GIT_REPO_ID, path: "/repo/main" }),
+      ]),
+    ).resolves.toMatchObject({
+      worktree: "/container/wt",
+      openPath: "/Users/a/.hamix/wt",
     });
   });
 

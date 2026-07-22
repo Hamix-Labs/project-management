@@ -10,7 +10,8 @@ const repoShaPattern = /^[0-9a-fA-F]{7,40}$/;
 
 export const repoQueryKeys = {
   all: ["repo"] as const,
-  diff: (sha: string) => [...repoQueryKeys.all, "diff", sha] as const,
+  diff: (worktreeId: string, sha: string) =>
+    [...repoQueryKeys.all, "diff", worktreeId, sha] as const,
 };
 
 /**
@@ -356,18 +357,25 @@ export function parseRepoDiffResponse(raw: unknown): RepoDiffResult {
   return out;
 }
 
-/** Unified diff for one commit, or null if repo is not configured (409/503). */
+/** Unified diff for one commit, or null if worktree repo is unavailable (409/503). */
 export async function fetchRepoCommitDiff(
   sha: string,
-  options?: { signal?: AbortSignal },
+  options: { worktreeId: string; signal?: AbortSignal },
 ): Promise<RepoDiffResult | null> {
   const s = assertRepoSha(sha);
-  const params = new URLSearchParams({ sha: s });
+  const worktreeId = options.worktreeId.trim();
+  if (worktreeId === "") {
+    throw new Error("worktree_id is required");
+  }
+  const params = new URLSearchParams({
+    sha: s,
+    worktree_id: worktreeId,
+  });
   const res = await fetchWithTimeout(
     `/repo/diff?${params}`,
     {
       headers: { Accept: "application/json" },
-      signal: options?.signal,
+      signal: options.signal,
     },
     { timeoutMs: repoFetchTimeoutMs },
   );

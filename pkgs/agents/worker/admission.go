@@ -114,8 +114,44 @@ func (w *Worker) openRunningCycle(ctx context.Context, taskID string) (*cyclesdo
 	return nil, nil
 }
 
+// healRunningAfterTerminalCycle flips status=running → done when the latest
+// cycle already succeeded but the final task status write failed (e.g. jsonb
+// serialization). Returns true when the row was healed or is no longer stuck.
+func (w *Worker) healRunningAfterTerminalCycle(ctx context.Context, taskID string) bool {
+	cycles, err := w.store.ListCyclesForTask(ctx, taskID, 0)
+	if err != nil {
+		if !errors.Is(err, taskcoredomain.ErrNotFound) {
+			slog.Warn("agent worker heal list cycles failed", "cmd", calltrace.LogCmd,
+				"operation", "agent.worker.Worker.healRunningAfterTerminalCycle.err",
+				"task_id", taskID, "err", err)
+		}
+		return false
+	}
+	var latest *cyclesdomain.TaskCycle
+	for i := range cycles {
+		c := &cycles[i]
+		if latest == nil || c.AttemptSeq > latest.AttemptSeq {
+			latest = c
+		}
+	}
+	if latest == nil || latest.Status != cyclesdomain.CycleStatusSucceeded {
+		return false
+	}
+	done := taskcoredomain.StatusDone
+	if _, err := w.store.Update(ctx, taskID, taskcorestore.UpdateTaskInput{Status: &done}, taskcoredomain.ActorAgent); err != nil {
+		slog.Warn("agent worker heal running→done failed", "cmd", calltrace.LogCmd,
+			"operation", "agent.worker.Worker.healRunningAfterTerminalCycle.update_err",
+			"task_id", taskID, "cycle_id", latest.ID, "err", err)
+		return false
+	}
+	slog.Info("agent worker healed running task after succeeded cycle", "cmd", calltrace.LogCmd,
+		"operation", "agent.worker.Worker.healRunningAfterTerminalCycle",
+		"task_id", taskID, "cycle_id", latest.ID)
+	return true
+}
+
 const (
-	admissionRunningWithoutCycleReason  = "running_without_open_cycle"
+	admissionRunningWithoutCycleReason   = "running_without_open_cycle"
 	admissionRunningMissingBindingReason = "running_missing_git_binding"
 )
 
@@ -194,6 +230,9 @@ func (w *Worker) processOne(parentCtx context.Context, task taskcoredomain.Task)
 			return
 		}
 		if cycle == nil {
+			if w.healRunningAfterTerminalCycle(parentCtx, fresh.ID) {
+				return
+			}
 			slog.Warn("running task without open cycle at dequeue", "cmd", calltrace.LogCmd,
 				"operation", "agent.worker.Worker.processOne.no_open_cycle", "task_id", task.ID)
 			w.failStuckRunning(parentCtx, fresh.ID, admissionRunningWithoutCycleReason, nil)

@@ -68,17 +68,29 @@ describe("parseGitApi", () => {
     ).toThrow(/is_main must be a boolean/);
   });
 
-  it("parses single worktree", () => {
-    expect(
-      parseGitWorktree({
-        id: "00000000-0000-4000-8000-000000000020",
-        repository_id: sampleRepo.id,
-        path: "/repo/wt",
-        name: "feature",
-        is_main: false,
-        created_at: "2026-06-22T12:00:00Z",
-      }).name,
-    ).toBe("feature");
+  it("parses worktree host_path when present", () => {
+    const wt = parseGitWorktree({
+      id: "00000000-0000-4000-8000-000000000020",
+      repository_id: sampleRepo.id,
+      path: "/container/wt",
+      host_path: "/Users/a/.hamix/wt",
+      name: "feature",
+      is_main: false,
+      created_at: "2026-06-22T12:00:00Z",
+    });
+    expect(wt.host_path).toBe("/Users/a/.hamix/wt");
+  });
+
+  it("defaults missing worktree host_path to empty string", () => {
+    const wt = parseGitWorktree({
+      id: "00000000-0000-4000-8000-000000000020",
+      repository_id: sampleRepo.id,
+      path: "/repo/wt",
+      name: "feature",
+      is_main: false,
+      created_at: "2026-06-22T12:00:00Z",
+    });
+    expect(wt.host_path).toBe("");
   });
 
   it("parses branch list", () => {

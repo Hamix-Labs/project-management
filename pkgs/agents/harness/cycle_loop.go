@@ -195,7 +195,10 @@ func (h *Harness) runCycleLoopFinalizeSuccess(
 		if state.cycle.cycleStarted {
 			h.bestEffortTerminate(parentCtx, state, task.ID, cyclesdomain.CycleStatusFailed, "finalize_effects_failed")
 		} else {
-			h.bestEffortFailTask(parentCtx, task.ID)
+			// Cycle already terminal: retry the intended task status (done/failed).
+			// Do not force StatusFailed after a succeeded cycle — that orphans a
+			// successful run as "failed" when only the status write failed.
+			_ = h.transitionTask(parentCtx, task.ID, effects.TaskStatus, "finalize_effects_retry")
 		}
 	}
 }

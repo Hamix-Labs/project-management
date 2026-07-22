@@ -6,7 +6,7 @@ export const worktreeGitCopy = {
   listColumnActions: "Actions",
   searchRepositoriesPlaceholder: "Search by name or path…",
   repositoriesPageSubtitle:
-    "Register repositories; Hamix allocates worktrees when you create tasks.",
+    "Point Hamix at a Git repository on disk. Task workspaces are allocated later, when you create a task on this repository.",
   repositoriesSearchCount: (filtered: number, total: number) => {
     const noun = total === 1 ? "repository" : "repositories";
     return `${filtered} of ${total} ${noun}`;

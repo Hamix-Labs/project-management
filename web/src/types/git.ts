@@ -14,6 +14,7 @@ export type GitWorktree = {
   id: string;
   repository_id: string;
   path: string;
+  host_path: string;
   name: string;
   is_main: boolean;
   branch_id?: string;
