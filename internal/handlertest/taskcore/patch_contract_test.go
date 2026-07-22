@@ -109,11 +109,8 @@ func TestHTTP_patchTask_400ErrorStrings(t *testing.T) {
 	}
 }
 
-// TestHTTP_patchTask_doneBlockedByIncompleteChecklist pins the checklist-must-
-// be-complete precondition string. Adds a checklist item directly via the store
-// (so we don't depend on POST /tasks/{id}/checklist/items wiring), leaves it
-// uncompleted, and asserts the bare 400 phrase from
-// validateChecklistCompleteTx propagates.
+// TestHTTP_patchTask_doneRequiresApprove pins that free-form PATCH status=done
+// is rejected; completion must go through POST /tasks/{id}/approve.
 func TestHTTP_patchTask_doneBlockedByIncompleteChecklist(t *testing.T) {
 	srv, st := handlertest.NewCreateServerWithStore(t)
 	defer srv.Close()
@@ -131,7 +128,7 @@ func TestHTTP_patchTask_doneBlockedByIncompleteChecklist(t *testing.T) {
 	if err := json.Unmarshal(raw, &errBody); err != nil {
 		t.Fatal(err)
 	}
-	const want = "all checklist items must be done before marking this task done"
+	const want = "status done requires POST /tasks/{id}/approve"
 	if errBody.Error != want {
 		t.Fatalf("error=%q want %q (docs/api.md)", errBody.Error, want)
 	}

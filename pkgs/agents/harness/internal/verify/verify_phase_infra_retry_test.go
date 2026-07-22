@@ -100,7 +100,7 @@ func TestWorker_VerifyPhase_carriesPassesAcrossRetries(t *testing.T) {
 		ReportDir:    reportDir,
 		VerifyRunner: verifyHook,
 	})
-	h.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusDone)
+	h.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusReview)
 	<-done
 	cancel()
 	bg := context.Background()

@@ -68,7 +68,7 @@ func TestWorker_VerifyPhase_persistsAndPublishesProgressEventsUnderVerifyPhaseSe
 		ReportDir:    reportDir,
 		VerifyRunner: verifyHook,
 	})
-	h.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusDone)
+	h.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusReview)
 	<-done
 	cancel()
 	if !verifyProgressFired.Load() {

@@ -161,7 +161,7 @@ func TestDecideVerifyDisabledLegacy(t *testing.T) {
 func TestDecideFinalizeSuccess(t *testing.T) {
 	t.Parallel()
 	ok := DecideFinalizeSuccess(nil)
-	if ok.CycleStatus != cyclesdomain.CycleStatusSucceeded || ok.TaskStatus != taskcoredomain.StatusDone {
+	if ok.CycleStatus != cyclesdomain.CycleStatusSucceeded || ok.TaskStatus != taskcoredomain.StatusReview {
 		t.Fatalf("got %+v", ok)
 	}
 	fail := DecideFinalizeSuccess(errSentinel{})

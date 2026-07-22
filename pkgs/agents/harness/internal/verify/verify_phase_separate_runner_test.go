@@ -61,7 +61,7 @@ func TestWorker_VerifyPhase_usesSeparateRunnerWhenConfigured(t *testing.T) {
 		ReportDir:    reportDir,
 		VerifyRunner: verifyHook,
 	})
-	h.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusDone)
+	h.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusReview)
 	<-done
 	cancel()
 	execCalls := execRunner.Calls()

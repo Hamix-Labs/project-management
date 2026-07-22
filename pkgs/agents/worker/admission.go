@@ -114,7 +114,7 @@ func (w *Worker) openRunningCycle(ctx context.Context, taskID string) (*cyclesdo
 	return nil, nil
 }
 
-// healRunningAfterTerminalCycle flips status=running → done when the latest
+// healRunningAfterTerminalCycle flips status=running → review when the latest
 // cycle already succeeded but the final task status write failed (e.g. jsonb
 // serialization). Returns true when the row was healed or is no longer stuck.
 func (w *Worker) healRunningAfterTerminalCycle(ctx context.Context, taskID string) bool {
@@ -137,9 +137,9 @@ func (w *Worker) healRunningAfterTerminalCycle(ctx context.Context, taskID strin
 	if latest == nil || latest.Status != cyclesdomain.CycleStatusSucceeded {
 		return false
 	}
-	done := taskcoredomain.StatusDone
-	if _, err := w.store.Update(ctx, taskID, taskcorestore.UpdateTaskInput{Status: &done}, taskcoredomain.ActorAgent); err != nil {
-		slog.Warn("agent worker heal running→done failed", "cmd", calltrace.LogCmd,
+	review := taskcoredomain.StatusReview
+	if _, err := w.store.Update(ctx, taskID, taskcorestore.UpdateTaskInput{Status: &review}, taskcoredomain.ActorAgent); err != nil {
+		slog.Warn("agent worker heal running→review failed", "cmd", calltrace.LogCmd,
 			"operation", "agent.worker.Worker.healRunningAfterTerminalCycle.update_err",
 			"task_id", taskID, "cycle_id", latest.ID, "err", err)
 		return false

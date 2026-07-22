@@ -107,7 +107,7 @@ func TestWorker_NoDoubleCycleOnRedelivery(t *testing.T) {
 	}
 
 	close(br.release)
-	h.waitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusDone)
+	h.waitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusReview)
 	cancel()
 	if err := <-done; err != nil {
 		t.Fatalf("worker exit err: %v", err)
@@ -137,7 +137,7 @@ func TestWorker_NilNotifierIsNoOp(t *testing.T) {
 		done <- w.Run(ctx)
 	}()
 
-	h.waitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusDone)
+	h.waitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusReview)
 	cancel()
 	if err := <-done; err != nil {
 		t.Fatalf("worker exit err: %v", err)
@@ -182,7 +182,7 @@ func TestWorker_QueueDrainsAfterHappyRun(t *testing.T) {
 	}
 
 	_, done := h.startWorker(ctx, wrappedRunner, worker.Options{})
-	h.waitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusDone)
+	h.waitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusReview)
 	cancel()
 	if err := <-done; err != nil {
 		t.Fatalf("worker exit err: %v", err)

@@ -41,6 +41,23 @@ func (a *API) RequestTaskRetry(ctx context.Context, in taskcorestore.RequestRetr
 	return updated, nil
 }
 
+func (a *API) RequestTaskApprove(ctx context.Context, taskID string, by taskcoredomain.Actor) (*taskcoredomain.Task, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.RequestTaskApprove", "task_id", taskID)
+	updated, prev, err := a.taskcore.RequestTaskApprove(ctx, taskID, by)
+	if err != nil {
+		return nil, err
+	}
+	if updated == nil {
+		return nil, nil
+	}
+	if updated.Status == taskcoredomain.StatusDone && prev != taskcoredomain.StatusDone {
+		a.notifyUnblockedDependents(ctx, updated.ID)
+	}
+	now := time.Now().UTC()
+	a.applyNotifyDecision(ctx, *updated, scheduling.DecideNotifyAfterReadyTransition(prev, updated, false, now))
+	return updated, nil
+}
+
 func (a *API) Create(ctx context.Context, in taskcorestore.CreateTaskInput, by taskcoredomain.Actor) (*taskcoredomain.Task, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.Create")
 	t, err := a.taskcore.Create(ctx, in, by)

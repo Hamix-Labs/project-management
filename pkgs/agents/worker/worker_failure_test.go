@@ -71,9 +71,9 @@ func TestWorker_StaleTaskAtDequeue_ackAndSkip(t *testing.T) {
 	tsk := h.createReadyTask(ctx, "stale")
 
 	// Move the task off `ready` AFTER it was enqueued by Create.
-	doneStatus := taskcoredomain.StatusDone
-	if _, err := h.store.Update(ctx, tsk.ID, taskcorestore.UpdateTaskInput{Status: &doneStatus}, taskcoredomain.ActorUser); err != nil {
-		t.Fatalf("update to done: %v", err)
+	staleStatus := taskcoredomain.StatusOnHold
+	if _, err := h.store.Update(ctx, tsk.ID, taskcorestore.UpdateTaskInput{Status: &staleStatus}, taskcoredomain.ActorUser); err != nil {
+		t.Fatalf("update to on_hold: %v", err)
 	}
 
 	r := runnerfake.New()
@@ -174,7 +174,7 @@ func TestWorker_PanicInRunner_terminatesAndContinues(t *testing.T) {
 	_, done := h.startWorker(ctx, pr, worker.Options{})
 
 	h.waitTaskStatus(ctx, first.ID, taskcoredomain.StatusFailed)
-	h.waitTaskStatus(ctx, second.ID, taskcoredomain.StatusDone)
+	h.waitTaskStatus(ctx, second.ID, taskcoredomain.StatusReview)
 
 	cancel()
 	if err := <-done; err != nil {

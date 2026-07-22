@@ -20,7 +20,7 @@ Work hierarchy is **Project → Task**. Tasks may have:
 | `title` | string | Required after trim. |
 | `initial_prompt` | string (HTML) | TipTap rich text; `@`-mentions validated against the task's `worktree_id` when present. |
 | `worktree_id` | string \| null | FK to `git_worktrees.id`; set by server allocate on create from `repository_id` (ADR-0081). |
-| `status` | enum | `ready` / `running` / `blocked` / `review` / `done` / `failed` / `on_hold`. Default `ready`. `on_hold` is operator-set: pickup is gated on `status = ready` so an `on_hold` task is intentionally kept out of the worker's queue until the operator flips it back to `ready` (PATCH `/tasks/{id}`). |
+| `status` | enum | `ready` / `running` / `blocked` / `review` / `done` / `failed` / `on_hold`. Default `ready`. After successful agent execute+verify the task enters **`review`** (awaiting human approval). Only `POST /tasks/{id}/approve` may set **`done`**. `on_hold` is operator-set: pickup is gated on `status = ready` so an `on_hold` task is intentionally kept out of the worker's queue until the operator flips it back to `ready` (PATCH `/tasks/{id}`). |
 | `pending_retry` | JSON \| null | Ephemeral operator intent between `POST /tasks/{id}/retry` and worker pickup. `{ mode: fresh|resume, parent_cycle_id }`. Not exposed on the HTTP task JSON (`json:"-"`); consumed and cleared atomically when the worker transitions `ready→running`. |
 | `priority` | enum | `low` / `medium` / `high` / `critical`. Required at create. |
 | `project_id` | string \| null | Project membership. Required on create when `worktree_id` is set; must belong to the same repo as the worktree. |
@@ -227,7 +227,7 @@ Per-task acceptance requirements. Stored in `task_checklist_items` (definitions:
 
 ### Worker verification loop
 
-Verify runs after every successful execute **only when the task has at least one criterion**. Tasks with **zero criteria** (legacy rows created before the create-time requirement) skip verify and write no checklist completion rows — a successful execute alone marks the task `done`.
+Verify runs after every successful execute **only when the task has at least one criterion**. Tasks with **zero criteria** (legacy rows created before the create-time requirement) skip verify and write no checklist completion rows — a successful execute alone marks the task `review` (awaiting human approval via `POST /tasks/{id}/approve`).
 
 1. **Execute** — prompt prepends all criteria with stable ids and the **absolute** worker-managed path the agent must write its report to (`<worker-managed dir>/<cycle_id>/criteria-report.json`, see "Report file contracts" below). `claimed_done` in the report is an assertion only — not final acceptance.
 2. **Gate** — criteria with `claimed_done: false` fail immediately (`verified_by=agent_self`); no verify pass for those ids.

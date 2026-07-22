@@ -36,8 +36,8 @@ func TestHarness_HappyPath_emitsTrailingPublishAfterTerminalStatus(t *testing.T)
 		TaskUpdatedNotifier: taskUpdated,
 	}), tsk)
 	<-done
-	final := env.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusDone)
-	if final.Status != taskcoredomain.StatusDone {
+	final := env.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusReview)
+	if final.Status != taskcoredomain.StatusReview {
 		t.Fatalf("task status = %q, want done", final.Status)
 	}
 
@@ -45,7 +45,7 @@ func TestHarness_HappyPath_emitsTrailingPublishAfterTerminalStatus(t *testing.T)
 	if len(statuses) == 0 {
 		t.Fatal("notifier received zero publishes")
 	}
-	if got := statuses[len(statuses)-1]; got != taskcoredomain.StatusDone {
+	if got := statuses[len(statuses)-1]; got != taskcoredomain.StatusReview {
 		t.Fatalf("last publish observed task status = %q, want done; full snapshot=%+v", got, statuses)
 	}
 	if cycles[len(cycles)-1] == "" {
@@ -82,7 +82,7 @@ func TestHarness_PublishesRunnerProgressWithCycleAndPhaseContext(t *testing.T) {
 
 	done := env.RunHarness(ctx, env.NewHarness(r, harness.Options{ProgressNotifier: progress}), tsk)
 	<-done
-	env.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusDone)
+	env.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusReview)
 
 	calls := progress.Snapshot()
 	if len(calls) != 1 {

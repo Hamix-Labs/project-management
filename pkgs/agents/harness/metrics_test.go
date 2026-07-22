@@ -32,7 +32,7 @@ func TestHarness_RunMetrics_observesHappyPathOnce(t *testing.T) {
 	metrics := metricsfake.New()
 	done := env.RunHarness(ctx, env.NewHarness(r, harness.Options{Metrics: metrics}), tsk)
 	<-done
-	env.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusDone)
+	env.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusReview)
 
 	calls := metrics.SnapshotRuns()
 	if len(calls) != 1 {
@@ -134,7 +134,7 @@ func TestHarness_RunMetrics_recordsEffectiveModelLabel(t *testing.T) {
 			metrics := metricsfake.New()
 			done := env.RunHarness(ctx, env.NewHarness(r, harness.Options{Metrics: metrics}), tsk)
 			<-done
-			env.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusDone)
+			env.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusReview)
 
 			calls := metrics.SnapshotRuns()
 			if len(calls) != 1 {
@@ -161,5 +161,5 @@ func TestHarness_RunMetrics_nilMetricsIsNoop(t *testing.T) {
 
 	done := env.RunHarness(ctx, env.NewHarness(r, harness.Options{}), tsk)
 	<-done
-	env.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusDone)
+	env.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusReview)
 }

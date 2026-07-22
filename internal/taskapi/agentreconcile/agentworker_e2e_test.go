@@ -84,7 +84,7 @@ func TestAgentWorkerE2E_readyTaskRunsThroughReconcileAndWorker(t *testing.T) {
 		workerDone <- w.Run(workerCtx)
 	}()
 
-	waitTaskStatusE2E(t, rootCtx, st, tsk.ID, taskcoredomain.StatusDone)
+	waitTaskStatusE2E(t, rootCtx, st, tsk.ID, taskcoredomain.StatusReview)
 
 	// Let the worker complete its post-TerminateCycle writes
 	// (transitionTask + AckAfterRecv) before snapshotting queue state.
@@ -191,7 +191,7 @@ func TestAgentWorkerE2E_worktreeBinding(t *testing.T) {
 		workerDone <- w.Run(workerCtx)
 	}()
 
-	waitTaskStatusE2E(t, rootCtx, st, tsk.ID, taskcoredomain.StatusDone)
+	waitTaskStatusE2E(t, rootCtx, st, tsk.ID, taskcoredomain.StatusReview)
 	time.Sleep(e2eIdleSettleWindow)
 
 	workerCancel()
@@ -262,8 +262,8 @@ func TestAgentWorkerE2E_sameWorktreeSequential(t *testing.T) {
 		workerDone <- w.Run(workerCtx)
 	}()
 
-	waitTaskStatusE2E(t, rootCtx, st, taskA.ID, taskcoredomain.StatusDone)
-	waitTaskStatusE2E(t, rootCtx, st, taskB.ID, taskcoredomain.StatusDone)
+	waitTaskStatusE2E(t, rootCtx, st, taskA.ID, taskcoredomain.StatusReview)
+	waitTaskStatusE2E(t, rootCtx, st, taskB.ID, taskcoredomain.StatusReview)
 
 	calls := r.Calls()
 	if len(calls) != 2 {
@@ -339,8 +339,8 @@ func TestAgentWorkerE2E_differentWorktreesParallel(t *testing.T) {
 		workerDone <- pool.Run(workerCtx)
 	}()
 
-	waitTaskStatusE2E(t, rootCtx, st, taskA.ID, taskcoredomain.StatusDone)
-	waitTaskStatusE2E(t, rootCtx, st, taskB.ID, taskcoredomain.StatusDone)
+	waitTaskStatusE2E(t, rootCtx, st, taskA.ID, taskcoredomain.StatusReview)
+	waitTaskStatusE2E(t, rootCtx, st, taskB.ID, taskcoredomain.StatusReview)
 
 	calls := r.Calls()
 	if len(calls) != 2 {
@@ -416,8 +416,11 @@ func TestAgentWorkerE2E_dependencyBlocksUntilUpstreamDone(t *testing.T) {
 		workerDone <- w.Run(workerCtx)
 	}()
 
-	waitTaskStatusE2E(t, rootCtx, st, upstream.ID, taskcoredomain.StatusDone)
-	waitTaskStatusE2E(t, rootCtx, st, dependent.ID, taskcoredomain.StatusDone)
+	waitTaskStatusE2E(t, rootCtx, st, upstream.ID, taskcoredomain.StatusReview)
+	if _, err := st.RequestTaskApprove(rootCtx, upstream.ID, taskcoredomain.ActorUser); err != nil {
+		t.Fatalf("approve upstream: %v", err)
+	}
+	waitTaskStatusE2E(t, rootCtx, st, dependent.ID, taskcoredomain.StatusReview)
 
 	calls := r.Calls()
 	if len(calls) != 2 {

@@ -92,6 +92,11 @@ func (s *Store) RequestTaskRetry(ctx context.Context, in RequestRetryInput, by d
 	return tasks.RequestTaskRetry(ctx, s.db, in, by)
 }
 
+func (s *Store) RequestTaskApprove(ctx context.Context, taskID string, by domain.Actor) (*domain.Task, domain.Status, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcore.store.RequestTaskApprove", "task_id", taskID)
+	return tasks.RequestTaskApprove(ctx, s.db, taskID, by)
+}
+
 func (s *Store) Create(ctx context.Context, in CreateTaskInput, by domain.Actor) (*domain.Task, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcore.store.Create")
 	return tasks.Create(ctx, s.db, in, by)

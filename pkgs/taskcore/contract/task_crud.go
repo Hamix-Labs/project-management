@@ -34,6 +34,7 @@ type TaskDepsStore interface {
 // TaskOpsStore is the retry/gate/binding-ops surface for tasks.
 type TaskOpsStore interface {
 	RequestTaskRetry(ctx context.Context, in RequestRetryInput, by domain.Actor) (*domain.Task, error)
+	RequestTaskApprove(ctx context.Context, taskID string, by domain.Actor) (*domain.Task, error)
 	ApplyTaskGateAction(ctx context.Context, taskID string, action GateAction, by domain.Actor) (*domain.Task, error)
 	ValidateTaskWorktreeBinding(ctx context.Context, projectID *string, worktreeID string) error
 }
