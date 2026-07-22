@@ -53,14 +53,6 @@
   color: var(--text-primary);
 }
 
-.register-repo-modal__lead {
-  margin: 0;
-  font-size: var(--text-sm);
-  line-height: 1.55;
-  color: var(--text-secondary);
-  text-wrap: pretty;
-}
-
 .register-repo-modal__close {
   display: inline-flex;
   align-items: center;
