@@ -1,6 +1,10 @@
 import { GitContextMeta } from "../commits/GitContextMeta";
 import { useCopyToClipboard } from "../commits/useCopyToClipboard";
 import { useTaskGitBinding } from "@/tasks/hooks/useTaskGitBinding";
+import {
+  TaskDetailCheckGlyph,
+  TaskDetailCopyGlyph,
+} from "./TaskDetailActionGlyphs";
 import { OpenInEditorMenu } from "./OpenInEditorMenu";
 
 type Props = {
@@ -36,6 +40,11 @@ export function TaskDetailGitBinding({ worktreeId, projectId }: Props) {
               pathCopy.copied ? "Copied worktree path" : "Copy worktree path"
             }
           >
+            {pathCopy.copied ? (
+              <TaskDetailCheckGlyph className="task-detail-action-glyph" />
+            ) : (
+              <TaskDetailCopyGlyph className="task-detail-action-glyph" />
+            )}
             {pathCopy.copyLabel}
           </button>
           <OpenInEditorMenu openPath={openPath} />

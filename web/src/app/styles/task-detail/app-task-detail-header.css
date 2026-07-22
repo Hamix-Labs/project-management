@@ -199,7 +199,9 @@ button.task-detail-open-in-trigger.btn-utility[aria-expanded="true"] {
 }
 
 .task-detail-open-in-item {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
   padding: 0.45rem 0.7rem;
   font-size: var(--text-sm);
   font-weight: 500;
@@ -220,6 +222,13 @@ button.task-detail-open-in-trigger.btn-utility[aria-expanded="true"] {
 
 .task-detail-open-in-item[data-preferred="true"] {
   font-weight: 600;
+}
+
+.task-detail-action-glyph {
+  flex-shrink: 0;
+  display: block;
+  width: 1rem;
+  height: 1rem;
 }
 
 

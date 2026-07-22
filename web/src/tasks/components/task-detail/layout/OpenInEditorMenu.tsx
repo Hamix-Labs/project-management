@@ -6,6 +6,7 @@ import {
   setLastEditorId,
 } from "@/tasks/task-git/editors/lastEditorPreference";
 import type { EditorId } from "@/tasks/task-git/editors/registry";
+import { TaskDetailExternalLinkGlyph } from "./TaskDetailActionGlyphs";
 
 type Props = {
   openPath: string;
@@ -70,6 +71,7 @@ export function OpenInEditorMenu({ openPath }: Props) {
           setOpen((wasOpen) => !wasOpen);
         }}
       >
+        <TaskDetailExternalLinkGlyph className="task-detail-action-glyph" />
         Open in
         <span className="task-detail-open-in-chevron" aria-hidden="true">
           ▾
@@ -100,6 +102,7 @@ export function OpenInEditorMenu({ openPath }: Props) {
                     setOpen(false);
                   }}
                 >
+                  <TaskDetailExternalLinkGlyph className="task-detail-action-glyph" />
                   {editor.label}
                 </a>
               </li>
