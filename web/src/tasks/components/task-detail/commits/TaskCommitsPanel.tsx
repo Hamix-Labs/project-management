@@ -38,7 +38,12 @@ export function TaskCommitsPanel({ taskId, enabled = true }: Props) {
       aria-labelledby="task-commits-heading"
     >
       <h3 id="task-commits-heading" className="task-detail-section-heading">
-        Commits
+        <span>Commits</span>
+        {!commitsQuery.isPending && !commitsQuery.isError ? (
+          <span className="task-detail-section-count" aria-hidden="true">
+            {commits.length}
+          </span>
+        ) : null}
       </h3>
 
       {commitsQuery.isPending ? (

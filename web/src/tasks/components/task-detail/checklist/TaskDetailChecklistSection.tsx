@@ -90,6 +90,14 @@ export function TaskDetailChecklistSection({
             id="task-checklist-heading"
           >
             <span>Done criteria</span>
+            {showProgress ? (
+              <span
+                className="task-detail-section-count"
+                aria-hidden="true"
+              >
+                {doneCount} of {totalCount}
+              </span>
+            ) : null}
           </h3>
           <FieldRequirementBadge requirement="optional" />
         </div>
