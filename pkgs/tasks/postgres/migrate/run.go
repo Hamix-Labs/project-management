@@ -82,5 +82,8 @@ func Run(ctx context.Context, db *gorm.DB, deps Deps) error {
 	if err := migrateOrphanRepoProjects(ctx, db); err != nil {
 		return fmt.Errorf("orphan repo projects: %w", err)
 	}
+	if err := migrateUnlinkedProjects(ctx, db); err != nil {
+		return fmt.Errorf("unlinked projects: %w", err)
+	}
 	return nil
 }
