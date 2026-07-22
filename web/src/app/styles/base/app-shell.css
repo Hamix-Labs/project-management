@@ -197,7 +197,7 @@
   /* Inspiration mark: soft top sheen over purple → deeper violet diagonal. */
   background-image: var(--brand-mark-sheen), var(--brand-mark-gradient);
   color: var(--text-on-brand);
-  font-size: var(--text-base, 1rem);
+  font-size: var(--text-md);
   font-weight: 900;
   letter-spacing: 0;
   line-height: 1;
