@@ -16,7 +16,7 @@
 
 .register-repo-modal__header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: var(--space-3);
   margin: 0;
   padding: 0 0 var(--space-5);
@@ -28,8 +28,8 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2.25rem;
+  height: 2.25rem;
   border-radius: var(--radius-lg);
   background: var(--text-primary);
   color: var(--bg-elevated);
@@ -38,6 +38,7 @@
 .register-repo-modal__header-copy {
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: var(--space-1);
   min-width: 0;
   flex: 1;
@@ -47,6 +48,7 @@
   margin: 0;
   font-size: var(--text-lg);
   font-weight: 600;
+  line-height: 1.25;
   letter-spacing: -0.022em;
   color: var(--text-primary);
 }
@@ -64,9 +66,10 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  align-self: center;
   width: 2rem;
   height: 2rem;
-  margin: calc(var(--space-1) * -1) calc(var(--space-2) * -1) 0 0;
+  margin: 0 calc(var(--space-2) * -1) 0 0;
   padding: 0;
   border: none;
   border-radius: var(--radius-sm);
