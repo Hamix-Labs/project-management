@@ -11,6 +11,7 @@ import { canEditChecklistItem } from "../../../task-display/canMutateTaskCriteri
 import type { useTaskDetailChecklist } from "../../../checklist/hooks/useTaskDetailChecklist";
 import { TaskDetailChecklistItemList } from "./TaskDetailChecklistItemList";
 import { TaskChecklistSkeleton } from "../../skeletons";
+import { TaskDetailPlusGlyph } from "../layout/TaskDetailActionGlyphs";
 
 export type TaskDetailChecklistControls = ReturnType<typeof useTaskDetailChecklist>;
 
@@ -112,6 +113,7 @@ export function TaskDetailChecklistSection({
               : "Criteria cannot be changed while the agent is working on this task."
           }
         >
+          <TaskDetailPlusGlyph className="task-detail-action-glyph" />
           Add criterion
         </button>
       </div>

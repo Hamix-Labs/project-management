@@ -57,7 +57,7 @@
   padding: var(--space-4);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-xl);
-  background: var(--bg-subtle);
+  background: var(--bg-elevated);
   box-sizing: border-box;
 }
 
@@ -199,7 +199,9 @@ button.task-detail-open-in-trigger.btn-utility[aria-expanded="true"] {
 }
 
 .task-detail-open-in-item {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
   padding: 0.45rem 0.7rem;
   font-size: var(--text-sm);
   font-weight: 500;
@@ -222,6 +224,13 @@ button.task-detail-open-in-trigger.btn-utility[aria-expanded="true"] {
   font-weight: 600;
 }
 
+.task-detail-action-glyph {
+  flex-shrink: 0;
+  display: block;
+  width: 1rem;
+  height: 1rem;
+}
+
 
 
 .task-detail-meta {
@@ -232,17 +241,11 @@ button.task-detail-open-in-trigger.btn-utility[aria-expanded="true"] {
   flex: 0 0 auto;
 }
 
-.task-detail-meta-secondary {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2) var(--space-3);
-}
-
 /* One chip track so status badge and priority pill share a common
-   vertical center — mixed ui-badge vs cell-pill padding was the main
+   vertical center — mixed badge vs cell-pill padding was the main
    source of misaligned chips in the header. */
 .task-detail-meta .ui-badge,
+.task-detail-meta .task-status-badge,
 .task-detail-meta .cell-pill,
 .task-detail-meta-secondary .cell-pill {
   display: inline-flex;
@@ -258,6 +261,15 @@ button.task-detail-open-in-trigger.btn-utility[aria-expanded="true"] {
 .task-detail-meta .cell-pill,
 .task-detail-meta-secondary .cell-pill {
   border: 1px solid transparent;
+}
+
+.task-detail-meta-secondary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
 }
 
 /* Runtime identity chip — quiet secondary meta under the title row. */

@@ -229,7 +229,7 @@ describe("TaskDetailPage", () => {
       await screen.findByRole("heading", { name: /^blocked task$/i }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Blocked", { selector: ".ui-badge" }),
+      screen.getByText("Blocked", { selector: ".task-status-badge" }),
     ).toHaveAttribute(
       "data-needs-user",
       "true",

@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { formatRelativeTime } from "@/shared/time/relativeTime";
 import { useNow } from "@/shared/useNow";
 import type { CycleCommit, TaskCommit } from "@/types";
+import { TaskDetailGitCommitGlyph } from "../layout/TaskDetailActionGlyphs";
 import { shortSha, taskCommitDiffPath } from "./commitDisplay";
 
 function attemptSeqForRow(commit: CycleCommit): number | undefined {
@@ -30,6 +31,7 @@ export function CommitRow({ taskId, commit, showAttempt = false }: Props) {
         aria-label={ariaLabel}
       >
         <span className="task-commit-row-inner">
+          <TaskDetailGitCommitGlyph className="task-commit-node-glyph" />
           <code className="task-commit-sha" title={commit.sha}>
             {shortSha(commit.sha)}
           </code>

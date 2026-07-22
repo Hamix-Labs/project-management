@@ -123,5 +123,9 @@ describe("TaskCommitsPanel", () => {
 
     expect(await screen.findByText(/Initial commit/i)).toBeInTheDocument();
     expect(screen.queryByTestId("task-commits-empty-well")).not.toBeInTheDocument();
+    expect(screen.getByTestId("task-commits-branch-line")).toHaveTextContent(
+      "main",
+    );
+    expect(screen.queryByTestId("task-commits-context")).not.toBeInTheDocument();
   });
 });

@@ -5,8 +5,8 @@ import {
   EmptyStateCommitsGlyph,
 } from "@/shared/EmptyState";
 import { useTaskCommits } from "@/tasks/hooks/useTaskCommits";
+import { TaskDetailGitBranchGlyph } from "../layout/TaskDetailActionGlyphs";
 import { CommitList } from "./CommitList";
-import { GitContextMeta } from "./GitContextMeta";
 
 type Props = {
   taskId: string;
@@ -20,15 +20,11 @@ export function TaskCommitsPanel({ taskId, enabled = true }: Props) {
     [commitsQuery.data?.commits],
   );
 
-  const gitContext = useMemo(() => {
-    if (commits.length === 0) return null;
+  const branch = useMemo(() => {
+    if (commits.length === 0) return "";
     const first = commits[0];
     const last = commits[commits.length - 1];
-    return {
-      repo: first.repo,
-      worktree: first.worktree,
-      branch: last.branch || first.branch,
-    };
+    return (last.branch || first.branch || "").trim();
   }, [commits]);
 
   return (
@@ -79,7 +75,15 @@ export function TaskCommitsPanel({ taskId, enabled = true }: Props) {
         </div>
       ) : (
         <>
-          {gitContext ? <GitContextMeta context={gitContext} /> : null}
+          {branch !== "" ? (
+            <div
+              className="task-commits-branch-line"
+              data-testid="task-commits-branch-line"
+            >
+              <TaskDetailGitBranchGlyph className="task-detail-action-glyph" />
+              <span className="task-commits-branch-name">{branch}</span>
+            </div>
+          ) : null}
           <CommitList taskId={taskId} commits={commits} showAttempt />
         </>
       )}

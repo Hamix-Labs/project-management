@@ -1,3 +1,8 @@
+import {
+  TaskListDeleteGlyph,
+  TaskListEditGlyph,
+} from "@/shared/ListRowActionGlyphs";
+
 type Props = {
   saving: boolean;
   /** When false, edit is disabled (e.g. task is running). Delete stays available. */
@@ -95,6 +100,7 @@ export function TaskDetailToolbarActions({
           canEdit ? undefined : "Cannot edit while the task is in progress"
         }
       >
+        <TaskListEditGlyph />
         Edit task
       </button>
       {showModelConfig && onConfigureModel ? (
@@ -113,6 +119,7 @@ export function TaskDetailToolbarActions({
         onClick={onDelete}
         disabled={saving}
       >
+        <TaskListDeleteGlyph />
         Delete
       </button>
     </div>
