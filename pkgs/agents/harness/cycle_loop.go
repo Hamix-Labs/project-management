@@ -11,7 +11,6 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/prompt"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/reports"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/verify"
-	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
@@ -84,95 +83,28 @@ func (h *Harness) runCycleLoopExecute(
 	state *processState,
 	opts cycleLoopOpts,
 ) bool {
-	execPhase, ok := h.startExecutePhase(parentCtx, cycle, state)
-	if !ok {
-		h.bestEffortTerminate(parentCtx, state, task.ID, cyclesdomain.CycleStatusFailed, "execute_phase_start_failed")
+	phaseOut := h.executeSvc().RunPhase(parentCtx, task, cycle, h.executePhasePorts(state, opts))
+	if phaseOut.FatalReason != "" {
+		h.bestEffortTerminate(parentCtx, state, task.ID, cyclesdomain.CycleStatusFailed, phaseOut.FatalReason)
 		return false
 	}
-	priorBase, err := h.priorCycleBaseSHA(parentCtx, cycle.ID, execPhase.PhaseSeq)
-	if err != nil {
-		slog.Warn("agent harness prior cycle base lookup failed", "cmd", calltrace.LogCmd,
-			"operation", "agent.harness.Harness.runCycleLoop.prior_cycle_base",
-			"cycle_id", cycle.ID, "err", err)
-	}
-	snap, err := captureExecuteGitSnapshot(parentCtx, h.gitSvc().Repo(), h.repoRootForGit(parentCtx), h.opts.WorkingDir, priorBase)
-	if err != nil {
-		slog.Warn("agent harness git snapshot failed", "cmd", calltrace.LogCmd,
-			"operation", "agent.harness.Harness.runCycleLoop.git_snapshot",
-			"cycle_id", cycle.ID, "err", err)
-		h.bestEffortTerminate(parentCtx, state, task.ID, cyclesdomain.CycleStatusFailed, "execute_git_snapshot_failed")
-		return false
-	}
+
+	snap := phaseOut.Snap
 	state.git.gitSnap = snap
+	execPhase := phaseOut.ExecPhase
+	result := phaseOut.Result
+	operatorCancelled := phaseOut.OperatorCancelled
 
-	decision, err := h.planExecuteRun(parentCtx, task, cycle, state, opts)
-	if err != nil {
-		h.bestEffortTerminate(parentCtx, state, task.ID, cyclesdomain.CycleStatusFailed, "cursor_resume_plan_failed")
-		return false
-	}
-	if decision.Mode == CursorResumeFresh || decision.Mode == CursorResumeFallback {
-		if err := reports.ScrubCycleArtifacts(h.opts.ReportDir, cycle.ID); err != nil {
-			slog.Error("agent harness scrub cycle artifacts failed", "cmd", calltrace.LogCmd,
-				"operation", "agent.harness.Harness.runCycleLoop.scrub_err",
-				"cycle_id", cycle.ID, "report_dir", h.opts.ReportDir, "err", err)
-			h.bestEffortTerminate(parentCtx, state, task.ID, cyclesdomain.CycleStatusFailed, "execute_report_scrub_failed")
-			return false
-		}
-	}
-	if err := reports.EnsureReportCycleDir(h.opts.ReportDir, cycle.ID); err != nil {
-		slog.Error("agent harness ensure report cycle dir failed", "cmd", calltrace.LogCmd,
-			"operation", "agent.harness.Harness.runCycleLoop.ensure_report_dir_err",
-			"cycle_id", cycle.ID, "report_dir", h.opts.ReportDir, "err", err)
-		h.bestEffortTerminate(parentCtx, state, task.ID, cyclesdomain.CycleStatusFailed, "execute_report_dir_ensure_failed")
-		return false
-	}
-
-	result, runErr := h.invokeRunnerWithTask(parentCtx, task, cycle, execPhase, decision)
-	if errors.Is(runErr, runner.ErrResumeSession) {
-		fallback := h.planExecuteResumeFallback(parentCtx, task, cycle, state, opts)
-		result, runErr = h.invokeRunnerWithTask(parentCtx, task, cycle, execPhase, fallback)
-	}
-	operatorCancelled := h.consumeOperatorCancel()
-
-	if parentCtx.Err() != nil {
-		effects := orchestration.DecideExecutePostRun(orchestration.ExecutePostRunInput{
-			ContextCancelled: true,
-		})
-		return h.applyExecuteEffects(parentCtx, task, cycle, state, execPhase, result, effects, 0, snap, operatorCancelled, false)
-	}
-
-	var ingestOutcome executeCommitIngestOutcome
-	var ingestErr error
-	ingestAttempted := false
-	staleRecovery := errors.Is(runErr, runner.ErrStale)
-	if (runErr == nil || staleRecovery) && !operatorCancelled && !snap.Skipped {
-		ingestAttempted = true
-		ingestOutcome, ingestErr = h.ingestExecuteCommits(
-			parentCtx, task.ID, cycle, execPhase.PhaseSeq, snap,
-		)
-		if ingestErr != nil {
-			slog.Warn("agent harness commit ingest error", "cmd", calltrace.LogCmd,
-				"operation", "agent.harness.Harness.runCycleLoop.commit_ingest_err",
-				"cycle_id", cycle.ID, "err", ingestErr)
-		}
-	}
-
-	commitCount := 0
-	if ingestAttempted && ingestErr == nil && ingestOutcome.FailReason == "" {
-		commitCount = ingestOutcome.CommitCount
-	}
-
-	postRunIn := buildExecutePostRunInput(parentCtx, runErr, operatorCancelled, snap, ingestAttempted, ingestOutcome, ingestErr)
-	effects := orchestration.DecideExecutePostRun(postRunIn)
-	if staleRecovery && effects.ContinueToVerify {
+	effects := orchestration.DecideExecutePostRun(phaseOut.PostRunInput)
+	if phaseOut.StaleRecovery && effects.ContinueToVerify {
 		recovered := streamIdleRecoveredEvent()
 		h.persistProgress(parentCtx, task.ID, cycle.ID, execPhase.PhaseSeq, recovered)
 		h.publishProgress(task.ID, cycle.ID, execPhase.PhaseSeq, state.phase.runCorrelationID, recovered)
 	}
 	h.probeCriteriaReport(state, cycle.ID)
-	cont := h.applyExecuteEffects(parentCtx, task, cycle, state, execPhase, result, effects, commitCount, snap, operatorCancelled, staleRecovery)
+	cont := h.applyExecuteEffects(parentCtx, task, cycle, state, execPhase, result, effects, phaseOut.CommitCount, snap, operatorCancelled, phaseOut.StaleRecovery)
 	if cont {
-		h.anchorPostExecuteState(parentCtx, state, execPhase.PhaseSeq, snap, ingestAttempted, ingestOutcome, ingestErr)
+		h.anchorPostExecuteState(parentCtx, state, execPhase.PhaseSeq, snap, phaseOut.IngestAttempted, phaseOut.IngestOutcome, phaseOut.IngestErr)
 	}
 	return cont
 }

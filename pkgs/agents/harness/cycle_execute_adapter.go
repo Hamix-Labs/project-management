@@ -2,9 +2,9 @@ package harness
 
 import (
 	"context"
-	"errors"
 	"strings"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/execute"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/git"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/orchestration"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
@@ -13,21 +13,7 @@ import (
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func mapRunnerOutcome(err error) orchestration.ExecuteRunnerOutcome {
-	if err == nil {
-		return orchestration.ExecuteRunnerOutcomeOK
-	}
-	switch {
-	case errors.Is(err, runner.ErrStale):
-		return orchestration.ExecuteRunnerOutcomeOK
-	case errors.Is(err, runner.ErrTimeout):
-		return orchestration.ExecuteRunnerOutcomeTimeout
-	case errors.Is(err, runner.ErrNonZeroExit):
-		return orchestration.ExecuteRunnerOutcomeNonZeroExit
-	case errors.Is(err, runner.ErrInvalidOutput):
-		return orchestration.ExecuteRunnerOutcomeInvalidOutput
-	default:
-		return orchestration.ExecuteRunnerOutcomeError
-	}
+	return execute.MapRunnerOutcome(err)
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
@@ -40,25 +26,7 @@ func buildExecutePostRunInput(
 	ingestOutcome executeCommitIngestOutcome,
 	ingestErr error,
 ) orchestration.ExecutePostRunInput {
-	evidenceRecovery := errors.Is(runErr, runner.ErrStale)
-	in := orchestration.ExecutePostRunInput{
-		RunnerOutcome:     mapRunnerOutcome(runErr),
-		OperatorCancelled: operatorCancelled,
-		ContextCancelled:  parentCtx.Err() != nil,
-		EvidenceRecovery:  evidenceRecovery,
-		CommitIngest: orchestration.ExecuteCommitIngestSummary{
-			GitSnapshotSkipped: snap.Skipped,
-		},
-	}
-	shouldIngest := (runErr == nil || evidenceRecovery) && !operatorCancelled && !snap.Skipped
-	if shouldIngest {
-		in.CommitIngest.IngestAttempted = ingestAttempted
-		if ingestAttempted {
-			in.CommitIngest.IngestErr = ingestErr != nil
-			in.CommitIngest.FailReason = ingestOutcome.FailReason
-		}
-	}
-	return in
+	return execute.BuildPostRunInput(parentCtx, runErr, operatorCancelled, snap, ingestAttempted, ingestOutcome, ingestErr)
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."

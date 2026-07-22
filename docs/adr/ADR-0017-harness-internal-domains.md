@@ -24,6 +24,7 @@ Split harness implementation into **`pkgs/agents/harness/internal/<domain>/`** s
 | `internal/verify` | Verify pipeline: gate, commands, integrity, LLM, persist |
 | `internal/resume` | Checkpoint reconstruction, operator retry routing, continuation bundles |
 | `internal/cursorresume` | Pure Cursor CLI `--resume` Decide + recovery-kind helpers (ADR-0031); distinct from harness checkpoint resume |
+| `internal/execute` | Execute-phase I/O pipeline: phase start ports, git snapshot, runner invoke ports, commit ingest, post-run fact mapping |
 | `internal/orchestration` | Pure cycle state machine: event → effects (Track B) |
 
 **Public API unchanged:** `harness.Harness`, `New`, `Run`, `Resume`, `RunWithRetry`, `CancelCurrentRun`, seam interfaces, and report sentinel errors (re-exported from root where needed). `pkgs/agents/worker` remains the only production importer of `harness`.
@@ -34,10 +35,11 @@ Split harness implementation into **`pkgs/agents/harness/internal/<domain>/`** s
 
 ```
 harness (root)
-  → internal/resume, internal/verify, internal/prompt, internal/git, internal/reports, internal/orchestration, internal/cursorresume
+  → internal/resume, internal/verify, internal/prompt, internal/git, internal/reports, internal/orchestration, internal/cursorresume, internal/execute
 
 internal/resume → internal/prompt, internal/git, internal/reports
 internal/verify → internal/git, internal/reports, runner, adapterkit
+internal/execute → internal/git, internal/reports, internal/orchestration, contract, runner
 internal/prompt → internal/git, internal/reports
 internal/cursorresume → internal/prompt, domain (pure Decide; no store/runner)
 internal/git    → store, domain, stdlib/git CLI
@@ -45,7 +47,7 @@ internal/reports → domain, stdlib (leaf)
 internal/orchestration → domain only (leaf for Track B pure machine)
 ```
 
-**Forbidden:** any `internal/*` importing `package harness` (root). **Forbidden:** `internal/verify` ↔ `internal/resume` mutual imports. **Forbidden:** folding Cursor CLI policy into `internal/resume` (different layer — ADR-0031).
+**Forbidden:** any `internal/*` importing `package harness` (root). **Forbidden:** `internal/verify` ↔ `internal/resume` mutual imports. **Forbidden:** `internal/execute` ↔ `internal/verify` mutual imports (criteria mirror/probe stay at root or use hooks). **Forbidden:** folding Cursor CLI policy into `internal/resume` (different layer — ADR-0031).
 
 ### Migration
 
