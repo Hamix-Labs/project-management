@@ -595,22 +595,3 @@
   display: block;
 }
 
-@media (hover: hover) {
-  .task-list-row .task-list-row-actions {
-    opacity: 0;
-    transition: opacity var(--duration-normal) var(--ease-out);
-  }
-
-  .task-list-row:hover .task-list-row-actions,
-  .task-list-row:focus-within .task-list-row-actions {
-    opacity: 1;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .task-list-row .task-list-row-actions {
-    opacity: 1 !important;
-    transition: none;
-  }
-}
-
