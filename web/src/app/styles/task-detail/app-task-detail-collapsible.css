@@ -13,7 +13,7 @@
    accordion hairline (Initial prompt). Keeps the disclosure stack
    compact while matching the inspiration handoff gap. */
 #task-detail-checklist.task-detail-section {
-  padding-bottom: var(--space-8);
+  padding-bottom: calc(var(--space-8) * 1.2);
 }
 
 .task-detail-collapsible {
