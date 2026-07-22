@@ -1,0 +1,79 @@
+/* Shared accordion chrome for task-detail prompt / cycles / commits. */
+
+.task-detail-collapsible {
+  margin: 0;
+}
+
+.task-detail-collapsible-summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+  user-select: none;
+  border-radius: var(--radius-sm);
+}
+
+.task-detail-collapsible-summary::-webkit-details-marker {
+  display: none;
+}
+
+.task-detail-collapsible-summary::marker {
+  content: "";
+}
+
+.task-detail-collapsible-summary:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.task-detail-collapsible-title-cluster {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+
+/* Heading inside the summary: keep caps label look, drop bottom margin
+   (spacing to body is handled by the open body rule below). */
+.task-detail-collapsible-summary .task-detail-section-heading {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.task-detail-collapsible-chevron {
+  flex-shrink: 0;
+  font-size: var(--text-xs);
+  line-height: 1;
+  color: var(--text-tertiary);
+  transition:
+    transform var(--duration-normal) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.task-detail-collapsible-summary:hover .task-detail-collapsible-chevron {
+  color: var(--text-secondary);
+}
+
+.task-detail-collapsible[open] .task-detail-collapsible-chevron {
+  transform: rotate(180deg);
+}
+
+.task-detail-collapsible[open] > .task-detail-collapsible-summary {
+  margin-bottom: var(--space-3);
+}
+
+.task-detail-collapsible-body {
+  margin: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .task-detail-collapsible-chevron {
+    transition: none;
+  }
+}
