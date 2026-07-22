@@ -14,19 +14,23 @@ Industry outer-harness patterns (LangGraph FSM, SWE-AF durable steps) separate *
 
 ## Decision
 
-Introduce `pkgs/agents/harness/internal/orchestration` as a **pure state machine** package:
+Introduce `pkgs/agents/harness/internal/orchestration` as a **pure Decide** package (event/facts → effects):
 
-| Type | Role |
+| Type / function | Role |
 |------|------|
-| `LoopState` | In-memory retry counters and phase position |
 | `VerifyResult` | Classify one verify pipeline outcome (pass, retryable fail, tamper) |
 | `VerifyEffects` | Retry loop, terminal failure, or tamper flags |
-| `DecideVerifyRetry` | Map `(attempt, maxRetries, result)` → effects |
-| `VerifyDisabled` | Predicate for legacy checklist-only path |
+| `DecideVerifyRetry` / `DecideVerifyRetryWithValidity` | Map `(attempt, maxRetries, result[, executeStillValid])` → effects |
 
-The harness **root applies effects**: increment `verifyAttempt`, call `terminateCycle`, run `completeChecklistLegacy`, etc. Orchestration imports **domain types only** — no store, runner, or filesystem.
+The harness **root applies effects**: increment `verifyAttempt` on `processState.verify`, call `terminateCycle`, run `completeChecklistLegacy`, etc. Orchestration imports **domain types only** — no store, runner, or filesystem.
+
+**Live in-memory scratch** for one run is nested `processState` on the harness root (`cycle.go`): verify counters live on `processState.verify`, not in orchestration. Decide functions take **scalar / DTO projections** at the I/O boundary.
 
 Initial scope covers verify retry/tamper decisions wired from `runCycleLoopVerify`. Execute-phase and loop-level finalize/legacy decisions were added in [ADR-0021](ADR-0021-harness-execute-orchestration.md).
+
+### Historical note (deleted types)
+
+An early sketch included `LoopState` (phase + verify attempt bag) and a `VerifyDisabled(enabled bool)` helper in orchestration. Both were **unused and removed** (commit `5bced0a7`, 2026-07-20). Do not revive them: verify-disabled is gated with `!state.verify.verifySnap.Enabled` at the root; legacy completion uses `DecideVerifyDisabledLegacy(checklistErr)` from ADR-0021. A full `Decide(LoopState, Event)` graph remains **Track C deferred** (ADR-0021) — not a type-alias cleanup.
 
 ## Consequences
 
@@ -38,8 +42,8 @@ Initial scope covers verify retry/tamper decisions wired from `runCycleLoopVerif
 
 ### Negative / Trade-offs
 
-- Split brain until execute transitions migrate — two places to read for full loop semantics.
-- DTO duplication between `processState` and `LoopState` until a later unify pass.
+- Execute transitions originally lagged verify (split brain) — largely closed by ADR-0021 DecideExecute / finalize / legacy.
+- Intentional DTO projection between `processState` and orchestration inputs (`ExecutePostRunInput`, `ClassifyInput`, etc.); do not merge `processState` into orchestration (would break leaf purity).
 
 ## Alternatives Considered
 
@@ -52,4 +56,5 @@ Initial scope covers verify retry/tamper decisions wired from `runCycleLoopVerif
 ## Related
 
 - [ADR-0017](ADR-0017-harness-internal-domains.md) — internal package layout
+- [ADR-0021](ADR-0021-harness-execute-orchestration.md) — execute Decide + Track C deferral
 - [docs/domain/harness.md](../domain/harness.md) — durability tiers and cycle lifecycle
