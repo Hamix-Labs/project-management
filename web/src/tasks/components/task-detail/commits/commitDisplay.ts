@@ -1,7 +1,7 @@
 export type GitContextFields = {
   repo: string;
   worktree: string;
-  /** Host-facing path for copy / Open in Cursor (host_path when set, else worktree path). */
+  /** Host-facing path for copy / Open in editor (host_path when set, else worktree path). */
   openPath?: string;
   branch: string;
 };

@@ -67,9 +67,16 @@
   flex: 0 0 auto;
 }
 
-a.task-detail-git-binding-open.btn-utility {
+.task-detail-open-in {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+button.task-detail-open-in-trigger.btn-utility {
   display: inline-flex;
   align-items: center;
+  gap: 0.2rem;
   margin: 0;
   min-height: unset;
   min-width: unset;
@@ -83,7 +90,6 @@ a.task-detail-git-binding-open.btn-utility {
   border: 1px solid var(--brand-border-faint);
   border-radius: var(--radius-sm);
   box-shadow: none;
-  text-decoration: none;
   cursor: pointer;
   transition:
     background 0.12s ease,
@@ -91,20 +97,66 @@ a.task-detail-git-binding-open.btn-utility {
     color 0.12s ease;
 }
 
-a.task-detail-git-binding-open.btn-utility:visited {
-  color: var(--text-secondary);
-}
-
-a.task-detail-git-binding-open.btn-utility:hover {
+button.task-detail-open-in-trigger.btn-utility:hover {
   background: var(--neutral-fill-subtle);
   border-color: var(--border-soft);
   color: var(--text-primary);
-  text-decoration: none;
 }
 
-a.task-detail-git-binding-open.btn-utility:focus-visible {
+button.task-detail-open-in-trigger.btn-utility:focus-visible {
   outline: none;
   box-shadow: var(--shadow-focus);
+}
+
+button.task-detail-open-in-trigger.btn-utility[aria-expanded="true"] {
+  background: var(--neutral-fill-subtle);
+  border-color: var(--border-soft);
+  color: var(--text-primary);
+}
+
+.task-detail-open-in-chevron {
+  font-size: 0.65em;
+  line-height: 1;
+  opacity: 0.8;
+}
+
+.task-detail-open-in-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: var(--z-portal-popover, 13000);
+  margin: 0;
+  padding: var(--space-1);
+  min-width: 8.5rem;
+  list-style: none;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+}
+
+.task-detail-open-in-item {
+  display: block;
+  padding: 0.28rem 0.55rem;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--text-primary);
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+.task-detail-open-in-item:hover,
+.task-detail-open-in-item:focus-visible {
+  background: var(--neutral-fill-subtle);
+  color: var(--text-primary);
+  text-decoration: none;
+  outline: none;
+}
+
+.task-detail-open-in-item[data-preferred="true"] {
+  font-weight: 600;
 }
 
 

@@ -1,7 +1,7 @@
 import { GitContextMeta } from "../commits/GitContextMeta";
 import { useCopyToClipboard } from "../commits/useCopyToClipboard";
 import { useTaskGitBinding } from "@/tasks/hooks/useTaskGitBinding";
-import { buildCursorOpenFolderUri } from "@/tasks/task-git/cursorOpenUri";
+import { OpenInEditorMenu } from "./OpenInEditorMenu";
 
 type Props = {
   worktreeId?: string;
@@ -19,8 +19,6 @@ export function TaskDetailGitBinding({ worktreeId, projectId }: Props) {
 
   const context = bindingQuery.data;
   const openPath = (context.openPath ?? context.worktree).trim();
-  const cursorHref =
-    openPath !== "" ? buildCursorOpenFolderUri(openPath) : "";
 
   return (
     <div className="task-detail-git-binding" data-testid="task-detail-git-binding">
@@ -40,13 +38,7 @@ export function TaskDetailGitBinding({ worktreeId, projectId }: Props) {
           >
             {pathCopy.copyLabel}
           </button>
-          <a
-            className="btn-utility task-detail-git-binding-open"
-            href={cursorHref}
-            aria-label="Open worktree in Cursor"
-          >
-            Open in Cursor
-          </a>
+          <OpenInEditorMenu openPath={openPath} />
         </div>
       ) : null}
     </div>
