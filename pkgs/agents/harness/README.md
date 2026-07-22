@@ -26,10 +26,13 @@ Root `harness` owns `Harness`, cycle entrypoints, effect application (`cycle_eff
 | File | Responsibility |
 |------|----------------|
 | `harness.go` | `Harness`, `New`, `Options`, `CancelCurrentRun`, SSE notifiers, metrics interface |
-| `cycle.go` | `Run` entry — starts a new cycle then delegates to the shared loop |
+| `cycle.go` | `Run` entry, `processState`, cycle start/terminate |
+| `cycle_runner.go` | Execute phase start, runner invoke, complete execute phase |
 | `cycle_loop.go` | Shared execute/verify loop coordinator; I/O then orchestration Decide |
 | `execution.go` | Thin wiring to `internal/execute` (`executeSvc`, phase ports) |
-| `cursor_resume.go` | ADR-0031 Cursor `--resume` I/O planners; pure Decide in [`internal/cursorresume`](internal/cursorresume/) ([cursor-session-resume.md](../../docs/domain/cursor-session-resume.md)) |
+| `cursor_resume.go` | ADR-0031 Cursor `--resume` I/O planners ([cursor-session-resume.md](../../docs/domain/cursor-session-resume.md)) |
+| `cursor_resume_resolve.go` | Session lookup + recovery context assembly; pure Decide in [`internal/cursorresume`](internal/cursorresume/) |
+| `cursor_resume_decide.go` | Root aliases for `internal/cursorresume` Decide types |
 | `cycle_effects.go` | Applies orchestration effects (store writes, publish, metrics) |
 | `cycle_execute_adapter.go` | Thin re-exports of execute adapter helpers used by effect apply |
 | `verify_retry_eligibility.go` | Post-execute anchors + `gatherRetryClassifyInput` (ADR-0028) |
