@@ -301,6 +301,7 @@ export const TASK_EVENT_TYPES = [
   "on_task_done",
   "task_failed",
   "task_retry_requested",
+  "task_polish_requested",
   "task_pickup_failed",
   // Execution-cycle audit mirrors. The backend writes these in the same
   // SQL transaction as task_cycles / task_cycle_phases rows so GET

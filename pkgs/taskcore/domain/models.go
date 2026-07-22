@@ -37,8 +37,8 @@ type Task struct {
 	// verified completion row; cleared when any item becomes unchecked.
 	// Maintained in checklist completion TX for SQL queue parity.
 	CriteriaSatisfiedAt *time.Time `json:"criteria_satisfied_at,omitempty"`
-	// PendingRetry holds operator retry intent between POST /retry and worker
-	// pickup. Not exposed on the public task API (json:"-").
+	// PendingRetry holds operator retry/polish intent between POST /retry or
+	// POST /polish and worker pickup. Not exposed on the public task API (json:"-").
 	PendingRetry *PendingRetry `json:"-"`
 	// CreatedAt is hydrated from the seq=1 task_created audit row on read;
 	// not a tasks-table column.

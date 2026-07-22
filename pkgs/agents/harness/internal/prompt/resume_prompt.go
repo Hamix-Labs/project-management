@@ -34,6 +34,41 @@ func AppendOperatorRetryResumeNotice(prompt string, cycle *cyclesdomain.TaskCycl
 	return b.String() + prompt
 }
 
+// AppendPolishNotice is for human polish from review: resume the Cursor conversation
+// with operator instructions. This is not a failure-resume path.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func AppendPolishNotice(prompt string, cycle *cyclesdomain.TaskCycle, instructions string, knownCommits []cyclesdomain.TaskCycleCommit) string {
+	if cycle == nil {
+		return prompt
+	}
+	var b strings.Builder
+	b.WriteString("## Human polish — refine completed work\n\n")
+	b.WriteString("This is a **new execution attempt** after the prior attempt succeeded and entered human review ")
+	b.WriteString(fmt.Sprintf("(new cycle_id=%s).\n\n", cycle.ID))
+	b.WriteString("Resume the existing conversation and apply the operator's polish instructions below. ")
+	b.WriteString("Do not treat this as recovery from a failure.\n\n")
+	instructions = strings.TrimSpace(instructions)
+	if instructions != "" {
+		b.WriteString("### Polish instructions\n\n")
+		b.WriteString(instructions)
+		b.WriteString("\n\n")
+	}
+	b.WriteString("Before changing anything:\n")
+	b.WriteString("1. Inspect the working tree (`git status`, read relevant files).\n")
+	b.WriteString("2. Keep prior good work; change only what the polish instructions require.\n")
+	if block := FormatKnownCommitsForResume(knownCommits); block != "" {
+		b.WriteString("3. ")
+		b.WriteString(strings.TrimSpace(block))
+		b.WriteString("Those commits are already indexed — list only **new** commits you create in `commits[]` on your criteria report.\n")
+		b.WriteString("4. Re-satisfy criteria after your changes and write the criteria report.\n")
+	} else {
+		b.WriteString("3. Re-satisfy criteria after your changes and write the criteria report.\n")
+	}
+	b.WriteString("\n")
+	return b.String() + prompt
+}
+
 // AppendResumeNotice prepends an in-process worker resume notice.
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."

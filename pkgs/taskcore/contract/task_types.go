@@ -97,3 +97,10 @@ type RequestRetryInput struct {
 	Mode          domain.RetryMode
 	ParentCycleID string
 }
+
+// RequestPolishInput is the store payload for operator polish from review.
+type RequestPolishInput struct {
+	TaskID        string
+	Instructions  string
+	ParentCycleID string
+}
