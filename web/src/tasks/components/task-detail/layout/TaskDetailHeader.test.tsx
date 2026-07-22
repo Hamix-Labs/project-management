@@ -32,7 +32,7 @@ describe("TaskDetailHeader", () => {
 
     expect(screen.getByRole("heading", { name: /^my task$/i })).toBeInTheDocument();
     expect(screen.getByText("Ready")).toBeInTheDocument();
-    expect(screen.getByText("High")).toBeInTheDocument();
+    expect(screen.getByText("High priority")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /^all tasks$/i })).toHaveAttribute(
       "href",
       "/",
@@ -53,7 +53,7 @@ describe("TaskDetailHeader", () => {
     });
 
     expect(
-      screen.getByText("Blocked", { selector: ".ui-badge" }),
+      screen.getByText("Blocked", { selector: ".task-status-badge" }),
     ).toHaveAttribute("data-needs-user", "true");
     // The old standalone stance line is gone — guard against its return.
     expect(screen.queryByText("Agent needs input")).not.toBeInTheDocument();

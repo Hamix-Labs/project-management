@@ -1,11 +1,10 @@
 import { Link } from "react-router-dom";
 import { cycleRunnerChipClass, runnerLabel } from "@/tasks/cycleDisplay/cyclesViewModel";
-import { Badge } from "@/components/ui";
+import { StatusBadge } from "@/components/task-status";
 import type { Task } from "@/types";
 import {
   priorityListLabel,
   priorityPillClass,
-  statusListLabel,
   statusNeedsUserInput,
 } from "../../../task-display";
 import { TaskDetailGitBinding } from "./TaskDetailGitBinding";
@@ -67,14 +66,13 @@ export function TaskDetailHeader({ task }: Props) {
             <span>{task.title}</span>
           </h2>
           <div className="task-detail-meta">
-            <Badge
+            <StatusBadge
               status={task.status}
+              className="task-detail-status-badge"
               data-needs-user={needsUser ? "true" : undefined}
-            >
-              {statusListLabel(task.status)}
-            </Badge>
+            />
             <span className={priorityPillClass(task.priority)}>
-              {priorityListLabel(task.priority)}
+              {priorityListLabel(task.priority)} priority
             </span>
           </div>
         </div>
