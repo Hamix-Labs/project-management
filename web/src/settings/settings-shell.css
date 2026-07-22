@@ -21,7 +21,7 @@
   top: 50%;
   left: 0;
   width: 1px;
-  height: 1.25rem;
+  height: 1.5rem;
   background: var(--border-hairline);
   transform: translateY(-50%);
 }
@@ -35,7 +35,7 @@
 .app-header-settings-link {
   display: inline-grid;
   place-items: center;
-  width: 2.25rem;
+  width: 2.25rem; /* 36px — inspiration size-9 */
   height: 2.25rem;
   border-radius: var(--radius-lg);
   text-decoration: none;
@@ -49,14 +49,14 @@
 
 .app-header-settings-icon {
   display: block;
-  width: 20px;
-  height: 20px;
+  width: 1.25rem;
+  height: 1.25rem;
   transition: transform var(--duration-moderate, 250ms) var(--ease-out);
 }
 
 .app-header-settings-link:hover,
 .app-header-settings-link:focus-visible {
-  background: var(--bg-muted);
+  background: var(--neutral-fill-subtle);
   color: var(--text-primary, inherit);
 }
 
@@ -64,9 +64,7 @@
   opacity: 0.9;
 }
 
-/* Active state uses neutral chrome — matches the nav's underline-only
-   active treatment so we don't flood the header with brand purple when
-   /settings is open. */
+/* Active settings stays quiet neutral — not a brand flood. */
 .app-header-settings-link[aria-current="page"] {
   color: var(--text-primary);
   background: var(--neutral-fill-subtle);
