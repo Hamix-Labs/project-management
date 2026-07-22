@@ -270,6 +270,45 @@ export async function retryTask(
   return parseTask(raw);
 }
 
+export async function approveTask(id: string): Promise<Task> {
+  const tid = assertTaskPathId(id);
+  const res = await fetchWithTimeout(
+    `/tasks/${encodeURIComponent(tid)}/approve`,
+    {
+      method: "POST",
+      headers: jsonHeaders,
+      body: "{}",
+    },
+  );
+  if (!res.ok) throw await apiErrorFromResponse(res);
+  const raw: unknown = await res.json();
+  return parseTask(raw);
+}
+
+export async function polishTask(
+  id: string,
+  input: { instructions: string; parent_cycle_id?: string },
+): Promise<Task> {
+  const tid = assertTaskPathId(id);
+  const body: Record<string, unknown> = {
+    instructions: input.instructions,
+  };
+  if (input.parent_cycle_id !== undefined) {
+    body.parent_cycle_id = input.parent_cycle_id;
+  }
+  const res = await fetchWithTimeout(
+    `/tasks/${encodeURIComponent(tid)}/polish`,
+    {
+      method: "POST",
+      headers: jsonHeaders,
+      body: JSON.stringify(body),
+    },
+  );
+  if (!res.ok) throw await apiErrorFromResponse(res);
+  const raw: unknown = await res.json();
+  return parseTask(raw);
+}
+
 export async function addTaskDependency(
   taskId: string,
   dependsOnTaskId: string,

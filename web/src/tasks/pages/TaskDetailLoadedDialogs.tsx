@@ -1,6 +1,11 @@
 import { errorMessage } from "@/lib/errorMessage";
 import { TaskModelConfigModal } from "../components/task-detail";
-import { AutonomyConfirmDialog, TaskRetryConfirmDialog } from "../components/dialogs";
+import {
+  AutonomyConfirmDialog,
+  TaskApproveConfirmDialog,
+  TaskPolishDialog,
+  TaskRetryConfirmDialog,
+} from "../components/dialogs";
 import type { TaskDetailLoadedViewProps } from "./TaskDetailLoadedView";
 
 type TaskDetailLoadedDialogsProps = Pick<
@@ -15,6 +20,12 @@ type TaskDetailLoadedDialogsProps = Pick<
   | "retryConfirmMode"
   | "setRetryConfirmMode"
   | "retryMutation"
+  | "approveConfirmOpen"
+  | "setApproveConfirmOpen"
+  | "approveMutation"
+  | "polishDialogOpen"
+  | "setPolishDialogOpen"
+  | "polishMutation"
   | "modelConfigOpen"
   | "setModelConfigOpen"
 >;
@@ -30,6 +41,12 @@ export function TaskDetailLoadedDialogs({
   retryConfirmMode,
   setRetryConfirmMode,
   retryMutation,
+  approveConfirmOpen,
+  setApproveConfirmOpen,
+  approveMutation,
+  polishDialogOpen,
+  setPolishDialogOpen,
+  polishMutation,
   modelConfigOpen,
   setModelConfigOpen,
 }: TaskDetailLoadedDialogsProps) {
@@ -84,6 +101,42 @@ export function TaskDetailLoadedDialogs({
             if (retryMutation.isError) retryMutation.reset();
           }}
           onConfirm={() => retryMutation.mutate(retryConfirmMode)}
+        />
+      ) : null}
+
+      {approveConfirmOpen ? (
+        <TaskApproveConfirmDialog
+          taskTitle={task.title}
+          saving={saving}
+          pending={approveMutation.isPending}
+          error={
+            approveMutation.isError
+              ? errorMessage(approveMutation.error, "Couldn't approve task.")
+              : null
+          }
+          onCancel={() => {
+            setApproveConfirmOpen(false);
+            if (approveMutation.isError) approveMutation.reset();
+          }}
+          onConfirm={() => approveMutation.mutate()}
+        />
+      ) : null}
+
+      {polishDialogOpen ? (
+        <TaskPolishDialog
+          taskTitle={task.title}
+          saving={saving}
+          pending={polishMutation.isPending}
+          error={
+            polishMutation.isError
+              ? errorMessage(polishMutation.error, "Couldn't queue polish.")
+              : null
+          }
+          onCancel={() => {
+            setPolishDialogOpen(false);
+            if (polishMutation.isError) polishMutation.reset();
+          }}
+          onConfirm={(instructions) => polishMutation.mutate(instructions)}
         />
       ) : null}
 

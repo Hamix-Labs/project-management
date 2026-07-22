@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { patchTask, retryTask } from "@/api";
+import { approveTask, patchTask, polishTask, retryTask } from "@/api";
 import {
   rumMutationRolledBack,
   rumMutationSettled,
@@ -77,6 +77,154 @@ function useTaskDetailRetryMutation(
       if (context) {
         rumMutationSettled(
           "task_retry",
+          performance.now() - context.startedAtMs,
+          200,
+        );
+      }
+    },
+    onSettled: (_data, _err, _vars, context) => {
+      if (context?.guarded) {
+        endGuardedTaskWrite(taskId);
+      }
+    },
+  });
+}
+
+function useTaskDetailApproveMutation(
+  taskId: string,
+  optimisticMutationsEnabled: boolean,
+  onApproveConfirmed: () => void,
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    unknown,
+    unknown,
+    void,
+    { prev: Task | undefined; startedAtMs: number; guarded: boolean }
+  >({
+    mutationFn: () => approveTask(taskId),
+    onMutate: async () => {
+      const guard = beginGuardedTaskWrite({
+        taskId,
+        optimisticEnabled: optimisticMutationsEnabled,
+        rumKind: "task_approve",
+      });
+      if (!guard.guarded) {
+        return { prev: undefined, startedAtMs: guard.startedAtMs, guarded: false };
+      }
+      await queryClient.cancelQueries({ queryKey: taskQueryKeys.detail(taskId) });
+      const detailKey = taskQueryKeys.detail(taskId);
+      const prev = queryClient.getQueryData<Task>(detailKey);
+      if (prev) {
+        queryClient.setQueryData<Task>(detailKey, { ...prev, status: "done" });
+      }
+      recordOptimisticApplied("task_approve", guard.startedAtMs);
+      return { prev, startedAtMs: guard.startedAtMs, guarded: true };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.prev) {
+        queryClient.setQueryData(taskQueryKeys.detail(taskId), context.prev);
+      }
+      if (context) {
+        if (context.prev !== undefined) {
+          rumMutationRolledBack(
+            "task_approve",
+            performance.now() - context.startedAtMs,
+          );
+        }
+        rumMutationSettled(
+          "task_approve",
+          performance.now() - context.startedAtMs,
+          0,
+        );
+      }
+    },
+    onSuccess: async (_data, _vars, context) => {
+      onApproveConfirmed();
+      await invalidateTaskCacheAsync(
+        queryClient,
+        { scope: "listStats" },
+        { scope: "detail", taskId },
+        { scope: "events", taskId },
+      );
+      if (context) {
+        rumMutationSettled(
+          "task_approve",
+          performance.now() - context.startedAtMs,
+          200,
+        );
+      }
+    },
+    onSettled: (_data, _err, _vars, context) => {
+      if (context?.guarded) {
+        endGuardedTaskWrite(taskId);
+      }
+    },
+  });
+}
+
+function useTaskDetailPolishMutation(
+  taskId: string,
+  optimisticMutationsEnabled: boolean,
+  onPolishConfirmed: () => void,
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    unknown,
+    unknown,
+    string,
+    { prev: Task | undefined; startedAtMs: number; guarded: boolean }
+  >({
+    mutationFn: (instructions) => polishTask(taskId, { instructions }),
+    onMutate: async () => {
+      const guard = beginGuardedTaskWrite({
+        taskId,
+        optimisticEnabled: optimisticMutationsEnabled,
+        rumKind: "task_polish",
+      });
+      if (!guard.guarded) {
+        return { prev: undefined, startedAtMs: guard.startedAtMs, guarded: false };
+      }
+      await queryClient.cancelQueries({ queryKey: taskQueryKeys.detail(taskId) });
+      const detailKey = taskQueryKeys.detail(taskId);
+      const prev = queryClient.getQueryData<Task>(detailKey);
+      if (prev) {
+        queryClient.setQueryData<Task>(detailKey, { ...prev, status: "ready" });
+      }
+      recordOptimisticApplied("task_polish", guard.startedAtMs);
+      return { prev, startedAtMs: guard.startedAtMs, guarded: true };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.prev) {
+        queryClient.setQueryData(taskQueryKeys.detail(taskId), context.prev);
+      }
+      if (context) {
+        if (context.prev !== undefined) {
+          rumMutationRolledBack(
+            "task_polish",
+            performance.now() - context.startedAtMs,
+          );
+        }
+        rumMutationSettled(
+          "task_polish",
+          performance.now() - context.startedAtMs,
+          0,
+        );
+      }
+    },
+    onSuccess: async (_data, _vars, context) => {
+      onPolishConfirmed();
+      await invalidateTaskCacheAsync(
+        queryClient,
+        { scope: "listStats" },
+        { scope: "detail", taskId },
+        { scope: "events", taskId },
+      );
+      if (context) {
+        rumMutationSettled(
+          "task_polish",
           performance.now() - context.startedAtMs,
           200,
         );
@@ -171,12 +319,24 @@ export function useTaskDetailMutations(taskId: string) {
   const [retryConfirmMode, setRetryConfirmMode] = useState<TaskRetryMode | null>(
     null,
   );
+  const [approveConfirmOpen, setApproveConfirmOpen] = useState(false);
+  const [polishDialogOpen, setPolishDialogOpen] = useState(false);
   const toast = useOptionalToast();
   const { optimisticMutationsEnabled } = useRolloutFlags();
   const retryMutation = useTaskDetailRetryMutation(
     taskId,
     optimisticMutationsEnabled,
     () => setRetryConfirmMode(null),
+  );
+  const approveMutation = useTaskDetailApproveMutation(
+    taskId,
+    optimisticMutationsEnabled,
+    () => setApproveConfirmOpen(false),
+  );
+  const polishMutation = useTaskDetailPolishMutation(
+    taskId,
+    optimisticMutationsEnabled,
+    () => setPolishDialogOpen(false),
   );
   const autonomyMutation = useTaskDetailAutonomyMutation(
     taskId,
@@ -192,7 +352,13 @@ export function useTaskDetailMutations(taskId: string) {
     setAutonomyConfirmOpen,
     retryConfirmMode,
     setRetryConfirmMode,
+    approveConfirmOpen,
+    setApproveConfirmOpen,
+    polishDialogOpen,
+    setPolishDialogOpen,
     retryMutation,
+    approveMutation,
+    polishMutation,
     autonomyMutation,
   };
 }

@@ -35,6 +35,12 @@ type Props = {
   autonomyMode?: "hidden" | "ready" | "on_hold";
   onToggleAutonomy?: () => void;
   autonomyPending?: boolean;
+  /** When set, shows Approve for a task in review (POST /approve). */
+  onApprove?: () => void;
+  approvePending?: boolean;
+  /** When set, shows Polish for a task in review (POST /polish). */
+  onPolish?: () => void;
+  polishPending?: boolean;
 };
 
 export function TaskDetailToolbarActions({
@@ -50,6 +56,10 @@ export function TaskDetailToolbarActions({
   autonomyMode = "hidden",
   onToggleAutonomy,
   autonomyPending = false,
+  onApprove,
+  approvePending = false,
+  onPolish,
+  polishPending = false,
 }: Props) {
   const showAutonomy =
     autonomyMode !== "hidden" && typeof onToggleAutonomy === "function";
@@ -60,6 +70,26 @@ export function TaskDetailToolbarActions({
 
   return (
     <div className="task-detail-actions">
+      {onApprove ? (
+        <button
+          type="button"
+          className="task-detail-btn-approve"
+          onClick={onApprove}
+          disabled={saving || approvePending || polishPending}
+        >
+          {approvePending ? "Approving…" : "Approve"}
+        </button>
+      ) : null}
+      {onPolish ? (
+        <button
+          type="button"
+          className="task-detail-btn-polish"
+          onClick={onPolish}
+          disabled={saving || approvePending || polishPending}
+        >
+          Polish
+        </button>
+      ) : null}
       {onRetryFresh ? (
         <button
           type="button"
