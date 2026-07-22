@@ -4,7 +4,8 @@ import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { AppSettings } from "@/api/settings";
 import { settingsQueryKeys } from "@/settings/settingsQueryKeys";
-import type { Status } from "@/types";
+import { taskQueryKeys } from "@/lib/taskQueryKeys";
+import type { Status, TaskCycle, TaskCyclesListResponse } from "@/types";
 import { TASK_TEST_DEFAULTS } from "@/test/taskDefaults";
 import { APP_SETTINGS_DEFAULTS } from "@/test/settingsDefaults";
 import { TaskDetailSchedule } from "./TaskDetailSchedule";
@@ -21,13 +22,40 @@ const NY_SETTINGS: AppSettings = {
   display_timezone: "America/New_York",
 };
 
-function createWrapper(settings: AppSettings = NY_SETTINGS) {
+function cycleStub(overrides: Partial<TaskCycle> = {}): TaskCycle {
+  return {
+    id: "cycle-1",
+    task_id: "task-1",
+    attempt_seq: 1,
+    status: "succeeded",
+    started_at: "2026-04-22T12:48:00Z",
+    ended_at: "2026-04-22T13:00:00Z",
+    triggered_by: "agent",
+    meta: {},
+    cycle_meta: {
+      runner: "cursor",
+      runner_version: "",
+      cursor_model: "",
+      cursor_model_effective: "",
+      prompt_hash: "",
+    },
+    ...overrides,
+  };
+}
+
+function createWrapper(
+  settings: AppSettings = NY_SETTINGS,
+  cycles?: TaskCyclesListResponse,
+) {
   const qc = new QueryClient({
     defaultOptions: {
       queries: { retry: false, gcTime: 0, staleTime: Infinity },
     },
   });
   qc.setQueryData(settingsQueryKeys.app(), settings);
+  if (cycles) {
+    qc.setQueryData(taskQueryKeys.cycles("task-1"), cycles);
+  }
   function Wrapper({ children }: { children: ReactNode }) {
     return <QueryClientProvider client={qc}>{children}</QueryClientProvider>;
   }
@@ -109,6 +137,7 @@ describe("TaskDetailSchedule (read-only)", () => {
       <Wrapper>
         <TaskDetailSchedule
           task={{
+            id: "task-1",
             status: "running",
             pickup_not_before: undefined,
             criteria_satisfied_at: "2026-04-22T13:00:00Z",
@@ -146,6 +175,7 @@ describe("TaskDetailSchedule (read-only)", () => {
       <Wrapper>
         <TaskDetailSchedule
           task={{
+            id: "task-1",
             status: "done",
             pickup_not_before: "2026-04-22T13:00:00Z",
             criteria_satisfied_at: "2026-04-22T13:00:00Z",
@@ -163,6 +193,7 @@ describe("TaskDetailSchedule (read-only)", () => {
       <Wrapper>
         <TaskDetailSchedule
           task={{
+            id: "task-1",
             status: "done",
             pickup_not_before: undefined,
             criteria_satisfied_at: "2026-04-22T13:00:00Z",
@@ -180,12 +211,52 @@ describe("TaskDetailSchedule (read-only)", () => {
     );
   });
 
+  it("shows wall-clock duration from earliest cycle start to completion", () => {
+    const { Wrapper } = createWrapper(NY_SETTINGS, {
+      task_id: "task-1",
+      cycles: [
+        cycleStub({
+          id: "cycle-2",
+          attempt_seq: 2,
+          started_at: "2026-04-22T12:55:00Z",
+        }),
+        cycleStub({
+          id: "cycle-1",
+          attempt_seq: 1,
+          started_at: "2026-04-22T12:48:00Z",
+        }),
+      ],
+      limit: 50,
+      has_more: false,
+    });
+    render(
+      <Wrapper>
+        <TaskDetailSchedule
+          task={{
+            id: "task-1",
+            status: "done",
+            pickup_not_before: undefined,
+            criteria_satisfied_at: "2026-04-22T13:00:00Z",
+          }}
+        />
+      </Wrapper>,
+    );
+    expect(screen.getByTestId("task-detail-phase-duration")).toHaveTextContent(
+      "12 min",
+    );
+    expect(screen.getByTestId("task-detail-phase-complete")).toHaveAttribute(
+      "aria-label",
+      expect.stringMatching(/took 12 min/i),
+    );
+  });
+
   it("stacks phase complete and schedule rows when both timestamps are set", () => {
     const { Wrapper } = createWrapper();
     const { container } = render(
       <Wrapper>
         <TaskDetailSchedule
           task={{
+            id: "task-1",
             status: "ready",
             pickup_not_before: "2026-04-22T13:00:00Z",
             criteria_satisfied_at: "2026-04-22T14:00:00Z",

@@ -1,9 +1,15 @@
 import { isUiFeatureOmitted } from "@/launch/omittedFeatures";
 import type { Status, Task } from "@/types";
 import { useAppTimezone, formatInAppTimezone } from "@/shared/time/appTimezone";
+import { useTaskCycles } from "@/tasks/hooks/useTaskCycles";
+import { PhaseCompleteGlyph, ScheduleGlyph } from "./TaskDetailScheduleGlyphs";
+import {
+  earliestCycleStartedAt,
+  formatTaskCompletionDuration,
+} from "./taskCompletionDuration";
 
 type Props = {
-  task: Pick<Task, "status" | "pickup_not_before" | "criteria_satisfied_at">;
+  task: Pick<Task, "id" | "status" | "pickup_not_before" | "criteria_satisfied_at">;
 };
 
 const TERMINAL_STATUSES: ReadonlySet<Status> = new Set(["done", "failed"]);
@@ -27,6 +33,14 @@ export function TaskDetailSchedule({ task }: Props) {
   const showPhaseCompletePlaceholder =
     !hasPhaseComplete && PHASE_COMPLETE_PLACEHOLDER_STATUSES.has(task.status);
 
+  const cyclesQuery = useTaskCycles(task.id, {
+    enabled: hasPhaseComplete && Boolean(task.id),
+  });
+  const startedAt = earliestCycleStartedAt(cyclesQuery.data?.cycles ?? []);
+  const durationLabel = hasPhaseComplete
+    ? formatTaskCompletionDuration(startedAt, phaseCompleteAt)
+    : null;
+
   if (!hasPhaseComplete && !scheduleUiEnabled && !showPhaseCompletePlaceholder) {
     return null;
   }
@@ -41,6 +55,9 @@ export function TaskDetailSchedule({ task }: Props) {
   const phaseFormatted = hasPhaseComplete
     ? formatInAppTimezone(phaseCompleteAt, tz)
     : null;
+  const phaseAria = durationLabel
+    ? `Phase completed, ${phaseFormatted}, took ${durationLabel}`
+    : `Phase completed, ${phaseFormatted}`;
 
   return (
     <div
@@ -52,7 +69,7 @@ export function TaskDetailSchedule({ task }: Props) {
         <div
           className="task-detail-schedule-row task-detail-schedule-row--phase"
           data-testid="task-detail-phase-complete"
-          aria-label={`Phase completed, ${phaseFormatted}`}
+          aria-label={phaseAria}
         >
           <span className="task-detail-schedule-row-icon" aria-hidden="true">
             <PhaseCompleteGlyph />
@@ -63,6 +80,14 @@ export function TaskDetailSchedule({ task }: Props) {
               ·
             </span>
             <time dateTime={phaseCompleteAt}>{phaseFormatted}</time>
+            {durationLabel ? (
+              <>
+                <span className="task-detail-schedule-row-sep" aria-hidden="true">
+                  ·
+                </span>
+                <span data-testid="task-detail-phase-duration">{durationLabel}</span>
+              </>
+            ) : null}
           </div>
         </div>
       ) : showPhaseCompletePlaceholder ? (
@@ -106,43 +131,5 @@ export function TaskDetailSchedule({ task }: Props) {
         </span>
       ) : null}
     </div>
-  );
-}
-
-function PhaseCompleteGlyph() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 16 16"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.4"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="8" cy="8" r="6.25" />
-      <path d="M5.25 8.25 7 10l3.75-4" />
-    </svg>
-  );
-}
-
-function ScheduleGlyph() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 16 16"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.4"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect x="2.25" y="3.5" width="11.5" height="10.25" rx="2" />
-      <path d="M2.25 6.5h11.5" />
-      <path d="M5.5 2v3" />
-      <path d="M10.5 2v3" />
-    </svg>
   );
 }
