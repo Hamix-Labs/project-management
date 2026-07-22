@@ -23,13 +23,17 @@ describe("agentProgressDisplay", () => {
     ["tool_call", "done", undefined, "Tool done"],
     ["tool_call", "error", "Read", "Tool failed"],
     ["tool_call", "started", "Read", "Tool call"],
+    ["tool_call", "started", "verify_command", "Verify command"],
+    ["tool_call", "running", "verify_command", "Verify command"],
+    ["tool_call", "completed", "verify_command", "Command done"],
+    ["tool_call", "failed", "verify_command", "Command failed"],
     ["assistant", undefined, undefined, "Agent reply"],
     ["run_state", "idle_suspicious", undefined, "May be stuck"],
     ["run_state", "idle_kill_pending", undefined, "Terminating soon"],
     ["run_state", "idle_recovered", undefined, "Recovered"],
     ["custom_event", undefined, undefined, "custom event"],
   ] as const)(
-    "agentProgressKindLabel(%s, %s) → %s",
+    "agentProgressKindLabel(%s, %s, %s) → %s",
     (kind, subtype, tool, expected) => {
       expect(agentProgressKindLabel(kind, subtype, tool)).toBe(expected);
     },

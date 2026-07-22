@@ -22,6 +22,27 @@ export function agentProgressKindDescriptor(
 ): AgentProgressKindDescriptor {
   const toolName = tool?.trim();
   if (kind === "tool_call" || kind === "tool") {
+    if (toolName === "verify_command") {
+      if (subtype === "completed" || subtype === "success" || subtype === "done") {
+        return {
+          label: "Command done",
+          title: "Worker verify command finished",
+          tone: "done",
+        };
+      }
+      if (subtype === "failed" || subtype === "error") {
+        return {
+          label: "Command failed",
+          title: "Worker verify command failed",
+          tone: "failed",
+        };
+      }
+      return {
+        label: "Verify command",
+        title: "Worker is running a checklist verify command",
+        tone: "tool",
+      };
+    }
     if (subtype === "completed" || subtype === "success" || subtype === "done") {
       return {
         label: "Tool done",

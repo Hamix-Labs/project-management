@@ -74,7 +74,7 @@ func (s *Service) runVerifyChecks(
 	}
 
 	if needLLMVerify {
-		cmdEvidence, cmdErr := s.RunCriterionCommands(parentCtx, cycle.ID, attemptSeq, snap, selfReport, nil)
+		cmdEvidence, cmdErr := s.RunCriterionCommands(parentCtx, task.ID, cycle.ID, phaseSeq, attemptSeq, snap, selfReport, nil)
 		if cmdErr != nil {
 			return nil, "", mirrorDegraded, cmdErr
 		}

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/prompt"
+	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/verify"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
@@ -140,7 +141,7 @@ func (h *Harness) persistProgress(ctx context.Context, taskID, cycleID string, p
 		TaskID:   taskID,
 		CycleID:  cycleID,
 		PhaseSeq: phaseSeq,
-		Source:   "cursor",
+		Source:   progressStreamSource(ev),
 		Kind:     ev.Kind,
 		Subtype:  ev.Subtype,
 		Message:  ev.Message,
@@ -152,6 +153,14 @@ func (h *Harness) persistProgress(ctx context.Context, taskID, cycleID string, p
 			"task_id", taskID, "cycle_id", cycleID, "phase_seq", phaseSeq,
 			"kind", ev.Kind, "err", err)
 	}
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by persistProgress."
+func progressStreamSource(ev runner.ProgressEvent) string {
+	if ev.Tool == verify.ProgressToolVerifyCommand {
+		return "worker"
+	}
+	return "cursor"
 }
 
 // withRunTimeout returns parent unchanged when d <= 0; otherwise wraps with WithTimeout.
