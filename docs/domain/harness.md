@@ -56,7 +56,7 @@ Package comment: [`doc.go`](../../pkgs/agents/harness/doc.go). Extraction ration
 | **Harness** | Concrete `harness.Harness` type; no interface or strategy registry ([ADR-0005](../adr/ADR-0005-extract-agent-harness.md)). |
 | **Cycle** | One `task_cycles` row from `StartCycle` through `TerminateCycle`. |
 | **Phase** | Execute or verify row in `task_cycle_phases`; each execute `runner.Run` maps to one execute phase. |
-| **processState** | In-memory scratch for one task run: cycle id, running phase seq, verify retry counters, `previouslyPassed`, `verifyFeedback`. Tier **T0** — lost on process restart. |
+| **processState** | In-memory scratch for one task run: cycle id, running phase seq, verify retry counters, `previouslyPassed`, `verifyFeedback`. Tier **T0** — lost on process restart. Owned by harness root (`cycle.go`); `internal/orchestration` receives scalar/DTO projections only (no `LoopState` bag — see ADR-0018). |
 | **Report dir** | `Options.ReportDir/<cycle_id>/` — ephemeral agent↔worker files outside `repo_root`. Tier **T1**. |
 | **Phase ledger** | `task_cycle_phases` rows + verify report mirrors. Tier **T2** — survives restart ([ADR-0006](../adr/ADR-0006-phase-boundary-resume.md)). |
 | **Commit index** | `task_cycle_commits` + git tree when `repo_root` configured. Tier **T3**. |

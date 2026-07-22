@@ -27,7 +27,7 @@ Extend `pkgs/agents/harness/internal/orchestration` with execute and loop-level 
 
 **Effect applier** owns store ordering: `CompletePhase` before `TerminateCycle`; publish/metrics after successful writes.
 
-**Track C deferred:** unified `Decide(LoopState, Event)` graph; shutdown/panic recovery stays imperative in `recovery.go`.
+**Track C deferred:** a unified event-graph `Decide(...)` over the full cycle (including recovery) is still out of scope. The historical `LoopState` type was never wired and was deleted as unused (`5bced0a7`); do not revive it as a unify vehicle. Shutdown/panic recovery stays imperative in `recovery.go`. Live counters remain on harness-root `processState` (see ADR-0018).
 
 ## Consequences
 
@@ -39,7 +39,7 @@ Extend `pkgs/agents/harness/internal/orchestration` with execute and loop-level 
 
 ### Negative / Trade-offs
 
-- DTO duplication between `processState` and orchestration inputs until a later unify pass.
+- Intentional DTO projection between `processState` and orchestration inputs (`ExecutePostRunInput`, etc.); keep orchestration free of harness scratch bags.
 - `funclogmeasure` allowlist updates when symbols move.
 
 ## Alternatives Considered
