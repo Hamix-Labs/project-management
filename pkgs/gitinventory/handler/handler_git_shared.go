@@ -79,8 +79,12 @@ func (h *Handler) serveListGitWorktrees(w http.ResponseWriter, r *http.Request, 
 	}
 	staleMap, err := h.inventory.WorktreeStaleMap(r.Context(), repoID, time.Now().UTC())
 	if err != nil {
-		WriteGitStoreError(w, r, op, err)
-		return
+		// Stale hints are enrichment only; do not fail the worktree list (UI
+		// bindings depend on this endpoint returning 200).
+		slog.Warn("worktree stale map failed; continuing without stale flags",
+			"cmd", calltrace.LogCmd, "operation", op+".stale_map_err",
+			"repository_id", repoID, "err", err)
+		staleMap = map[string]bool{}
 	}
 	out := make([]gitWorktreeJSON, 0, len(rows))
 	for _, row := range rows {
