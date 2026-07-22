@@ -1,4 +1,5 @@
 import { promptHasVisibleContent } from "@/lib/promptFormat";
+import { TaskDetailCollapsibleSection } from "../layout/TaskDetailCollapsibleSection";
 
 type TaskDetailPromptSectionProps = {
   initialPrompt: string;
@@ -9,43 +10,37 @@ export function TaskDetailPromptSection({
   initialPrompt,
   sanitizedInitialPrompt,
 }: TaskDetailPromptSectionProps) {
-  return (
-    <div className="task-detail-section task-detail-prompt">
-      <h3
-        className="task-detail-section-heading"
-        id="task-detail-prompt-heading"
-      >
-        <span>Initial prompt</span>
-      </h3>
-      {!promptHasVisibleContent(initialPrompt) ? (
+  if (!promptHasVisibleContent(initialPrompt)) {
+    return (
+      <div className="task-detail-section task-detail-prompt">
+        <h3
+          className="task-detail-section-heading"
+          id="task-detail-prompt-heading"
+        >
+          <span>Initial prompt</span>
+        </h3>
         <p
           className="muted task-detail-prompt-empty"
           aria-labelledby="task-detail-prompt-heading"
         >
           —
         </p>
-      ) : (
-        <details className="task-detail-prompt-details">
-          <summary className="task-detail-prompt-summary">
-            <span className="task-detail-prompt-summary-open-label">
-              Show full initial prompt
-            </span>
-            <span className="task-detail-prompt-summary-close-label">
-              Hide initial prompt
-            </span>
-            <span
-              className="task-detail-prompt-summary-chevron"
-              aria-hidden="true"
-            >
-              ▾
-            </span>
-          </summary>
-          <div
-            className="task-detail-prompt-body"
-            dangerouslySetInnerHTML={{ __html: sanitizedInitialPrompt }}
-          />
-        </details>
-      )}
-    </div>
+      </div>
+    );
+  }
+
+  return (
+    <TaskDetailCollapsibleSection
+      as="div"
+      className="task-detail-prompt"
+      title="Initial prompt"
+      headingId="task-detail-prompt-heading"
+      defaultOpen={false}
+    >
+      <div
+        className="task-detail-prompt-body"
+        dangerouslySetInnerHTML={{ __html: sanitizedInitialPrompt }}
+      />
+    </TaskDetailCollapsibleSection>
   );
 }
