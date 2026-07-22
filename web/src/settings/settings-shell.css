@@ -56,7 +56,7 @@
 
 .app-header-settings-link:hover,
 .app-header-settings-link:focus-visible {
-  background: var(--neutral-fill-subtle);
+  background: var(--neutral-fill-faint);
   color: var(--text-primary, inherit);
 }
 
