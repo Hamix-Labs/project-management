@@ -8,8 +8,9 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/contract"
-	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
 // WorktreeStaleAfter is how long after the latest terminal task a managed
@@ -55,7 +56,11 @@ func (s *Store) WorktreeStaleMap(ctx context.Context, repoID string, now time.Ti
 	}
 	out := make(map[string]bool, len(wts))
 	cutoff := now.UTC().Add(-WorktreeStaleAfter)
-	terminal := []string{string(taskcoredomain.StatusDone), string(taskcoredomain.StatusFailed)}
+	terminalCycles := []string{
+		string(cyclesdomain.CycleStatusSucceeded),
+		string(cyclesdomain.CycleStatusFailed),
+		string(cyclesdomain.CycleStatusAborted),
+	}
 	nonTerminal := []string{
 		string(taskcoredomain.StatusReady),
 		string(taskcoredomain.StatusRunning),
@@ -78,13 +83,16 @@ func (s *Store) WorktreeStaleMap(ctx context.Context, repoID string, now time.Ti
 			out[wt.ID] = false
 			continue
 		}
+		// tasks has no updated_at column; use latest terminal cycle end time.
 		var latest *time.Time
-		row := s.db.WithContext(ctx).Table("tasks").
-			Select("MAX(updated_at)").
-			Where("worktree_id = ? AND status IN ?", wt.ID, terminal).
+		row := s.db.WithContext(ctx).
+			Table("task_cycles AS c").
+			Select("MAX(c.ended_at)").
+			Joins("INNER JOIN tasks AS t ON t.id = c.task_id").
+			Where("t.worktree_id = ? AND c.status IN ? AND c.ended_at IS NOT NULL", wt.ID, terminalCycles).
 			Row()
 		if err := row.Scan(&latest); err != nil {
-			return nil, fmt.Errorf("latest terminal task: %w", err)
+			return nil, fmt.Errorf("latest terminal cycle: %w", err)
 		}
 		if latest == nil {
 			out[wt.ID] = false
