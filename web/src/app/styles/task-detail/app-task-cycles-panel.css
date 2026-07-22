@@ -9,7 +9,15 @@
 .task-cycles-panel {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+}
+
+/* Ticker + history sit inside the collapsible body; space them more
+   openly than the old panel gap so the live card and attempt rows read
+   as separate beats. */
+.task-cycles-panel .task-detail-collapsible-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2.25rem;
 }
 
 /* Live ticker: neutral surface with a left live stripe. Phase name is the
