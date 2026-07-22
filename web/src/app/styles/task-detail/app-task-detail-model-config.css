@@ -101,9 +101,8 @@ a.task-create-agent-lock-notice-link:hover {
 }
 
 /* === Hero toolbar =====================================================
-   Single-row flex: schedule metadata grows on the left, actions pin
-   to the right, vertically centered. Task status lives in the header
-   pill — no duplicate status copy in this strip. */
+   Schedule on the left, actions on the right. Top border separates the
+   action row from the git metadata card above (inspiration layout). */
 .task-detail-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -112,8 +111,10 @@ a.task-create-agent-lock-notice-link:hover {
   gap: var(--space-3) var(--space-4);
   margin-top: var(--space-5);
   margin-bottom: 0;
+  padding-top: var(--space-5);
   padding-bottom: var(--space-5);
-  border-bottom: 1px solid var(--border-hairline);
+  border-top: 1px solid var(--border-hairline);
+  border-bottom: none;
 }
 
 .task-detail-toolbar > .task-detail-schedule,
@@ -136,10 +137,9 @@ a.task-create-agent-lock-notice-link:hover {
   justify-content: flex-end;
 }
 
-/* The toolbar already carries its own bottom hairline, so the first
-   section beneath it should not double up with its own top border. */
+/* The toolbar no longer carries a bottom hairline; the first section
+   beneath it keeps its own top border for consistent section rhythm. */
 .task-detail-toolbar + .task-detail-section {
-  border-top: none;
   padding-top: var(--space-6);
 }
 

@@ -50,6 +50,11 @@ export function TaskCyclesPanel({ taskId, enabled = true }: Props) {
         id="task-detail-cycles-heading"
       >
         <span>Execution cycles</span>
+        {!cyclesQuery.isPending && !cyclesQuery.isError ? (
+          <span className="task-detail-section-count" aria-hidden="true">
+            {(cyclesQuery.data?.cycles ?? []).length}
+          </span>
+        ) : null}
       </h3>
 
       {cyclesQuery.isPending ? (

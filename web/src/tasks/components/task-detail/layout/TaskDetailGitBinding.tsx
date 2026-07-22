@@ -30,7 +30,7 @@ export function TaskDetailGitBinding({ worktreeId, projectId }: Props) {
         >
           <button
             type="button"
-            className="btn-utility"
+            className="btn-utility task-detail-git-binding-copy"
             onClick={() => pathCopy.copy(openPath)}
             aria-label={
               pathCopy.copied ? "Copied worktree path" : "Copy worktree path"

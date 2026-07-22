@@ -284,17 +284,33 @@ button.task-detail-btn-delete:focus-visible {
   border-top: 1px solid var(--border-hairline);
 }
 
-/* Section headings double as the scroll-skimming map of this page.
-   The old text-xs caption with text-secondary color was easy to miss —
-   bumping to text-sm, text-primary, and tighter spacing turns them into
-   genuine anchor points without crowding the content beneath. */
+/* Section headings — muted uppercase labels for scroll-skimming. */
 .task-detail-section-heading {
   margin: 0 0 var(--space-3);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
   font-size: var(--text-xs);
   font-weight: 600;
   letter-spacing: var(--data-caps-letter-spacing);
   text-transform: uppercase;
-  color: var(--text-primary);
+  color: var(--text-tertiary);
+}
+
+.task-detail-section-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  padding: 0 0.4rem;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-secondary);
+  background: var(--neutral-fill-subtle);
+  border-radius: var(--radius-full);
 }
 
 .task-detail-section-hint {
