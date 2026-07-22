@@ -6,6 +6,7 @@ import {
 } from "@/shared/EmptyState";
 import type { Phase, PhaseStatus } from "@/types/cycle";
 import { useTaskCycles } from "../../../hooks/useTaskCycles";
+import { TaskDetailCollapsibleSection } from "../layout/TaskDetailCollapsibleSection";
 import { CycleHistoryList } from "./CycleHistoryList";
 import { CurrentPhaseTicker } from "./CurrentPhaseTicker";
 import { CyclesLoading } from "./CyclesLoading";
@@ -40,23 +41,19 @@ export function TaskCyclesPanel({ taskId, enabled = true }: Props) {
     [cyclesQuery.data?.cycles],
   );
 
-  return (
-    <section
-      className="task-detail-section task-cycles-panel"
-      aria-labelledby="task-detail-cycles-heading"
-    >
-      <h3
-        className="task-detail-section-heading"
-        id="task-detail-cycles-heading"
-      >
-        <span>Execution cycles</span>
-        {!cyclesQuery.isPending && !cyclesQuery.isError ? (
-          <span className="task-detail-section-count" aria-hidden="true">
-            {(cyclesQuery.data?.cycles ?? []).length}
-          </span>
-        ) : null}
-      </h3>
+  const count =
+    !cyclesQuery.isPending && !cyclesQuery.isError
+      ? (cyclesQuery.data?.cycles ?? []).length
+      : null;
 
+  return (
+    <TaskDetailCollapsibleSection
+      className="task-cycles-panel"
+      title="Execution cycles"
+      headingId="task-detail-cycles-heading"
+      count={count}
+      defaultOpen
+    >
       {cyclesQuery.isPending ? (
         <CyclesLoading />
       ) : cyclesQuery.isError ? (
@@ -102,7 +99,7 @@ export function TaskCyclesPanel({ taskId, enabled = true }: Props) {
           />
         </>
       )}
-    </section>
+    </TaskDetailCollapsibleSection>
   );
 }
 
