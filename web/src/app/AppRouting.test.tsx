@@ -31,6 +31,16 @@ describe("App routing", () => {
     const titleLink = await screen.findByRole("link", { name: /^hamix$/i });
     expect(titleLink).toHaveAttribute("href", "/");
     expect(titleLink).toHaveAttribute("aria-current", "page");
+    expect(titleLink.querySelector(".hamix-wordmark__mark")).toHaveTextContent(
+      "H",
+    );
+  });
+
+  it("marks the Tasks nav link as current on / with pill chrome", async () => {
+    renderApp();
+    const tasks = await screen.findByRole("link", { name: /^tasks$/i });
+    expect(tasks).toHaveAttribute("aria-current", "page");
+    expect(tasks).toHaveClass("app-nav__link");
   });
 
   it("navigates home when Hamix wordmark is used from a task route", async () => {
