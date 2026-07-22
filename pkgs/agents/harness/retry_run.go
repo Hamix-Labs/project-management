@@ -14,6 +14,8 @@ import (
 type startCycleOpts struct {
 	parentCycleID *string
 	retryMode     taskcoredomain.RetryMode
+	runKind       taskcoredomain.PendingRunKind
+	instructions  string
 }
 
 // RunWithRetry starts a new cycle. intent==nil is the existing first-run path.
@@ -27,6 +29,10 @@ func (h *Harness) RunWithRetry(parentCtx context.Context, task *taskcoredomain.T
 			"operation", "agent.harness.Harness.RunWithRetry.invalid_intent",
 			"task_id", task.ID, "err", err)
 		h.resumeSvc().FailTaskAfterRetryPrep(parentCtx, task.ID, "retry_invalid_intent")
+		return
+	}
+	if intent.NormalizeKind() == taskcoredomain.PendingKindPolish {
+		h.runPolish(parentCtx, task, intent)
 		return
 	}
 	switch intent.Mode {
@@ -100,6 +106,50 @@ func (h *Harness) runResumeRetry(parentCtx context.Context, task *taskcoredomain
 		}
 	}
 	h.enterCycleLoopFromCheckpoint(parentCtx, task, cycle, &state, cp, cycleLoopEntryOperatorRetry)
+}
+
+// runPolish starts a new attempt from a succeeded parent: always execute (never
+// verify-only), Cursor session resume via retry_mode=resume, polish prompts.
+func (h *Harness) runPolish(parentCtx context.Context, task *taskcoredomain.Task, intent *taskcoredomain.PendingRetry) {
+	cp, err := h.loadCheckpointFromParent(parentCtx, intent.ParentCycleID)
+	if err != nil {
+		slog.Warn("agent harness polish checkpoint failed", "cmd", calltrace.LogCmd,
+			"operation", "agent.harness.Harness.runPolish.checkpoint_err",
+			"task_id", task.ID, "parent_cycle_id", intent.ParentCycleID, "err", err)
+		h.resumeSvc().FailTaskAfterRetryPrep(parentCtx, task.ID, "retry_checkpoint_failed")
+		return
+	}
+	startedAt := h.opts.Clock()
+	state := processState{
+		cycle:  cycleLifecycleState{startedAt: startedAt},
+		verify: verifyLifecycleState{previouslyPassed: map[string]criterionVerdict{}},
+	}
+	defer h.recoverFromPanic(&state, *task)
+
+	parentID := intent.ParentCycleID
+	cycle, ok := h.startCycle(parentCtx, task, &state, startCycleOpts{
+		parentCycleID: &parentID,
+		retryMode:     taskcoredomain.RetryResume,
+		runKind:       taskcoredomain.PendingKindPolish,
+		instructions:  intent.Instructions,
+	})
+	if !ok {
+		h.bestEffortFailTask(parentCtx, task.ID)
+		return
+	}
+	snap, err := h.loadVerificationSnapshot(parentCtx, task.ID)
+	if err != nil {
+		slog.Error("agent harness polish verification snapshot failed", "cmd", calltrace.LogCmd,
+			"operation", "agent.harness.Harness.runPolish.verify_snap_err",
+			"task_id", task.ID, "cycle_id", cycle.ID, "err", err)
+		h.bestEffortTerminate(parentCtx, &state, task.ID, cyclesdomain.CycleStatusFailed, "verification_snapshot_load_failed")
+		return
+	}
+	state.verify.verifySnap = snap
+	h.runCycleLoop(parentCtx, task, cycle, &state, cycleLoopOpts{
+		resumeNotice: true,
+		knownCommits: cp.KnownCommits,
+	})
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."

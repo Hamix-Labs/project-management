@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"strings"
 	"time"
 
 	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
@@ -137,6 +138,12 @@ func (h *Harness) startCycle(ctx context.Context, task *taskcoredomain.Task, sta
 	meta := buildCycleMeta(h.runner, task.InitialPrompt, req)
 	if opts.retryMode != "" {
 		meta = mergeCycleMetaBytes(meta, map[string]any{"retry_mode": string(opts.retryMode)})
+	}
+	if opts.runKind != "" {
+		meta = mergeCycleMetaBytes(meta, map[string]any{"run_kind": string(opts.runKind)})
+	}
+	if strings.TrimSpace(opts.instructions) != "" {
+		meta = mergeCycleMetaBytes(meta, map[string]any{"polish_instructions": strings.TrimSpace(opts.instructions)})
 	}
 	in := cyclescontract.StartCycleInput{
 		TaskID:        task.ID,

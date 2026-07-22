@@ -285,6 +285,7 @@ const TASK_SCOPE_TYPES = new Set<TaskEventType>([
   "task_completed",
   "task_failed",
   "task_retry_requested",
+  "task_polish_requested",
   "task_pickup_failed",
   "sync_ping",
 ]);

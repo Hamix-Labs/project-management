@@ -35,7 +35,10 @@ func (h *Harness) composeExecutePrompt(ctx context.Context, task *taskcoredomain
 	)
 	promptText = prompt.AppendVerifyFeedback(promptText, state.verify.verifyFeedback)
 	retryMode := retryModeFromCycleMeta(cycle)
-	if bundle := opts.continuation; bundle != nil {
+	runKind := runKindFromCycleMeta(cycle)
+	if runKind == taskcoredomain.PendingKindPolish {
+		promptText = prompt.AppendPolishNotice(promptText, cycle, polishInstructionsFromCycleMeta(cycle), opts.knownCommits)
+	} else if bundle := opts.continuation; bundle != nil {
 		promptText = prompt.ComposeContinuation(promptText, continuationInputFromBundle(cycle, bundle))
 		if bundle.ExecuteFeedback != "" {
 			promptText = prompt.AppendExecuteHarnessFeedback(promptText, bundle.ExecuteFeedback)
@@ -48,7 +51,8 @@ func (h *Harness) composeExecutePrompt(ctx context.Context, task *taskcoredomain
 		}
 	}
 	if !state.git.gitSnap.Skipped {
-		promptText = prompt.AppendGitCommitPolicy(promptText, retryMode == taskcoredomain.RetryResume)
+		operatorResume := retryMode == taskcoredomain.RetryResume || runKind == taskcoredomain.PendingKindPolish
+		promptText = prompt.AppendGitCommitPolicy(promptText, operatorResume)
 	}
 	return promptText
 }

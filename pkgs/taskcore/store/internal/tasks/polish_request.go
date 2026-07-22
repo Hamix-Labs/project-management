@@ -1,0 +1,149 @@
+package tasks
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"log/slog"
+	"strings"
+
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
+	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
+	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
+	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/model"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
+	cyclesmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store/model"
+	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
+	eventsaudit "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/audit"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+)
+
+// RequestPolishInput is the store payload for operator polish from review.
+type RequestPolishInput = contract.RequestPolishInput
+
+// RequestTaskPolish sets pending_retry (kind=polish) and status=ready from review.
+func RequestTaskPolish(ctx context.Context, db *gorm.DB, in RequestPolishInput, by domain.Actor) (*domain.Task, domain.Status, error) {
+	defer storekernel.DeferLatency(storekernel.OpUpdateTask)()
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.tasks.RequestTaskPolish", "task_id", in.TaskID)
+	if err := domain.ValidateActor(by); err != nil {
+		return nil, "", err
+	}
+	if by != domain.ActorUser {
+		return nil, "", fmt.Errorf("%w: polish requires user actor", domain.ErrInvalidInput)
+	}
+	taskID := strings.TrimSpace(in.TaskID)
+	if taskID == "" {
+		return nil, "", fmt.Errorf("%w: id", domain.ErrInvalidInput)
+	}
+	instructions := strings.TrimSpace(in.Instructions)
+	intent := domain.PendingRetry{
+		Kind:          domain.PendingKindPolish,
+		Mode:          domain.RetryResume,
+		ParentCycleID: strings.TrimSpace(in.ParentCycleID),
+		Instructions:  instructions,
+	}
+	var updated *domain.Task
+	var origStatus domain.Status
+	err := db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var cur model.Task
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ?", taskID).First(&cur).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return domain.ErrNotFound
+			}
+			return fmt.Errorf("load task: %w", err)
+		}
+		dcur := model.ToDomainTask(cur)
+		origStatus = dcur.Status
+		parentID, err := resolvePolishParentCycleInTx(tx, taskID, intent.ParentCycleID)
+		if err != nil {
+			return err
+		}
+		intent.ParentCycleID = parentID
+		if err := intent.Validate(); err != nil {
+			return err
+		}
+		if dcur.Status == domain.StatusReady && dcur.PendingRetry != nil {
+			if dcur.PendingRetry.Equal(&intent) {
+				updated = &dcur
+				return nil
+			}
+			return fmt.Errorf("%w: task already queued with different retry intent", domain.ErrConflict)
+		}
+		if dcur.Status != domain.StatusReview {
+			return fmt.Errorf("%w: task status is %q, want review", domain.ErrInvalidInput, dcur.Status)
+		}
+		nextSeq, err := eventsaudit.NextEventSeq(tx, taskID)
+		if err != nil {
+			return err
+		}
+		payload, err := json.Marshal(map[string]string{
+			"kind":            string(intent.Kind),
+			"mode":            string(intent.Mode),
+			"parent_cycle_id": intent.ParentCycleID,
+			"instructions":    intent.Instructions,
+		})
+		if err != nil {
+			return err
+		}
+		if err := eventsaudit.AppendEvent(tx, taskID, nextSeq, taskeventsdomain.EventTaskPolishRequested, by, payload); err != nil {
+			return err
+		}
+		nextSeq++
+		dcur.PendingRetry = &intent
+		ready := domain.StatusReady
+		if err := applyStatusPatch(tx, taskID, &dcur, &ready, by, &nextSeq); err != nil {
+			return err
+		}
+		cur = model.FromDomainTask(dcur)
+		if err := tx.Save(&cur).Error; err != nil {
+			return fmt.Errorf("save task: %w", err)
+		}
+		if err := hydrateDependsOn(ctx, tx, &dcur); err != nil {
+			return err
+		}
+		updated = &dcur
+		return nil
+	})
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return nil, "", domain.ErrNotFound
+		}
+		return nil, "", err
+	}
+	return updated, origStatus, nil
+}
+
+func resolvePolishParentCycleInTx(tx *gorm.DB, taskID, explicit string) (string, error) {
+	explicit = strings.TrimSpace(explicit)
+	if explicit != "" {
+		var c cyclesmodel.TaskCycle
+		if err := tx.Where("id = ?", explicit).First(&c).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return "", domain.ErrNotFound
+			}
+			return "", fmt.Errorf("load parent cycle: %w", err)
+		}
+		dc := cyclesmodel.ToDomainTaskCycle(c)
+		if dc.TaskID != taskID {
+			return "", fmt.Errorf("%w: parent_cycle_id does not belong to this task", domain.ErrInvalidInput)
+		}
+		if dc.Status != cyclesdomain.CycleStatusSucceeded {
+			return "", fmt.Errorf("%w: polish parent cycle must be succeeded", domain.ErrInvalidInput)
+		}
+		return dc.ID, nil
+	}
+	var cycles []cyclesmodel.TaskCycle
+	if err := tx.Where("task_id = ?", taskID).Order("attempt_seq DESC").Limit(50).Find(&cycles).Error; err != nil {
+		return "", fmt.Errorf("list cycles: %w", err)
+	}
+	for i := range cycles {
+		dc := cyclesmodel.ToDomainTaskCycle(cycles[i])
+		if dc.Status == cyclesdomain.CycleStatusSucceeded {
+			return dc.ID, nil
+		}
+	}
+	return "", fmt.Errorf("%w: no succeeded cycle to polish from", domain.ErrInvalidInput)
+}

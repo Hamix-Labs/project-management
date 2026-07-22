@@ -57,6 +57,26 @@ describe("TaskDetailToolbarActions", () => {
     expect(onDelete).toHaveBeenCalledOnce();
   });
 
+  it("renders Approve and Polish when review handlers are provided", async () => {
+    const user = userEvent.setup();
+    const onApprove = vi.fn();
+    const onPolish = vi.fn();
+    render(
+      <TaskDetailToolbarActions
+        saving={false}
+        onEdit={vi.fn()}
+        onDelete={vi.fn()}
+        onApprove={onApprove}
+        onPolish={onPolish}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /^approve$/i }));
+    await user.click(screen.getByRole("button", { name: /^polish$/i }));
+    expect(onApprove).toHaveBeenCalledOnce();
+    expect(onPolish).toHaveBeenCalledOnce();
+  });
+
   it("renders Start over and Resume from failure when retry handlers are provided", async () => {
     const user = userEvent.setup();
     const onRetryFresh = vi.fn();

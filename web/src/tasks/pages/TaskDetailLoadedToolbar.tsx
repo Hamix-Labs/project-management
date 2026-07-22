@@ -13,8 +13,12 @@ type TaskDetailLoadedToolbarProps = Pick<
   | "autonomyMode"
   | "setAutonomyConfirmOpen"
   | "setRetryConfirmMode"
+  | "setApproveConfirmOpen"
+  | "setPolishDialogOpen"
   | "setModelConfigOpen"
   | "retryMutation"
+  | "approveMutation"
+  | "polishMutation"
   | "autonomyMutation"
 >;
 
@@ -25,18 +29,33 @@ export function TaskDetailLoadedToolbar({
   autonomyMode,
   setAutonomyConfirmOpen,
   setRetryConfirmMode,
+  setApproveConfirmOpen,
+  setPolishDialogOpen,
   setModelConfigOpen,
   retryMutation,
+  approveMutation,
+  polishMutation,
   autonomyMutation,
 }: TaskDetailLoadedToolbarProps) {
+  const inReview = task.status === "review";
+
   return (
     <div className="task-detail-toolbar">
       <TaskDetailSchedule task={task} />
+      {inReview ? (
+        <p className="task-detail-review-hint muted" role="status">
+          Agents finished — approve or request polish.
+        </p>
+      ) : null}
       <TaskDetailToolbarActions
         saving={saving}
         canEdit={canEditTask(task.status)}
         onEdit={() => modals.openEdit(task)}
         onDelete={() => modals.requestDelete(task)}
+        onApprove={inReview ? () => setApproveConfirmOpen(true) : undefined}
+        approvePending={approveMutation.isPending}
+        onPolish={inReview ? () => setPolishDialogOpen(true) : undefined}
+        polishPending={polishMutation.isPending}
         onRetryFresh={
           task.status === "failed"
             ? () => setRetryConfirmMode("fresh")

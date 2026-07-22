@@ -32,4 +32,8 @@ describe("statusListLabel", () => {
   it("maps running to in-progress copy", () => {
     expect(statusListLabel("running")).toBe("Running");
   });
+
+  it("maps review to awaiting-review copy", () => {
+    expect(statusListLabel("review")).toBe("Awaiting review");
+  });
 });

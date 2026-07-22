@@ -25,7 +25,8 @@
  * ==================================================================== */
 
 /* Primary: start over after failure (POST /retry fresh). */
-button.task-detail-btn-retry-fresh {
+button.task-detail-btn-retry-fresh,
+button.task-detail-btn-approve {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -44,30 +45,35 @@ button.task-detail-btn-retry-fresh {
     transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-normal) var(--ease-out);
 }
 
-button.task-detail-btn-retry-fresh:not(:disabled):hover {
+button.task-detail-btn-retry-fresh:not(:disabled):hover,
+button.task-detail-btn-approve:not(:disabled):hover {
   background: var(--brand-hover);
   filter: none;
   transform: none;
   box-shadow: var(--shadow-md);
 }
 
-button.task-detail-btn-retry-fresh:not(:disabled):active {
+button.task-detail-btn-retry-fresh:not(:disabled):active,
+button.task-detail-btn-approve:not(:disabled):active {
   transform: scale(0.98);
   box-shadow: var(--shadow-sm);
 }
 
-button.task-detail-btn-retry-fresh:focus-visible {
+button.task-detail-btn-retry-fresh:focus-visible,
+button.task-detail-btn-approve:focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px var(--brand-muted), var(--shadow-sm);
 }
 
-button.task-detail-btn-retry-fresh:disabled {
+button.task-detail-btn-retry-fresh:disabled,
+button.task-detail-btn-approve:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
 
 /* Secondary: resume from parent checkpoint after failure (POST /retry resume). */
-button.task-detail-btn-retry-resume {
+button.task-detail-btn-retry-resume,
+button.task-detail-btn-polish {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -88,22 +94,26 @@ button.task-detail-btn-retry-resume {
     color var(--duration-normal) var(--ease-out);
 }
 
-button.task-detail-btn-retry-resume:not(:disabled):hover {
+button.task-detail-btn-retry-resume:not(:disabled):hover,
+button.task-detail-btn-polish:not(:disabled):hover {
   background: var(--bg-subtle);
   border-color: var(--border-chrome-muted);
 }
 
-button.task-detail-btn-retry-resume:not(:disabled):active {
+button.task-detail-btn-retry-resume:not(:disabled):active,
+button.task-detail-btn-polish:not(:disabled):active {
   transform: scale(0.98);
 }
 
-button.task-detail-btn-retry-resume:focus-visible {
+button.task-detail-btn-retry-resume:focus-visible,
+button.task-detail-btn-polish:focus-visible {
   outline: none;
   border-color: var(--brand-border-focus);
   box-shadow: 0 0 0 3px var(--brand-muted);
 }
 
-button.task-detail-btn-retry-resume:disabled {
+button.task-detail-btn-retry-resume:disabled,
+button.task-detail-btn-polish:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }

@@ -68,6 +68,38 @@ func retryModeFromCycleMeta(cycle *cyclesdomain.TaskCycle) taskcoredomain.RetryM
 	return taskcoredomain.RetryMode(strings.TrimSpace(meta.RetryMode))
 }
 
+// runKindFromCycleMeta reads queued-run kind stamped on cycle MetaJSON.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func runKindFromCycleMeta(cycle *cyclesdomain.TaskCycle) taskcoredomain.PendingRunKind {
+	if cycle == nil || len(cycle.MetaJSON) == 0 {
+		return ""
+	}
+	var meta struct {
+		RunKind string `json:"run_kind"`
+	}
+	if err := json.Unmarshal(cycle.MetaJSON, &meta); err != nil {
+		return ""
+	}
+	return taskcoredomain.PendingRunKind(strings.TrimSpace(meta.RunKind))
+}
+
+// polishInstructionsFromCycleMeta reads human polish instructions from cycle MetaJSON.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func polishInstructionsFromCycleMeta(cycle *cyclesdomain.TaskCycle) string {
+	if cycle == nil || len(cycle.MetaJSON) == 0 {
+		return ""
+	}
+	var meta struct {
+		Instructions string `json:"polish_instructions"`
+	}
+	if err := json.Unmarshal(cycle.MetaJSON, &meta); err != nil {
+		return ""
+	}
+	return strings.TrimSpace(meta.Instructions)
+}
+
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func mergeCycleMetaBytes(base []byte, extra map[string]any) []byte {
 	if len(extra) == 0 {

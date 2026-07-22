@@ -69,6 +69,15 @@ func TestAppendResumeNotice_andCommitPolicy(t *testing.T) {
 			t.Fatalf("operator retry notice missing %q in %q", frag, opRetry)
 		}
 	}
+	polish := prompt.AppendPolishNotice("base", cycle, "tighten spacing", known)
+	for _, frag := range []string{"Human polish", "cycle-1", "tighten spacing", "abc123def456", "base"} {
+		if !containsSubstr(polish, frag) {
+			t.Fatalf("polish notice missing %q in %q", frag, polish)
+		}
+	}
+	if containsSubstr(polish, "resume from failure") {
+		t.Fatalf("polish notice must not use failure-resume wording: %q", polish)
+	}
 	dir := t.TempDir()
 	initGitRepoForDiffTest(t, dir)
 	diff := verifyDiffSection(dir)

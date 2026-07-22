@@ -25,6 +25,12 @@ type ApproveCall struct {
 	By     taskcoredomain.Actor
 }
 
+// PolishCall records one RequestTaskPolish invocation.
+type PolishCall struct {
+	Input taskcorecontract.RequestPolishInput
+	By    taskcoredomain.Actor
+}
+
 // GateCall records one ApplyTaskGateAction invocation.
 type GateCall struct {
 	TaskID string
@@ -47,12 +53,16 @@ type TaskCRUDFake struct {
 	approveErr  error
 	approveTask *taskcoredomain.Task
 
+	polishErr  error
+	polishTask *taskcoredomain.Task
+
 	gateErr  error
 	gateTask *taskcoredomain.Task
 
 	getCalls     []GetCall
 	retryCalls   []RetryCall
 	approveCalls []ApproveCall
+	polishCalls  []PolishCall
 	gateCalls    []GateCall
 }
 
@@ -226,6 +236,53 @@ func (f *TaskCRUDFake) RequestTaskApprove(ctx context.Context, taskID string, by
 	f.approveCalls = append(f.approveCalls, ApproveCall{TaskID: taskID, By: by})
 	err := f.approveErr
 	task := f.approveTask
+	f.mu.Unlock()
+	if err != nil {
+		return nil, err
+	}
+	if task != nil {
+		return task, nil
+	}
+	return nil, errNotImplemented
+}
+
+// FailPolish configures RequestTaskPolish to return err.
+//
+//funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
+func (f *TaskCRUDFake) FailPolish(err error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.polishErr = err
+}
+
+// OnPolish configures RequestTaskPolish to return task.
+//
+//funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
+func (f *TaskCRUDFake) OnPolish(task *taskcoredomain.Task) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.polishTask = task
+}
+
+// PolishCalls returns a copy of recorded RequestTaskPolish calls.
+//
+//funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
+func (f *TaskCRUDFake) PolishCalls() []PolishCall {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	out := make([]PolishCall, len(f.polishCalls))
+	copy(out, f.polishCalls)
+	return out
+}
+
+// RequestTaskPolish records the call and returns the configured outcome.
+//
+//funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
+func (f *TaskCRUDFake) RequestTaskPolish(ctx context.Context, in taskcorecontract.RequestPolishInput, by taskcoredomain.Actor) (*taskcoredomain.Task, error) {
+	f.mu.Lock()
+	f.polishCalls = append(f.polishCalls, PolishCall{Input: in, By: by})
+	err := f.polishErr
+	task := f.polishTask
 	f.mu.Unlock()
 	if err != nil {
 		return nil, err

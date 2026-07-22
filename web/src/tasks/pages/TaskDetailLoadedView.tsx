@@ -34,6 +34,12 @@ export type TaskDetailLoadedViewProps = {
   retryConfirmMode: TaskRetryMode | null;
   setRetryConfirmMode: (mode: TaskRetryMode | null) => void;
   retryMutation: ReturnType<typeof useTaskDetailMutations>["retryMutation"];
+  approveConfirmOpen: boolean;
+  setApproveConfirmOpen: (open: boolean) => void;
+  approveMutation: ReturnType<typeof useTaskDetailMutations>["approveMutation"];
+  polishDialogOpen: boolean;
+  setPolishDialogOpen: (open: boolean) => void;
+  polishMutation: ReturnType<typeof useTaskDetailMutations>["polishMutation"];
   modelConfigOpen: boolean;
   setModelConfigOpen: (open: boolean) => void;
 };
@@ -53,6 +59,12 @@ export function TaskDetailLoadedView({
   retryConfirmMode,
   setRetryConfirmMode,
   retryMutation,
+  approveConfirmOpen,
+  setApproveConfirmOpen,
+  approveMutation,
+  polishDialogOpen,
+  setPolishDialogOpen,
+  polishMutation,
   modelConfigOpen,
   setModelConfigOpen,
 }: TaskDetailLoadedViewProps) {
@@ -71,8 +83,12 @@ export function TaskDetailLoadedView({
         autonomyMode={autonomyMode}
         setAutonomyConfirmOpen={setAutonomyConfirmOpen}
         setRetryConfirmMode={setRetryConfirmMode}
+        setApproveConfirmOpen={setApproveConfirmOpen}
+        setPolishDialogOpen={setPolishDialogOpen}
         setModelConfigOpen={setModelConfigOpen}
         retryMutation={retryMutation}
+        approveMutation={approveMutation}
+        polishMutation={polishMutation}
         autonomyMutation={autonomyMutation}
       />
 
@@ -87,6 +103,12 @@ export function TaskDetailLoadedView({
         retryConfirmMode={retryConfirmMode}
         setRetryConfirmMode={setRetryConfirmMode}
         retryMutation={retryMutation}
+        approveConfirmOpen={approveConfirmOpen}
+        setApproveConfirmOpen={setApproveConfirmOpen}
+        approveMutation={approveMutation}
+        polishDialogOpen={polishDialogOpen}
+        setPolishDialogOpen={setPolishDialogOpen}
+        polishMutation={polishMutation}
         modelConfigOpen={modelConfigOpen}
         setModelConfigOpen={setModelConfigOpen}
       />
