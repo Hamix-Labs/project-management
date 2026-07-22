@@ -58,6 +58,16 @@ export function cyclePageAuditEvents(taskId: string, events: unknown[]) {
   });
 }
 
+export function cycleVerdictsGet(
+  taskId: string,
+  cycleId: string,
+  body: JsonBodyType,
+) {
+  return http.get(`/tasks/${taskId}/cycles/${cycleId}/verdicts`, () =>
+    HttpResponse.json(body),
+  );
+}
+
 /** Handlers for TaskCycleDetailPage routing tests. */
 export function cyclePageHandlers(options: {
   taskId: string;
@@ -65,11 +75,25 @@ export function cyclePageHandlers(options: {
   cycle: JsonBodyType;
   streamEvents: JsonBodyType[];
   auditEvents: JsonBodyType[];
+  verdicts?: JsonBodyType;
 }) {
-  const { taskId, cycleId, cycle, streamEvents, auditEvents } = options;
+  const { taskId, cycleId, cycle, streamEvents, auditEvents, verdicts } =
+    options;
   return [
     cycleDetailGet(taskId, cycleId, cycle),
     cycleStreamGet(taskId, cycleId, streamEvents),
     cyclePageAuditEvents(taskId, auditEvents),
+    cycleVerdictsGet(
+      taskId,
+      cycleId,
+      verdicts ?? {
+        task_id: taskId,
+        cycle_id: cycleId,
+        criteria_reports: [],
+        verify_reports: [],
+        command_runs: [],
+        commits: [],
+      },
+    ),
   ];
 }

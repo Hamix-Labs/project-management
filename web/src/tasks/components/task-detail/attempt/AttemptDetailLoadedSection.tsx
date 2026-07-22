@@ -10,6 +10,7 @@ import {
   sortStreamEventsNewestFirst,
 } from "./attemptActivityHelpers";
 import { AttemptActivitySection } from "./AttemptActivitySection";
+import { AttemptCommitsSection } from "./AttemptCommitsSection";
 import { AttemptDetailHeader } from "./AttemptDetailHeader";
 import { AttemptDetailNavigation } from "./AttemptDetailNavigation";
 import { AttemptPhasesSection } from "./AttemptPhasesSection";
@@ -49,6 +50,10 @@ export function AttemptDetailLoadedSection({ pageState, cycle }: Props) {
         filterPhaseSeq={phaseFilter.filterPhaseSeq}
         onSelectPhase={phaseFilter.setFilterPhaseSeq}
         phaseFilterEnabled={timelineDisplay.showPhaseBadge}
+      />
+      <AttemptCommitsSection
+        taskId={pageState.taskId}
+        cycleId={pageState.cycleId}
       />
       <AttemptActivitySection
         pageState={pageState}
