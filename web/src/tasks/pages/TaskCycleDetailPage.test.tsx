@@ -174,4 +174,49 @@ describe("TaskCycleDetailPage", () => {
       screen.getByRole("button", { name: "All phases", pressed: true }),
     ).toBeInTheDocument();
   });
+
+  it("lists commits for the attempt from verdicts", async () => {
+    server.use(
+      ...cyclePageHandlers({
+        taskId: "t1",
+        cycleId: "cyc-1",
+        cycle: multiPhaseCycleDetail(),
+        streamEvents: [],
+        auditEvents: [],
+        verdicts: {
+          task_id: "t1",
+          cycle_id: "cyc-1",
+          criteria_reports: [],
+          verify_reports: [],
+          command_runs: [],
+          commits: [
+            {
+              seq: 1,
+              repo: "/repo",
+              worktree: "/wt",
+              branch: "hamix/task-abc",
+              sha: "abcdef0123456789",
+              committed_at: "2026-04-25T12:00:15.000Z",
+              message: "implement feature",
+            },
+          ],
+        },
+      }),
+    );
+
+    renderAttemptPage();
+    expect(
+      await screen.findByText("implement feature"),
+    ).toBeInTheDocument();
+    const commits = screen.getByTestId("task-attempt-commits");
+    expect(within(commits).getByText(/abcdef0/i)).toBeInTheDocument();
+  });
+
+  it("shows empty state when the attempt has no commits", async () => {
+    useCyclePageHandlers();
+    renderAttemptPage();
+    expect(
+      await screen.findByTestId("task-attempt-commits-empty"),
+    ).toHaveTextContent(/No commits indexed for this attempt/i);
+  });
 });
