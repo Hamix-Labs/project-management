@@ -127,5 +127,48 @@ describe("TaskCommitsPanel", () => {
       "main",
     );
     expect(screen.queryByTestId("task-commits-context")).not.toBeInTheDocument();
+
+    const details = document.querySelector(
+      ".task-commits-panel .task-detail-collapsible",
+    );
+    expect(details).toHaveAttribute("open");
+  });
+
+  it("collapses commits body when the section header is toggled", async () => {
+    const user = userEvent.setup();
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = reqUrl(input);
+      if (url.endsWith("/tasks/task-1/commits")) {
+        return okJSON({
+          task_id: "task-1",
+          commits: [
+            {
+              seq: 1,
+              cycle_id: "cycle-1",
+              attempt_seq: 1,
+              repo: "/repo",
+              worktree: "/repo/.worktrees/task-1",
+              branch: "main",
+              sha: "abc123def4567890abcdef1234567890abcdef12",
+              message: "Initial commit",
+              committed_at: "2026-04-18T11:00:00.000Z",
+            },
+          ],
+        });
+      }
+      return new Response("not found", { status: 404 });
+    });
+
+    renderPanel();
+
+    expect(await screen.findByText(/Initial commit/i)).toBeVisible();
+    const details = document.querySelector(
+      ".task-commits-panel .task-detail-collapsible",
+    );
+    expect(details).toHaveAttribute("open");
+
+    await user.click(screen.getByRole("heading", { name: /^commits$/i }));
+    expect(details).not.toHaveAttribute("open");
+    expect(screen.queryByText(/Initial commit/i)).not.toBeVisible();
   });
 });
