@@ -48,6 +48,10 @@ function formatTaskRuntime(task: TaskDetailHeaderTask): string {
 
 export function TaskDetailHeader({ task }: Props) {
   const needsUser = statusNeedsUserInput(task.status);
+  const milestone = (task.milestone ?? "").trim();
+  const tags = task.tags ?? [];
+  const hasSecondaryMeta = milestone !== "" || tags.length > 0;
+
   return (
     <>
       <nav className="task-detail-nav" aria-label="Task navigation">
@@ -58,19 +62,24 @@ export function TaskDetailHeader({ task }: Props) {
       </nav>
 
       <header className="task-detail-header">
-        <h2 className="task-detail-title term-arrow">
-          <span>{task.title}</span>
-        </h2>
-        <div className="task-detail-meta">
-          <Badge
-            status={task.status}
-            data-needs-user={needsUser ? "true" : undefined}
-          >
-            {statusListLabel(task.status)}
-          </Badge>
-          <span className={priorityPillClass(task.priority)}>
-            {priorityListLabel(task.priority)}
-          </span>
+        <div className="task-detail-identity">
+          <h2 className="task-detail-title term-arrow">
+            <span>{task.title}</span>
+          </h2>
+          <div className="task-detail-meta">
+            <Badge
+              status={task.status}
+              data-needs-user={needsUser ? "true" : undefined}
+            >
+              {statusListLabel(task.status)}
+            </Badge>
+            <span className={priorityPillClass(task.priority)}>
+              {priorityListLabel(task.priority)}
+            </span>
+          </div>
+        </div>
+
+        <div className="task-detail-meta-secondary">
           <span
             className={`cell-pill ${cycleRunnerChipClass()} task-detail-runtime-chip`}
             data-testid="task-detail-runtime"
@@ -78,24 +87,29 @@ export function TaskDetailHeader({ task }: Props) {
           >
             {formatTaskRuntime(task)}
           </span>
-          {(task.milestone ?? "").trim() !== "" ? (
-            <span
-              className="cell-pill task-detail-milestone-chip"
-              data-testid="task-detail-milestone"
-            >
-              {task.milestone}
-            </span>
+          {hasSecondaryMeta ? (
+            <>
+              {milestone !== "" ? (
+                <span
+                  className="cell-pill task-detail-milestone-chip"
+                  data-testid="task-detail-milestone"
+                >
+                  {milestone}
+                </span>
+              ) : null}
+              {tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="cell-pill task-detail-tag-chip"
+                  data-testid="task-detail-tag"
+                >
+                  {tag}
+                </span>
+              ))}
+            </>
           ) : null}
-          {(task.tags ?? []).map((tag) => (
-            <span
-              key={tag}
-              className="cell-pill task-detail-tag-chip"
-              data-testid="task-detail-tag"
-            >
-              {tag}
-            </span>
-          ))}
         </div>
+
         <TaskDetailGitBinding
           worktreeId={task.worktree_id}
           projectId={task.project_id}
