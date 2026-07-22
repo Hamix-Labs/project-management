@@ -16,6 +16,7 @@ Domain logic lives under `internal/` (importable only from `harness` and sibling
 | [`internal/verify/`](internal/verify/) | Verification pipeline stages |
 | [`internal/resume/`](internal/resume/) | Checkpoint load, retry routing, continuation bundles |
 | [`internal/cursorresume/`](internal/cursorresume/) | Pure ADR-0031 Cursor CLI `--resume` Decide + recovery-kind helpers |
+| [`internal/execute/`](internal/execute/) | Execute-phase I/O pipeline (git snap, runner ports, commit ingest, post-run facts) |
 | `internal/orchestration/` | Pure cycle Decide functions (`DecideVerifyRetry`, `DecideVerifyRetryWithValidity`, `ClassifyVerifyRetryMode`, `DecideExecutePostRun`, loop-level finalize/legacy) |
 
 Root `harness` owns `Harness`, cycle entrypoints, effect application (`cycle_effects.go`), recovery, and metrics.
@@ -27,9 +28,10 @@ Root `harness` owns `Harness`, cycle entrypoints, effect application (`cycle_eff
 | `harness.go` | `Harness`, `New`, `Options`, `CancelCurrentRun`, SSE notifiers, metrics interface |
 | `cycle.go` | `Run` entry — starts a new cycle then delegates to the shared loop |
 | `cycle_loop.go` | Shared execute/verify loop coordinator; I/O then orchestration Decide |
+| `execution.go` | Thin wiring to `internal/execute` (`executeSvc`, phase ports) |
 | `cursor_resume.go` | ADR-0031 Cursor `--resume` I/O planners; pure Decide in [`internal/cursorresume`](internal/cursorresume/) ([cursor-session-resume.md](../../docs/domain/cursor-session-resume.md)) |
 | `cycle_effects.go` | Applies orchestration effects (store writes, publish, metrics) |
-| `cycle_execute_adapter.go` | Maps runner/git facts to orchestration DTOs at the I/O boundary |
+| `cycle_execute_adapter.go` | Thin re-exports of execute adapter helpers used by effect apply |
 | `verify_retry_eligibility.go` | Post-execute anchors + `gatherRetryClassifyInput` (ADR-0028) |
 | `cycle_verify_only_test.go` | Integration tests for in-cycle verify-only retry (EC-xx) |
 | `resume.go` | `Resume` — continue an open cycle after `process_restart` finalization |
