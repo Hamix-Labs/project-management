@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it } from "vitest";
 import { gitQueryKeys } from "@/lib/gitQueryKeys";
@@ -16,10 +17,12 @@ function createWrapper(qc: QueryClient) {
 
 describe("TaskDetailGitBinding", () => {
   beforeEach(() => {
+    localStorage.clear();
     server.use(...globalGitApiHandlers());
   });
 
   it("renders branch and worktree context for a bound task", async () => {
+    const user = userEvent.setup();
     const qc = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
@@ -38,11 +41,14 @@ describe("TaskDetailGitBinding", () => {
     expect(screen.getByTestId("task-commits-context")).toHaveTextContent("main");
     expect(screen.getByTestId("task-detail-git-binding-actions")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /copy worktree path/i })).toBeInTheDocument();
-    const openLink = screen.getByRole("link", { name: /open worktree in cursor/i });
-    expect(openLink).toHaveAttribute(
-      "href",
-      "cursor://file/repo/main/",
-    );
+
+    await user.click(screen.getByTestId("task-detail-open-in-trigger"));
+    expect(
+      screen.getByRole("menuitem", { name: /open worktree in cursor/i }),
+    ).toHaveAttribute("href", "cursor://file/repo/main/?windowId=_blank");
+    expect(
+      screen.getByRole("menuitem", { name: /open worktree in vs code/i }),
+    ).toHaveAttribute("href", "vscode://file/repo/main/?windowId=_blank");
   });
 
   it("renders nothing when the task has no worktree binding", () => {
