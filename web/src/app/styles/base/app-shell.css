@@ -194,13 +194,14 @@
   height: 2rem;
   margin-inline-end: var(--space-2);
   border-radius: var(--radius-lg);
-  background: var(--brand);
+  /* Inspiration mark: soft top sheen over purple → deeper violet diagonal. */
+  background-image: var(--brand-mark-sheen), var(--brand-mark-gradient);
   color: var(--text-on-brand);
-  font-size: var(--text-sm);
-  font-weight: 800;
+  font-size: var(--text-md);
+  font-weight: 900;
   letter-spacing: 0;
   line-height: 1;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--brand-mark-shadow);
 }
 
 .hamix-wordmark__ha {

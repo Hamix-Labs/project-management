@@ -83,6 +83,19 @@
       #7878e0 45%,
       #a8a8f0 100%
     );
+    --brand-mark-gradient: linear-gradient(
+      140deg,
+      oklch(0.66 0.2 277) 0%,
+      oklch(0.52 0.24 285) 100%
+    );
+    --brand-mark-sheen: linear-gradient(
+      180deg,
+      rgb(255 255 255 / 22%) 0%,
+      transparent 55%
+    );
+    --brand-mark-shadow:
+      0 4px 6px -1px rgb(var(--brand-rgb) / 40%),
+      0 2px 4px -2px rgb(var(--brand-rgb) / 28%);
     --focus-ring: var(--brand-focus);
     /* Dark: same RGB, higher alpha so hairlines + tints read on near-black (DS §14) */
     --brand-border-faint: rgb(var(--brand-rgb) / 22%);

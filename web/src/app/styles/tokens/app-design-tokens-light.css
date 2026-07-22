@@ -40,6 +40,20 @@
     #4a4ab8 48%,
     #8282e8 100%
   );
+  /* App header H badge — diagonal brand wash + soft top sheen */
+  --brand-mark-gradient: linear-gradient(
+    140deg,
+    oklch(0.62 0.22 277) 0%,
+    oklch(0.5 0.24 285) 100%
+  );
+  --brand-mark-sheen: linear-gradient(
+    180deg,
+    rgb(255 255 255 / 28%) 0%,
+    transparent 55%
+  );
+  --brand-mark-shadow:
+    0 4px 6px -1px rgb(var(--brand-rgb) / 30%),
+    0 2px 4px -2px rgb(var(--brand-rgb) / 20%);
   --link: #3d3bf3;
   --link-hover: #3230c9;
   --surface-hover: var(--brand-muted);
