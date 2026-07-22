@@ -1,7 +1,7 @@
 package harness
 
 import (
-	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/reports"
+	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/execute"
 )
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
@@ -25,11 +25,5 @@ func (h *Harness) probeCriteriaReport(state *processState, cycleID string) {
 	if !state.verify.verifySnap.Enabled || len(state.verify.verifySnap.Criteria) == 0 {
 		return
 	}
-	expected := expectedActiveCriterionIDs(state)
-	if len(expected) == 0 {
-		return
-	}
-	if _, err := reports.ParseCriteriaReport(h.opts.ReportDir, cycleID, expected); err != nil {
-		state.verify.reportParseErr = err.Error()
-	}
+	state.verify.reportParseErr = execute.ProbeCriteriaReport(h.opts.ReportDir, cycleID, expectedActiveCriterionIDs(state))
 }
