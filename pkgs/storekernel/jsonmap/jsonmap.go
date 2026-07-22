@@ -61,3 +61,26 @@ func RawJSONObjectFromDatatypes(j datatypes.JSON) json.RawMessage {
 	}
 	return json.RawMessage(j)
 }
+
+// JSONStringSlice maps a string slice to datatypes.JSONSlice for jsonb columns.
+// nil and empty both become a non-nil empty slice so GormValue writes "[]"
+// (a nil JSONSlice writes JSON null / empty driver values that Postgres rejects
+// on NOT NULL jsonb columns when paired with GORM serializer:json).
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func JSONStringSlice(s []string) datatypes.JSONSlice[string] {
+	if s == nil {
+		s = []string{}
+	}
+	return datatypes.NewJSONSlice(s)
+}
+
+// StringSliceFromJSON maps datatypes.JSONSlice back to a plain []string.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func StringSliceFromJSON(s datatypes.JSONSlice[string]) []string {
+	if len(s) == 0 {
+		return []string{}
+	}
+	return append([]string(nil), s...)
+}
