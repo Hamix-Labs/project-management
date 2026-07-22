@@ -9,10 +9,11 @@
   padding-block: var(--space-3);
 }
 
-/* Close the handoff from Done criteria into the accordion stack so the
-   first hairline does not float under a double space-8/space-4 gap. */
+/* Breathing room between the Done criteria surface and the first
+   accordion hairline (Initial prompt). Keeps the disclosure stack
+   compact while matching the inspiration handoff gap. */
 #task-detail-checklist.task-detail-section {
-  padding-bottom: var(--space-2);
+  padding-bottom: var(--space-8);
 }
 
 .task-detail-collapsible {
