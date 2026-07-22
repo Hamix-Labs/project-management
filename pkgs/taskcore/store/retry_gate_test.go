@@ -130,7 +130,7 @@ func TestRequestTaskRetry_rejectsNonFailedStatuses(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for _, status := range []domain.Status{domain.StatusReady, domain.StatusRunning, domain.StatusDone} {
+	for _, status := range []domain.Status{domain.StatusReady, domain.StatusRunning, domain.StatusOnHold} {
 		s := status
 		if _, _, err := st.Update(ctx, task.ID, taskcorestore.UpdateTaskInput{Status: &s}, domain.ActorUser); err != nil {
 			t.Fatalf("set %s: %v", status, err)

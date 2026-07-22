@@ -47,7 +47,7 @@ func TestHarness_execute_propagates_run_correlation_id_to_runner(t *testing.T) {
 
 	done := env.RunHarness(ctx, env.NewHarness(r, harness.Options{}), tsk)
 	<-done
-	env.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusDone)
+	env.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusReview)
 
 	req := r.lastRequest()
 	if req.RunCorrelationID == "" {

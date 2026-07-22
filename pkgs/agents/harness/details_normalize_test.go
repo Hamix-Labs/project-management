@@ -50,8 +50,8 @@ func TestHarness_normalizes_non_object_runner_details(t *testing.T) {
 
 			done := env.RunHarness(ctx, env.NewHarness(r, harness.Options{}), tsk)
 			<-done
-			final := env.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusDone)
-			if final.Status != taskcoredomain.StatusDone {
+			final := env.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusReview)
+			if final.Status != taskcoredomain.StatusReview {
 				t.Fatalf("task status = %q, want done", final.Status)
 			}
 
@@ -90,7 +90,7 @@ func TestHarness_object_details_pass_through_unchanged(t *testing.T) {
 
 	done := env.RunHarness(ctx, env.NewHarness(r, harness.Options{}), tsk)
 	<-done
-	env.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusDone)
+	env.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusReview)
 
 	cycle := harnesstest.AssertCycleStatus(t, env.Store, tsk.ID, 1, cyclesdomain.CycleStatusSucceeded)
 	phases, err := env.Store.ListPhasesForCycle(ctx, cycle.ID)

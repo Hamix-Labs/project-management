@@ -39,12 +39,12 @@ func TestIntegration_ReadyWorkerCycleEventsStream(t *testing.T) {
 	})
 
 	_, done := h.startWorker(ctx, r, worker.Options{})
-	final := h.waitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusDone)
+	final := h.waitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusReview)
 	cancel()
 	if err := <-done; err != nil {
 		t.Fatalf("worker exit err: %v", err)
 	}
-	if final.Status != taskcoredomain.StatusDone {
+	if final.Status != taskcoredomain.StatusReview {
 		t.Fatalf("task status = %q, want done", final.Status)
 	}
 

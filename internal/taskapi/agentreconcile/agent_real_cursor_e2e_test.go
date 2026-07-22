@@ -205,9 +205,9 @@ func TestAgentE2E_RealCursor_taskFromHTTPReachesDoneWithFileWritten(t *testing.T
 		taskID, e2eRealCursorPollTimeout)
 
 	finalStatus := waitTaskTerminalE2E(t, rootCtx, st, taskID, e2eRealCursorPollTimeout, e2eRealCursorPollInterval)
-	if finalStatus != taskcoredomain.StatusDone {
+	if finalStatus != taskcoredomain.StatusReview {
 		dumpFailedTaskContext(t, rootCtx, st, taskID)
-		t.Fatalf("task %s final status = %q, want %q", taskID, finalStatus, taskcoredomain.StatusDone)
+		t.Fatalf("task %s final status = %q, want %q", taskID, finalStatus, taskcoredomain.StatusReview)
 	}
 
 	time.Sleep(e2eRealCursorPostDoneSettle)
@@ -568,7 +568,7 @@ func waitTaskTerminalE2E(t *testing.T, ctx context.Context, st *composition.API,
 // because the test then asserts on the specific terminal value.
 func isTerminalTaskStatus(s taskcoredomain.Status) bool {
 	switch s {
-	case taskcoredomain.StatusDone, taskcoredomain.StatusFailed:
+	case taskcoredomain.StatusReview, taskcoredomain.StatusFailed:
 		return true
 	default:
 		return false

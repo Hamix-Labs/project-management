@@ -34,8 +34,11 @@ func TestListQueueCandidates_excludesOpenDependency(t *testing.T) {
 		t.Fatalf("blocked task %q should not be a queue candidate", blocked.ID)
 	}
 
-	done := domain.StatusDone
-	if _, _, err := Update(ctx, db, dep.ID, UpdateInput{Status: &done}, domain.ActorUser); err != nil {
+	review := domain.StatusReview
+	if _, _, err := Update(ctx, db, dep.ID, UpdateInput{Status: &review}, domain.ActorUser); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := RequestTaskApprove(ctx, db, dep.ID, domain.ActorUser); err != nil {
 		t.Fatal(err)
 	}
 	cands, err = ready.ListQueueCandidates(ctx, db, 50, nil)

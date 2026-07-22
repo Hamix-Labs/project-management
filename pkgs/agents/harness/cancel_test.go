@@ -97,8 +97,8 @@ func TestHarness_NoCapRunTimeout_doesNotFireOnLongRun(t *testing.T) {
 	close(br.Release)
 
 	<-done
-	final := env.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusDone)
-	if final.Status != taskcoredomain.StatusDone {
+	final := env.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusReview)
+	if final.Status != taskcoredomain.StatusReview {
 		t.Fatalf("task status = %q, want done (no-cap run should succeed)", final.Status)
 	}
 }

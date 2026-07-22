@@ -188,7 +188,7 @@ func TestEdgeCase_EC01_verifyInfra_skipsExecute(t *testing.T) {
 		default:
 		}
 		got, err := st.Get(ctx, tsk.ID)
-		if err == nil && got.Status == taskcoredomain.StatusDone {
+		if err == nil && got.Status == taskcoredomain.StatusReview {
 			break
 		}
 		time.Sleep(10 * time.Millisecond)
@@ -269,7 +269,7 @@ func TestEdgeCase_EC02_verifyAgentReject_fullReexecute(t *testing.T) {
 		default:
 		}
 		got, err := st.Get(ctx, tsk.ID)
-		if err == nil && got.Status == taskcoredomain.StatusDone {
+		if err == nil && got.Status == taskcoredomain.StatusReview {
 			break
 		}
 		time.Sleep(10 * time.Millisecond)
@@ -451,7 +451,7 @@ func TestEdgeCase_EC09_partialPass_infraVerifyOnly(t *testing.T) {
 		default:
 		}
 		got, err := st.Get(runCtx, tsk.ID)
-		if err == nil && got.Status == taskcoredomain.StatusDone {
+		if err == nil && got.Status == taskcoredomain.StatusReview {
 			break
 		}
 		time.Sleep(10 * time.Millisecond)

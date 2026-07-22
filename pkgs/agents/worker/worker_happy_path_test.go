@@ -34,14 +34,14 @@ func TestWorker_HappyPath_writesOnePhaseAndFourMirrors(t *testing.T) {
 	))
 
 	_, done := h.startWorker(ctx, r, worker.Options{})
-	final := h.waitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusDone)
+	final := h.waitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusReview)
 	cancel()
 	if err := <-done; err != nil {
 		t.Fatalf("worker exit err: %v", err)
 	}
 
 	bg := context.Background()
-	if final.Status != taskcoredomain.StatusDone {
+	if final.Status != taskcoredomain.StatusReview {
 		t.Fatalf("task status = %q, want done", final.Status)
 	}
 
@@ -188,7 +188,7 @@ func TestWorker_SelectedProjectContext_injectsAndSnapshotsOnlySelectedItems(t *t
 	))
 
 	_, done := h.startWorker(ctx, r, worker.Options{})
-	h.waitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusDone)
+	h.waitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusReview)
 	cancel()
 	if err := <-done; err != nil {
 		t.Fatalf("worker exit err: %v", err)
@@ -292,7 +292,7 @@ func TestWorker_StartCycle_recordsRunnerModelAttribution(t *testing.T) {
 				cyclesdomain.PhaseStatusSucceeded, "ok", nil, ""))
 
 			_, done := h.startWorker(ctx, r, worker.Options{})
-			h.waitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusDone)
+			h.waitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusReview)
 			cancel()
 			if err := <-done; err != nil {
 				t.Fatalf("worker exit err: %v", err)

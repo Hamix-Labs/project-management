@@ -19,6 +19,12 @@ type RetryCall struct {
 	By    taskcoredomain.Actor
 }
 
+// ApproveCall records one RequestTaskApprove invocation.
+type ApproveCall struct {
+	TaskID string
+	By     taskcoredomain.Actor
+}
+
 // GateCall records one ApplyTaskGateAction invocation.
 type GateCall struct {
 	TaskID string
@@ -38,12 +44,16 @@ type TaskCRUDFake struct {
 	retryErr  error
 	retryTask *taskcoredomain.Task
 
+	approveErr  error
+	approveTask *taskcoredomain.Task
+
 	gateErr  error
 	gateTask *taskcoredomain.Task
 
-	getCalls   []GetCall
-	retryCalls []RetryCall
-	gateCalls  []GateCall
+	getCalls     []GetCall
+	retryCalls   []RetryCall
+	approveCalls []ApproveCall
+	gateCalls    []GateCall
 }
 
 // NewTaskCRUD returns an empty TaskCRUDFake. Get returns taskcoredomain.ErrNotFound
@@ -198,6 +208,24 @@ func (f *TaskCRUDFake) RequestTaskRetry(ctx context.Context, in taskcorecontract
 	f.retryCalls = append(f.retryCalls, RetryCall{Input: in, By: by})
 	err := f.retryErr
 	task := f.retryTask
+	f.mu.Unlock()
+	if err != nil {
+		return nil, err
+	}
+	if task != nil {
+		return task, nil
+	}
+	return nil, errNotImplemented
+}
+
+// RequestTaskApprove records the call and returns the configured outcome.
+//
+//funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
+func (f *TaskCRUDFake) RequestTaskApprove(ctx context.Context, taskID string, by taskcoredomain.Actor) (*taskcoredomain.Task, error) {
+	f.mu.Lock()
+	f.approveCalls = append(f.approveCalls, ApproveCall{TaskID: taskID, By: by})
+	err := f.approveErr
+	task := f.approveTask
 	f.mu.Unlock()
 	if err != nil {
 		return nil, err

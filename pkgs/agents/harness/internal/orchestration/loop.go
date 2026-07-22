@@ -28,6 +28,6 @@ func DecideFinalizeSuccess(completionErr error) FinalizeEffects {
 	}
 	return FinalizeEffects{
 		CycleStatus: cyclesdomain.CycleStatusSucceeded,
-		TaskStatus:  taskcoredomain.StatusDone,
+		TaskStatus:  taskcoredomain.StatusReview,
 	}
 }

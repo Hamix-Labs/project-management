@@ -9,10 +9,9 @@ import (
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
-	eventsaudit "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/audit"
-	checkliststore "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/store"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
+	eventsaudit "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/audit"
 	"gorm.io/gorm"
 )
 
@@ -248,9 +247,7 @@ func applyStatusPatch(tx *gorm.DB, taskID string, cur *domain.Task, st *domain.S
 		return nil
 	}
 	if *st == domain.StatusDone {
-		if err := checkliststore.ValidateCanMarkDoneInTx(tx, taskID); err != nil {
-			return err
-		}
+		return fmt.Errorf("%w: status done requires POST /tasks/{id}/approve", domain.ErrInvalidInput)
 	}
 	b, err := storekernel.EventPairJSON(string(cur.Status), string(*st))
 	if err != nil {
