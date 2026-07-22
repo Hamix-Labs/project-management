@@ -4,23 +4,14 @@ import "github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 import (
 	"context"
 	"log/slog"
-	"sort"
 	"strings"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/cursorresume"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/prompt"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/reports"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/verify"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
-)
-
-// CursorResumeMode is logged on every runner.Run for ADR-0031 observability.
-type CursorResumeMode string
-
-const (
-	CursorResumeFresh    CursorResumeMode = "fresh"
-	CursorResumeContinue CursorResumeMode = "resume"
-	CursorResumeFallback CursorResumeMode = "resume_fallback"
 )
 
 // CursorResumeDecision is the harness policy output for one runner.Run.
@@ -283,70 +274,59 @@ func (h *Harness) selectRecoveryKind(
 	opts cycleLoopOpts,
 	retryMode taskcoredomain.RetryMode,
 ) prompt.RecoveryKind {
-	if phase == cyclesdomain.PhaseVerify {
-		if state.verify.verifyAttempt > 0 {
-			return prompt.RecoveryVerifyFeedback
-		}
-		return prompt.RecoveryVerifyInfra
-	}
-	if state.verify.reportParseErr != "" {
-		if strings.Contains(strings.ToLower(state.verify.reportParseErr), "missing") {
-			return prompt.RecoveryCriteriaReportMissing
-		}
-		return prompt.RecoveryCriteriaReportInvalid
-	}
-	if retryMode == taskcoredomain.RetryResume && opts.continuation != nil {
-		return prompt.RecoveryOperatorRetryResume
-	}
-	if opts.resumeNotice {
-		return prompt.RecoveryProcessRestart
-	}
-	if len(state.verify.lastFailedVerdicts) > 0 {
-		return prompt.RecoveryVerifyImplementation
-	}
-	return prompt.RecoveryVerifyImplementation
+	return cursorresume.SelectRecoveryKind(cursorresume.RecoveryKindInput{
+		Phase:             phase,
+		VerifyAttempt:     state.verify.verifyAttempt,
+		ReportParseErr:    state.verify.reportParseErr,
+		RetryMode:         retryMode,
+		HasContinuation:   opts.continuation != nil,
+		ResumeNotice:      opts.resumeNotice,
+		HasFailedVerdicts: len(state.verify.lastFailedVerdicts) > 0,
+	})
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure state comparison for verify fresh-after-execute deny."
+func firstVerifyAfterNewExecute(state *processState) bool {
+	return cursorresume.FirstVerifyAfterNewExecute(
+		state.phase.lastVerifyAfterExecuteSeq,
+		state.phase.lastCompletedExecutePhaseSeq,
+	)
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure verdict to DTO mapping."
 func failedCriteriaFromVerdicts(verdicts []criterionVerdict) []prompt.CriterionFailure {
-	var out []prompt.CriterionFailure
+	in := make([]cursorresume.CriterionFailureInput, 0, len(verdicts))
 	for _, v := range verdicts {
-		if v.Passed {
-			continue
-		}
-		out = append(out, prompt.CriterionFailure{
+		in = append(in, cursorresume.CriterionFailureInput{
 			ID:        v.ID,
+			Passed:    v.Passed,
 			Reasoning: v.Reasoning,
 			Verifier:  string(v.Verifier),
 		})
 	}
-	return out
+	return cursorresume.FailedCriteriaFromInputs(in)
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure id extraction from locked verdict map."
 func lockedCriterionIDs(locked map[string]criterionVerdict) []string {
-	if len(locked) == 0 {
-		return nil
-	}
-	ids := make([]string, 0, len(locked))
+	ids := make(map[string]struct{}, len(locked))
 	for id := range locked {
-		ids = append(ids, id)
+		ids[id] = struct{}{}
 	}
-	sort.Strings(ids)
-	return ids
+	return cursorresume.LockedCriterionIDs(ids)
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure active checklist id list from state."
 func activeCriterionIDs(state *processState) []string {
-	expected := make([]string, 0)
+	all := make([]string, 0, len(state.verify.verifySnap.Criteria))
 	for _, it := range state.verify.verifySnap.Criteria {
-		if _, ok := state.verify.previouslyPassed[it.ID]; ok {
-			continue
-		}
-		expected = append(expected, it.ID)
+		all = append(all, it.ID)
 	}
-	sort.Strings(expected)
-	return expected
+	passed := make(map[string]struct{}, len(state.verify.previouslyPassed))
+	for id := range state.verify.previouslyPassed {
+		passed[id] = struct{}{}
+	}
+	return cursorresume.ActiveCriterionIDs(all, passed)
 }
 
 func logRecoveryCompose(decision CursorResumeDecision) {

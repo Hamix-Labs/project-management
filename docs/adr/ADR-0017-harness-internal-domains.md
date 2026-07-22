@@ -23,6 +23,7 @@ Split harness implementation into **`pkgs/agents/harness/internal/<domain>/`** s
 | `internal/prompt` | Execute/verify prompt assembly from DTOs (no store writes) |
 | `internal/verify` | Verify pipeline: gate, commands, integrity, LLM, persist |
 | `internal/resume` | Checkpoint reconstruction, operator retry routing, continuation bundles |
+| `internal/cursorresume` | Pure Cursor CLI `--resume` Decide + recovery-kind helpers (ADR-0031); distinct from harness checkpoint resume |
 | `internal/orchestration` | Pure cycle state machine: event → effects (Track B) |
 
 **Public API unchanged:** `harness.Harness`, `New`, `Run`, `Resume`, `RunWithRetry`, `CancelCurrentRun`, seam interfaces, and report sentinel errors (re-exported from root where needed). `pkgs/agents/worker` remains the only production importer of `harness`.
@@ -33,17 +34,18 @@ Split harness implementation into **`pkgs/agents/harness/internal/<domain>/`** s
 
 ```
 harness (root)
-  → internal/resume, internal/verify, internal/prompt, internal/git, internal/reports, internal/orchestration
+  → internal/resume, internal/verify, internal/prompt, internal/git, internal/reports, internal/orchestration, internal/cursorresume
 
 internal/resume → internal/prompt, internal/git, internal/reports
 internal/verify → internal/git, internal/reports, runner, adapterkit
 internal/prompt → internal/git, internal/reports
+internal/cursorresume → internal/prompt, domain (pure Decide; no store/runner)
 internal/git    → store, domain, stdlib/git CLI
 internal/reports → domain, stdlib (leaf)
 internal/orchestration → domain only (leaf for Track B pure machine)
 ```
 
-**Forbidden:** any `internal/*` importing `package harness` (root). **Forbidden:** `internal/verify` ↔ `internal/resume` mutual imports.
+**Forbidden:** any `internal/*` importing `package harness` (root). **Forbidden:** `internal/verify` ↔ `internal/resume` mutual imports. **Forbidden:** folding Cursor CLI policy into `internal/resume` (different layer — ADR-0031).
 
 ### Migration
 

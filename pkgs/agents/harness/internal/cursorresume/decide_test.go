@@ -1,4 +1,4 @@
-package harness
+package cursorresume
 
 import (
 	"testing"
@@ -7,9 +7,9 @@ import (
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
-func TestDecideCursorResume_table(t *testing.T) {
+func TestDecide_table(t *testing.T) {
 	t.Parallel()
-	base := CursorResumeFacts{
+	base := Facts{
 		SessionResumeEnabled: true,
 		RetryMode:            taskcoredomain.RetryResume,
 		Phase:                cyclesdomain.PhaseExecute,
@@ -18,91 +18,91 @@ func TestDecideCursorResume_table(t *testing.T) {
 		WorkingDir:           "/tmp/ws",
 	}
 	tests := []struct {
-		name       string
-		mutate     func(*CursorResumeFacts)
-		wantMode   CursorResumeMode
-		wantDeny   string
-		wantAllow  bool
+		name      string
+		mutate    func(*Facts)
+		wantMode  Mode
+		wantDeny  string
+		wantAllow bool
 	}{
 		{
 			name:      "continue when all gates pass",
-			wantMode:  CursorResumeContinue,
+			wantMode:  ModeContinue,
 			wantAllow: true,
 		},
 		{
 			name: "force fresh",
-			mutate: func(f *CursorResumeFacts) {
+			mutate: func(f *Facts) {
 				f.ForceFresh = true
 			},
-			wantMode: CursorResumeFresh,
+			wantMode: ModeFresh,
 			wantDeny: "resume_failed",
 		},
 		{
 			name: "settings disabled",
-			mutate: func(f *CursorResumeFacts) {
+			mutate: func(f *Facts) {
 				f.SessionResumeEnabled = false
 			},
-			wantMode: CursorResumeFresh,
+			wantMode: ModeFresh,
 			wantDeny: "settings_disabled",
 		},
 		{
 			name: "retry fresh",
-			mutate: func(f *CursorResumeFacts) {
+			mutate: func(f *Facts) {
 				f.RetryMode = taskcoredomain.RetryFresh
 			},
-			wantMode: CursorResumeFresh,
+			wantMode: ModeFresh,
 			wantDeny: "retry_fresh",
 		},
 		{
 			name: "verify fresh after execute",
-			mutate: func(f *CursorResumeFacts) {
+			mutate: func(f *Facts) {
 				f.Phase = cyclesdomain.PhaseVerify
 				f.FirstVerifyAfterExecute = true
 			},
-			wantMode: CursorResumeFresh,
+			wantMode: ModeFresh,
 			wantDeny: "verify_fresh_after_execute",
 		},
 		{
 			name: "head drift",
-			mutate: func(f *CursorResumeFacts) {
+			mutate: func(f *Facts) {
 				f.HasPostExecuteHead = true
 				f.HeadMatchesAnchor = false
 			},
-			wantMode: CursorResumeFresh,
+			wantMode: ModeFresh,
 			wantDeny: "head_drift",
 		},
 		{
 			name: "tamper",
-			mutate: func(f *CursorResumeFacts) {
+			mutate: func(f *Facts) {
 				f.ReportTampered = true
 			},
-			wantMode: CursorResumeFresh,
+			wantMode: ModeFresh,
 			wantDeny: "tamper",
 		},
 		{
 			name: "no session id",
-			mutate: func(f *CursorResumeFacts) {
+			mutate: func(f *Facts) {
 				f.SessionID = ""
 			},
-			wantMode: CursorResumeFresh,
+			wantMode: ModeFresh,
 			wantDeny: "no_session_id",
 		},
 		{
 			name: "workspace mismatch",
-			mutate: func(f *CursorResumeFacts) {
+			mutate: func(f *Facts) {
 				f.WorkingDir = "  "
 			},
-			wantMode: CursorResumeFresh,
+			wantMode: ModeFresh,
 			wantDeny: "workspace_mismatch",
 		},
 		{
 			name: "skip head check when git skipped",
-			mutate: func(f *CursorResumeFacts) {
+			mutate: func(f *Facts) {
 				f.GitSkipped = true
 				f.HasPostExecuteHead = true
 				f.HeadMatchesAnchor = false
 			},
-			wantMode:  CursorResumeContinue,
+			wantMode:  ModeContinue,
 			wantAllow: true,
 		},
 	}
@@ -113,7 +113,7 @@ func TestDecideCursorResume_table(t *testing.T) {
 			if tt.mutate != nil {
 				tt.mutate(&in)
 			}
-			got := DecideCursorResume(in)
+			got := Decide(in)
 			if got.Mode != tt.wantMode || got.DenyReason != tt.wantDeny || got.AllowResume != tt.wantAllow {
 				t.Fatalf("got %+v want mode=%s deny=%q allow=%v", got, tt.wantMode, tt.wantDeny, tt.wantAllow)
 			}
