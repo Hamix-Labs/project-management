@@ -1,12 +1,12 @@
 /* Shared accordion chrome for task-detail prompt / cycles / commits. */
 
-/* Compact disclosure rows — the generic .task-detail-section rhythm
-   (space-8 top) is for dense content blocks; these headers must sit
-   tight between hairlines like the inspiration accordion stack. */
+/* Disclosure rows — less than the generic .task-detail-section rhythm
+   (space-8 top), but enough padding so the label is not sandwiched
+   between hairlines. */
 .task-detail-section.task-detail-prompt,
 .task-detail-section.task-cycles-panel,
 .task-detail-section.task-commits-panel {
-  padding-block: var(--space-3);
+  padding-block: var(--space-5);
 }
 
 /* Breathing room between the Done criteria surface and the first
