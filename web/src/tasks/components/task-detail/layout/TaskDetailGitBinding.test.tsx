@@ -36,6 +36,13 @@ describe("TaskDetailGitBinding", () => {
     expect(screen.getByText("Branch")).toBeInTheDocument();
     expect(screen.getByText("Worktree")).toBeInTheDocument();
     expect(screen.getByTestId("task-commits-context")).toHaveTextContent("main");
+    expect(screen.getByTestId("task-detail-git-binding-actions")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /copy worktree path/i })).toBeInTheDocument();
+    const openLink = screen.getByRole("link", { name: /open worktree in cursor/i });
+    expect(openLink).toHaveAttribute(
+      "href",
+      "cursor://file/repo/main/",
+    );
   });
 
   it("renders nothing when the task has no worktree binding", () => {

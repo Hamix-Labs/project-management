@@ -1,9 +1,9 @@
+import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
+import { getTask } from "@/api";
 import { maxRepoShaQueryBytes } from "@/api/repo";
-import { errorMessage } from "@/lib/errorMessage";
-import { CopyableId } from "@/shared/CopyableId";
-import { formatRelativeTime } from "@/shared/time/relativeTime";
+import { taskQueryKeys } from "@/lib/taskQueryKeys";
 import { useDocumentTitle } from "@/shared/useDocumentTitle";
 import { useNow } from "@/shared/useNow";
 import { CommitDiffPanel } from "../components/task-detail/commits/CommitDiffPanel";
@@ -13,6 +13,8 @@ import {
 } from "../components/task-detail/commits/commitDisplay";
 import { useCommitDiff } from "../hooks/useCommitDiff";
 import { useTaskCommits } from "../hooks/useTaskCommits";
+import { QUERY_POLICY } from "../queryPolicy";
+import { TaskCommitDiffPageHeader } from "./TaskCommitDiffPageHeader";
 
 export function TaskCommitDiffPage() {
   const now = useNow();
@@ -26,8 +28,21 @@ export function TaskCommitDiffPage() {
     sha.length <= maxRepoShaQueryBytes &&
     commitShaParamPattern.test(sha);
 
-  const commitsQuery = useTaskCommits(taskId, { enabled: Boolean(taskId) && shaValid });
-  const diffQuery = useCommitDiff(sha, { enabled: Boolean(taskId) && shaValid });
+  const taskQuery = useQuery({
+    queryKey: taskQueryKeys.detail(taskId),
+    queryFn: ({ signal }) => getTask(taskId, { signal }),
+    enabled: Boolean(taskId) && shaValid,
+    staleTime: QUERY_POLICY.detailStaleTimeMs,
+  });
+  const worktreeId = (taskQuery.data?.worktree_id ?? "").trim();
+
+  const commitsQuery = useTaskCommits(taskId, {
+    enabled: Boolean(taskId) && shaValid,
+  });
+  const diffQuery = useCommitDiff(sha, {
+    worktreeId,
+    enabled: Boolean(taskId) && shaValid && worktreeId !== "",
+  });
   const commit = useMemo(
     () => commitsQuery.data?.commits.find((c) => c.sha === sha),
     [commitsQuery.data?.commits, sha],
@@ -67,82 +82,22 @@ export function TaskCommitDiffPage() {
     );
   }
 
-  const backTo = `/tasks/${encodeURIComponent(taskId)}`;
-  const gitAuthor = diffQuery.data?.author;
-
   return (
     <section
       className="panel task-detail-panel task-commit-diff-page task-detail-content--enter"
       data-testid="task-commit-diff-page"
     >
-      <header className="task-commit-diff-page-head">
-        <Link to={backTo} className="pd__back project-context-back-link">
-          <span aria-hidden="true">&#8249;</span>
-          Back to task
-        </Link>
-
-        <div className="task-commit-diff-page-hero">
-          {commit?.message ? (
-            <h1 className="task-commit-diff-page-message">{commit.message}</h1>
-          ) : (
-            <h1 className="task-commit-diff-page-message muted">
-              {shortSha(sha)}
-            </h1>
-          )}
-        </div>
-
-        <p className="task-commit-diff-page-meta muted">
-          <CopyableId
-            value={sha}
-            displayValue={shortSha(sha)}
-            copyLabel="Copy SHA"
-            className="task-commit-diff-page-sha"
-          />
-          {commit ? (
-            <>
-              <span className="task-commit-meta-sep" aria-hidden="true">
-                ·
-              </span>
-              <span>{formatRelativeTime(commit.committed_at, new Date(now))}</span>
-              {commit.branch ? (
-                <>
-                  <span className="task-commit-meta-sep" aria-hidden="true">
-                    ·
-                  </span>
-                  <span>{commit.branch}</span>
-                </>
-              ) : null}
-            </>
-          ) : commitsQuery.isError ? (
-            <>
-              <span className="task-commit-meta-sep" aria-hidden="true">
-                ·
-              </span>
-              <span role="status">
-                {errorMessage(commitsQuery.error, "Could not load commit metadata.")}
-              </span>
-            </>
-          ) : null}
-          {gitAuthor ? (
-            <>
-              <span className="task-commit-meta-sep" aria-hidden="true">
-                ·
-              </span>
-              <span
-                title={
-                  diffQuery.data?.author_email
-                    ? diffQuery.data.author_email
-                    : undefined
-                }
-              >
-                {gitAuthor}
-              </span>
-            </>
-          ) : null}
-        </p>
-      </header>
+      <TaskCommitDiffPageHeader
+        taskId={taskId}
+        sha={sha}
+        now={now}
+        commit={commit}
+        commitsQuery={commitsQuery}
+        diffQuery={diffQuery}
+      />
       <CommitDiffPanel
         sha={sha}
+        worktreeId={worktreeId}
         viewClassName="task-commit-diff-view task-commit-diff-view--page"
       />
     </section>

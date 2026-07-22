@@ -284,11 +284,11 @@ describe("fetchRepoCommitDiff", () => {
   it("returns null on 409", async () => {
     vi.mocked(fetch).mockResolvedValue(new Response("", { status: 409 }));
     await expect(
-      fetchRepoCommitDiff("abc1234"),
+      fetchRepoCommitDiff("abc1234", { worktreeId: "wt-1" }),
     ).resolves.toBeNull();
   });
 
-  it("parses ok JSON", async () => {
+  it("parses ok JSON and sends worktree_id", async () => {
     vi.mocked(fetch).mockResolvedValue(
       new Response(
         JSON.stringify({
@@ -300,22 +300,38 @@ describe("fetchRepoCommitDiff", () => {
         { status: 200, headers: { "Content-Type": "application/json" } },
       ),
     );
-    await expect(fetchRepoCommitDiff("abc1234")).resolves.toEqual({
+    await expect(
+      fetchRepoCommitDiff("abc1234", { worktreeId: "wt-1" }),
+    ).resolves.toEqual({
       sha: "abc1234",
       patch: "diff --git a/x b/x",
       truncated: false,
       size_bytes: 18,
     });
+    expect(String(vi.mocked(fetch).mock.calls[0]?.[0])).toContain(
+      "worktree_id=wt-1",
+    );
+  });
+
+  it("rejects missing worktree_id before fetch", async () => {
+    await expect(
+      fetchRepoCommitDiff("abc1234", { worktreeId: "  " }),
+    ).rejects.toThrow(/worktree_id is required/);
+    expect(fetch).not.toHaveBeenCalled();
   });
 
   it("rejects invalid sha before fetch", async () => {
-    await expect(fetchRepoCommitDiff("not-valid")).rejects.toThrow(/invalid sha/);
+    await expect(
+      fetchRepoCommitDiff("not-valid", { worktreeId: "wt-1" }),
+    ).rejects.toThrow(/invalid sha/);
     expect(fetch).not.toHaveBeenCalled();
   });
 
   it("rejects sha longer than max before fetch", async () => {
     const longSha = "a".repeat(maxRepoShaQueryBytes + 1);
-    await expect(fetchRepoCommitDiff(longSha)).rejects.toThrow(/too long/);
+    await expect(
+      fetchRepoCommitDiff(longSha, { worktreeId: "wt-1" }),
+    ).rejects.toThrow(/too long/);
     expect(fetch).not.toHaveBeenCalled();
   });
 });

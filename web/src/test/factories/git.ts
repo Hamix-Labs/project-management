@@ -25,6 +25,7 @@ export function gitWorktreeFactory(overrides: Partial<GitWorktree> = {}): GitWor
     id: FACTORY_GIT_WORKTREE_ID,
     repository_id: FACTORY_GIT_REPO_ID,
     path: "/repo/main",
+    host_path: "",
     name: "main",
     is_main: true,
     branch_id: FACTORY_GIT_BRANCH_ID,

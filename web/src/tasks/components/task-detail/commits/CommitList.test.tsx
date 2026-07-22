@@ -10,6 +10,7 @@ import { CommitList } from "./CommitList";
 import { TaskCommitDiffPage } from "@/tasks/pages/TaskCommitDiffPage";
 
 const taskId = "task-1";
+const worktreeId = "00000000-0000-4000-8000-000000000020";
 const sampleCommits: CycleCommit[] = [
   {
     seq: 1,
@@ -21,6 +22,19 @@ const sampleCommits: CycleCommit[] = [
     message: "refactor(web): split helpers",
   },
 ];
+
+const sampleTask = {
+  id: taskId,
+  title: "Sample task",
+  initial_prompt: "prompt",
+  status: "running",
+  priority: "medium",
+  runner: "cursor",
+  cursor_model: "",
+  worktree_id: worktreeId,
+  tags: [],
+  depends_on: [],
+};
 
 function createWrapper(initialEntries = ["/"]) {
   const qc = new QueryClient({
@@ -60,6 +74,39 @@ const samplePatch = [
   "-hello",
   "+world",
 ].join("\n");
+
+function mockDiffPageFetches(options: {
+  onDiff?: (url: string) => Response | Promise<Response>;
+}): void {
+  vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+    const url = typeof input === "string" ? input : (input as Request).url;
+    if (url.includes("/repo/diff")) {
+      if (options.onDiff) {
+        return options.onDiff(url);
+      }
+      return okJSON({
+        sha: sampleCommits[0].sha,
+        patch: samplePatch,
+        truncated: false,
+        size_bytes: samplePatch.length,
+      });
+    }
+    if (
+      url.includes(`/tasks/${taskId}/commits`) &&
+      !url.includes("/repo/") &&
+      !url.includes("/commits/")
+    ) {
+      return okJSON({ task_id: taskId, commits: sampleCommits });
+    }
+    if (
+      (url.endsWith(`/tasks/${taskId}`) || url.includes(`/tasks/${taskId}?`)) &&
+      !url.includes("/commits")
+    ) {
+      return okJSON(sampleTask);
+    }
+    throw new Error(`unexpected fetch ${url}`);
+  });
+}
 
 describe("CommitList", () => {
   afterEach(() => {
@@ -102,9 +149,8 @@ describe("CommitList", () => {
 
   it("navigates to the commit diff page and loads the patch", async () => {
     const diffCalls: string[] = [];
-    vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
-      const url = typeof input === "string" ? input : (input as Request).url;
-      if (url.includes("/repo/diff")) {
+    mockDiffPageFetches({
+      onDiff: (url) => {
         diffCalls.push(url);
         return okJSON({
           sha: sampleCommits[0].sha,
@@ -112,11 +158,7 @@ describe("CommitList", () => {
           truncated: false,
           size_bytes: samplePatch.length,
         });
-      }
-      if (url.includes(`/tasks/${taskId}/commits`) && !url.includes("/repo/")) {
-        return okJSON({ commits: sampleCommits });
-      }
-      throw new Error(`unexpected fetch ${url}`);
+      },
     });
 
     const user = userEvent.setup();
@@ -137,7 +179,8 @@ describe("CommitList", () => {
     await waitFor(() => {
       expect(diffCalls.length).toBeGreaterThanOrEqual(1);
     });
-    expect(diffCalls[0]).toContain("/repo/diff?sha=");
+    expect(diffCalls[0]).toContain("worktree_id=");
+    expect(diffCalls[0]).toContain(worktreeId);
     await screen.findByText("note.txt");
   });
 });
@@ -149,19 +192,14 @@ describe("TaskCommitDiffPage", () => {
 
   it("shows error state and retries when diff fetch fails", async () => {
     let attempts = 0;
-    vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
-      const url = typeof input === "string" ? input : (input as Request).url;
-      if (url.includes("/repo/diff")) {
+    mockDiffPageFetches({
+      onDiff: () => {
         attempts += 1;
         return new Response(JSON.stringify({ error: "boom" }), {
           status: 500,
           headers: { "Content-Type": "application/json" },
         });
-      }
-      if (url.includes(`/tasks/${taskId}/commits`) && !url.includes("/repo/")) {
-        return okJSON({ commits: sampleCommits });
-      }
-      throw new Error(`unexpected fetch ${url}`);
+      },
     });
 
     const user = userEvent.setup();
@@ -189,20 +227,14 @@ describe("TaskCommitDiffPage", () => {
   });
 
   it("shows truncation notice when the patch is truncated", async () => {
-    vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
-      const url = typeof input === "string" ? input : (input as Request).url;
-      if (url.includes("/repo/diff")) {
-        return okJSON({
+    mockDiffPageFetches({
+      onDiff: () =>
+        okJSON({
           sha: sampleCommits[0].sha,
           patch: samplePatch,
           truncated: true,
           size_bytes: samplePatch.length,
-        });
-      }
-      if (url.includes(`/tasks/${taskId}/commits`) && !url.includes("/repo/")) {
-        return okJSON({ commits: sampleCommits });
-      }
-      throw new Error(`unexpected fetch ${url}`);
+        }),
     });
 
     const Wrapper = createWrapper([

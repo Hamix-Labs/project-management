@@ -59,6 +59,7 @@ export async function resolveTaskGitBinding(
     return {
       repo: repository?.path ?? "",
       worktree: worktree.path,
+      openPath: worktree.host_path.trim() || worktree.path,
       branch: branch?.name ?? "",
     };
   }

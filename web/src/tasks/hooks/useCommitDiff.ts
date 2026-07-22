@@ -3,12 +3,15 @@ import { fetchRepoCommitDiff, repoQueryKeys, type RepoDiffResult } from "@/api/r
 
 export function useCommitDiff(
   sha: string,
-  options?: { enabled?: boolean },
+  options?: { worktreeId?: string; enabled?: boolean },
 ): UseQueryResult<RepoDiffResult | null, Error> {
-  const enabled = (options?.enabled ?? true) && Boolean(sha);
+  const worktreeId = (options?.worktreeId ?? "").trim();
+  const enabled =
+    (options?.enabled ?? true) && Boolean(sha) && worktreeId !== "";
   return useQuery({
-    queryKey: repoQueryKeys.diff(sha),
-    queryFn: ({ signal }) => fetchRepoCommitDiff(sha, { signal }),
+    queryKey: repoQueryKeys.diff(worktreeId, sha),
+    queryFn: ({ signal }) =>
+      fetchRepoCommitDiff(sha, { worktreeId, signal }),
     enabled,
     staleTime: Number.POSITIVE_INFINITY,
     gcTime: 30 * 60_000,

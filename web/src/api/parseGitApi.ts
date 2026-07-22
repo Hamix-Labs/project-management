@@ -51,6 +51,10 @@ function parseGitWorktreeRow(value: unknown, path: string): GitWorktree {
     id: parseNonEmptyString(value.id, `${path}.id`),
     repository_id: parseNonEmptyString(value.repository_id, `${path}.repository_id`),
     path: parseString(value.path, `${path}.path`),
+    host_path:
+      value.host_path === undefined || value.host_path === null
+        ? ""
+        : parseString(value.host_path, `${path}.host_path`),
     name: parseString(value.name, `${path}.name`),
     is_main: parseBooleanField(value.is_main, `${path}.is_main`),
     created_at: parseString(value.created_at, `${path}.created_at`),

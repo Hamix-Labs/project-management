@@ -17,6 +17,7 @@ describe("commitDisplay", () => {
     const items = buildGitContextItems({
       repo: "C:\\tmp\\hamix-repo",
       worktree: "C:/tmp/hamix-repo",
+      openPath: "C:/tmp/hamix-repo",
       branch: "main",
     });
     expect(items).toEqual([
@@ -33,6 +34,7 @@ describe("commitDisplay", () => {
     const items = buildGitContextItems({
       repo: "/workspace/monorepo",
       worktree: "/workspace/monorepo/apps/web",
+      openPath: "/workspace/monorepo/apps/web",
       branch: "feature/commits",
     });
     expect(items.map((i) => i.label)).toEqual(["Branch", "Worktree", "Repo root"]);

@@ -5,11 +5,26 @@ import { CommitDiffLayout } from "./CommitDiffLayout";
 
 type Props = {
   sha: string;
+  worktreeId?: string;
   viewClassName?: string;
 };
 
-export function CommitDiffPanel({ sha, viewClassName }: Props) {
-  const diffQuery = useCommitDiff(sha);
+export function CommitDiffPanel({ sha, worktreeId, viewClassName }: Props) {
+  const wtId = (worktreeId ?? "").trim();
+  const diffQuery = useCommitDiff(sha, {
+    worktreeId: wtId,
+    enabled: wtId !== "",
+  });
+
+  if (wtId === "") {
+    return (
+      <div className="task-commit-diff-panel">
+        <p className="task-commit-diff-empty muted">
+          This task has no worktree binding, so the commit diff cannot be loaded.
+        </p>
+      </div>
+    );
+  }
 
   if (diffQuery.isPending) {
     return (
@@ -48,7 +63,8 @@ export function CommitDiffPanel({ sha, viewClassName }: Props) {
     return (
       <div className="task-commit-diff-panel">
         <p className="task-commit-diff-empty muted">
-          Workspace repo is not configured. Set repo root in Settings to view diffs.
+          Worktree is unavailable. Open the task worktree or re-register the
+          repository to view diffs.
         </p>
       </div>
     );

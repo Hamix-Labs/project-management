@@ -47,11 +47,67 @@
   grid-column: 1 / -1;
   grid-row: 2;
   margin-top: var(--space-1);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
 }
 
 .task-detail-git-binding .task-commits-context {
   margin: 0;
+  flex: 1 1 auto;
+  min-width: 0;
 }
+
+.task-detail-git-binding-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 0 0 auto;
+}
+
+a.task-detail-git-binding-open.btn-utility {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  min-height: unset;
+  min-width: unset;
+  padding: 0.12rem 0.45rem;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: normal;
+  color: var(--text-secondary);
+  background: var(--brand-surface-faint);
+  border: 1px solid var(--brand-border-faint);
+  border-radius: var(--radius-sm);
+  box-shadow: none;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease;
+}
+
+a.task-detail-git-binding-open.btn-utility:visited {
+  color: var(--text-secondary);
+}
+
+a.task-detail-git-binding-open.btn-utility:hover {
+  background: var(--neutral-fill-subtle);
+  border-color: var(--border-soft);
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+a.task-detail-git-binding-open.btn-utility:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+
 
 .task-detail-meta {
   grid-column: 2;

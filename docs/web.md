@@ -93,7 +93,7 @@ Project and git writes invalidate React Query through a shared catalog — not i
 
 Expanded cycle rows in `TaskCyclesPanel` load `GET /tasks/{id}/cycles/{cycleId}/verdicts`. When the worker indexed git commits for the cycle, the panel shows a repo → branch breadcrumb and commit rows (`git_context`, `commits[]`) with **status badges** (`eligible`, `observed`, …) above the per-criterion verdict list.
 
-The task detail page also loads **`GET /tasks/{id}/commits`** via `TaskCommitsPanel` / `useTaskCommits` — task-wide commit history deduped by SHA, refetched on `task_cycle_changed` SSE. Clicking a commit row navigates to **`/tasks/{id}/commits/{sha}`** (`TaskCommitDiffPage`), which loads **`GET /repo/diff?sha=`** with GitHub-style summary stats, syntax-highlighted hunks (refractor + `react-diff-view`), unified/split toggle, file navigator, and collapsible large files. Parsers: `web/src/api/parseTaskApiCycles.ts`; types: `web/src/types/cycle.ts`. See [domain/cycle-commits.md](./domain/cycle-commits.md).
+The task detail page also loads **`GET /tasks/{id}/commits`** via `TaskCommitsPanel` / `useTaskCommits` — task-wide commit history deduped by SHA, refetched on `task_cycle_changed` SSE. Clicking a commit row navigates to **`/tasks/{id}/commits/{sha}`** (`TaskCommitDiffPage`), which loads **`GET /repo/diff?worktree_id=&sha=`** (task `worktree_id`) with GitHub-style summary stats, syntax-highlighted hunks (refractor + `react-diff-view`), unified/split toggle, file navigator, and collapsible large files. Parsers: `web/src/api/parseTaskApiCycles.ts`; types: `web/src/types/cycle.ts`. See [domain/cycle-commits.md](./domain/cycle-commits.md).
 
 ## CSS ownership
 
