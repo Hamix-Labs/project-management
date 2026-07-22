@@ -10,6 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/execute"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/git"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/resume"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/verify"
@@ -94,12 +95,13 @@ type Options struct {
 // Harness drives one task end-to-end through the execute/verify substrate.
 // Construct with New; call Run from the worker after admission checks pass.
 type Harness struct {
-	store  Store
-	runner runner.Runner
-	opts   Options
-	git    *git.Service
-	resume *resume.Service
-	verify *verify.Service
+	store   Store
+	runner  runner.Runner
+	opts    Options
+	git     *git.Service
+	resume  *resume.Service
+	verify  *verify.Service
+	execute *execute.Service
 
 	mu                      sync.Mutex
 	currentRunCancel        context.CancelFunc
@@ -208,5 +210,8 @@ func (h *Harness) SetWorkingDir(dir string) {
 	h.opts.WorkingDir = dir
 	if h.verify != nil {
 		h.verify.SetWorkingDir(dir)
+	}
+	if h.execute != nil {
+		h.execute.SetReportDir(h.opts.ReportDir)
 	}
 }
