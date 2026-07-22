@@ -54,6 +54,20 @@
   line-height: 1.35;
 }
 
+.task-detail-phase-duration {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  font-weight: 450;
+}
+
+.task-detail-phase-duration .task-detail-action-glyph {
+  color: var(--text-tertiary);
+}
+
 .task-detail-schedule-row-label {
   font-size: var(--text-xs);
   font-weight: 500;

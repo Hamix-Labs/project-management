@@ -116,6 +116,7 @@ button.task-detail-btn-edit {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 0.4rem;
   min-height: 2.25rem;
   border-radius: var(--radius-md);
   padding: 0.375rem 0.875rem;
@@ -243,6 +244,7 @@ button.task-detail-btn-delete {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 0.4rem;
   min-height: 2.25rem;
   border-radius: var(--radius-md);
   padding: 0.375rem 0.875rem;

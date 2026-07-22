@@ -3,6 +3,7 @@ import type { Status, Task } from "@/types";
 import { useAppTimezone, formatInAppTimezone } from "@/shared/time/appTimezone";
 import { useTaskCycles } from "@/tasks/hooks/useTaskCycles";
 import { PhaseCompleteGlyph, ScheduleGlyph } from "./TaskDetailScheduleGlyphs";
+import { TaskDetailClockGlyph } from "../layout/TaskDetailActionGlyphs";
 import {
   earliestCycleStartedAt,
   formatTaskCompletionDuration,
@@ -85,7 +86,13 @@ export function TaskDetailSchedule({ task }: Props) {
                 <span className="task-detail-schedule-row-sep" aria-hidden="true">
                   ·
                 </span>
-                <span data-testid="task-detail-phase-duration">{durationLabel}</span>
+                <span
+                  className="task-detail-phase-duration"
+                  data-testid="task-detail-phase-duration"
+                >
+                  <TaskDetailClockGlyph className="task-detail-action-glyph" />
+                  {durationLabel}
+                </span>
               </>
             ) : null}
           </div>
