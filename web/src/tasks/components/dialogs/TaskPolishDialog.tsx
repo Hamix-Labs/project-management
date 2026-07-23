@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { FieldLabel } from "@/shared/FieldLabel";
 import { Modal } from "@/shared/Modal";
 import { MutationErrorBanner } from "@/shared/MutationErrorBanner";
 
@@ -40,29 +41,33 @@ export function TaskPolishDialog({
       busyLabel="Queueing polish…"
       dismissibleWhileBusy
     >
-      <section className="panel confirm-dialog modal-sheet task-polish-dialog">
+      <section className="panel modal-sheet task-polish-dialog">
         <h2 id={titleId}>Polish this task?</h2>
-        <p className="confirm-dialog__statement" id={descriptionId}>
+        <p className="task-polish-dialog__statement" id={descriptionId}>
           <strong>{taskTitle}</strong>
         </p>
-        <p className="confirm-dialog__footnote">
+        <p className="task-polish-dialog__footnote">
           Starts a new attempt that resumes the existing agent conversation.
           The task returns to awaiting review when polish finishes.
         </p>
         <div className="field">
-          <label htmlFor={instructionsId}>Instructions</label>
+          <FieldLabel htmlFor={instructionsId} requirement="required">
+            Instructions
+          </FieldLabel>
           <textarea
             ref={textareaRef}
             id={instructionsId}
+            className="task-polish-dialog__instructions"
             rows={5}
             value={instructions}
             onChange={(e) => setInstructions(e.target.value)}
             disabled={saving || pending}
             placeholder="What should the agent change?"
+            required
             aria-required
           />
         </div>
-        <MutationErrorBanner error={error} className="confirm-dialog__err" />
+        <MutationErrorBanner error={error} className="task-polish-dialog__err" />
         <div className="row stack-row-actions">
           <button
             type="button"

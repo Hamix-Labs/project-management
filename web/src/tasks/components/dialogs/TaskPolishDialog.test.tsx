@@ -17,6 +17,7 @@ describe("TaskPolishDialog", () => {
       />,
     );
     expect(screen.getByRole("button", { name: /^polish$/i })).toBeDisabled();
+    expect(screen.getByLabelText(/instructions/i)).toBeRequired();
     await user.type(
       screen.getByLabelText(/instructions/i),
       "  tighten spacing  ",
