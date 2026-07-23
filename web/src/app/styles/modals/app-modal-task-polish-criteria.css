@@ -34,12 +34,17 @@
   min-width: 0;
 }
 
-/* fieldset defaults would fight section hairlines */
+/* Keep legend from breaking section hairlines — border lives on the wrapper. */
 .task-polish-dialog__criteria {
-  border-left: none;
-  border-right: none;
-  border-bottom: none;
+  padding: 0;
+  border: none;
   min-inline-size: 0;
+}
+
+.task-polish-dialog__criteria > legend {
+  float: none;
+  width: 100%;
+  padding: 0;
 }
 
 .task-polish-dialog__criteria-list,
