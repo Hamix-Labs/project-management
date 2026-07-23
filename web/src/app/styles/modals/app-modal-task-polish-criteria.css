@@ -1,0 +1,100 @@
+/*
+ * Task polish dialog — criteria flag list and add-new drafts.
+ * Loaded with app-modal-task-polish.css.
+ */
+
+.task-polish-dialog__section-title {
+  margin: 0;
+  padding: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+.task-polish-dialog__section-hint {
+  margin: var(--space-1) 0 var(--space-2);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+  color: var(--text-tertiary);
+}
+
+.task-polish-dialog__criteria {
+  margin: 0;
+  padding: 0;
+  border: none;
+  min-width: 0;
+}
+
+.task-polish-dialog__criteria-list,
+.task-polish-dialog__new-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.task-polish-dialog__criteria-item,
+.task-polish-dialog__new-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.task-polish-dialog__criteria-item input[type="checkbox"] {
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.2rem;
+  accent-color: var(--brand);
+}
+
+.task-polish-dialog__criteria-item label {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.task-polish-dialog__new-item span {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--text-primary);
+}
+
+.task-polish-dialog__new-remove {
+  flex-shrink: 0;
+  min-height: var(--touch-target-min);
+}
+
+.task-polish-dialog__add-row {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  min-width: 0;
+}
+
+.task-polish-dialog__add-row input[type="text"] {
+  flex: 1;
+  min-width: 0;
+  min-height: 2.25rem;
+  padding: 0.4rem 0.65rem;
+  font-size: 0.8125rem;
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-md);
+}
+
+.task-polish-dialog__add-row input[type="text"]:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+  border-color: color-mix(in srgb, var(--brand) 60%, var(--border-hairline));
+}
