@@ -18,6 +18,8 @@ type GitWriteStore interface {
 	RemoveGitWorktreeFromDisk(ctx context.Context, projectID, worktreeID string, force bool) error
 	CreateGitBranch(ctx context.Context, projectID, repoID string, input CreateGitBranchInput) (domain.GitBranch, error)
 	DeleteGitBranch(ctx context.Context, projectID, branchID string, force bool) error
+	// DeleteGitBranchByID is the global-route variant of DeleteGitBranch.
+	DeleteGitBranchByID(ctx context.Context, branchID string, force bool) error
 	RepoWorktreeInventory(ctx context.Context, repo domain.GitRepository) ([]WorktreeInventoryRow, error)
 	RepoWorktreeCheckoutStatus(ctx context.Context, repo domain.GitRepository) ([]WorktreeCheckoutStatusRow, error)
 	ProbeGitWorktree(ctx context.Context, repoID, path string) (GitWorktreeProbeResult, error)

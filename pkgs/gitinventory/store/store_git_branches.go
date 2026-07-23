@@ -98,6 +98,16 @@ func (s *Store) CreateGitBranch(ctx context.Context, projectID, repoID string, i
 // DeleteGitBranch removes a branch via git and the database.
 func (s *Store) DeleteGitBranch(ctx context.Context, projectID, branchID string, force bool) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "gitinventory.store.DeleteGitBranch")
+	return s.deleteGitBranch(ctx, projectID, branchID, force)
+}
+
+// DeleteGitBranchByID is the global-route variant of DeleteGitBranch.
+func (s *Store) DeleteGitBranchByID(ctx context.Context, branchID string, force bool) error {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "gitinventory.store.DeleteGitBranchByID")
+	return s.deleteGitBranch(ctx, "", branchID, force)
+}
+
+func (s *Store) deleteGitBranch(ctx context.Context, projectID, branchID string, force bool) error {
 	branch, err := s.GetGitBranch(ctx, projectID, branchID)
 	if err != nil {
 		return err

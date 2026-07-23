@@ -5,7 +5,9 @@ package store
 import "github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 import (
 	"context"
+	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	taskcorecontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
@@ -15,6 +17,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/internal/ready"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/internal/stats"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/internal/tasks"
+	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/model"
 	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 	"gorm.io/gorm"
 )
@@ -191,6 +194,21 @@ func (s *Store) TaskStats(ctx context.Context) (TaskStats, error) {
 func (s *Store) CountPreFeatureCycles(ctx context.Context) (PreFeatureCycleCounts, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcore.store.CountPreFeatureCycles")
 	return stats.CountPreFeatureCycles(ctx, s.db)
+}
+
+// CountTasksByWorktreeID returns how many tasks still reference worktreeID.
+func (s *Store) CountTasksByWorktreeID(ctx context.Context, worktreeID string) (int64, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcore.store.CountTasksByWorktreeID")
+	worktreeID = strings.TrimSpace(worktreeID)
+	if worktreeID == "" {
+		return 0, nil
+	}
+	var n int64
+	err := s.db.WithContext(ctx).Model(&model.Task{}).Where("worktree_id = ?", worktreeID).Count(&n).Error
+	if err != nil {
+		return 0, fmt.Errorf("count tasks by worktree_id: %w", err)
+	}
+	return n, nil
 }
 
 func (s *Store) ApplyDevTaskRowMirror(ctx context.Context, taskID string, typ taskeventsdomain.EventType, data []byte) (*domain.Task, domain.Status, error) {

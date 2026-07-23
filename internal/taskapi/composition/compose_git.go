@@ -223,6 +223,12 @@ func (a *API) DeleteGitBranch(ctx context.Context, projectID, branchID string, f
 	return a.git.DeleteGitBranch(ctx, projectID, branchID, force)
 }
 
+// DeleteGitBranchByID deletes a branch by primary key (global route).
+func (a *API) DeleteGitBranchByID(ctx context.Context, branchID string, force bool) error {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.DeleteGitBranchByID")
+	return a.git.DeleteGitBranchByID(ctx, branchID, force)
+}
+
 // GuardBranchNotBoundToOtherWorktree rejects when branchID is already assigned to another worktree.
 func (a *API) GuardBranchNotBoundToOtherWorktree(ctx context.Context, branchID, exceptWorktreeID string) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.GuardBranchNotBoundToOtherWorktree")

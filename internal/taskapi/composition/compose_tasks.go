@@ -4,6 +4,7 @@ import "github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 import (
 	"context"
 	"log/slog"
+	"strings"
 	"time"
 
 	taskcorecontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
@@ -128,9 +129,19 @@ func (a *API) NotifyUnblockedDependents(ctx context.Context, predecessorID strin
 
 func (a *API) Delete(ctx context.Context, id string, by taskcoredomain.Actor) ([]string, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.Delete")
+	var worktreeID, taskID string
+	if t, err := a.taskcore.Get(ctx, id); err == nil && t != nil {
+		taskID = t.ID
+		if t.WorktreeID != nil {
+			worktreeID = strings.TrimSpace(*t.WorktreeID)
+		}
+	}
 	deletedIDs, err := a.taskcore.Delete(ctx, id, by)
 	if err != nil {
 		return nil, err
+	}
+	if worktreeID != "" {
+		a.bestEffortRemoveTaskWorktree(ctx, taskID, worktreeID)
 	}
 	for _, tid := range deletedIDs {
 		a.cancelPickupWake(tid)
