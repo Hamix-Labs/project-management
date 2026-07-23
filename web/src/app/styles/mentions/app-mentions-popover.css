@@ -41,6 +41,143 @@
   box-shadow: var(--shadow-xl);
 }
 
+/* Tippy-hosted @ file list — inspiration chrome; do not break # list layout. */
+.mention-dropdown--repo-files {
+  position: relative;
+  left: auto;
+  right: auto;
+  top: auto;
+  margin: 0;
+  width: min(100vw - 2rem, 28rem);
+  max-height: min(50vh, 22rem);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+}
+
+.mention-dropdown__search {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid var(--border-hairline);
+  color: var(--text-tertiary);
+}
+
+.mention-dropdown__search-placeholder,
+.mention-dropdown__search-query {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-sm);
+  line-height: 1.35;
+}
+
+.mention-dropdown__search-placeholder {
+  color: var(--text-tertiary);
+}
+
+.mention-dropdown__search-query {
+  color: var(--text-primary);
+}
+
+.mention-dropdown__at-kbd {
+  display: none;
+  flex-shrink: 0;
+  align-items: center;
+  padding: 0.15rem 0.4rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: 1.2;
+  color: var(--text-tertiary);
+  background: var(--neutral-fill-subtle);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-sm);
+  box-shadow: none;
+}
+
+@media (min-width: 40rem) {
+  .mention-dropdown__at-kbd {
+    display: inline-flex;
+  }
+}
+
+.mention-dropdown__list {
+  margin: 0;
+  padding: 0.35rem;
+  overflow-y: auto;
+  list-style: none;
+  flex: 1;
+  min-height: 0;
+  max-height: 16rem;
+}
+
+.mention-dropdown__empty {
+  margin: 0;
+  padding: var(--space-6) var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+  line-height: 1.45;
+  text-align: center;
+}
+
+.mention-dropdown__path {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 0.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  line-height: 1.35;
+}
+
+.mention-dropdown__dir {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-tertiary);
+  font-weight: 400;
+}
+
+.mention-dropdown__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.mention-dropdown__glyph {
+  flex-shrink: 0;
+  display: block;
+}
+
+.mention-dropdown__footer {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 0.5rem 0.75rem;
+  border-top: 1px solid var(--border-hairline);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.mention-dropdown__footer-keys {
+  font-family: var(--font-mono);
+}
+
+.mention-dropdown__footer-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* —— Shared / # project-context list head (unchanged contract) —— */
 .tiptap-suggestion-list__head {
   flex-shrink: 0;
   padding: var(--space-3) var(--space-4);
@@ -60,6 +197,10 @@
   list-style: none;
   flex: 1;
   min-height: 0;
+}
+
+.mention-dropdown--repo-files ul[role="listbox"] {
+  padding: 0.35rem;
 }
 
 .tiptap-suggestion-list__empty {
@@ -100,10 +241,23 @@
   transform: none;
   transition:
     background var(--duration-normal) var(--ease-out),
-    box-shadow var(--duration-normal) var(--ease-out);
+    box-shadow var(--duration-normal) var(--ease-out),
+    color var(--duration-normal) var(--ease-out);
 }
 
-/* Replace OS / browser blue focus with brand (matches primary actions elsewhere) */
+.mention-option--repo-file button {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: var(--radius-md);
+  color: var(--text-tertiary);
+}
+
+.mention-option--repo-file button .mention-dropdown__glyph {
+  color: var(--text-tertiary);
+}
+
 .mention-option button:focus {
   outline: none;
 }
@@ -111,6 +265,12 @@
 .mention-option button:focus-visible {
   background: var(--brand-muted);
   box-shadow: var(--shadow-focus);
+}
+
+.mention-option--repo-file button:focus-visible {
+  background: var(--neutral-fill-subtle);
+  box-shadow: var(--shadow-focus);
+  color: var(--text-primary);
 }
 
 .mention-option button:not(:disabled):hover {
@@ -122,14 +282,28 @@
   .mention-option button:hover:not(:focus-visible) {
     background: var(--neutral-fill-subtle);
   }
+
+  .mention-option--repo-file button:hover:not(:focus-visible) {
+    color: var(--text-primary);
+  }
+
+  .mention-option--repo-file button:hover:not(:focus-visible)
+    .mention-dropdown__glyph {
+    color: var(--text-primary);
+  }
 }
 
-.mention-option.highlight button {
-  background: var(--brand-muted);
+.mention-option.highlight button,
+.mention-option--active button {
+  background: var(--neutral-fill-subtle);
   color: var(--text-primary);
 }
 
-.mention-option.highlight button:focus-visible {
-  box-shadow: var(--shadow-focus);
+.mention-option--active button .mention-dropdown__glyph {
+  color: var(--text-primary);
 }
 
+.mention-option.highlight button:focus-visible,
+.mention-option--active button:focus-visible {
+  box-shadow: var(--shadow-focus);
+}
