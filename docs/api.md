@@ -82,7 +82,7 @@ Model semantics (tags, milestone, `depends_on`, gate, worker readiness): [data-m
 | GET | `/tasks/cycle-failures` | Paginated terminal cycle failures. `?limit`, `?offset`, `?sort ∈ at_desc | at_asc | reason_asc | reason_desc`. |
 | GET | `/tasks/{id}` | Single flat `domain.Task`. |
 | PATCH | `/tasks/{id}` | At least one of: `title`, `initial_prompt`, `status`, `priority`, `project_id`, `worktree_id`, `project_context_item_ids`, `pickup_not_before`, `cursor_model`, `tags`, `milestone`, `gate`, `depends_on`. Publishes `task_updated` (+ `task_gate_changed` / `task_dependency_changed` when those fields change). Writable `status` values for `X-Actor: user`: `ready`, `running`, `blocked`, `review`, `done`, `failed`, `on_hold`. See [data-model.md](./data-model.md). |
-| DELETE | `/tasks/{id}` | `204` empty body. Publishes `task_deleted`. |
+| DELETE | `/tasks/{id}` | `204` empty body. Publishes `task_deleted`. When the task owned a Hamix-managed worktree (`hamix/task-*` branch, not main, no remaining task bindings), best-effort removes that checkout from disk and deletes the matching branch; disk cleanup failures do not fail the delete. |
 | GET | `/tasks/{id}/events` | Audit log. Default: ascending all rows. With `limit` / `before_seq` / `after_seq`: keyset-paged newest-first slice with `range_*`, `has_more_*`, `approval_pending`. Deep dive: [domain/task-events.md](./domain/task-events.md). |
 | GET | `/tasks/{id}/events/{seq}` | Single event row. |
 | PATCH | `/tasks/{id}/events/{seq}` | Append a user-response message (max 10 000 bytes after trim, thread cap 200). Only for `approval_requested` and `task_failed`. Publishes `task_event_changed`. |
