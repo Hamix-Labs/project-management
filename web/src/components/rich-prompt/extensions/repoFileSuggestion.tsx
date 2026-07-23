@@ -123,6 +123,20 @@ export const RepoFileSuggestion = Extension.create<RepoFileSuggestionOptions>({
             RepoSuggestionItem,
             RepoSuggestionItem
           > | null = null;
+          let selectedIndex = 0;
+          let lastQuery = "";
+
+          const listProps = (
+            props: SuggestionProps<RepoSuggestionItem, RepoSuggestionItem>,
+            index: number,
+          ) => ({
+            items: props.items,
+            query: props.query,
+            selectedIndex: index,
+            command: (item: RepoSuggestionItem) => {
+              props.command(item);
+            },
+          });
 
           return {
             onBeforeStart() {
@@ -135,13 +149,10 @@ export const RepoFileSuggestion = Extension.create<RepoFileSuggestionOptions>({
               props: SuggestionProps<RepoSuggestionItem, RepoSuggestionItem>,
             ) {
               latestProps = props;
+              selectedIndex = 0;
+              lastQuery = props.query;
               component = new ReactRenderer(RepoFileSuggestionList, {
-                props: {
-                  items: props.items,
-                  command: (item: RepoSuggestionItem) => {
-                    props.command(item);
-                  },
-                },
+                props: listProps(props, selectedIndex),
                 editor: props.editor,
               });
 
@@ -170,12 +181,15 @@ export const RepoFileSuggestion = Extension.create<RepoFileSuggestionOptions>({
               props: SuggestionProps<RepoSuggestionItem, RepoSuggestionItem>,
             ) {
               latestProps = props;
-              component?.updateProps({
-                items: props.items,
-                command: (item: RepoSuggestionItem) => {
-                  props.command(item);
-                },
-              });
+              if (props.query !== lastQuery) {
+                selectedIndex = 0;
+                lastQuery = props.query;
+              } else {
+                const max = Math.max(0, props.items.length - 1);
+                selectedIndex = Math.min(selectedIndex, max);
+              }
+              if (props.items.length === 0) selectedIndex = 0;
+              component?.updateProps(listProps(props, selectedIndex));
               popup?.setProps({
                 getReferenceClientRect: () =>
                   latestProps != null
@@ -189,11 +203,37 @@ export const RepoFileSuggestion = Extension.create<RepoFileSuggestionOptions>({
                 popup?.hide();
                 return true;
               }
+              if (!latestProps || latestProps.items.length === 0) {
+                return false;
+              }
+              if (props.event.key === "ArrowDown") {
+                props.event.preventDefault();
+                selectedIndex = Math.min(
+                  selectedIndex + 1,
+                  latestProps.items.length - 1,
+                );
+                component?.updateProps(listProps(latestProps, selectedIndex));
+                return true;
+              }
+              if (props.event.key === "ArrowUp") {
+                props.event.preventDefault();
+                selectedIndex = Math.max(selectedIndex - 1, 0);
+                component?.updateProps(listProps(latestProps, selectedIndex));
+                return true;
+              }
+              if (props.event.key === "Enter") {
+                const item = latestProps.items[selectedIndex];
+                if (!item) return false;
+                props.event.preventDefault();
+                latestProps.command(item);
+                return true;
+              }
               return false;
             },
 
             onExit() {
               lastRepoSuggestionItems = [];
+              selectedIndex = 0;
               setFetchBusy(false);
               popup?.destroy();
               component?.destroy();
