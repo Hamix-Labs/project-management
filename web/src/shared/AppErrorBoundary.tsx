@@ -10,7 +10,7 @@ type AppErrorBoundaryProps = {
   /** User-visible headline in the fallback callout (defaults to full-app copy). */
   fallbackMessage?: string;
   /** `componentDidCatch` log prefix; default `app-root` (full SPA shell in `main.tsx`). */
-  variant?: "app-root" | "route-outlet";
+  variant?: "app-root" | "route-outlet" | "modal-layer";
 };
 
 type AppErrorBoundaryState = {

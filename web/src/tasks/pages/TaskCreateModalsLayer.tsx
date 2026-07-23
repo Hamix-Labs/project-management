@@ -1,9 +1,10 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { RegisterRepositoryFirstPrompt } from "@/components/RegisterRepositoryFirstPrompt";
 import { ProjectContextPicker } from "@/components/project-context/ProjectContextPicker";
 import { useProjectContextPromptBinding } from "@/hooks/useProjectContextPromptBinding";
 import { isUiFeatureOmitted } from "@/launch/omittedFeatures";
+import { AppErrorBoundary } from "@/shared/AppErrorBoundary";
 import { useAppTimezone } from "@/shared/time/appTimezone";
 import { DraftResumeModal } from "../components/draft-resume";
 import { buildTaskCreateModalProps } from "../components/task-create-modal/buildTaskCreateModalProps";
@@ -17,7 +18,32 @@ const TaskCreateModal = lazy(() =>
   })),
 );
 
+const CREATE_MODAL_LAYER_FALLBACK =
+  "Something went wrong while opening the task form.";
+
+/**
+ * Create/edit overlays sit outside the route outlet boundary, so TipTap /
+ * lazy-chunk failures must be contained here — otherwise they wipe the whole
+ * SPA via the app-root boundary.
+ */
 export function TaskCreateModalsLayer() {
+  const app = useTasksAppContext();
+  const [layerKey, setLayerKey] = useState(0);
+  return (
+    <AppErrorBoundary
+      variant="modal-layer"
+      fallbackMessage={CREATE_MODAL_LAYER_FALLBACK}
+      onRecover={() => {
+        app.closeEdit();
+        setLayerKey((k) => k + 1);
+      }}
+    >
+      <TaskCreateModalsLayerBody key={layerKey} />
+    </AppErrorBoundary>
+  );
+}
+
+function TaskCreateModalsLayerBody() {
   const app = useTasksAppContext();
   const navigate = useNavigate();
   const appTimezone = useAppTimezone();

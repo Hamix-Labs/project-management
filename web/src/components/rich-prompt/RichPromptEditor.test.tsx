@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { ReactNode } from "react";
+import { StrictMode, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ProjectContextItem } from "@/types";
 import { ModalStackProvider } from "@/shared/ModalStackContext";
@@ -154,5 +154,25 @@ describe("RichPromptEditor — project context wiring", () => {
     expect(
       screen.queryByLabelText(/selected project context/i),
     ).not.toBeInTheDocument();
+  });
+
+  it("mounts under StrictMode without throwing (TipTap immediatelyRender)", async () => {
+    const { Wrapper } = makeWrapper();
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    render(
+      <StrictMode>
+        <RichPromptEditor id="rich-strict" value="<p></p>" onChange={vi.fn()} />
+      </StrictMode>,
+      { wrapper: Wrapper },
+    );
+    expect(
+      await screen.findByRole("toolbar", { name: /text formatting/i }),
+    ).toBeInTheDocument();
+    expect(
+      errorSpy.mock.calls.some((c) =>
+        String(c[0] ?? "").includes("reading 'commands'"),
+      ),
+    ).toBe(false);
+    errorSpy.mockRestore();
   });
 });
