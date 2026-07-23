@@ -21,6 +21,8 @@ type ComposeGitValidator interface {
 	ValidateTaskRepositoryBinding(ctx context.Context, projectID, repositoryID *string) error
 	AllocateTaskWorktree(ctx context.Context, repositoryID, taskID string) (worktreeID string, err error)
 	ValidatePromptMentionsForWorktree(ctx context.Context, worktreeID *string, prompt string) error
+	ValidatePromptMentionsForRepository(ctx context.Context, repositoryID, prompt string) error
+	ValidatePromptMentionsForProject(ctx context.Context, projectID *string, prompt string) error
 }
 
 // RunnerValidator checks that a runner id is known at the composition edge.

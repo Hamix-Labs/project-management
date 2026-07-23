@@ -87,6 +87,15 @@ func TestWorker_runningMissingBinding_failsTaskAndTerminatesCycle(t *testing.T) 
 		t.Fatalf("start phase: %v", err)
 	}
 
+	runningTask, err := h.store.Get(ctx, tsk.ID)
+	if err != nil {
+		t.Fatalf("get running task: %v", err)
+	}
+	// Create without worktree_id does not enqueue; force the stuck Running row.
+	if err := h.queue.NotifyReadyTask(ctx, *runningTask); err != nil {
+		t.Fatalf("NotifyReadyTask: %v", err)
+	}
+
 	_, done := h.startWorker(ctx, runnerfake.New(), worker.Options{})
 	h.waitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusFailed)
 	cancel()

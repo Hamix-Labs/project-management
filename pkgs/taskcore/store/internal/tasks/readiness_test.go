@@ -9,16 +9,53 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/internal/ready"
 )
 
+func TestListQueueCandidates_excludesMissingWorktree(t *testing.T) {
+	t.Parallel()
+	db := tasktestdb.OpenSQLite(t)
+	ctx := context.Background()
+
+	pending, err := Create(ctx, db, CreateInput{
+		Title:    "no-wt",
+		Status:   domain.StatusReady,
+		Priority: domain.PriorityMedium,
+	}, domain.ActorUser)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wtID := "wt-present"
+	provisioned, err := Create(ctx, db, CreateInput{
+		Title:      "has-wt",
+		Status:     domain.StatusReady,
+		Priority:   domain.PriorityMedium,
+		WorktreeID: &wtID,
+	}, domain.ActorUser)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cands, err := ready.ListQueueCandidates(ctx, db, 50, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if containsCandidateID(cands, pending.ID) {
+		t.Fatalf("unprovisioned task %q should not be a queue candidate", pending.ID)
+	}
+	if !containsCandidateID(cands, provisioned.ID) {
+		t.Fatalf("provisioned task %q should be a queue candidate", provisioned.ID)
+	}
+}
+
 func TestListQueueCandidates_excludesOpenDependency(t *testing.T) {
 	t.Parallel()
 	db := tasktestdb.OpenSQLite(t)
 	ctx := context.Background()
 
-	dep, err := Create(ctx, db, CreateInput{Title: "dep", Status: domain.StatusReady, Priority: domain.PriorityMedium}, domain.ActorUser)
+	wtID := "wt-dep-ready"
+	dep, err := Create(ctx, db, CreateInput{Title: "dep", Status: domain.StatusReady, Priority: domain.PriorityMedium, WorktreeID: &wtID}, domain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	blocked, err := Create(ctx, db, CreateInput{Title: "blocked", Status: domain.StatusReady, Priority: domain.PriorityMedium}, domain.ActorUser)
+	blocked, err := Create(ctx, db, CreateInput{Title: "blocked", Status: domain.StatusReady, Priority: domain.PriorityMedium, WorktreeID: &wtID}, domain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -59,11 +96,13 @@ func TestListQueueCandidates_excludesHeldGate(t *testing.T) {
 		Kind:   domain.GateKindManualApproval,
 		Status: domain.GateStatusActive,
 	}
+	wtID := "wt-held-gate"
 	held, err := Create(ctx, db, CreateInput{
-		Title:    "held",
-		Status:   domain.StatusReady,
-		Priority: domain.PriorityMedium,
-		Gate:     heldGate,
+		Title:      "held",
+		Status:     domain.StatusReady,
+		Priority:   domain.PriorityMedium,
+		Gate:       heldGate,
+		WorktreeID: &wtID,
 	}, domain.ActorUser)
 	if err != nil {
 		t.Fatal(err)

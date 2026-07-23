@@ -7,7 +7,11 @@ import { ROUTER_FUTURE_FLAGS } from "../../../../lib/routerFutureFlags";
 import { TASK_TEST_DEFAULTS } from "@/test/taskDefaults";
 import { TaskDetailHeader } from "./TaskDetailHeader";
 
-function renderHeader(task: Parameters<typeof TaskDetailHeader>[0]["task"]) {
+function renderHeader(
+  task: Omit<Parameters<typeof TaskDetailHeader>[0]["task"], "id"> & {
+    id?: string;
+  },
+) {
   const qc = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -18,7 +22,12 @@ function renderHeader(task: Parameters<typeof TaskDetailHeader>[0]["task"]) {
       </QueryClientProvider>
     );
   }
-  return render(<TaskDetailHeader task={task} />, { wrapper: Wrapper });
+  return render(
+    <TaskDetailHeader
+      task={{ id: "00000000-0000-4000-8000-000000000001", ...task }}
+    />,
+    { wrapper: Wrapper },
+  );
 }
 
 describe("TaskDetailHeader", () => {

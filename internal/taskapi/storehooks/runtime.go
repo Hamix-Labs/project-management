@@ -6,8 +6,9 @@ import (
 
 // Runtime groups cross-cutting hooks registered once at taskapi startup.
 type Runtime struct {
-	Notify     notify.Holder
-	PickupWake PickupWakeRegistry
+	Notify            notify.Holder
+	PickupWake        PickupWakeRegistry
+	WorktreeProvision WorktreeProvisionRegistry
 }
 
 // NewRuntime returns a ready-to-wire hook bundle.
@@ -38,4 +39,14 @@ func (r *Runtime) SetPickupWake(w PickupWake) {
 		return
 	}
 	r.PickupWake.Set(w)
+}
+
+// SetWorktreeProvisioner registers p for async managed-worktree allocate after create.
+//
+//funclogmeasure:skip category=hot-path reason="Startup wiring hook; provision traces at composition chokepoints."
+func (r *Runtime) SetWorktreeProvisioner(p WorktreeProvisioner) {
+	if r == nil {
+		return
+	}
+	r.WorktreeProvision.Set(p)
 }

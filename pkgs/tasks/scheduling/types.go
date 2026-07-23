@@ -16,6 +16,7 @@ const (
 	FailedPredicatePickup       FailedPredicate = taskcorecontract.FailedPredicatePickup
 	FailedPredicateGate         FailedPredicate = taskcorecontract.FailedPredicateGate
 	FailedPredicateDependencies FailedPredicate = taskcorecontract.FailedPredicateDependencies
+	FailedPredicateWorktree     FailedPredicate = taskcorecontract.FailedPredicateWorktree
 )
 
 // ReadinessResult is the outcome of EvaluateWorkerReadiness.

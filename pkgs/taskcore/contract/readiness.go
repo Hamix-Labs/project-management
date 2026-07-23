@@ -1,6 +1,7 @@
 package contract
 
 import (
+	"strings"
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
@@ -23,8 +24,9 @@ func ShouldNotifyReadyNow(pickupNotBefore *time.Time, now time.Time) bool {
 	return !pickupNotBefore.After(now)
 }
 
-// EvaluateWorkerReadiness applies the four worker predicates in fixed order.
-// dependenciesMet must reflect store-loaded edge satisfaction when predicate 4 applies.
+// EvaluateWorkerReadiness applies the worker predicates in fixed order.
+// dependenciesMet must reflect store-loaded edge satisfaction when the
+// dependencies predicate applies.
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func EvaluateWorkerReadiness(task *domain.Task, now time.Time, dependenciesMet bool) ReadinessResult {
@@ -39,6 +41,9 @@ func EvaluateWorkerReadiness(task *domain.Task, now time.Time, dependenciesMet b
 	}
 	if !dependenciesMet {
 		return ReadinessResult{Ready: false, FailedPredicate: FailedPredicateDependencies}
+	}
+	if task.WorktreeID == nil || strings.TrimSpace(*task.WorktreeID) == "" {
+		return ReadinessResult{Ready: false, FailedPredicate: FailedPredicateWorktree}
 	}
 	return ReadinessResult{Ready: true, FailedPredicate: FailedPredicateNone}
 }

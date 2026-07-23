@@ -24,9 +24,21 @@ func TestHTTP_getTask_flatTaskEnvelope(t *testing.T) {
 
 	id := handlertest.MustCreateTask(t, srv.URL, `{"title":"root-leaf","priority":"medium"}`)
 
-	res, raw := handlertest.GetTask(t, srv.URL, id)
-	if res.StatusCode != http.StatusOK {
-		t.Fatalf("status %d (want 200) body=%s", res.StatusCode, raw)
+	deadline := time.Now().Add(15 * time.Second)
+	var raw []byte
+	var res *http.Response
+	for {
+		res, raw = handlertest.GetTask(t, srv.URL, id)
+		if res.StatusCode != http.StatusOK {
+			t.Fatalf("status %d (want 200) body=%s", res.StatusCode, raw)
+		}
+		if strings.Contains(string(raw), `"worktree_id"`) {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("timed out waiting for worktree_id in body=%s", raw)
+		}
+		time.Sleep(25 * time.Millisecond)
 	}
 
 	var top map[string]json.RawMessage

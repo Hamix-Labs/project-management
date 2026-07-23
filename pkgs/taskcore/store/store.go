@@ -186,6 +186,15 @@ func (s *Store) ListReadyTasksUserCreated(ctx context.Context, limit int, afterI
 	return ready.ListUserCreated(ctx, s.db, limit, afterID)
 }
 
+// PendingWorktreeRow is a ready task awaiting managed-worktree allocate.
+type PendingWorktreeRow = ready.PendingWorktreeRow
+
+// ListTasksPendingWorktree lists ready tasks with no worktree_id (ADR-0083).
+func (s *Store) ListTasksPendingWorktree(ctx context.Context, limit int) ([]PendingWorktreeRow, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcore.store.ListTasksPendingWorktree")
+	return ready.ListPendingWorktree(ctx, s.db, limit)
+}
+
 func (s *Store) TaskStats(ctx context.Context) (TaskStats, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcore.store.TaskStats")
 	return stats.Get(ctx, s.db)

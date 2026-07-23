@@ -27,6 +27,14 @@ func (h *Handler) ValidatePromptMentionsForWorktree(ctx context.Context, worktre
 	return h.validatePromptMentionsForWorktree(ctx, worktreeID, prompt)
 }
 
+func (h *Handler) ValidatePromptMentionsForRepository(ctx context.Context, repositoryID, prompt string) error {
+	return h.validatePromptMentionsForRepository(ctx, repositoryID, prompt)
+}
+
+func (h *Handler) ValidatePromptMentionsForProject(ctx context.Context, projectID *string, prompt string) error {
+	return h.validatePromptMentionsForProject(ctx, projectID, prompt)
+}
+
 //funclogmeasure:skip category=delegate-already-logs reason="Validation delegate; taskcore handler emits trace at the HTTP chokepoint."
 func (h *Handler) validateComposePayload(ctx context.Context, payload taskcorehandler.TaskComposePayloadJSON, settings settingsdomain.AppSettings) error {
 	return h.taskcoreHandler().ValidateCompose(ctx, taskcorehandler.TaskComposePayloadJSON(payload), settings, taskcorehandler.ValidateComposeOpts{

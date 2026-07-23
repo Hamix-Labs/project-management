@@ -16,6 +16,7 @@ const (
 	FailedPredicatePickup       FailedPredicate = "pickup"
 	FailedPredicateGate         FailedPredicate = "gate"
 	FailedPredicateDependencies FailedPredicate = "dependencies"
+	FailedPredicateWorktree     FailedPredicate = "worktree"
 )
 
 // AgentPickupResult is returned when the worker atomically transitions a task to running.

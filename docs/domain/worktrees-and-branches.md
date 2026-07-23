@@ -11,13 +11,13 @@ How Hamix-managed git worktrees scope agent runs, `/repo/*` autocomplete, and `@
 
 ## Overview
 
-Hamix scopes workspace access through **managed git worktrees** (`git_worktrees` rows). Operators register a **repository** by local path. Creating a task with `repository_id` (+ `project_id`) causes the server to **allocate** a linked worktree and branch (`hamix/task-<8 hex>`), persist `worktree_id`, and start from `origin/<defaultBranch>` after `git fetch`. Agents never bind to the main/`is_main` checkout or the repository default branch.
+Hamix scopes workspace access through **managed git worktrees** (`git_worktrees` rows). Operators register a **repository** by local path. Creating a task with `repository_id` (+ `project_id`) persists the task immediately; the server then **eagerly allocates** a linked worktree and branch (`hamix/task-<8 hex>`) in the background, persists `worktree_id`, and starts from `origin/<defaultBranch>` after `git fetch` ([ADR-0083](../adr/ADR-0083-async-task-worktree-provision.md)). Agents never bind to the main/`is_main` checkout or the repository default branch, and do not pick up a task until `worktree_id` is set.
 
 When no git repository is registered:
 
 - The agent worker supervisor stays **idle** (`idle_reason=no_repository_registered`).
 - `GET /repo/*` returns **400** without `worktree_id` query param, or **404** for unknown worktree.
-- Prompts with `@`-mentions require `worktree_id` (set by allocate on create).
+- Prompts with `@`-mentions on create are validated against the repository **main** checkout until the task worktree exists; after allocate, `/repo/*` and mentions use the task `worktree_id`.
 
 Operators manage repositories in the SPA:
 
@@ -28,8 +28,8 @@ Operators manage repositories in the SPA:
 Happy path:
 
 1. **Register repository** on `/repositories` — path to the main git checkout.
-2. **Create task** with `repository_id` (+ project) — Hamix allocates `{ManagedWorktreeRoot}/worktrees/{repoID}/{branchSlug}` (default `{UserConfigDir}/hamix`, override `HAMIX_MANAGED_WORKTREE_ROOT`).
-3. Managed worktrees stay internal to Hamix; operators manage repositories from the list, not a worktree detail page.
+2. **Create task** with `repository_id` (+ project) — `POST /tasks` returns quickly; Hamix then allocates `{ManagedWorktreeRoot}/worktrees/{repoID}/{branchSlug}` (default `{UserConfigDir}/hamix`, override `HAMIX_MANAGED_WORKTREE_ROOT`) asynchronously.
+3. Managed worktrees stay internal to Hamix; operators manage repositories from the list, not a worktree detail page. The SPA shows predicted branch/worktree names from the task id while provisioning.
 
 **Task delete:** deleting a task that owns a Hamix-managed worktree (matching `hamix/task-*` branch, not main, no other tasks still bound) best-effort removes that checkout from disk and the matching branch. Disk cleanup failures do not fail `DELETE /tasks/{id}`.
 

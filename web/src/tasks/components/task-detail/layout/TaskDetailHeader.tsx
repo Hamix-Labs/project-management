@@ -9,6 +9,7 @@ import { TaskDetailGitBinding } from "./TaskDetailGitBinding";
 
 type TaskDetailHeaderTask = Pick<
   Task,
+  | "id"
   | "title"
   | "priority"
   | "runner"
@@ -100,6 +101,7 @@ export function TaskDetailHeader({ task }: Props) {
         </div>
 
         <TaskDetailGitBinding
+          taskId={task.id}
           worktreeId={task.worktree_id}
           projectId={task.project_id}
         />

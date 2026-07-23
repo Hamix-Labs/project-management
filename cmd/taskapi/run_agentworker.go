@@ -33,14 +33,20 @@ func startReadyTaskAgents(ctx context.Context, taskStore *composition.API, hub *
 	reconcileCtx, reconcileCancel := context.WithCancel(ctx)
 	go agents.RunReconcileLoop(reconcileCtx, taskStore, agentQueue, iv, nil)
 
+	provisioner := composition.NewWorktreeProvisioner(taskStore, hub)
+	taskStore.SetWorktreeProvisioner(provisioner)
+	go provisioner.Run(reconcileCtx)
+
 	sup := agentworker.New(ctx, taskStore, agentQueue, hub)
 	if err := sup.Start(ctx); err != nil {
 		pickupWake.Stop()
+		provisioner.Stop()
 		reconcileCancel()
 		return nil, nil, nil, err
 	}
 	stopAgents := func() {
 		pickupWake.Stop()
+		provisioner.Stop()
 		reconcileCancel()
 	}
 	return stopAgents, agentQueue, sup, nil
