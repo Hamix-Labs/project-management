@@ -64,6 +64,28 @@ func TestMemoryQueue_BufferCap_and_BufferDepth(t *testing.T) {
 	}
 }
 
+func TestMemoryQueue_ReceiveKeepsPendingUntilAck(t *testing.T) {
+	q := NewMemoryQueue(2)
+	t1 := taskcoredomain.Task{ID: "11111111-1111-4111-8111-111111111111", Title: "a", Priority: taskcoredomain.PriorityMedium}
+	if err := q.NotifyReadyTask(context.Background(), t1); err != nil {
+		t.Fatal(err)
+	}
+	got, err := q.Receive(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.ID != t1.ID {
+		t.Fatalf("got id %q", got.ID)
+	}
+	if err := q.NotifyReadyTask(context.Background(), t1); !errors.Is(err, ErrAlreadyQueued) {
+		t.Fatalf("after Receive before Ack: want ErrAlreadyQueued got %v", err)
+	}
+	q.AckAfterRecv(t1.ID)
+	if err := q.NotifyReadyTask(context.Background(), t1); err != nil {
+		t.Fatalf("after Ack: want nil got %v", err)
+	}
+}
+
 func TestMemoryQueue_fullReturnsErrQueueFull(t *testing.T) {
 	q := NewMemoryQueue(1)
 	t1 := taskcoredomain.Task{ID: "11111111-1111-4111-8111-111111111111", Title: "a", Priority: taskcoredomain.PriorityMedium}

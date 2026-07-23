@@ -156,9 +156,27 @@ func (h *Harness) recoverFromPanic(state *processState, task taskcoredomain.Task
 // failed (so there is no cycle row to terminate but the task is now
 // `running` and would otherwise be re-enqueued forever by the
 // reconcile loop). See docs/architecture.md "Lifecycle of one task".
+// Only transitions from running — never clobbers review/done after a
+// successful finalize that raced with a late Resume.
 func (h *Harness) bestEffortFailTask(ctx context.Context, taskID string) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.bestEffortFailTask",
 		"task_id", taskID)
+	cur, err := h.store.Get(ctx, taskID)
+	if err != nil {
+		if !errors.Is(err, taskcoredomain.ErrNotFound) {
+			slog.Warn("agent harness bestEffortFailTask Get failed", "cmd", calltrace.LogCmd,
+				"operation", "agent.harness.Harness.bestEffortFailTask.get_err",
+				"task_id", taskID, "err", err)
+		}
+		return
+	}
+	if cur.Status != taskcoredomain.StatusRunning {
+		slog.Info("agent harness bestEffortFailTask skipped; task not running",
+			"cmd", calltrace.LogCmd,
+			"operation", "agent.harness.Harness.bestEffortFailTask.skip",
+			"task_id", taskID, "status", string(cur.Status))
+		return
+	}
 	failed := taskcoredomain.StatusFailed
 	if _, err := h.store.Update(ctx, taskID, taskcorestore.UpdateTaskInput{Status: &failed}, taskcoredomain.ActorAgent); err != nil {
 		if !errors.Is(err, taskcoredomain.ErrNotFound) {

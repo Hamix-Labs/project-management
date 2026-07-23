@@ -244,8 +244,43 @@ func (w *Worker) processOne(parentCtx context.Context, task taskcoredomain.Task)
 			w.failStuckRunning(parentCtx, fresh.ID, admissionRunningMissingBindingReason, nil)
 			return
 		}
-		unlock := w.gate.Lock(strings.TrimSpace(*fresh.WorktreeID))
+		wtID := strings.TrimSpace(*fresh.WorktreeID)
+		unlock, acquired := w.gate.TryLock(wtID)
+		if !acquired {
+			slog.Debug("agent worker worktree busy; skipping running resume", "cmd", calltrace.LogCmd,
+				"operation", "agent.worker.Worker.processOne.running_worktree_busy",
+				"task_id", task.ID, "worktree_id", wtID)
+			return
+		}
 		defer unlock()
+
+		fresh, ok = w.reloadTask(parentCtx, task.ID)
+		if !ok {
+			return
+		}
+		if fresh.Status != taskcoredomain.StatusRunning {
+			slog.Warn("stale task after worktree lock", "cmd", calltrace.LogCmd,
+				"operation", "agent.worker.Worker.processOne.stale_after_lock",
+				"task_id", task.ID, "status", string(fresh.Status))
+			return
+		}
+		cycle, err = w.openRunningCycle(parentCtx, fresh.ID)
+		if err != nil {
+			slog.Warn("running task cycle lookup failed after lock; deferring", "cmd", calltrace.LogCmd,
+				"operation", "agent.worker.Worker.processOne.cycle_lookup_err_after_lock",
+				"task_id", task.ID, "err", err)
+			w.deferTaskPickup(parentCtx, task.ID, pickupPersistenceDefer)
+			return
+		}
+		if cycle == nil {
+			if w.healRunningAfterTerminalCycle(parentCtx, fresh.ID) {
+				return
+			}
+			slog.Warn("running task without open cycle after lock", "cmd", calltrace.LogCmd,
+				"operation", "agent.worker.Worker.processOne.no_open_cycle_after_lock", "task_id", task.ID)
+			w.failStuckRunning(parentCtx, fresh.ID, admissionRunningWithoutCycleReason, nil)
+			return
+		}
 		w.runWithGitPrep(parentCtx, fresh, func() {
 			w.harness.Resume(parentCtx, fresh, cycle)
 		})
