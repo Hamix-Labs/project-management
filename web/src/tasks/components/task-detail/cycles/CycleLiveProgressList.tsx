@@ -1,10 +1,6 @@
 import type { AgentRunProgressItem } from "@/tasks/hooks/useAgentRunProgress";
-import {
-  agentProgressKindLabel,
-  agentProgressMessage,
-  formatAgentProgressClockTime,
-  formatAgentProgressElapsed,
-} from "@/tasks/cycleDisplay/agentProgressDisplay";
+import { toLiveTimelineRows } from "@/tasks/cycleDisplay/liveTimelineRows";
+import { CycleLiveProgressIcon } from "./CycleLiveProgressIcons";
 
 export type CycleLiveProgressListProps = {
   items: ReadonlyArray<AgentRunProgressItem>;
@@ -41,16 +37,13 @@ export function CycleLiveProgressList({
     );
   }
 
-  const newestFirst = [...items].sort((a, b) => b.receivedAt - a.receivedAt);
-  const latest = newestFirst[0];
   const shouldShowPending = showPendingRow ?? true;
-
-  function formatTimestamp(receivedAt: number): string {
-    if (timestampMode === "clock") {
-      return formatAgentProgressClockTime(receivedAt);
-    }
-    return formatAgentProgressElapsed(receivedAt, now);
-  }
+  const rows = toLiveTimelineRows(items, now, {
+    maxItems,
+    showPendingRow: shouldShowPending,
+    pendingMessage,
+    timestampMode,
+  });
 
   return (
     <ol
@@ -58,52 +51,49 @@ export function CycleLiveProgressList({
       aria-label={listAriaLabel}
       data-testid={testId}
     >
-      {shouldShowPending ? (
-        <li
-          className="task-cycle-progress-item task-cycle-progress-item--pending"
-          aria-label="Waiting for the next agent update"
-        >
-          <span className="task-cycle-progress-pulse" aria-hidden="true">
-            <span />
-            <span />
-            <span />
-          </span>
-          <span className="task-cycle-progress-message">{pendingMessage}</span>
-          <span className="task-cycle-progress-time" aria-hidden="true">
-            {latest ? `Last ${formatAgentProgressElapsed(latest.receivedAt, now)}` : ""}
-          </span>
-        </li>
-      ) : null}
-      {newestFirst.slice(0, maxItems).map((entry, index) => {
-        const message = agentProgressMessage(entry);
+      {rows.map((row, index) => {
+        const isLatest = !row.isPending && index === (shouldShowPending ? 1 : 0);
         return (
           <li
-            key={`${entry.receivedAt}:${index}:${entry.progress.kind}:${entry.progress.subtype ?? ""}`}
-            className={`task-cycle-progress-item${index === 0 ? " task-cycle-progress-item--latest" : ""}`}
+            key={row.key}
+            className={[
+              "task-cycle-progress-item",
+              row.isPending && "task-cycle-progress-item--pending",
+              isLatest && "task-cycle-progress-item--latest",
+            ]
+              .filter(Boolean)
+              .join(" ")}
+            aria-label={row.isPending ? row.kindTitle : undefined}
+            title={row.kindTitle}
           >
-            <span className="task-cycle-progress-kind">
-              {agentProgressKindLabel(
-                entry.progress.kind,
-                entry.progress.subtype,
-                entry.progress.tool,
-              )}
+            <span className="task-cycle-progress-icon">
+              <CycleLiveProgressIcon role={row.icon} />
             </span>
-            <span
-              className="task-cycle-progress-message"
-              title={message}
-            >
-              {message}
-            </span>
-            {timestampMode === "clock" ? (
+            <div className="task-cycle-progress-body">
+              <span className="task-cycle-progress-kind">{row.kindLabel}</span>
+              <span
+                className={[
+                  "task-cycle-progress-message",
+                  row.messageEmphasis === "secondary" &&
+                    "task-cycle-progress-message--secondary",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                title={row.message}
+              >
+                {row.message}
+              </span>
+            </div>
+            {timestampMode === "clock" && row.receivedAt != null ? (
               <time
                 className="task-cycle-progress-time"
-                dateTime={new Date(entry.receivedAt).toISOString()}
+                dateTime={new Date(row.receivedAt).toISOString()}
               >
-                {formatTimestamp(entry.receivedAt)}
+                {row.timeLabel}
               </time>
             ) : (
               <span className="task-cycle-progress-time" aria-hidden="true">
-                {formatTimestamp(entry.receivedAt)}
+                {row.timeLabel}
               </span>
             )}
           </li>
