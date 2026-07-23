@@ -112,9 +112,14 @@
   flex: 1 1 auto;
   min-width: 0;
   min-height: 0;
-  max-height: min(62vh, 36rem);
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: var(--space-4) var(--space-8) var(--space-6);
+}
+
+/* Prevent flex shrink from collapsing the instructions editor (scroll instead). */
+.task-polish-dialog__body > * {
+  flex-shrink: 0;
 }
 
 .task-polish-dialog__label-row {
@@ -202,8 +207,8 @@
 .task-polish-dialog .task-create-editor-shell .rich-prompt-wrap .tiptap {
   border: none;
   border-radius: 0;
-  min-height: 14rem;
-  max-height: 22rem;
+  min-height: 12rem;
+  max-height: none;
   padding: 1rem;
   font-family: var(--font-sans);
   font-size: var(--text-sm);

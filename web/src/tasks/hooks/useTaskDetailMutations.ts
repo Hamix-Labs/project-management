@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { approveTask, patchTask, polishTask, retryTask } from "@/api";
+import type { ChecklistItemDraft } from "@/types";
 import {
   rumMutationRolledBack,
   rumMutationSettled,
@@ -177,7 +178,7 @@ function useTaskDetailPolishMutation(
     {
       instructions: string;
       flaggedCriterionIds: string[];
-      newCriteria: string[];
+      newCriteria: ChecklistItemDraft[];
     },
     { prev: Task | undefined; startedAtMs: number; guarded: boolean }
   >({
@@ -185,7 +186,10 @@ function useTaskDetailPolishMutation(
       polishTask(taskId, {
         instructions: input.instructions,
         flagged_criterion_ids: input.flaggedCriterionIds,
-        new_criteria: input.newCriteria,
+        new_criteria: input.newCriteria.map((item) => ({
+          text: item.text,
+          verify_commands: item.verify_commands,
+        })),
       }),
     onMutate: async () => {
       const guard = beginGuardedTaskWrite({

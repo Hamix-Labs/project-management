@@ -10,10 +10,10 @@ import (
 )
 
 type taskPolishJSON struct {
-	Instructions        string   `json:"instructions"`
-	ParentCycleID       string   `json:"parent_cycle_id,omitempty"`
-	FlaggedCriterionIDs []string `json:"flagged_criterion_ids,omitempty"`
-	NewCriteria         []string `json:"new_criteria,omitempty"`
+	Instructions        string                              `json:"instructions"`
+	ParentCycleID       string                              `json:"parent_cycle_id,omitempty"`
+	FlaggedCriterionIDs []string                            `json:"flagged_criterion_ids,omitempty"`
+	NewCriteria         []contract.CreateChecklistItemInput `json:"new_criteria,omitempty"`
 }
 
 // postTaskPolish handles POST /tasks/{id}/polish for human rework from review.

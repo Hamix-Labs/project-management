@@ -1,10 +1,22 @@
+import type { FormEvent } from "react";
+import type { ChecklistItemDraft } from "@/types";
+import { ChecklistCriterionModal } from "../task-compose";
+import { CloseGlyph } from "./TaskPolishGlyphs";
+
 type Props = {
   headingId: string;
-  newCriteria: string[];
-  draft: string;
+  newCriteria: ChecklistItemDraft[];
   disabled: boolean;
-  onDraftChange: (value: string) => void;
-  onAdd: () => void;
+  modalOpen: boolean;
+  modalText: string;
+  modalCommands: NonNullable<ChecklistItemDraft["verify_commands"]>;
+  onOpenModal: () => void;
+  onCloseModal: () => void;
+  onModalTextChange: (value: string) => void;
+  onModalCommandsChange: (
+    cmds: NonNullable<ChecklistItemDraft["verify_commands"]>,
+  ) => void;
+  onSubmitModal: (e: FormEvent) => void;
   onRemove: (index: number) => void;
 };
 
@@ -43,30 +55,18 @@ function CheckGlyph() {
   );
 }
 
-function CloseGlyph() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 16 16"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-      <path d="M4 4l8 8M12 4l-8 8" />
-    </svg>
-  );
-}
-
 export function TaskPolishAddCriteria({
   headingId,
   newCriteria,
-  draft,
   disabled,
-  onDraftChange,
-  onAdd,
+  modalOpen,
+  modalText,
+  modalCommands,
+  onOpenModal,
+  onCloseModal,
+  onModalTextChange,
+  onModalCommandsChange,
+  onSubmitModal,
   onRemove,
 }: Props) {
   return (
@@ -77,50 +77,34 @@ export function TaskPolishAddCriteria({
       <p className="task-polish-dialog__section-hint">
         Optional new requirements for this polish attempt.
       </p>
-      <div className="task-polish-dialog__add-row">
-        <input
-          type="text"
-          value={draft}
-          disabled={disabled}
-          placeholder="New criterion…"
-          aria-labelledby={headingId}
-          onChange={(e) => onDraftChange(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.nativeEvent.isComposing) {
-              e.preventDefault();
-              onAdd();
-            }
-          }}
-        />
-        <button
-          type="button"
-          className="secondary task-polish-dialog__add-btn"
-          disabled={disabled || !draft.trim()}
-          onClick={onAdd}
-        >
-          <PlusGlyph />
-          Add
-        </button>
-      </div>
+      <button
+        type="button"
+        className="secondary task-polish-dialog__add-btn"
+        disabled={disabled}
+        onClick={onOpenModal}
+      >
+        <PlusGlyph />
+        Add criterion
+      </button>
       {newCriteria.length > 0 ? (
         <ul
           className="task-polish-dialog__new-list"
           aria-labelledby={headingId}
         >
-          {newCriteria.map((text, index) => (
-            <li key={`${index}-${text}`} className="task-polish-dialog__new-chip">
+          {newCriteria.map((item, index) => (
+            <li key={`${index}-${item.text}`} className="task-polish-dialog__new-chip">
               <span
                 className="task-polish-dialog__check task-polish-dialog__check--on"
                 aria-hidden="true"
               >
                 <CheckGlyph />
               </span>
-              <span className="task-polish-dialog__criteria-text">{text}</span>
+              <span className="task-polish-dialog__criteria-text">{item.text}</span>
               <button
                 type="button"
                 className="task-polish-dialog__new-remove"
                 disabled={disabled}
-                aria-label={`Remove criterion ${text}`}
+                aria-label={`Remove criterion ${item.text}`}
                 onClick={() => onRemove(index)}
               >
                 <CloseGlyph />
@@ -128,6 +112,21 @@ export function TaskPolishAddCriteria({
             </li>
           ))}
         </ul>
+      ) : null}
+      {modalOpen ? (
+        <ChecklistCriterionModal
+          mode="add"
+          pending={false}
+          saving={disabled}
+          onClose={onCloseModal}
+          text={modalText}
+          onTextChange={onModalTextChange}
+          verifyCommands={modalCommands}
+          onVerifyCommandsChange={onModalCommandsChange}
+          onSubmit={onSubmitModal}
+          modalStack="nested"
+          lockBodyScroll={false}
+        />
       ) : null}
     </div>
   );

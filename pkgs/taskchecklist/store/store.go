@@ -72,6 +72,13 @@ func AddTextsInTx(tx *gorm.DB, taskID string, texts []string, by taskcoredomain.
 	return checklist.AddTextsInTx(tx, taskID, texts, by)
 }
 
+// AddItemsInTx appends definition rows with optional verify commands inside an outer TX.
+//
+//funclogmeasure:skip category=delegate-already-logs reason="Package-level forwarder; checklist.AddItemsInTx emits trace at the store chokepoint."
+func AddItemsInTx(tx *gorm.DB, taskID string, items []CreateChecklistItemInput, by taskcoredomain.Actor) ([]string, error) {
+	return checklist.AddItemsInTx(tx, taskID, items, by)
+}
+
 // ClearCompletionsForPolishInTx clears flagged criterion completions inside polish TX.
 //
 //funclogmeasure:skip category=delegate-already-logs reason="Package-level forwarder; checklist.ClearCompletionsForPolishInTx emits trace at the store chokepoint."
