@@ -124,7 +124,6 @@ export function TaskDetailLoadedDialogs({
 
       {polishDialogOpen ? (
         <TaskPolishDialog
-          taskTitle={task.title}
           worktreeId={task.worktree_id}
           projectId={task.project_id}
           projectContextItemIds={task.project_context_item_ids}

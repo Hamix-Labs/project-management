@@ -38,7 +38,6 @@ describe("TaskPolishDialog", () => {
     const onConfirm = vi.fn();
     render(
       <TaskPolishDialog
-        taskTitle="Ship gate"
         saving={false}
         pending={false}
         onCancel={vi.fn()}
@@ -57,7 +56,6 @@ describe("TaskPolishDialog", () => {
   it("uses a wide modal shell for the rich instructions editor", () => {
     render(
       <TaskPolishDialog
-        taskTitle="Ship gate"
         saving={false}
         pending={false}
         onCancel={vi.fn()}

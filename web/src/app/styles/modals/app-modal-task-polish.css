@@ -15,13 +15,8 @@
   color: var(--text-primary);
 }
 
-.task-polish-dialog__statement {
-  margin: var(--space-2) 0 0;
-  color: var(--text-primary);
-}
-
 .task-polish-dialog__footnote {
-  margin: var(--space-3) 0 0;
+  margin: var(--space-2) 0 0;
   font-size: var(--text-help);
   line-height: 1.45;
   color: var(--text-secondary);

@@ -8,7 +8,6 @@ import { Modal } from "@/shared/Modal";
 import { MutationErrorBanner } from "@/shared/MutationErrorBanner";
 
 type Props = {
-  taskTitle: string;
   /** Scopes @ file mentions to the task worktree (same as create-task prompt). */
   worktreeId?: string;
   /** When set, enables # project-context mentions like create-task. */
@@ -22,7 +21,6 @@ type Props = {
 };
 
 export function TaskPolishDialog({
-  taskTitle,
   worktreeId,
   projectId = "",
   projectContextItemIds = [],
@@ -61,10 +59,7 @@ export function TaskPolishDialog({
     >
       <section className="panel modal-sheet task-polish-dialog">
         <h2 id={titleId}>Polish this task?</h2>
-        <p className="task-polish-dialog__statement" id={descriptionId}>
-          <strong>{taskTitle}</strong>
-        </p>
-        <p className="task-polish-dialog__footnote">
+        <p className="task-polish-dialog__footnote" id={descriptionId}>
           Starts a new attempt that resumes the existing agent conversation.
           The task returns to awaiting review when polish finishes.
         </p>
