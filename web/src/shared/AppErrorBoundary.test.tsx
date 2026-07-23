@@ -70,6 +70,26 @@ describe("AppErrorBoundary", () => {
     errorSpy.mockRestore();
   });
 
+  it("logs modal-layer scope when variant is modal-layer", () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    render(
+      <AppErrorBoundary
+        variant="modal-layer"
+        fallbackMessage="Something went wrong while opening the task form."
+      >
+        <CrashOnRender />
+      </AppErrorBoundary>,
+    );
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Something went wrong while opening the task form.",
+    );
+    const modalMsg = findScopedBoundaryLogMessage(errorSpy.mock.calls);
+    expect(modalMsg).toBeDefined();
+    expect(modalMsg).toContain("[AppErrorBoundary:modal-layer]");
+    errorSpy.mockRestore();
+  });
+
   it("renders fallback UI when child render throws", () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     render(

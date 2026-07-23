@@ -104,7 +104,7 @@ export function useRichPromptEditorController({
       );
       onProjectIdsChangeRef.current?.(merged);
       const ed = editorRef.current;
-      if (ed) {
+      if (ed && !ed.isDestroyed) {
         insertProjectContextChipAt(ed, payload.item, payload.insertAt);
       }
     },
@@ -125,7 +125,10 @@ export function useRichPromptEditorController({
     [placeholder, repoOpts, projectSuggestionOpts],
   );
 
+  // TipTap 3 + React StrictMode: sync create during render leaves a destroyed
+  // editor whose `.commands` getter throws on the remount effect pass.
   const editor = useEditor({
+    immediatelyRender: false,
     extensions,
     content: "<p></p>",
     editable: !disabled,
@@ -148,11 +151,12 @@ export function useRichPromptEditorController({
   }, [editor]);
 
   useEffect(() => {
-    editor?.setEditable(!disabled);
+    if (!editor || editor.isDestroyed) return;
+    editor.setEditable(!disabled);
   }, [editor, disabled]);
 
   useEffect(() => {
-    if (!editor) return;
+    if (!editor || editor.isDestroyed) return;
     if (value === lastEmittedHtml.current) return;
     const next = looksLikeStoredHtml(value)
       ? value
@@ -178,7 +182,7 @@ export function useRichPromptEditorController({
   );
 
   const insertPathOnly = useCallback(() => {
-    if (!editor || !pendingInsert) return;
+    if (!editor || editor.isDestroyed || !pendingInsert) return;
     insertRepoFileMentionAt(
       editor,
       pendingInsert.insertAt,
@@ -189,11 +193,12 @@ export function useRichPromptEditorController({
 
   const insertWithRange = useCallback(
     async (startLine: number, endLine: number) => {
-      if (!editor || !pendingInsert) return;
+      if (!editor || editor.isDestroyed || !pendingInsert) return;
       const { insertAt, path } = pendingInsert;
       setRangeWarning(null);
       const res = await validateRepoRange(path, startLine, endLine);
       if (res === null) {
+        if (editor.isDestroyed) return;
         insertRepoFileMentionAt(editor, insertAt, path, startLine, endLine);
         setPendingInsert(null);
         return;
@@ -205,6 +210,7 @@ export function useRichPromptEditorController({
         );
         return;
       }
+      if (editor.isDestroyed) return;
       insertRepoFileMentionAt(editor, insertAt, path, startLine, endLine);
       setPendingInsert(null);
     },
