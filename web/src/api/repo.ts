@@ -186,7 +186,7 @@ export async function validateRepoRange(
   path: string,
   start: number,
   end: number,
-  options?: { signal?: AbortSignal },
+  options?: { signal?: AbortSignal; worktreeId?: string },
 ): Promise<RepoValidateRangeResult | null> {
   const p = assertRepoRelPath(path);
   const params = new URLSearchParams({
@@ -194,6 +194,10 @@ export async function validateRepoRange(
     start: assertRepoLineQueryParam("start", start),
     end: assertRepoLineQueryParam("end", end),
   });
+  const worktreeId = options?.worktreeId?.trim();
+  if (worktreeId) {
+    params.set("worktree_id", worktreeId);
+  }
   const res = await fetchWithTimeout(
     `/repo/validate-range?${params}`,
     {
@@ -235,10 +239,14 @@ export type RepoFileResult = {
 /** Full file text for @ line-range UI, or null if repo is not configured (503). */
 export async function fetchRepoFile(
   path: string,
-  options?: { signal?: AbortSignal },
+  options?: { signal?: AbortSignal; worktreeId?: string },
 ): Promise<RepoFileResult | null> {
   const p = assertRepoRelPath(path);
   const params = new URLSearchParams({ path: p });
+  const worktreeId = options?.worktreeId?.trim();
+  if (worktreeId) {
+    params.set("worktree_id", worktreeId);
+  }
   const res = await fetchWithTimeout(
     `/repo/file?${params}`,
     {

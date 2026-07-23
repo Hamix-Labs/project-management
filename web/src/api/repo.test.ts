@@ -153,6 +153,26 @@ describe("fetchRepoFile", () => {
     await expect(fetchRepoFile("   ")).rejects.toThrow(/required/);
     expect(fetch).not.toHaveBeenCalled();
   });
+
+  it("includes worktree_id when provided", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          path: "a.go",
+          content: "x",
+          binary: false,
+          truncated: false,
+          size_bytes: 1,
+          line_count: 1,
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+    await fetchRepoFile("a.go", { worktreeId: "wt-abc" });
+    const [url] = vi.mocked(fetch).mock.calls[0] as [string];
+    expect(url).toContain("worktree_id=wt-abc");
+    expect(url).toContain("path=a.go");
+  });
 });
 
 describe("probeWorktreeRepo", () => {
@@ -256,6 +276,20 @@ describe("validateRepoRange", () => {
 
     const [, init] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit];
     expect(init.signal).toBeDefined();
+  });
+
+  it("includes worktree_id when provided", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(
+        JSON.stringify({ ok: true, line_count: 10 }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+
+    await validateRepoRange("a.go", 1, 2, { worktreeId: "wt-abc" });
+
+    const [url] = vi.mocked(fetch).mock.calls[0] as [string];
+    expect(url).toContain("worktree_id=wt-abc");
   });
 
   it("rejects invalid start before fetch", async () => {

@@ -6,6 +6,8 @@ type Props = {
   id: string;
   pendingInsert: PendingFileInsert;
   disabled?: boolean;
+  /** Scopes file preview + range validation to the task worktree. */
+  worktreeId?: string;
   rangeWarning: string | null;
   onClose: () => void;
   onInsertWithRange: (startLine: number, endLine: number) => Promise<void>;
@@ -16,6 +18,7 @@ export function RichPromptFileReferenceModal({
   id,
   pendingInsert,
   disabled,
+  worktreeId,
   rangeWarning,
   onClose,
   onInsertWithRange,
@@ -40,6 +43,7 @@ export function RichPromptFileReferenceModal({
         <MentionRangePanel
           id={id}
           path={pendingInsert.path}
+          worktreeId={worktreeId}
           disabled={disabled}
           rangeWarning={rangeWarning}
           onInsertWithRange={onInsertWithRange}

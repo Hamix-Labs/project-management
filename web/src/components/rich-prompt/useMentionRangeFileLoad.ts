@@ -15,9 +15,12 @@ export type UseMentionRangeFileLoadResult = {
  * UI states the panel renders.
  *
  * Behaviour:
- *  - On mount and on every `path` change, the previous request is aborted and
- *    a new fetch starts. Loading flips to `true`, `file` and `loadError`
- *    reset.
+ *  - On mount and on every `path` / `worktreeId` change, the previous request
+ *    is aborted and a new fetch starts. Loading flips to `true`, `file` and
+ *    `loadError` reset.
+ *  - An empty/missing `worktreeId` skips the network call — `/repo/file`
+ *    requires `worktree_id` — and surfaces the same unavailable message as a
+ *    503 from the server.
  *  - `fetchRepoFile` returning `null` means the server reported the workspace
  *    repo is not configured (HTTP 503). We surface a stable "File preview is
  *    unavailable." message instead of silently rendering empty space.
@@ -28,11 +31,13 @@ export type UseMentionRangeFileLoadResult = {
  */
 export function useMentionRangeFileLoad(
   path: string,
+  worktreeId?: string,
 ): UseMentionRangeFileLoadResult {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [file, setFile] = useState<RepoFileResult | null>(null);
   const [retryTick, setRetryTick] = useState(0);
+  const scopedWorktreeId = worktreeId?.trim() ?? "";
 
   useEffect(() => {
     let active = true;
@@ -40,7 +45,20 @@ export function useMentionRangeFileLoad(
     setLoading(true);
     setLoadError(null);
     setFile(null);
-    void fetchRepoFile(path, { signal: ac.signal })
+
+    if (!scopedWorktreeId) {
+      setLoadError("File preview is unavailable.");
+      setLoading(false);
+      return () => {
+        active = false;
+        ac.abort();
+      };
+    }
+
+    void fetchRepoFile(path, {
+      signal: ac.signal,
+      worktreeId: scopedWorktreeId,
+    })
       .then((r) => {
         if (!active) return;
         if (r === null) {
@@ -60,7 +78,7 @@ export function useMentionRangeFileLoad(
       active = false;
       ac.abort();
     };
-  }, [path, retryTick]);
+  }, [path, scopedWorktreeId, retryTick]);
 
   const retry = useCallback(() => {
     setRetryTick((t) => t + 1);
