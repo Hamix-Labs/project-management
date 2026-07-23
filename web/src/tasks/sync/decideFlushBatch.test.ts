@@ -37,6 +37,7 @@ describe("decideFlushBatch", () => {
     pending.enrichedCycles.add(cycleEnrichmentKey("t1", "c1"));
     const decision = decideFlushBatch(pending);
     expect(decision.invalidateKeys).toContainEqual(taskQueryKeys.cycles("t1"));
+    expect(decision.invalidateKeys).toContainEqual(taskQueryKeys.tokenUsage("t1"));
     expect(decision.invalidateKeys).toContainEqual(taskQueryKeys.checklist("t1"));
   });
 
@@ -48,6 +49,7 @@ describe("decideFlushBatch", () => {
     const decision = decideFlushBatch(pending);
     expect(decision.invalidateKeys).not.toContainEqual(taskQueryKeys.detailRoot());
     expect(decision.invalidateKeys).toContainEqual(taskQueryKeys.cycles("t1"));
+    expect(decision.invalidateKeys).toContainEqual(taskQueryKeys.tokenUsage("t1"));
     expect(decision.invalidateKeys).toContainEqual(taskQueryKeys.checklist("t1"));
   });
 
@@ -58,6 +60,7 @@ describe("decideFlushBatch", () => {
     const decision = decideFlushBatch(pending);
     expect(decision.invalidateKeys).toContainEqual(taskQueryKeys.detailRoot());
     expect(decision.invalidateKeys).toContainEqual(taskQueryKeys.cycles("t1"));
+    expect(decision.invalidateKeys).toContainEqual(taskQueryKeys.tokenUsage("t1"));
     expect(decision.invalidateKeys).toContainEqual(taskQueryKeys.checklist("t1"));
   });
 
@@ -67,6 +70,7 @@ describe("decideFlushBatch", () => {
     pending.enrichedCycles.add(cycleEnrichmentKey("t1", "c1"));
     const decision = decideFlushBatch(pending);
     expect(decision.invalidateKeys).not.toContainEqual(taskQueryKeys.cycles("t1"));
+    expect(decision.invalidateKeys).not.toContainEqual(taskQueryKeys.tokenUsage("t1"));
     expect(decision.invalidateKeys).toContainEqual(taskQueryKeys.checklist("t1"));
   });
 });

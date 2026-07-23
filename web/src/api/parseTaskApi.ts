@@ -31,3 +31,7 @@ export {
   parseTaskCycleStreamResponse,
   parseTaskCyclesListResponse,
 } from "./parseTaskApiCycles";
+export {
+  parseTaskTokenUsageResponse,
+  parseTokenUsageProjection,
+} from "./parseTaskApiTokenUsage";

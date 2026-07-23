@@ -61,6 +61,8 @@ export const taskQueryKeys = {
   /** Prefix for all cycle queries on a task; partial-match invalidation hits both list and per-cycle. */
   cycles: (id: string) =>
     [...taskQueryKeys.all, "detail", id, "cycles"] as const,
+  tokenUsage: (id: string) =>
+    [...taskQueryKeys.all, "detail", id, "token-usage"] as const,
   cycle: (id: string, cycleId: string) =>
     [...taskQueryKeys.all, "detail", id, "cycles", cycleId] as const,
   cycleStream: (id: string, cycleId: string) =>

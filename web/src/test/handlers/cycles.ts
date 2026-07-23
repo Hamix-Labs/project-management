@@ -68,6 +68,23 @@ export function cycleVerdictsGet(
   );
 }
 
+export function taskTokenUsageGet(taskId: string, body: JsonBodyType) {
+  return http.get(`/tasks/${taskId}/token-usage`, () => HttpResponse.json(body));
+}
+
+export function unknownTokenUsage() {
+  return {
+    consumed_tokens: 0,
+    execute_consumed_tokens: 0,
+    verify_consumed_tokens: 0,
+    input_tokens: 0,
+    output_tokens: 0,
+    cache_read_tokens: 0,
+    cache_write_tokens: 0,
+    known: false,
+  };
+}
+
 /** Handlers for TaskCycleDetailPage routing tests. */
 export function cyclePageHandlers(options: {
   taskId: string;

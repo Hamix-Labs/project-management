@@ -2,6 +2,7 @@ import {
   TaskDetailSchedule,
   TaskDetailToolbarActions,
 } from "../components/task-detail";
+import { TokenUsageChip } from "../components/task-detail/TokenUsageChip";
 import { canEditTask } from "../task-display/canEditTask";
 import type { TaskDetailLoadedViewProps } from "./TaskDetailLoadedView";
 
@@ -41,7 +42,10 @@ export function TaskDetailLoadedToolbar({
 
   return (
     <div className="task-detail-toolbar">
-      <TaskDetailSchedule task={task} />
+      <div className="task-detail-toolbar-left">
+        <TokenUsageChip taskId={task.id} />
+        <TaskDetailSchedule task={task} />
+      </div>
       <TaskDetailToolbarActions
         saving={saving}
         canEdit={canEditTask(task.status)}

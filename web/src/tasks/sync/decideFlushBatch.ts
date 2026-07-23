@@ -50,6 +50,7 @@ export function decideFlushBatch(pending: PendingInvalidations): SyncFlushDecisi
     );
     if (!allCyclesEnriched) {
       keys.push(taskQueryKeys.cycles(taskId));
+      keys.push(taskQueryKeys.tokenUsage(taskId));
     }
     // Agent runs write checklist completions without embedding them in cycle
     // enrichment; invalidate checklist whenever cycle hints arrive.

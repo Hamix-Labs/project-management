@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { errorMessage } from "@/lib/errorMessage";
 import { useAppTimezone } from "@/shared/time/appTimezone";
 import { useNow } from "@/shared/useNow";
@@ -9,9 +9,14 @@ import {
   phaseStatusFillClass,
   phaseStatusLabel,
 } from "@/tasks/cycleDisplay/cyclesViewModel";
-import type { TaskCycle } from "@/types/cycle";
+import type { TaskCycle, TaskTokenUsageAttempt } from "@/types/cycle";
 import { useTaskCycle } from "../../../hooks/useTaskCycles";
+import { useTaskTokenUsage } from "../../../hooks/useTaskTokenUsage";
 import { formatCycleLineageLabel } from "../../../cycleDisplay/cycleLineage";
+import {
+  formatShareOfTaskPct,
+  formatTokenCount,
+} from "../../../task-display/formatTokenCount";
 import { CycleRowVerdicts } from "./CycleRowVerdicts";
 import {
   formatAttemptTiming,
@@ -31,6 +36,12 @@ export function CycleHistoryList({
   runningCycleId,
   cyclesById,
 }: CycleHistoryListProps) {
+  const usageQuery = useTaskTokenUsage(taskId);
+  const attemptsByCycleId = useMemo(
+    () => indexAttemptsByCycleId(usageQuery.data?.attempts ?? []),
+    [usageQuery.data?.attempts],
+  );
+
   if (cycles.length === 0) {
     return null;
   }
@@ -43,10 +54,21 @@ export function CycleHistoryList({
           cycle={cycle}
           isLiveAbove={cycle.id === runningCycleId}
           cyclesById={cyclesById}
+          attemptUsage={attemptsByCycleId.get(cycle.id)}
         />
       ))}
     </ol>
   );
+}
+
+function indexAttemptsByCycleId(
+  attempts: TaskTokenUsageAttempt[],
+): Map<string, TaskTokenUsageAttempt> {
+  const out = new Map<string, TaskTokenUsageAttempt>();
+  for (const attempt of attempts) {
+    out.set(attempt.cycle_id, attempt);
+  }
+  return out;
 }
 
 function CycleRow({
@@ -54,16 +76,19 @@ function CycleRow({
   cycle,
   isLiveAbove,
   cyclesById,
+  attemptUsage,
 }: {
   taskId: string;
   cycle: TaskCycle;
   isLiveAbove: boolean;
   cyclesById: ReadonlyMap<string, TaskCycle>;
+  attemptUsage?: TaskTokenUsageAttempt;
 }) {
   const [open, setOpen] = useState(false);
   const tz = useAppTimezone();
   const lineage = formatCycleLineageLabel(cycle, cyclesById);
   const timing = formatAttemptTiming(cycle, tz);
+  const tokenSummary = formatCycleTokenSummary(cycle, attemptUsage);
 
   return (
     <li className="task-cycle-row" data-cycle-status={cycle.status}>
@@ -94,6 +119,15 @@ function CycleRow({
           <span className="task-cycle-row-trigger muted">
             by {cycle.triggered_by}
           </span>
+          {tokenSummary ? (
+            <span
+              className="task-cycle-row-tokens muted"
+              data-testid="task-cycle-row-tokens"
+              aria-label={tokenSummary.ariaLabel}
+            >
+              {tokenSummary.label}
+            </span>
+          ) : null}
           {isLiveAbove ? (
             <span
               className="task-cycle-row-livehint"
@@ -119,6 +153,28 @@ function CycleRow({
       </details>
     </li>
   );
+}
+
+function formatCycleTokenSummary(
+  cycle: TaskCycle,
+  attemptUsage?: TaskTokenUsageAttempt,
+): { label: string; ariaLabel?: string } | null {
+  const cycleUsage = cycle.token_usage;
+  if (!cycleUsage?.known) {
+    return null;
+  }
+
+  const tokens = formatTokenCount(cycleUsage.consumed_tokens);
+  const sharePct = attemptUsage?.share_of_task_pct;
+  if (sharePct == null) {
+    return { label: tokens.label, ariaLabel: tokens.ariaLabel };
+  }
+
+  const shareLabel = formatShareOfTaskPct(sharePct);
+  return {
+    label: `${tokens.label} · ${shareLabel} of task`,
+    ariaLabel: `${tokens.ariaLabel}, ${shareLabel} of task`,
+  };
 }
 
 function CycleRowPhases({

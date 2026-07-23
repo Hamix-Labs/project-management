@@ -62,6 +62,12 @@ describe("taskQueryKeys", () => {
       "cycles",
       "cyc-1",
     ]);
+    expect(taskQueryKeys.tokenUsage("t1")).toEqual([
+      "tasks",
+      "detail",
+      "t1",
+      "token-usage",
+    ]);
   });
 
   it("encodes events cursor variants in the key", () => {
