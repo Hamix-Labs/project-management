@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { TaskCycle, TaskCyclePhase, TaskCyclesListResponse } from "@/types/cycle";
 import {
+  formatAttemptTiming,
   indexCyclesById,
   pickLatestPhase,
   pickRunningPhase,
@@ -96,5 +97,26 @@ describe("pickLatestPhase", () => {
       phase("p2", "verify", "succeeded", 2),
     ];
     expect(pickLatestPhase(phases)?.id).toBe("p2");
+  });
+});
+
+describe("formatAttemptTiming", () => {
+  it("labels in-progress attempts without a duration", () => {
+    const timing = formatAttemptTiming(cycle("c-run", "running"), "UTC");
+    expect(timing.label).toMatch(/^Picked up · .+ · Completed · in progress$/);
+    expect(timing.label).not.toMatch(/min/);
+  });
+
+  it("labels terminal attempts with completed time and duration", () => {
+    const timing = formatAttemptTiming(
+      {
+        ...cycle("c-done", "succeeded"),
+        started_at: "2026-04-22T12:48:00Z",
+        ended_at: "2026-04-22T13:00:00Z",
+      },
+      "UTC",
+    );
+    expect(timing.label).toMatch(/^Picked up · .+ · Completed · .+ · 12 min$/);
+    expect(timing.ariaLabel).toBe(timing.label);
   });
 });

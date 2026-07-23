@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { errorMessage } from "@/lib/errorMessage";
+import { useAppTimezone } from "@/shared/time/appTimezone";
 import { useNow } from "@/shared/useNow";
 import {
   cycleStatusLabel,
@@ -13,8 +14,8 @@ import { useTaskCycle } from "../../../hooks/useTaskCycles";
 import { formatCycleLineageLabel } from "../../../cycleDisplay/cycleLineage";
 import { CycleRowVerdicts } from "./CycleRowVerdicts";
 import {
+  formatAttemptTiming,
   formatPhaseDuration,
-  formatStartedToEnded,
 } from "./cyclePanelUtils";
 
 type CycleHistoryListProps = {
@@ -60,7 +61,9 @@ function CycleRow({
   cyclesById: ReadonlyMap<string, TaskCycle>;
 }) {
   const [open, setOpen] = useState(false);
+  const tz = useAppTimezone();
   const lineage = formatCycleLineageLabel(cycle, cyclesById);
+  const timing = formatAttemptTiming(cycle, tz);
 
   return (
     <li className="task-cycle-row" data-cycle-status={cycle.status}>
@@ -81,8 +84,12 @@ function CycleRow({
               <span className="task-cycle-lineage muted"> · {lineage}</span>
             ) : null}
           </span>
-          <span className="task-cycle-row-when muted">
-            {formatStartedToEnded(cycle)}
+          <span
+            className="task-cycle-row-when muted"
+            aria-label={timing.ariaLabel}
+            data-testid="task-cycle-row-when"
+          >
+            {timing.label}
           </span>
           <span className="task-cycle-row-trigger muted">
             by {cycle.triggered_by}
