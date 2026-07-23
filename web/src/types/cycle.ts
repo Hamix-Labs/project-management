@@ -82,6 +82,33 @@ export type CycleMeta = {
   prompt_hash: string;
 };
 
+/** Token accounting projection shared by cycle rows and task-wide usage. */
+export type TokenUsageProjection = {
+  consumed_tokens: number;
+  execute_consumed_tokens: number;
+  verify_consumed_tokens: number;
+  input_tokens: number;
+  output_tokens: number;
+  cache_read_tokens: number;
+  cache_write_tokens: number;
+  known: boolean;
+};
+
+/** One row from `GET /tasks/{id}/token-usage`. */
+export type TaskTokenUsageAttempt = {
+  cycle_id: string;
+  attempt_seq: number;
+  token_usage: TokenUsageProjection;
+  share_of_task_pct: number | null;
+};
+
+/** Envelope for `GET /tasks/{id}/token-usage`. */
+export type TaskTokenUsageResponse = {
+  task_id: string;
+  token_usage: TokenUsageProjection;
+  attempts: TaskTokenUsageAttempt[];
+};
+
 /** One row from `GET /tasks/{id}/cycles` (or the cycle envelope of `GET /tasks/{id}/cycles/{cycleId}`). */
 export type TaskCycle = {
   id: string;
@@ -102,6 +129,8 @@ export type TaskCycle = {
    * server cycle row predates the projection keys); see {@link CycleMeta}.
    */
   cycle_meta: CycleMeta;
+  /** Present when the server attached parseable phase usage for this attempt. */
+  token_usage?: TokenUsageProjection;
 };
 
 /** One row from `GET /tasks/{id}/cycles/{cycleId}::phases`. */

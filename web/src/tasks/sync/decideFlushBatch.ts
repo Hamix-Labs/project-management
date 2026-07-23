@@ -43,6 +43,7 @@ export function decideFlushBatch(pending: PendingInvalidations): SyncFlushDecisi
     );
     if (!allCyclesEnriched) {
       keys.push(taskQueryKeys.cycles(taskId));
+      keys.push(taskQueryKeys.tokenUsage(taskId));
     }
   }
 

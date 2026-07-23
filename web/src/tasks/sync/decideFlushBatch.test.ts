@@ -37,6 +37,7 @@ describe("decideFlushBatch", () => {
     pending.enrichedCycles.add(cycleEnrichmentKey("t1", "c1"));
     const decision = decideFlushBatch(pending);
     expect(decision.invalidateKeys).toContainEqual(taskQueryKeys.cycles("t1"));
+    expect(decision.invalidateKeys).toContainEqual(taskQueryKeys.tokenUsage("t1"));
   });
 
   it("skips cycles invalidation when task id is also in tasks set", () => {

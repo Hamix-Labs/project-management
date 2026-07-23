@@ -33,6 +33,7 @@ import {
   parsePhaseStatus,
   parseString,
 } from "./parseTaskApiCore";
+import { parseOptionalTokenUsageProjection } from "./parseTaskApiTokenUsage";
 
 /**
  * Validates the typed `cycle_meta` projection introduced in Phase 1b of
@@ -78,6 +79,8 @@ export function parseTaskCycle(value: unknown): TaskCycle {
   if (ended !== undefined) out.ended_at = ended;
   const parent = parseOptionalNonEmptyId(value.parent_cycle_id, "parent_cycle_id");
   if (parent !== undefined) out.parent_cycle_id = parent;
+  const tokenUsage = parseOptionalTokenUsageProjection(value.token_usage);
+  if (tokenUsage !== undefined) out.token_usage = tokenUsage;
   return out;
 }
 

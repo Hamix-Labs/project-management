@@ -9,6 +9,7 @@ import type {
   TaskCyclePhase,
   TaskCycleStreamResponse,
   TaskCyclesListResponse,
+  TaskTokenUsageResponse,
   TerminateTaskCycleInput,
 } from "@/types";
 import {
@@ -19,6 +20,7 @@ import {
   parseTaskCyclePhase,
   parseTaskCycleStreamResponse,
   parseTaskCyclesListResponse,
+  parseTaskTokenUsageResponse,
 } from "./parseTaskApi";
 import { fetchWithTimeout, jsonHeaders, apiErrorFromResponse } from "./shared";
 import {
@@ -256,4 +258,21 @@ export async function listTaskCommits(
   if (!res.ok) throw await apiErrorFromResponse(res);
   const raw: unknown = await res.json();
   return parseTaskCommitsResponse(raw);
+}
+
+export async function getTaskTokenUsage(
+  taskId: string,
+  options?: { signal?: AbortSignal },
+): Promise<TaskTokenUsageResponse> {
+  const tid = assertTaskPathId(taskId, "task id");
+  const res = await fetchWithTimeout(
+    `/tasks/${encodeURIComponent(tid)}/token-usage`,
+    {
+      headers: { Accept: "application/json" },
+      signal: options?.signal,
+    },
+  );
+  if (!res.ok) throw await apiErrorFromResponse(res);
+  const raw: unknown = await res.json();
+  return parseTaskTokenUsageResponse(raw);
 }

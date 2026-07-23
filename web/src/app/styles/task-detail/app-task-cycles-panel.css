@@ -82,7 +82,8 @@
 }
 
 .task-cycle-row-when,
-.task-cycle-row-trigger {
+.task-cycle-row-trigger,
+.task-cycle-row-tokens {
   font-size: var(--text-xs);
 }
 
