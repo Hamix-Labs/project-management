@@ -73,6 +73,20 @@ func (h *Handler) getTaskCycles(w http.ResponseWriter, r *http.Request) {
 	out, hasMore, next := paginateMappedRows(rows, limit, taskCycleResponseFromDomain, func(r taskCycleResponse) int64 {
 		return r.AttemptSeq
 	})
+	usageRows, err := h.cycles.ListPhaseTokenUsageForTask(r.Context(), taskID)
+	if err != nil {
+		handlerhttp.WriteStoreError(w, r, op, err)
+		return
+	}
+	byCycle := groupUsageRowsByCycleID(usageRows)
+	for i := range out {
+		cycleRows, ok := byCycle[out[i].ID]
+		if !ok {
+			continue
+		}
+		proj := projectTokenUsageFromRows(cycleRows)
+		out[i].TokenUsage = &proj
+	}
 	resp := taskCyclesListResponse{
 		TaskID:               taskID,
 		Cycles:               out,

@@ -42,6 +42,7 @@ func Register(m *http.ServeMux, deps Deps) {
 	m.Handle("GET /tasks/cycle-failures", http.HandlerFunc(h.cycleFailures))
 	m.Handle("POST /tasks/{id}/cycles", http.HandlerFunc(h.postTaskCycle))
 	m.Handle("GET /tasks/{id}/cycles", http.HandlerFunc(h.getTaskCycles))
+	m.Handle("GET /tasks/{id}/token-usage", http.HandlerFunc(h.getTaskTokenUsage))
 	m.Handle("GET /tasks/{id}/cycles/{cycleId}/stream", http.HandlerFunc(h.getTaskCycleStream))
 	m.Handle("GET /tasks/{id}/commits", http.HandlerFunc(h.getTaskCommits))
 	m.Handle("GET /tasks/{id}/cycles/{cycleId}/verdicts", http.HandlerFunc(h.getTaskCycleVerdicts))

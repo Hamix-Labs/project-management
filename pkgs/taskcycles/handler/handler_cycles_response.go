@@ -124,6 +124,10 @@ func taskCycleDetailFromDomain(c *cyclesdomain.TaskCycle, phases []cyclesdomain.
 	for i := range phases {
 		out.Phases = append(out.Phases, taskCyclePhaseResponseFromDomain(&phases[i]))
 	}
+	if usageRows := phaseUsageRowsFromPhases(c.ID, c.AttemptSeq, phases); len(usageRows) > 0 {
+		proj := projectTokenUsageFromRows(usageRows)
+		out.TokenUsage = &proj
+	}
 	return out
 }
 
