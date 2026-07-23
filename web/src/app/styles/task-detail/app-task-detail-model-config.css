@@ -128,12 +128,6 @@ a.task-create-agent-lock-notice-link:hover {
   margin-right: auto;
 }
 
-.task-detail-toolbar > .task-detail-review-hint {
-  flex: 1 1 100%;
-  margin: 0;
-  font-size: var(--text-sm);
-}
-
 .task-detail-toolbar > .task-detail-actions {
   flex: 0 0 auto;
   flex-wrap: nowrap;
