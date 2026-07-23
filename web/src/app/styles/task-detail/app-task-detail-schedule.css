@@ -27,21 +27,6 @@
   flex-shrink: 0;
 }
 
-.task-detail-schedule-row--phase .task-detail-schedule-row-icon {
-  color: var(--success);
-}
-
-.task-detail-schedule-row--phase-pending .task-detail-schedule-row-icon {
-  color: var(--text-tertiary);
-}
-
-.task-detail-schedule-row-pending {
-  font-size: var(--text-sm);
-  font-variant-numeric: tabular-nums;
-  color: var(--text-tertiary);
-  font-weight: 450;
-}
-
 .task-detail-schedule-row--scheduled .task-detail-schedule-row-icon {
   color: var(--info);
 }
@@ -52,20 +37,6 @@
   align-items: center;
   gap: 0.35rem;
   line-height: 1.35;
-}
-
-.task-detail-phase-duration {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-size: var(--text-sm);
-  font-variant-numeric: tabular-nums;
-  color: var(--text-primary);
-  font-weight: 450;
-}
-
-.task-detail-phase-duration .task-detail-action-glyph {
-  color: var(--text-tertiary);
 }
 
 .task-detail-schedule-row-label {

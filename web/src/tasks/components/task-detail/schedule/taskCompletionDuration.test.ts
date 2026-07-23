@@ -1,25 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  earliestCycleStartedAt,
-  formatTaskCompletionDuration,
-} from "./taskCompletionDuration";
-
-describe("earliestCycleStartedAt", () => {
-  it("returns the earliest started_at among cycles", () => {
-    expect(
-      earliestCycleStartedAt([
-        { started_at: "2026-04-22T14:00:00Z" },
-        { started_at: "2026-04-22T13:00:00Z" },
-        { started_at: "2026-04-22T13:30:00Z" },
-      ]),
-    ).toBe("2026-04-22T13:00:00Z");
-  });
-
-  it("returns null when there are no usable starts", () => {
-    expect(earliestCycleStartedAt([])).toBeNull();
-    expect(earliestCycleStartedAt([{ started_at: "" }])).toBeNull();
-  });
-});
+import { formatTaskCompletionDuration } from "./taskCompletionDuration";
 
 describe("formatTaskCompletionDuration", () => {
   it("formats a multi-minute span", () => {

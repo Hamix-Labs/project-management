@@ -4,8 +4,7 @@ import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { AppSettings } from "@/api/settings";
 import { settingsQueryKeys } from "@/settings/settingsQueryKeys";
-import { taskQueryKeys } from "@/lib/taskQueryKeys";
-import type { Status, TaskCycle, TaskCyclesListResponse } from "@/types";
+import type { Status } from "@/types";
 import { TASK_TEST_DEFAULTS } from "@/test/taskDefaults";
 import { APP_SETTINGS_DEFAULTS } from "@/test/settingsDefaults";
 import { TaskDetailSchedule } from "./TaskDetailSchedule";
@@ -22,40 +21,13 @@ const NY_SETTINGS: AppSettings = {
   display_timezone: "America/New_York",
 };
 
-function cycleStub(overrides: Partial<TaskCycle> = {}): TaskCycle {
-  return {
-    id: "cycle-1",
-    task_id: "task-1",
-    attempt_seq: 1,
-    status: "succeeded",
-    started_at: "2026-04-22T12:48:00Z",
-    ended_at: "2026-04-22T13:00:00Z",
-    triggered_by: "agent",
-    meta: {},
-    cycle_meta: {
-      runner: "cursor",
-      runner_version: "",
-      cursor_model: "",
-      cursor_model_effective: "",
-      prompt_hash: "",
-    },
-    ...overrides,
-  };
-}
-
-function createWrapper(
-  settings: AppSettings = NY_SETTINGS,
-  cycles?: TaskCyclesListResponse,
-) {
+function createWrapper(settings: AppSettings = NY_SETTINGS) {
   const qc = new QueryClient({
     defaultOptions: {
       queries: { retry: false, gcTime: 0, staleTime: Infinity },
     },
   });
   qc.setQueryData(settingsQueryKeys.app(), settings);
-  if (cycles) {
-    qc.setQueryData(taskQueryKeys.cycles("task-1"), cycles);
-  }
   function Wrapper({ children }: { children: ReactNode }) {
     return <QueryClientProvider client={qc}>{children}</QueryClientProvider>;
   }
@@ -68,7 +40,6 @@ function renderPanel(opts: {
 } = {}) {
   const { Wrapper } = createWrapper();
   const task = {
-    id: "task-1",
     status: opts.status ?? ("ready" as Status),
     pickup_not_before: opts.pickup ?? undefined,
   };
@@ -84,9 +55,18 @@ describe("TaskDetailSchedule (read-only)", () => {
     isUiFeatureOmitted.mockImplementation(() => false);
   });
 
-  it("renders nothing when the task is terminal and has no schedule", () => {
+  it("always renders the status badge in the toolbar strip", () => {
     renderPanel({ status: "done", pickup: null });
-    expect(screen.queryByTestId("task-detail-schedule")).toBeNull();
+    expect(screen.getByTestId("task-detail-schedule")).toBeInTheDocument();
+    expect(screen.getByTestId("task-detail-status")).toHaveTextContent(/done/i);
+    expect(screen.queryByText(/no pickup scheduled/i)).toBeNull();
+  });
+
+  it("highlights the status badge when status needs user input", () => {
+    renderPanel({ status: "review", pickup: null });
+    expect(
+      screen.getByText("Awaiting review", { selector: ".task-status-badge" }),
+    ).toHaveAttribute("data-needs-user", "true");
   });
 
   it("renders a schedule row formatted in the app timezone", () => {
@@ -117,156 +97,38 @@ describe("TaskDetailSchedule (read-only)", () => {
       status: "running",
       pickup: "2026-04-22T13:00:00Z",
     });
-    expect(screen.getByTestId("task-detail-phase-complete-pending")).toBeInTheDocument();
+    expect(screen.getByTestId("task-detail-status")).toHaveTextContent(/running/i);
     expect(screen.getByTestId("task-detail-schedule-badge")).toBeInTheDocument();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 
-  it("shows a pending completed placeholder while the task is running", () => {
+  it("does not show phase-complete timing on the schedule strip", () => {
     renderPanel({ status: "running", pickup: null });
-    const row = screen.getByTestId("task-detail-phase-complete-pending");
-    expect(row).toHaveClass("task-detail-schedule-row--phase-pending");
-    expect(row).toHaveTextContent(/completed/i);
-    expect(row).toHaveTextContent("—");
     expect(screen.queryByTestId("task-detail-phase-complete")).toBeNull();
-  });
-
-  it("replaces the pending placeholder with the timestamp when criteria are satisfied", () => {
-    const { Wrapper } = createWrapper();
-    render(
-      <Wrapper>
-        <TaskDetailSchedule
-          task={{
-            id: "task-1",
-            status: "running",
-            pickup_not_before: undefined,
-            criteria_satisfied_at: "2026-04-22T13:00:00Z",
-          }}
-        />
-      </Wrapper>,
-    );
-    expect(screen.getByTestId("task-detail-phase-complete")).toBeInTheDocument();
     expect(screen.queryByTestId("task-detail-phase-complete-pending")).toBeNull();
-    expect(screen.getByTestId("task-detail-phase-complete")).toHaveTextContent(
-      /09:00/,
-    );
+    expect(screen.queryByTestId("task-detail-phase-duration")).toBeNull();
   });
 
-  it("does not show a completed placeholder for a ready task", () => {
-    renderPanel({ status: "ready", pickup: null });
-    expect(
-      screen.queryByTestId("task-detail-phase-complete-pending"),
-    ).toBeNull();
-  });
-
-  it("hides pickup schedule UI when launch omits schedule", () => {
+  it("hides pickup schedule UI when launch omits schedule but still shows status", () => {
     isUiFeatureOmitted.mockImplementation((feature) => feature === "schedule");
     renderPanel({
       status: "ready",
       pickup: "2026-04-22T13:00:00Z",
     });
-    expect(screen.queryByTestId("task-detail-schedule")).toBeNull();
-  });
-
-  it("still shows phase complete when launch omits schedule", () => {
-    isUiFeatureOmitted.mockImplementation((feature) => feature === "schedule");
-    const { Wrapper } = createWrapper();
-    render(
-      <Wrapper>
-        <TaskDetailSchedule
-          task={{
-            id: "task-1",
-            status: "done",
-            pickup_not_before: "2026-04-22T13:00:00Z",
-            criteria_satisfied_at: "2026-04-22T13:00:00Z",
-          }}
-        />
-      </Wrapper>,
-    );
-    expect(screen.getByTestId("task-detail-phase-complete")).toBeInTheDocument();
+    expect(screen.getByTestId("task-detail-schedule")).toBeInTheDocument();
+    expect(screen.getByTestId("task-detail-status")).toHaveTextContent(/ready/i);
     expect(screen.queryByTestId("task-detail-schedule-badge")).toBeNull();
+    expect(screen.queryByText(/no pickup scheduled/i)).toBeNull();
   });
 
-  it("shows phase complete timestamp when criteria_satisfied_at is set", () => {
-    const { Wrapper } = createWrapper();
-    render(
-      <Wrapper>
-        <TaskDetailSchedule
-          task={{
-            id: "task-1",
-            status: "done",
-            pickup_not_before: undefined,
-            criteria_satisfied_at: "2026-04-22T13:00:00Z",
-          }}
-        />
-      </Wrapper>,
-    );
-    const row = screen.getByTestId("task-detail-phase-complete");
-    expect(row).toHaveClass("task-detail-schedule-row");
-    expect(row).toHaveTextContent(/completed/i);
-    expect(row).toHaveTextContent(/09:00/);
-    expect(row).toHaveAttribute(
-      "aria-label",
-      expect.stringMatching(/phase completed/i),
-    );
-  });
-
-  it("shows wall-clock duration from earliest cycle start to completion", () => {
-    const { Wrapper } = createWrapper(NY_SETTINGS, {
-      task_id: "task-1",
-      cycles: [
-        cycleStub({
-          id: "cycle-2",
-          attempt_seq: 2,
-          started_at: "2026-04-22T12:55:00Z",
-        }),
-        cycleStub({
-          id: "cycle-1",
-          attempt_seq: 1,
-          started_at: "2026-04-22T12:48:00Z",
-        }),
-      ],
-      limit: 50,
-      has_more: false,
+  it("stacks status and schedule rows when a pickup time is set", () => {
+    const { container } = renderPanel({
+      status: "ready",
+      pickup: "2026-04-22T13:00:00Z",
     });
-    render(
-      <Wrapper>
-        <TaskDetailSchedule
-          task={{
-            id: "task-1",
-            status: "done",
-            pickup_not_before: undefined,
-            criteria_satisfied_at: "2026-04-22T13:00:00Z",
-          }}
-        />
-      </Wrapper>,
-    );
-    expect(screen.getByTestId("task-detail-phase-duration")).toHaveTextContent(
-      "12 min",
-    );
-    expect(screen.getByTestId("task-detail-phase-complete")).toHaveAttribute(
-      "aria-label",
-      expect.stringMatching(/took 12 min/i),
-    );
-  });
-
-  it("stacks phase complete and schedule rows when both timestamps are set", () => {
-    const { Wrapper } = createWrapper();
-    const { container } = render(
-      <Wrapper>
-        <TaskDetailSchedule
-          task={{
-            id: "task-1",
-            status: "ready",
-            pickup_not_before: "2026-04-22T13:00:00Z",
-            criteria_satisfied_at: "2026-04-22T14:00:00Z",
-          }}
-        />
-      </Wrapper>,
-    );
     const rows = container.querySelectorAll(".task-detail-schedule-row");
     expect(rows).toHaveLength(2);
-    expect(screen.getByTestId("task-detail-phase-complete")).toBeInTheDocument();
+    expect(screen.getByTestId("task-detail-status")).toBeInTheDocument();
     expect(screen.getByTestId("task-detail-schedule-badge")).toBeInTheDocument();
   });
 });

@@ -22,39 +22,31 @@ function renderHeader(task: Parameters<typeof TaskDetailHeader>[0]["task"]) {
 }
 
 describe("TaskDetailHeader", () => {
-  it("renders title, status and priority pills, and back link", () => {
+  it("renders title, priority pill, and back link without a status badge", () => {
     renderHeader({
       title: "My task",
-      status: "ready",
       priority: "high",
       ...TASK_TEST_DEFAULTS,
     });
 
     expect(screen.getByRole("heading", { name: /^my task$/i })).toBeInTheDocument();
-    expect(screen.getByText("Ready")).toBeInTheDocument();
     expect(screen.getByText("High priority")).toBeInTheDocument();
+    expect(screen.queryByText("Ready", { selector: ".task-status-badge" })).toBeNull();
     expect(screen.getByRole("link", { name: /^all tasks$/i })).toHaveAttribute(
       "href",
       "/",
     );
   });
 
-  // The header is identity-only: the needs-user signal lives in the
-  // attention callout, while the header surfaces it as a highlighted
-  // status pill (`data-needs-user`). No separate stance line — that was
-  // redundant with both the pill and the callout. (Redesign 2026-06-04.)
-  it("highlights the status pill when status needs user input", () => {
+  it("does not render a status badge for needs-user statuses", () => {
     renderHeader({
       title: "Blocked",
-      status: "blocked",
       priority: "medium",
       ...TASK_TEST_DEFAULTS,
       cursor_model: "opus",
     });
 
-    expect(
-      screen.getByText("Blocked", { selector: ".task-status-badge" }),
-    ).toHaveAttribute("data-needs-user", "true");
+    expect(document.querySelector(".task-status-badge")).toBeNull();
     // The old standalone stance line is gone — guard against its return.
     expect(screen.queryByText("Agent needs input")).not.toBeInTheDocument();
     expect(screen.queryByText("Informational")).not.toBeInTheDocument();
@@ -63,7 +55,6 @@ describe("TaskDetailHeader", () => {
   it("renders the runtime chip with runner and model intent (Phase 4a of plan)", () => {
     renderHeader({
       title: "Has model",
-      status: "ready",
       priority: "medium",
       ...TASK_TEST_DEFAULTS,
       cursor_model: "opus-4",
@@ -76,7 +67,6 @@ describe("TaskDetailHeader", () => {
   it("renders 'default model' copy in the runtime chip when task has no cursor_model selected", () => {
     renderHeader({
       title: "No model",
-      status: "ready",
       priority: "medium",
       ...TASK_TEST_DEFAULTS,
       cursor_model: "",
@@ -89,7 +79,6 @@ describe("TaskDetailHeader", () => {
   it("does not render a header change-model control", () => {
     renderHeader({
       title: "T",
-      status: "ready",
       priority: "medium",
       ...TASK_TEST_DEFAULTS,
     });
