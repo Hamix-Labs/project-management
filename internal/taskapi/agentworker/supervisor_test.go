@@ -362,10 +362,12 @@ func TestSupervisor_probeSchedulingHint_silentWhenQueueHasReadyNow(t *testing.T)
 	defer cancel()
 
 	rig := newSupervisorTestRig(t, ctx, nil)
+	wtID := "wt-ready-now"
 	if _, err := rig.store.Create(ctx, taskcorestore.CreateTaskInput{
-		Title:    "ready-now",
-		Priority: taskcoredomain.PriorityMedium,
-		Status:   taskcoredomain.StatusReady,
+		Title:      "ready-now",
+		Priority:   taskcoredomain.PriorityMedium,
+		Status:     taskcoredomain.StatusReady,
+		WorktreeID: &wtID,
 	}, taskcoredomain.ActorUser); err != nil {
 		t.Fatalf("create ready-now task: %v", err)
 	}

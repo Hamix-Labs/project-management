@@ -17,11 +17,12 @@ func TestReconcileReadyTasksNotQueued_enqueuesMissing(t *testing.T) {
 	st := composition.NewAPI(tasktestdb.OpenSQLite(t))
 	q := agents.NewMemoryQueue(8)
 
-	t1, err := st.Create(ctx, taskcorestore.CreateTaskInput{Title: "a", Priority: taskcoredomain.PriorityMedium}, taskcoredomain.ActorUser)
+	wtID := "wt-reconcile-1"
+	t1, err := st.Create(ctx, taskcorestore.CreateTaskInput{Title: "a", Priority: taskcoredomain.PriorityMedium, WorktreeID: &wtID}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-	t2, err := st.Create(ctx, taskcorestore.CreateTaskInput{Title: "b", Priority: taskcoredomain.PriorityMedium}, taskcoredomain.ActorUser)
+	t2, err := st.Create(ctx, taskcorestore.CreateTaskInput{Title: "b", Priority: taskcoredomain.PriorityMedium, WorktreeID: &wtID}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,10 +70,11 @@ func TestReconcileReadyTasksNotQueued_stopsOnFull(t *testing.T) {
 	ctx := context.Background()
 	st := composition.NewAPI(tasktestdb.OpenSQLite(t))
 	q := agents.NewMemoryQueue(1)
-	if _, err := st.Create(ctx, taskcorestore.CreateTaskInput{Title: "a", Priority: taskcoredomain.PriorityMedium}, taskcoredomain.ActorUser); err != nil {
+	wtID := "wt-reconcile-full"
+	if _, err := st.Create(ctx, taskcorestore.CreateTaskInput{Title: "a", Priority: taskcoredomain.PriorityMedium, WorktreeID: &wtID}, taskcoredomain.ActorUser); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := st.Create(ctx, taskcorestore.CreateTaskInput{Title: "b", Priority: taskcoredomain.PriorityMedium}, taskcoredomain.ActorUser); err != nil {
+	if _, err := st.Create(ctx, taskcorestore.CreateTaskInput{Title: "b", Priority: taskcoredomain.PriorityMedium, WorktreeID: &wtID}, taskcoredomain.ActorUser); err != nil {
 		t.Fatal(err)
 	}
 	if err := q.NotifyReadyTask(ctx, taskcoredomain.Task{ID: "00000000-0000-4000-8000-000000000001", Title: "stub", Priority: taskcoredomain.PriorityMedium}); err != nil {

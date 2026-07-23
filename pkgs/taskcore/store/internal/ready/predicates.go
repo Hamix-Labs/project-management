@@ -11,6 +11,7 @@ import (
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func applyDequeuableTaskPredicates(q *gorm.DB, db *gorm.DB) *gorm.DB {
+	q = q.Where("tasks.worktree_id IS NOT NULL AND tasks.worktree_id <> ''")
 	q = q.Where(`NOT EXISTS (
 		SELECT 1 FROM task_dependencies td
 		INNER JOIN tasks dep ON dep.id = td.depends_on_task_id

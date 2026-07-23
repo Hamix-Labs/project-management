@@ -30,6 +30,11 @@ func TestWorker_missingGitBinding_defersPickup(t *testing.T) {
 	if err != nil {
 		t.Fatalf("create: %v", err)
 	}
+	// Create without worktree_id does not notify (ADR-0083). Force a queue
+	// entry to exercise the worker's missing-binding defer path.
+	if err := h.queue.NotifyReadyTask(ctx, *tsk); err != nil {
+		t.Fatalf("NotifyReadyTask: %v", err)
+	}
 
 	_, done := h.startWorker(ctx, runnerfake.New(), worker.Options{})
 	time.Sleep(200 * time.Millisecond)

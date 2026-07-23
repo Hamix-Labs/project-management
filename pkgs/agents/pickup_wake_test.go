@@ -20,10 +20,12 @@ func TestPickupWakeScheduler_WakeEnqueuesNearFutureTask(t *testing.T) {
 	st.SetPickupWake(w)
 	defer w.Stop()
 
+	wtID := "wt-wake-1"
 	future := time.Now().UTC().Add(40 * time.Millisecond)
 	tk, err := st.Create(ctx, taskcorestore.CreateTaskInput{
 		Title: "wake-test", Priority: taskcoredomain.PriorityMedium,
 		PickupNotBefore: &future,
+		WorktreeID:      &wtID,
 	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
@@ -60,9 +62,11 @@ func TestPickupWakeScheduler_CancelPreventsWake(t *testing.T) {
 	defer w.Stop()
 
 	future := time.Now().UTC().Add(200 * time.Millisecond)
+	wtID := "wt-wake-cancel"
 	tk, err := st.Create(ctx, taskcorestore.CreateTaskInput{
 		Title: "cancel-test", Priority: taskcoredomain.PriorityMedium,
 		PickupNotBefore: &future,
+		WorktreeID:      &wtID,
 	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
@@ -91,9 +95,11 @@ func TestPickupWakeScheduler_QueueFullReschedulesWake(t *testing.T) {
 	}
 
 	future := time.Now().UTC().Add(40 * time.Millisecond)
+	wtID := "wt-wake-full"
 	tk, err := st.Create(ctx, taskcorestore.CreateTaskInput{
 		Title: "queue-full-wake", Priority: taskcoredomain.PriorityMedium,
 		PickupNotBefore: &future,
+		WorktreeID:      &wtID,
 	}, taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)

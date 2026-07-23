@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel/parity"
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
-	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel/parity"
 	"gorm.io/gorm/logger"
 )
 

@@ -9,6 +9,8 @@ import { globalGitApiHandlers } from "@/test/handlers/gitMsw";
 import { FACTORY_GIT_WORKTREE_ID } from "@/test/factories/git";
 import { TaskDetailGitBinding } from "./TaskDetailGitBinding";
 
+const SAMPLE_TASK_ID = "0acaf529-9adf-4333-8992-29aa308eadba";
+
 function createWrapper(qc: QueryClient) {
   return function Wrapper({ children }: { children: ReactNode }) {
     return <QueryClientProvider client={qc}>{children}</QueryClientProvider>;
@@ -28,7 +30,10 @@ describe("TaskDetailGitBinding", () => {
     });
 
     render(
-      <TaskDetailGitBinding worktreeId={FACTORY_GIT_WORKTREE_ID} />,
+      <TaskDetailGitBinding
+        taskId={SAMPLE_TASK_ID}
+        worktreeId={FACTORY_GIT_WORKTREE_ID}
+      />,
       { wrapper: createWrapper(qc) },
     );
 
@@ -51,14 +56,32 @@ describe("TaskDetailGitBinding", () => {
     ).toHaveAttribute("href", "vscode://file/repo/main/?windowId=_blank");
   });
 
-  it("renders nothing when the task has no worktree binding", () => {
+  it("shows predicted branch and worktree names while provisioning", () => {
     const qc = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
 
-    render(<TaskDetailGitBinding />, { wrapper: createWrapper(qc) });
+    render(<TaskDetailGitBinding taskId={SAMPLE_TASK_ID} />, {
+      wrapper: createWrapper(qc),
+    });
 
-    expect(screen.queryByTestId("task-detail-git-binding")).not.toBeInTheDocument();
+    expect(screen.getByTestId("task-detail-git-binding")).toBeInTheDocument();
+    expect(screen.getByTestId("task-detail-git-binding")).toHaveAttribute(
+      "data-provisioning",
+      "true",
+    );
+    expect(screen.getByTestId("task-commits-context")).toHaveTextContent(
+      "hamix/task-0acaf529",
+    );
+    expect(screen.getByTestId("task-commits-context")).toHaveTextContent(
+      "hamix-task-0acaf529",
+    );
+    expect(
+      screen.getByTestId("task-detail-git-binding-pending"),
+    ).toHaveTextContent(/preparing workspace/i);
+    expect(
+      screen.queryByTestId("task-detail-git-binding-actions"),
+    ).not.toBeInTheDocument();
   });
 
   it("renders nothing when the worktree cannot be resolved", async () => {
@@ -68,7 +91,10 @@ describe("TaskDetailGitBinding", () => {
     });
 
     render(
-      <TaskDetailGitBinding worktreeId={missingWorktreeId} />,
+      <TaskDetailGitBinding
+        taskId={SAMPLE_TASK_ID}
+        worktreeId={missingWorktreeId}
+      />,
       { wrapper: createWrapper(qc) },
     );
 

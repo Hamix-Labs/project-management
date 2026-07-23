@@ -174,6 +174,32 @@ func BoundTaskHandler(st *composition.API, opts ...handler.HandlerOption) http.H
 	return handler.NewHandler(st, realtime.NewSSEHub(), nil, append(base, opts...)...)
 }
 
+// StartWorktreeProvisioner wires the async allocate loop used in production
+// after POST /tasks (ADR-0083). Call on create-capable test stores so ready
+// tasks become queue-eligible once the managed worktree binds.
+//
+//funclogmeasure:skip category=tool-required-noop reason="Test-only provisioner wiring; not part of production trace paths."
+func StartWorktreeProvisioner(t *testing.T, st *composition.API) {
+	t.Helper()
+	hub := realtime.NewSSEHub()
+	prov := composition.NewWorktreeProvisioner(st, hub)
+	st.SetWorktreeProvisioner(prov)
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		prov.Run(ctx)
+	}()
+	t.Cleanup(func() {
+		cancel()
+		prov.Stop()
+		select {
+		case <-done:
+		case <-time.After(5 * time.Second):
+		}
+	})
+}
+
 // NewBoundServer returns an httptest.Server backed by BoundTaskHandler with a
 // seeded shared git repo registered under the server URL. build receives the
 // composition.API so callers can wrap the handler (e.g. with middleware).
@@ -184,6 +210,7 @@ func NewBoundServer(t *testing.T, build func(st *composition.API) http.Handler) 
 	db := tasktestdb.OpenSQLite(t)
 	st := composition.NewAPI(db)
 	binding := htSeedGitRepo(t, st)
+	StartWorktreeProvisioner(t, st)
 	srv := httptest.NewServer(build(st))
 	RegisterGitBinding(t, srv.URL, binding)
 	t.Cleanup(srv.Close)
@@ -200,6 +227,7 @@ func NewDirectBoundHandler(t *testing.T, build func(st *composition.API) http.Ha
 	db := tasktestdb.OpenSQLite(t)
 	st := composition.NewAPI(db)
 	binding := htSeedGitRepo(t, st)
+	StartWorktreeProvisioner(t, st)
 	RegisterGitBinding(t, DirectHandlerTestURL, binding)
 	return build(st)
 }

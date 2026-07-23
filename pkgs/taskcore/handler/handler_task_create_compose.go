@@ -101,15 +101,7 @@ func (h *Handler) CreateTaskFromComposeJSON(
 		}
 	}
 	repoID := strings.TrimSpace(*payload.RepositoryID)
-	wtID, err := h.gitCompose.AllocateTaskWorktree(r.Context(), repoID, taskID)
-	if err != nil {
-		return nil, err
-	}
-	payload.WorktreeID = &wtID
-	if err := h.gitCompose.ValidateTaskGitBindingV2(r.Context(), payload.ProjectID, payload.WorktreeID); err != nil {
-		return nil, err
-	}
-	if err := h.gitCompose.ValidatePromptMentionsForWorktree(r.Context(), payload.WorktreeID, payload.InitialPrompt); err != nil {
+	if err := h.gitCompose.ValidatePromptMentionsForRepository(r.Context(), repoID, payload.InitialPrompt); err != nil {
 		return nil, err
 	}
 	t, err := h.tasks.Create(ctx, taskcorecontract.CreateTaskInput{
@@ -129,7 +121,7 @@ func (h *Handler) CreateTaskFromComposeJSON(
 		Gate:                  opts.Gate,
 		DependsOn:             dependsOn,
 		ChecklistItems:        checklistItems,
-		WorktreeID:            payload.WorktreeID,
+		WorktreeID:            nil,
 	}, by)
 	if err != nil {
 		return nil, err

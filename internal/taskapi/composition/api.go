@@ -1,8 +1,12 @@
 package composition
 
 import (
+	"context"
+	"log/slog"
+
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi/storehooks"
 	gitinventorystore "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	projectsstore "github.com/AlexsanderHamir/Hamix/pkgs/projects/store"
 	settingsstore "github.com/AlexsanderHamir/Hamix/pkgs/settings/store"
 	checkliststore "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/store"
@@ -72,6 +76,32 @@ func (a *API) SetPickupWake(w storehooks.PickupWake) {
 		return
 	}
 	a.hooks.SetPickupWake(w)
+}
+
+// SetWorktreeProvisioner registers p for async managed-worktree allocate after create.
+//
+//funclogmeasure:skip category=hot-path reason="Startup wiring hook; provision traces at composition chokepoints."
+func (a *API) SetWorktreeProvisioner(p storehooks.WorktreeProvisioner) {
+	if a == nil {
+		return
+	}
+	a.hooks.SetWorktreeProvisioner(p)
+}
+
+// EnqueueWorktreeProvision wakes the registered provisioner (nil-safe).
+//
+//funclogmeasure:skip category=hot-path reason="In-process hook forwarder; allocate traces at provisioner chokepoints."
+func (a *API) EnqueueWorktreeProvision(ctx context.Context, taskID, repositoryID string) {
+	if a == nil || a.hooks == nil {
+		return
+	}
+	a.hooks.WorktreeProvision.Enqueue(ctx, taskID, repositoryID)
+}
+
+// ListTasksPendingWorktree lists ready tasks still missing a worktree binding.
+func (a *API) ListTasksPendingWorktree(ctx context.Context, limit int) ([]taskcorestore.PendingWorktreeRow, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ListTasksPendingWorktree")
+	return a.taskcore.ListTasksPendingWorktree(ctx, limit)
 }
 
 // TaskCore returns the taskcore store (for tests that need direct BC access).

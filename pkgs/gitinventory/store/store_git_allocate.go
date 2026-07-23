@@ -10,8 +10,8 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory"
 	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
-	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 )
 
 // TaskBranchName returns hamix/task-<first 8 hex of task id> (dashes stripped).

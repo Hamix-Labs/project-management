@@ -3,6 +3,7 @@ package handler
 import (
 	"log/slog"
 	"net/http"
+	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
@@ -55,7 +56,17 @@ func (h *Handler) patch(w http.ResponseWriter, r *http.Request) {
 		if wt == nil {
 			wt = cur.WorktreeID
 		}
-		if err := h.gitCompose.ValidatePromptMentionsForWorktree(r.Context(), wt, *body.InitialPrompt); err != nil {
+		projectID := cur.ProjectID
+		if body.ProjectID.Defined && !body.ProjectID.Clear {
+			projectID = &body.ProjectID.SetID
+		}
+		var err error
+		if wt != nil && strings.TrimSpace(*wt) != "" {
+			err = h.gitCompose.ValidatePromptMentionsForWorktree(r.Context(), wt, *body.InitialPrompt)
+		} else {
+			err = h.gitCompose.ValidatePromptMentionsForProject(r.Context(), projectID, *body.InitialPrompt)
+		}
+		if err != nil {
 			h.httpPort.WriteStoreError(w, r, op, err)
 			return
 		}

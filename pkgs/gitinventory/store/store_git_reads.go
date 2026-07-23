@@ -9,8 +9,8 @@ import (
 
 	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store/model"
-	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"gorm.io/gorm"
 )
 

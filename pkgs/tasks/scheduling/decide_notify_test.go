@@ -11,10 +11,12 @@ func TestDecideNotifyAfterReadyTransition(t *testing.T) {
 	now := time.Date(2026, 6, 1, 12, 0, 0, 0, time.UTC)
 	future := now.Add(time.Hour)
 	past := now.Add(-time.Minute)
+	wt := "wt-1"
 
-	readyTask := &taskcoredomain.Task{ID: "t1", Status: taskcoredomain.StatusReady}
-	futurePickup := &taskcoredomain.Task{ID: "t2", Status: taskcoredomain.StatusReady, PickupNotBefore: &future}
-	eligiblePickup := &taskcoredomain.Task{ID: "t3", Status: taskcoredomain.StatusReady, PickupNotBefore: &past}
+	readyTask := &taskcoredomain.Task{ID: "t1", Status: taskcoredomain.StatusReady, WorktreeID: &wt}
+	noWorktree := &taskcoredomain.Task{ID: "t0", Status: taskcoredomain.StatusReady}
+	futurePickup := &taskcoredomain.Task{ID: "t2", Status: taskcoredomain.StatusReady, PickupNotBefore: &future, WorktreeID: &wt}
+	eligiblePickup := &taskcoredomain.Task{ID: "t3", Status: taskcoredomain.StatusReady, PickupNotBefore: &past, WorktreeID: &wt}
 
 	cases := []struct {
 		name          string
@@ -25,7 +27,8 @@ func TestDecideNotifyAfterReadyTransition(t *testing.T) {
 		wantWake      bool
 		wantCancel    bool
 	}{
-		{"create ready", "", readyTask, false, true, false, true},
+		{"create ready with worktree", "", readyTask, false, true, false, true},
+		{"create ready without worktree", "", noWorktree, false, false, false, false},
 		{"transition to ready", taskcoredomain.StatusBlocked, readyTask, false, true, false, true},
 		{"stay ready no pickup touch", taskcoredomain.StatusReady, readyTask, false, false, false, true},
 		{"pickup touched eligible", taskcoredomain.StatusReady, eligiblePickup, true, true, false, true},

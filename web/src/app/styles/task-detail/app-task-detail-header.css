@@ -125,6 +125,13 @@
   flex: 0 0 auto;
 }
 
+.task-detail-git-binding-pending {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
 /* Shared outline chrome for Copy path + Open in (inspiration card actions). */
 button.task-detail-git-binding-copy.btn-utility,
 button.task-detail-open-in-trigger.btn-utility {

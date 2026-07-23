@@ -66,7 +66,7 @@ Git context follows [ADR-0037](./adr/ADR-0037-global-repos-project-tree.md) (glo
 | GET | `/git/repositories/{repoId}/branches` | Registered branches `{ branches: [...] }`. |
 | GET | `/git/repositories/{repoId}/projects` | Projects tied to this repo `{ projects, limit }`. |
 
-**Projects:** `POST /projects` accepts optional `repository_id` (repo must exist). Task create requires `repository_id` (+ `project_id`); the server allocates a managed worktree and sets `worktree_id`. Agents refuse main/`is_main` and the repository default branch.
+**Projects:** `POST /projects` accepts optional `repository_id` (repo must exist). Task create requires `repository_id` (+ `project_id`); the server returns the task immediately and **eagerly allocates** a managed worktree asynchronously (sets `worktree_id` when ready). Agents refuse main/`is_main` and the repository default branch, and do not pick up until `worktree_id` is set.
 
 Stable error codes: `not_a_git_repository`, `path_exists`, `branch_exists`, `branch_checked_out`, `branch_bound_to_worktree`, `project_repo_mismatch`, `has_running_task`, `bootstrap_mismatch`, `repository_not_found`, `worktree_not_found`, `branch_not_found`, `duplicate`.
 
@@ -76,7 +76,7 @@ Model semantics (tags, milestone, `depends_on`, gate, worker readiness): [data-m
 
 | Method | Path | Notes |
 |---|---|---|
-| POST | `/tasks` | Create. Title required; `priority` required; `checklist_items` required. **`project_id` and `repository_id` required** — server allocates a managed worktree (`hamix/task-<8 hex>`), fetches `origin`, and sets `worktree_id`. Refuses main/`is_main` and the repo default branch. Optional `id`, `draft_id`, `pickup_not_before`, `cursor_model`, `tags`, `milestone`, `depends_on`. Returns flat `domain.Task`. Publishes `task_created`. |
+| POST | `/tasks` | Create. Title required; `priority` required; `checklist_items` required. **`project_id` and `repository_id` required** — validates repo/project binding and returns flat `domain.Task` with `worktree_id` often still null. Server then eagerly allocates a managed worktree (`hamix/task-<8 hex>`), fetches `origin`, and patches `worktree_id` (publishes `task_updated`). Allocate failure marks the task `failed`. Agents refuse main/`is_main` and the repo default branch and do not dequeue until `worktree_id` is set. Optional `id`, `draft_id`, `pickup_not_before`, `cursor_model`, `tags`, `milestone`, `depends_on`. Publishes `task_created` on insert. |
 | GET | `/tasks` | List all tasks (flat). Pagination: `?limit` (0–200, default **50** when omitted) + `?offset` (≥ 0) **or** `?after_id` (keyset, mutually exclusive with offset). Envelope `{ tasks, limit, offset, has_more }`. Each element is a flat `domain.Task` (no nested `children`). Rows are ordered **newest first** by `created_at` (from the `task_created` audit event). **SPA note:** the Hamix web app always sends `limit=20` (`BootstrapListLimit` / `TASK_LIST_PAGE_SIZE`) explicitly; it does not rely on the server default. See [`policy`](../../pkgs/tasks/handler/policy/read_limits.go). |
 | GET | `/tasks/stats` | Counters: `total`, `ready`, `critical`, `scheduled`, `by_status`, `by_priority`, `cycles`, `phases`, `runner`, `recent_failures`. |
 | GET | `/tasks/cycle-failures` | Paginated terminal cycle failures. `?limit`, `?offset`, `?sort ∈ at_desc | at_asc | reason_asc | reason_desc`. |

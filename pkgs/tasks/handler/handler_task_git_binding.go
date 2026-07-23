@@ -111,6 +111,51 @@ func (h *Handler) validatePromptMentionsForWorktree(ctx context.Context, worktre
 	return h.validatePromptMentionsForWorktreeID(ctx, wtID, prompt)
 }
 
+func (h *Handler) validatePromptMentionsForRepository(ctx context.Context, repositoryID, prompt string) error {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.validatePromptMentionsForRepository")
+	if len(repo.ParseFileMentions(prompt)) == 0 {
+		return nil
+	}
+	repositoryID = strings.TrimSpace(repositoryID)
+	if repositoryID == "" {
+		return fmt.Errorf("%w: repository_id required for @-mentions", taskcoredomain.ErrInvalidInput)
+	}
+	wts, err := h.store.ListGitWorktreesByRepo(ctx, repositoryID)
+	if err != nil {
+		return err
+	}
+	var mainID string
+	for _, wt := range wts {
+		if wt.IsMain {
+			mainID = wt.ID
+			break
+		}
+	}
+	if mainID == "" {
+		return fmt.Errorf("%w: repository has no main worktree for @-mentions", taskcoredomain.ErrInvalidInput)
+	}
+	return h.validatePromptMentionsForWorktreeID(ctx, mainID, prompt)
+}
+
+func (h *Handler) validatePromptMentionsForProject(ctx context.Context, projectID *string, prompt string) error {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.validatePromptMentionsForProject")
+	if len(repo.ParseFileMentions(prompt)) == 0 {
+		return nil
+	}
+	pid := trimmedOptionalID(projectID)
+	if pid == "" {
+		return fmt.Errorf("%w: project_id required for @-mentions", taskcoredomain.ErrInvalidInput)
+	}
+	proj, err := h.store.GetProject(ctx, pid)
+	if err != nil {
+		return err
+	}
+	if proj.RepositoryID == nil || strings.TrimSpace(*proj.RepositoryID) == "" {
+		return fmt.Errorf("%w: project not bound to repository", taskcoredomain.ErrInvalidInput)
+	}
+	return h.validatePromptMentionsForRepository(ctx, *proj.RepositoryID, prompt)
+}
+
 func (h *Handler) validatePromptMentionsForWorktreeID(ctx context.Context, worktreeID, prompt string) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.validatePromptMentionsForWorktreeID")
 	if h.repoProv == nil {

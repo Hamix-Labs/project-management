@@ -52,7 +52,7 @@ func TestUserCreatedTaskEnqueuesForAgents(t *testing.T) {
 		if got.Priority != taskcoredomain.PriorityMedium {
 			t.Fatalf("priority %s", got.Priority)
 		}
-	case <-time.After(2 * time.Second):
+	case <-time.After(15 * time.Second):
 		t.Fatal("timeout waiting for queued task")
 	}
 }
@@ -91,7 +91,7 @@ func TestAgentActorCreateEnqueuesWhenReady(t *testing.T) {
 		if got.Title != "from-agent" {
 			t.Fatalf("title %q", got.Title)
 		}
-	case <-time.After(2 * time.Second):
+	case <-time.After(15 * time.Second):
 		t.Fatal("timeout waiting for queued task")
 	}
 }

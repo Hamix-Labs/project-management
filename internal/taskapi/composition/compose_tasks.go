@@ -81,7 +81,30 @@ func (a *API) Create(ctx context.Context, in taskcorestore.CreateTaskInput, by t
 	}
 	now := time.Now().UTC()
 	a.applyNotifyDecision(ctx, *t, scheduling.DecideNotifyAfterReadyTransition("", t, false, now))
+	a.enqueueWorktreeIfNeeded(ctx, t)
 	return t, nil
+}
+
+func (a *API) enqueueWorktreeIfNeeded(ctx context.Context, t *taskcoredomain.Task) {
+	if a == nil || t == nil {
+		return
+	}
+	if t.WorktreeID != nil && strings.TrimSpace(*t.WorktreeID) != "" {
+		return
+	}
+	if t.ProjectID == nil || strings.TrimSpace(*t.ProjectID) == "" {
+		return
+	}
+	proj, err := a.projects.GetProject(ctx, strings.TrimSpace(*t.ProjectID))
+	if err != nil || proj.RepositoryID == nil {
+		slog.Warn("enqueue worktree provision: resolve project repo", "task_id", t.ID, "err", err)
+		return
+	}
+	repoID := strings.TrimSpace(*proj.RepositoryID)
+	if repoID == "" {
+		return
+	}
+	a.EnqueueWorktreeProvision(ctx, t.ID, repoID)
 }
 
 func (a *API) Update(ctx context.Context, id string, in taskcorestore.UpdateTaskInput, by taskcoredomain.Actor) (*taskcoredomain.Task, error) {
