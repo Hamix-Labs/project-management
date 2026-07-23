@@ -145,6 +145,15 @@ func (h *Harness) startCycle(ctx context.Context, task *taskcoredomain.Task, sta
 	if strings.TrimSpace(opts.instructions) != "" {
 		meta = mergeCycleMetaBytes(meta, map[string]any{"polish_instructions": strings.TrimSpace(opts.instructions)})
 	}
+	if len(opts.flaggedIDs) > 0 {
+		meta = mergeCycleMetaBytes(meta, map[string]any{"polish_flagged_ids": opts.flaggedIDs})
+	}
+	if len(opts.newIDs) > 0 {
+		meta = mergeCycleMetaBytes(meta, map[string]any{"polish_new_ids": opts.newIDs})
+	}
+	if opts.skipVerify {
+		meta = mergeCycleMetaBytes(meta, map[string]any{"polish_skip_verify": true})
+	}
 	in := cyclescontract.StartCycleInput{
 		TaskID:        task.ID,
 		TriggeredBy:   taskcoredomain.ActorAgent,

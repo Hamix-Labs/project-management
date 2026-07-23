@@ -25,10 +25,13 @@ const (
 // POST /tasks/{id}/polish and consumed when the worker transitions the task
 // from ready to running. Column name remains pending_retry.
 type PendingRetry struct {
-	Kind          PendingRunKind `json:"kind,omitempty"`
-	Mode          RetryMode      `json:"mode"`
-	ParentCycleID string         `json:"parent_cycle_id"`
-	Instructions  string         `json:"instructions,omitempty"`
+	Kind                PendingRunKind `json:"kind,omitempty"`
+	Mode                RetryMode      `json:"mode"`
+	ParentCycleID       string         `json:"parent_cycle_id"`
+	Instructions        string         `json:"instructions,omitempty"`
+	FlaggedCriterionIDs []string       `json:"flagged_criterion_ids,omitempty"`
+	NewCriterionIDs     []string       `json:"new_criterion_ids,omitempty"`
+	SkipVerify          bool           `json:"skip_verify,omitempty"`
 }
 
 // NormalizeKind returns the effective kind (empty/omitted => retry).
@@ -78,8 +81,14 @@ func (p *PendingRetry) Validate() error {
 			return fmt.Errorf("%w: polish instructions", ErrInvalidInput)
 		}
 		p.Instructions = instructions
+		p.FlaggedCriterionIDs = normalizeIDList(p.FlaggedCriterionIDs)
+		p.NewCriterionIDs = normalizeIDList(p.NewCriterionIDs)
+		p.SkipVerify = len(p.FlaggedCriterionIDs) == 0 && len(p.NewCriterionIDs) == 0
 	} else {
 		p.Instructions = ""
+		p.FlaggedCriterionIDs = nil
+		p.NewCriterionIDs = nil
+		p.SkipVerify = false
 	}
 	return nil
 }
@@ -92,6 +101,12 @@ func (p *PendingRetry) Clone() *PendingRetry {
 		return nil
 	}
 	cp := *p
+	if p.FlaggedCriterionIDs != nil {
+		cp.FlaggedCriterionIDs = append([]string(nil), p.FlaggedCriterionIDs...)
+	}
+	if p.NewCriterionIDs != nil {
+		cp.NewCriterionIDs = append([]string(nil), p.NewCriterionIDs...)
+	}
 	return &cp
 }
 
@@ -105,5 +120,45 @@ func (p *PendingRetry) Equal(other *PendingRetry) bool {
 	return p.NormalizeKind() == other.NormalizeKind() &&
 		p.Mode == other.Mode &&
 		p.ParentCycleID == other.ParentCycleID &&
-		strings.TrimSpace(p.Instructions) == strings.TrimSpace(other.Instructions)
+		strings.TrimSpace(p.Instructions) == strings.TrimSpace(other.Instructions) &&
+		stringSlicesEqual(p.FlaggedCriterionIDs, other.FlaggedCriterionIDs) &&
+		stringSlicesEqual(p.NewCriterionIDs, other.NewCriterionIDs) &&
+		p.SkipVerify == other.SkipVerify
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func normalizeIDList(ids []string) []string {
+	if len(ids) == 0 {
+		return nil
+	}
+	seen := make(map[string]struct{}, len(ids))
+	out := make([]string, 0, len(ids))
+	for _, raw := range ids {
+		id := strings.TrimSpace(raw)
+		if id == "" {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		out = append(out, id)
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func stringSlicesEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }

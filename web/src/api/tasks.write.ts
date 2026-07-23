@@ -285,9 +285,19 @@ export async function approveTask(id: string): Promise<Task> {
   return parseTask(raw);
 }
 
+export type PolishTaskInput = {
+  instructions: string;
+  parent_cycle_id?: string;
+  flagged_criterion_ids?: string[];
+  new_criteria?: Array<{
+    text: string;
+    verify_commands?: ChecklistVerifyCommandInput[];
+  }>;
+};
+
 export async function polishTask(
   id: string,
-  input: { instructions: string; parent_cycle_id?: string },
+  input: PolishTaskInput,
 ): Promise<Task> {
   const tid = assertTaskPathId(id);
   const body: Record<string, unknown> = {
@@ -295,6 +305,12 @@ export async function polishTask(
   };
   if (input.parent_cycle_id !== undefined) {
     body.parent_cycle_id = input.parent_cycle_id;
+  }
+  if (input.flagged_criterion_ids && input.flagged_criterion_ids.length > 0) {
+    body.flagged_criterion_ids = input.flagged_criterion_ids;
+  }
+  if (input.new_criteria && input.new_criteria.length > 0) {
+    body.new_criteria = input.new_criteria;
   }
   const res = await fetchWithTimeout(
     `/tasks/${encodeURIComponent(tid)}/polish`,

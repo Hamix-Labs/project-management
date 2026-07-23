@@ -100,7 +100,9 @@ type RequestRetryInput struct {
 
 // RequestPolishInput is the store payload for operator polish from review.
 type RequestPolishInput struct {
-	TaskID        string
-	Instructions  string
-	ParentCycleID string
+	TaskID              string
+	Instructions        string
+	ParentCycleID       string
+	FlaggedCriterionIDs []string
+	NewCriteria         []CreateChecklistItemInput
 }

@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { approveTask, patchTask, polishTask, retryTask } from "@/api";
+import type { ChecklistItemDraft } from "@/types";
 import {
   rumMutationRolledBack,
   rumMutationSettled,
@@ -174,10 +175,22 @@ function useTaskDetailPolishMutation(
   return useMutation<
     unknown,
     unknown,
-    string,
+    {
+      instructions: string;
+      flaggedCriterionIds: string[];
+      newCriteria: ChecklistItemDraft[];
+    },
     { prev: Task | undefined; startedAtMs: number; guarded: boolean }
   >({
-    mutationFn: (instructions) => polishTask(taskId, { instructions }),
+    mutationFn: (input) =>
+      polishTask(taskId, {
+        instructions: input.instructions,
+        flagged_criterion_ids: input.flaggedCriterionIds,
+        new_criteria: input.newCriteria.map((item) => ({
+          text: item.text,
+          verify_commands: item.verify_commands,
+        })),
+      }),
     onMutate: async () => {
       const guard = beginGuardedTaskWrite({
         taskId,
@@ -221,6 +234,7 @@ function useTaskDetailPolishMutation(
         { scope: "listStats" },
         { scope: "detail", taskId },
         { scope: "events", taskId },
+        { scope: "checklist", taskId },
       );
       if (context) {
         rumMutationSettled(

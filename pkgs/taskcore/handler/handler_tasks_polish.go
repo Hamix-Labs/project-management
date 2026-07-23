@@ -10,8 +10,10 @@ import (
 )
 
 type taskPolishJSON struct {
-	Instructions  string `json:"instructions"`
-	ParentCycleID string `json:"parent_cycle_id,omitempty"`
+	Instructions        string                              `json:"instructions"`
+	ParentCycleID       string                              `json:"parent_cycle_id,omitempty"`
+	FlaggedCriterionIDs []string                            `json:"flagged_criterion_ids,omitempty"`
+	NewCriteria         []contract.CreateChecklistItemInput `json:"new_criteria,omitempty"`
 }
 
 // postTaskPolish handles POST /tasks/{id}/polish for human rework from review.
@@ -37,9 +39,11 @@ func (h *Handler) postTaskPolish(w http.ResponseWriter, r *http.Request) {
 	}
 	h.debugHTTPRequest(r, op, "task_id", taskID, "parent_cycle_id", body.ParentCycleID)
 	t, err := h.tasks.RequestTaskPolish(r.Context(), contract.RequestPolishInput{
-		TaskID:        taskID,
-		Instructions:  body.Instructions,
-		ParentCycleID: body.ParentCycleID,
+		TaskID:              taskID,
+		Instructions:        body.Instructions,
+		ParentCycleID:       body.ParentCycleID,
+		FlaggedCriterionIDs: body.FlaggedCriterionIDs,
+		NewCriteria:         body.NewCriteria,
 	}, by)
 	if err != nil {
 		h.httpPort.WriteStoreError(w, r, op, err)

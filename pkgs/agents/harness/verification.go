@@ -61,7 +61,13 @@ func (h *Harness) completeChecklistLegacy(ctx context.Context, taskID string) er
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (h *Harness) applyVerifiedCompletions(ctx context.Context, taskID, cycleID string, verdicts []criterionVerdict) error {
-	return h.verifySvc().ApplyVerifiedCompletions(ctx, taskID, cycleID, verdicts)
+	if err := h.verifySvc().ApplyVerifiedCompletions(ctx, taskID, cycleID, verdicts); err != nil {
+		return err
+	}
+	// Align with HTTP checklist coherence (ADR-0026): checklist writes must
+	// publish task_updated so the SPA does not rely on cycle-frame side effects.
+	h.publishTaskUpdated(taskID)
+	return nil
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."

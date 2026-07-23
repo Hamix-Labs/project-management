@@ -11,6 +11,16 @@ export function syncListStatsInvalidationKeys() {
   return decideTaskInvalidationKeys({ scope: "listStats" });
 }
 
+/**
+ * Decides which React Query keys to invalidate for a debounced SSE flush.
+ *
+ * Enrichment coverage (E1): marking a task enriched means only the task *row*
+ * cache is current. It must never suppress invalidation of sibling detail keys
+ * (cycles, checklist) that were not patched in the same apply step.
+ *
+ * Cycle hints (E2): cycle invalidation is independent of whether the task row
+ * was enriched — do not skip cycles merely because the task id is also pending.
+ */
 export function decideFlushBatch(pending: PendingInvalidations): SyncFlushDecision {
   const taskIds = [...pending.tasks];
   const enrichedTaskIds = new Set(pending.enrichedTasks);
@@ -35,15 +45,15 @@ export function decideFlushBatch(pending: PendingInvalidations): SyncFlushDecisi
   }
 
   for (const [taskId, cycleSet] of cycleEntries) {
-    if (taskIds.includes(taskId)) {
-      continue;
-    }
     const allCyclesEnriched = [...cycleSet].every((cycleId) =>
       enrichedCycles.has(cycleEnrichmentKey(taskId, cycleId)),
     );
     if (!allCyclesEnriched) {
       keys.push(taskQueryKeys.cycles(taskId));
     }
+    // Agent runs write checklist completions without embedding them in cycle
+    // enrichment; invalidate checklist whenever cycle hints arrive.
+    keys.push(taskQueryKeys.checklist(taskId));
   }
 
   const commitsTaskIds = new Set(taskIds);

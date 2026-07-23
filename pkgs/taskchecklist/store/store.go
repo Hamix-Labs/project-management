@@ -65,6 +65,27 @@ func SeedDefinitionItemsAtCreateInTx(tx *gorm.DB, taskID string, items []CreateC
 	return checklist.SeedDefinitionItemsAtCreateInTx(tx, taskID, items, by)
 }
 
+// AddTextsInTx appends definition rows inside an outer transaction.
+//
+//funclogmeasure:skip category=delegate-already-logs reason="Package-level forwarder; checklist.AddTextsInTx emits trace at the store chokepoint."
+func AddTextsInTx(tx *gorm.DB, taskID string, texts []string, by taskcoredomain.Actor) ([]string, error) {
+	return checklist.AddTextsInTx(tx, taskID, texts, by)
+}
+
+// AddItemsInTx appends definition rows with optional verify commands inside an outer TX.
+//
+//funclogmeasure:skip category=delegate-already-logs reason="Package-level forwarder; checklist.AddItemsInTx emits trace at the store chokepoint."
+func AddItemsInTx(tx *gorm.DB, taskID string, items []CreateChecklistItemInput, by taskcoredomain.Actor) ([]string, error) {
+	return checklist.AddItemsInTx(tx, taskID, items, by)
+}
+
+// ClearCompletionsForPolishInTx clears flagged criterion completions inside polish TX.
+//
+//funclogmeasure:skip category=delegate-already-logs reason="Package-level forwarder; checklist.ClearCompletionsForPolishInTx emits trace at the store chokepoint."
+func ClearCompletionsForPolishInTx(tx *gorm.DB, subjectTaskID string, itemIDs []string, by taskcoredomain.Actor) error {
+	return checklist.ClearCompletionsForPolishInTx(tx, subjectTaskID, itemIDs, by)
+}
+
 // BackfillCriteriaSatisfiedAt sets criteria_satisfied_at for tasks whose checklist is already complete.
 //
 //funclogmeasure:skip category=delegate-already-logs reason="Package-level forwarder; checklist.BackfillCriteriaSatisfiedAt emits trace at the store chokepoint."

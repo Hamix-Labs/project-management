@@ -45,7 +45,10 @@ import (
 //
 // Rev 13: attach non-default projects with null repository_id to the sole
 // registered repository so create-task repo-scoped pickers list them.
-const SchemaRevision = 13
+//
+// Rev 14: PendingRetry polish fields (flagged/new criterion IDs, skip_verify)
+// in taskcore domain JSON. No SQL or post-AutoMigrate behavior change.
+const SchemaRevision = 14
 
 const schemaMetaRowID = 1
 

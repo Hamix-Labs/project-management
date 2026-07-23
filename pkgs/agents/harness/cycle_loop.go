@@ -21,6 +21,7 @@ type cycleLoopOpts struct {
 	skipFirstExecute bool
 	knownCommits     []cyclesdomain.TaskCycleCommit
 	continuation     *ContinuationBundle
+	skipVerify       bool
 }
 
 func (h *Harness) composeExecutePrompt(ctx context.Context, task *taskcoredomain.Task, cycle *cyclesdomain.TaskCycle, state *processState, opts cycleLoopOpts) string {
@@ -37,7 +38,7 @@ func (h *Harness) composeExecutePrompt(ctx context.Context, task *taskcoredomain
 	retryMode := retryModeFromCycleMeta(cycle)
 	runKind := runKindFromCycleMeta(cycle)
 	if runKind == taskcoredomain.PendingKindPolish {
-		promptText = prompt.AppendPolishNotice(promptText, cycle, polishInstructionsFromCycleMeta(cycle), opts.knownCommits)
+		promptText = prompt.AppendPolishNotice(promptText, cycle, polishNoticeInputFromCycle(cycle, state, opts.knownCommits))
 	} else if bundle := opts.continuation; bundle != nil {
 		promptText = prompt.ComposeContinuation(promptText, continuationInputFromBundle(cycle, bundle))
 		if bundle.ExecuteFeedback != "" {
@@ -55,6 +56,31 @@ func (h *Harness) composeExecutePrompt(ctx context.Context, task *taskcoredomain
 		promptText = prompt.AppendGitCommitPolicy(promptText, operatorResume)
 	}
 	return promptText
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func polishNoticeInputFromCycle(cycle *cyclesdomain.TaskCycle, state *processState, known []cyclesdomain.TaskCycleCommit) prompt.PolishNoticeInput {
+	textByID := make(map[string]string, len(state.verify.verifySnap.Criteria))
+	for _, c := range state.verify.verifySnap.Criteria {
+		textByID[c.ID] = c.Text
+	}
+	flaggedIDs := polishFlaggedIDsFromCycleMeta(cycle)
+	newIDs := polishNewIDsFromCycleMeta(cycle)
+	flagged := make([]prompt.PolishCriterion, 0, len(flaggedIDs))
+	for _, id := range flaggedIDs {
+		flagged = append(flagged, prompt.PolishCriterion{ID: id, Text: textByID[id]})
+	}
+	newRows := make([]prompt.PolishCriterion, 0, len(newIDs))
+	for _, id := range newIDs {
+		newRows = append(newRows, prompt.PolishCriterion{ID: id, Text: textByID[id]})
+	}
+	return prompt.PolishNoticeInput{
+		Instructions: polishInstructionsFromCycleMeta(cycle),
+		SkipVerify:   polishSkipVerifyFromCycleMeta(cycle),
+		Flagged:      flagged,
+		New:          newRows,
+		KnownCommits: known,
+	}
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
@@ -223,6 +249,11 @@ func (h *Harness) runCycleLoop(parentCtx context.Context, task *taskcoredomain.T
 			}
 		} else {
 			skipExecute = false
+		}
+
+		if opts.skipVerify {
+			h.runCycleLoopFinalizeSuccess(parentCtx, task, cycle, state)
+			return
 		}
 
 		retryLoop, terminalFailure, skipNextExecute := h.runCycleLoopVerify(parentCtx, task, cycle, state)

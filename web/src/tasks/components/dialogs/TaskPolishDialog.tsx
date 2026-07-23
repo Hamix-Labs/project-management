@@ -5,61 +5,40 @@ import { isUiFeatureOmitted } from "@/launch/omittedFeatures";
 import { promptHasVisibleContent } from "@/lib/promptFormat";
 import { Modal } from "@/shared/Modal";
 import { MutationErrorBanner } from "@/shared/MutationErrorBanner";
+import type { ChecklistItemDraft } from "@/types";
+import { TaskPolishAddCriteria } from "./TaskPolishAddCriteria";
+import { TaskPolishCriteriaList } from "./TaskPolishCriteriaList";
+import { CloseGlyph, SparkleGlyph } from "./TaskPolishGlyphs";
+import { usePolishCriterionDrafts } from "./usePolishCriterionDrafts";
+
+export type PolishCriterionOption = {
+  id: string;
+  text: string;
+};
+
+export type PolishConfirmPayload = {
+  instructions: string;
+  flaggedCriterionIds: string[];
+  newCriteria: ChecklistItemDraft[];
+};
 
 type Props = {
-  /** Scopes @ file mentions to the task worktree (same as create-task prompt). */
   worktreeId?: string;
-  /** When set, enables # project-context mentions like create-task. */
   projectId?: string;
   projectContextItemIds?: string[];
+  criteria?: PolishCriterionOption[];
   saving: boolean;
   pending: boolean;
   error?: string | null;
   onCancel: () => void;
-  onConfirm: (instructions: string) => void;
+  onConfirm: (payload: PolishConfirmPayload) => void;
 };
-
-function SparkleGlyph({ size = 16 }: { size?: number }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 16 16"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.4"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M8 2.25L9.35 6.4 13.5 7.75 9.35 9.1 8 13.25 6.65 9.1 2.5 7.75 6.65 6.4z" />
-      <path d="M12.5 2.25v2" />
-      <path d="M11.5 3.25h2" />
-    </svg>
-  );
-}
-
-function CloseGlyph() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 16 16"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-      <path d="M4 4l8 8M12 4l-8 8" />
-    </svg>
-  );
-}
 
 export function TaskPolishDialog({
   worktreeId,
   projectId = "",
   projectContextItemIds = [],
+  criteria = [],
   saving,
   pending,
   error = null,
@@ -70,7 +49,11 @@ export function TaskPolishDialog({
   const descriptionId = useId();
   const instructionsId = useId();
   const instructionsLabelId = `${instructionsId}-label`;
+  const flaggedHeadingId = useId();
+  const addHeadingId = useId();
   const [instructions, setInstructions] = useState("");
+  const [flaggedIds, setFlaggedIds] = useState<Set<string>>(() => new Set());
+  const drafts = usePolishCriterionDrafts();
   const [selectedContextIds, setSelectedContextIds] = useState(
     projectContextItemIds,
   );
@@ -83,6 +66,15 @@ export function TaskPolishDialog({
   const canSubmit =
     promptHasVisibleContent(instructions) && !saving && !pending;
   const controlsDisabled = saving || pending;
+
+  function toggleFlagged(id: string) {
+    setFlaggedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   return (
     <Modal
@@ -98,7 +90,7 @@ export function TaskPolishDialog({
         <header className="task-polish-dialog__header">
           <div className="task-polish-dialog__header-main">
             <span className="task-polish-dialog__badge" aria-hidden="true">
-              <SparkleGlyph size={16} />
+              <SparkleGlyph size={20} />
             </span>
             <div className="task-polish-dialog__title-block">
               <h2 id={titleId} className="task-polish-dialog__title">
@@ -122,28 +114,52 @@ export function TaskPolishDialog({
         </header>
 
         <div className="task-polish-dialog__body">
-          <div className="task-polish-dialog__label-row">
-            <label
-              id={instructionsLabelId}
-              htmlFor={instructionsId}
-              className="task-polish-dialog__label"
-            >
-              Instructions
-            </label>
-            <span className="task-polish-dialog__hint">
-              Type <kbd>@</kbd> to reference files
-            </span>
-          </div>
-          <div className="task-create-editor-shell">
-            <RichPromptEditor
-              id={instructionsId}
-              value={instructions}
-              onChange={setInstructions}
-              disabled={controlsDisabled}
-              placeholder="Describe what to refine — tighten the copy, fix edge cases, improve tests…"
-              worktreeId={worktreeId?.trim() || undefined}
-              projectContext={promptProjectContext ?? undefined}
-            />
+          <TaskPolishCriteriaList
+            criteria={criteria}
+            flaggedIds={flaggedIds}
+            disabled={controlsDisabled}
+            headingId={flaggedHeadingId}
+            onToggle={toggleFlagged}
+          />
+          <TaskPolishAddCriteria
+            headingId={addHeadingId}
+            newCriteria={drafts.newCriteria}
+            disabled={controlsDisabled}
+            modalOpen={drafts.modalOpen}
+            modalText={drafts.modalText}
+            modalCommands={drafts.modalCommands}
+            onOpenModal={drafts.openModal}
+            onCloseModal={drafts.closeModal}
+            onModalTextChange={drafts.setModalText}
+            onModalCommandsChange={drafts.setModalCommands}
+            onSubmitModal={drafts.submitModal}
+            onRemove={drafts.removeAt}
+          />
+
+          <div className="task-polish-dialog__section">
+            <div className="task-polish-dialog__label-row">
+              <label
+                id={instructionsLabelId}
+                htmlFor={instructionsId}
+                className="task-polish-dialog__label"
+              >
+                Instructions
+              </label>
+              <span className="task-polish-dialog__hint">
+                Type <kbd>@</kbd> to reference files
+              </span>
+            </div>
+            <div className="task-create-editor-shell">
+              <RichPromptEditor
+                id={instructionsId}
+                value={instructions}
+                onChange={setInstructions}
+                disabled={controlsDisabled}
+                placeholder="Describe what should change in this polish pass…"
+                worktreeId={worktreeId?.trim() || undefined}
+                projectContext={promptProjectContext ?? undefined}
+              />
+            </div>
           </div>
         </div>
 
@@ -166,7 +182,13 @@ export function TaskPolishDialog({
               type="button"
               className="primary task-polish-dialog__submit"
               disabled={!canSubmit}
-              onClick={() => onConfirm(instructions)}
+              onClick={() =>
+                onConfirm({
+                  instructions,
+                  flaggedCriterionIds: Array.from(flaggedIds),
+                  newCriteria: drafts.newCriteria,
+                })
+              }
             >
               {pending ? (
                 "Queueing…"
