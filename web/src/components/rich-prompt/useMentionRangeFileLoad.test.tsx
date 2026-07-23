@@ -17,6 +17,8 @@ const sampleFile: RepoFileResult = {
   line_count: 2,
 };
 
+const wt = "wt-1";
+
 describe("useMentionRangeFileLoad", () => {
   beforeEach(() => {
     vi.mocked(fetchRepoFile).mockReset();
@@ -26,7 +28,7 @@ describe("useMentionRangeFileLoad", () => {
     vi.mocked(fetchRepoFile).mockResolvedValue(sampleFile);
 
     const { result } = renderHook(() =>
-      useMentionRangeFileLoad("src/foo.go"),
+      useMentionRangeFileLoad("src/foo.go", wt),
     );
 
     expect(result.current.loading).toBe(true);
@@ -36,13 +38,26 @@ describe("useMentionRangeFileLoad", () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.file).toEqual(sampleFile);
     expect(result.current.loadError).toBeNull();
+    expect(fetchRepoFile).toHaveBeenCalledWith(
+      "src/foo.go",
+      expect.objectContaining({ worktreeId: wt }),
+    );
+  });
+
+  it("skips fetch and surfaces unavailable when worktreeId is missing", async () => {
+    const { result } = renderHook(() => useMentionRangeFileLoad("src/foo.go"));
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(fetchRepoFile).not.toHaveBeenCalled();
+    expect(result.current.loadError).toBe("File preview is unavailable.");
+    expect(result.current.file).toBeNull();
   });
 
   it("surfaces 'File preview is unavailable.' when the API returns null (503)", async () => {
     vi.mocked(fetchRepoFile).mockResolvedValue(null);
 
     const { result } = renderHook(() =>
-      useMentionRangeFileLoad("src/foo.go"),
+      useMentionRangeFileLoad("src/foo.go", wt),
     );
 
     await waitFor(() => expect(result.current.loading).toBe(false));
@@ -54,7 +69,7 @@ describe("useMentionRangeFileLoad", () => {
     vi.mocked(fetchRepoFile).mockRejectedValue("boom");
 
     const { result } = renderHook(() =>
-      useMentionRangeFileLoad("src/foo.go"),
+      useMentionRangeFileLoad("src/foo.go", wt),
     );
 
     await waitFor(() => expect(result.current.loading).toBe(false));
@@ -65,7 +80,7 @@ describe("useMentionRangeFileLoad", () => {
     vi.mocked(fetchRepoFile).mockRejectedValue(new Error("offline"));
 
     const { result } = renderHook(() =>
-      useMentionRangeFileLoad("src/foo.go"),
+      useMentionRangeFileLoad("src/foo.go", wt),
     );
 
     await waitFor(() => expect(result.current.loading).toBe(false));
@@ -81,7 +96,7 @@ describe("useMentionRangeFileLoad", () => {
     });
 
     const { result } = renderHook(() =>
-      useMentionRangeFileLoad("src/foo.go"),
+      useMentionRangeFileLoad("src/foo.go", wt),
     );
 
     await waitFor(() => expect(result.current.loadError).toBe("offline"));
@@ -106,7 +121,7 @@ describe("useMentionRangeFileLoad", () => {
     });
 
     const { rerender } = renderHook(
-      ({ path }: { path: string }) => useMentionRangeFileLoad(path),
+      ({ path }: { path: string }) => useMentionRangeFileLoad(path, wt),
       { initialProps: { path: "src/foo.go" } },
     );
 
@@ -130,7 +145,7 @@ describe("useMentionRangeFileLoad", () => {
     });
 
     const { result, unmount } = renderHook(() =>
-      useMentionRangeFileLoad("src/foo.go"),
+      useMentionRangeFileLoad("src/foo.go", wt),
     );
 
     expect(result.current.loading).toBe(true);
@@ -139,6 +154,5 @@ describe("useMentionRangeFileLoad", () => {
 
     resolveFile(sampleFile);
     await Promise.resolve();
-    // No throw — and no state assertion needed since the hook is unmounted.
   });
 });

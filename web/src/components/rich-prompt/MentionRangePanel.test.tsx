@@ -19,6 +19,8 @@ const sampleFile = {
 };
 
 describe("MentionRangePanel", () => {
+  const wt = "wt-1";
+
   beforeEach(() => {
     vi.mocked(fetchRepoFile).mockResolvedValue(sampleFile);
   });
@@ -32,6 +34,7 @@ describe("MentionRangePanel", () => {
       <MentionRangePanel
         id="p1"
         path="src/foo.go"
+        worktreeId={wt}
         rangeWarning={null}
         onInsertWithRange={vi.fn()}
         onInsertPathOnly={onInsertPathOnly}
@@ -43,7 +46,10 @@ describe("MentionRangePanel", () => {
     await waitFor(() =>
       expect(fetchRepoFile).toHaveBeenCalledWith(
         "src/foo.go",
-        expect.objectContaining({ signal: expect.any(AbortSignal) }),
+        expect.objectContaining({
+          signal: expect.any(AbortSignal),
+          worktreeId: wt,
+        }),
       ),
     );
     await screen.findByRole("textbox", { name: /preview/i });
@@ -62,6 +68,7 @@ describe("MentionRangePanel", () => {
       <MentionRangePanel
         id="p2"
         path="src/foo.go"
+        worktreeId={wt}
         rangeWarning={null}
         onInsertWithRange={onInsertWithRange}
         onInsertPathOnly={vi.fn()}
@@ -88,6 +95,7 @@ describe("MentionRangePanel", () => {
       <MentionRangePanel
         id="p4"
         path="src/foo.go"
+        worktreeId={wt}
         rangeWarning={null}
         onInsertWithRange={onInsertWithRange}
         onInsertPathOnly={vi.fn()}
@@ -108,6 +116,7 @@ describe("MentionRangePanel", () => {
       <MentionRangePanel
         id="p3"
         path="x"
+        worktreeId={wt}
         rangeWarning="Bad range"
         onInsertWithRange={vi.fn()}
         onInsertPathOnly={vi.fn()}
@@ -132,6 +141,7 @@ describe("MentionRangePanel", () => {
       <MentionRangePanel
         id="p-load"
         path="src/foo.go"
+        worktreeId={wt}
         rangeWarning={null}
         onInsertWithRange={vi.fn()}
         onInsertPathOnly={vi.fn()}
@@ -151,7 +161,12 @@ describe("MentionRangePanel", () => {
     let calls = 0;
     vi.mocked(fetchRepoFile).mockImplementation(async (p, init) => {
       expect(p).toBe("src/foo.go");
-      expect(init).toEqual(expect.objectContaining({ signal: expect.any(AbortSignal) }));
+      expect(init).toEqual(
+        expect.objectContaining({
+          signal: expect.any(AbortSignal),
+          worktreeId: wt,
+        }),
+      );
       calls += 1;
       if (calls === 1) {
         throw new Error("offline");
@@ -163,6 +178,7 @@ describe("MentionRangePanel", () => {
       <MentionRangePanel
         id="p-retry"
         path="src/foo.go"
+        worktreeId={wt}
         rangeWarning={null}
         onInsertWithRange={vi.fn()}
         onInsertPathOnly={vi.fn()}
@@ -184,6 +200,7 @@ describe("MentionRangePanel", () => {
       <MentionRangePanel
         id="p5"
         path="src/foo.go"
+        worktreeId={wt}
         rangeWarning={null}
         onInsertWithRange={onInsertWithRange}
         onInsertPathOnly={vi.fn()}

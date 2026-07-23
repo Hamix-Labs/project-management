@@ -10,6 +10,8 @@ import { useMentionRangeFileLoad } from "./useMentionRangeFileLoad";
 export type MentionRangePanelProps = {
   id: string;
   path: string;
+  /** Scopes `/repo/file` to the task worktree (required by the API). */
+  worktreeId?: string;
   disabled?: boolean;
   rangeWarning: string | null;
   onInsertWithRange: (startLine: number, endLine: number) => void | Promise<void>;
@@ -23,6 +25,7 @@ const LARGE_LINES = 10_000;
 export function MentionRangePanel({
   id,
   path,
+  worktreeId,
   disabled,
   rangeWarning,
   onInsertWithRange,
@@ -30,7 +33,7 @@ export function MentionRangePanel({
   onCancel,
 }: MentionRangePanelProps) {
   const { loading, loadError, file, retry: retryLoad } =
-    useMentionRangeFileLoad(path);
+    useMentionRangeFileLoad(path, worktreeId);
   const taRef = useRef<HTMLTextAreaElement>(null);
   const codeContentRef = useRef<HTMLElement>(null);
   const [selStart, setSelStart] = useState(0);

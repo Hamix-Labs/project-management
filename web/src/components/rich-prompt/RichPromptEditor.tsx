@@ -11,7 +11,7 @@ export type { RichPromptEditorProjectContextProps } from "./richPromptEditorType
 
 /** Rich initial prompt (TipTap) with @ file suggestions scoped to the task worktree, plus optional `#` project-context mentions. */
 export function RichPromptEditor(props: RichPromptEditorProps) {
-  const { id, disabled } = props;
+  const { id, disabled, worktreeId } = props;
   const {
     editor,
     projectContextEnabled,
@@ -42,6 +42,7 @@ export function RichPromptEditor(props: RichPromptEditorProps) {
           id={id}
           pendingInsert={pendingInsert}
           disabled={disabled}
+          worktreeId={worktreeId}
           rangeWarning={rangeWarning}
           onClose={dismissPendingInsert}
           onInsertWithRange={insertWithRange}

@@ -196,7 +196,10 @@ export function useRichPromptEditorController({
       if (!editor || editor.isDestroyed || !pendingInsert) return;
       const { insertAt, path } = pendingInsert;
       setRangeWarning(null);
-      const res = await validateRepoRange(path, startLine, endLine);
+      const scopedWorktreeId = worktreeIdRef.current?.trim();
+      const res = await validateRepoRange(path, startLine, endLine, {
+        worktreeId: scopedWorktreeId || undefined,
+      });
       if (res === null) {
         if (editor.isDestroyed) return;
         insertRepoFileMentionAt(editor, insertAt, path, startLine, endLine);
