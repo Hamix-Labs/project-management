@@ -61,7 +61,7 @@ export function TaskPolishDialog({
         <h2 id={titleId}>Polish this task?</h2>
         <p className="task-polish-dialog__footnote" id={descriptionId}>
           Starts a new attempt that resumes the existing agent conversation.
-          The task returns to awaiting review when polish finishes.
+          The task returns to awaiting review when the new attempt finishes.
         </p>
         <div className="field">
           <FieldLabel
