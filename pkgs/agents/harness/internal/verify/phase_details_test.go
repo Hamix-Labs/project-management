@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	checklistcontract "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/contract"
 	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"strings"
 	"testing"
 )
@@ -82,5 +83,27 @@ func TestEncodePhaseDetails_includesStructuredSnapshot(t *testing.T) {
 	}
 	if row.Reasoning != "Missing coverage" {
 		t.Fatalf("reasoning = %q", row.Reasoning)
+	}
+}
+
+func TestEncodePhaseDetails_includesUsage(t *testing.T) {
+	t.Parallel()
+	raw := EncodePhaseDetails(1, nil, nil, PhaseDetailsOpts{
+		VerifyRetryCount: 0,
+		Usage: cyclesdomain.TokenUsage{
+			InputTokens:  12,
+			OutputTokens: 8,
+		},
+		UsagePresent: true,
+	})
+	var got verifyPhaseDetailsPayload
+	if err := json.Unmarshal(raw, &got); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if got.Usage == nil {
+		t.Fatal("usage missing")
+	}
+	if got.Usage.InputTokens != 12 || got.Usage.OutputTokens != 8 {
+		t.Fatalf("usage = %+v", got.Usage)
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	checklistcontract "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/contract"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"log/slog"
 	"strings"
 )
@@ -26,15 +27,18 @@ type verifySnapshotPayload struct {
 }
 
 type verifyPhaseDetailsPayload struct {
-	Verification     verifySnapshotPayload `json:"verification"`
-	MirrorDegraded   *bool                 `json:"mirror_degraded,omitempty"`
-	VerifyRetryCount *int                  `json:"verify_retry_count,omitempty"`
+	Verification     verifySnapshotPayload    `json:"verification"`
+	MirrorDegraded   *bool                    `json:"mirror_degraded,omitempty"`
+	VerifyRetryCount *int                     `json:"verify_retry_count,omitempty"`
+	Usage            *cyclesdomain.TokenUsage `json:"usage,omitempty"`
 }
 
 // PhaseDetailsOpts carries optional verify phase metadata persisted in details_json.
 type PhaseDetailsOpts struct {
 	MirrorDegraded   bool
 	VerifyRetryCount int
+	Usage            cyclesdomain.TokenUsage
+	UsagePresent     bool
 }
 
 func criterionTextIndex(items []checklistcontract.ChecklistVerifyItem) map[string]string {
@@ -142,6 +146,10 @@ func EncodePhaseDetails(
 	}
 	retry := opts.VerifyRetryCount
 	payload.VerifyRetryCount = &retry
+	if opts.UsagePresent || opts.Usage.Known() {
+		u := opts.Usage
+		payload.Usage = &u
+	}
 	b, err := json.Marshal(payload)
 	if err != nil {
 		return []byte("{}")

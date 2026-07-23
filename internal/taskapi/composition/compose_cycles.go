@@ -89,3 +89,9 @@ func (a *API) ListRunningCyclePhases(ctx context.Context) ([]cyclesdomain.TaskCy
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ListRunningCyclePhases")
 	return a.cycles.ListRunningCyclePhases(ctx)
 }
+
+// ListPhaseTokenUsageForTask returns parseable usage rows for every phase on the task.
+func (a *API) ListPhaseTokenUsageForTask(ctx context.Context, taskID string) ([]cyclesdomain.PhaseUsageRow, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ListPhaseTokenUsageForTask")
+	return a.cycles.ListPhaseTokenUsageForTask(ctx, taskID)
+}

@@ -143,6 +143,7 @@ erDiagram
 - Terminal rows are read-only. Corrective work means a new row with a higher seq.
 - Cross-task lineage is rejected. `parent_cycle_id` must reference a cycle on the same task.
 - `meta_json` and `details_json` are `jsonb` (Postgres) / `text` (SQLite) and default to `{}`.
+- Execute and verify phase `details_json` may include a top-level Cursor `usage` object (`inputTokens`, `outputTokens`, `cacheReadTokens`, `cacheWriteTokens`, `totalTokens` — camelCase per ADR-0083). The harness persists it from the runner `Result` on both phase kinds; verify shallow-merges usage alongside the verification snapshot. Absent or unparseable usage is omitted from server-side aggregates (`taskcycles/domain.TokenUsage`, `ListPhaseTokenUsageForTask`).
 
 ### Dual-write invariant
 

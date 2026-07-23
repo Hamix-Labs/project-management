@@ -157,6 +157,11 @@ func (s *Store) ListCommitsForTask(ctx context.Context, taskID string) ([]cycles
 	return commits.ListCommitsForTask(ctx, s.db, taskID)
 }
 
+func (s *Store) ListPhaseTokenUsageForTask(ctx context.Context, taskID string) ([]cyclesdomain.PhaseUsageRow, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.ListPhaseTokenUsageForTask")
+	return cycles.ListPhaseTokenUsageForTask(ctx, s.db, taskID)
+}
+
 func (s *Store) UpsertCriteriaReports(ctx context.Context, cycleID string, attemptSeq int64, entries []CriteriaReportEntry) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.UpsertCriteriaReports")
 	return reports.UpsertCriteriaReports(ctx, s.db, cycleID, attemptSeq, criteriaReportEntries(entries))
