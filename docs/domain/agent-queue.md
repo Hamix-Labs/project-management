@@ -64,7 +64,7 @@ Package tradeoffs: [`pkgs/agents/doc.go`](../../pkgs/agents/doc.go).
 | --- | --- |
 | **MemoryQueue** | Buffered Go channel + `pending` map of task ids |
 | **NotifyReadyTask** | Producer entry; returns `ErrAlreadyQueued` or `ErrQueueFull` |
-| **Pending set** | Task ids currently in the channel buffer (dedup at enqueue); cleared on `Receive` dequeue |
+| **Pending set** | Task ids buffered in the channel **or** still owned by a worker (`Receive` → `AckAfterRecv`); dedup at enqueue |
 | **PickupWakeScheduler** | Min-heap + timer for deferred `pickup_not_before` |
 | **Reconcile** | SQL scan → enqueue ids missing from pending |
 | **Running reconcile** | Re-enqueue `status=running` tasks with open cycles after restart |
@@ -163,8 +163,13 @@ sequenceDiagram
   Note over W: defer AckAfterRecv registered first
   W->>S: reloadTask
   alt status running and open cycle
-    W->>G: Lock(worktree_id)
-    W->>H: Resume
+    W->>G: TryLock(worktree_id)
+    alt worktree busy
+      W->>W: return (ack; reconcile may re-offer)
+    else acquired
+      W->>S: reload + re-open cycle
+      W->>H: Resume
+    end
   else status ready and eligible
     W->>G: TryLock(worktree_id)
     alt worktree busy
@@ -180,21 +185,22 @@ sequenceDiagram
   W->>Q: remove id from pending
 ```
 
-**Why defer `AckAfterRecv`:** each slot uses `Receive`, which already removes the id from **`pending`** when dequeuing. The deferred ack satisfies the `Recv()`+manual-ack contract documented on `MemoryQueue` and is idempotent. **Duplicate enqueue while a cycle runs** is prevented by `status=running` (ready reconcile skips running tasks), not by the pending set after dequeue.
+**Why defer `AckAfterRecv`:** `Receive` leaves the id in **`pending`** for the whole harness run. Only `AckAfterRecv` (deferred at the start of `processOne`) clears it, so running reconcile cannot re-enqueue the same task while a pool slot still owns it. After process crash, pending is empty and running reconcile re-offers open cycles (ADR-0006).
 
-**Worktree gate:** ready admission uses `TryLock` so a busy worktree does not block the whole pool — the slot defers and another slot can pick up work for a different worktree. Running resume uses blocking `Lock` because the task already owns the worktree.
+**Worktree gate:** both ready admission and running resume use `TryLock` so a busy worktree does not block a pool slot waiting to Resume after another owner finishes (that wait-then-Resume path previously clobbered `review`→`failed`).
 
 Admission branches:
 
 | `reloadTask` status | Action |
 | --- | --- |
-| `running` + open cycle | `WorktreeGate.Lock` → `Harness.Resume` (post-restart continue) |
+| `running` + open cycle | `TryLock` → reload + re-open cycle → `Harness.Resume` |
+| `running` + worktree busy | Return (ack); reconcile may re-offer if still running |
 | `ready` + `ReadyForAgentPickup` + `TryLock` ok | `transitionTaskToRunning` → `Harness.Run` |
 | `ready` + worktree busy (`TryLock` false) | `deferTaskPickup` ~5s |
 | `ready` but not eligible | `deferTaskPickup` ~60s |
 | Other | Warn stale; return (ack still runs) |
 
-`Receive` removes the id from `pending` when the task is dequeued. **`AckAfterRecv`** after harness is idempotent for the worker path; use **`Recv()` + `AckAfterRecv`** if you consume the channel manually without `Receive`.
+`Receive` does **not** clear pending. **`AckAfterRecv`** after harness clears the claim. Use **`Recv()` + `AckAfterRecv`** if you consume the channel manually without `Receive`.
 
 ## Reconciliation
 
@@ -223,8 +229,9 @@ Both passes log structured counts: scanned, enqueued, skipped_already_queued, st
 | Invariant | Meaning |
 | --- | --- |
 | **Queue ⊆ SQL eligible** | Never enqueue a ready task SQL `ListQueueCandidates` would reject (pickup gate + `ShouldNotifyReadyNow`) |
-| **Pending dedupes buffer** | At most one buffered entry per task id (`ErrAlreadyQueued`); cleared on `Receive` dequeue |
+| **Pending dedupes buffer + in-flight** | At most one claim per task id (`ErrAlreadyQueued`); cleared only on `AckAfterRecv` after the worker finishes |
 | **No double ready pickup** | While `status=running`, ready reconcile does not start a second cycle |
+| **No mid-run running re-enqueue** | Pending covers in-flight processing so running reconcile skips until Ack (crash still re-offers when pending is empty) |
 | **Persist beats notify** | Commit succeeds even when queue full |
 | **Ready queue (architecture)** | Queue never holds a task failing `status='ready' AND (pickup_not_before IS NULL OR pickup_not_before <= now())` |
 | **Running resume (architecture)** | Queue may hold `status='running'` with open cycle for resume admission |

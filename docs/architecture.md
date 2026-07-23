@@ -268,7 +268,7 @@ Bounded in-memory FIFO for the agent worker. Deep dives: [domain/agent-queue.md]
 
 - After a successful commit that leaves a task `ready`, `Store.notifyReadyTask` enqueues a snapshot. If the queue is full, the mutation still succeeds (the notify failure is `Warn`-logged).
 - `PickupWakeScheduler` defers enqueue when `pickup_not_before` is in the future. Startup `Hydrate` reloads deferred rows.
-- `agents.RunReconcileLoop` runs `ReconcileReadyTasksNotQueued` and `ReconcileRunningTasksNotQueued` once at startup and every 2 minutes (fixed in code, `ReconcileTickInterval`). Ready reconcile pages `store.ListReadyTaskQueueCandidates` in oldest-first order so backlog is not starved. Running reconcile pages open cycles and enqueues tasks still `status='running'` when not already pending.
+- `agents.RunReconcileLoop` runs `ReconcileReadyTasksNotQueued` and `ReconcileRunningTasksNotQueued` once at startup and every 2 minutes (fixed in code, `ReconcileTickInterval`). Ready reconcile pages `store.ListReadyTaskQueueCandidates` in oldest-first order so backlog is not starved. Running reconcile pages open cycles and enqueues tasks still `status='running'` when not already pending (pending covers buffered and in-flight until `AckAfterRecv`).
 
 **Invariant (ready queue):** the queue never contains a task the SQL filter `status='ready' AND (pickup_not_before IS NULL OR pickup_not_before <= now())` would reject.
 
@@ -325,7 +325,7 @@ sequenceDiagram
 Assume a `status=ready` task is already on `MemoryQueue` from the [System](#system) enqueue path.
 
 **Step 1. The worker receives a task from the queue.**
-The worker blocks on `Receive`, which removes the task id from the queue's pending set. It registers a deferred `AckAfterRecv` before doing any work so the ack always runs last, even on panic or early return.
+The worker blocks on `Receive`, which leaves the task id in the queue's pending set. It registers a deferred `AckAfterRecv` before doing any work so the ack always runs last, even on panic or early return.
 *In the diagram:* `MemoryQueue → Worker` (Receive task snapshot).
 
 **Step 2. The worker reloads the row and marks the task running.**
@@ -337,11 +337,11 @@ The worker calls `Harness.Run`. The harness records cycle metadata, starts an ex
 *In the diagram:* `Worker → Harness` (Run), then `Harness → Store` (StartCycle, StartPhase execute), then `Harness → Runner` (Run).
 
 **Step 4. Optional verify phase and cycle termination.**
-When the task has done criteria, the harness parses `criteria-report.json`, may gate on `claimed_done`, starts a verify phase, and parses `verify-report.json`. It then completes the execute phase, terminates the cycle with `succeeded`, `failed`, or `aborted`, and sets the task to `done` or `failed`.
+When the task has done criteria, the harness parses `criteria-report.json`, may gate on `claimed_done`, starts a verify phase, and parses `verify-report.json`. It then completes the execute phase, terminates the cycle with `succeeded`, `failed`, or `aborted`, and sets the task to `review` (human approval) or `failed`.
 *In the diagram:* `Harness → Harness` (criteria + verify, when applicable), then `Harness → Store` (CompletePhase, TerminateCycle, Update status).
 
 **Step 5. The worker acknowledges the queue entry.**
-`AckAfterRecv` runs last. It is idempotent and pairs with the manual-ack contract documented on `MemoryQueue`. While a cycle runs, duplicate ready pickup is prevented by `status=running`, not by the pending set after dequeue.
+`AckAfterRecv` runs last and clears the id from pending. It is idempotent and pairs with the manual-ack contract documented on `MemoryQueue`. While a worker owns the task (Receive → Ack), running reconcile cannot re-enqueue the same id; after process crash pending is empty and running reconcile re-offers open cycles.
 *In the diagram:* `Worker → MemoryQueue` (AckAfterRecv).
 
 On panic, the worker runs best-effort cleanup on a fresh 5s background context (`CompletePhase(failed, "panic")`, `TerminateCycle(failed, "panic")`, `Update(failed)`) before ack. On shutdown after `runner.Run` returns, the same shape runs with reason `"shutdown"` and cycle status `aborted`.

@@ -38,6 +38,7 @@ Mid-CLI session resume, worker leases, and a dedicated checkpoint table are out 
 - Resume quality depends on prior execute commits when the working tree is clean and commit policy is off.
 - Same-phase restart transitions are gated on `process_restart` summary to prevent REST abuse.
 - Single-process worker assumption unchanged; multi-replica workers would still race.
+- In-process pool concurrency requires pending to cover **in-flight** work (`Receive` → `AckAfterRecv`), not only the channel buffer — otherwise running reconcile re-enqueues mid-run and a late `Resume` can clobber `review`→`failed`. Resume checkpoint failures must not fail tasks whose cycle already succeeded (or whose verify phase already succeeded while another owner is finalizing).
 
 ## Alternatives Considered
 

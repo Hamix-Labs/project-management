@@ -11,7 +11,8 @@ import (
 )
 
 // MemoryQueue is a bounded FIFO of full taskcoredomain.Task snapshots for in-process agent consumers.
-// It tracks task ids currently buffered so reconciliation can skip ids already present.
+// Pending tracks ids that are buffered in the channel or still being processed by a worker
+// (Receive → AckAfterRecv), so reconciliation does not re-enqueue mid-run.
 type MemoryQueue struct {
 	mu      sync.Mutex
 	bufCap  int
@@ -64,7 +65,9 @@ func (q *MemoryQueue) Recv() <-chan taskcoredomain.Task {
 	return q.ch
 }
 
-// AckAfterRecv drops id from the queue's pending set. Call once after consuming a task from Recv.
+// AckAfterRecv drops id from the queue's pending set. Call once when the worker
+// finishes processOne (success, early return, or panic recovery) so reconcile
+// may re-offer the id. Idempotent.
 func (q *MemoryQueue) AckAfterRecv(id string) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agents.MemoryQueue.AckAfterRecv", "task_id", id)
 	if q == nil || id == "" {
@@ -75,7 +78,8 @@ func (q *MemoryQueue) AckAfterRecv(id string) {
 	q.mu.Unlock()
 }
 
-// Receive waits for the next task, removes it from the pending set, and returns it.
+// Receive waits for the next task and returns it. The id stays in pending until
+// AckAfterRecv so running reconcile cannot re-enqueue while a worker still owns it.
 func (q *MemoryQueue) Receive(ctx context.Context) (taskcoredomain.Task, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agents.MemoryQueue.Receive")
 	if q == nil {
@@ -83,9 +87,6 @@ func (q *MemoryQueue) Receive(ctx context.Context) (taskcoredomain.Task, error) 
 	}
 	select {
 	case t := <-q.ch:
-		q.mu.Lock()
-		delete(q.pending, t.ID)
-		q.mu.Unlock()
 		return t, nil
 	case <-ctx.Done():
 		return taskcoredomain.Task{}, ctx.Err()
