@@ -100,6 +100,66 @@ func polishInstructionsFromCycleMeta(cycle *cyclesdomain.TaskCycle) string {
 	return strings.TrimSpace(meta.Instructions)
 }
 
+// polishSkipVerifyFromCycleMeta reads polish_skip_verify from cycle MetaJSON.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func polishSkipVerifyFromCycleMeta(cycle *cyclesdomain.TaskCycle) bool {
+	if cycle == nil || len(cycle.MetaJSON) == 0 {
+		return false
+	}
+	var meta struct {
+		SkipVerify bool `json:"polish_skip_verify"`
+	}
+	if err := json.Unmarshal(cycle.MetaJSON, &meta); err != nil {
+		return false
+	}
+	return meta.SkipVerify
+}
+
+// polishFlaggedIDsFromCycleMeta reads polish_flagged_ids from cycle MetaJSON.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func polishFlaggedIDsFromCycleMeta(cycle *cyclesdomain.TaskCycle) []string {
+	return stringSliceFromCycleMeta(cycle, "polish_flagged_ids")
+}
+
+// polishNewIDsFromCycleMeta reads polish_new_ids from cycle MetaJSON.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func polishNewIDsFromCycleMeta(cycle *cyclesdomain.TaskCycle) []string {
+	return stringSliceFromCycleMeta(cycle, "polish_new_ids")
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func stringSliceFromCycleMeta(cycle *cyclesdomain.TaskCycle, key string) []string {
+	if cycle == nil || len(cycle.MetaJSON) == 0 {
+		return nil
+	}
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(cycle.MetaJSON, &raw); err != nil {
+		return nil
+	}
+	b, ok := raw[key]
+	if !ok || len(b) == 0 {
+		return nil
+	}
+	var ids []string
+	if err := json.Unmarshal(b, &ids); err != nil {
+		return nil
+	}
+	out := make([]string, 0, len(ids))
+	for _, id := range ids {
+		id = strings.TrimSpace(id)
+		if id != "" {
+			out = append(out, id)
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func mergeCycleMetaBytes(base []byte, extra map[string]any) []byte {
 	if len(extra) == 0 {

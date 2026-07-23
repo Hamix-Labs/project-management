@@ -320,6 +320,139 @@ func TestVerifyOnlyCrossCycleResume_runCycleLoopSkipsRunnerExecute(t *testing.T)
 	}
 }
 
+func TestSeedPolishPreviouslyPassed_locksUnflaggedDone(t *testing.T) {
+	ctx := context.Background()
+	st := storefake.New(t).API
+	tsk, err := st.Create(ctx, taskcorestore.CreateTaskInput{
+		Title: "polish-seed", InitialPrompt: "work", Priority: taskcoredomain.PriorityMedium,
+	}, taskcoredomain.ActorUser)
+	if err != nil {
+		t.Fatal(err)
+	}
+	a, err := st.AddChecklistItem(ctx, tsk.ID, "Auth", nil, taskcoredomain.ActorUser)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err := st.AddChecklistItem(ctx, tsk.ID, "Tests", nil, taskcoredomain.ActorUser)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c, err := st.AddChecklistItem(ctx, tsk.ID, "Docs", nil, taskcoredomain.ActorUser)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, id := range []string{a.ID, b.ID} {
+		if err := st.SetChecklistItemDone(ctx, tsk.ID, id, true, taskcoredomain.ActorAgent); err != nil {
+			t.Fatal(err)
+		}
+	}
+	h := New(st, runnerfake.New(), Options{})
+	got, err := h.seedPolishPreviouslyPassed(ctx, tsk.ID, []string{a.ID}, []string{c.ID})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := got[a.ID]; ok {
+		t.Fatal("flagged id must not be locked")
+	}
+	if _, ok := got[c.ID]; ok {
+		t.Fatal("new id must not be locked")
+	}
+	if !got[b.ID].Passed {
+		t.Fatalf("unflagged done criterion should be locked: %+v", got)
+	}
+}
+
+func TestRunWithRetry_polishSkipVerifySkipsVerifyPhase(t *testing.T) {
+	ctx := context.Background()
+	st := storefake.New(t).API
+	tsk, err := st.Create(ctx, taskcorestore.CreateTaskInput{
+		Title: "polish-skip-verify", InitialPrompt: "work", Priority: taskcoredomain.PriorityMedium,
+	}, taskcoredomain.ActorUser)
+	if err != nil {
+		t.Fatal(err)
+	}
+	item, err := st.AddChecklistItem(ctx, tsk.ID, "criterion", nil, taskcoredomain.ActorUser)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := st.SetChecklistItemDone(ctx, tsk.ID, item.ID, true, taskcoredomain.ActorAgent); err != nil {
+		t.Fatal(err)
+	}
+	running := taskcoredomain.StatusRunning
+	if _, err := st.Update(ctx, tsk.ID, taskcorestore.UpdateTaskInput{Status: &running}, taskcoredomain.ActorAgent); err != nil {
+		t.Fatal(err)
+	}
+	parent, err := st.StartCycle(ctx, cyclescontract.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := st.TerminateCycle(ctx, parent.ID, cyclesdomain.CycleStatusSucceeded, "", taskcoredomain.ActorAgent); err != nil {
+		t.Fatal(err)
+	}
+	review := taskcoredomain.StatusReview
+	if _, err := st.Update(ctx, tsk.ID, taskcorestore.UpdateTaskInput{Status: &review}, taskcoredomain.ActorAgent); err != nil {
+		t.Fatal(err)
+	}
+	running = taskcoredomain.StatusRunning
+	if _, err := st.Update(ctx, tsk.ID, taskcorestore.UpdateTaskInput{Status: &running}, taskcoredomain.ActorAgent); err != nil {
+		t.Fatal(err)
+	}
+
+	r := runnerfake.New()
+	r.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(cyclesdomain.PhaseStatusSucceeded, "ok", nil, ""))
+	h := New(st, r, Options{
+		WorkingDir: t.TempDir(),
+		Clock:      func() time.Time { return time.Unix(0, 0).UTC() },
+	})
+	intent := &taskcoredomain.PendingRetry{
+		Kind:          taskcoredomain.PendingKindPolish,
+		Mode:          taskcoredomain.RetryResume,
+		ParentCycleID: parent.ID,
+		Instructions:  "tighten spacing",
+	}
+	if err := intent.Validate(); err != nil {
+		t.Fatal(err)
+	}
+	if !intent.SkipVerify {
+		t.Fatal("expected SkipVerify")
+	}
+	h.RunWithRetry(ctx, tsk, intent)
+
+	for _, call := range r.Calls() {
+		if call.Phase == cyclesdomain.PhaseVerify {
+			t.Fatalf("instructions-only polish must skip verify; got %+v", call)
+		}
+	}
+	if len(r.Calls()) == 0 {
+		t.Fatal("expected execute runner call")
+	}
+	got, err := st.Get(ctx, tsk.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Status != taskcoredomain.StatusReview {
+		t.Fatalf("status=%q want review", got.Status)
+	}
+	cycles, err := st.ListCyclesForTask(ctx, tsk.ID, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(cycles) < 2 {
+		t.Fatalf("cycles=%d want >=2", len(cycles))
+	}
+	meta := string(cycles[0].MetaJSON)
+	if !strings.Contains(meta, `"polish_skip_verify":true`) {
+		t.Fatalf("meta=%s want polish_skip_verify", meta)
+	}
+	items, err := st.ListChecklistForSubject(ctx, tsk.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(items) != 1 || !items[0].Done {
+		t.Fatalf("prior completion must stay intact: %+v", items)
+	}
+}
+
 func TestLoadCheckpointFromParent_requiresTerminal(t *testing.T) {
 	ctx := context.Background()
 	st := storefake.New(t).API
