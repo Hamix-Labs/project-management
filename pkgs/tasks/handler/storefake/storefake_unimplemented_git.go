@@ -129,6 +129,11 @@ func (unimplementedHandlerStore) DeleteGitBranch(context.Context, string, string
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
+func (unimplementedHandlerStore) DeleteGitBranchByID(context.Context, string, bool) error {
+	return errNotImplemented
+}
+
+//funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
 func (unimplementedHandlerStore) RepoWorktreeInventory(context.Context, gitdomain.GitRepository) ([]gitcontract.WorktreeInventoryRow, error) {
 	return nil, errNotImplemented
 }

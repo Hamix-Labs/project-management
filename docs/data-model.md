@@ -341,7 +341,7 @@ Out of scope today: embeddings / vector search, autonomous memory pruning, summa
 
 ## Git workflow (`git_repositories`, `git_worktrees`, `git_branches`)
 
-Git context chain: **repo → managed worktree (`branch_id`) → task (`worktree_id`)**. Operators register a repository by path; task create with `repository_id` allocates a worktree under `.hamix/{repoID}/worktrees/…` (see [ADR-0081](./adr/ADR-0081-hamix-managed-worktrees.md)). A **project** is an optional overlay tied to one repo. Also [ADR-0039](./adr/ADR-0039-fixed-worktree-branch.md), [ADR-0037](./adr/ADR-0037-global-repos-project-tree.md), [domain/worktrees-and-branches.md](./domain/worktrees-and-branches.md).
+Git context chain: **repo → managed worktree (`branch_id`) → task (`worktree_id`)**. Operators register a repository by path; task create with `repository_id` allocates a worktree under `{UserConfigDir}/hamix/worktrees/{repoID}/…` (override `HAMIX_MANAGED_WORKTREE_ROOT`; see [ADR-0081](./adr/ADR-0081-hamix-managed-worktrees.md)). A **project** is an optional overlay tied to one repo. Also [ADR-0039](./adr/ADR-0039-fixed-worktree-branch.md), [ADR-0037](./adr/ADR-0037-global-repos-project-tree.md), [domain/worktrees-and-branches.md](./domain/worktrees-and-branches.md).
 
 ```mermaid
 flowchart TB

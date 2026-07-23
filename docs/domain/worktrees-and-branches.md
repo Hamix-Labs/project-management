@@ -28,10 +28,12 @@ Operators manage repositories in the SPA:
 Happy path:
 
 1. **Register repository** on `/repositories` — path to the main git checkout.
-2. **Create task** with `repository_id` (+ project) — Hamix allocates `{dir(repo)}/.hamix/{repoID}/worktrees/{branchSlug}`.
+2. **Create task** with `repository_id` (+ project) — Hamix allocates `{ManagedWorktreeRoot}/worktrees/{repoID}/{branchSlug}` (default `{UserConfigDir}/hamix`, override `HAMIX_MANAGED_WORKTREE_ROOT`).
 3. Managed worktrees stay internal to Hamix; operators manage repositories from the list, not a worktree detail page.
 
-**Stale managed worktrees:** a non-main worktree with no non-terminal tasks whose latest terminal task `updated_at` is older than **24h** may be marked `stale` in the API. Hamix does **not** auto-delete worktrees; operators remove them via `DELETE /git/worktrees/{id}?remove_from_disk=true` when needed (no SPA worktree browser).
+**Task delete:** deleting a task that owns a Hamix-managed worktree (matching `hamix/task-*` branch, not main, no other tasks still bound) best-effort removes that checkout from disk and the matching branch. Disk cleanup failures do not fail `DELETE /tasks/{id}`.
+
+**Stale managed worktrees:** a non-main worktree with no non-terminal tasks whose latest terminal task `updated_at` is older than **24h** may be marked `stale` in the API. Staleness alone does **not** auto-delete; leftovers after non-owned bindings (or failed best-effort cleanup) may be removed via `DELETE /git/worktrees/{id}?remove_from_disk=true` (no SPA worktree browser).
 
 **Unregister vs delete from disk (API):** **Unregister** drops only the Hamix row. **Delete from disk** runs `git worktree remove` and deletes the row. The main worktree cannot be deleted from disk via the API.
 
@@ -58,7 +60,7 @@ See [ADR-0081](../adr/ADR-0081-hamix-managed-worktrees.md), [ADR-0040](../adr/AD
 | Term | Definition |
 | --- | --- |
 | **Git repository** | A registered main checkout (`git_repositories.path`) |
-| **Managed worktree** | Hamix-allocated linked checkout under `.hamix/{repoID}/worktrees/…` |
+| **Managed worktree** | Hamix-allocated linked checkout under `{ManagedWorktreeRoot}/worktrees/{repoID}/…` |
 | **Branch** | A repo-level ref (`git_branches`); bound to at most one worktree |
 | **`WorkingDir`** | `runner.Request.WorkingDir` — task worktree path at dequeue |
 | **`@`-mention** | Token in `initial_prompt`: `@path` or `@path(start-end)` |

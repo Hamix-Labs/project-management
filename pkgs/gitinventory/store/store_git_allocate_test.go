@@ -19,6 +19,7 @@ func TestTaskBranchName(t *testing.T) {
 
 func TestAllocateTaskWorktree(t *testing.T) {
 	s, ctx, _ := gitTestStore(t)
+	t.Setenv(gitinventory.EnvManagedWorktreeRoot, t.TempDir())
 	remote := t.TempDir()
 	runGitStore(t, remote, "init", "--bare", "-b", "main")
 	parent := t.TempDir()
@@ -46,6 +47,9 @@ func TestAllocateTaskWorktree(t *testing.T) {
 	if filepath.ToSlash(wt.Path) != wantPath {
 		t.Fatalf("path=%q want %q", wt.Path, wantPath)
 	}
+	if !strings.HasPrefix(filepath.ToSlash(wt.Path), filepath.ToSlash(gitinventory.ManagedWorktreeRoot())+"/") {
+		t.Fatalf("allocated path %q not under managed root %q", wt.Path, gitinventory.ManagedWorktreeRoot())
+	}
 	br, err := s.GetGitBranchByID(ctx, wt.BranchID)
 	if err != nil {
 		t.Fatalf("GetGitBranchByID: %v", err)
@@ -55,6 +59,66 @@ func TestAllocateTaskWorktree(t *testing.T) {
 	}
 	if strings.EqualFold(br.Name, repo.DefaultBranch) {
 		t.Fatal("allocated branch must not be default")
+	}
+	branchID := br.ID
+	if err := s.RemoveGitWorktreeFromDiskByID(ctx, wt.ID, true); err != nil {
+		t.Fatalf("RemoveGitWorktreeFromDiskByID: %v", err)
+	}
+	if err := s.DeleteGitBranch(ctx, "", branchID, true); err != nil {
+		t.Fatalf("DeleteGitBranch: %v", err)
+	}
+	if _, err := s.GetGitBranchByID(ctx, branchID); err == nil {
+		t.Fatal("expected branch row removed")
+	}
+}
+
+func TestDeleteGitBranchByID_rejectsWhileCheckedOut(t *testing.T) {
+	s, ctx, _ := gitTestStore(t)
+	t.Setenv(gitinventory.EnvManagedWorktreeRoot, t.TempDir())
+	remote := t.TempDir()
+	runGitStore(t, remote, "init", "--bare", "-b", "main")
+	parent := t.TempDir()
+	main := filepath.Join(parent, "main")
+	runGitStore(t, parent, "clone", remote, main)
+	runGitStore(t, main, "config", "user.email", "t@example.com")
+	runGitStore(t, main, "config", "user.name", "Test")
+	runGitStore(t, main, "commit", "--allow-empty", "-m", "init")
+	runGitStore(t, main, "push", "-u", "origin", "main")
+
+	repo, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main})
+	if err != nil {
+		t.Fatalf("CreateGlobalGitRepository: %v", err)
+	}
+	taskID := uuid.NewString()
+	wt, err := s.AllocateTaskWorktree(ctx, repo.ID, taskID)
+	if err != nil {
+		t.Fatalf("AllocateTaskWorktree: %v", err)
+	}
+	err = s.DeleteGitBranchByID(ctx, wt.BranchID, true)
+	if err == nil {
+		t.Fatal("expected delete while checked out to fail")
+	}
+}
+
+func TestCreateGitBranch_andDelete(t *testing.T) {
+	s, ctx, _ := gitTestStore(t)
+	main := initGitRepo(t)
+	repo, err := s.CreateGlobalGitRepository(ctx, CreateGitRepositoryInput{Path: main})
+	if err != nil {
+		t.Fatalf("CreateGlobalGitRepository: %v", err)
+	}
+	br, err := s.CreateGitBranch(ctx, "", repo.ID, CreateGitBranchInput{Name: "topic/create-test", StartPoint: "main"})
+	if err != nil {
+		t.Fatalf("CreateGitBranch: %v", err)
+	}
+	if br.Name != "topic/create-test" {
+		t.Fatalf("name=%q", br.Name)
+	}
+	if _, err := s.CreateGitBranch(ctx, "", repo.ID, CreateGitBranchInput{Name: "topic/create-test", StartPoint: "main"}); err == nil {
+		t.Fatal("expected duplicate branch error")
+	}
+	if err := s.DeleteGitBranchByID(ctx, br.ID, true); err != nil {
+		t.Fatalf("DeleteGitBranchByID: %v", err)
 	}
 }
 

@@ -1,20 +1,46 @@
 package gitinventory
 
 import (
+	"os"
 	"path/filepath"
 	"strings"
 	"unicode"
 )
 
+// EnvManagedWorktreeRoot overrides the default managed-worktree root when set.
+const EnvManagedWorktreeRoot = "HAMIX_MANAGED_WORKTREE_ROOT"
+
+// ManagedWorktreeRoot returns the root directory for Hamix-allocated worktrees:
+// `$HAMIX_MANAGED_WORKTREE_ROOT` when set, otherwise `{UserConfigDir}/hamix`
+// (falling back to `{UserHomeDir}/hamix` if UserConfigDir is unavailable).
+//
+//funclogmeasure:skip category=hot-path reason="Pure path helper without I/O beyond env/UserConfigDir; operation trace is emitted by the calling chokepoint."
+func ManagedWorktreeRoot() string {
+	if v := strings.TrimSpace(os.Getenv(EnvManagedWorktreeRoot)); v != "" {
+		return filepath.Clean(v)
+	}
+	base, err := os.UserConfigDir()
+	if err != nil || strings.TrimSpace(base) == "" {
+		home, homeErr := os.UserHomeDir()
+		if homeErr != nil || strings.TrimSpace(home) == "" {
+			return "hamix"
+		}
+		base = home
+	}
+	return filepath.Join(base, "hamix")
+}
+
 // ManagedWorktreePath returns the on-disk path for a Hamix-allocated worktree:
-// `{dir(repoPath)}/.hamix/{repoID}/worktrees/{branchSlug}`.
+// `{ManagedWorktreeRoot}/worktrees/{repoID}/{branchSlug}`.
+//
+// repoPath is retained for call-site compatibility and is not used for the root.
 //
 //funclogmeasure:skip category=hot-path reason="Pure path helper without I/O; operation trace is emitted by the calling chokepoint."
 func ManagedWorktreePath(repoPath, repoID, branch string) string {
-	parent := filepath.Dir(filepath.Clean(strings.TrimSpace(repoPath)))
+	_ = repoPath
 	id := strings.TrimSpace(repoID)
 	slug := BranchPathSlug(branch)
-	return filepath.ToSlash(filepath.Join(parent, ".hamix", id, "worktrees", slug))
+	return filepath.ToSlash(filepath.Join(ManagedWorktreeRoot(), "worktrees", id, slug))
 }
 
 // BranchPathSlug turns a git branch name into a single filesystem path segment.
