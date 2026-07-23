@@ -136,28 +136,30 @@ export function TaskPolishDialog({
             onRemove={drafts.removeAt}
           />
 
-          <div className="task-polish-dialog__label-row">
-            <label
-              id={instructionsLabelId}
-              htmlFor={instructionsId}
-              className="task-polish-dialog__label"
-            >
-              Instructions
-            </label>
-            <span className="task-polish-dialog__hint">
-              Type <kbd>@</kbd> to reference files
-            </span>
-          </div>
-          <div className="task-create-editor-shell">
-            <RichPromptEditor
-              id={instructionsId}
-              value={instructions}
-              onChange={setInstructions}
-              disabled={controlsDisabled}
-              placeholder="Describe what should change in this polish pass…"
-              worktreeId={worktreeId?.trim() || undefined}
-              projectContext={promptProjectContext ?? undefined}
-            />
+          <div className="task-polish-dialog__section">
+            <div className="task-polish-dialog__label-row">
+              <label
+                id={instructionsLabelId}
+                htmlFor={instructionsId}
+                className="task-polish-dialog__label"
+              >
+                Instructions
+              </label>
+              <span className="task-polish-dialog__hint">
+                Type <kbd>@</kbd> to reference files
+              </span>
+            </div>
+            <div className="task-create-editor-shell">
+              <RichPromptEditor
+                id={instructionsId}
+                value={instructions}
+                onChange={setInstructions}
+                disabled={controlsDisabled}
+                placeholder="Describe what should change in this polish pass…"
+                worktreeId={worktreeId?.trim() || undefined}
+                projectContext={promptProjectContext ?? undefined}
+              />
+            </div>
           </div>
         </div>
 

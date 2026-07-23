@@ -40,7 +40,7 @@ export function TaskPolishCriteriaList({
 
   return (
     <fieldset
-      className="task-polish-dialog__criteria"
+      className="task-polish-dialog__section task-polish-dialog__criteria"
       disabled={disabled}
     >
       <legend id={headingId} className="task-polish-dialog__section-title">

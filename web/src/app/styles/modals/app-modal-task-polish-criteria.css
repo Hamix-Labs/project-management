@@ -31,9 +31,15 @@
 .task-polish-dialog__criteria,
 .task-polish-dialog__add-criteria {
   margin: 0;
-  padding: 0;
-  border: none;
   min-width: 0;
+}
+
+/* fieldset defaults would fight section hairlines */
+.task-polish-dialog__criteria {
+  border-left: none;
+  border-right: none;
+  border-bottom: none;
+  min-inline-size: 0;
 }
 
 .task-polish-dialog__criteria-list,

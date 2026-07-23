@@ -70,7 +70,7 @@ export function TaskPolishAddCriteria({
   onRemove,
 }: Props) {
   return (
-    <div className="task-polish-dialog__add-criteria">
+    <div className="task-polish-dialog__section task-polish-dialog__add-criteria">
       <h3 id={headingId} className="task-polish-dialog__section-title">
         Add criteria
       </h3>
