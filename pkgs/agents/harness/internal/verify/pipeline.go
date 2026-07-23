@@ -68,13 +68,15 @@ func (s *Service) RunPipeline(
 	}
 
 	attemptSeq := int64(verifyAttempt) + 1
-	verdicts, feedbackOut, mirrorDegraded, verifyErr := s.runVerifyChecks(parentCtx, task, cycle, phase.PhaseSeq, runCorrelationID, attemptSeq, snap, previouslyPassed, feedback, mirrorDegradedIn)
+	verdicts, feedbackOut, mirrorDegraded, usage, usagePresent, verifyErr := s.runVerifyChecks(parentCtx, task, cycle, phase.PhaseSeq, runCorrelationID, attemptSeq, snap, previouslyPassed, feedback, mirrorDegradedIn)
 
 	tampered, tamperReason := s.checkIntegrity(parentCtx, cycle.ID, pre, preErr)
 
 	detailsOpts := PhaseDetailsOpts{
 		MirrorDegraded:   mirrorDegraded,
 		VerifyRetryCount: verifyAttempt,
+		Usage:            usage,
+		UsagePresent:     usagePresent,
 	}
 
 	phaseStatus := cyclesdomain.PhaseStatusSucceeded

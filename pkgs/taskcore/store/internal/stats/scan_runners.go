@@ -81,9 +81,10 @@ type runnerStatsMetaProjection struct {
 
 // runnerStatsExecDetailsProjection mirrors the keys the cursor adapter
 // writes into the execute phase's details_json via buildDetails. Only
-// resolved_model is consumed by stats today; the rest of the payload
-// (session/request ids, usage, etc.) is scoped to the per-phase audit
-// trail and is not meaningful at the aggregate level.
+// resolved_model is consumed by stats today; token usage and the rest of
+// the payload are scoped to the per-phase audit trail — see
+// taskcycles/store/internal/cycles.ListPhaseTokenUsageForTask for
+// task/cycle usage aggregation.
 type runnerStatsExecDetailsProjection struct {
 	ResolvedModel string `json:"resolved_model"`
 }

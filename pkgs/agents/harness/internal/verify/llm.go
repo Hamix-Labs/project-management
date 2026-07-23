@@ -29,7 +29,7 @@ func (s *Service) runLLMVerifyAgent(
 	feedback string,
 	cmdEvidence []CommandEvidence,
 	verifyAttempt int,
-) error {
+) (cyclesdomain.TokenUsage, bool, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.verify.runLLMVerifyAgent",
 		"task_id", task.ID, "cycle_id", cycle.ID, "locked_passes", len(previouslyPassed))
 	promptText := buildVerifyPrompt(ctx, s, task.ID, snap, cycle.ID, previouslyPassed, selfReport, feedback, cmdEvidence)
@@ -46,17 +46,28 @@ func (s *Service) runLLMVerifyAgent(
 			PreviouslyPassed: previouslyPassed,
 		})
 		if err != nil {
-			return err
+			return cyclesdomain.TokenUsage{}, false, err
 		}
 		promptText = plan.Prompt
 		resumeSessionID = plan.ResumeSessionID
 	}
-	_, err := s.runVerifyCursor(ctx, task, cycle, phaseSeq, runCorrelationID, snap, promptText, resumeSessionID)
+	var total cyclesdomain.TokenUsage
+	var usagePresent bool
+	res, err := s.runVerifyCursor(ctx, task, cycle, phaseSeq, runCorrelationID, snap, promptText, resumeSessionID)
+	if u, ok := cyclesdomain.TokenUsageFromDetailsJSON(res.Details); ok {
+		total = cyclesdomain.AddTokenUsage(total, u)
+		usagePresent = true
+	}
 	if errors.Is(err, runner.ErrResumeSession) {
 		full := buildVerifyPrompt(ctx, s, task.ID, snap, cycle.ID, previouslyPassed, selfReport, feedback, cmdEvidence)
-		_, err = s.runVerifyCursor(ctx, task, cycle, phaseSeq, runCorrelationID, snap, full, "")
+		res, retryErr := s.runVerifyCursor(ctx, task, cycle, phaseSeq, runCorrelationID, snap, full, "")
+		if u, ok := cyclesdomain.TokenUsageFromDetailsJSON(res.Details); ok {
+			total = cyclesdomain.AddTokenUsage(total, u)
+			usagePresent = true
+		}
+		err = retryErr
 	}
-	return err
+	return total, usagePresent, err
 }
 
 // BuildVerifyPrompt exports the full verify prompt composer for harness fallback paths.

@@ -22,7 +22,7 @@ func (s *Service) runVerifyChecks(
 	previouslyPassed map[string]Verdict,
 	feedback string,
 	mirrorDegradedIn bool,
-) ([]Verdict, string, bool, error) {
+) ([]Verdict, string, bool, cyclesdomain.TokenUsage, bool, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.verify.runVerifyChecks",
 		"task_id", task.ID, "cycle_id", cycle.ID,
 		"run_correlation_id", runCorrelationID,
@@ -38,7 +38,7 @@ func (s *Service) runVerifyChecks(
 
 	selfReport, err := s.loadCriteriaSelfReport(parentCtx, cycle.ID, attemptSeq, expected)
 	if err != nil {
-		return nil, "", mirrorDegraded, err
+		return nil, "", mirrorDegraded, cyclesdomain.TokenUsage{}, false, err
 	}
 
 	if uerr := s.PersistCriteriaReports(parentCtx, cycle.ID, attemptSeq, snap.Criteria, previouslyPassed, selfReport); uerr != nil {
@@ -50,6 +50,8 @@ func (s *Service) runVerifyChecks(
 
 	verdicts := make([]Verdict, 0, len(snap.Criteria))
 	needLLMVerify := false
+	var usage cyclesdomain.TokenUsage
+	var usagePresent bool
 
 	for _, it := range snap.Criteria {
 		if locked, ok := previouslyPassed[it.ID]; ok {
@@ -76,12 +78,16 @@ func (s *Service) runVerifyChecks(
 	if needLLMVerify {
 		cmdEvidence, cmdErr := s.RunCriterionCommands(parentCtx, task.ID, cycle.ID, phaseSeq, attemptSeq, snap, selfReport, nil)
 		if cmdErr != nil {
-			return nil, "", mirrorDegraded, cmdErr
+			return nil, "", mirrorDegraded, cyclesdomain.TokenUsage{}, false, cmdErr
 		}
-		runErr := s.runLLMVerifyAgent(parentCtx, task, cycle, phaseSeq, runCorrelationID, snap, previouslyPassed, selfReport, feedback, cmdEvidence, int(attemptSeq)-1)
+		runUsage, runUsagePresent, runErr := s.runLLMVerifyAgent(parentCtx, task, cycle, phaseSeq, runCorrelationID, snap, previouslyPassed, selfReport, feedback, cmdEvidence, int(attemptSeq)-1)
+		if runUsagePresent {
+			usage = cyclesdomain.AddTokenUsage(usage, runUsage)
+			usagePresent = true
+		}
 		nextVerdicts, parseErr := s.assembleVerdictsFromVerifyReport(cycle.ID, expected, verdicts, selfReport, previouslyPassed)
 		if err := verifyLLMRunError(runErr, parseErr); err != nil {
-			return nil, "", mirrorDegraded, err
+			return nil, "", mirrorDegraded, usage, usagePresent, err
 		}
 		verdicts = nextVerdicts
 	}
@@ -100,7 +106,7 @@ func (s *Service) runVerifyChecks(
 		}
 	}
 	if len(failures) > 0 {
-		return verdicts, strings.Join(failures, "; "), mirrorDegraded, fmt.Errorf("verification failed")
+		return verdicts, strings.Join(failures, "; "), mirrorDegraded, usage, usagePresent, fmt.Errorf("verification failed")
 	}
-	return verdicts, "", mirrorDegraded, nil
+	return verdicts, "", mirrorDegraded, usage, usagePresent, nil
 }
