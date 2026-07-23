@@ -53,11 +53,14 @@ func TestHarness_HappyPath_emitsTrailingPublishAfterTerminalStatus(t *testing.T)
 	}
 
 	taskIDs := taskUpdated.Snapshot()
-	if len(taskIDs) != 1 {
-		t.Fatalf("task_updated publishes: got %d want 1 (%v)", len(taskIDs), taskIDs)
+	// One publish after verified checklist completions, one after terminal status.
+	if len(taskIDs) != 2 {
+		t.Fatalf("task_updated publishes: got %d want 2 (%v)", len(taskIDs), taskIDs)
 	}
-	if taskIDs[0] != tsk.ID {
-		t.Fatalf("task_updated task id = %q, want %q", taskIDs[0], tsk.ID)
+	for i, id := range taskIDs {
+		if id != tsk.ID {
+			t.Fatalf("task_updated[%d] task id = %q, want %q", i, id, tsk.ID)
+		}
 	}
 }
 
