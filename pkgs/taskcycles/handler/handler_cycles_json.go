@@ -83,6 +83,7 @@ type taskCycleResponse struct {
 	ParentCycleID *string                  `json:"parent_cycle_id,omitempty"`
 	Meta          json.RawMessage          `json:"meta"`
 	CycleMeta     cycleMetaProjection      `json:"cycle_meta"`
+	TokenUsage    *tokenUsageProjection    `json:"token_usage,omitempty"`
 }
 
 // taskCyclePhaseResponse is the JSON shape for a single phase row.
@@ -132,6 +133,7 @@ type taskCycleDetailResponse struct {
 	ParentCycleID *string                  `json:"parent_cycle_id,omitempty"`
 	Meta          json.RawMessage          `json:"meta"`
 	CycleMeta     cycleMetaProjection      `json:"cycle_meta"`
+	TokenUsage    *tokenUsageProjection    `json:"token_usage,omitempty"`
 	Phases        []taskCyclePhaseResponse `json:"phases"`
 }
 
