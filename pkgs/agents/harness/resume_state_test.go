@@ -74,12 +74,16 @@ func TestAppendResumeNotice_andCommitPolicy(t *testing.T) {
 		KnownCommits: known,
 		SkipVerify:   true,
 	})
-	for _, frag := range []string{"Human polish", "cycle-1", "tighten spacing", "abc123def456", "base", "skip the verify agent"} {
+	for _, frag := range []string{
+		"Human polish", "cycle-1", "tighten spacing", "abc123def456", "base",
+		"skip the verify agent", "polishments", "not a worker restart",
+		"do not re-claim or re-hunt",
+	} {
 		if !containsSubstr(polish, frag) {
 			t.Fatalf("polish notice missing %q in %q", frag, polish)
 		}
 	}
-	if containsSubstr(polish, "resume from failure") {
+	if containsSubstr(polish, "resume from failure") || containsSubstr(polish, "worker restarted") {
 		t.Fatalf("polish notice must not use failure-resume wording: %q", polish)
 	}
 	selective := prompt.AppendPolishNotice("base", cycle, prompt.PolishNoticeInput{
@@ -90,7 +94,7 @@ func TestAppendResumeNotice_andCommitPolicy(t *testing.T) {
 	for _, frag := range []string{
 		"Human-flagged incorrect criteria", "[c1] Auth works",
 		"Newly added criteria", "[c3] Docs updated",
-		"independent verify agent", "fix auth",
+		"independent verify agent", "fix auth", "polishments",
 	} {
 		if !containsSubstr(selective, frag) {
 			t.Fatalf("selective polish notice missing %q in %q", frag, selective)

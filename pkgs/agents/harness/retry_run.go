@@ -112,8 +112,10 @@ func (h *Harness) runResumeRetry(parentCtx context.Context, task *taskcoredomain
 }
 
 // runPolish starts a new attempt from a succeeded parent: always execute (never
-// verify-only). Cursor session resume via retry_mode=resume. When the operator
-// flagged or added criteria, seed locked passes and run verify; otherwise skip verify.
+// verify-only). Cursor session resume via retry_mode=resume. Always seed locked
+// previouslyPassed so InjectCriteria does not re-open accepted criteria (including
+// instructions-only / skip_verify). When the operator flagged or added criteria,
+// those IDs stay unlocked and verify runs; otherwise skip verify.
 func (h *Harness) runPolish(parentCtx context.Context, task *taskcoredomain.Task, intent *taskcoredomain.PendingRetry) {
 	cp, err := h.loadCheckpointFromParent(parentCtx, intent.ParentCycleID)
 	if err != nil {
@@ -124,16 +126,13 @@ func (h *Harness) runPolish(parentCtx context.Context, task *taskcoredomain.Task
 		return
 	}
 	startedAt := h.opts.Clock()
-	previouslyPassed := map[string]criterionVerdict{}
-	if !intent.SkipVerify {
-		previouslyPassed, err = h.seedPolishPreviouslyPassed(parentCtx, task.ID, intent.FlaggedCriterionIDs, intent.NewCriterionIDs)
-		if err != nil {
-			slog.Warn("agent harness polish seed previouslyPassed failed", "cmd", calltrace.LogCmd,
-				"operation", "agent.harness.Harness.runPolish.seed_err",
-				"task_id", task.ID, "err", err)
-			h.resumeSvc().FailTaskAfterRetryPrep(parentCtx, task.ID, "retry_checkpoint_failed")
-			return
-		}
+	previouslyPassed, err := h.seedPolishPreviouslyPassed(parentCtx, task.ID, intent.FlaggedCriterionIDs, intent.NewCriterionIDs)
+	if err != nil {
+		slog.Warn("agent harness polish seed previouslyPassed failed", "cmd", calltrace.LogCmd,
+			"operation", "agent.harness.Harness.runPolish.seed_err",
+			"task_id", task.ID, "err", err)
+		h.resumeSvc().FailTaskAfterRetryPrep(parentCtx, task.ID, "retry_checkpoint_failed")
+		return
 	}
 	state := processState{
 		cycle:  cycleLifecycleState{startedAt: startedAt},

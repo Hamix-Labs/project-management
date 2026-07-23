@@ -20,6 +20,8 @@ const (
 	RecoveryOperatorRetryResume   RecoveryKind = "operator_retry_resume"
 	RecoveryVerifyInfra           RecoveryKind = "verify_infra_retry"
 	RecoveryVerifyFeedback        RecoveryKind = "verify_feedback_carry"
+	// RecoveryHumanPolish is Cursor --resume stdin for operator polish (not failure recovery).
+	RecoveryHumanPolish RecoveryKind = "human_polish"
 )
 
 // CriterionFailure is one failed criterion for structured verify recovery text.
@@ -57,6 +59,8 @@ type RecoveryContext struct {
 	InterruptedPhase     cyclesdomain.Phase
 	GitPorcelain         string
 	PriorVerifyFeedback  string
+	// Polish drives RecoveryHumanPolish deltas (ComposePolishDirective).
+	Polish PolishNoticeInput
 }
 
 const (
@@ -85,6 +89,10 @@ func ComposeRecoveryDelta(ctx RecoveryContext) string {
 
 //funclogmeasure:skip category=hot-path reason="Pure string builder; ComposeRecoveryDelta logs byte metrics."
 func composeExecuteRecoveryDelta(b *strings.Builder, ctx RecoveryContext) {
+	if ctx.Kind == RecoveryHumanPolish {
+		composeHumanPolishRecoveryDelta(b, ctx)
+		return
+	}
 	fmt.Fprintf(b, recoverySectionContinuation+"\n\n", ctx.AttemptSeq)
 	b.WriteString("You are continuing the same Cursor session. Do not restart discovery or revert locked work.\n\n")
 	b.WriteString("### What changed\n\n")
@@ -140,6 +148,34 @@ func composeExecuteRecoveryDelta(b *strings.Builder, ctx RecoveryContext) {
 	}
 	b.WriteString("- Amend, rebase, or squash commits from this cycle\n\n")
 	if ctx.ReportPath != "" {
+		b.WriteString("### Artifacts\n\n")
+		fmt.Fprintf(b, "- criteria-report.json: `%s` (schema v1, claimed_done + evidence per active id)\n", ctx.ReportPath)
+	}
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure string builder; ComposeRecoveryDelta logs byte metrics."
+func composeHumanPolishRecoveryDelta(b *strings.Builder, ctx RecoveryContext) {
+	fmt.Fprintf(b, recoverySectionContinuation+"\n\n", ctx.AttemptSeq)
+	b.WriteString("You are continuing the same Cursor session for **human polish**. ")
+	b.WriteString("Do not restart discovery or revert locked work.\n\n")
+	cycle := &cyclesdomain.TaskCycle{ID: ctx.CycleID, AttemptSeq: ctx.AttemptSeq}
+	b.WriteString(ComposePolishDirective(cycle, ctx.Polish))
+	b.WriteString("### Do this next\n\n")
+	b.WriteString("1. Apply the operator polish instructions above.\n")
+	if ctx.Polish.SkipVerify {
+		b.WriteString("2. Do not re-claim or re-hunt locked/prior criteria; your execute claim ends this attempt.\n")
+	} else if ctx.ReportPath != "" {
+		fmt.Fprintf(b, "2. Update `%s` for active (flagged/new) criteria only.\n", ctx.ReportPath)
+	}
+	b.WriteString("\n### Do not\n\n")
+	if len(ctx.LockedCriteria) > 0 {
+		b.WriteString("- Re-do locked criteria: ")
+		b.WriteString(strings.Join(ctx.LockedCriteria, ", "))
+		b.WriteString("\n")
+	}
+	b.WriteString("- Amend, rebase, or squash commits from this cycle\n")
+	b.WriteString("- Re-audit the original task as if it failed\n\n")
+	if ctx.ReportPath != "" && !ctx.Polish.SkipVerify {
 		b.WriteString("### Artifacts\n\n")
 		fmt.Fprintf(b, "- criteria-report.json: `%s` (schema v1, claimed_done + evidence per active id)\n", ctx.ReportPath)
 	}

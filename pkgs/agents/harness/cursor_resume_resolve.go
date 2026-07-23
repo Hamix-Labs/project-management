@@ -125,7 +125,8 @@ func (h *Harness) buildRecoveryContext(
 	reportPath := reports.CriteriaReportPath(h.opts.ReportDir, cycle.ID)
 	locked := lockedCriterionIDs(state.verify.previouslyPassed)
 	expected := activeCriterionIDs(state)
-	kind := h.selectRecoveryKind(phase, state, opts, retryMode)
+	runKind := runKindFromCycleMeta(cycle)
+	kind := h.selectRecoveryKind(phase, state, opts, retryMode, runKind)
 	ctx := prompt.RecoveryContext{
 		Kind:                kind,
 		Phase:               phase,
@@ -139,6 +140,9 @@ func (h *Harness) buildRecoveryContext(
 		ExpectedIDs:         expected,
 		InterruptedPhase:    opts.interruptedPhase,
 		PriorVerifyFeedback: state.verify.verifyFeedback,
+	}
+	if runKind == taskcoredomain.PendingKindPolish {
+		ctx.Polish = polishNoticeInputFromCycle(cycle, state, opts.knownCommits)
 	}
 	if bundle := opts.continuation; bundle != nil && kind == prompt.RecoveryOperatorRetryResume {
 		ctx.FailureClass = string(bundle.FailureClass)
@@ -157,12 +161,14 @@ func (h *Harness) selectRecoveryKind(
 	state *processState,
 	opts cycleLoopOpts,
 	retryMode taskcoredomain.RetryMode,
+	runKind taskcoredomain.PendingRunKind,
 ) prompt.RecoveryKind {
 	return cursorresume.SelectRecoveryKind(cursorresume.RecoveryKindInput{
 		Phase:             phase,
 		VerifyAttempt:     state.verify.verifyAttempt,
 		ReportParseErr:    state.verify.reportParseErr,
 		RetryMode:         retryMode,
+		RunKind:           runKind,
 		HasContinuation:   opts.continuation != nil,
 		ResumeNotice:      opts.resumeNotice,
 		HasFailedVerdicts: len(state.verify.lastFailedVerdicts) > 0,

@@ -23,6 +23,7 @@ type RecoveryKindInput struct {
 	VerifyAttempt     int
 	ReportParseErr    string
 	RetryMode         taskcoredomain.RetryMode
+	RunKind           taskcoredomain.PendingRunKind
 	HasContinuation   bool
 	ResumeNotice      bool
 	HasFailedVerdicts bool
@@ -46,6 +47,10 @@ func SelectRecoveryKind(in RecoveryKindInput) prompt.RecoveryKind {
 	}
 	if in.RetryMode == taskcoredomain.RetryResume && in.HasContinuation {
 		return prompt.RecoveryOperatorRetryResume
+	}
+	// Polish must never fall through to process_restart recovery framing.
+	if in.RunKind == taskcoredomain.PendingKindPolish {
+		return prompt.RecoveryHumanPolish
 	}
 	if in.ResumeNotice {
 		return prompt.RecoveryProcessRestart

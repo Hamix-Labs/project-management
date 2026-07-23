@@ -42,3 +42,27 @@ func TestSelectRecoveryKind_operatorRetryDefersToCriteriaProbeErr(t *testing.T) 
 		t.Fatalf("kind=%q want criteria_report_missing", kind)
 	}
 }
+
+func TestSelectRecoveryKind_humanPolishBeatsProcessRestart(t *testing.T) {
+	t.Parallel()
+	kind := SelectRecoveryKind(RecoveryKindInput{
+		Phase:        cyclesdomain.PhaseExecute,
+		RetryMode:    taskcoredomain.RetryResume,
+		RunKind:      taskcoredomain.PendingKindPolish,
+		ResumeNotice: true,
+	})
+	if kind != prompt.RecoveryHumanPolish {
+		t.Fatalf("kind=%q want %q", kind, prompt.RecoveryHumanPolish)
+	}
+}
+
+func TestSelectRecoveryKind_resumeNoticeStillProcessRestart(t *testing.T) {
+	t.Parallel()
+	kind := SelectRecoveryKind(RecoveryKindInput{
+		Phase:        cyclesdomain.PhaseExecute,
+		ResumeNotice: true,
+	})
+	if kind != prompt.RecoveryProcessRestart {
+		t.Fatalf("kind=%q want %q", kind, prompt.RecoveryProcessRestart)
+	}
+}
