@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { TaskPolishDialog } from "./TaskPolishDialog";
@@ -71,13 +71,25 @@ describe("TaskPolishDialog", () => {
     );
     await user.click(screen.getByLabelText(/auth works/i));
     expect(screen.getByRole("button", { name: /^polish$/i })).toBeDisabled();
-    await user.type(screen.getByPlaceholderText(/new criterion/i), "Docs");
-    await user.click(screen.getByRole("button", { name: /^add$/i }));
+    await user.click(screen.getByRole("button", { name: /^add criterion$/i }));
+    const sheet = document.querySelector(
+      ".task-checklist-criterion-modal-sheet",
+    );
+    expect(sheet).not.toBeNull();
+    await user.type(
+      within(sheet as HTMLElement).getByLabelText(/criterion/i),
+      "Docs",
+    );
+    await user.click(
+      within(sheet as HTMLElement).getByRole("button", {
+        name: /^add criterion$/i,
+      }),
+    );
     expect(screen.getByRole("button", { name: /^polish$/i })).toBeDisabled();
     expect(onConfirm).not.toHaveBeenCalled();
   });
 
-  it("includes flagged and new criteria in the confirm payload", async () => {
+  it("opens the checklist criterion modal to draft new criteria", async () => {
     const user = userEvent.setup();
     const onConfirm = vi.fn();
     render(
@@ -94,18 +106,27 @@ describe("TaskPolishDialog", () => {
     );
 
     expect(
-      screen.getByText(/were any of these/i).closest("legend"),
-    ).toHaveTextContent("Were any of these not done correctly?");
-    expect(
       screen.getByText("not", { selector: ".task-polish-dialog__not" }),
     ).toBeInTheDocument();
     await user.click(screen.getByLabelText(/auth works/i));
-    await user.type(screen.getByPlaceholderText(/new criterion/i), "Docs updated");
-    await user.click(screen.getByRole("button", { name: /^add$/i }));
-    expect(screen.getByText("Docs updated")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /^add criterion$/i }));
+    const sheet = document.querySelector(
+      ".task-checklist-criterion-modal-sheet",
+    );
+    expect(sheet).not.toBeNull();
     expect(
-      screen.queryByText(/one clear, testable requirement/i),
-    ).not.toBeInTheDocument();
+      within(sheet as HTMLElement).getByText(/one clear, testable requirement/i),
+    ).toBeInTheDocument();
+    await user.type(
+      within(sheet as HTMLElement).getByLabelText(/criterion/i),
+      "Docs updated",
+    );
+    await user.click(
+      within(sheet as HTMLElement).getByRole("button", {
+        name: /^add criterion$/i,
+      }),
+    );
+    expect(screen.getByText("Docs updated")).toBeInTheDocument();
     expect(
       document.querySelector(".task-checklist-criterion-modal-sheet"),
     ).toBeNull();
@@ -117,7 +138,7 @@ describe("TaskPolishDialog", () => {
     expect(onConfirm).toHaveBeenCalledWith({
       instructions: "fix the auth flow",
       flaggedCriterionIds: ["c1"],
-      newCriteria: ["Docs updated"],
+      newCriteria: [{ text: "Docs updated", verify_commands: [] }],
     });
   });
 
@@ -131,8 +152,14 @@ describe("TaskPolishDialog", () => {
         onConfirm={vi.fn()}
       />,
     );
-    await user.type(screen.getByPlaceholderText(/new criterion/i), "Docs");
-    await user.click(screen.getByRole("button", { name: /^add$/i }));
+    await user.click(screen.getByRole("button", { name: /^add criterion$/i }));
+    const sheet = document.querySelector(
+      ".task-checklist-criterion-modal-sheet",
+    ) as HTMLElement;
+    await user.type(within(sheet).getByLabelText(/criterion/i), "Docs");
+    await user.click(
+      within(sheet).getByRole("button", { name: /^add criterion$/i }),
+    );
     expect(screen.getByText("Docs")).toBeInTheDocument();
     await user.click(
       screen.getByRole("button", { name: /remove criterion docs/i }),

@@ -104,5 +104,5 @@ type RequestPolishInput struct {
 	Instructions        string
 	ParentCycleID       string
 	FlaggedCriterionIDs []string
-	NewCriteria         []string
+	NewCriteria         []CreateChecklistItemInput
 }

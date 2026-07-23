@@ -7,6 +7,7 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	checkliststore "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/store"
+	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
@@ -209,7 +210,7 @@ func TestRequestTaskPolish_flagsAndNewCriteria(t *testing.T) {
 		TaskID:              task.ID,
 		Instructions:        "fix auth",
 		FlaggedCriterionIDs: []string{itemA.ID},
-		NewCriteria:         []string{"Docs updated"},
+		NewCriteria:         []contract.CreateChecklistItemInput{{Text: "Docs updated"}},
 	}, domain.ActorUser)
 	if err != nil {
 		t.Fatal(err)

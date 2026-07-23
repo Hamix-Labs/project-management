@@ -289,7 +289,10 @@ export type PolishTaskInput = {
   instructions: string;
   parent_cycle_id?: string;
   flagged_criterion_ids?: string[];
-  new_criteria?: string[];
+  new_criteria?: Array<{
+    text: string;
+    verify_commands?: ChecklistVerifyCommandInput[];
+  }>;
 };
 
 export async function polishTask(
