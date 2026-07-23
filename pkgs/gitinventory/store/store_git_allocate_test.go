@@ -19,6 +19,7 @@ func TestTaskBranchName(t *testing.T) {
 
 func TestAllocateTaskWorktree(t *testing.T) {
 	s, ctx, _ := gitTestStore(t)
+	t.Setenv(gitinventory.EnvManagedWorktreeRoot, t.TempDir())
 	remote := t.TempDir()
 	runGitStore(t, remote, "init", "--bare", "-b", "main")
 	parent := t.TempDir()
@@ -45,6 +46,9 @@ func TestAllocateTaskWorktree(t *testing.T) {
 	wantPath := gitinventory.ManagedWorktreePath(repo.Path, repo.ID, wantBranch)
 	if filepath.ToSlash(wt.Path) != wantPath {
 		t.Fatalf("path=%q want %q", wt.Path, wantPath)
+	}
+	if !strings.HasPrefix(filepath.ToSlash(wt.Path), filepath.ToSlash(gitinventory.ManagedWorktreeRoot())+"/") {
+		t.Fatalf("allocated path %q not under managed root %q", wt.Path, gitinventory.ManagedWorktreeRoot())
 	}
 	br, err := s.GetGitBranchByID(ctx, wt.BranchID)
 	if err != nil {
