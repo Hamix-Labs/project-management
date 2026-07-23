@@ -202,14 +202,28 @@ func (h *Harness) runCycleLoopVerify(
 	return retry, term, effects.SkipNextExecute
 }
 
+//funclogmeasure:skip category=delegate-already-logs reason="Thin wrapper; runCycleLoopFinalizeSuccessOpts emits finalize traces."
 func (h *Harness) runCycleLoopFinalizeSuccess(
 	parentCtx context.Context,
 	task *taskcoredomain.Task,
 	cycle *cyclesdomain.TaskCycle,
 	state *processState,
 ) {
-	unionVerdicts := unionPreviouslyPassedVerdicts(state)
-	completionErr := h.applyVerifiedCompletions(parentCtx, task.ID, cycle.ID, unionVerdicts)
+	h.runCycleLoopFinalizeSuccessOpts(parentCtx, task, cycle, state, true)
+}
+
+func (h *Harness) runCycleLoopFinalizeSuccessOpts(
+	parentCtx context.Context,
+	task *taskcoredomain.Task,
+	cycle *cyclesdomain.TaskCycle,
+	state *processState,
+	applyCompletions bool,
+) {
+	var completionErr error
+	if applyCompletions {
+		unionVerdicts := unionPreviouslyPassedVerdicts(state)
+		completionErr = h.applyVerifiedCompletions(parentCtx, task.ID, cycle.ID, unionVerdicts)
+	}
 	effects := orchestration.DecideFinalizeSuccess(completionErr)
 	if completionErr != nil {
 		slog.Warn("agent harness checklist completion failed",
@@ -252,7 +266,9 @@ func (h *Harness) runCycleLoop(parentCtx context.Context, task *taskcoredomain.T
 		}
 
 		if opts.skipVerify {
-			h.runCycleLoopFinalizeSuccess(parentCtx, task, cycle, state)
+			// Prior done criteria are already completed in the DB; polish seed locks
+			// are for prompt injection only — do not re-write evidence on finalize.
+			h.runCycleLoopFinalizeSuccessOpts(parentCtx, task, cycle, state, false)
 			return
 		}
 

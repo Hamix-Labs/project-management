@@ -74,6 +74,112 @@ func TestComposeRecoveryDelta_verifyInfra(t *testing.T) {
 	}
 }
 
+func TestComposeRecoveryDelta_humanPolishInstructionsOnly(t *testing.T) {
+	t.Parallel()
+	delta := ComposeRecoveryDelta(RecoveryContext{
+		Kind:           RecoveryHumanPolish,
+		Phase:          cyclesdomain.PhaseExecute,
+		CycleID:        "polish-cycle-1",
+		AttemptSeq:     2,
+		ReportPath:     "/tmp/report.json",
+		LockedCriteria: []string{"crit-locked"},
+		Polish: PolishNoticeInput{
+			Instructions: "Create REFACTOR.md explaining the refactor.",
+			SkipVerify:   true,
+		},
+	})
+	for _, frag := range []string{
+		"Human polish", "Create REFACTOR.md", "skip the verify agent",
+		"polishments", "crit-locked", "human polish",
+	} {
+		if !strings.Contains(delta, frag) {
+			t.Fatalf("missing %q in %q", frag, delta)
+		}
+	}
+	for _, bad := range []string{"worker restarted", "Fix the issue described above"} {
+		if strings.Contains(delta, bad) {
+			t.Fatalf("must not contain %q: %q", bad, delta)
+		}
+	}
+}
+
+func TestComposeRecoveryDelta_humanPolishFlagged(t *testing.T) {
+	t.Parallel()
+	delta := ComposeRecoveryDelta(RecoveryContext{
+		Kind:           RecoveryHumanPolish,
+		Phase:          cyclesdomain.PhaseExecute,
+		CycleID:        "polish-cycle-2",
+		AttemptSeq:     3,
+		ReportPath:     "/tmp/report.json",
+		LockedCriteria: []string{"crit-ok"},
+		Polish: PolishNoticeInput{
+			Instructions: "Also document the change.",
+			Flagged:      []PolishCriterion{{ID: "crit-a", Text: "Auth works"}},
+		},
+	})
+	for _, frag := range []string{
+		"Also document the change", "Human-flagged incorrect criteria",
+		"[crit-a] Auth works", "active (flagged/new)", "crit-ok",
+	} {
+		if !strings.Contains(delta, frag) {
+			t.Fatalf("missing %q in %q", frag, delta)
+		}
+	}
+	if strings.Contains(delta, "skip the verify agent") {
+		t.Fatalf("flagged polish must not skip verify: %q", delta)
+	}
+}
+
+func TestComposeRecoveryDelta_humanPolishMixed(t *testing.T) {
+	t.Parallel()
+	delta := ComposeRecoveryDelta(RecoveryContext{
+		Kind:       RecoveryHumanPolish,
+		Phase:      cyclesdomain.PhaseExecute,
+		CycleID:    "polish-cycle-3",
+		AttemptSeq: 4,
+		ReportPath: "/tmp/report.json",
+		Polish: PolishNoticeInput{
+			Instructions: "Write REFACTOR.md",
+			Flagged:      []PolishCriterion{{ID: "c1", Text: "Named in report"}},
+			New:          []PolishCriterion{{ID: "c2", Text: "Docs updated"}},
+		},
+	})
+	for _, frag := range []string{
+		"Write REFACTOR.md",
+		"Human-flagged incorrect criteria", "[c1] Named in report",
+		"Newly added criteria", "[c2] Docs updated",
+		"independent verify agent",
+	} {
+		if !strings.Contains(delta, frag) {
+			t.Fatalf("missing %q in %q", frag, delta)
+		}
+	}
+	if strings.Contains(delta, "worker restarted") {
+		t.Fatalf("mixed polish must not use process restart: %q", delta)
+	}
+}
+
+func TestComposeRecoveryDelta_humanPolishNewOnly(t *testing.T) {
+	t.Parallel()
+	delta := ComposeRecoveryDelta(RecoveryContext{
+		Kind:       RecoveryHumanPolish,
+		Phase:      cyclesdomain.PhaseExecute,
+		CycleID:    "polish-cycle-4",
+		AttemptSeq: 2,
+		Polish: PolishNoticeInput{
+			Instructions: "Implement the new requirement.",
+			New:          []PolishCriterion{{ID: "c-new", Text: "Ship changelog"}},
+		},
+	})
+	for _, frag := range []string{
+		"Implement the new requirement", "Newly added criteria", "[c-new] Ship changelog",
+	} {
+		if !strings.Contains(delta, frag) {
+			t.Fatalf("missing %q in %q", frag, delta)
+		}
+	}
+}
+
 func TestComposeRecoveryDelta_goldenFiles(t *testing.T) {
 	cases := map[string]RecoveryContext{
 		"verify_implementation_fail": {

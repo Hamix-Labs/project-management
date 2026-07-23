@@ -362,6 +362,38 @@ func TestSeedPolishPreviouslyPassed_locksUnflaggedDone(t *testing.T) {
 	}
 }
 
+func TestSeedPolishPreviouslyPassed_instructionsOnlyLocksAllDone(t *testing.T) {
+	ctx := context.Background()
+	st := storefake.New(t).API
+	tsk, err := st.Create(ctx, taskcorestore.CreateTaskInput{
+		Title: "polish-lock-all", InitialPrompt: "work", Priority: taskcoredomain.PriorityMedium,
+	}, taskcoredomain.ActorUser)
+	if err != nil {
+		t.Fatal(err)
+	}
+	a, err := st.AddChecklistItem(ctx, tsk.ID, "Auth", nil, taskcoredomain.ActorUser)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err := st.AddChecklistItem(ctx, tsk.ID, "Tests", nil, taskcoredomain.ActorUser)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, id := range []string{a.ID, b.ID} {
+		if err := st.SetChecklistItemDone(ctx, tsk.ID, id, true, taskcoredomain.ActorAgent); err != nil {
+			t.Fatal(err)
+		}
+	}
+	h := New(st, runnerfake.New(), Options{})
+	got, err := h.seedPolishPreviouslyPassed(ctx, tsk.ID, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 2 || !got[a.ID].Passed || !got[b.ID].Passed {
+		t.Fatalf("instructions-only polish must lock all done criteria: %+v", got)
+	}
+}
+
 func TestRunWithRetry_polishSkipVerifySkipsVerifyPhase(t *testing.T) {
 	ctx := context.Background()
 	st := storefake.New(t).API

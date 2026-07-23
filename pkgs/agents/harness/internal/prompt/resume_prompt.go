@@ -13,7 +13,7 @@ type PolishCriterion struct {
 	Text string
 }
 
-// PolishNoticeInput drives AppendPolishNotice sections.
+// PolishNoticeInput drives ComposePolishDirective / AppendPolishNotice sections.
 type PolishNoticeInput struct {
 	Instructions string
 	SkipVerify   bool
@@ -50,20 +50,25 @@ func AppendOperatorRetryResumeNotice(prompt string, cycle *cyclesdomain.TaskCycl
 	return b.String() + prompt
 }
 
-// AppendPolishNotice is for human polish from review: resume the Cursor conversation
-// with operator instructions. This is not a failure-resume path.
+// ComposePolishDirective builds the human-polish execute directive (shared by full
+// prompts and Cursor --resume deltas). Optional Flagged / New / SkipVerify sections
+// appear only when relevant — one composer for all polish combos.
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func AppendPolishNotice(prompt string, cycle *cyclesdomain.TaskCycle, in PolishNoticeInput) string {
+func ComposePolishDirective(cycle *cyclesdomain.TaskCycle, in PolishNoticeInput) string {
 	if cycle == nil {
-		return prompt
+		return ""
 	}
 	var b strings.Builder
 	b.WriteString("## Human polish — refine completed work\n\n")
 	b.WriteString("This is a **new execution attempt** after the prior attempt succeeded and entered human review ")
 	b.WriteString(fmt.Sprintf("(new cycle_id=%s).\n\n", cycle.ID))
-	b.WriteString("You are continuing the same Cursor conversation. Treat this as intentional refinement of accepted work, ")
-	b.WriteString("not recovery from a failure and not a full rewrite unless the instructions say so.\n\n")
+	b.WriteString("The prior attempt's checklist was accepted into review (independent verification had approved ")
+	b.WriteString("those criteria where applicable). The human is now requesting **polishments**. ")
+	b.WriteString("This is not failure recovery and not a worker restart.\n\n")
+	b.WriteString("You are continuing the same Cursor conversation. Do not rediscover or re-audit the original task. ")
+	b.WriteString("Change only what the polish instructions and any flagged/new criteria below require — ")
+	b.WriteString("not a full rewrite unless the instructions say so.\n\n")
 
 	instructions := strings.TrimSpace(in.Instructions)
 	b.WriteString("### Operator polish instructions (authoritative)\n\n")
@@ -96,12 +101,14 @@ func AppendPolishNotice(prompt string, cycle *cyclesdomain.TaskCycle, in PolishN
 	if in.SkipVerify {
 		b.WriteString("### Verification mode for this polish\n\n")
 		b.WriteString("This polish has **no flagged or newly added criteria**. After execute finishes, the harness will **skip the verify agent**.\n")
+		b.WriteString("Prior criteria remain accepted — do not re-claim or re-hunt them.\n")
 		b.WriteString("Your execute-phase claim that the polish instructions are satisfied is sufficient for this attempt to return to human review.\n")
 		b.WriteString("Still inspect the tree, change only what the instructions require, commit new work normally, and do not undo prior good work.\n\n")
 	} else {
 		b.WriteString("### Verification mode for this polish\n\n")
 		b.WriteString("Criteria listed as already verified must remain satisfied — do not undo them.\n")
-		b.WriteString("Active / flagged / new criteria will be re-verified by the independent verify agent after execute.\n")
+		b.WriteString("Apply the polish instructions; fix flagged criteria; implement newly added criteria.\n")
+		b.WriteString("Only active / flagged / new criteria will be re-verified by the independent verify agent after execute.\n")
 		b.WriteString("Write a complete criteria report for active criteria only.\n\n")
 	}
 
@@ -123,7 +130,19 @@ func AppendPolishNotice(prompt string, cycle *cyclesdomain.TaskCycle, in PolishN
 		b.WriteString("3. Re-satisfy active criteria after your changes and write the criteria report.\n")
 	}
 	b.WriteString("\n")
-	return b.String() + prompt
+	return b.String()
+}
+
+// AppendPolishNotice prepends ComposePolishDirective for full execute prompts.
+// This is not a failure-resume path.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func AppendPolishNotice(prompt string, cycle *cyclesdomain.TaskCycle, in PolishNoticeInput) string {
+	directive := ComposePolishDirective(cycle, in)
+	if directive == "" {
+		return prompt
+	}
+	return directive + prompt
 }
 
 // AppendResumeNotice prepends an in-process worker resume notice.
