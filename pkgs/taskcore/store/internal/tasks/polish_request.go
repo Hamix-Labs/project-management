@@ -43,7 +43,7 @@ func RequestTaskPolish(ctx context.Context, db *gorm.DB, in RequestPolishInput, 
 	}
 	instructions := strings.TrimSpace(in.Instructions)
 	flagged := normalizePolishIDList(in.FlaggedCriterionIDs)
-	newTexts := normalizePolishTextList(in.NewCriteria)
+	newItems := normalizePolishNewCriteria(in.NewCriteria)
 	intent := domain.PendingRetry{
 		Kind:                domain.PendingKindPolish,
 		Mode:                domain.RetryResume,
@@ -70,7 +70,7 @@ func RequestTaskPolish(ctx context.Context, db *gorm.DB, in RequestPolishInput, 
 		intent.ParentCycleID = parentID
 
 		if dcur.Status == domain.StatusReady && dcur.PendingRetry != nil {
-			if polishIntentAlreadyQueued(dcur.PendingRetry, intent, flagged, newTexts) {
+			if polishIntentAlreadyQueued(dcur.PendingRetry, intent, flagged, newItems) {
 				updated = &dcur
 				return nil
 			}
@@ -85,7 +85,7 @@ func RequestTaskPolish(ctx context.Context, db *gorm.DB, in RequestPolishInput, 
 				return err
 			}
 		}
-		newIDs, err := checkliststore.AddTextsInTx(tx, taskID, newTexts, by)
+		newIDs, err := checkliststore.AddItemsInTx(tx, taskID, newItems, by)
 		if err != nil {
 			return err
 		}
@@ -173,6 +173,28 @@ func resolvePolishParentCycleInTx(tx *gorm.DB, taskID, explicit string) (string,
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func normalizePolishNewCriteria(items []contract.CreateChecklistItemInput) []contract.CreateChecklistItemInput {
+	if len(items) == 0 {
+		return nil
+	}
+	out := make([]contract.CreateChecklistItemInput, 0, len(items))
+	for _, raw := range items {
+		t := strings.TrimSpace(raw.Text)
+		if t == "" {
+			continue
+		}
+		out = append(out, contract.CreateChecklistItemInput{
+			Text:           t,
+			VerifyCommands: raw.VerifyCommands,
+		})
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func normalizePolishIDList(ids []string) []string {
 	if len(ids) == 0 {
 		return nil
@@ -196,37 +218,18 @@ func normalizePolishIDList(ids []string) []string {
 	return out
 }
 
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func normalizePolishTextList(texts []string) []string {
-	if len(texts) == 0 {
-		return nil
-	}
-	out := make([]string, 0, len(texts))
-	for _, raw := range texts {
-		t := strings.TrimSpace(raw)
-		if t == "" {
-			continue
-		}
-		out = append(out, t)
-	}
-	if len(out) == 0 {
-		return nil
-	}
-	return out
-}
-
 // polishIntentAlreadyQueued reports whether a queued polish pending_retry matches
 // this request. New criterion texts cannot be re-inserted; match by instructions,
-// parent, flags, and new-ID count when texts are present.
+// parent, flags, and new-item count when items are present.
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func polishIntentAlreadyQueued(queued *domain.PendingRetry, intent domain.PendingRetry, flagged, newTexts []string) bool {
+func polishIntentAlreadyQueued(queued *domain.PendingRetry, intent domain.PendingRetry, flagged []string, newItems []contract.CreateChecklistItemInput) bool {
 	if queued == nil || queued.NormalizeKind() != domain.PendingKindPolish {
 		return false
 	}
 	probe := intent
 	probe.FlaggedCriterionIDs = flagged
-	if len(newTexts) == 0 {
+	if len(newItems) == 0 {
 		probe.NewCriterionIDs = nil
 		if err := probe.Validate(); err != nil {
 			return false
@@ -236,7 +239,7 @@ func polishIntentAlreadyQueued(queued *domain.PendingRetry, intent domain.Pendin
 	if queued.ParentCycleID != intent.ParentCycleID ||
 		strings.TrimSpace(queued.Instructions) != strings.TrimSpace(intent.Instructions) ||
 		!stringSlicesEqual(queued.FlaggedCriterionIDs, flagged) ||
-		len(queued.NewCriterionIDs) != len(newTexts) {
+		len(queued.NewCriterionIDs) != len(newItems) {
 		return false
 	}
 	return true

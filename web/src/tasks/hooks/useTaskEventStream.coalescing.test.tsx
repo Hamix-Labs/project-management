@@ -64,7 +64,10 @@ describe("useTaskEventStream coalescing", () => {
     expect(inv).not.toHaveBeenCalled();
   });
 
-  it("dedupes cycle invalidation when the same task already has a broad invalidation pending", () => {
+  it("still invalidates cycles and checklist when task_updated shares a flush with cycle hints", () => {
+    // Enrichment coverage (E1/E2): a pending task id must not suppress
+    // sibling cycles/checklist invalidation — that stall left the live
+    // ticker and done criteria stale after verify success.
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const inv = vi.spyOn(qc, "invalidateQueries");
 
@@ -87,14 +90,14 @@ describe("useTaskEventStream coalescing", () => {
       vi.advanceTimersByTime(950);
     });
     const calls = inv.mock.calls.map((c) => c[0]);
-    const cyclesOnlyCalls = calls.filter(
-      (c) =>
-        JSON.stringify((c as { queryKey: unknown[] }).queryKey) ===
-        JSON.stringify(["tasks", "detail", "task-1", "cycles"]),
-    );
-    expect(cyclesOnlyCalls).toHaveLength(0);
     expect(calls).toContainEqual({
       queryKey: ["tasks", "detail"],
+    });
+    expect(calls).toContainEqual({
+      queryKey: taskQueryKeys.cycles("task-1"),
+    });
+    expect(calls).toContainEqual({
+      queryKey: taskQueryKeys.checklist("task-1"),
     });
   });
 

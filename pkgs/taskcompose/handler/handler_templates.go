@@ -8,9 +8,9 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/contract"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 )
 
 func (h *Handler) listTaskTemplates(w http.ResponseWriter, r *http.Request) {

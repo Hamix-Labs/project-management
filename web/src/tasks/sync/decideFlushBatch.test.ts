@@ -38,13 +38,39 @@ describe("decideFlushBatch", () => {
     const decision = decideFlushBatch(pending);
     expect(decision.invalidateKeys).toContainEqual(taskQueryKeys.cycles("t1"));
     expect(decision.invalidateKeys).toContainEqual(taskQueryKeys.tokenUsage("t1"));
+    expect(decision.invalidateKeys).toContainEqual(taskQueryKeys.checklist("t1"));
   });
 
-  it("skips cycles invalidation when task id is also in tasks set", () => {
+  it("invalidates cycles and checklist when enriched task shares batch with cycle hints", () => {
+    const pending = emptyPending();
+    pending.tasks.add("t1");
+    pending.enrichedTasks.add("t1");
+    pending.cycles.set("t1", new Set(["c1"]));
+    const decision = decideFlushBatch(pending);
+    expect(decision.invalidateKeys).not.toContainEqual(taskQueryKeys.detailRoot());
+    expect(decision.invalidateKeys).toContainEqual(taskQueryKeys.cycles("t1"));
+    expect(decision.invalidateKeys).toContainEqual(taskQueryKeys.tokenUsage("t1"));
+    expect(decision.invalidateKeys).toContainEqual(taskQueryKeys.checklist("t1"));
+  });
+
+  it("invalidates detail prefix for unenriched task that also has cycle hints", () => {
     const pending = emptyPending();
     pending.tasks.add("t1");
     pending.cycles.set("t1", new Set(["c1"]));
     const decision = decideFlushBatch(pending);
+    expect(decision.invalidateKeys).toContainEqual(taskQueryKeys.detailRoot());
+    expect(decision.invalidateKeys).toContainEqual(taskQueryKeys.cycles("t1"));
+    expect(decision.invalidateKeys).toContainEqual(taskQueryKeys.tokenUsage("t1"));
+    expect(decision.invalidateKeys).toContainEqual(taskQueryKeys.checklist("t1"));
+  });
+
+  it("skips cycles invalidation when every cycle was enriched", () => {
+    const pending = emptyPending();
+    pending.cycles.set("t1", new Set(["c1"]));
+    pending.enrichedCycles.add(cycleEnrichmentKey("t1", "c1"));
+    const decision = decideFlushBatch(pending);
     expect(decision.invalidateKeys).not.toContainEqual(taskQueryKeys.cycles("t1"));
+    expect(decision.invalidateKeys).not.toContainEqual(taskQueryKeys.tokenUsage("t1"));
+    expect(decision.invalidateKeys).toContainEqual(taskQueryKeys.checklist("t1"));
   });
 });

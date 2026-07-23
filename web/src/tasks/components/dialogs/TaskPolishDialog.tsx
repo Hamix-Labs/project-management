@@ -5,8 +5,11 @@ import { isUiFeatureOmitted } from "@/launch/omittedFeatures";
 import { promptHasVisibleContent } from "@/lib/promptFormat";
 import { Modal } from "@/shared/Modal";
 import { MutationErrorBanner } from "@/shared/MutationErrorBanner";
+import type { ChecklistItemDraft } from "@/types";
 import { TaskPolishAddCriteria } from "./TaskPolishAddCriteria";
 import { TaskPolishCriteriaList } from "./TaskPolishCriteriaList";
+import { CloseGlyph, SparkleGlyph } from "./TaskPolishGlyphs";
+import { usePolishCriterionDrafts } from "./usePolishCriterionDrafts";
 
 export type PolishCriterionOption = {
   id: string;
@@ -16,7 +19,7 @@ export type PolishCriterionOption = {
 export type PolishConfirmPayload = {
   instructions: string;
   flaggedCriterionIds: string[];
-  newCriteria: string[];
+  newCriteria: ChecklistItemDraft[];
 };
 
 type Props = {
@@ -30,43 +33,6 @@ type Props = {
   onCancel: () => void;
   onConfirm: (payload: PolishConfirmPayload) => void;
 };
-
-function SparkleGlyph({ size = 16 }: { size?: number }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 16 16"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.4"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M8 2.25L9.35 6.4 13.5 7.75 9.35 9.1 8 13.25 6.65 9.1 2.5 7.75 6.65 6.4z" />
-      <path d="M12.5 2.25v2" />
-      <path d="M11.5 3.25h2" />
-    </svg>
-  );
-}
-
-function CloseGlyph() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 16 16"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-      <path d="M4 4l8 8M12 4l-8 8" />
-    </svg>
-  );
-}
 
 export function TaskPolishDialog({
   worktreeId,
@@ -87,8 +53,7 @@ export function TaskPolishDialog({
   const addHeadingId = useId();
   const [instructions, setInstructions] = useState("");
   const [flaggedIds, setFlaggedIds] = useState<Set<string>>(() => new Set());
-  const [newDraft, setNewDraft] = useState("");
-  const [newCriteria, setNewCriteria] = useState<string[]>([]);
+  const drafts = usePolishCriterionDrafts();
   const [selectedContextIds, setSelectedContextIds] = useState(
     projectContextItemIds,
   );
@@ -111,13 +76,6 @@ export function TaskPolishDialog({
     });
   }
 
-  function addNewCriterion() {
-    const text = newDraft.trim();
-    if (!text) return;
-    setNewCriteria((prev) => [...prev, text]);
-    setNewDraft("");
-  }
-
   return (
     <Modal
       onClose={onCancel}
@@ -132,7 +90,7 @@ export function TaskPolishDialog({
         <header className="task-polish-dialog__header">
           <div className="task-polish-dialog__header-main">
             <span className="task-polish-dialog__badge" aria-hidden="true">
-              <SparkleGlyph size={16} />
+              <SparkleGlyph size={20} />
             </span>
             <div className="task-polish-dialog__title-block">
               <h2 id={titleId} className="task-polish-dialog__title">
@@ -165,38 +123,43 @@ export function TaskPolishDialog({
           />
           <TaskPolishAddCriteria
             headingId={addHeadingId}
-            newCriteria={newCriteria}
-            draft={newDraft}
+            newCriteria={drafts.newCriteria}
             disabled={controlsDisabled}
-            onDraftChange={setNewDraft}
-            onAdd={addNewCriterion}
-            onRemove={(index) =>
-              setNewCriteria((prev) => prev.filter((_, i) => i !== index))
-            }
+            modalOpen={drafts.modalOpen}
+            modalText={drafts.modalText}
+            modalCommands={drafts.modalCommands}
+            onOpenModal={drafts.openModal}
+            onCloseModal={drafts.closeModal}
+            onModalTextChange={drafts.setModalText}
+            onModalCommandsChange={drafts.setModalCommands}
+            onSubmitModal={drafts.submitModal}
+            onRemove={drafts.removeAt}
           />
 
-          <div className="task-polish-dialog__label-row">
-            <label
-              id={instructionsLabelId}
-              htmlFor={instructionsId}
-              className="task-polish-dialog__label"
-            >
-              Instructions
-            </label>
-            <span className="task-polish-dialog__hint">
-              Type <kbd>@</kbd> to reference files
-            </span>
-          </div>
-          <div className="task-create-editor-shell">
-            <RichPromptEditor
-              id={instructionsId}
-              value={instructions}
-              onChange={setInstructions}
-              disabled={controlsDisabled}
-              placeholder="Describe what to refine — tighten the copy, fix edge cases, improve tests…"
-              worktreeId={worktreeId?.trim() || undefined}
-              projectContext={promptProjectContext ?? undefined}
-            />
+          <div className="task-polish-dialog__section">
+            <div className="task-polish-dialog__label-row">
+              <label
+                id={instructionsLabelId}
+                htmlFor={instructionsId}
+                className="task-polish-dialog__label"
+              >
+                Instructions
+              </label>
+              <span className="task-polish-dialog__hint">
+                Type <kbd>@</kbd> to reference files
+              </span>
+            </div>
+            <div className="task-create-editor-shell">
+              <RichPromptEditor
+                id={instructionsId}
+                value={instructions}
+                onChange={setInstructions}
+                disabled={controlsDisabled}
+                placeholder="Describe what should change in this polish pass…"
+                worktreeId={worktreeId?.trim() || undefined}
+                projectContext={promptProjectContext ?? undefined}
+              />
+            </div>
           </div>
         </div>
 
@@ -223,7 +186,7 @@ export function TaskPolishDialog({
                 onConfirm({
                   instructions,
                   flaggedCriterionIds: Array.from(flaggedIds),
-                  newCriteria,
+                  newCriteria: drafts.newCriteria,
                 })
               }
             >

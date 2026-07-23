@@ -21,7 +21,17 @@ import (
 // AddTextsInTx appends definition rows inside an outer transaction (e.g. polish).
 // Returns created item IDs in input order (empty texts skipped).
 func AddTextsInTx(tx *gorm.DB, taskID string, texts []string, by taskcoredomain.Actor) ([]string, error) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.checklist.AddTextsInTx")
+	items := make([]CreateChecklistItemInput, 0, len(texts))
+	for _, t := range texts {
+		items = append(items, CreateChecklistItemInput{Text: t})
+	}
+	return AddItemsInTx(tx, taskID, items, by)
+}
+
+// AddItemsInTx appends definition rows (optional verify commands) inside an outer TX.
+// Returns created item IDs in input order (empty texts skipped).
+func AddItemsInTx(tx *gorm.DB, taskID string, items []CreateChecklistItemInput, by taskcoredomain.Actor) ([]string, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.checklist.AddItemsInTx")
 	if err := taskcoredomain.ValidateActor(by); err != nil {
 		return nil, err
 	}
@@ -45,11 +55,15 @@ func AddTextsInTx(tx *gorm.DB, taskID string, texts []string, by taskcoredomain.
 	if err != nil {
 		return nil, err
 	}
-	out := make([]string, 0, len(texts))
-	for _, raw := range texts {
-		text := strings.TrimSpace(raw)
+	out := make([]string, 0, len(items))
+	for _, raw := range items {
+		text := strings.TrimSpace(raw.Text)
 		if text == "" {
 			continue
+		}
+		cmds, err := NormalizeVerifyCommandInputs(raw.VerifyCommands)
+		if err != nil {
+			return nil, err
 		}
 		maxOrder++
 		dit := checklistdomain.TaskChecklistItem{
@@ -60,6 +74,11 @@ func AddTextsInTx(tx *gorm.DB, taskID string, texts []string, by taskcoredomain.
 		}
 		if err := tx.Create(checklistmodel.FromDomainTaskChecklistItemPtr(&dit)).Error; err != nil {
 			return nil, fmt.Errorf("insert checklist item: %w", err)
+		}
+		if len(cmds) > 0 {
+			if err := replaceCommandsInTx(tx, dit.ID, cmds); err != nil {
+				return nil, err
+			}
 		}
 		b, _ := json.Marshal(map[string]string{"item_id": dit.ID, "text": dit.Text})
 		if err := eventsaudit.AppendEvent(tx, taskID, seq, taskeventsdomain.EventChecklistItemAdded, by, b); err != nil {
