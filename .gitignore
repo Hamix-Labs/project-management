@@ -38,3 +38,7 @@ possible_improvements.md
 # this pattern keeps `git status` clean even if a future Windows
 # subsystem caches via an env var we forgot to forward.
 %*%/
+
+# Local UI mock / design reference — do not vendor
+execution-cycles-interface/
+

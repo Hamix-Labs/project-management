@@ -67,9 +67,10 @@ describe("CycleLiveProgressList", () => {
       frame({ progress: { kind: "assistant", message: "Hi" } }, NOW - 2_000),
     ];
     render(<CycleLiveProgressList items={items} now={NOW} showPendingRow />);
-    expect(screen.getByLabelText(/waiting for the next agent update/i)).toBeInTheDocument();
-    expect(screen.getByText(/Working/i)).toBeInTheDocument();
-    expect(screen.getByText("2s ago")).toBeInTheDocument();
-    expect(screen.queryByText(/Last 2s ago/)).not.toBeInTheDocument();
+    const pending = screen.getByLabelText(/waiting for the next agent update/i);
+    expect(pending).toBeInTheDocument();
+    expect(pending).toHaveTextContent(/Working/i);
+    expect(pending).toHaveTextContent("2s ago");
+    expect(pending).not.toHaveTextContent(/Last 2s ago/);
   });
 });
