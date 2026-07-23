@@ -9,11 +9,11 @@ import (
 	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
-	eventsaudit "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/audit"
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel/jsonmap"
 	taskcorecontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/model"
+	eventsaudit "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/audit"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )

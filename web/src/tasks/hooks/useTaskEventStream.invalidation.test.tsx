@@ -107,12 +107,14 @@ describe("useTaskEventStream invalidation", () => {
     expect(calls).toContainEqual({
       queryKey: taskQueryKeys.commits("task-1"),
     });
-    // Standalone "cycles only" invalidation must not also fire — it
-    // would be redundant work and would defeat the dedup logic.
-    for (const arg of calls) {
-      const key = (arg as { queryKey: readonly unknown[] }).queryKey;
-      expect(key).not.toEqual(["tasks", "detail", "task-1", "cycles"]);
-    }
+    // Cycle hints also invalidate cycles + checklist siblings so agent
+    // runs stay coherent even when enrichment later skips detailRoot.
+    expect(calls).toContainEqual({
+      queryKey: taskQueryKeys.cycles("task-1"),
+    });
+    expect(calls).toContainEqual({
+      queryKey: taskQueryKeys.checklist("task-1"),
+    });
   });
 
   it("invalidates the task-stats query on task/cycle frames", () => {

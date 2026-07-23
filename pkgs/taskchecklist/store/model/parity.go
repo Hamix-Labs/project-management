@@ -1,8 +1,8 @@
 package model
 
 import (
-	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel/parity"
+	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 )
 
 // ParityPair is the BC-local name for the shared parity registry entry type.

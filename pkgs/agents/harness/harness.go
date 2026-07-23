@@ -66,11 +66,12 @@ type ProgressNotifier interface {
 	PublishRunProgress(taskID, cycleID string, phaseSeq int64, runCorrelationID string, ev runner.ProgressEvent)
 }
 
-// TaskUpdatedNotifier is the optional SSE seam for terminal task.status transitions.
+// TaskUpdatedNotifier is the optional SSE seam for task_updated publishes.
 // cmd/taskapi wires an adapter that publishes enriched task_updated; tests pass nil.
 //
 // Implementations MUST NOT block: the harness invokes PublishTaskUpdated
-// synchronously after a successful terminal transitionTask.
+// synchronously after verified checklist completions and after a successful
+// terminal transitionTask.
 type TaskUpdatedNotifier interface {
 	PublishTaskUpdated(taskID string)
 }

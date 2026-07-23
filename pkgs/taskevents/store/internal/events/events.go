@@ -21,9 +21,9 @@ import (
 	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
-	eventsaudit "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/audit"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
+	eventsaudit "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/audit"
 	"gorm.io/gorm"
 )
 

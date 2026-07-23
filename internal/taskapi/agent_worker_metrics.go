@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/worker"
-	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
+	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

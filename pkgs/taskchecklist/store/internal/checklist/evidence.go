@@ -11,12 +11,12 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
-	eventsaudit "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/audit"
-	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/taskload"
 	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 	checklistmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/store/model"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/taskload"
 	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
+	eventsaudit "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/audit"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )

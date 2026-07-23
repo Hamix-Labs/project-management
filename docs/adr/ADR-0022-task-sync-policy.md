@@ -49,10 +49,17 @@ Timing constants unchanged: **900ms / 2500ms** task flush; **5000ms / 10000ms** 
 - One module answers cache-coherence questions for task realtime UX.
 - Docs align with backend realtime layout (ADR-0020).
 
+### Enrichment coverage (flush rules)
+
+- **E1 — Task-row only:** `patch_task_detail` / `enrichedTasks` means the task *row* cache is current. It must not suppress invalidation of sibling detail keys (cycles list/detail, checklist, events) that were not patched in the same apply step.
+- **E2 — Cycle hints are independent:** `decideFlushBatch` invalidates `cycles(taskId)` from pending cycle entries regardless of whether the same task id is also in `pending.tasks` / enriched. Coupling “task pending ⇒ skip cycles” assumed `detailRoot` would always run; enrichment made that false.
+- Harness verified checklist completions publish `task_updated` (aligned with HTTP checklist / ADR-0026) so checklist refresh is not an accidental side effect of cycle frames alone.
+
 ### Negative / Trade-offs
 
 - Temporary shims during migration (`optimisticVersion` re-exports)
 - Coordinator still owns timer wiring (transport concern adjacent to policy)
+- Cycle-hint flushes also invalidate checklist (defense in depth); slightly more refetch than a pure task-row enrichment path
 
 ## Alternatives Considered
 

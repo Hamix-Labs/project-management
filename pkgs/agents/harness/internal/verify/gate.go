@@ -7,8 +7,8 @@ import (
 	"log/slog"
 	"strings"
 
-	checklistcontract "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/contract"
 	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
+	checklistcontract "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/contract"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 )
 

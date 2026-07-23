@@ -196,7 +196,7 @@ Constants: [`TaskChangeType`](../../pkgs/tasks/handler/sse.go). Authoritative li
 | Type | Typical publisher | Coalesced? | `data` enrichment |
 | --- | --- | --- | --- |
 | `task_created` | HTTP create | Hint-only yes | Full task tree |
-| `task_updated` | HTTP patch, checklist, gate, retry; harness terminal status via worker adapter | Hint-only yes | Full `domain.Task` on task-row mutations only ([ADR-0026](../adr/ADR-0026-backend-data-coherence.md) S2, S5) |
+| `task_updated` | HTTP patch, checklist, gate, retry; harness verified checklist completions + terminal status via worker adapter | Hint-only yes | Full `domain.Task` on task-row mutations only ([ADR-0026](../adr/ADR-0026-backend-data-coherence.md) S2, S5) |
 | `task_event_changed` | HTTP `PATCH /tasks/{id}/events/{seq}` user-response append | Yes | No |
 | `task_deleted` | HTTP delete | Yes | No |
 | `task_cycle_changed` | Harness via worker adapter | **Never** | Sometimes cycle detail |
@@ -254,9 +254,13 @@ Architecture: [ADR-0022](../adr/ADR-0022-task-sync-policy.md). Entry hook: [`use
 7. **Progress** → separate debounced path to `useAgentRunProgress` (not full invalidation storm)
 8. **Flush** — trailing debounce **900ms**, max wait **2500ms** so worker burst (~4 cycle frames per run) collapses to one invalidation batch
 
-Cycle frames drive most agent UI updates — the worker emits `task_cycle_changed`, not `task_updated`. Invalidating the `["tasks","detail"]` prefix keeps checklist, events, and nested subtask trees consistent when SSE only names one task id.
+Cycle frames drive most agent UI updates — the worker emits `task_cycle_changed`, and harness checklist completions also publish `task_updated` (same coherence as HTTP checklist / ADR-0026).
 
-Enrichment fast path: when **every** task id in a flush batch was enriched and applied, skip the broad detail-prefix invalidation.
+**Enrichment coverage (E1):** an enriched `task_updated` patches only the task *row* (`taskQueryKeys.detail(id)`). It must never be treated as making the whole detail subtree fresh — cycles list, checklist, and events are siblings that need their own hints or invalidation.
+
+**Cycle hints (E2):** flush invalidates `cycles(taskId)` (and checklist) from pending cycle entries even when the same task id was enriched in the batch. Do not skip cycle invalidation merely because the task is also in `pending.tasks`.
+
+Enrichment fast path: when **every** task id in a flush batch was enriched and applied, skip the broad detail-prefix invalidation for the *task row* only. Sibling keys still invalidate from cycle (and other) hints in the same batch.
 
 ## Configuration and tuning
 

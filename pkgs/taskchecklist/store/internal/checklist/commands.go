@@ -8,11 +8,11 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/taskload"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/contract"
 	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 	checklistmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/store/model"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/taskload"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )

@@ -7,8 +7,8 @@ import (
 	"log/slog"
 	"sync"
 
-	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 )
 
 // Notifier is invoked after a task row is committed in the ready state
