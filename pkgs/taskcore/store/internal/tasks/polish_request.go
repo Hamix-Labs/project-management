@@ -10,6 +10,7 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
+	checkliststore "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/store"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/model"
@@ -25,6 +26,8 @@ import (
 type RequestPolishInput = contract.RequestPolishInput
 
 // RequestTaskPolish sets pending_retry (kind=polish) and status=ready from review.
+// When flags/new criteria are present, clears flagged completions and appends
+// new definition rows in the same transaction.
 func RequestTaskPolish(ctx context.Context, db *gorm.DB, in RequestPolishInput, by domain.Actor) (*domain.Task, domain.Status, error) {
 	defer storekernel.DeferLatency(storekernel.OpUpdateTask)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.tasks.RequestTaskPolish", "task_id", in.TaskID)
@@ -39,11 +42,14 @@ func RequestTaskPolish(ctx context.Context, db *gorm.DB, in RequestPolishInput, 
 		return nil, "", fmt.Errorf("%w: id", domain.ErrInvalidInput)
 	}
 	instructions := strings.TrimSpace(in.Instructions)
+	flagged := normalizePolishIDList(in.FlaggedCriterionIDs)
+	newTexts := normalizePolishTextList(in.NewCriteria)
 	intent := domain.PendingRetry{
-		Kind:          domain.PendingKindPolish,
-		Mode:          domain.RetryResume,
-		ParentCycleID: strings.TrimSpace(in.ParentCycleID),
-		Instructions:  instructions,
+		Kind:                domain.PendingKindPolish,
+		Mode:                domain.RetryResume,
+		ParentCycleID:       strings.TrimSpace(in.ParentCycleID),
+		Instructions:        instructions,
+		FlaggedCriterionIDs: flagged,
 	}
 	var updated *domain.Task
 	var origStatus domain.Status
@@ -62,11 +68,9 @@ func RequestTaskPolish(ctx context.Context, db *gorm.DB, in RequestPolishInput, 
 			return err
 		}
 		intent.ParentCycleID = parentID
-		if err := intent.Validate(); err != nil {
-			return err
-		}
+
 		if dcur.Status == domain.StatusReady && dcur.PendingRetry != nil {
-			if dcur.PendingRetry.Equal(&intent) {
+			if polishIntentAlreadyQueued(dcur.PendingRetry, intent, flagged, newTexts) {
 				updated = &dcur
 				return nil
 			}
@@ -75,15 +79,34 @@ func RequestTaskPolish(ctx context.Context, db *gorm.DB, in RequestPolishInput, 
 		if dcur.Status != domain.StatusReview {
 			return fmt.Errorf("%w: task status is %q, want review", domain.ErrInvalidInput, dcur.Status)
 		}
+
+		if len(flagged) > 0 {
+			if err := checkliststore.ClearCompletionsForPolishInTx(tx, taskID, flagged, by); err != nil {
+				return err
+			}
+		}
+		newIDs, err := checkliststore.AddTextsInTx(tx, taskID, newTexts, by)
+		if err != nil {
+			return err
+		}
+		intent.FlaggedCriterionIDs = flagged
+		intent.NewCriterionIDs = newIDs
+		if err := intent.Validate(); err != nil {
+			return err
+		}
+
 		nextSeq, err := eventsaudit.NextEventSeq(tx, taskID)
 		if err != nil {
 			return err
 		}
-		payload, err := json.Marshal(map[string]string{
-			"kind":            string(intent.Kind),
-			"mode":            string(intent.Mode),
-			"parent_cycle_id": intent.ParentCycleID,
-			"instructions":    intent.Instructions,
+		payload, err := json.Marshal(map[string]any{
+			"kind":                  string(intent.Kind),
+			"mode":                  string(intent.Mode),
+			"parent_cycle_id":       intent.ParentCycleID,
+			"instructions":          intent.Instructions,
+			"flagged_criterion_ids": intent.FlaggedCriterionIDs,
+			"new_criterion_ids":     intent.NewCriterionIDs,
+			"skip_verify":           intent.SkipVerify,
 		})
 		if err != nil {
 			return err
@@ -116,6 +139,7 @@ func RequestTaskPolish(ctx context.Context, db *gorm.DB, in RequestPolishInput, 
 	return updated, origStatus, nil
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func resolvePolishParentCycleInTx(tx *gorm.DB, taskID, explicit string) (string, error) {
 	explicit = strings.TrimSpace(explicit)
 	if explicit != "" {
@@ -146,4 +170,87 @@ func resolvePolishParentCycleInTx(tx *gorm.DB, taskID, explicit string) (string,
 		}
 	}
 	return "", fmt.Errorf("%w: no succeeded cycle to polish from", domain.ErrInvalidInput)
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func normalizePolishIDList(ids []string) []string {
+	if len(ids) == 0 {
+		return nil
+	}
+	seen := make(map[string]struct{}, len(ids))
+	out := make([]string, 0, len(ids))
+	for _, raw := range ids {
+		id := strings.TrimSpace(raw)
+		if id == "" {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		out = append(out, id)
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func normalizePolishTextList(texts []string) []string {
+	if len(texts) == 0 {
+		return nil
+	}
+	out := make([]string, 0, len(texts))
+	for _, raw := range texts {
+		t := strings.TrimSpace(raw)
+		if t == "" {
+			continue
+		}
+		out = append(out, t)
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+// polishIntentAlreadyQueued reports whether a queued polish pending_retry matches
+// this request. New criterion texts cannot be re-inserted; match by instructions,
+// parent, flags, and new-ID count when texts are present.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func polishIntentAlreadyQueued(queued *domain.PendingRetry, intent domain.PendingRetry, flagged, newTexts []string) bool {
+	if queued == nil || queued.NormalizeKind() != domain.PendingKindPolish {
+		return false
+	}
+	probe := intent
+	probe.FlaggedCriterionIDs = flagged
+	if len(newTexts) == 0 {
+		probe.NewCriterionIDs = nil
+		if err := probe.Validate(); err != nil {
+			return false
+		}
+		return queued.Equal(&probe)
+	}
+	if queued.ParentCycleID != intent.ParentCycleID ||
+		strings.TrimSpace(queued.Instructions) != strings.TrimSpace(intent.Instructions) ||
+		!stringSlicesEqual(queued.FlaggedCriterionIDs, flagged) ||
+		len(queued.NewCriterionIDs) != len(newTexts) {
+		return false
+	}
+	return true
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func stringSlicesEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }

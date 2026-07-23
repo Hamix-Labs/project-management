@@ -174,10 +174,19 @@ function useTaskDetailPolishMutation(
   return useMutation<
     unknown,
     unknown,
-    string,
+    {
+      instructions: string;
+      flaggedCriterionIds: string[];
+      newCriteria: string[];
+    },
     { prev: Task | undefined; startedAtMs: number; guarded: boolean }
   >({
-    mutationFn: (instructions) => polishTask(taskId, { instructions }),
+    mutationFn: (input) =>
+      polishTask(taskId, {
+        instructions: input.instructions,
+        flagged_criterion_ids: input.flaggedCriterionIds,
+        new_criteria: input.newCriteria,
+      }),
     onMutate: async () => {
       const guard = beginGuardedTaskWrite({
         taskId,
@@ -221,6 +230,7 @@ function useTaskDetailPolishMutation(
         { scope: "listStats" },
         { scope: "detail", taskId },
         { scope: "events", taskId },
+        { scope: "checklist", taskId },
       );
       if (context) {
         rumMutationSettled(

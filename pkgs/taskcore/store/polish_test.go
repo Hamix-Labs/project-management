@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
+	checkliststore "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/store"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
@@ -177,5 +178,78 @@ func TestRequestTaskPolish_rejectsFailedParentCycle(t *testing.T) {
 	}, domain.ActorUser)
 	if !errors.Is(err, domain.ErrInvalidInput) {
 		t.Fatalf("err = %v, want ErrInvalidInput", err)
+	}
+}
+
+func TestRequestTaskPolish_flagsAndNewCriteria(t *testing.T) {
+	t.Parallel()
+	db := tasktestdb.OpenSQLite(t)
+	st := taskcorestore.NewStore(db)
+	cycles := cyclesstore.NewStore(db)
+	checklist := checkliststore.NewStore(db)
+	ctx := context.Background()
+
+	task, _ := mustReviewTaskWithSucceededCycle(t, st, cycles)
+	itemA, err := checklist.AddChecklistItem(ctx, task.ID, "Auth works", nil, domain.ActorUser)
+	if err != nil {
+		t.Fatal(err)
+	}
+	itemB, err := checklist.AddChecklistItem(ctx, task.ID, "Tests pass", nil, domain.ActorUser)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := checklist.SetChecklistItemDone(ctx, task.ID, itemA.ID, true, domain.ActorAgent); err != nil {
+		t.Fatal(err)
+	}
+	if err := checklist.SetChecklistItemDone(ctx, task.ID, itemB.ID, true, domain.ActorAgent); err != nil {
+		t.Fatal(err)
+	}
+
+	updated, _, err := st.RequestTaskPolish(ctx, taskcorestore.RequestPolishInput{
+		TaskID:              task.ID,
+		Instructions:        "fix auth",
+		FlaggedCriterionIDs: []string{itemA.ID},
+		NewCriteria:         []string{"Docs updated"},
+	}, domain.ActorUser)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pr := updated.PendingRetry
+	if pr == nil || pr.SkipVerify || len(pr.FlaggedCriterionIDs) != 1 || pr.FlaggedCriterionIDs[0] != itemA.ID {
+		t.Fatalf("PendingRetry = %+v", pr)
+	}
+	if len(pr.NewCriterionIDs) != 1 {
+		t.Fatalf("NewCriterionIDs = %#v", pr.NewCriterionIDs)
+	}
+
+	items, err := checklist.ListChecklistForSubject(ctx, task.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(items) != 3 {
+		t.Fatalf("items = %d, want 3", len(items))
+	}
+	var aDone, bDone, newFound bool
+	for _, it := range items {
+		switch it.ID {
+		case itemA.ID:
+			aDone = it.Done
+		case itemB.ID:
+			bDone = it.Done
+		case pr.NewCriterionIDs[0]:
+			newFound = true
+			if it.Done {
+				t.Fatal("new criterion should not be done")
+			}
+		}
+	}
+	if aDone {
+		t.Fatal("flagged criterion should be reopened")
+	}
+	if !bDone {
+		t.Fatal("unflagged criterion should stay done")
+	}
+	if !newFound {
+		t.Fatal("new criterion missing")
 	}
 }

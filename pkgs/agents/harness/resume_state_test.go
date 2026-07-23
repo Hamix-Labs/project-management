@@ -69,14 +69,35 @@ func TestAppendResumeNotice_andCommitPolicy(t *testing.T) {
 			t.Fatalf("operator retry notice missing %q in %q", frag, opRetry)
 		}
 	}
-	polish := prompt.AppendPolishNotice("base", cycle, "tighten spacing", known)
-	for _, frag := range []string{"Human polish", "cycle-1", "tighten spacing", "abc123def456", "base"} {
+	polish := prompt.AppendPolishNotice("base", cycle, prompt.PolishNoticeInput{
+		Instructions: "tighten spacing",
+		KnownCommits: known,
+		SkipVerify:   true,
+	})
+	for _, frag := range []string{"Human polish", "cycle-1", "tighten spacing", "abc123def456", "base", "skip the verify agent"} {
 		if !containsSubstr(polish, frag) {
 			t.Fatalf("polish notice missing %q in %q", frag, polish)
 		}
 	}
 	if containsSubstr(polish, "resume from failure") {
 		t.Fatalf("polish notice must not use failure-resume wording: %q", polish)
+	}
+	selective := prompt.AppendPolishNotice("base", cycle, prompt.PolishNoticeInput{
+		Instructions: "fix auth",
+		Flagged:      []prompt.PolishCriterion{{ID: "c1", Text: "Auth works"}},
+		New:          []prompt.PolishCriterion{{ID: "c3", Text: "Docs updated"}},
+	})
+	for _, frag := range []string{
+		"Human-flagged incorrect criteria", "[c1] Auth works",
+		"Newly added criteria", "[c3] Docs updated",
+		"independent verify agent", "fix auth",
+	} {
+		if !containsSubstr(selective, frag) {
+			t.Fatalf("selective polish notice missing %q in %q", frag, selective)
+		}
+	}
+	if containsSubstr(selective, "skip the verify agent") {
+		t.Fatalf("selective polish must not skip verify: %q", selective)
 	}
 	dir := t.TempDir()
 	initGitRepoForDiffTest(t, dir)

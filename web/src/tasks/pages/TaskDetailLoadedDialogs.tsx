@@ -1,4 +1,6 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { errorMessage } from "@/lib/errorMessage";
+import type { TaskChecklistResponse } from "@/types";
 import { TaskModelConfigModal } from "../components/task-detail";
 import {
   AutonomyConfirmDialog,
@@ -6,6 +8,7 @@ import {
   TaskPolishDialog,
   TaskRetryConfirmDialog,
 } from "../components/dialogs";
+import { taskQueryKeys } from "../task-query";
 import type { TaskDetailLoadedViewProps } from "./TaskDetailLoadedView";
 
 type TaskDetailLoadedDialogsProps = Pick<
@@ -51,6 +54,12 @@ export function TaskDetailLoadedDialogs({
   setModelConfigOpen,
 }: TaskDetailLoadedDialogsProps) {
   const autonomyEnable = autonomyMode === "on_hold";
+  const queryClient = useQueryClient();
+  const checklist = queryClient.getQueryData<TaskChecklistResponse>(
+    taskQueryKeys.checklist(task.id),
+  );
+  const polishCriteria =
+    checklist?.items.map((item) => ({ id: item.id, text: item.text })) ?? [];
 
   return (
     <>
@@ -127,6 +136,7 @@ export function TaskDetailLoadedDialogs({
           worktreeId={task.worktree_id}
           projectId={task.project_id}
           projectContextItemIds={task.project_context_item_ids}
+          criteria={polishCriteria}
           saving={saving}
           pending={polishMutation.isPending}
           error={
@@ -138,7 +148,7 @@ export function TaskDetailLoadedDialogs({
             setPolishDialogOpen(false);
             if (polishMutation.isError) polishMutation.reset();
           }}
-          onConfirm={(instructions) => polishMutation.mutate(instructions)}
+          onConfirm={(payload) => polishMutation.mutate(payload)}
         />
       ) : null}
 

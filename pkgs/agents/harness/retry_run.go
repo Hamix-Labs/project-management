@@ -16,6 +16,9 @@ type startCycleOpts struct {
 	retryMode     taskcoredomain.RetryMode
 	runKind       taskcoredomain.PendingRunKind
 	instructions  string
+	flaggedIDs    []string
+	newIDs        []string
+	skipVerify    bool
 }
 
 // RunWithRetry starts a new cycle. intent==nil is the existing first-run path.
@@ -109,7 +112,8 @@ func (h *Harness) runResumeRetry(parentCtx context.Context, task *taskcoredomain
 }
 
 // runPolish starts a new attempt from a succeeded parent: always execute (never
-// verify-only), Cursor session resume via retry_mode=resume, polish prompts.
+// verify-only). Cursor session resume via retry_mode=resume. When the operator
+// flagged or added criteria, seed locked passes and run verify; otherwise skip verify.
 func (h *Harness) runPolish(parentCtx context.Context, task *taskcoredomain.Task, intent *taskcoredomain.PendingRetry) {
 	cp, err := h.loadCheckpointFromParent(parentCtx, intent.ParentCycleID)
 	if err != nil {
@@ -120,9 +124,20 @@ func (h *Harness) runPolish(parentCtx context.Context, task *taskcoredomain.Task
 		return
 	}
 	startedAt := h.opts.Clock()
+	previouslyPassed := map[string]criterionVerdict{}
+	if !intent.SkipVerify {
+		previouslyPassed, err = h.seedPolishPreviouslyPassed(parentCtx, task.ID, intent.FlaggedCriterionIDs, intent.NewCriterionIDs)
+		if err != nil {
+			slog.Warn("agent harness polish seed previouslyPassed failed", "cmd", calltrace.LogCmd,
+				"operation", "agent.harness.Harness.runPolish.seed_err",
+				"task_id", task.ID, "err", err)
+			h.resumeSvc().FailTaskAfterRetryPrep(parentCtx, task.ID, "retry_checkpoint_failed")
+			return
+		}
+	}
 	state := processState{
 		cycle:  cycleLifecycleState{startedAt: startedAt},
-		verify: verifyLifecycleState{previouslyPassed: map[string]criterionVerdict{}},
+		verify: verifyLifecycleState{previouslyPassed: previouslyPassed},
 	}
 	defer h.recoverFromPanic(&state, *task)
 
@@ -132,6 +147,9 @@ func (h *Harness) runPolish(parentCtx context.Context, task *taskcoredomain.Task
 		retryMode:     taskcoredomain.RetryResume,
 		runKind:       taskcoredomain.PendingKindPolish,
 		instructions:  intent.Instructions,
+		flaggedIDs:    intent.FlaggedCriterionIDs,
+		newIDs:        intent.NewCriterionIDs,
+		skipVerify:    intent.SkipVerify,
 	})
 	if !ok {
 		h.bestEffortFailTask(parentCtx, task.ID)
@@ -149,7 +167,39 @@ func (h *Harness) runPolish(parentCtx context.Context, task *taskcoredomain.Task
 	h.runCycleLoop(parentCtx, task, cycle, &state, cycleLoopOpts{
 		resumeNotice: true,
 		knownCommits: cp.KnownCommits,
+		skipVerify:   intent.SkipVerify,
 	})
+}
+
+func (h *Harness) seedPolishPreviouslyPassed(ctx context.Context, taskID string, flagged, newIDs []string) (map[string]criterionVerdict, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.seedPolishPreviouslyPassed", "task_id", taskID)
+	reopen := make(map[string]struct{}, len(flagged)+len(newIDs))
+	for _, id := range flagged {
+		reopen[id] = struct{}{}
+	}
+	for _, id := range newIDs {
+		reopen[id] = struct{}{}
+	}
+	items, err := h.store.ListChecklistForSubject(ctx, taskID)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]criterionVerdict, len(items))
+	for _, it := range items {
+		if _, ok := reopen[it.ID]; ok {
+			continue
+		}
+		if !it.Done {
+			continue
+		}
+		out[it.ID] = criterionVerdict{
+			ID:        it.ID,
+			Passed:    true,
+			Evidence:  it.Evidence,
+			Reasoning: it.VerifierReasoning,
+		}
+	}
+	return out, nil
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."

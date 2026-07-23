@@ -50,7 +50,65 @@ describe("TaskPolishDialog", () => {
       "  tighten spacing  ",
     );
     await user.click(screen.getByRole("button", { name: /^polish$/i }));
-    expect(onConfirm).toHaveBeenCalledWith("  tighten spacing  ");
+    expect(onConfirm).toHaveBeenCalledWith({
+      instructions: "  tighten spacing  ",
+      flaggedCriterionIds: [],
+      newCriteria: [],
+    });
+  });
+
+  it("keeps submit disabled when only flags or drafts are present", async () => {
+    const user = userEvent.setup();
+    const onConfirm = vi.fn();
+    render(
+      <TaskPolishDialog
+        saving={false}
+        pending={false}
+        criteria={[{ id: "c1", text: "Auth works" }]}
+        onCancel={vi.fn()}
+        onConfirm={onConfirm}
+      />,
+    );
+    await user.click(screen.getByLabelText(/auth works/i));
+    expect(screen.getByRole("button", { name: /^polish$/i })).toBeDisabled();
+    await user.type(screen.getByPlaceholderText(/new criterion/i), "Docs");
+    await user.click(screen.getByRole("button", { name: /^add$/i }));
+    expect(screen.getByRole("button", { name: /^polish$/i })).toBeDisabled();
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+
+  it("includes flagged and new criteria in the confirm payload", async () => {
+    const user = userEvent.setup();
+    const onConfirm = vi.fn();
+    render(
+      <TaskPolishDialog
+        saving={false}
+        pending={false}
+        criteria={[
+          { id: "c1", text: "Auth works" },
+          { id: "c2", text: "Tests pass" },
+        ]}
+        onCancel={vi.fn()}
+        onConfirm={onConfirm}
+      />,
+    );
+
+    expect(
+      screen.getByText(/were any of these not done correctly/i),
+    ).toBeInTheDocument();
+    await user.click(screen.getByLabelText(/auth works/i));
+    await user.type(screen.getByPlaceholderText(/new criterion/i), "Docs updated");
+    await user.click(screen.getByRole("button", { name: /^add$/i }));
+    await user.type(
+      screen.getByLabelText(/instructions/i),
+      "fix the auth flow",
+    );
+    await user.click(screen.getByRole("button", { name: /^polish$/i }));
+    expect(onConfirm).toHaveBeenCalledWith({
+      instructions: "fix the auth flow",
+      flaggedCriterionIds: ["c1"],
+      newCriteria: ["Docs updated"],
+    });
   });
 
   it("uses a wide modal shell for the rich instructions editor", () => {

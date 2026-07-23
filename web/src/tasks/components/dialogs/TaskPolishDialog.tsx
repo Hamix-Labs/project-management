@@ -5,18 +5,30 @@ import { isUiFeatureOmitted } from "@/launch/omittedFeatures";
 import { promptHasVisibleContent } from "@/lib/promptFormat";
 import { Modal } from "@/shared/Modal";
 import { MutationErrorBanner } from "@/shared/MutationErrorBanner";
+import { TaskPolishAddCriteria } from "./TaskPolishAddCriteria";
+import { TaskPolishCriteriaList } from "./TaskPolishCriteriaList";
+
+export type PolishCriterionOption = {
+  id: string;
+  text: string;
+};
+
+export type PolishConfirmPayload = {
+  instructions: string;
+  flaggedCriterionIds: string[];
+  newCriteria: string[];
+};
 
 type Props = {
-  /** Scopes @ file mentions to the task worktree (same as create-task prompt). */
   worktreeId?: string;
-  /** When set, enables # project-context mentions like create-task. */
   projectId?: string;
   projectContextItemIds?: string[];
+  criteria?: PolishCriterionOption[];
   saving: boolean;
   pending: boolean;
   error?: string | null;
   onCancel: () => void;
-  onConfirm: (instructions: string) => void;
+  onConfirm: (payload: PolishConfirmPayload) => void;
 };
 
 function SparkleGlyph({ size = 16 }: { size?: number }) {
@@ -60,6 +72,7 @@ export function TaskPolishDialog({
   worktreeId,
   projectId = "",
   projectContextItemIds = [],
+  criteria = [],
   saving,
   pending,
   error = null,
@@ -70,7 +83,12 @@ export function TaskPolishDialog({
   const descriptionId = useId();
   const instructionsId = useId();
   const instructionsLabelId = `${instructionsId}-label`;
+  const flaggedHeadingId = useId();
+  const addHeadingId = useId();
   const [instructions, setInstructions] = useState("");
+  const [flaggedIds, setFlaggedIds] = useState<Set<string>>(() => new Set());
+  const [newDraft, setNewDraft] = useState("");
+  const [newCriteria, setNewCriteria] = useState<string[]>([]);
   const [selectedContextIds, setSelectedContextIds] = useState(
     projectContextItemIds,
   );
@@ -83,6 +101,22 @@ export function TaskPolishDialog({
   const canSubmit =
     promptHasVisibleContent(instructions) && !saving && !pending;
   const controlsDisabled = saving || pending;
+
+  function toggleFlagged(id: string) {
+    setFlaggedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function addNewCriterion() {
+    const text = newDraft.trim();
+    if (!text) return;
+    setNewCriteria((prev) => [...prev, text]);
+    setNewDraft("");
+  }
 
   return (
     <Modal
@@ -122,6 +156,25 @@ export function TaskPolishDialog({
         </header>
 
         <div className="task-polish-dialog__body">
+          <TaskPolishCriteriaList
+            criteria={criteria}
+            flaggedIds={flaggedIds}
+            disabled={controlsDisabled}
+            headingId={flaggedHeadingId}
+            onToggle={toggleFlagged}
+          />
+          <TaskPolishAddCriteria
+            headingId={addHeadingId}
+            newCriteria={newCriteria}
+            draft={newDraft}
+            disabled={controlsDisabled}
+            onDraftChange={setNewDraft}
+            onAdd={addNewCriterion}
+            onRemove={(index) =>
+              setNewCriteria((prev) => prev.filter((_, i) => i !== index))
+            }
+          />
+
           <div className="task-polish-dialog__label-row">
             <label
               id={instructionsLabelId}
@@ -166,7 +219,13 @@ export function TaskPolishDialog({
               type="button"
               className="primary task-polish-dialog__submit"
               disabled={!canSubmit}
-              onClick={() => onConfirm(instructions)}
+              onClick={() =>
+                onConfirm({
+                  instructions,
+                  flaggedCriterionIds: Array.from(flaggedIds),
+                  newCriteria,
+                })
+              }
             >
               {pending ? (
                 "Queueing…"
