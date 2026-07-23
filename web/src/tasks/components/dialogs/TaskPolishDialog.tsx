@@ -3,7 +3,6 @@ import { RichPromptEditor } from "@/components/rich-prompt";
 import { useProjectContextPromptBinding } from "@/hooks/useProjectContextPromptBinding";
 import { isUiFeatureOmitted } from "@/launch/omittedFeatures";
 import { promptHasVisibleContent } from "@/lib/promptFormat";
-import { FieldLabel } from "@/shared/FieldLabel";
 import { Modal } from "@/shared/Modal";
 import { MutationErrorBanner } from "@/shared/MutationErrorBanner";
 
@@ -20,6 +19,43 @@ type Props = {
   onConfirm: (instructions: string) => void;
 };
 
+function SparkleGlyph({ size = 16 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M8 2.25L9.35 6.4 13.5 7.75 9.35 9.1 8 13.25 6.65 9.1 2.5 7.75 6.65 6.4z" />
+      <path d="M12.5 2.25v2" />
+      <path d="M11.5 3.25h2" />
+    </svg>
+  );
+}
+
+function CloseGlyph() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
+      <path d="M4 4l8 8M12 4l-8 8" />
+    </svg>
+  );
+}
+
 export function TaskPolishDialog({
   worktreeId,
   projectId = "",
@@ -33,6 +69,7 @@ export function TaskPolishDialog({
   const titleId = useId();
   const descriptionId = useId();
   const instructionsId = useId();
+  const instructionsLabelId = `${instructionsId}-label`;
   const [instructions, setInstructions] = useState("");
   const [selectedContextIds, setSelectedContextIds] = useState(
     projectContextItemIds,
@@ -58,54 +95,90 @@ export function TaskPolishDialog({
       dismissibleWhileBusy
     >
       <section className="panel modal-sheet task-polish-dialog">
-        <h2 id={titleId}>Polish this task?</h2>
-        <p className="task-polish-dialog__footnote" id={descriptionId}>
-          Starts a new attempt that resumes the existing agent conversation.
-          The task returns to awaiting review when the new attempt finishes.
-        </p>
-        <div className="field">
-          <FieldLabel
-            id={`${instructionsId}-label`}
-            htmlFor={instructionsId}
-            requirement="required"
+        <header className="task-polish-dialog__header">
+          <div className="task-polish-dialog__header-main">
+            <span className="task-polish-dialog__badge" aria-hidden="true">
+              <SparkleGlyph size={16} />
+            </span>
+            <div className="task-polish-dialog__title-block">
+              <h2 id={titleId} className="task-polish-dialog__title">
+                Polish this task
+              </h2>
+              <p className="task-polish-dialog__blurb" id={descriptionId}>
+                Resume the existing agent conversation with new instructions.
+                The task returns to awaiting review when the polish finishes.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="task-polish-dialog__close"
+            aria-label="Close"
+            disabled={saving}
+            onClick={onCancel}
           >
-            Instructions
-          </FieldLabel>
+            <CloseGlyph />
+          </button>
+        </header>
+
+        <div className="task-polish-dialog__body">
+          <div className="task-polish-dialog__label-row">
+            <label
+              id={instructionsLabelId}
+              htmlFor={instructionsId}
+              className="task-polish-dialog__label"
+            >
+              Instructions
+            </label>
+            <span className="task-polish-dialog__hint">
+              Type <kbd>@</kbd> to reference files
+            </span>
+          </div>
           <div className="task-create-editor-shell">
             <RichPromptEditor
               id={instructionsId}
               value={instructions}
               onChange={setInstructions}
               disabled={controlsDisabled}
-              placeholder={
-                promptProjectContext
-                  ? "What should the agent change? Type @ for a repo file, # for project context…"
-                  : "What should the agent change? Type @ to mention a repo file…"
-              }
+              placeholder="Describe what to refine — tighten the copy, fix edge cases, improve tests…"
               worktreeId={worktreeId?.trim() || undefined}
               projectContext={promptProjectContext ?? undefined}
             />
           </div>
         </div>
+
         <MutationErrorBanner error={error} className="task-polish-dialog__err" />
-        <div className="row stack-row-actions">
-          <button
-            type="button"
-            className="secondary"
-            onClick={onCancel}
-            disabled={saving}
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            className="primary"
-            disabled={!canSubmit}
-            onClick={() => onConfirm(instructions)}
-          >
-            {pending ? "Queueing…" : "Polish"}
-          </button>
-        </div>
+
+        <footer className="task-polish-dialog__footer">
+          <span className="task-polish-dialog__esc-hint" aria-hidden="true">
+            <kbd>Esc</kbd> to cancel
+          </span>
+          <div className="task-polish-dialog__actions">
+            <button
+              type="button"
+              className="secondary task-polish-dialog__cancel"
+              onClick={onCancel}
+              disabled={saving}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="primary task-polish-dialog__submit"
+              disabled={!canSubmit}
+              onClick={() => onConfirm(instructions)}
+            >
+              {pending ? (
+                "Queueing…"
+              ) : (
+                <>
+                  <SparkleGlyph size={16} />
+                  Polish
+                </>
+              )}
+            </button>
+          </div>
+        </footer>
       </section>
     </Modal>
   );

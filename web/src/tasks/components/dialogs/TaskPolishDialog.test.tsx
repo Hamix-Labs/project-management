@@ -64,4 +64,33 @@ describe("TaskPolishDialog", () => {
     );
     expect(screen.getByRole("dialog")).toHaveClass("modal-shell--wide");
   });
+
+  it("renders inspiration chrome: title, close, @ hint, and Esc affordance", async () => {
+    const user = userEvent.setup();
+    const onCancel = vi.fn();
+    render(
+      <TaskPolishDialog
+        saving={false}
+        pending={false}
+        onCancel={onCancel}
+        onConfirm={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByRole("heading", { name: /^polish this task$/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/resume the existing agent conversation/i),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/type/i).closest(".task-polish-dialog__hint")).toHaveTextContent(
+      "Type @ to reference files",
+    );
+    expect(screen.getByText(/esc/i).closest(".task-polish-dialog__esc-hint")).toHaveTextContent(
+      "Esc to cancel",
+    );
+
+    await user.click(screen.getByRole("button", { name: /^close$/i }));
+    expect(onCancel).toHaveBeenCalledOnce();
+  });
 });

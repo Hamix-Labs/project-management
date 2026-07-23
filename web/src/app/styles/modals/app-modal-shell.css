@@ -53,6 +53,10 @@
   width: min(100%, 42rem);
 }
 
+.modal-shell--wide:has(.task-polish-dialog) {
+  width: min(100%, 36rem);
+}
+
 .modal-shell--wide:has(.task-create-modal-sheet.task-create) {
   width: min(100%, 52rem);
 }
