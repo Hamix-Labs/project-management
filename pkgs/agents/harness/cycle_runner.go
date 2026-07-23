@@ -119,6 +119,10 @@ func (h *Harness) invokeRunner(parentCtx context.Context, task *taskcoredomain.T
 	return h.invokeRunnerWithDecision(parentCtx, task, cycle, exec, cyclesdomain.PhaseExecute, task.CursorModel, decision)
 }
 
+// progressPersistTimeout bounds AppendCycleStreamEvent after detaching the
+// caller's cancel/deadline so a wedged DB cannot hang the harness on shutdown.
+const progressPersistTimeout = 5 * time.Second
+
 func (h *Harness) persistProgress(ctx context.Context, taskID, cycleID string, phaseSeq int64, ev runner.ProgressEvent) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.persistProgress",
 		"task_id", taskID, "cycle_id", cycleID, "phase_seq", phaseSeq,
@@ -137,7 +141,12 @@ func (h *Harness) persistProgress(ctx context.Context, taskID, cycleID string, p
 			payload = []byte("{}")
 		}
 	}
-	if _, err := h.store.AppendCycleStreamEvent(ctx, cyclesstore.AppendCycleStreamEventInput{
+	// Progress is best-effort observability and must outlive the work context
+	// that produced it (kill timers, run timeouts). Detach cancellation but
+	// keep values (trace/correlation); bound the write so shutdown cannot leak.
+	writeCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), progressPersistTimeout)
+	defer cancel()
+	if _, err := h.store.AppendCycleStreamEvent(writeCtx, cyclesstore.AppendCycleStreamEventInput{
 		TaskID:   taskID,
 		CycleID:  cycleID,
 		PhaseSeq: phaseSeq,

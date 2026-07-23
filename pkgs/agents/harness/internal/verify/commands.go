@@ -169,9 +169,16 @@ func (s *Service) emitCommandProgress(
 
 // startCommandProgressHeartbeat emits "running" events until stop is closed.
 //
+// progressCtx is the run lifetime (parent/worker cancel or stop after Wait).
+// It must NOT be the per-command kill timer: observability outlives a kill
+// attempt because Wait can still block (e.g. Windows process trees).
+// execCtx is the kill timer only; when it expires while Wait is still
+// outstanding, one boundary event is emitted and heartbeats continue.
+//
 //funclogmeasure:skip category=hot-path reason="Goroutine helper; progress traces via PersistProgress."
 func (s *Service) startCommandProgressHeartbeat(
-	ctx context.Context,
+	progressCtx context.Context,
+	execCtx context.Context,
 	taskID, cycleID string,
 	phaseSeq int64,
 	commandLabel, criterionID string,
@@ -187,15 +194,26 @@ func (s *Service) startCommandProgressHeartbeat(
 	go func() {
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
+		var execDone <-chan struct{}
+		if execCtx != nil {
+			execDone = execCtx.Done()
+		}
 		for {
 			select {
 			case <-done:
 				return
-			case <-ctx.Done():
+			case <-progressCtx.Done():
 				return
+			case <-execDone:
+				execDone = nil
+				elapsed := s.clock().Sub(started)
+				s.emitCommandProgress(progressCtx, taskID, cycleID, phaseSeq, "running",
+					fmt.Sprintf("Timed out waiting for: %s (%s); still waiting for process exit",
+						commandLabel, formatProgressElapsed(elapsed)),
+					criterionID, commandSeq, command)
 			case <-ticker.C:
 				elapsed := s.clock().Sub(started)
-				s.emitCommandProgress(ctx, taskID, cycleID, phaseSeq, "running",
+				s.emitCommandProgress(progressCtx, taskID, cycleID, phaseSeq, "running",
 					fmt.Sprintf("Running: %s (%s)", commandLabel, formatProgressElapsed(elapsed)),
 					criterionID, commandSeq, command)
 			}
@@ -243,16 +261,19 @@ func (s *Service) RunCriterionCommands(
 			metaPath := base + ".meta.json"
 
 			commandLabel := truncateProgressCommand(cmd.Command)
-			s.emitCommandProgress(parentCtx, taskID, cycleID, phaseSeq, "started",
+			// progressCtx: run lifetime for live/durable updates (outlives kill attempts).
+			// execCtx: per-command kill timer only — never used for progress emission.
+			progressCtx := parentCtx
+			s.emitCommandProgress(progressCtx, taskID, cycleID, phaseSeq, "started",
 				fmt.Sprintf("Running: %s", commandLabel),
 				it.ID, seq, cmd.Command)
 
-			cmdCtx, cancel := context.WithTimeout(parentCtx, timeout)
+			execCtx, cancel := context.WithTimeout(parentCtx, timeout)
 			started := s.clock()
 			stopHeartbeat := s.startCommandProgressHeartbeat(
-				cmdCtx, taskID, cycleID, phaseSeq, commandLabel, it.ID, seq, cmd.Command, started,
+				progressCtx, execCtx, taskID, cycleID, phaseSeq, commandLabel, it.ID, seq, cmd.Command, started,
 			)
-			stdout, stderr, exitCode, runErr := execFn(cmdCtx, s.workingDir, cmd.Command)
+			stdout, stderr, exitCode, runErr := execFn(execCtx, s.workingDir, cmd.Command)
 			stopHeartbeat()
 			cancel()
 			durationMS := s.clock().Sub(started).Milliseconds()
@@ -295,7 +316,7 @@ func (s *Service) RunCriterionCommands(
 				doneSubtype = "failed"
 				doneMsg = fmt.Sprintf("Failed: %s (exit %d, %s)", commandLabel, exitCode, formatProgressElapsed(time.Duration(durationMS)*time.Millisecond))
 			}
-			s.emitCommandProgress(parentCtx, taskID, cycleID, phaseSeq, doneSubtype, doneMsg, it.ID, seq, cmd.Command)
+			s.emitCommandProgress(progressCtx, taskID, cycleID, phaseSeq, doneSubtype, doneMsg, it.ID, seq, cmd.Command)
 
 			ev := CommandEvidence{
 				CriterionID:     it.ID,

@@ -205,6 +205,118 @@ func TestRunCriterionCommands_emitsLiveProgress(t *testing.T) {
 	}
 }
 
+func TestRunCriterionCommands_heartbeatsContinuePastExecTimeout(t *testing.T) {
+	// Not parallel: mutates package-level commandProgressHeartbeat.
+	prevHeartbeat := commandProgressHeartbeat
+	commandProgressHeartbeat = 25 * time.Millisecond
+	t.Cleanup(func() { commandProgressHeartbeat = prevHeartbeat })
+
+	st := storefake.New(t).API
+	ctx := context.Background()
+
+	task, err := st.Create(ctx, taskcorestore.CreateTaskInput{
+		Title:         "verify-cmd-past-timeout",
+		InitialPrompt: "do work",
+		Status:        taskcoredomain.StatusReady,
+		Priority:      taskcoredomain.PriorityMedium,
+		ChecklistItems: []checklistcontract.CreateChecklistItemInput{{
+			Text: "tests pass",
+			VerifyCommands: []checklistcontract.VerifyCommandInput{{
+				Command:         "slow-check",
+				ExpectedOutcome: "Exit code 0.",
+			}},
+		}},
+	}, taskcoredomain.ActorUser)
+	if err != nil {
+		t.Fatal(err)
+	}
+	items, err := st.ListChecklistForVerify(ctx, task.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var mu sync.Mutex
+	var events []runner.ProgressEvent
+	svc := NewService(Deps{
+		Store:      st,
+		Runner:     runnerfake.New(),
+		ReportDir:  t.TempDir(),
+		WorkingDir: t.TempDir(),
+		Hooks: Hooks{
+			PersistProgress: func(ctx context.Context, taskID, cycleID string, phaseSeq int64, ev runner.ProgressEvent) {
+				mu.Lock()
+				events = append(events, ev)
+				mu.Unlock()
+			},
+		},
+	})
+
+	selfReport := map[string]reports.CriteriaEntry{
+		items[0].ID: {ClaimedDone: true, Evidence: "done"},
+	}
+	// Kill timer fires quickly; execFn ignores ctx and keeps blocking (Wait outliving kill).
+	const execTimeoutSec = 1
+	snap := Snapshot{
+		VerifyCommandTimeoutSeconds: execTimeoutSec,
+		Criteria:                    items,
+	}
+
+	timeoutFired := make(chan struct{})
+	_, err = svc.RunCriterionCommands(ctx, task.ID, "cycle-past-timeout", 2, 1, snap, selfReport,
+		func(cmdCtx context.Context, dir, command string) ([]byte, []byte, int, error) {
+			select {
+			case <-cmdCtx.Done():
+				close(timeoutFired)
+			case <-time.After(2 * time.Second):
+				t.Fatal("execCtx did not cancel within 2s")
+			}
+			// Keep Wait outstanding past the kill timer so progress must outlive execCtx.
+			time.Sleep(80 * time.Millisecond)
+			return []byte("late\n"), nil, 1, nil
+		})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+	if len(events) < 3 {
+		t.Fatalf("want started + timeout/running + failed, got %d: %+v", len(events), events)
+	}
+	if events[0].Subtype != "started" {
+		t.Fatalf("first event = %+v", events[0])
+	}
+	sawTimeoutBoundary := false
+	sawPostTimeoutHeartbeat := false
+	for _, ev := range events[1 : len(events)-1] {
+		if ev.Subtype != "running" {
+			continue
+		}
+		if strings.Contains(ev.Message, "Timed out waiting for:") {
+			sawTimeoutBoundary = true
+			continue
+		}
+		if sawTimeoutBoundary && strings.Contains(ev.Message, "Running: slow-check") {
+			sawPostTimeoutHeartbeat = true
+		}
+	}
+	if !sawTimeoutBoundary {
+		t.Fatalf("missing timeout-boundary progress in %+v", events)
+	}
+	if !sawPostTimeoutHeartbeat {
+		t.Fatalf("missing heartbeat after exec timeout in %+v", events)
+	}
+	last := events[len(events)-1]
+	if last.Subtype != "failed" || !strings.Contains(last.Message, "Failed:") {
+		t.Fatalf("last event = %+v", last)
+	}
+	select {
+	case <-timeoutFired:
+	default:
+		t.Fatal("execFn never observed execCtx cancellation")
+	}
+}
+
 func TestProgressStreamHelpers(t *testing.T) {
 	t.Parallel()
 	got := truncateProgressCommand(strings.Repeat("a", 200))
