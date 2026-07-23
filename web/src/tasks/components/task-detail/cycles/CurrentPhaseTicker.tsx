@@ -2,18 +2,19 @@ import { errorMessage } from "@/lib/errorMessage";
 import { useNow } from "@/shared/useNow";
 import { formatDurationSeconds } from "@/observability";
 import {
-  cycleStatusLabel,
-  cycleStatusFillClass,
-  cycleRunnerChipClass,
-  formatRunnerModel,
   phaseLabel,
   phaseStatusFillClass,
   phaseStatusLabel,
 } from "@/tasks/cycleDisplay/cyclesViewModel";
 import type { TaskCycle } from "@/types/cycle";
-import { useAgentRunProgress, type AgentRunProgressItem } from "../../../hooks/useAgentRunProgress";
+import {
+  useAgentRunProgress,
+  type AgentRunProgressItem,
+} from "../../../hooks/useAgentRunProgress";
 import { useTaskCycle } from "../../../hooks/useTaskCycles";
 import { formatCycleLineageLabel } from "../../../cycleDisplay/cycleLineage";
+import { CycleLiveCardHead } from "./CycleLiveCardHead";
+import { CycleLiveCardMeta } from "./CycleLiveCardMeta";
 import { CycleLiveProgressList } from "./CycleLiveProgressList";
 import {
   elapsedSeconds,
@@ -37,55 +38,45 @@ export function CurrentPhaseTicker({
   const now = useNow({ enabled: cycle.status === "running" });
   const lineage = formatCycleLineageLabel(cycle, cyclesById);
 
+  const runningPhase =
+    detailQuery.data != null
+      ? pickRunningPhase(detailQuery.data.phases)
+      : null;
+
   return (
     <div className="task-cycle-ticker" data-testid="task-cycle-ticker">
-      <div className="task-cycle-ticker-head">
-        <span className="cycle-live-dot" aria-hidden="true" />
-        <span className="task-cycle-ticker-eyebrow">Live</span>
-        <span
-          className={`cell-pill ${cycleStatusFillClass(cycle.status)}`}
-          data-testid="task-cycle-ticker-status"
-        >
-          {cycleStatusLabel(cycle.status)}
-        </span>
-      </div>
-      <CurrentPhaseLine
+      <CycleLiveCardHead
+        cycleStatus={cycle.status}
+        phaseName={
+          runningPhase ? phaseLabel(runningPhase.phase) : null
+        }
+        phaseElapsed={
+          runningPhase
+            ? formatDurationSeconds(
+                elapsedSeconds(runningPhase.started_at, now),
+              )
+            : null
+        }
+      />
+      <CurrentPhaseBody
         taskId={taskId}
         cycleId={cycle.id}
         detailQuery={detailQuery}
         now={now}
       />
-      <div className="task-cycle-ticker-meta">
-        <span className="task-cycle-ticker-attempt">
-          Attempt #{cycle.attempt_seq}
-          {lineage ? (
-            <span className="task-cycle-lineage muted"> · {lineage}</span>
-          ) : null}
-        </span>
-        <span className="task-cycle-ticker-meta-sep" aria-hidden="true">
-          ·
-        </span>
-        <span
-          className={`cell-pill ${cycleRunnerChipClass()}`}
-          data-testid="task-cycle-ticker-runner"
-        >
-          {formatRunnerModel(cycle.cycle_meta)}
-        </span>
-        <span className="task-cycle-ticker-meta-sep" aria-hidden="true">
-          ·
-        </span>
-        <span
-          className="task-cycle-ticker-elapsed"
-          data-testid="task-cycle-ticker-elapsed"
-        >
-          Started {formatDurationSeconds(elapsedSeconds(cycle.started_at, now))} ago
-        </span>
-      </div>
+      <CycleLiveCardMeta
+        attemptSeq={cycle.attempt_seq}
+        lineage={lineage}
+        cycleMeta={cycle.cycle_meta}
+        startedLabel={formatDurationSeconds(
+          elapsedSeconds(cycle.started_at, now),
+        )}
+      />
     </div>
   );
 }
 
-function CurrentPhaseLine({
+function CurrentPhaseBody({
   taskId,
   cycleId,
   detailQuery,
@@ -113,7 +104,8 @@ function CurrentPhaseLine({
         className="task-cycle-ticker-focus task-cycle-ticker-focus--error"
         data-testid="task-cycle-ticker-phase"
       >
-        Could not resolve current phase ({errorMessage(detailQuery.error, "unknown error")}).
+        Could not resolve current phase (
+        {errorMessage(detailQuery.error, "unknown error")}).
       </p>
     );
   }
@@ -132,39 +124,29 @@ function CurrentPhaseLine({
       );
     }
     return (
-      <p className="task-cycle-ticker-focus" data-testid="task-cycle-ticker-phase">
+      <p
+        className="task-cycle-ticker-focus"
+        data-testid="task-cycle-ticker-phase"
+      >
         Between phases · last:{" "}
         <span className={`cell-pill ${phaseStatusFillClass(lastPhase.status)}`}>
-          {phaseLabel(lastPhase.phase)} {phaseStatusLabel(lastPhase.status).toLowerCase()}
+          {phaseLabel(lastPhase.phase)}{" "}
+          {phaseStatusLabel(lastPhase.status).toLowerCase()}
         </span>
       </p>
     );
   }
+
   return (
-    <>
-      <div
-        className="task-cycle-ticker-focus task-cycle-ticker-focus--running"
-        data-testid="task-cycle-ticker-phase"
-      >
-        <span className="task-cycle-ticker-focus-label" aria-live="polite">
-          <span className={`cell-pill ${phaseStatusFillClass(runningPhase.status)}`}>
-            {phaseLabel(runningPhase.phase)}
-          </span>
-        </span>
-        <span className="task-cycle-ticker-focus-elapsed" aria-hidden="true">
-          {formatDurationSeconds(elapsedSeconds(runningPhase.started_at, now))}
-        </span>
-      </div>
-      <div className="task-cycle-ticker-feed">
-        <PhaseProgress
-          taskId={taskId}
-          cycleId={cycleId}
-          phaseSeq={runningPhase.phase_seq}
-          phase={runningPhase.phase}
-          now={now}
-        />
-      </div>
-    </>
+    <div className="task-cycle-ticker-feed">
+      <PhaseProgress
+        taskId={taskId}
+        cycleId={cycleId}
+        phaseSeq={runningPhase.phase_seq}
+        phase={runningPhase.phase}
+        now={now}
+      />
+    </div>
   );
 }
 

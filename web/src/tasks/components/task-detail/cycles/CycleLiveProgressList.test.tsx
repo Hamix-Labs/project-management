@@ -62,12 +62,15 @@ describe("CycleLiveProgressList", () => {
     expect(screen.getByRole("list", { name: /recent agent progress/i })).toBeInTheDocument();
   });
 
-  it("renders pending row when showPendingRow is true", () => {
+  it("renders pending Working row with relative time (no Last prefix)", () => {
     const items = [
       frame({ progress: { kind: "assistant", message: "Hi" } }, NOW - 2_000),
     ];
     render(<CycleLiveProgressList items={items} now={NOW} showPendingRow />);
-    expect(screen.getByLabelText(/waiting for the next agent update/i)).toBeInTheDocument();
-    expect(screen.getByText(/Last 2s ago/)).toBeInTheDocument();
+    const pending = screen.getByLabelText(/waiting for the next agent update/i);
+    expect(pending).toBeInTheDocument();
+    expect(pending).toHaveTextContent(/Working/i);
+    expect(pending).toHaveTextContent("2s ago");
+    expect(pending).not.toHaveTextContent(/Last 2s ago/);
   });
 });
