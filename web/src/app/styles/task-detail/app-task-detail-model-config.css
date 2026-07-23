@@ -101,14 +101,15 @@ a.task-create-agent-lock-notice-link:hover {
 }
 
 /* === Hero toolbar =====================================================
-   Schedule on the left, actions on the right. Top border separates the
-   action row from the git metadata card above (inspiration layout). */
+   Schedule (left) and actions (right) on one aligned row. Grid keeps
+   both columns on a shared baseline so the bar never reads as a wrap
+   pile of unrelated clusters. */
 .task-detail-toolbar {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: flex-end;
-  gap: var(--space-3) var(--space-4);
+  column-gap: var(--space-4);
+  row-gap: var(--space-3);
   margin-top: var(--space-5);
   margin-bottom: 0;
   padding-top: var(--space-5);
@@ -123,18 +124,17 @@ a.task-create-agent-lock-notice-link:hover {
 }
 
 .task-detail-toolbar > .task-detail-schedule {
-  flex: 1 1 auto;
-  min-width: min(100%, 12rem);
-  margin-right: auto;
+  min-width: 0;
 }
 
 .task-detail-toolbar > .task-detail-actions {
-  flex: 0 0 auto;
+  justify-self: end;
   flex-wrap: nowrap;
 }
 
 .task-detail-toolbar:not(:has(> .task-detail-schedule)) {
-  justify-content: flex-end;
+  grid-template-columns: 1fr;
+  justify-items: end;
 }
 
 /* The toolbar no longer carries a bottom hairline; the first section
@@ -143,21 +143,15 @@ a.task-create-agent-lock-notice-link:hover {
   padding-top: var(--space-6);
 }
 
-/* Narrow screens: collapse the two-column toolbar to a single column.
-   The action cluster slides under the facts and stretches edge-to-edge
-   so Edit/Delete remain reachable as full-width touch targets. */
+/* Narrow screens: stack facts above actions; keep actions right-aligned. */
 @media (max-width: 720px) {
   .task-detail-toolbar {
-    flex-direction: column;
-    align-items: stretch;
-    gap: var(--space-3);
-  }
-
-  .task-detail-toolbar > .task-detail-schedule {
-    margin-right: 0;
+    grid-template-columns: 1fr;
+    justify-items: stretch;
   }
 
   .task-detail-toolbar > .task-detail-actions {
+    justify-self: stretch;
     justify-content: flex-end;
     flex-wrap: wrap;
   }
