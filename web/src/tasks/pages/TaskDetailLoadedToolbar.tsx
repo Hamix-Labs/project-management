@@ -42,11 +42,6 @@ export function TaskDetailLoadedToolbar({
   return (
     <div className="task-detail-toolbar">
       <TaskDetailSchedule task={task} />
-      {inReview ? (
-        <p className="task-detail-review-hint muted" role="status">
-          Agents finished — approve or request polish.
-        </p>
-      ) : null}
       <TaskDetailToolbarActions
         saving={saving}
         canEdit={canEditTask(task.status)}
