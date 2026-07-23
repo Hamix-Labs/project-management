@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/reports"
+	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/adapterkit"
 	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 )
@@ -21,6 +22,16 @@ import (
 const maxCommandOutputBytes = 256 * 1024
 
 const inlineCommandPreviewLines = 40
+
+// ProgressToolVerifyCommand is the ProgressEvent.Tool value for worker-executed
+// checklist verify commands (live ticker + durable stream).
+const ProgressToolVerifyCommand = "verify_command"
+
+const maxProgressCommandChars = 120
+
+// commandProgressHeartbeat is the interval between "running" progress events
+// while a verify shell command blocks. Tests may shorten this.
+var commandProgressHeartbeat = 5 * time.Second
 
 // CommandEvidence captures one verify-phase command run for LLM prompt and audit.
 type CommandEvidence struct {
@@ -101,17 +112,111 @@ func defaultShellExec(ctx context.Context, dir, command string) ([]byte, []byte,
 	return adapterkit.DefaultExec(ctx, dir, os.Environ(), nil, shell, args...)
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func truncateProgressCommand(command string) string {
+	command = strings.TrimSpace(command)
+	runes := []rune(command)
+	if len(runes) <= maxProgressCommandChars {
+		return command
+	}
+	return string(runes[:maxProgressCommandChars-1]) + "…"
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func formatProgressElapsed(d time.Duration) string {
+	if d < 0 {
+		d = 0
+	}
+	sec := int(d.Seconds())
+	if sec < 60 {
+		return fmt.Sprintf("%ds", sec)
+	}
+	return fmt.Sprintf("%dm %ds", sec/60, sec%60)
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func verifyCommandProgressPayload(criterionID string, commandSeq int, command string) json.RawMessage {
+	b, err := json.Marshal(map[string]any{
+		"criterion_id": criterionID,
+		"command_seq":  commandSeq,
+		"command":      command,
+	})
+	if err != nil {
+		return []byte("{}")
+	}
+	return b
+}
+
+func (s *Service) emitCommandProgress(
+	ctx context.Context,
+	taskID, cycleID string,
+	phaseSeq int64,
+	subtype, message, criterionID string,
+	commandSeq int,
+	command string,
+) {
+	if s == nil || s.hooks.PersistProgress == nil || taskID == "" || phaseSeq <= 0 {
+		return
+	}
+	s.hooks.PersistProgress(ctx, taskID, cycleID, phaseSeq, runner.ProgressEvent{
+		Kind:    "tool_call",
+		Subtype: subtype,
+		Message: message,
+		Tool:    ProgressToolVerifyCommand,
+		Payload: verifyCommandProgressPayload(criterionID, commandSeq, command),
+	})
+}
+
+// startCommandProgressHeartbeat emits "running" events until stop is closed.
+//
+//funclogmeasure:skip category=hot-path reason="Goroutine helper; progress traces via PersistProgress."
+func (s *Service) startCommandProgressHeartbeat(
+	ctx context.Context,
+	taskID, cycleID string,
+	phaseSeq int64,
+	commandLabel, criterionID string,
+	commandSeq int,
+	command string,
+	started time.Time,
+) (stop func()) {
+	interval := commandProgressHeartbeat
+	if interval <= 0 {
+		return func() {}
+	}
+	done := make(chan struct{})
+	go func() {
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-done:
+				return
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				elapsed := s.clock().Sub(started)
+				s.emitCommandProgress(ctx, taskID, cycleID, phaseSeq, "running",
+					fmt.Sprintf("Running: %s (%s)", commandLabel, formatProgressElapsed(elapsed)),
+					criterionID, commandSeq, command)
+			}
+		}
+	}()
+	return func() { close(done) }
+}
+
 // RunCriterionCommands executes checklist verify commands and records artifact paths.
 func (s *Service) RunCriterionCommands(
 	parentCtx context.Context,
+	taskID string,
 	cycleID string,
+	phaseSeq int64,
 	attemptSeq int64,
 	snap Snapshot,
 	selfReport map[string]reports.CriteriaEntry,
 	execFn shellExecFunc,
 ) ([]CommandEvidence, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.verify.RunCriterionCommands",
-		"cycle_id", cycleID, "attempt_seq", attemptSeq)
+		"task_id", taskID, "cycle_id", cycleID, "phase_seq", phaseSeq, "attempt_seq", attemptSeq)
 	if execFn == nil {
 		execFn = defaultShellExec
 	}
@@ -137,9 +242,18 @@ func (s *Service) RunCriterionCommands(
 			stderrPath := base + ".stderr"
 			metaPath := base + ".meta.json"
 
+			commandLabel := truncateProgressCommand(cmd.Command)
+			s.emitCommandProgress(parentCtx, taskID, cycleID, phaseSeq, "started",
+				fmt.Sprintf("Running: %s", commandLabel),
+				it.ID, seq, cmd.Command)
+
 			cmdCtx, cancel := context.WithTimeout(parentCtx, timeout)
 			started := s.clock()
+			stopHeartbeat := s.startCommandProgressHeartbeat(
+				cmdCtx, taskID, cycleID, phaseSeq, commandLabel, it.ID, seq, cmd.Command, started,
+			)
 			stdout, stderr, exitCode, runErr := execFn(cmdCtx, s.workingDir, cmd.Command)
+			stopHeartbeat()
 			cancel()
 			durationMS := s.clock().Sub(started).Milliseconds()
 
@@ -174,6 +288,14 @@ func (s *Service) RunCriterionCommands(
 			if werr := os.WriteFile(metaPath, metaBytes, 0o600); werr != nil {
 				return nil, fmt.Errorf("write meta evidence: %w", werr)
 			}
+
+			doneSubtype := "completed"
+			doneMsg := fmt.Sprintf("Finished: %s (exit %d, %s)", commandLabel, exitCode, formatProgressElapsed(time.Duration(durationMS)*time.Millisecond))
+			if runErr != nil || exitCode != 0 {
+				doneSubtype = "failed"
+				doneMsg = fmt.Sprintf("Failed: %s (exit %d, %s)", commandLabel, exitCode, formatProgressElapsed(time.Duration(durationMS)*time.Millisecond))
+			}
+			s.emitCommandProgress(parentCtx, taskID, cycleID, phaseSeq, doneSubtype, doneMsg, it.ID, seq, cmd.Command)
 
 			ev := CommandEvidence{
 				CriterionID:     it.ID,

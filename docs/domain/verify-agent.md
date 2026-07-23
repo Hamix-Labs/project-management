@@ -99,7 +99,7 @@ Report files live under `HAMIX_WORKER_REPORT_DIR` (outside `repo_root`). The ver
 
 2. **Gate** — For each criterion, if `claimed_done` is false, the worker records an immediate failure (`verified_by=agent_self`, reasoning: execute did not claim done). Those ids are **not** sent to the verify LLM. See `runVerifyChecks` in [`verification.go`](../../pkgs/agents/harness/verification.go).
 
-3. **Worker commands** — For criteria with `claimed_done: true` and attached `verify_commands`, the worker runs each command sequentially via shell (`sh -c` / `cmd /C`) in `WorkingDir` (`app_settings.repo_root`). stdout, stderr, and meta JSON are written under `<report_dir>/<cycle_id>/checks/<criterion_id>/<seq>.*`. See [`verify_commands.go`](../../pkgs/agents/harness/verify_commands.go).
+3. **Worker commands** — For criteria with `claimed_done: true` and attached `verify_commands`, the worker runs each command sequentially via shell (`sh -c` / `cmd /C`) in `WorkingDir` (`app_settings.repo_root`). stdout, stderr, and meta JSON are written under `<report_dir>/<cycle_id>/checks/<criterion_id>/<seq>.*`. While each command runs, the worker emits live progress (`tool=verify_command`, stream `source=worker`) so the SPA cycles ticker is not blank before the LLM starts. See [`commands.go`](../../pkgs/agents/harness/internal/verify/commands.go) and [ADR-0012](../adr/ADR-0012-structured-verify-commands.md).
 
 4. **Verify LLM** — The harness builds the verify prompt (below), then calls `verifyRunner.Run` with `WorkingDir` set to the repo root. Progress streams on the verify phase's `phase_seq`.
 

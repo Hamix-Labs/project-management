@@ -8,10 +8,13 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/reports"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/storefake"
+	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/runnerfake"
 	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
@@ -65,7 +68,7 @@ func TestRunCriterionCommands_writesEvidenceAndPromptSection(t *testing.T) {
 		Criteria:                    items,
 	}
 
-	evidence, err := svc.RunCriterionCommands(ctx, cycleID, 1, snap, selfReport, func(ctx context.Context, dir, command string) ([]byte, []byte, int, error) {
+	evidence, err := svc.RunCriterionCommands(ctx, task.ID, cycleID, 1, 1, snap, selfReport, func(ctx context.Context, dir, command string) ([]byte, []byte, int, error) {
 		if command != "echo hello" {
 			t.Fatalf("command = %q", command)
 		}
@@ -104,5 +107,114 @@ func TestRunCriterionCommands_writesEvidenceAndPromptSection(t *testing.T) {
 	base := filepath.Join(reportDir, cycleID, "checks", items[0].ID, "0")
 	if _, err := os.Stat(base + ".stdout"); err != nil {
 		t.Fatalf("expected base artifacts under %s: %v", base, err)
+	}
+}
+
+func TestRunCriterionCommands_emitsLiveProgress(t *testing.T) {
+	// Not parallel: mutates package-level commandProgressHeartbeat.
+	prevHeartbeat := commandProgressHeartbeat
+	commandProgressHeartbeat = 20 * time.Millisecond
+	t.Cleanup(func() { commandProgressHeartbeat = prevHeartbeat })
+
+	st := storefake.New(t).API
+	ctx := context.Background()
+
+	task, err := st.Create(ctx, taskcorestore.CreateTaskInput{
+		Title:         "verify-cmd-progress",
+		InitialPrompt: "do work",
+		Status:        taskcoredomain.StatusReady,
+		Priority:      taskcoredomain.PriorityMedium,
+		ChecklistItems: []checklistcontract.CreateChecklistItemInput{{
+			Text: "tests pass",
+			VerifyCommands: []checklistcontract.VerifyCommandInput{{
+				Command:         "go test ./...",
+				ExpectedOutcome: "Exit code 0.",
+			}},
+		}},
+	}, taskcoredomain.ActorUser)
+	if err != nil {
+		t.Fatal(err)
+	}
+	items, err := st.ListChecklistForVerify(ctx, task.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var mu sync.Mutex
+	var events []runner.ProgressEvent
+	svc := NewService(Deps{
+		Store:      st,
+		Runner:     runnerfake.New(),
+		ReportDir:  t.TempDir(),
+		WorkingDir: t.TempDir(),
+		Hooks: Hooks{
+			PersistProgress: func(ctx context.Context, taskID, cycleID string, phaseSeq int64, ev runner.ProgressEvent) {
+				if taskID != task.ID || cycleID != "cycle-progress" || phaseSeq != 2 {
+					t.Errorf("unexpected progress target task=%s cycle=%s phase=%d", taskID, cycleID, phaseSeq)
+				}
+				mu.Lock()
+				events = append(events, ev)
+				mu.Unlock()
+			},
+		},
+	})
+
+	selfReport := map[string]reports.CriteriaEntry{
+		items[0].ID: {ClaimedDone: true, Evidence: "done"},
+	}
+	snap := Snapshot{
+		VerifyCommandTimeoutSeconds: settingsdomain.DefaultVerifyCommandTimeoutSeconds,
+		Criteria:                    items,
+	}
+
+	_, err = svc.RunCriterionCommands(ctx, task.ID, "cycle-progress", 2, 1, snap, selfReport,
+		func(ctx context.Context, dir, command string) ([]byte, []byte, int, error) {
+			time.Sleep(55 * time.Millisecond)
+			return []byte("ok\n"), nil, 0, nil
+		})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+	if len(events) < 3 {
+		t.Fatalf("want at least started+running+completed, got %d: %+v", len(events), events)
+	}
+	if events[0].Subtype != "started" || events[0].Tool != ProgressToolVerifyCommand {
+		t.Fatalf("first event = %+v", events[0])
+	}
+	if !strings.Contains(events[0].Message, "Running: go test") {
+		t.Fatalf("started message = %q", events[0].Message)
+	}
+	sawRunning := false
+	for _, ev := range events[1 : len(events)-1] {
+		if ev.Subtype == "running" {
+			sawRunning = true
+			if !strings.Contains(ev.Message, "Running: go test") {
+				t.Fatalf("running message = %q", ev.Message)
+			}
+		}
+	}
+	if !sawRunning {
+		t.Fatalf("missing running heartbeat in %+v", events)
+	}
+	last := events[len(events)-1]
+	if last.Subtype != "completed" || !strings.Contains(last.Message, "Finished:") {
+		t.Fatalf("last event = %+v", last)
+	}
+}
+
+func TestProgressStreamHelpers(t *testing.T) {
+	t.Parallel()
+	got := truncateProgressCommand(strings.Repeat("a", 200))
+	if got != strings.Repeat("a", maxProgressCommandChars-1)+"…" {
+		t.Fatalf("truncate = %q (rune len %d)", got, len([]rune(got)))
+	}
+	if got := formatProgressElapsed(5 * time.Second); got != "5s" {
+		t.Fatalf("elapsed = %q", got)
+	}
+	if got := formatProgressElapsed(125 * time.Second); got != "2m 5s" {
+		t.Fatalf("elapsed = %q", got)
 	}
 }

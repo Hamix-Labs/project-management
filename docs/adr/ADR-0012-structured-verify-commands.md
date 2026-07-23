@@ -33,6 +33,7 @@ Operators still need repeatable, machine-checkable evidence (test output, lint r
 - Deterministic evidence the verify agent can cite without trusting execute self-report alone.
 - Clear separation: commands produce artifacts; LLM judges against text + `expected_outcome`.
 - Child-table design allows a future global command template library (copy-on-insert) without schema churn.
+- While each command runs, the worker emits live `agent_run_progress` / `task_cycle_stream_events` with `source=worker`, `tool=verify_command`, and subtypes `started` | `running` | `completed` | `failed`, so the SPA cycles ticker can show “Running: …” instead of an empty wait state before the LLM verify agent starts.
 
 ### Negative / Trade-offs
 

@@ -160,6 +160,7 @@ function CurrentPhaseLine({
           taskId={taskId}
           cycleId={cycleId}
           phaseSeq={runningPhase.phase_seq}
+          phase={runningPhase.phase}
           now={now}
         />
       </div>
@@ -184,15 +185,24 @@ function idlePendingMessage(items: ReadonlyArray<AgentRunProgressItem>): string 
   return "Waiting for the next agent update…";
 }
 
+function phaseEmptyMessage(phase: string): string {
+  if (phase === "verify") {
+    return "Running verify checks…";
+  }
+  return "Waiting for the next agent update…";
+}
+
 function PhaseProgress({
   taskId,
   cycleId,
   phaseSeq,
+  phase,
   now,
 }: {
   taskId: string;
   cycleId: string;
   phaseSeq: number;
+  phase: string;
   now: number;
 }) {
   const items = useAgentRunProgress(taskId, cycleId, phaseSeq);
@@ -201,7 +211,7 @@ function PhaseProgress({
       items={items}
       now={now}
       showPendingRow={items.length > 0}
-      emptyMessage="Waiting for the next agent update…"
+      emptyMessage={phaseEmptyMessage(phase)}
       pendingMessage={idlePendingMessage(items)}
     />
   );
