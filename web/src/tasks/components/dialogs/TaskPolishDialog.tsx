@@ -132,7 +132,7 @@ export function TaskPolishDialog({
         <header className="task-polish-dialog__header">
           <div className="task-polish-dialog__header-main">
             <span className="task-polish-dialog__badge" aria-hidden="true">
-              <SparkleGlyph size={16} />
+              <SparkleGlyph size={20} />
             </span>
             <div className="task-polish-dialog__title-block">
               <h2 id={titleId} className="task-polish-dialog__title">
@@ -193,7 +193,7 @@ export function TaskPolishDialog({
               value={instructions}
               onChange={setInstructions}
               disabled={controlsDisabled}
-              placeholder="Describe what to refine — tighten the copy, fix edge cases, improve tests…"
+              placeholder="Describe what should change in this polish pass…"
               worktreeId={worktreeId?.trim() || undefined}
               projectContext={promptProjectContext ?? undefined}
             />

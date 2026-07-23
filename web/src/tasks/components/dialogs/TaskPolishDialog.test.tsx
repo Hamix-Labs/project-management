@@ -94,11 +94,21 @@ describe("TaskPolishDialog", () => {
     );
 
     expect(
-      screen.getByText(/were any of these not done correctly/i),
+      screen.getByText(/were any of these/i).closest("legend"),
+    ).toHaveTextContent("Were any of these not done correctly?");
+    expect(
+      screen.getByText("not", { selector: ".task-polish-dialog__not" }),
     ).toBeInTheDocument();
     await user.click(screen.getByLabelText(/auth works/i));
     await user.type(screen.getByPlaceholderText(/new criterion/i), "Docs updated");
     await user.click(screen.getByRole("button", { name: /^add$/i }));
+    expect(screen.getByText("Docs updated")).toBeInTheDocument();
+    expect(
+      screen.queryByText(/one clear, testable requirement/i),
+    ).not.toBeInTheDocument();
+    expect(
+      document.querySelector(".task-checklist-criterion-modal-sheet"),
+    ).toBeNull();
     await user.type(
       screen.getByLabelText(/instructions/i),
       "fix the auth flow",
@@ -109,6 +119,25 @@ describe("TaskPolishDialog", () => {
       flaggedCriterionIds: ["c1"],
       newCriteria: ["Docs updated"],
     });
+  });
+
+  it("removes a drafted criterion with the chip remove control", async () => {
+    const user = userEvent.setup();
+    render(
+      <TaskPolishDialog
+        saving={false}
+        pending={false}
+        onCancel={vi.fn()}
+        onConfirm={vi.fn()}
+      />,
+    );
+    await user.type(screen.getByPlaceholderText(/new criterion/i), "Docs");
+    await user.click(screen.getByRole("button", { name: /^add$/i }));
+    expect(screen.getByText("Docs")).toBeInTheDocument();
+    await user.click(
+      screen.getByRole("button", { name: /remove criterion docs/i }),
+    );
+    expect(screen.queryByText("Docs")).not.toBeInTheDocument();
   });
 
   it("uses a wide modal shell for the rich instructions editor", () => {
@@ -140,6 +169,9 @@ describe("TaskPolishDialog", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText(/resume the existing agent conversation/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText(/describe what should change in this polish pass/i),
     ).toBeInTheDocument();
     expect(screen.getByText(/type/i).closest(".task-polish-dialog__hint")).toHaveTextContent(
       "Type @ to reference files",
