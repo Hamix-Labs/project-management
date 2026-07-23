@@ -1,21 +1,3 @@
-export function PhaseCompleteGlyph() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 16 16"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.4"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="8" cy="8" r="6.25" />
-      <path d="M5.25 8.25 7 10l3.75-4" />
-    </svg>
-  );
-}
-
 export function ScheduleGlyph() {
   return (
     <svg

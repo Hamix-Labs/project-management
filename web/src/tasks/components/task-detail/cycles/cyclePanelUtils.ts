@@ -4,6 +4,8 @@ import type {
   TaskCyclesListResponse,
 } from "@/types/cycle";
 import { formatDurationSeconds } from "@/observability";
+import { formatInAppTimezone } from "@/shared/time/appTimezone";
+import { formatTaskCompletionDuration } from "../schedule/taskCompletionDuration";
 
 /**
  * Splits the cycle list into the (at most one) running cycle and the
@@ -54,25 +56,29 @@ export function elapsedSeconds(isoStart: string, now: number): number {
   return Math.max(0, (now - start) / 1000);
 }
 
-export function formatStartedToEnded(cycle: TaskCycle): string {
-  const start = formatLocalTime(cycle.started_at);
-  if (cycle.status === "running" || !cycle.ended_at) {
-    return `${start} → in progress`;
-  }
-  const end = formatLocalTime(cycle.ended_at);
-  return `${start} → ${end}`;
-}
+export type AttemptTiming = {
+  /** Visible summary: `Picked up · … · Completed · … · duration`. */
+  label: string;
+  /** Accessible description for the timing span. */
+  ariaLabel: string;
+};
 
-export function formatLocalTime(iso: string): string {
-  const ts = Date.parse(iso);
-  if (!Number.isFinite(ts)) return iso;
-  const d = new Date(ts);
-  return d.toLocaleString(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+/**
+ * Per-attempt pickup / complete / duration copy for cycle history rows.
+ * Uses the operator app timezone so timings match the schedule strip.
+ */
+export function formatAttemptTiming(cycle: TaskCycle, tz: string): AttemptTiming {
+  const start = formatInAppTimezone(cycle.started_at, tz);
+  if (cycle.status === "running" || !cycle.ended_at) {
+    const label = `Picked up · ${start} · Completed · in progress`;
+    return { label, ariaLabel: label };
+  }
+  const end = formatInAppTimezone(cycle.ended_at, tz);
+  const duration = formatTaskCompletionDuration(cycle.started_at, cycle.ended_at);
+  const label = duration
+    ? `Picked up · ${start} · Completed · ${end} · ${duration}`
+    : `Picked up · ${start} · Completed · ${end}`;
+  return { label, ariaLabel: label };
 }
 
 export function formatPhaseDuration(phase: TaskCyclePhase, now: number): string {
