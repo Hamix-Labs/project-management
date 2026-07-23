@@ -1,10 +1,19 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useState } from "react";
+import { RichPromptEditor } from "@/components/rich-prompt";
+import { useProjectContextPromptBinding } from "@/hooks/useProjectContextPromptBinding";
+import { isUiFeatureOmitted } from "@/launch/omittedFeatures";
+import { promptHasVisibleContent } from "@/lib/promptFormat";
 import { FieldLabel } from "@/shared/FieldLabel";
 import { Modal } from "@/shared/Modal";
 import { MutationErrorBanner } from "@/shared/MutationErrorBanner";
 
 type Props = {
   taskTitle: string;
+  /** Scopes @ file mentions to the task worktree (same as create-task prompt). */
+  worktreeId?: string;
+  /** When set, enables # project-context mentions like create-task. */
+  projectId?: string;
+  projectContextItemIds?: string[];
   saving: boolean;
   pending: boolean;
   error?: string | null;
@@ -14,6 +23,9 @@ type Props = {
 
 export function TaskPolishDialog({
   taskTitle,
+  worktreeId,
+  projectId = "",
+  projectContextItemIds = [],
   saving,
   pending,
   error = null,
@@ -23,20 +35,26 @@ export function TaskPolishDialog({
   const titleId = useId();
   const descriptionId = useId();
   const instructionsId = useId();
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [instructions, setInstructions] = useState("");
-  const trimmed = instructions.trim();
-  const canSubmit = trimmed.length > 0 && !saving && !pending;
-
-  useEffect(() => {
-    textareaRef.current?.focus();
-  }, []);
+  const [selectedContextIds, setSelectedContextIds] = useState(
+    projectContextItemIds,
+  );
+  const projectsUiEnabled = !isUiFeatureOmitted("projects");
+  const promptProjectContext = useProjectContextPromptBinding({
+    projectId: projectsUiEnabled ? projectId : "",
+    selectedIds: selectedContextIds,
+    onSelectedIdsChange: setSelectedContextIds,
+  });
+  const canSubmit =
+    promptHasVisibleContent(instructions) && !saving && !pending;
+  const controlsDisabled = saving || pending;
 
   return (
     <Modal
       onClose={onCancel}
       labelledBy={titleId}
       describedBy={descriptionId}
+      size="wide"
       busy={pending}
       busyLabel="Queueing polish…"
       dismissibleWhileBusy
@@ -51,21 +69,28 @@ export function TaskPolishDialog({
           The task returns to awaiting review when polish finishes.
         </p>
         <div className="field">
-          <FieldLabel htmlFor={instructionsId} requirement="required">
+          <FieldLabel
+            id={`${instructionsId}-label`}
+            htmlFor={instructionsId}
+            requirement="required"
+          >
             Instructions
           </FieldLabel>
-          <textarea
-            ref={textareaRef}
-            id={instructionsId}
-            className="task-polish-dialog__instructions"
-            rows={5}
-            value={instructions}
-            onChange={(e) => setInstructions(e.target.value)}
-            disabled={saving || pending}
-            placeholder="What should the agent change?"
-            required
-            aria-required
-          />
+          <div className="task-create-editor-shell">
+            <RichPromptEditor
+              id={instructionsId}
+              value={instructions}
+              onChange={setInstructions}
+              disabled={controlsDisabled}
+              placeholder={
+                promptProjectContext
+                  ? "What should the agent change? Type @ for a repo file, # for project context…"
+                  : "What should the agent change? Type @ to mention a repo file…"
+              }
+              worktreeId={worktreeId?.trim() || undefined}
+              projectContext={promptProjectContext ?? undefined}
+            />
+          </div>
         </div>
         <MutationErrorBanner error={error} className="task-polish-dialog__err" />
         <div className="row stack-row-actions">
@@ -81,7 +106,7 @@ export function TaskPolishDialog({
             type="button"
             className="primary"
             disabled={!canSubmit}
-            onClick={() => onConfirm(trimmed)}
+            onClick={() => onConfirm(instructions)}
           >
             {pending ? "Queueing…" : "Polish"}
           </button>
