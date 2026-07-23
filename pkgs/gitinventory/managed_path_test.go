@@ -8,6 +8,14 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory"
 )
 
+func TestManagedWorktreeRoot_defaultUnderHamix(t *testing.T) {
+	t.Setenv(gitinventory.EnvManagedWorktreeRoot, "")
+	got := gitinventory.ManagedWorktreeRoot()
+	if filepath.Base(got) != "hamix" {
+		t.Fatalf("ManagedWorktreeRoot base=%q want hamix (got %q)", filepath.Base(got), got)
+	}
+}
+
 func TestManagedWorktreeRoot_envOverride(t *testing.T) {
 	root := t.TempDir()
 	t.Setenv(gitinventory.EnvManagedWorktreeRoot, root)
