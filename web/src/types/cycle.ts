@@ -196,7 +196,7 @@ export type TaskCycleStreamResponse = {
  */
 export const VERIFIER_KINDS = [
   "agent_self",
-  "verify_agent",
+  "execute_agent",
   "deterministic_check",
   "human_override",
   "legacy",
@@ -229,7 +229,7 @@ export type CycleCriteriaReport = {
  * One row from `GET /tasks/{id}/cycles/{cycleId}/verdicts.verify_reports`.
  * Records the verify phase's verdict for one criterion in one retry
  * attempt. `verifier_kind` distinguishes deterministic_check (cheap),
- * verify_agent (LLM judgement), and agent_self (the agent did not
+ * execute_agent (LLM judgement), and agent_self (the agent did not
  * claim done).
  */
 export type CycleVerifyReport = {

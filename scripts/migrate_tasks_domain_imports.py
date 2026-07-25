@@ -39,7 +39,7 @@ TASKCYCLES = {
 TASKCHECKLIST = {
     "TaskChecklistItem", "TaskChecklistItemCommand", "TaskChecklistCompletion", "VerifierKind",
     "MaxVerifyCommandsPerItem", "MaxVerifyCommandLen", "MaxVerifyExpectedOutcomeLen",
-    "VerifierAgentSelf", "VerifierVerifyAgent", "VerifierDeterministicCheck",
+    "VerifierAgentSelf", "VerifierExecuteAgent", "VerifierDeterministicCheck",
     "VerifierHumanOverride", "VerifierLegacy", "ValidVerifierKind",
 }
 

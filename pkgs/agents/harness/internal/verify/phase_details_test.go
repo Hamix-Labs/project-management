@@ -16,8 +16,8 @@ func TestFormatPhaseSummary_success(t *testing.T) {
 		{ID: "c2", Text: "Update docs"},
 	}
 	verdicts := []Verdict{
-		{ID: "c1", Passed: true, Verifier: checklistdomain.VerifierVerifyAgent},
-		{ID: "c2", Passed: true, Verifier: checklistdomain.VerifierVerifyAgent},
+		{ID: "c1", Passed: true, Verifier: checklistdomain.VerifierExecuteAgent},
+		{ID: "c2", Passed: true, Verifier: checklistdomain.VerifierExecuteAgent},
 	}
 	got := FormatPhaseSummary(criteria, verdicts, true)
 	if got != "All 2 criteria verified" {
@@ -56,7 +56,7 @@ func TestEncodePhaseDetails_includesStructuredSnapshot(t *testing.T) {
 		{
 			ID:        "c1",
 			Passed:    false,
-			Verifier:  checklistdomain.VerifierVerifyAgent,
+			Verifier:  checklistdomain.VerifierExecuteAgent,
 			Reasoning: "Missing coverage",
 		},
 	}
@@ -78,7 +78,7 @@ func TestEncodePhaseDetails_includesStructuredSnapshot(t *testing.T) {
 	if row.CriterionID != "c1" || row.Text != "Criterion A" || row.Verified {
 		t.Fatalf("row: %+v", row)
 	}
-	if row.VerifierKind != string(checklistdomain.VerifierVerifyAgent) {
+	if row.VerifierKind != string(checklistdomain.VerifierExecuteAgent) {
 		t.Fatalf("verifier_kind = %q", row.VerifierKind)
 	}
 	if row.Reasoning != "Missing coverage" {

@@ -17,7 +17,7 @@ import (
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
-func (s *Service) runLLMVerifyAgent(
+func (s *Service) runLLMVerify(
 	ctx context.Context,
 	task *taskcoredomain.Task,
 	cycle *cyclesdomain.TaskCycle,
@@ -30,7 +30,7 @@ func (s *Service) runLLMVerifyAgent(
 	cmdEvidence []CommandEvidence,
 	verifyAttempt int,
 ) (cyclesdomain.TokenUsage, bool, error) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.verify.runLLMVerifyAgent",
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.verify.runLLMVerify",
 		"task_id", task.ID, "cycle_id", cycle.ID, "locked_passes", len(previouslyPassed))
 	promptText := buildVerifyPrompt(ctx, s, task.ID, snap, cycle.ID, previouslyPassed, selfReport, feedback, cmdEvidence)
 	resumeSessionID := ""
@@ -99,7 +99,8 @@ func buildVerifyPrompt(
 		"task_id", taskID, "cycle_id", cycleID, "locked_passes", len(previouslyPassed))
 	commits := s.loadTaskCommits(ctx, taskID)
 	var b strings.Builder
-	b.WriteString("You are the verification agent. Do not modify source files.\n")
+	b.WriteString("You implemented this task. Now verify each criterion below.\n")
+	b.WriteString("Do not modify source files.\n")
 	b.WriteString(fmt.Sprintf("Write `%s` only.\n\n", reports.VerifyReportPath(s.reportDir, cycleID)))
 	b.WriteString("Schema: {\"criteria\":[{\"id\":\"...\",\"verified\":true|false,\"reasoning\":\"...\"}]}\n\n")
 	if len(previouslyPassed) > 0 {
@@ -208,15 +209,15 @@ func (s *Service) assembleVerdictsFromVerifyReport(
 		nv := Verdict{ID: v.ID, Evidence: entry.Evidence}
 		if vr.Verified {
 			nv.Passed = true
-			nv.Verifier = checklistdomain.VerifierVerifyAgent
+			nv.Verifier = checklistdomain.VerifierExecuteAgent
 			nv.Reasoning = vr.Reasoning
 		} else {
 			nv.Passed = false
-			nv.Verifier = checklistdomain.VerifierVerifyAgent
+			nv.Verifier = checklistdomain.VerifierExecuteAgent
 			nv.Reasoning = vr.Reasoning
 		}
 		next = append(next, nv)
-		s.recordVerdict(checklistdomain.VerifierVerifyAgent, nv.Passed)
+		s.recordVerdict(checklistdomain.VerifierExecuteAgent, nv.Passed)
 	}
 	return next, nil
 }
@@ -229,7 +230,7 @@ func verifyLLMRunError(runErr error, parseErr error) error {
 	}
 	if parseErr != nil {
 		if errors.Is(runErr, runner.ErrStale) {
-			return fmt.Errorf("verify agent stream idle: %w", parseErr)
+			return fmt.Errorf("verify stream idle: %w", parseErr)
 		}
 		return parseErr
 	}

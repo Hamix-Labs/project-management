@@ -76,7 +76,7 @@ func TestAppendResumeNotice_andCommitPolicy(t *testing.T) {
 	})
 	for _, frag := range []string{
 		"Human polish", "cycle-1", "tighten spacing", "abc123def456", "base",
-		"skip the verify agent", "polishments", "not a worker restart",
+		"skip the verify phase", "polishments", "not a worker restart",
 		"do not re-claim or re-hunt",
 	} {
 		if !containsSubstr(polish, frag) {
@@ -94,13 +94,13 @@ func TestAppendResumeNotice_andCommitPolicy(t *testing.T) {
 	for _, frag := range []string{
 		"Human-flagged incorrect criteria", "[c1] Auth works",
 		"Newly added criteria", "[c3] Docs updated",
-		"independent verify agent", "fix auth", "polishments",
+		"re-verified by you (same agent)", "fix auth", "polishments",
 	} {
 		if !containsSubstr(selective, frag) {
 			t.Fatalf("selective polish notice missing %q in %q", frag, selective)
 		}
 	}
-	if containsSubstr(selective, "skip the verify agent") {
+	if containsSubstr(selective, "skip the verify phase") {
 		t.Fatalf("selective polish must not skip verify: %q", selective)
 	}
 	dir := t.TempDir()

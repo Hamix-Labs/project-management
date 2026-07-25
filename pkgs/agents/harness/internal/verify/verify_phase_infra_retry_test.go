@@ -2,14 +2,15 @@ package verify_test
 
 import (
 	"context"
+	"sync/atomic"
+	"testing"
+
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/runnerfake"
 	settingscontract "github.com/AlexsanderHamir/Hamix/pkgs/settings/contract"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
-	"sync/atomic"
-	"testing"
 )
 
 // EC-09 (docs/domain/harness.md): locked passes survive infra verify retries.
@@ -45,60 +46,49 @@ func TestWorker_VerifyPhase_carriesPassesAcrossRetries(t *testing.T) {
 	workDir := t.TempDir()
 	reportDir := t.TempDir()
 	var execAttempt atomic.Int32
-	execRunner := runnerfake.New()
-	execHook := &hookRunner{Runner: execRunner, preRun: func(req runner.Request) {
-		if req.Phase != cyclesdomain.PhaseExecute {
-			return
-		}
-		cycles, _ := h.Store.ListCyclesForTask(context.Background(), req.TaskID, 1)
-		if len(cycles) == 0 {
-			return
-		}
-		n := execAttempt.Add(1)
-		// Attempt 1 reports both criteria as claimed done. Attempt 2
-		// only reports c2 — c1 was passed on attempt 1 so the prompt
-		// excludes it from the expected-IDs set, and including a
-		// stale c1 entry is no longer required.
-		ids := []string{c1.ID, c2.ID}
-		if n >= 2 {
-			ids = []string{c2.ID}
-		}
-		writeCriteriaReportFor(t, reportDir, cycles[0].ID, ids)
-	}}
-	execRunner.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(
-		cyclesdomain.PhaseStatusSucceeded, "exec ok", nil, ""))
-
 	var verifyAttempt atomic.Int32
-	verifyRunner := runnerfake.New()
-	verifyHook := &hookRunner{Runner: verifyRunner, preRun: func(req runner.Request) {
-		if req.Phase != cyclesdomain.PhaseVerify {
-			return
-		}
+	r := runnerfake.New()
+	hook := &hookRunner{Runner: r, preRun: func(req runner.Request) {
 		cycles, _ := h.Store.ListCyclesForTask(context.Background(), req.TaskID, 1)
 		if len(cycles) == 0 {
 			return
 		}
-		n := verifyAttempt.Add(1)
-		// Attempt 1: c1 verified, c2 fails. Attempt 2: c2 verified.
-		// (c1 is locked from attempt 1 and not in the expected set.)
-		switch n {
-		case 1:
-			writePartialVerifyReport(t, reportDir, cycles[0].ID, map[string]bool{
-				c1.ID: true, c2.ID: false,
-			})
-		default:
-			writePartialVerifyReport(t, reportDir, cycles[0].ID, map[string]bool{
-				c2.ID: true,
-			})
+		switch req.Phase {
+		case cyclesdomain.PhaseExecute:
+			n := execAttempt.Add(1)
+			// Attempt 1 reports both criteria as claimed done. Attempt 2
+			// only reports c2 — c1 was passed on attempt 1 so the prompt
+			// excludes it from the expected-IDs set, and including a
+			// stale c1 entry is no longer required.
+			ids := []string{c1.ID, c2.ID}
+			if n >= 2 {
+				ids = []string{c2.ID}
+			}
+			writeCriteriaReportFor(t, reportDir, cycles[0].ID, ids)
+		case cyclesdomain.PhaseVerify:
+			n := verifyAttempt.Add(1)
+			// Attempt 1: c1 verified, c2 fails. Attempt 2: c2 verified.
+			// (c1 is locked from attempt 1 and not in the expected set.)
+			switch n {
+			case 1:
+				writePartialVerifyReport(t, reportDir, cycles[0].ID, map[string]bool{
+					c1.ID: true, c2.ID: false,
+				})
+			default:
+				writePartialVerifyReport(t, reportDir, cycles[0].ID, map[string]bool{
+					c2.ID: true,
+				})
+			}
 		}
 	}}
-	verifyRunner.Script(tsk.ID, cyclesdomain.PhaseVerify, runner.NewResult(
+	r.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(
+		cyclesdomain.PhaseStatusSucceeded, "exec ok", nil, ""))
+	r.Script(tsk.ID, cyclesdomain.PhaseVerify, runner.NewResult(
 		cyclesdomain.PhaseStatusSucceeded, "verify ok", nil, ""))
 
-	done := h.StartHarnessRun(ctx, tsk, execHook, harness.Options{
-		WorkingDir:   workDir,
-		ReportDir:    reportDir,
-		VerifyRunner: verifyHook,
+	done := h.StartHarnessRun(ctx, tsk, hook, harness.Options{
+		WorkingDir: workDir,
+		ReportDir:  reportDir,
 	})
 	h.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusReview)
 	<-done

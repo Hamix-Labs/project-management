@@ -23,7 +23,7 @@ func TestClassify_EC01_verifyInfra_verifyOnly(t *testing.T) {
 
 func TestClassify_EC02_verifyAgentReject_fullReexecute(t *testing.T) {
 	t.Parallel()
-	cls := ClassifyFailureClass([]verify.Verdict{{Passed: false, Verifier: checklistdomain.VerifierVerifyAgent}}, false)
+	cls := ClassifyFailureClass([]verify.Verdict{{Passed: false, Verifier: checklistdomain.VerifierExecuteAgent}}, false)
 	if cls != VerifyRetryFailureImplementation {
 		t.Fatalf("class=%v", cls)
 	}

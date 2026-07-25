@@ -41,7 +41,7 @@ type CriteriaEntry struct {
 
 // VerifyEntry is the per-criterion payload for one verify attempt's
 // verify-report.json row. VerifierKind records how the verdict was
-// reached (deterministic_check / verify_agent / agent_self), matching
+// reached (deterministic_check / execute_agent / agent_self), matching
 // the verifier_kind values used on task_checklist_completions so the
 // SPA can render the same chip in both surfaces.
 type VerifyEntry struct {

@@ -2,16 +2,17 @@ package verify_test
 
 import (
 	"context"
-	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness"
-	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
-	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/runnerfake"
-	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness"
+	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
+	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/runnerfake"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
 // TestWorker_VerifyPhase_repoRootStaysCleanThroughoutCycle pins PR1's
@@ -44,36 +45,27 @@ func TestWorker_VerifyPhase_repoRootStaysCleanThroughoutCycle(t *testing.T) {
 		t.Fatalf("precondition failed: working tree not clean before cycle: %s", preStatus)
 	}
 
-	execRunner := runnerfake.New()
-	execHook := &hookRunner{Runner: execRunner, preRun: func(req runner.Request) {
-		if req.Phase != cyclesdomain.PhaseExecute {
+	r := runnerfake.New()
+	hook := &hookRunner{Runner: r, preRun: func(req runner.Request) {
+		cycles, _ := h.Store.ListCyclesForTask(context.Background(), req.TaskID, 1)
+		if len(cycles) == 0 {
 			return
 		}
-		cycles, _ := h.Store.ListCyclesForTask(context.Background(), req.TaskID, 1)
-		if len(cycles) > 0 {
+		switch req.Phase {
+		case cyclesdomain.PhaseExecute:
 			writeCriteriaReportWithGitWork(t, reportDir, cycles[0].ID, workDir, []string{item.ID})
-		}
-	}}
-	execRunner.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(
-		cyclesdomain.PhaseStatusSucceeded, "exec ok", nil, ""))
-
-	verifyRunner := runnerfake.New()
-	verifyHook := &hookRunner{Runner: verifyRunner, preRun: func(req runner.Request) {
-		if req.Phase != cyclesdomain.PhaseVerify {
-			return
-		}
-		cycles, _ := h.Store.ListCyclesForTask(context.Background(), req.TaskID, 1)
-		if len(cycles) > 0 {
+		case cyclesdomain.PhaseVerify:
 			writeVerifyReport(t, reportDir, cycles[0].ID, []string{item.ID})
 		}
 	}}
-	verifyRunner.Script(tsk.ID, cyclesdomain.PhaseVerify, runner.NewResult(
+	r.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(
+		cyclesdomain.PhaseStatusSucceeded, "exec ok", nil, ""))
+	r.Script(tsk.ID, cyclesdomain.PhaseVerify, runner.NewResult(
 		cyclesdomain.PhaseStatusSucceeded, "verify ok", nil, ""))
 
-	done := h.StartHarnessRun(ctx, tsk, execHook, harness.Options{
-		WorkingDir:   workDir,
-		ReportDir:    reportDir,
-		VerifyRunner: verifyHook,
+	done := h.StartHarnessRun(ctx, tsk, hook, harness.Options{
+		WorkingDir: workDir,
+		ReportDir:  reportDir,
 	})
 	h.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusReview)
 	<-done
@@ -114,36 +106,27 @@ func TestWorker_terminateCycle_cleansReportDir(t *testing.T) {
 	workDir := t.TempDir()
 	reportDir := t.TempDir()
 
-	execRunner := runnerfake.New()
-	execHook := &hookRunner{Runner: execRunner, preRun: func(req runner.Request) {
-		if req.Phase != cyclesdomain.PhaseExecute {
+	r := runnerfake.New()
+	hook := &hookRunner{Runner: r, preRun: func(req runner.Request) {
+		cycles, _ := h.Store.ListCyclesForTask(context.Background(), req.TaskID, 1)
+		if len(cycles) == 0 {
 			return
 		}
-		cycles, _ := h.Store.ListCyclesForTask(context.Background(), req.TaskID, 1)
-		if len(cycles) > 0 {
+		switch req.Phase {
+		case cyclesdomain.PhaseExecute:
 			writeCriteriaReport(t, reportDir, cycles[0].ID, []string{item.ID})
-		}
-	}}
-	execRunner.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(
-		cyclesdomain.PhaseStatusSucceeded, "exec ok", nil, ""))
-
-	verifyRunner := runnerfake.New()
-	verifyHook := &hookRunner{Runner: verifyRunner, preRun: func(req runner.Request) {
-		if req.Phase != cyclesdomain.PhaseVerify {
-			return
-		}
-		cycles, _ := h.Store.ListCyclesForTask(context.Background(), req.TaskID, 1)
-		if len(cycles) > 0 {
+		case cyclesdomain.PhaseVerify:
 			writeVerifyReport(t, reportDir, cycles[0].ID, []string{item.ID})
 		}
 	}}
-	verifyRunner.Script(tsk.ID, cyclesdomain.PhaseVerify, runner.NewResult(
+	r.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(
+		cyclesdomain.PhaseStatusSucceeded, "exec ok", nil, ""))
+	r.Script(tsk.ID, cyclesdomain.PhaseVerify, runner.NewResult(
 		cyclesdomain.PhaseStatusSucceeded, "verify ok", nil, ""))
 
-	done := h.StartHarnessRun(ctx, tsk, execHook, harness.Options{
-		WorkingDir:   workDir,
-		ReportDir:    reportDir,
-		VerifyRunner: verifyHook,
+	done := h.StartHarnessRun(ctx, tsk, hook, harness.Options{
+		WorkingDir: workDir,
+		ReportDir:  reportDir,
 	})
 	h.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusReview)
 	<-done

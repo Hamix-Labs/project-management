@@ -31,7 +31,7 @@ type RunMetrics interface {
 	RecordRun(runner string, model string, terminalStatus string, duration time.Duration)
 	// RecordVerifyVerdict is fired once per criterion verdict produced
 	// by the verify pass. verifierKind is one of the
-	// checklistdomain.VerifierKind values (deterministic_check, verify_agent,
+	// checklistdomain.VerifierKind values (deterministic_check, execute_agent,
 	// agent_self) — see docs/data-model.md "verified_by" column.
 	// passed is the verdict.
 	//

@@ -171,7 +171,7 @@ func TestLoadContinuationBundle_verifyOnlyWhenExecuteSucceeded(t *testing.T) {
 		t.Fatalf("upsert commits: %v", err)
 	}
 	if err := st.UpsertVerifyReports(ctx, cycle.ID, 1, []cyclesstore.VerifyReportEntry{
-		{CriterionID: item.ID, Verified: false, VerifierKind: checklistdomain.VerifierVerifyAgent, Reasoning: "still failing"},
+		{CriterionID: item.ID, Verified: false, VerifierKind: checklistdomain.VerifierExecuteAgent, Reasoning: "still failing"},
 	}); err != nil {
 		t.Fatalf("upsert verify: %v", err)
 	}

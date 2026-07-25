@@ -100,7 +100,7 @@ func ComposePolishDirective(cycle *cyclesdomain.TaskCycle, in PolishNoticeInput)
 
 	if in.SkipVerify {
 		b.WriteString("### Verification mode for this polish\n\n")
-		b.WriteString("This polish has **no flagged or newly added criteria**. After execute finishes, the harness will **skip the verify agent**.\n")
+		b.WriteString("This polish has **no flagged or newly added criteria**. After execute finishes, the harness will **skip the verify phase**.\n")
 		b.WriteString("Prior criteria remain accepted — do not re-claim or re-hunt them.\n")
 		b.WriteString("Your execute-phase claim that the polish instructions are satisfied is sufficient for this attempt to return to human review.\n")
 		b.WriteString("Still inspect the tree, change only what the instructions require, commit new work normally, and do not undo prior good work.\n\n")
@@ -108,7 +108,7 @@ func ComposePolishDirective(cycle *cyclesdomain.TaskCycle, in PolishNoticeInput)
 		b.WriteString("### Verification mode for this polish\n\n")
 		b.WriteString("Criteria listed as already verified must remain satisfied — do not undo them.\n")
 		b.WriteString("Apply the polish instructions; fix flagged criteria; implement newly added criteria.\n")
-		b.WriteString("Only active / flagged / new criteria will be re-verified by the independent verify agent after execute.\n")
+		b.WriteString("Only active / flagged / new criteria will be re-verified by you (same agent) after execute, using worker command evidence.\n")
 		b.WriteString("Write a complete criteria report for active criteria only.\n\n")
 	}
 
@@ -120,12 +120,12 @@ func ComposePolishDirective(cycle *cyclesdomain.TaskCycle, in PolishNoticeInput)
 		b.WriteString(strings.TrimSpace(block))
 		b.WriteString("Those commits are already indexed — list only **new** commits you create in `commits[]` on your criteria report.\n")
 		if in.SkipVerify {
-			b.WriteString("4. Apply the polish instructions; your execute claim ends this attempt (no verify agent).\n")
+			b.WriteString("4. Apply the polish instructions; your execute claim ends this attempt (no verify phase).\n")
 		} else {
 			b.WriteString("4. Re-satisfy active criteria after your changes and write the criteria report.\n")
 		}
 	} else if in.SkipVerify {
-		b.WriteString("3. Apply the polish instructions; your execute claim ends this attempt (no verify agent).\n")
+		b.WriteString("3. Apply the polish instructions; your execute claim ends this attempt (no verify phase).\n")
 	} else {
 		b.WriteString("3. Re-satisfy active criteria after your changes and write the criteria report.\n")
 	}

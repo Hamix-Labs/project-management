@@ -18,7 +18,7 @@ func TestComposeRecoveryDelta_verifyImplementation(t *testing.T) {
 		FailedCriteria: []CriterionFailure{{
 			ID:        "criterion-a",
 			Reasoning: "missing handler",
-			Verifier:  "verify_agent",
+			Verifier:  "execute_agent",
 		}},
 		LockedCriteria: []string{"criterion-b"},
 	})
@@ -89,7 +89,7 @@ func TestComposeRecoveryDelta_humanPolishInstructionsOnly(t *testing.T) {
 		},
 	})
 	for _, frag := range []string{
-		"Human polish", "Create REFACTOR.md", "skip the verify agent",
+		"Human polish", "Create REFACTOR.md", "skip the verify phase",
 		"polishments", "crit-locked", "human polish",
 	} {
 		if !strings.Contains(delta, frag) {
@@ -125,7 +125,7 @@ func TestComposeRecoveryDelta_humanPolishFlagged(t *testing.T) {
 			t.Fatalf("missing %q in %q", frag, delta)
 		}
 	}
-	if strings.Contains(delta, "skip the verify agent") {
+	if strings.Contains(delta, "skip the verify phase") {
 		t.Fatalf("flagged polish must not skip verify: %q", delta)
 	}
 }
@@ -148,7 +148,7 @@ func TestComposeRecoveryDelta_humanPolishMixed(t *testing.T) {
 		"Write REFACTOR.md",
 		"Human-flagged incorrect criteria", "[c1] Named in report",
 		"Newly added criteria", "[c2] Docs updated",
-		"independent verify agent",
+		"re-verified by you (same agent)",
 	} {
 		if !strings.Contains(delta, frag) {
 			t.Fatalf("missing %q in %q", frag, delta)
@@ -188,7 +188,7 @@ func TestComposeRecoveryDelta_goldenFiles(t *testing.T) {
 			AttemptSeq: 2,
 			ReportPath: "/tmp/hamix/cycle-1/criteria-report.json",
 			FailedCriteria: []CriterionFailure{{
-				ID: "criterion-a", Reasoning: "missing handler", Verifier: "verify_agent",
+				ID: "criterion-a", Reasoning: "missing handler", Verifier: "execute_agent",
 			}},
 			LockedCriteria: []string{"criterion-b"},
 		},
