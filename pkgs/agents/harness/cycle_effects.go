@@ -47,7 +47,7 @@ func (h *Harness) applyExecuteEffects(
 		phaseDetails = mergeStreamIdleRecoveryDetails(phaseDetails, h.opts.StreamIdleStuck)
 	}
 
-	if effects.ContinueToVerify {
+	if effects.ContinueToVerify && state.verify.verifySnap.Enabled {
 		corr := cyclesdomain.RunCorrelationIDFromDetailsJSON(execPhase.DetailsJSON)
 		ev := runner.SetupProgressEvent(runner.ProgressRunStateHandoffVerify, "Handing off to verify…")
 		h.persistProgress(parentCtx, task.ID, cycle.ID, execPhase.PhaseSeq, ev)
