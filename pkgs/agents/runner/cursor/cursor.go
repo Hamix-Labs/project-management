@@ -164,6 +164,9 @@ func (a *Adapter) invokeCursorProcess(
 	lineCallback := func(line []byte) {
 		emitProgressFromLine(req.OnProgress, line, a.homePaths)
 	}
+	if req.OnProgress != nil {
+		req.OnProgress(runner.SetupProgressEvent(runner.ProgressRunStateSetupSpawn, "Launching cursor-agent…"))
+	}
 	if a.streamExec != nil {
 		if req.StreamIdleStuck > 0 {
 			out.stdout, out.stderr, out.exitCode, out.execErr = adapterkit.DefaultStreamExecWithIdle(

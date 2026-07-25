@@ -78,21 +78,24 @@ func TestRun_streamJSONEmitsLiveProgress(t *testing.T) {
 	if res.Summary != "done" {
 		t.Fatalf("Summary: got %q want done", res.Summary)
 	}
-	if len(progress) != 3 {
-		t.Fatalf("progress count: got %d want 3 (%+v)", len(progress), progress)
+	if len(progress) != 4 {
+		t.Fatalf("progress count: got %d want 4 (%+v)", len(progress), progress)
 	}
-	if progress[0].Kind != "system" || progress[0].Message != "Using Claude 4 Sonnet" {
-		t.Errorf("system progress: %+v", progress[0])
+	if progress[0].Kind != runner.ProgressRunStateKind || progress[0].Subtype != runner.ProgressRunStateSetupSpawn {
+		t.Errorf("setup spawn progress: %+v", progress[0])
 	}
-	if progress[1].Kind != "assistant" || progress[1].Message != "Reading the task files." {
-		t.Errorf("assistant progress: %+v", progress[1])
+	if progress[1].Kind != "system" || progress[1].Message != "Using Claude 4 Sonnet" {
+		t.Errorf("system progress: %+v", progress[1])
 	}
-	if progress[2].Kind != "tool_call" || progress[2].Subtype != "started" || progress[2].Tool != "ReadFile" {
-		t.Errorf("tool progress: %+v", progress[2])
+	if progress[2].Kind != "assistant" || progress[2].Message != "Reading the task files." {
+		t.Errorf("assistant progress: %+v", progress[2])
+	}
+	if progress[3].Kind != "tool_call" || progress[3].Subtype != "started" || progress[3].Tool != "ReadFile" {
+		t.Errorf("tool progress: %+v", progress[3])
 	}
 	var payload map[string]any
-	if err := json.Unmarshal(progress[2].Payload, &payload); err != nil {
-		t.Fatalf("tool progress payload: %v raw=%s", err, progress[2].Payload)
+	if err := json.Unmarshal(progress[3].Payload, &payload); err != nil {
+		t.Fatalf("tool progress payload: %v raw=%s", err, progress[3].Payload)
 	}
 	if payload["type"] != "tool_call" || payload["name"] != "ReadFile" {
 		t.Fatalf("tool progress payload=%v", payload)
@@ -122,16 +125,18 @@ func TestRun_streamJSONSummarizesToolInputsForLiveProgress(t *testing.T) {
 	if _, err := a.Run(context.Background(), req); err != nil {
 		t.Fatalf("Run: %v", err)
 	}
-	if len(progress) != 4 {
-		t.Fatalf("progress count: got %d want 4 (%+v)", len(progress), progress)
+	if len(progress) != 5 {
+		t.Fatalf("progress count: got %d want 5 (%+v)", len(progress), progress)
 	}
 	got := []string{
 		progress[0].Message,
 		progress[1].Message,
 		progress[2].Message,
 		progress[3].Message,
+		progress[4].Message,
 	}
 	want := []string{
+		"Launching cursor-agent…",
 		"Searching for *.go in worker",
 		"Searching for *.go in runner",
 		"Reading facade_projects.go L1-91",
@@ -167,16 +172,18 @@ func TestRun_streamJSONSummarizesNestedToolCallsForLiveProgress(t *testing.T) {
 	if _, err := a.Run(context.Background(), req); err != nil {
 		t.Fatalf("Run: %v", err)
 	}
-	if len(progress) != 4 {
-		t.Fatalf("progress count: got %d want 4 (%+v)", len(progress), progress)
+	if len(progress) != 5 {
+		t.Fatalf("progress count: got %d want 5 (%+v)", len(progress), progress)
 	}
 	got := []string{
 		progress[0].Message,
 		progress[1].Message,
 		progress[2].Message,
 		progress[3].Message,
+		progress[4].Message,
 	}
 	want := []string{
+		"Launching cursor-agent…",
 		"Reading README.md",
 		"Writing summary.txt",
 		"Editing improvements_01.md",
@@ -188,15 +195,15 @@ func TestRun_streamJSONSummarizesNestedToolCallsForLiveProgress(t *testing.T) {
 		}
 	}
 	gotTools := []string{
-		progress[0].Tool,
 		progress[1].Tool,
 		progress[2].Tool,
 		progress[3].Tool,
+		progress[4].Tool,
 	}
 	wantTools := []string{"ReadFile", "WriteFile", "EditFile", "rg"}
 	for i := range wantTools {
 		if gotTools[i] != wantTools[i] {
-			t.Fatalf("progress[%d].Tool = %q, want %q", i, gotTools[i], wantTools[i])
+			t.Fatalf("progress[%d].Tool = %q, want %q", i+1, gotTools[i], wantTools[i])
 		}
 	}
 }
