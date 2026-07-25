@@ -2,7 +2,7 @@ import { lazy } from "react";
 import { Link, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { isUiFeatureOmitted } from "@/launch/omittedFeatures";
 import {
-  DeleteConfirmDialog,
+  CloseConfirmDialog,
   TaskChangeModelModal,
   TaskDraftsPage,
   TaskTemplatesPage,
@@ -204,14 +204,16 @@ function AppShell() {
           <RoutedMainOutlet />
           <TaskCreateModalsLayer />
 
-          {app.deleteTarget ? (
-            <DeleteConfirmDialog
-              taskTitle={app.deleteTarget.title}
+          {app.closeTarget ? (
+            <CloseConfirmDialog
+              taskTitle={app.closeTarget.title}
+              taskId={app.closeTarget.id}
+              taskNumber={app.closeTarget.number}
               saving={app.saving}
-              deletePending={app.deletePending}
-              error={app.deleteError}
-              onCancel={app.cancelDelete}
-              onConfirm={() => void app.confirmDelete()}
+              closePending={app.closePending}
+              error={app.closeError}
+              onCancel={app.cancelClose}
+              onConfirm={() => void app.confirmClose()}
             />
           ) : null}
 

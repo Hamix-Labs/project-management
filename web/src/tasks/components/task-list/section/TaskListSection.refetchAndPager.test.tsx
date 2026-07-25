@@ -37,7 +37,7 @@ describe("TaskListSection refetch and pager", () => {
             {...listPagerDefaults}
             rootTasksOnPage={1}
             onEdit={vi.fn()}
-            onRequestDelete={vi.fn()}
+            onRequestClose={vi.fn()}
           />
         </MemoryRouter>
       </QueryClientProvider>,
@@ -60,7 +60,7 @@ describe("TaskListSection refetch and pager", () => {
             {...listPagerDefaults}
             rootTasksOnPage={3}
             onEdit={vi.fn()}
-            onRequestDelete={vi.fn()}
+            onRequestClose={vi.fn()}
           />
         </MemoryRouter>
       </QueryClientProvider>,
@@ -117,7 +117,7 @@ describe("TaskListSection refetch and pager", () => {
         hasPrevPage={false}
         rootTasksOnPage={20}
         onEdit={vi.fn()}
-        onRequestDelete={vi.fn()}
+        onRequestClose={vi.fn()}
       />,
     );
     await user.click(screen.getByRole("button", { name: /^next$/i }));

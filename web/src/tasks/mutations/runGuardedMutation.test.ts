@@ -62,7 +62,7 @@ describe("runGuardedTaskMutation", () => {
       runGuardedTaskMutation({
         taskId: "t1",
         optimisticEnabled: true,
-        rumKind: "task_delete",
+        rumKind: "task_close",
         applyOptimistic,
         run,
       }),

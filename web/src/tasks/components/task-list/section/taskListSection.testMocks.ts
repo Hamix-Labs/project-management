@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, vi } from "vitest";
+import { makeTask } from "@/test/taskDefaults";
 
-const { mockPatchTask, mockDeleteTask } = vi.hoisted(() => ({
+const { mockPatchTask, mockCloseTask } = vi.hoisted(() => ({
   mockPatchTask: vi.fn(),
-  mockDeleteTask: vi.fn(),
+  mockCloseTask: vi.fn(),
 }));
 
 const isUiFeatureOmitted = vi.hoisted(() =>
@@ -18,14 +19,16 @@ vi.mock("@/api", async (importOriginal) => {
   return {
     ...actual,
     patchTask: mockPatchTask,
-    deleteTask: mockDeleteTask,
+    closeTask: mockCloseTask,
   };
 });
 
 beforeEach(() => {
   mockPatchTask.mockReset();
-  mockDeleteTask.mockReset();
-  mockDeleteTask.mockResolvedValue(undefined);
+  mockCloseTask.mockReset();
+  mockCloseTask.mockResolvedValue(
+    makeTask({ id: "closed", status: "closed" }),
+  );
   isUiFeatureOmitted.mockImplementation(() => false);
 });
 

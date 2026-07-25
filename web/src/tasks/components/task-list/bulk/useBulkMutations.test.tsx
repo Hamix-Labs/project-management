@@ -3,17 +3,18 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { taskQueryKeys } from "../../../task-query";
+import { makeTask } from "@/test/taskDefaults";
 import {
-  type BulkDeleteResult,
-  useBulkDeleteMutation,
-} from "./useBulkDeleteMutation";
+  type BulkCloseResult,
+  useBulkCloseMutation,
+} from "./useBulkCloseMutation";
 import {
   type BulkScheduleResult,
   useBulkScheduleMutation,
 } from "./useBulkScheduleMutation";
 
-const { mockDeleteTask, mockPatchTask } = vi.hoisted(() => ({
-  mockDeleteTask: vi.fn(),
+const { mockCloseTask, mockPatchTask } = vi.hoisted(() => ({
+  mockCloseTask: vi.fn(),
   mockPatchTask: vi.fn(),
 }));
 
@@ -21,14 +22,14 @@ vi.mock("@/api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/api")>();
   return {
     ...actual,
-    deleteTask: mockDeleteTask,
+    closeTask: mockCloseTask,
     patchTask: mockPatchTask,
   };
 });
 
-import { deleteTask, patchTask } from "@/api";
+import { closeTask, patchTask } from "@/api";
 
-const mockedDelete = vi.mocked(deleteTask);
+const mockedClose = vi.mocked(closeTask);
 const mockedPatch = vi.mocked(patchTask);
 
 function deferred<T>() {
@@ -51,16 +52,19 @@ function makeWrapper() {
   return { Wrapper, queryClient };
 }
 
-describe("useBulkDeleteMutation", () => {
+describe("useBulkCloseMutation", () => {
   beforeEach(() => {
-    mockedDelete.mockReset();
+    mockedClose.mockReset();
+    mockedClose.mockImplementation(async (id: string) =>
+      makeTask({ id, status: "closed" }),
+    );
   });
 
   it("does not call the API or invalidate when selection is empty", async () => {
     const { Wrapper, queryClient } = makeWrapper();
     const inv = vi.spyOn(queryClient, "invalidateQueries");
 
-    const { result } = renderHook(() => useBulkDeleteMutation(), {
+    const { result } = renderHook(() => useBulkCloseMutation(), {
       wrapper: Wrapper,
     });
 
@@ -68,19 +72,19 @@ describe("useBulkDeleteMutation", () => {
       await result.current.run([]);
     });
 
-    expect(mockedDelete).not.toHaveBeenCalled();
+    expect(mockedClose).not.toHaveBeenCalled();
     expect(inv).not.toHaveBeenCalled();
   });
 
-  it("still invalidates task queries when some deletes fail (partial success)", async () => {
+  it("still invalidates task queries when some closes fail (partial success)", async () => {
     const { Wrapper, queryClient } = makeWrapper();
     const inv = vi.spyOn(queryClient, "invalidateQueries");
 
-    mockedDelete
-      .mockResolvedValueOnce(undefined)
+    mockedClose
+      .mockResolvedValueOnce(makeTask({ id: "ok-id", status: "closed" }))
       .mockRejectedValueOnce(new Error("server no"));
 
-    const { result } = renderHook(() => useBulkDeleteMutation(), {
+    const { result } = renderHook(() => useBulkCloseMutation(), {
       wrapper: Wrapper,
     });
 
@@ -134,8 +138,8 @@ describe("useBulkScheduleMutation overlapping runs", () => {
   });
 
   /**
-   * Same contract as bulk delete: shared `isPending` + in-flight ref.
-   * Split `act` boundaries for React 18 flush semantics (see delete overlap test).
+   * Same contract as bulk close: shared `isPending` + in-flight ref.
+   * Split `act` boundaries for React 18 flush semantics (see close overlap test).
    */
   it("keeps isPending true until every overlapping bulk run has finished", async () => {
     const dSlow = deferred<void>();
@@ -185,9 +189,9 @@ describe("useBulkScheduleMutation overlapping runs", () => {
   });
 });
 
-describe("useBulkDeleteMutation overlapping runs", () => {
+describe("useBulkCloseMutation overlapping runs", () => {
   beforeEach(() => {
-    mockedDelete.mockReset();
+    mockedClose.mockReset();
   });
 
   /**
@@ -200,20 +204,19 @@ describe("useBulkDeleteMutation overlapping runs", () => {
     const dSlow = deferred<void>();
     const { Wrapper } = makeWrapper();
 
-    mockedDelete.mockImplementation(async (id: string) => {
+    mockedClose.mockImplementation(async (id: string) => {
       if (id === "slow") {
         await dSlow.promise;
-        return;
       }
-      return undefined;
+      return makeTask({ id, status: "closed" });
     });
 
-    const { result } = renderHook(() => useBulkDeleteMutation(), {
+    const { result } = renderHook(() => useBulkCloseMutation(), {
       wrapper: Wrapper,
     });
 
     let slowDone = false;
-    let pSlow!: Promise<BulkDeleteResult>;
+    let pSlow!: Promise<BulkCloseResult>;
 
     await act(() => {
       pSlow = result.current.run(["slow"]).finally(() => {
@@ -221,7 +224,7 @@ describe("useBulkDeleteMutation overlapping runs", () => {
       });
     });
 
-    await waitFor(() => expect(mockedDelete).toHaveBeenCalledWith("slow"));
+    await waitFor(() => expect(mockedClose).toHaveBeenCalledWith("slow"));
     expect(result.current.isPending).toBe(true);
 
     await act(async () => {

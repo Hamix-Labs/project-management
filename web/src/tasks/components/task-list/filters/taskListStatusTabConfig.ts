@@ -19,6 +19,7 @@ export function taskListStatusTabs(): TaskListStatusTab[] {
     { value: "failed", label: "Failed" },
     { value: "done", label: "Done" },
     { value: "on_hold", label: "On hold" },
+    { value: "closed", label: "Closed" },
   ];
   if (scheduleUiEnabled) {
     tabs.push({ value: "scheduled", label: "Scheduled" });
@@ -44,6 +45,7 @@ export function taskListStatusTabCount(
     case "failed":
     case "done":
     case "on_hold":
+    case "closed":
       return stats.by_status?.[value] ?? 0;
     default:
       return null;

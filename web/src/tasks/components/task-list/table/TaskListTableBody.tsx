@@ -1,5 +1,5 @@
 import type { Task } from "@/types";
-import type { DeleteTargetInput } from "../../../hooks/useTaskDeleteFlow";
+import type { CloseTargetInput } from "../../../hooks/useTaskCloseFlow";
 import {
   EmptyState,
   EmptyStateFilterGlyph,
@@ -20,7 +20,7 @@ export function TaskListTableBody({
   projectNameById,
   saving,
   onEdit,
-  onRequestDelete,
+  onRequestClose,
   prefetchTaskDetail,
   navigate,
 }: {
@@ -34,7 +34,7 @@ export function TaskListTableBody({
   projectNameById: Record<string, string>;
   saving: boolean;
   onEdit: (t: Task) => void;
-  onRequestDelete: (t: DeleteTargetInput) => void;
+  onRequestClose: (t: CloseTargetInput) => void;
   prefetchTaskDetail: (id: string) => void;
   navigate: (path: string) => void;
 }) {
@@ -75,7 +75,7 @@ export function TaskListTableBody({
             projectNameById={projectNameById}
             saving={saving}
             onEdit={onEdit}
-            onRequestDelete={onRequestDelete}
+            onRequestClose={onRequestClose}
             prefetchTaskDetail={prefetchTaskDetail}
             navigate={navigate}
           />

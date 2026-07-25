@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, type FormEvent } from "react";
 import type { Task } from "@/types";
-import { useTaskDeleteFlow } from "./useTaskDeleteFlow";
+import { useTaskCloseFlow } from "./useTaskCloseFlow";
 import { useTaskCreateFlow } from "./useTaskCreateFlow";
 import { useTasksHomeList } from "./useTasksHomeList";
 import { useTaskEditFlow } from "./useTaskEditFlow";
@@ -26,7 +26,7 @@ export type UseTasksAppOptions = {
 };
 
 /**
- * Thin facade: create flow + home list + edit/delete composers.
+ * Thin facade: create flow + home list + edit/close composers.
  * Settings cache ownership lives in bootstrap / settings vertical (F-05-06).
  */
 export function useTasksApp({
@@ -58,26 +58,34 @@ export function useTasksApp({
   editingTaskIdRef.current = editingTaskId;
 
   const {
-    deleteTarget,
-    requestDelete,
-    cancelDelete,
-    confirmDelete,
-    deletePending,
-    deleteError,
-    deleteSuccess,
-    deleteVariables,
-    resetError: resetDeleteError,
-  } = useTaskDeleteFlow({
-    onDeleted: (deletedId) => {
-      if (editingTaskIdRef.current === deletedId) {
+    closeTarget,
+    requestClose,
+    cancelClose,
+    confirmClose,
+    closePending,
+    closeError,
+    closeSuccess,
+    closeVariables,
+    resetCloseError,
+    reopen,
+    reopenPending,
+    reopenError,
+    resetReopenError,
+  } = useTaskCloseFlow({
+    onClosed: (closedId) => {
+      // Keep the compose modal open on close — closing a task should
+      // never surprise-close an unrelated editor. Historically the
+      // delete flow closed the modal because the task row vanished;
+      // with close the row still exists so there is no orphan risk.
+      if (editingTaskIdRef.current === closedId) {
         closeCreateModal();
       }
     },
   });
 
   useEffect(() => {
-    if (!deleteTarget) resetDeleteError();
-  }, [deleteTarget, resetDeleteError]);
+    if (!closeTarget) resetCloseError();
+  }, [closeTarget, resetCloseError]);
 
   const list = useTasksHomeList({ dataEnabled, bootstrapSettled });
 
@@ -102,19 +110,22 @@ export function useTasksApp({
     createFlow.createPending ||
     createFlow.templateSavePending ||
     edit.patchPending ||
-    deletePending;
+    closePending ||
+    reopenPending;
 
   const error = useMemo(() => {
     if (list.listError) return list.listError;
     if (createFlowError) return createFlowError;
     if (edit.patchError) return edit.patchError;
-    if (deleteError) return deleteError;
+    if (closeError) return closeError;
+    if (reopenError) return reopenError;
     return edit.editTitleRequiredError;
   }, [
     list.listError,
     createFlowError,
     edit.patchError,
-    deleteError,
+    closeError,
+    reopenError,
     edit.editTitleRequiredError,
   ]);
 
@@ -162,9 +173,13 @@ export function useTasksApp({
     saving,
     patchPending: edit.patchPending,
     patchError: edit.patchError,
-    deletePending,
-    deleteSuccess,
-    deleteVariables,
+    closePending,
+    closeSuccess,
+    closeVariables,
+    reopen,
+    reopenPending,
+    reopenError,
+    resetReopenError,
     error,
     sseLive,
     taskStats: list.taskStats,
@@ -180,11 +195,11 @@ export function useTasksApp({
     submitEdit: edit.submitEdit,
     submitComposeModal,
     editFormError: edit.editTitleRequiredError,
-    deleteTarget,
-    requestDelete,
-    cancelDelete,
-    confirmDelete,
-    deleteError,
+    closeTarget,
+    requestClose,
+    cancelClose,
+    confirmClose,
+    closeError,
     taskListPage: list.taskListPage,
     setTaskListPage: list.setTaskListPage,
     resetTaskListPage: list.resetTaskListPage,

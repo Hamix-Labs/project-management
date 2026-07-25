@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useTaskDetailPrefetcher } from "@/app/hooks/usePrefetchOnIntent";
 import type { Task } from "@/types";
 import type { TaskWithDepth } from "../../../task-tree";
-import type { DeleteTargetInput } from "../../../hooks/useTaskDeleteFlow";
+import type { CloseTargetInput } from "../../../hooks/useTaskCloseFlow";
 import type {
   TaskListSortDir,
   TaskListSortKey,
@@ -25,7 +25,7 @@ type Props = {
   saving: boolean;
   emptyListAction?: EmptyStateAction;
   onEdit: (t: Task) => void;
-  onRequestDelete: (t: DeleteTargetInput) => void;
+  onRequestClose: (t: CloseTargetInput) => void;
   selection?: BulkSelectionProps;
   projectNameById?: Record<string, string>;
   showProjectColumn?: boolean;
@@ -42,7 +42,7 @@ export function TaskListDataTable({
   saving,
   emptyListAction,
   onEdit,
-  onRequestDelete,
+  onRequestClose,
   selection,
   projectNameById = {},
   showProjectColumn = true,
@@ -95,7 +95,7 @@ export function TaskListDataTable({
           projectNameById={projectNameById}
           saving={saving}
           onEdit={onEdit}
-          onRequestDelete={onRequestDelete}
+          onRequestClose={onRequestClose}
           prefetchTaskDetail={prefetchTaskDetail}
           navigate={navigate}
         />

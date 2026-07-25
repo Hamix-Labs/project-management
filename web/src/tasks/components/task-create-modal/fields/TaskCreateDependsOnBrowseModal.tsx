@@ -1,6 +1,6 @@
 import { Modal } from "@/shared/Modal";
 import type { Task } from "@/types";
-import { shortId } from "./taskCreateDependsOnUtils";
+import { taskDisplayRef } from "@/lib/taskShortId";
 
 type Props = {
   browseTitleId: string;
@@ -71,7 +71,7 @@ export function TaskCreateDependsOnBrowseModal({
                         {t.title || "(untitled task)"}
                       </span>
                       <span className="task-create-deps-browse__row-meta">
-                        {shortId(t.id)} · {t.status}
+                        {taskDisplayRef(t)} · {t.status}
                       </span>
                     </span>
                   </label>

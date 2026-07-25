@@ -21,7 +21,7 @@ describe("TaskListSection", () => {
         smoothTransitions={false}
         {...listPagerDefaults}
         onEdit={vi.fn()}
-        onRequestDelete={vi.fn()}
+        onRequestClose={vi.fn()}
       />,
     );
     expect(
@@ -39,7 +39,7 @@ describe("TaskListSection", () => {
         smoothTransitions={false}
         {...listPagerDefaults}
         onEdit={vi.fn()}
-        onRequestDelete={vi.fn()}
+        onRequestClose={vi.fn()}
       />,
     );
     expect(screen.getByText("Syncing with server…")).toBeInTheDocument();
@@ -54,7 +54,7 @@ describe("TaskListSection", () => {
         saving={false}
         {...listPagerDefaults}
         onEdit={vi.fn()}
-        onRequestDelete={vi.fn()}
+        onRequestClose={vi.fn()}
       />,
     );
     // Title stays "No tasks yet" (precise, used as a page-ready sentinel
@@ -83,7 +83,7 @@ describe("TaskListSection", () => {
         saving={false}
         {...listPagerDefaults}
         onEdit={vi.fn()}
-        onRequestDelete={vi.fn()}
+        onRequestClose={vi.fn()}
         emptyListAction={{
           label: "Create one",
           onClick: onCreate,
@@ -97,7 +97,7 @@ describe("TaskListSection", () => {
   it("renders rows and calls onEdit", async () => {
     const user = userEvent.setup();
     const onEdit = vi.fn();
-    const onRequestDelete = vi.fn();
+    const onRequestClose = vi.fn();
     const task = {
       id: "1",
       title: "Alpha",
@@ -116,7 +116,7 @@ describe("TaskListSection", () => {
         {...listPagerDefaults}
         rootTasksOnPage={1}
         onEdit={onEdit}
-        onRequestDelete={onRequestDelete}
+        onRequestClose={onRequestClose}
       />,
     );
     await user.click(
@@ -124,9 +124,9 @@ describe("TaskListSection", () => {
     );
     expect(onEdit).toHaveBeenCalledWith(task);
     await user.click(
-      screen.getByRole("button", { name: /^delete task "alpha"$/i }),
+      screen.getByRole("button", { name: /^close task "alpha"$/i }),
     );
-    expect(onRequestDelete).toHaveBeenCalledWith({
+    expect(onRequestClose).toHaveBeenCalledWith({
       ...task,
     });
   });
@@ -141,7 +141,7 @@ describe("TaskListSection", () => {
         {...listPagerDefaults}
         rootTasksOnPage={1}
         onEdit={vi.fn()}
-        onRequestDelete={vi.fn()}
+        onRequestClose={vi.fn()}
         taskStats={{
           total: 15,
           ready: 7,
@@ -168,10 +168,10 @@ describe("TaskListSection", () => {
     ).toBeInTheDocument();
   });
 
-  it("disables edit but keeps delete enabled for running tasks", async () => {
+  it("disables edit but keeps close enabled for running tasks", async () => {
     const user = userEvent.setup();
     const onEdit = vi.fn();
-    const onRequestDelete = vi.fn();
+    const onRequestClose = vi.fn();
     const task = {
       id: "1",
       title: "Running task",
@@ -190,7 +190,7 @@ describe("TaskListSection", () => {
         {...listPagerDefaults}
         rootTasksOnPage={1}
         onEdit={onEdit}
-        onRequestDelete={onRequestDelete}
+        onRequestClose={onRequestClose}
       />,
     );
     const editButton = screen.getByRole("button", {
@@ -201,9 +201,9 @@ describe("TaskListSection", () => {
     expect(onEdit).not.toHaveBeenCalled();
 
     await user.click(
-      screen.getByRole("button", { name: /^delete task "running task"$/i }),
+      screen.getByRole("button", { name: /^close task "running task"$/i }),
     );
-    expect(onRequestDelete).toHaveBeenCalledWith(task);
+    expect(onRequestClose).toHaveBeenCalledWith(task);
   });
 
   it("filters rows by status and priority", async () => {
@@ -237,7 +237,7 @@ describe("TaskListSection", () => {
         {...listPagerDefaults}
         rootTasksOnPage={2}
         onEdit={vi.fn()}
-        onRequestDelete={vi.fn()}
+        onRequestClose={vi.fn()}
       />,
     );
     expect(screen.getByText("Low ready")).toBeInTheDocument();
@@ -274,7 +274,7 @@ describe("TaskListSection", () => {
         smoothTransitions={false}
         {...listPagerDefaults}
         onEdit={vi.fn()}
-        onRequestDelete={vi.fn()}
+        onRequestClose={vi.fn()}
       />,
     );
     expect(screen.getByRole("tablist", { name: /filter tasks by status/i })).toBeInTheDocument();
@@ -314,7 +314,7 @@ describe("TaskListSection", () => {
         {...listPagerDefaults}
         rootTasksOnPage={2}
         onEdit={vi.fn()}
-        onRequestDelete={vi.fn()}
+        onRequestClose={vi.fn()}
       />,
     );
     expect(screen.getByText("Alpha task")).toBeInTheDocument();
@@ -352,7 +352,7 @@ describe("TaskListSection", () => {
         rootTasksOnPage={2}
         projectFilterOptions={[{ id: "project-1", name: "Context moat" }]}
         onEdit={vi.fn()}
-        onRequestDelete={vi.fn()}
+        onRequestClose={vi.fn()}
       />,
     );
     expect(screen.getByText("Moat task")).toBeInTheDocument();
@@ -397,7 +397,7 @@ describe("TaskListSection", () => {
         {...listPagerDefaults}
         rootTasksOnPage={1}
         onEdit={vi.fn()}
-        onRequestDelete={vi.fn()}
+        onRequestClose={vi.fn()}
       />,
     );
     await user.click(screen.getByRole("tab", { name: /^failed$/i }));

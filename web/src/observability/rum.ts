@@ -30,7 +30,8 @@ import { RUM_ENDPOINT, sendRUMPayload } from "@/api/rum";
 export type RUMMutationKind =
   | "task_create"
   | "task_patch"
-  | "task_delete"
+  | "task_close"
+  | "task_reopen"
   | "task_requeue"
   | "task_retry"
   | "task_approve"

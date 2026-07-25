@@ -4,22 +4,22 @@ import { describe, expect, it, vi } from "vitest";
 import { TaskDetailToolbarActions } from "./TaskDetailAttentionBar";
 
 describe("TaskDetailToolbarActions", () => {
-  it("invokes edit and delete handlers", async () => {
+  it("invokes edit and close handlers", async () => {
     const user = userEvent.setup();
     const onEdit = vi.fn();
-    const onDelete = vi.fn();
+    const onClose = vi.fn();
     render(
       <TaskDetailToolbarActions
         saving={false}
         onEdit={onEdit}
-        onDelete={onDelete}
+        onClose={onClose}
       />,
     );
 
     await user.click(screen.getByRole("button", { name: /edit task/i }));
-    await user.click(screen.getByRole("button", { name: /^delete$/i }));
+    await user.click(screen.getByRole("button", { name: /^close$/i }));
     expect(onEdit).toHaveBeenCalledOnce();
-    expect(onDelete).toHaveBeenCalledOnce();
+    expect(onClose).toHaveBeenCalledOnce();
   });
 
   it("disables action buttons while saving", () => {
@@ -27,24 +27,24 @@ describe("TaskDetailToolbarActions", () => {
       <TaskDetailToolbarActions
         saving
         onEdit={vi.fn()}
-        onDelete={vi.fn()}
+        onClose={vi.fn()}
       />,
     );
 
     expect(screen.getByRole("button", { name: /edit task/i })).toBeDisabled();
-    expect(screen.getByRole("button", { name: /^delete$/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /^close$/i })).toBeDisabled();
   });
 
-  it("disables edit but keeps delete enabled when canEdit is false", async () => {
+  it("disables edit but keeps close enabled when canEdit is false", async () => {
     const user = userEvent.setup();
     const onEdit = vi.fn();
-    const onDelete = vi.fn();
+    const onClose = vi.fn();
     render(
       <TaskDetailToolbarActions
         saving={false}
         canEdit={false}
         onEdit={onEdit}
-        onDelete={onDelete}
+        onClose={onClose}
       />,
     );
 
@@ -53,8 +53,39 @@ describe("TaskDetailToolbarActions", () => {
     await user.click(editButton);
     expect(onEdit).not.toHaveBeenCalled();
 
-    await user.click(screen.getByRole("button", { name: /^delete$/i }));
-    expect(onDelete).toHaveBeenCalledOnce();
+    await user.click(screen.getByRole("button", { name: /^close$/i }));
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it("swaps Close for Reopen when onReopen is provided", async () => {
+    const user = userEvent.setup();
+    const onReopen = vi.fn();
+    render(
+      <TaskDetailToolbarActions
+        saving={false}
+        onEdit={vi.fn()}
+        onReopen={onReopen}
+      />,
+    );
+    expect(
+      screen.queryByRole("button", { name: /^close$/i }),
+    ).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /^reopen$/i }));
+    expect(onReopen).toHaveBeenCalledOnce();
+  });
+
+  it("shows Reopening… pending label", () => {
+    render(
+      <TaskDetailToolbarActions
+        saving={false}
+        onEdit={vi.fn()}
+        onReopen={vi.fn()}
+        reopenPending
+      />,
+    );
+    expect(
+      screen.getByRole("button", { name: /^reopening…$/i }),
+    ).toBeDisabled();
   });
 
   it("renders Approve and Polish when review handlers are provided", async () => {
@@ -65,7 +96,7 @@ describe("TaskDetailToolbarActions", () => {
       <TaskDetailToolbarActions
         saving={false}
         onEdit={vi.fn()}
-        onDelete={vi.fn()}
+        onClose={vi.fn()}
         onApprove={onApprove}
         onPolish={onPolish}
       />,
@@ -85,7 +116,7 @@ describe("TaskDetailToolbarActions", () => {
       <TaskDetailToolbarActions
         saving={false}
         onEdit={vi.fn()}
-        onDelete={vi.fn()}
+        onClose={vi.fn()}
         onRetryFresh={onRetryFresh}
         onRetryResume={onRetryResume}
       />,
@@ -107,7 +138,7 @@ describe("TaskDetailToolbarActions", () => {
       <TaskDetailToolbarActions
         saving={false}
         onEdit={vi.fn()}
-        onDelete={vi.fn()}
+        onClose={vi.fn()}
         onConfigureModel={onConfigureModel}
       />,
     );
@@ -119,7 +150,7 @@ describe("TaskDetailToolbarActions", () => {
       <TaskDetailToolbarActions
         saving={false}
         onEdit={vi.fn()}
-        onDelete={vi.fn()}
+        onClose={vi.fn()}
         onConfigureModel={onConfigureModel}
         showModelConfig
       />,
@@ -138,7 +169,7 @@ describe("TaskDetailToolbarActions", () => {
         <TaskDetailToolbarActions
           saving={false}
           onEdit={vi.fn()}
-          onDelete={vi.fn()}
+          onClose={vi.fn()}
         />,
       );
       expect(
@@ -153,7 +184,7 @@ describe("TaskDetailToolbarActions", () => {
         <TaskDetailToolbarActions
           saving={false}
           onEdit={vi.fn()}
-          onDelete={vi.fn()}
+          onClose={vi.fn()}
           autonomyMode="ready"
           onToggleAutonomy={onToggleAutonomy}
         />,
@@ -170,7 +201,7 @@ describe("TaskDetailToolbarActions", () => {
         <TaskDetailToolbarActions
           saving={false}
           onEdit={vi.fn()}
-          onDelete={vi.fn()}
+          onClose={vi.fn()}
           autonomyMode="on_hold"
           onToggleAutonomy={onToggleAutonomy}
         />,
@@ -185,7 +216,7 @@ describe("TaskDetailToolbarActions", () => {
         <TaskDetailToolbarActions
           saving={false}
           onEdit={vi.fn()}
-          onDelete={vi.fn()}
+          onClose={vi.fn()}
           autonomyMode="ready"
           onToggleAutonomy={vi.fn()}
           autonomyPending
@@ -201,7 +232,7 @@ describe("TaskDetailToolbarActions", () => {
       <TaskDetailToolbarActions
         saving={false}
         onEdit={vi.fn()}
-        onDelete={vi.fn()}
+        onClose={vi.fn()}
         onConfigureModel={vi.fn()}
         showModelConfig
       />,

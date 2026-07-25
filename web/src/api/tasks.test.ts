@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createTask,
-  deleteTask,
+  closeTask,
   getTask,
   getTaskStats,
   getCycleFailures,
@@ -10,6 +10,7 @@ import {
   maxTaskPathIDBytes,
   patchTask,
   patchTaskEventUserResponse,
+  reopenTask,
   saveTaskDraft,
 } from "./index";
 
@@ -445,21 +446,62 @@ describe("patchTaskEventUserResponse", () => {
   });
 });
 
-describe("deleteTask", () => {
+describe("closeTask", () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it("DELETEs /tasks/{id}", async () => {
+  it("POSTs /tasks/{id}/close", async () => {
     const spy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(null, { status: 204 }),
+      new Response(
+        JSON.stringify({
+          id: "ab/c",
+          title: "Closed",
+          initial_prompt: "",
+          status: "closed",
+          priority: "medium",
+          runner: "cursor",
+          cursor_model: "",
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
     );
 
-    await deleteTask("ab/c");
+    await closeTask("ab/c");
 
     expect(spy).toHaveBeenCalledWith(
-      "/tasks/ab%2Fc",
-      expect.objectContaining({ method: "DELETE" }),
+      "/tasks/ab%2Fc/close",
+      expect.objectContaining({ method: "POST" }),
+    );
+  });
+});
+
+describe("reopenTask", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("POSTs /tasks/{id}/reopen", async () => {
+    const spy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          id: "ab/c",
+          title: "Reopened",
+          initial_prompt: "",
+          status: "ready",
+          priority: "medium",
+          runner: "cursor",
+          cursor_model: "",
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+
+    await reopenTask("ab/c");
+
+    expect(spy).toHaveBeenCalledWith(
+      "/tasks/ab%2Fc/reopen",
+      expect.objectContaining({ method: "POST" }),
     );
   });
 });

@@ -40,21 +40,21 @@ vi.mock("react-router-dom", async (importOriginal) => {
 
 function mockApp(): ReturnType<typeof useTasksApp> {
   return {
-    deleteSuccess: false,
-    deleteVariables: undefined,
+    closeSuccess: false,
+    closeVariables: undefined,
     openEdit: vi.fn(),
-    requestDelete: vi.fn(),
+    requestClose: vi.fn(),
     saving: false,
   } as unknown as ReturnType<typeof useTasksApp>;
 }
 
-function appWithDeleteSuccess(
+function appWithCloseSuccess(
   variables: { id: string },
 ): ReturnType<typeof useTasksApp> {
   return {
     ...mockApp(),
-    deleteSuccess: true,
-    deleteVariables: variables,
+    closeSuccess: true,
+    closeVariables: variables,
   } as unknown as ReturnType<typeof useTasksApp>;
 }
 
@@ -346,14 +346,14 @@ describe("TaskDetailPage", () => {
     ).toBeInTheDocument();
   });
 
-  it("navigates home after successful delete", () => {
+  it("stays on the detail page after a successful close", () => {
     useTaskDetailHandlers(taskDetail("root1", "Root"));
 
-    const app = appWithDeleteSuccess({ id: "root1" });
+    const app = appWithCloseSuccess({ id: "root1" });
 
     renderDetail("/tasks/root1", app);
 
-    expect(mockNavigate).toHaveBeenCalledWith("/", { replace: true });
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 
   it("disables Add criterion when the task is running or done", async () => {

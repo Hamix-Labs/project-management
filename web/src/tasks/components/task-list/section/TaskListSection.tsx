@@ -9,7 +9,7 @@ import { useDelayedTrue } from "@/lib/useDelayedTrue";
 import { formatTaskListHeadingSummary } from "./taskListHeadingSummary";
 import type { Task, TaskStatsResponse } from "@/types";
 import type { TaskWithDepth } from "../../../task-tree";
-import type { DeleteTargetInput } from "../../../hooks/useTaskDeleteFlow";
+import type { CloseTargetInput } from "../../../hooks/useTaskCloseFlow";
 import type { EmptyStateAction } from "@/shared/EmptyState";
 import { useAppTimezone } from "@/shared/time/appTimezone";
 import { isUiFeatureOmitted } from "@/launch/omittedFeatures";
@@ -54,7 +54,7 @@ type Props = {
    * Opens in-app delete confirmation (do not call `window.confirm` from the
    * table).
    */
-  onRequestDelete: (t: DeleteTargetInput) => void;
+  onRequestClose: (t: CloseTargetInput) => void;
   /** Primary action when the server returned no tasks (e.g. open create modal). */
   emptyListAction?: EmptyStateAction;
   /** Optional toolbar on the title row (e.g. home “New task”). */
@@ -90,7 +90,7 @@ export const TaskListSection = memo(function TaskListSection({
   hasPrevPage,
   smoothTransitions = true,
   onEdit,
-  onRequestDelete,
+  onRequestClose,
   emptyListAction,
   actions,
   taskStats,
@@ -179,7 +179,7 @@ export const TaskListSection = memo(function TaskListSection({
         showProjectColumn={showProjectColumn}
         emptyListAction={emptyListAction}
         onEdit={onEdit}
-        onRequestDelete={onRequestDelete}
+        onRequestClose={onRequestClose}
         onListPageChange={onListPageChange}
         filters={filters}
         bulk={bulk}

@@ -1,6 +1,6 @@
 import type { Task } from "@/types";
 import type { TaskWithDepth } from "../../../task-tree";
-import type { DeleteTargetInput } from "../../../hooks/useTaskDeleteFlow";
+import type { CloseTargetInput } from "../../../hooks/useTaskCloseFlow";
 import type { EmptyStateAction } from "@/shared/EmptyState";
 import { TaskListDataTable } from "../table/TaskListDataTable";
 import { TaskListTableSkeleton } from "../table/TaskListTableSkeleton";
@@ -29,7 +29,7 @@ type Props = {
   showProjectColumn: boolean;
   emptyListAction?: EmptyStateAction;
   onEdit: (t: Task) => void;
-  onRequestDelete: (t: DeleteTargetInput) => void;
+  onRequestClose: (t: CloseTargetInput) => void;
   onListPageChange: (page: number) => void;
   filters: Filters;
   bulk: Bulk;
@@ -52,7 +52,7 @@ export function TaskListTableRegion({
   showProjectColumn,
   emptyListAction,
   onEdit,
-  onRequestDelete,
+  onRequestClose,
   onListPageChange,
   filters,
   bulk,
@@ -77,7 +77,7 @@ export function TaskListTableRegion({
             saving={saving}
             emptyListAction={emptyListAction}
             onEdit={onEdit}
-            onRequestDelete={onRequestDelete}
+            onRequestClose={onRequestClose}
             projectNameById={filters.projectNameById}
             showProjectColumn={showProjectColumn}
             sortKey={filters.sortKey}

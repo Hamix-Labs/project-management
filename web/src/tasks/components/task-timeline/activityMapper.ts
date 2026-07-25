@@ -1,4 +1,5 @@
 import { statusListLabel } from "@/lib/taskStatusDisplay";
+import { taskDisplayRef } from "@/lib/taskShortId";
 import { parseVerificationSnapshot } from "../../task-events/parseVerificationSnapshot";
 import type { Status, TaskActivityEvent } from "@/types";
 import { STATUSES } from "@/types";
@@ -12,9 +13,16 @@ function activityEventId(ev: TaskActivityEvent): string {
   return `activity-${ev.task_id}-${ev.seq}`;
 }
 
-/** Short task reference (first 8 chars of the uuid). */
-function taskRef(taskId: string): string {
-  return taskId.replace(/-/g, "").slice(0, 8);
+/**
+ * Canonical short reference for a timeline row: prefers the per-project
+ * `#N` when the server surfaced `task_number`, else the short UUID.
+ * `task_title` is intentionally NOT used — see the Timeline spec: the
+ * timeline is a stream of tiny "what changed" cards and titles blow up
+ * the layout / leak edited titles into the audit trail. The full title
+ * lives on the task detail page reached via `taskId`.
+ */
+function taskRef(ev: Pick<TaskActivityEvent, "task_id" | "task_number">): string {
+  return taskDisplayRef({ id: ev.task_id, number: ev.task_number });
 }
 
 function isStatus(s: unknown): s is Status {
@@ -32,7 +40,7 @@ function mapStatusChanged(ev: TaskActivityEvent): TimelineEvent {
   const fromLabel = from ? statusListLabel(from) : from;
   const toLabel = to ? statusListLabel(to) : to;
 
-  const highlight = ev.task_title ?? taskRef(ev.task_id);
+  const ref = taskRef(ev);
   const detail =
     fromLabel && toLabel
       ? `${fromLabel} → ${toLabel}`
@@ -48,10 +56,10 @@ function mapStatusChanged(ev: TaskActivityEvent): TimelineEvent {
     category: "tasks",
     at: ev.at,
     title: "Status changed",
-    highlight,
+    highlight: ref,
     detail,
     taskId: ev.task_id,
-    taskRef: taskRef(ev.task_id),
+    taskRef: ref,
     seq: ev.seq,
     meta: meta.length > 0 ? meta : undefined,
   };
@@ -93,7 +101,7 @@ function mapPhaseFailed(ev: TaskActivityEvent): TimelineEvent {
   const phaseLabel = KNOWN_PHASES.has(phase)
     ? phaseDisplayLabel(phase)
     : "Phase";
-  const highlight = ev.task_title ?? taskRef(ev.task_id);
+  const ref = taskRef(ev);
   const detail =
     summary || (snapshot ? `${snapshot.failedCount} criteria failed` : `${phaseLabel} phase failed.`);
 
@@ -110,10 +118,10 @@ function mapPhaseFailed(ev: TaskActivityEvent): TimelineEvent {
     category: "verification",
     at: ev.at,
     title: `${phaseLabel} phase failed`,
-    highlight,
+    highlight: ref,
     detail,
     taskId: ev.task_id,
-    taskRef: taskRef(ev.task_id),
+    taskRef: ref,
     seq: ev.seq,
     meta: meta.length > 0 ? meta : undefined,
   };
@@ -124,17 +132,17 @@ function mapPhaseFailed(ev: TaskActivityEvent): TimelineEvent {
 // ---------------------------------------------------------------------------
 
 function mapApprovalGranted(ev: TaskActivityEvent): TimelineEvent {
-  const highlight = ev.task_title ?? taskRef(ev.task_id);
+  const ref = taskRef(ev);
   return {
     id: activityEventId(ev),
     kind: "review-approved" as TimelineKind,
     category: "tasks",
     at: ev.at,
     title: "Review approved",
-    highlight,
+    highlight: ref,
     detail: "Approval granted — task cleared for the next step.",
     taskId: ev.task_id,
-    taskRef: taskRef(ev.task_id),
+    taskRef: ref,
     seq: ev.seq,
   };
 }

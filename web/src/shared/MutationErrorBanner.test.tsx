@@ -33,7 +33,7 @@ describe("MutationErrorBanner", () => {
 
   it("renders a pre-coerced string verbatim (does NOT route through errorMessage's fallback path)", () => {
     // Critical contract: the flow hooks (`useTaskPatchFlow`,
-    // `useTaskDeleteFlow`) already pre-coerce via
+    // `useTaskCloseFlow`) already pre-coerce via
     // `errorMessage(mutation.error)` before exposing `patchError` /
     // `deleteError`, so by the time the string reaches the banner it
     // is already user-presentable. Routing it back through

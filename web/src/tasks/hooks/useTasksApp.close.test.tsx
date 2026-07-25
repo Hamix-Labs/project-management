@@ -3,16 +3,17 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useTasksApp } from "./useTasksApp";
 import { stubEventSource } from "../../test/browserMocks";
+import { makeTask } from "@/test/taskDefaults";
 import {
   makeWrapper,
-  mockedDeleteTask,
+  mockedCloseTask,
   mockedEnsureRepos,
   mockedGetStats,
   mockedListDrafts,
   mockedListTasks,
 } from "./useTasksApp.testSetup";
 
-describe("useTasksApp delete lifecycle", () => {
+describe("useTasksApp close lifecycle", () => {
   beforeEach(() => {
     stubEventSource();
     mockedListTasks.mockResolvedValue({
@@ -29,32 +30,34 @@ describe("useTasksApp delete lifecycle", () => {
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
-    mockedDeleteTask.mockReset();
+    mockedCloseTask.mockReset();
   });
 
-  it("keeps successful delete variables available after the confirm dialog closes", async () => {
-    mockedDeleteTask.mockResolvedValueOnce(undefined as unknown as void);
+  it("keeps successful close variables available after the confirm dialog closes", async () => {
+    mockedCloseTask.mockResolvedValueOnce(
+      makeTask({ id: "root-task", status: "closed" }),
+    );
     const { Wrapper } = makeWrapper();
     const { result } = renderHook(() => useTasksApp({ sseLive: false }), {
       wrapper: Wrapper,
     });
 
     act(() => {
-      result.current.requestDelete({
+      result.current.requestClose({
         id: "root-task",
         title: "Root task",
       });
     });
     act(() => {
-      result.current.confirmDelete();
+      result.current.confirmClose();
     });
 
     await waitFor(() => {
-      expect(result.current.deleteTarget).toBeNull();
+      expect(result.current.closeTarget).toBeNull();
     });
     await waitFor(() => {
-      expect(result.current.deleteSuccess).toBe(true);
-      expect(result.current.deleteVariables).toEqual({ id: "root-task" });
+      expect(result.current.closeSuccess).toBe(true);
+      expect(result.current.closeVariables).toEqual({ id: "root-task" });
     });
   });
 });

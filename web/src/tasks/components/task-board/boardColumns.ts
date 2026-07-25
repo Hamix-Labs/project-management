@@ -5,12 +5,17 @@ export type BoardColumnId =
   | "backlog"
   | "in_progress"
   | "verification"
-  | "needs_attention";
+  | "needs_attention"
+  | "closed";
 
 export type BoardColumnDef = {
   id: BoardColumnId;
   label: string;
-  /** Disjoint status sets; never includes `done`. */
+  /**
+   * Disjoint status sets; never includes `done` or `closed` — both are
+   * terminal and filtered out of the board's active-task walk (see
+   * `fetchActiveTasksForBoard`).
+   */
   statuses: readonly Status[];
   tone: StatusTone;
 };
@@ -43,6 +48,12 @@ export const BOARD_COLUMNS: readonly BoardColumnDef[] = [
     label: "Needs Attention",
     statuses: ["blocked", "failed"],
     tone: "danger",
+  },
+  {
+    id: "closed",
+    label: "Closed",
+    statuses: ["closed"],
+    tone: "neutral",
   },
 ] as const;
 

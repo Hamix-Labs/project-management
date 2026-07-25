@@ -17,6 +17,8 @@ export function statusListLabel(status: Status): string {
       return "Failed";
     case "on_hold":
       return "On hold";
+    case "closed":
+      return "Closed";
   }
 }
 
@@ -43,4 +45,5 @@ export const STATUS_META: Record<Status, StatusMeta> = {
   failed: { label: statusListLabel("failed"), tone: "danger", order: 5 },
   done: { label: statusListLabel("done"), tone: "success", order: 6 },
   on_hold: { label: statusListLabel("on_hold"), tone: "neutral", order: 7 },
+  closed: { label: statusListLabel("closed"), tone: "neutral", order: 8 },
 };

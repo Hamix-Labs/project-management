@@ -250,33 +250,61 @@ export function taskPatchError(
   );
 }
 
-/** DELETE /tasks/:id — success (204). */
-export function taskDelete(
+/** POST /tasks/:id/close — success (returns updated task). */
+export function taskClose(
   taskId: string,
-  onDelete?: () => void,
+  onClose?: () => void,
+  overrides: Partial<Task> = {},
 ) {
-  return http.delete(`/tasks/${taskId}`, () => {
-    onDelete?.();
-    return new HttpResponse(null, { status: 204 });
+  return http.post(`/tasks/${taskId}/close`, () => {
+    onClose?.();
+    return HttpResponse.json(
+      makeTask({ id: taskId, status: "closed", ...overrides }),
+    );
   });
 }
 
-/** DELETE /tasks/:id — 4xx/5xx failure. */
-export function taskDeleteError(
+/** POST /tasks/:id/close — 4xx/5xx failure. */
+export function taskCloseError(
   taskId: string,
   status: number,
-  error = "Could not delete task",
+  error = "Could not close task",
 ) {
-  return http.delete(`/tasks/${taskId}`, () =>
+  return http.post(`/tasks/${taskId}/close`, () =>
     HttpResponse.json({ error }, { status }),
   );
 }
 
-/** Keeps DELETE /tasks/:id pending until deferred.resolve/reject. */
-export function taskDeletePending(taskId: string) {
+/** Keeps POST /tasks/:id/close pending until deferred.resolve/reject. */
+export function taskClosePending(taskId: string) {
   const deferred = createDeferred<Response>();
-  const handler = http.delete(`/tasks/${taskId}`, () => deferred.promise);
+  const handler = http.post(`/tasks/${taskId}/close`, () => deferred.promise);
   return [handler, deferred] as const;
+}
+
+/** POST /tasks/:id/reopen — success (returns updated task). */
+export function taskReopen(
+  taskId: string,
+  onReopen?: () => void,
+  overrides: Partial<Task> = {},
+) {
+  return http.post(`/tasks/${taskId}/reopen`, () => {
+    onReopen?.();
+    return HttpResponse.json(
+      makeTask({ id: taskId, status: "ready", ...overrides }),
+    );
+  });
+}
+
+/** POST /tasks/:id/reopen — 4xx/5xx failure. */
+export function taskReopenError(
+  taskId: string,
+  status: number,
+  error = "Could not reopen task",
+) {
+  return http.post(`/tasks/${taskId}/reopen`, () =>
+    HttpResponse.json({ error }, { status }),
+  );
 }
 
 export function checklistItemCreate(taskId: string) {

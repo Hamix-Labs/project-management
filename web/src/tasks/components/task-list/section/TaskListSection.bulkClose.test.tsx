@@ -1,5 +1,5 @@
 import "./taskListSection.testMocks";
-import { deleteTask } from "@/api";
+import { closeTask } from "@/api";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -10,10 +10,10 @@ import {
   renderWithRouter,
 } from "./taskListSection.testSetup";
 
-const mockDeleteTask = vi.mocked(deleteTask);
+const mockCloseTask = vi.mocked(closeTask);
 
-describe("TaskListSection bulk delete", () => {
-  it("opens confirm and DELETEs each selected task", async () => {
+describe("TaskListSection bulk close", () => {
+  it("opens confirm and POSTs close for each selected task", async () => {
     const user = userEvent.setup();
     const tasks = [
       makeRow("a", "Alpha"),
@@ -29,20 +29,20 @@ describe("TaskListSection bulk delete", () => {
         {...listPagerDefaults}
         rootTasksOnPage={3}
         onEdit={vi.fn()}
-        onRequestDelete={vi.fn()}
+        onRequestClose={vi.fn()}
       />,
     );
     await user.click(screen.getByTestId("task-list-select-row-a"));
     await user.click(screen.getByTestId("task-list-select-row-b"));
-    await user.click(screen.getByTestId("task-list-bulk-bar-delete"));
+    await user.click(screen.getByTestId("task-list-bulk-bar-close"));
     expect(
-      screen.getByRole("heading", { name: /delete 2 tasks/i }),
+      screen.getByRole("heading", { name: /close 2 tasks/i }),
     ).toBeInTheDocument();
-    await user.click(screen.getByTestId("task-bulk-delete-confirm"));
+    await user.click(screen.getByTestId("task-bulk-close-confirm"));
     await waitFor(() => {
-      expect(mockDeleteTask).toHaveBeenCalledTimes(2);
+      expect(mockCloseTask).toHaveBeenCalledTimes(2);
     });
-    const ids = mockDeleteTask.mock.calls.map((c) => c[0]).sort();
+    const ids = mockCloseTask.mock.calls.map((c) => c[0]).sort();
     expect(ids).toEqual(["a", "b"]);
     await waitFor(() => {
       expect(

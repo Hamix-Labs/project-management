@@ -47,7 +47,21 @@ function parseActivityEvent(raw: unknown): TaskActivityEvent | null {
       ? o.task_title.trim()
       : undefined;
 
-  return { task_id, seq, at, type: o.type, by, data, task_title };
+  const task_number =
+    typeof o.task_number === "number" && Number.isFinite(o.task_number)
+      ? o.task_number
+      : undefined;
+
+  return {
+    task_id,
+    seq,
+    at,
+    type: o.type,
+    by,
+    data,
+    task_title,
+    task_number,
+  };
 }
 
 export function parseTaskActivityResponse(raw: unknown): TaskActivityResponse {

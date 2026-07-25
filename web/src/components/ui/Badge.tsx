@@ -17,6 +17,7 @@ const STATUS_CLASS: Record<Status, string> = {
   done: "ui-badge--status-done",
   failed: "ui-badge--status-failed",
   on_hold: "ui-badge--status-on_hold",
+  closed: "ui-badge--status-on_hold",
 };
 
 export function Badge({ status, tone, className, children, ...rest }: BadgeProps) {
