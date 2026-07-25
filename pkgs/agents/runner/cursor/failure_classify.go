@@ -37,7 +37,8 @@ func classifyCursorFailure(combined string) (kind string, standardizedMsg string
 	lower := strings.ToLower(combined)
 	switch {
 	case strings.Contains(lower, "resume") && (strings.Contains(lower, "session") || strings.Contains(lower, "not found") || strings.Contains(lower, "invalid")):
-		return FailureKindResumeSession, "Cursor could not resume the prior session. A fresh chat will be started."
+		return FailureKindResumeSession, "Cursor could not resume the prior chat session. " +
+			"Hamix did not start a new chat (avoids re-sending full context). Retry or Start over."
 	case strings.Contains(lower, "usage limit"):
 		return FailureKindCursorUsageLimit, cursorUsageLimitStdMsg
 	case strings.Contains(lower, "spend limit") && strings.Contains(lower, "continue with this model"):

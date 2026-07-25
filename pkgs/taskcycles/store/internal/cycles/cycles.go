@@ -155,11 +155,11 @@ func Terminate(ctx context.Context, db *gorm.DB, cycleID string, status cyclesdo
 
 		failureSummary := ""
 		if mirrorEventTypeForCycleStatus(status) == taskeventsdomain.EventCycleFailed {
-			var lastFailedExecute model.TaskCyclePhase
-			q := tx.Where("cycle_id = ? AND phase = ? AND status = ?", cycle.ID, cyclesdomain.PhaseExecute, cyclesdomain.PhaseStatusFailed).
+			var lastFailedPhase model.TaskCyclePhase
+			q := tx.Where("cycle_id = ? AND status = ?", cycle.ID, cyclesdomain.PhaseStatusFailed).
 				Order("phase_seq DESC")
-			if err := q.First(&lastFailedExecute).Error; err == nil {
-				lastPhase := model.ToDomainTaskCyclePhase(lastFailedExecute)
+			if err := q.First(&lastFailedPhase).Error; err == nil {
+				lastPhase := model.ToDomainTaskCyclePhase(lastFailedPhase)
 				var details map[string]any
 				if len(lastPhase.DetailsJSON) > 0 {
 					_ = json.Unmarshal(lastPhase.DetailsJSON, &details)

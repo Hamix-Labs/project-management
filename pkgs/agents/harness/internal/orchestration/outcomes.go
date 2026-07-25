@@ -18,6 +18,8 @@ const (
 	ReasonExecuteInvalidCommit      TerminationReason = "execute_invalid_commit"
 	ReasonCancelledByOperator       TerminationReason = "cancelled_by_operator"
 	ReasonChecklistCompletionFailed TerminationReason = "checklist_completion_failed"
+	ReasonCursorMissingSessionID    TerminationReason = "cursor_missing_session_id"
+	ReasonCursorResumeSession       TerminationReason = "cursor_resume_session"
 )
 
 // VerifyEffects lists side effects the harness root applies after DecideVerifyRetry.

@@ -71,6 +71,10 @@ func humanizeFailureKind(kind string) string {
 	switch kind {
 	case "cursor_usage_limit":
 		return "Cursor usage limit reached"
+	case "cursor_missing_session_id":
+		return "Cursor chat session id missing"
+	case "cursor_resume_session":
+		return "Cursor could not resume the prior chat"
 	default:
 		return ""
 	}
