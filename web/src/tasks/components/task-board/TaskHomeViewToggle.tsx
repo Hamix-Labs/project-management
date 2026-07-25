@@ -1,3 +1,4 @@
+import type { ReactElement } from "react";
 import type { TaskHomeView } from "../../pages/taskHomeView";
 
 type Props = {
@@ -7,6 +8,15 @@ type Props = {
 
 const LIST_PANEL_ID = "task-list-panel";
 const BOARD_PANEL_ID = "task-board-panel";
+const TIMELINE_PANEL_ID = "task-timeline-panel";
+
+const VIEW_ORDER: TaskHomeView[] = ["list", "board", "timeline"];
+
+const PANEL_BY_VIEW: Record<TaskHomeView, string> = {
+  list: LIST_PANEL_ID,
+  board: BOARD_PANEL_ID,
+  timeline: TIMELINE_PANEL_ID,
+};
 
 function ListIcon() {
   return (
@@ -78,9 +88,50 @@ function BoardIcon() {
   );
 }
 
+function TimelineIcon() {
+  return (
+    <svg
+      className="task-home-view-toggle__icon"
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M8 2.5v11"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+      />
+      <circle cx="8" cy="4" r="1.4" fill="currentColor" />
+      <circle cx="8" cy="8" r="1.4" fill="currentColor" />
+      <circle cx="8" cy="12" r="1.4" fill="currentColor" />
+    </svg>
+  );
+}
+
+function neighborView(current: TaskHomeView, delta: 1 | -1): TaskHomeView {
+  const idx = VIEW_ORDER.indexOf(current);
+  const next = (idx + delta + VIEW_ORDER.length) % VIEW_ORDER.length;
+  return VIEW_ORDER[next]!;
+}
+
+type TabDef = {
+  view: TaskHomeView;
+  label: string;
+  icon: () => ReactElement;
+};
+
+const TABS: TabDef[] = [
+  { view: "list", label: "List", icon: ListIcon },
+  { view: "board", label: "Board", icon: BoardIcon },
+  { view: "timeline", label: "Timeline", icon: TimelineIcon },
+];
+
 /**
- * List | Board control for Task Home. Tab-like segmented buttons with
- * aria-controls pointing at the active view's tabpanel.
+ * List | Board | Timeline control for Task Home. Tab-like segmented
+ * buttons with aria-controls pointing at the active view's tabpanel.
  */
 export function TaskHomeViewToggle({ value, onChange }: Props) {
   return (
@@ -89,52 +140,39 @@ export function TaskHomeViewToggle({ value, onChange }: Props) {
       role="tablist"
       aria-label="Task view"
     >
-      <button
-        type="button"
-        role="tab"
-        id="task-home-view-tab-list"
-        className={
-          value === "list"
-            ? "task-home-view-toggle__btn task-home-view-toggle__btn--active"
-            : "task-home-view-toggle__btn"
-        }
-        aria-selected={value === "list"}
-        aria-controls={LIST_PANEL_ID}
-        tabIndex={value === "list" ? 0 : -1}
-        onClick={() => onChange("list")}
-        onKeyDown={(e) => {
-          if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
-            e.preventDefault();
-            onChange("board");
-          }
-        }}
-      >
-        <ListIcon />
-        List
-      </button>
-      <button
-        type="button"
-        role="tab"
-        id="task-home-view-tab-board"
-        className={
-          value === "board"
-            ? "task-home-view-toggle__btn task-home-view-toggle__btn--active"
-            : "task-home-view-toggle__btn"
-        }
-        aria-selected={value === "board"}
-        aria-controls={BOARD_PANEL_ID}
-        tabIndex={value === "board" ? 0 : -1}
-        onClick={() => onChange("board")}
-        onKeyDown={(e) => {
-          if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
-            e.preventDefault();
-            onChange("list");
-          }
-        }}
-      >
-        <BoardIcon />
-        Board
-      </button>
+      {TABS.map((tab) => {
+        const Icon = tab.icon;
+        const selected = value === tab.view;
+        return (
+          <button
+            key={tab.view}
+            type="button"
+            role="tab"
+            id={`task-home-view-tab-${tab.view}`}
+            className={
+              selected
+                ? "task-home-view-toggle__btn task-home-view-toggle__btn--active"
+                : "task-home-view-toggle__btn"
+            }
+            aria-selected={selected}
+            aria-controls={PANEL_BY_VIEW[tab.view]}
+            tabIndex={selected ? 0 : -1}
+            onClick={() => onChange(tab.view)}
+            onKeyDown={(e) => {
+              if (e.key === "ArrowRight") {
+                e.preventDefault();
+                onChange(neighborView(value, 1));
+              } else if (e.key === "ArrowLeft") {
+                e.preventDefault();
+                onChange(neighborView(value, -1));
+              }
+            }}
+          >
+            <Icon />
+            {tab.label}
+          </button>
+        );
+      })}
     </div>
   );
 }
