@@ -166,7 +166,7 @@ func (h *Harness) persistProgress(ctx context.Context, taskID, cycleID string, p
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by persistProgress."
 func progressStreamSource(ev runner.ProgressEvent) string {
-	if ev.Tool == verify.ProgressToolVerifyCommand {
+	if ev.Tool == verify.ProgressToolVerifyCommand || ev.Tool == runner.ProgressToolHarnessSetup {
 		return "worker"
 	}
 	return "cursor"
