@@ -7,9 +7,14 @@ describe("omittedFeatures", () => {
     expect(isUiFeatureOmitted("projects")).toBe(false);
   });
 
-  it("documents tags and dependencies as omitted for the current launch", () => {
-    expect(OMITTED_UI_FEATURES.tagsAndDependencies).toBe(true);
-    expect(isUiFeatureOmitted("tagsAndDependencies")).toBe(true);
+  it("documents task tags as restored", () => {
+    expect(OMITTED_UI_FEATURES.taskTags).toBe(false);
+    expect(isUiFeatureOmitted("taskTags")).toBe(false);
+  });
+
+  it("documents task dependencies and milestone as omitted for the current launch", () => {
+    expect(OMITTED_UI_FEATURES.taskDependencies).toBe(true);
+    expect(isUiFeatureOmitted("taskDependencies")).toBe(true);
   });
 
   it("documents schedule as omitted for the current launch", () => {

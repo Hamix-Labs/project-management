@@ -17,7 +17,8 @@ const isUiFeatureOmitted = vi.hoisted(() => vi.fn((_feature: string) => false));
 vi.mock("@/launch/omittedFeatures", () => ({
   OMITTED_UI_FEATURES: {
     projects: true,
-    tagsAndDependencies: true,
+    taskTags: true,
+    taskDependencies: true,
     schedule: true,
   },
   isUiFeatureOmitted: (feature: string) => isUiFeatureOmitted(feature),
@@ -314,7 +315,10 @@ describe("TaskCreateModal", () => {
   describe("launch omissions", () => {
     it("hides schedule and tags from More options when launch flags omit them", async () => {
       isUiFeatureOmitted.mockImplementation(
-        (feature) => feature === "schedule" || feature === "tagsAndDependencies",
+        (feature) =>
+          feature === "schedule" ||
+          feature === "taskTags" ||
+          feature === "taskDependencies",
       );
       const user = userEvent.setup();
       renderModal({
@@ -328,6 +332,23 @@ describe("TaskCreateModal", () => {
       await expandMoreOptions(user);
       expect(screen.queryByTestId("schedule-picker-input")).not.toBeInTheDocument();
       expect(screen.queryByLabelText(/^tags$/i)).not.toBeInTheDocument();
+    });
+
+    it("shows tags only when taskTags is restored and taskDependencies stays omitted", async () => {
+      isUiFeatureOmitted.mockImplementation(
+        (feature) => feature === "schedule" || feature === "taskDependencies",
+      );
+      const user = userEvent.setup();
+      renderModal({
+        tagsCsv: "backend, api",
+        milestone: "M1",
+      });
+      const toggle = screen.getByTestId("task-create-more-options-toggle");
+      expect(toggle).toHaveTextContent(/2 tags/);
+      expect(toggle).not.toHaveTextContent(/Milestone/);
+      await expandMoreOptions(user);
+      expect(screen.getByLabelText(/^tags$/i)).toBeInTheDocument();
+      expect(screen.queryByLabelText(/^milestone$/i)).not.toBeInTheDocument();
     });
   });
 

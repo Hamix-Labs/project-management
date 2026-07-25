@@ -17,12 +17,15 @@ export function advancedSummaryLine(input: {
   dependsOn: string[];
   /** When false, schedule is omitted from the collapsed summary (launch gate). */
   includeSchedule?: boolean;
-  /** When false, tags/milestone/deps are omitted from the collapsed summary (launch gate). */
-  includeTagsAndDependencies?: boolean;
+  /** When false, tags are omitted from the collapsed summary (launch gate). */
+  includeTags?: boolean;
+  /** When false, milestone/deps are omitted from the collapsed summary (launch gate). */
+  includeDependencies?: boolean;
 }): string {
   const parts: string[] = [];
   const includeSchedule = input.includeSchedule ?? true;
-  const includeTagsAndDependencies = input.includeTagsAndDependencies ?? true;
+  const includeTags = input.includeTags ?? true;
+  const includeDependencies = input.includeDependencies ?? true;
 
   const runnerLabel = runnerDisplayLabel(input.runner);
   const modelLabel = input.cursorModel.trim();
@@ -34,12 +37,14 @@ export function advancedSummaryLine(input: {
     parts.push("Scheduled");
   }
 
-  if (includeTagsAndDependencies) {
+  if (includeTags) {
     const tagCount = countCsv(input.tagsCsv);
     if (tagCount > 0) {
       parts.push(`${tagCount} ${tagCount === 1 ? "tag" : "tags"}`);
     }
+  }
 
+  if (includeDependencies) {
     if (input.milestone.trim()) {
       parts.push("Milestone");
     }
@@ -51,7 +56,7 @@ export function advancedSummaryLine(input: {
   }
 
   if (parts.length === 0) {
-    return advancedSummaryFallback(includeSchedule, includeTagsAndDependencies);
+    return advancedSummaryFallback(includeSchedule, includeTags, includeDependencies);
   }
 
   return parts.join(" · ");
@@ -59,11 +64,13 @@ export function advancedSummaryLine(input: {
 
 function advancedSummaryFallback(
   includeSchedule: boolean,
-  includeTagsAndDependencies: boolean,
+  includeTags: boolean,
+  includeDependencies: boolean,
 ): string {
   const labels = ["Agent"];
   if (includeSchedule) labels.push("schedule");
-  if (includeTagsAndDependencies) labels.push("tags", "dependencies");
+  if (includeTags) labels.push("tags");
+  if (includeDependencies) labels.push("dependencies");
   return labels.join(", ");
 }
 

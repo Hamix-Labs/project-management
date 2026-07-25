@@ -64,24 +64,52 @@ Features that **exist in the codebase** but are **hidden or fixed for a specific
 
 ---
 
-### Tags & dependencies (create/edit modal)
+### Task tags (create/edit + list)
+
+| Field | Value |
+| --- | --- |
+| **Status** | **Restored** — 2026-07-25 |
+| **Since** | 2026-06-20 |
+| **Restored** | 2026-07-25 — `taskTags: false` in `omittedFeatures.ts`; tags-only UI (milestone/deps stay omitted) |
+
+**Operator-visible behavior** (restored)
+
+- Create / edit task modal **More options**: **Tags** CSV field.
+- Task detail: tag chips when present (unchanged read-only display).
+- Task list: tag filter (when loaded tasks have tags) and inline tag chips under the title.
+
+**Still implemented**
+
+- Task field `tags` in the data model — [data-model.md](./data-model.md).
+- REST create/PATCH `tags` — [api.md](./api.md).
+
+**UI gates**
+
+| Surface | File |
+| --- | --- |
+| Modal fieldset + summary hint | `web/src/tasks/components/task-create-modal/` |
+| List filter + row chips | `web/src/tasks/components/task-list/` |
+
+---
+
+### Dependencies & milestone (create/edit modal + detail)
 
 | Field | Value |
 | --- | --- |
 | **Status** | Omitted (initial launch) |
 | **Since** | 2026-06-20 |
-| **Target restore** | TBD — when tag/milestone/dependency editing is launch-ready |
+| **Target restore** | TBD — when milestone/dependency editing is launch-ready |
 
 **Operator-visible behavior**
 
-- Create / edit task modal **More options**: no **Tags & dependencies** fieldset (tags, milestone, depends-on picker).
+- Create / edit task modal **More options**: no milestone field, no depends-on picker.
 - Task detail: no **Dependencies** section (upstream list or empty state).
-- Collapsed **More options** summary no longer mentions tags or dependencies (shows agent only when schedule is also omitted).
-- New tasks still submit with empty tags, no milestone, and no `depends_on` edges unless set via API.
+- Collapsed **More options** summary does not mention milestone or dependencies.
+- New tasks still submit with no milestone and no `depends_on` edges unless set via API.
 
 **Still implemented (intentionally not deleted)**
 
-- Task fields `tags`, `milestone`, and dependency edges in the data model — [data-model.md](./data-model.md).
+- Task fields `milestone` and dependency edges in the data model — [data-model.md](./data-model.md).
 - REST dependency routes and task PATCH fields — [api.md](./api.md).
 - Store logic unchanged.
 
@@ -89,14 +117,13 @@ Features that **exist in the codebase** but are **hidden or fixed for a specific
 
 | Surface | File |
 | --- | --- |
-| Modal fieldset + summary hint | `web/src/tasks/components/task-create-modal/TaskCreateModal.tsx` |
-| Summary line copy | `web/src/tasks/components/task-create-modal/advancedSummaryLine.ts` |
-| Task detail dependencies | `web/src/tasks/pages/TaskDetailPage.tsx` |
+| Modal fieldset + summary hint | `web/src/tasks/components/task-create-modal/` |
+| Task detail dependencies | `web/src/tasks/pages/TaskDetailLoadedView.tsx` |
 
 **Restore checklist**
 
-- [ ] Set `tagsAndDependencies: false` in `web/src/launch/omittedFeatures.ts`.
-- [ ] Smoke-test create and edit modals: tags, milestone, depends-on picker.
+- [ ] Set `taskDependencies: false` in `web/src/launch/omittedFeatures.ts`.
+- [ ] Smoke-test create and edit modals: milestone, depends-on picker.
 - [ ] Smoke-test task detail: dependencies section with and without upstream tasks.
 - [ ] Move this section to **Restored** below with the release name/date.
 
