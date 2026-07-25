@@ -12,9 +12,9 @@ export type BoardColumnDef = {
   id: BoardColumnId;
   label: string;
   /**
-   * Disjoint status sets; never includes `done` or `closed` — both are
-   * terminal and filtered out of the board's active-task walk (see
-   * `fetchActiveTasksForBoard`).
+   * Disjoint status sets; never includes `done` (filtered out of the
+   * board walk). `closed` has its own column so operator exits stay
+   * findable without leaving the board.
    */
   statuses: readonly Status[];
   tone: StatusTone;
