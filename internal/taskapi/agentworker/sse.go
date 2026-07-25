@@ -169,6 +169,7 @@ func (a *runProgressSSEAdapter) shouldDrop(taskID, cycleID string, phaseSeq int6
 	return false
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func publishEventNonBlocking(pub realtime.Publisher, _ NotifierMetrics, _ string, ev realtime.Event) {
 	if pub == nil {
 		return

@@ -17,6 +17,8 @@ type TokenUsage struct {
 // Known reports whether any token field is present with a non-zero value
 // or TotalTokens was explicitly set. Zero-valued structs are unknown and
 // must be omitted from aggregates unless ParseTokenUsage said otherwise.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (u TokenUsage) Known() bool {
 	return u.TotalTokens != 0 ||
 		u.InputTokens != 0 ||
@@ -27,6 +29,8 @@ func (u TokenUsage) Known() bool {
 
 // Consumed is the billed/context metric for operators.
 // Prefer TotalTokens when present and > 0; otherwise sum the four parts.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (u TokenUsage) Consumed() int64 {
 	if u.TotalTokens > 0 {
 		return u.TotalTokens
@@ -35,6 +39,8 @@ func (u TokenUsage) Consumed() int64 {
 }
 
 // AddTokenUsage sums two usages field-wise. Unknown (zero) operands are fine.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func AddTokenUsage(a, b TokenUsage) TokenUsage {
 	return TokenUsage{
 		InputTokens:      a.InputTokens + b.InputTokens,
@@ -48,6 +54,8 @@ func AddTokenUsage(a, b TokenUsage) TokenUsage {
 // ParseTokenUsage decodes a Cursor usage JSON object.
 // The second return is false when raw is empty, not an object, or has no
 // recognizable token fields (all omitted / null).
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func ParseTokenUsage(raw json.RawMessage) (TokenUsage, bool) {
 	raw = json.RawMessage(trimSpaceBytes(raw))
 	if len(raw) == 0 || string(raw) == "null" {
@@ -71,6 +79,8 @@ func ParseTokenUsage(raw json.RawMessage) (TokenUsage, bool) {
 }
 
 // TokenUsageFromDetailsJSON reads the top-level "usage" key from phase details_json.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func TokenUsageFromDetailsJSON(details json.RawMessage) (TokenUsage, bool) {
 	details = json.RawMessage(trimSpaceBytes(details))
 	if len(details) == 0 || string(details) == "null" || string(details) == "{}" {
@@ -94,6 +104,8 @@ type PhaseUsageRow struct {
 }
 
 // SumPhaseUsageByKind aggregates usage rows into execute vs verify totals.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func SumPhaseUsageByKind(rows []PhaseUsageRow) (execute, verify TokenUsage) {
 	for _, r := range rows {
 		switch r.Phase {
@@ -107,6 +119,8 @@ func SumPhaseUsageByKind(rows []PhaseUsageRow) (execute, verify TokenUsage) {
 }
 
 // SumPhaseUsageByCycleID aggregates usage rows per cycle id.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func SumPhaseUsageByCycleID(rows []PhaseUsageRow) map[string]TokenUsage {
 	out := make(map[string]TokenUsage, len(rows))
 	for _, r := range rows {
@@ -115,6 +129,7 @@ func SumPhaseUsageByCycleID(rows []PhaseUsageRow) map[string]TokenUsage {
 	return out
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func hasTokenKey(m map[string]json.RawMessage) bool {
 	for _, k := range []string{
 		"inputTokens", "outputTokens", "cacheReadTokens", "cacheWriteTokens", "totalTokens",
@@ -126,6 +141,7 @@ func hasTokenKey(m map[string]json.RawMessage) bool {
 	return false
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func trimSpaceBytes(b []byte) []byte {
 	i, j := 0, len(b)
 	for i < j && (b[i] == ' ' || b[i] == '\n' || b[i] == '\r' || b[i] == '\t') {

@@ -52,7 +52,7 @@ func (h *Harness) executePhasePorts(state *processState, opts cycleLoopOpts) exe
 	}
 }
 
-//funclogmeasure:skip category=hot-path reason="Pure DTO mapping."
+//funclogmeasure:skip category=hot-path reason="Pure DTO mapping without I/O; callers own operation traces."
 func executeRunPlanFromDecision(dec CursorResumeDecision) execute.RunPlan {
 	return execute.RunPlan{
 		Mode:            string(dec.Mode),
@@ -61,7 +61,7 @@ func executeRunPlanFromDecision(dec CursorResumeDecision) execute.RunPlan {
 	}
 }
 
-//funclogmeasure:skip category=hot-path reason="Pure DTO mapping."
+//funclogmeasure:skip category=hot-path reason="Pure DTO mapping without I/O; callers own operation traces."
 func decisionFromExecuteRunPlan(plan execute.RunPlan) CursorResumeDecision {
 	return CursorResumeDecision{
 		Mode:            CursorResumeMode(plan.Mode),

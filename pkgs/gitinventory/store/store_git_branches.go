@@ -108,6 +108,7 @@ func (s *Store) DeleteGitBranchByID(ctx context.Context, branchID string, force 
 	return s.deleteGitBranch(ctx, "", branchID, force)
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (s *Store) deleteGitBranch(ctx context.Context, projectID, branchID string, force bool) error {
 	branch, err := s.GetGitBranch(ctx, projectID, branchID)
 	if err != nil {

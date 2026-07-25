@@ -28,6 +28,7 @@ type taskTokenUsageResponse struct {
 	Attempts   []taskTokenUsageAttempt `json:"attempts"`
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func projectTokenUsage(exec, verify cyclesdomain.TokenUsage, known bool) tokenUsageProjection {
 	if !known {
 		return tokenUsageProjection{Known: false}
@@ -45,11 +46,13 @@ func projectTokenUsage(exec, verify cyclesdomain.TokenUsage, known bool) tokenUs
 	}
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func projectTokenUsageFromRows(rows []cyclesdomain.PhaseUsageRow) tokenUsageProjection {
 	exec, verify := cyclesdomain.SumPhaseUsageByKind(rows)
 	return projectTokenUsage(exec, verify, len(rows) > 0)
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func projectCycleTokenUsage(rows []cyclesdomain.PhaseUsageRow, cycleID string) tokenUsageProjection {
 	filtered := make([]cyclesdomain.PhaseUsageRow, 0, len(rows))
 	for _, r := range rows {
@@ -60,6 +63,7 @@ func projectCycleTokenUsage(rows []cyclesdomain.PhaseUsageRow, cycleID string) t
 	return projectTokenUsageFromRows(filtered)
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func groupUsageRowsByCycleID(rows []cyclesdomain.PhaseUsageRow) map[string][]cyclesdomain.PhaseUsageRow {
 	out := make(map[string][]cyclesdomain.PhaseUsageRow, len(rows))
 	for _, r := range rows {
@@ -68,6 +72,7 @@ func groupUsageRowsByCycleID(rows []cyclesdomain.PhaseUsageRow) map[string][]cyc
 	return out
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func phaseUsageRowsFromPhases(cycleID string, attemptSeq int64, phases []cyclesdomain.TaskCyclePhase) []cyclesdomain.PhaseUsageRow {
 	out := make([]cyclesdomain.PhaseUsageRow, 0, len(phases))
 	for i := range phases {
@@ -86,6 +91,7 @@ func phaseUsageRowsFromPhases(cycleID string, attemptSeq int64, phases []cyclesd
 	return out
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func shareOfTaskPct(cycleConsumed, taskConsumed int64, known bool) *float64 {
 	if !known || taskConsumed == 0 || cycleConsumed == 0 {
 		return nil

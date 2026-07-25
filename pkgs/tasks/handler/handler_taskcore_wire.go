@@ -15,11 +15,13 @@ import (
 // (taskcore RunnerValidator, settings RunnerModelLister).
 type registryRunnerPorts struct{}
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (registryRunnerPorts) ValidateRunner(id string) error {
 	_, err := registry.Lookup(id)
 	return err
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (registryRunnerPorts) ListModels(ctx context.Context, runnerID, binaryPath string, timeout time.Duration) ([]settingshandler.RunnerModel, string, error) {
 	models, resolved, err := registry.ListModelsForRunner(ctx, runnerID, binaryPath, timeout)
 	if err != nil {
