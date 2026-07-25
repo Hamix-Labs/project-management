@@ -63,9 +63,13 @@ For `PhaseVerify`, session lookup uses `LastSessionID(cycleID, PhaseExecute)` vi
 
 ## Storage
 
-- **Write:** `task_cycle_phases.details_json.session_id` on phase complete (cursor adapter).
+- **Write:** `task_cycle_phases.details_json.session_id` is written at two moments:
+  1. **First stream sighting (mid-run):** the cursor adapter fires `runner.Request.OnSessionID` once, on the first NDJSON frame that carries a non-empty `session_id`. The harness patches the running phase row via `store.PatchPhaseDetails`. First-wins: a later frame reporting a different id does not overwrite the stored value.
+  2. **Any terminal outcome:** the cursor adapter surfaces `session_id` on `Result.Details` for success, `is_error=true`, non-zero exit, timeout/cancel, and exec failure — extracted from captured stdout (init frame is enough). `CompletePhase` merges those details into the row.
 - **Read (execute):** `store.LastSessionID(ctx, cycleID, PhaseExecute)`.
 - **Read (verify):** same — last terminal **execute** session for the cycle (ADR-0085).
+
+The mid-run patch guarantees a durable id even when the run terminates before emitting a `result` event (timeout, panic, kill). Terminal-outcome writes remain the audit anchor.
 
 Cross-cycle **Resume from failure** reads the **parent** cycle's execute session when the child has no execute session yet (including verify-only entry).
 

@@ -106,6 +106,14 @@ func (s *Store) CompletePhase(ctx context.Context, in CompletePhaseInput) (*cycl
 	return cycles.CompletePhase(ctx, s.db, in)
 }
 
+// PatchPhaseDetails shallow-merges patch into a running phase's details_json.
+// See cycles.PatchPhaseDetails for the merge / first-wins rules.
+func (s *Store) PatchPhaseDetails(ctx context.Context, cycleID string, phaseSeq int64, patch []byte) error {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.PatchPhaseDetails",
+		"cycle_id", cycleID, "phase_seq", phaseSeq)
+	return cycles.PatchPhaseDetails(ctx, s.db, cycleID, phaseSeq, patch)
+}
+
 func (s *Store) ListPhasesForCycle(ctx context.Context, cycleID string) ([]cyclesdomain.TaskCyclePhase, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.ListPhasesForCycle")
 	return cycles.ListPhasesForCycle(ctx, s.db, cycleID)

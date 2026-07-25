@@ -6,7 +6,9 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"runtime/debug"
 	"strings"
+	"sync/atomic"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/adapterkit"
@@ -159,7 +161,22 @@ func (a *Adapter) invokeCursorProcess(
 	argv []string,
 ) cursorProcessOutput {
 	var out cursorProcessOutput
+	var sessionIDFired atomic.Bool
 	lineCallback := func(line []byte) {
+		if req.OnSessionID != nil && !sessionIDFired.Load() {
+			if id := sessionIDFromLine(line); id != "" && sessionIDFired.CompareAndSwap(false, true) {
+				func() {
+					defer func() {
+						if rec := recover(); rec != nil {
+							slog.Error("cursor OnSessionID callback panicked",
+								"cmd", calltrace.LogCmd, "operation", "cursor.invokeCursorProcess.on_session_id_panic",
+								"panic", rec, "stack", string(debug.Stack()))
+						}
+					}()
+					req.OnSessionID(id)
+				}()
+			}
+		}
 		emitProgressFromLine(req.OnProgress, line, a.homePaths)
 	}
 	if req.OnProgress != nil {
@@ -242,6 +259,11 @@ func (a *Adapter) resultForNonZeroExit(
 		details = mergeDetailsJSON(details, map[string]any{
 			"failure_kind":         kind,
 			"standardized_message": stdMsg,
+		})
+	}
+	if id := sessionIDFromStdout(stdout); id != "" {
+		details = mergeDetailsJSON(details, map[string]any{
+			"session_id": id,
 		})
 	}
 	summary := fmt.Sprintf("cursor: exit %d", exitCode)

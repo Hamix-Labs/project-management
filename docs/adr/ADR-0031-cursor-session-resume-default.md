@@ -19,7 +19,7 @@ T2A still creates a new `task_cycle_phases` row per `runner.Run` (ADR-0030 corre
 3. **Deny-list** forces fresh chat: RetryFresh/Start over, first in chain (no session id), HEAD drift, tamper, missing id, workspace mismatch, `--resume` failure (`resume_fallback` + full prompt). First verify after execute **resumes** the execute session ([ADR-0085](./ADR-0085-verify-resumes-execute-session.md)).
 4. **Cross-cycle RetryResume** resumes the **parent cycle's** session for the entry phase (execute session for verify-only entry).
 5. **Settings opt-out:** `app_settings.cursor_session_resume_enabled` (default `true`).
-6. **Storage:** read `session_id` via `LastSessionID(cycleID, phase)` from `details_json`; no new table. Verify reads the **execute** phase session.
+6. **Storage:** read `session_id` via `LastSessionID(cycleID, phase)` from `details_json`; no new table. Verify reads the **execute** phase session. **Persistence timing:** the harness writes `details_json.session_id` (a) once, best-effort, on the **first NDJSON `session_id` sighting** during the run via `store.PatchPhaseDetails` (first-wins, run_correlation_id preserved), and (b) on **any terminal `CompletePhase` outcome** — success, `is_error=true`, non-zero exit, timeout, cancel, or exec failure — from the id the cursor adapter extracts out of captured stdout (init frame suffices). The mid-run patch guarantees the id survives kills that prevent a terminal `result` event; the terminal write remains the audit anchor.
 
 ## MUST / MUST NOT
 

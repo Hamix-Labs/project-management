@@ -95,6 +95,9 @@ type Request struct {
 	// OnProgress is an optional live-update callback. It is excluded from
 	// JSON so the persisted/tested request wire shape stays stable.
 	OnProgress func(ProgressEvent) `json:"-"`
+	// OnSessionID is invoked at most once when the adapter first observes a
+	// non-empty Cursor stream-json session_id. Best-effort; excluded from JSON.
+	OnSessionID func(sessionID string) `json:"-"`
 }
 
 // Result is what Runner.Run returns. On wrapped error returns

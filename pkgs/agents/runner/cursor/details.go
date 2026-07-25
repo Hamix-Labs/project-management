@@ -112,6 +112,12 @@ func failureDetails(stage string, err error, stdout, stderr []byte, homePaths []
 	for k, v := range extra {
 		out[k] = v
 	}
+	// ADR-0031: capture the Cursor CLI session_id from any NDJSON frame
+	// (init/assistant/tool_call/result) so timeout/cancel/exec-failure
+	// details still carry the id used to resume the chat.
+	if id := sessionIDFromStdout(stdout); id != "" {
+		out["session_id"] = id
+	}
 	payload, marshalErr := json.Marshal(out)
 	if marshalErr != nil {
 		return json.RawMessage(`{"failure_stage":"details_marshal_failed"}`)

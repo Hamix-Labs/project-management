@@ -155,6 +155,11 @@ func (s *Service) runVerifyCursor(
 			s.hooks.PersistProgress(ctx, task.ID, cycle.ID, phaseSeq, ev)
 		}
 	}
+	onSessionID := func(sessionID string) {
+		if s.hooks.PersistSessionID != nil {
+			s.hooks.PersistSessionID(ctx, cycle.ID, phaseSeq, sessionID)
+		}
+	}
 	invokeMsg := "Starting Cursor CLI…"
 	if strings.TrimSpace(resumeSessionID) != "" {
 		invokeMsg = "Resuming Cursor session…"
@@ -170,6 +175,7 @@ func (s *Service) runVerifyCursor(
 		RunCorrelationID: runCorrelationID,
 		ResumeSessionID:  resumeSessionID,
 		OnProgress:       onProgress,
+		OnSessionID:      onSessionID,
 	})
 }
 

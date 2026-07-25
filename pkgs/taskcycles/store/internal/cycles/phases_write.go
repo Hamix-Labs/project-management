@@ -215,6 +215,89 @@ func CompletePhase(ctx context.Context, db *gorm.DB, in CompletePhaseInput) (*cy
 	return out, nil
 }
 
+// PatchPhaseDetails shallow-merges patch into details_json for a
+// non-terminal phase row. It preserves run_correlation_id and never
+// overwrites an existing non-empty session_id (first-wins per ADR-0031
+// so mid-run patches from the adapter do not clobber the id already
+// stored). Rejects missing or already-terminal phase rows.
+func PatchPhaseDetails(ctx context.Context, db *gorm.DB, cycleID string, phaseSeq int64, patch []byte) error {
+	defer storekernel.DeferLatency(storekernel.OpCompleteCyclePhase)()
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.cycles.PatchPhaseDetails",
+		"cycle_id", cycleID, "phase_seq", phaseSeq, "patch_bytes", len(patch))
+	cycleID = strings.TrimSpace(cycleID)
+	if cycleID == "" {
+		return fmt.Errorf("%w: cycle_id", taskcoredomain.ErrInvalidInput)
+	}
+	if phaseSeq <= 0 {
+		return fmt.Errorf("%w: phase_seq", taskcoredomain.ErrInvalidInput)
+	}
+	normalized, err := storekernel.NormalizeJSONObject(patch, "patch", taskcoredomain.ErrInvalidInput)
+	if err != nil {
+		return err
+	}
+	return db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		ph, err := loadPhaseByCycleSeqInTx(tx, cycleID, phaseSeq)
+		if err != nil {
+			return err
+		}
+		if cyclesdomain.TerminalPhaseStatus(ph.Status) {
+			return fmt.Errorf("%w: phase already terminal", taskcoredomain.ErrInvalidInput)
+		}
+		merged, err := patchPhaseDetailsJSON(ph.DetailsJSON, normalized)
+		if err != nil {
+			return fmt.Errorf("merge phase details: %w", err)
+		}
+		if err := tx.Model(&model.TaskCyclePhase{}).Where("id = ?", ph.ID).Update("details_json", datatypes.JSON(merged)).Error; err != nil {
+			return fmt.Errorf("update task_cycle_phase details_json: %w", err)
+		}
+		return nil
+	})
+}
+
+// patchPhaseDetailsJSON shallow-merges an incoming patch object into the
+// existing details_json. run_correlation_id is preserved (never
+// overwritten) and an existing non-empty session_id wins over a
+// different/empty value in the patch (first-wins, ADR-0031).
+//
+//funclogmeasure:skip category=hot-path reason="Pure merge helper without I/O; operation trace is emitted by PatchPhaseDetails."
+func patchPhaseDetailsJSON(existing json.RawMessage, incoming []byte) ([]byte, error) {
+	base := map[string]any{}
+	if len(existing) > 0 {
+		if err := json.Unmarshal(existing, &base); err != nil {
+			return nil, fmt.Errorf("unmarshal existing details: %w", err)
+		}
+	}
+	preservedCorrelationID := cyclesdomain.RunCorrelationIDFromDetailsJSON(existing)
+	preservedSessionID := cyclesdomain.SessionIDFromDetailsJSON(existing)
+
+	patch := map[string]any{}
+	if len(incoming) > 0 {
+		if err := json.Unmarshal(incoming, &patch); err != nil {
+			return nil, fmt.Errorf("unmarshal incoming patch: %w", err)
+		}
+	}
+	for k, v := range patch {
+		base[k] = v
+	}
+	if preservedCorrelationID != "" {
+		base[cyclesdomain.PhaseDetailsRunCorrelationID] = preservedCorrelationID
+	}
+	if preservedSessionID != "" {
+		if incomingID, _ := patch[cyclesdomain.PhaseDetailsSessionID].(string); strings.TrimSpace(incomingID) != preservedSessionID {
+			slog.Warn("taskcycles: PatchPhaseDetails preserved existing session_id",
+				"cmd", calltrace.LogCmd, "operation", "taskcycles.store.cycles.patchPhaseDetailsJSON.session_id_conflict",
+				"incoming_session_id_present", strings.TrimSpace(incomingID) != "",
+			)
+		}
+		base[cyclesdomain.PhaseDetailsSessionID] = preservedSessionID
+	}
+	out, err := json.Marshal(base)
+	if err != nil {
+		return nil, fmt.Errorf("marshal merged details: %w", err)
+	}
+	return out, nil
+}
+
 func loadPhaseByCycleSeqInTx(tx *gorm.DB, cycleID string, phaseSeq int64) (*cyclesdomain.TaskCyclePhase, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcycles.store.cycles.loadPhaseByCycleSeqInTx")
 	var p model.TaskCyclePhase

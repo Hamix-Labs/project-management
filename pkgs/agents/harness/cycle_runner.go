@@ -90,6 +90,9 @@ func (h *Harness) invokeRunnerWithDecision(
 		h.persistProgress(runCtx, task.ID, cycle.ID, phaseRow.PhaseSeq, ev)
 		h.publishProgress(task.ID, cycle.ID, phaseRow.PhaseSeq, runCorrelationID, ev)
 	}
+	onSessionID := func(sessionID string) {
+		h.persistSessionID(runCtx, cycle.ID, phaseRow.PhaseSeq, sessionID)
+	}
 	promptText := prompt.WrapWithProjectContext(decision.Prompt, projectContext.Text)
 	onProgress(setupInvokeProgress(decision))
 	return h.runner.Run(runCtx, runner.Request{
@@ -103,6 +106,7 @@ func (h *Harness) invokeRunnerWithDecision(
 		RunCorrelationID: runCorrelationID,
 		ResumeSessionID:  decision.ResumeSessionID,
 		OnProgress:       onProgress,
+		OnSessionID:      onSessionID,
 	})
 }
 
@@ -163,6 +167,40 @@ func (h *Harness) persistProgress(ctx context.Context, taskID, cycleID string, p
 			"cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.persistProgress.err",
 			"task_id", taskID, "cycle_id", cycleID, "phase_seq", phaseSeq,
 			"kind", ev.Kind, "err", err)
+	}
+}
+
+// sessionIDPersistTimeout bounds PatchPhaseDetails after detaching the caller's
+// cancel/deadline so a wedged DB cannot hang the harness on shutdown. Mirrors
+// progressPersistTimeout.
+const sessionIDPersistTimeout = 5 * time.Second
+
+// persistSessionID writes the Cursor CLI session_id into the running phase
+// row's details_json on first stream sighting (ADR-0031). Best-effort:
+// detaches cancel like persistProgress, bounds the write with a short timeout,
+// warns on error, and never fails the run.
+func (h *Harness) persistSessionID(ctx context.Context, cycleID string, phaseSeq int64, sessionID string) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.persistSessionID",
+		"cycle_id", cycleID, "phase_seq", phaseSeq)
+	sessionID = strings.TrimSpace(sessionID)
+	if sessionID == "" || cycleID == "" || phaseSeq <= 0 {
+		return
+	}
+	patch, err := json.Marshal(map[string]string{
+		cyclesdomain.PhaseDetailsSessionID: sessionID,
+	})
+	if err != nil {
+		slog.Warn("agent harness session_id patch marshal failed",
+			"cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.persistSessionID.marshal_err",
+			"cycle_id", cycleID, "phase_seq", phaseSeq, "err", err)
+		return
+	}
+	writeCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), sessionIDPersistTimeout)
+	defer cancel()
+	if err := h.store.PatchPhaseDetails(writeCtx, cycleID, phaseSeq, patch); err != nil {
+		slog.Warn("agent harness session_id persistence failed",
+			"cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.persistSessionID.err",
+			"cycle_id", cycleID, "phase_seq", phaseSeq, "err", err)
 	}
 }
 
