@@ -133,4 +133,20 @@ describe("taskQueryKeys", () => {
       0,
     ]);
   });
+
+  it("scopes activity feed queries under tasks/activity", () => {
+    expect(taskQueryKeys.activityRoot()).toEqual(["tasks", "activity"]);
+    expect(taskQueryKeys.activity(undefined, 0)).toEqual([
+      "tasks",
+      "activity",
+      "",
+      0,
+    ]);
+    expect(taskQueryKeys.activity("2026-07-18T00:00:00.000Z", 0)).toEqual([
+      "tasks",
+      "activity",
+      "2026-07-18T00:00:00.000Z",
+      0,
+    ]);
+  });
 });

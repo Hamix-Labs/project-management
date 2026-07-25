@@ -1,9 +1,6 @@
-import { eventInTimelineRange } from "./timelineRange";
 import type {
   TimelineDateGroup,
   TimelineEvent,
-  TimelineFilterId,
-  TimelineRangeId,
 } from "./timelineTypes";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -35,34 +32,20 @@ export function formatTimelineClock(at: Date): string {
   });
 }
 
-function matchesFilter(
-  event: TimelineEvent,
-  filter: TimelineFilterId,
-): boolean {
-  if (filter === "all") return true;
-  return event.category === filter;
-}
-
 /**
- * Filter by category + range, newest first, group by relative day label.
+ * Sort newest first and group by relative day label.
+ * Server-side filtering (via `since`) is already applied before these events
+ * reach the client.
  */
 export function groupTimelineEvents(
   events: TimelineEvent[],
-  filter: TimelineFilterId,
-  rangeId: TimelineRangeId,
   now: Date = new Date(),
 ): TimelineDateGroup[] {
-  const filtered = events
-    .filter(
-      (e) =>
-        matchesFilter(e, filter) && eventInTimelineRange(e.at, rangeId, now),
-    )
-    .slice()
-    .sort((a, b) => Date.parse(b.at) - Date.parse(a.at));
+  const sorted = events.slice().sort((a, b) => Date.parse(b.at) - Date.parse(a.at));
 
   const order: string[] = [];
   const map = new Map<string, TimelineEvent[]>();
-  for (const event of filtered) {
+  for (const event of sorted) {
     const at = new Date(event.at);
     const label = timelineDateGroupLabel(at, now);
     if (!map.has(label)) {

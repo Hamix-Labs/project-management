@@ -210,7 +210,11 @@ export function TaskHome() {
             emptyListAction={emptyAction}
           />
         ) : view === "timeline" ? (
-          <TaskTimelineSection actions={listActions} />
+          <TaskTimelineSection
+            actions={listActions}
+            view={view}
+            dataEnabled={list.homeDataReady}
+          />
         ) : (
           <TaskListSection
             {...listSectionProps}

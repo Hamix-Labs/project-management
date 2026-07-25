@@ -10,6 +10,7 @@ describe("decideFlushBatch", () => {
     expect(decision.invalidateKeys).toContainEqual(taskQueryKeys.all);
     expect(decision.invalidateKeys).toContainEqual(taskQueryKeys.stats());
     expect(decision.invalidateKeys).toContainEqual(taskQueryKeys.cycleFailuresRoot());
+    expect(decision.invalidateKeys).toContainEqual(taskQueryKeys.activityRoot());
   });
 
   it("skips detail prefix when every task was enriched", () => {
@@ -72,5 +73,13 @@ describe("decideFlushBatch", () => {
     expect(decision.invalidateKeys).not.toContainEqual(taskQueryKeys.cycles("t1"));
     expect(decision.invalidateKeys).not.toContainEqual(taskQueryKeys.tokenUsage("t1"));
     expect(decision.invalidateKeys).toContainEqual(taskQueryKeys.checklist("t1"));
+  });
+
+  it("always invalidates activityRoot alongside cycleFailuresRoot in non-empty pending", () => {
+    const pending = emptyPending();
+    pending.tasks.add("t1");
+    const decision = decideFlushBatch(pending);
+    expect(decision.invalidateKeys).toContainEqual(taskQueryKeys.activityRoot());
+    expect(decision.invalidateKeys).toContainEqual(taskQueryKeys.cycleFailuresRoot());
   });
 });
