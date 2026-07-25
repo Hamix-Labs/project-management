@@ -88,6 +88,33 @@ export type TaskStatsRecentFailure = {
   reason: string;
 };
 
+/** Fixed set of event types surfaced by GET /tasks/activity. */
+export type TaskActivityEventType =
+  | "status_changed"
+  | "phase_failed"
+  | "approval_granted";
+
+/** One row from GET /tasks/activity. */
+export type TaskActivityEvent = {
+  task_id: string;
+  /** 1-based audit-trail sequence number on the owning task. */
+  seq: number;
+  /** ISO 8601 UTC timestamp. */
+  at: string;
+  type: TaskActivityEventType;
+  by: string;
+  data: Record<string, unknown>;
+  task_title?: string;
+};
+
+/** Response envelope for GET /tasks/activity. */
+export type TaskActivityResponse = {
+  total: number;
+  limit: number;
+  offset: number;
+  events: TaskActivityEvent[];
+};
+
 /** GET /tasks/cycle-failures — paginated cycle_failed list for the failures page. */
 export type CycleFailuresListResponse = {
   total: number;
