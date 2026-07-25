@@ -22,9 +22,11 @@ design with worker-owned evidence.
 
 1. **Same agent** — The LLM that writes `verify-report.json` is the execute
    agent. `PhaseVerify` always invokes the worker’s execute `runner.Runner`.
-   Prefer Cursor `--resume` of the execute session when policy allows; fall
-   back to a full verify prompt with criteria, evidence, command previews, and
-   diff.
+   Prefer Cursor `--resume` of the execute session when policy allows
+   ([ADR-0085](./ADR-0085-verify-resumes-execute-session.md)). Optional
+   `verify_model` may pass a different `--model` on that resume; it does
+   **not** select a different runner. When resume is disabled, a full verify
+   prompt with criteria, evidence, command previews, and diff is used.
 2. **Wire kind** — Successful LLM verdicts persist
    `verified_by=execute_agent` (replaces `verify_agent`). `agent_self` remains
    failure-only for unclaimed criteria.

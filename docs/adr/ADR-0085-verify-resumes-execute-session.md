@@ -1,7 +1,7 @@
 # ADR-0085: Verify resumes the execute Cursor session
 
 **Date:** 2026-07-25
-**Status:** Accepted
+**Status:** Accepted (amended: optional verify model; hard-fail missing session / resume)
 **Deciders:** Backend / agents-worker maintainers
 
 ## Context
@@ -17,6 +17,10 @@ Polish already resumes the prior execute session for further execute work;
 when polish runs verify (flagged/new criteria), it hit the same first-verify
 fresh gap.
 
+Soft-falling back to a full fresh verify (or execute) after a missing
+`session_id` or `ErrResumeSession` re-sent full context and broke the
+same-chat product rule.
+
 ## Decision
 
 1. **Same chat** — For `PhaseVerify`, Cursor `--resume` uses the cycle’s
@@ -26,22 +30,34 @@ fresh gap.
    `FirstVerifyAfterNewExecute` helper.
 3. **Supersede** ADR-0031 rules that required separate execute/verify session
    chains and forbade cross-wiring execute session ids into verify runs.
-4. **Retain** — new phase row per `runner.Run`; recovery deltas on resume;
-   full verify prompt on `ErrResumeSession` / missing id / settings off /
-   safety denials (tamper, head_drift, …); checklist/verdict UX unchanged.
+4. **Optional verify model** — `app_settings.verify_model` may pin a different
+   `--model` on the verify `Run` while still `--resume`ing the execute chat.
+   Empty inherits the execute effective model (task pin, else `cursor_model`).
+5. **Hard-fail session contract** (Cursor + `cursor_session_resume_enabled`):
+   - Successful execute without `session_id` → fail execute phase
+     (`cursor_missing_session_id`); do not enter verify.
+   - Verify with deny `no_session_id` → fail verify; **zero** Cursor Runs.
+   - `ErrResumeSession` on execute or verify → fail; **no** soft-fresh full
+     prompt retry (avoids double token spend / new chat).
+6. **Retain** — new phase row per `runner.Run`; recovery deltas on resume;
+   intentional fresh execute paths (`settings_disabled`, Start over /
+   `retry_fresh`, tamper, `head_drift`, workspace mismatch); checklist/verdict
+   UX unchanged. When resume is **disabled**, verify may still run fresh.
 
 ## Consequences
 
 ### Positive
 
 - Execute → verify continues one Cursor conversation (same agent and chat).
-- Polish+verify shares the polish execute session for judgment.
+- Operators can pin a cheaper/stronger model for verify without a second chat.
+- Missing chat ids and resume failures surface as operator-readable
+  `failure_kind` / `standardized_message` / `cycle_failed.failure_summary`.
 
 ### Negative / trade-offs
 
-- Verify recovery deltas must make sense when continuing an **execute** chat
-  (wording updated; full prompt remains the fallback).
-- If execute never recorded a `session_id`, verify stays fresh (unchanged).
+- Verify recovery deltas must make sense when continuing an **execute** chat.
+- Infra/CLI bugs that omit `session_id` become hard cycle failures instead of
+  silent fresh chats.
 
 ## Alternatives considered
 
@@ -49,6 +65,7 @@ fresh gap.
 | --- | --- |
 | Keep separate verify chain, only remove first-verify-fresh | Still starts a new chat after execute |
 | Resume last verify session when present | First verify still needs execute’s id; execute id is sufficient for later retries if resume succeeded |
+| Soft-fresh on missing id / `ErrResumeSession` | Burns ~full context again; violates same-chat hard requirement |
 
 ## See also
 
