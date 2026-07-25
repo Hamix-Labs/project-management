@@ -5,7 +5,6 @@ import { useDocumentTitle } from "@/shared/useDocumentTitle";
 import { useProject } from "./hooks";
 import { ProjectDeleteConfirmDialog } from "./ProjectDeleteConfirmDialog";
 import { ProjectSettingsPanel } from "./ProjectSettingsPanel";
-import { ProjectTasksPanel } from "./ProjectTasksPanel";
 import { ProjectContextEntryCard } from "./ProjectContextEntryCard";
 import { useDeleteProjectMutation } from "./mutations";
 
@@ -123,8 +122,6 @@ export function ProjectDetailPage() {
           <ProjectSettingsPanel project={project.data} />
 
           <ProjectContextEntryCard projectId={projectId} />
-
-          <ProjectTasksPanel projectId={projectId} />
         </div>
       ) : null}
     </section>
@@ -135,7 +132,6 @@ function ProjectDetailSkeleton() {
   return (
     <div className="pd__skeleton" aria-hidden="true">
       <div className="pd__shimmer pd__shimmer--card" />
-      <div className="pd__shimmer pd__shimmer--card pd__shimmer--card-sm" />
       <div className="pd__shimmer pd__shimmer--card pd__shimmer--card-sm" />
     </div>
   );

@@ -16,10 +16,10 @@ export const taskQueryKeys = {
   /**
    * A single page of `GET /tasks`. Keyed by `{ limit, offset }` so every
    * consumer — the home list (limit=20), the depends-on picker
-   * (limit=200), the project tasks panel (limit=200) — shares the same
-   * cache tree. Previously the picker / panel keyed off `listRoot()`
-   * (the prefix itself), which created a parallel "all tasks" cache
-   * entry duplicating storage, fetches, and SSE invalidation work.
+   * (limit=200) — shares the same cache tree. Previously the picker
+   * keyed off `listRoot()` (the prefix itself), which created a
+   * parallel "all tasks" cache entry duplicating storage, fetches, and
+   * SSE invalidation work.
    */
   list: (params: TaskListParams) =>
     [...taskQueryKeys.listRoot(), params] as const,
