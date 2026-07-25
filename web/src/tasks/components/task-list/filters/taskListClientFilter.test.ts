@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { TASK_TEST_DEFAULTS } from "@/test/taskDefaults";
 import type { TaskWithDepth } from "../../../task-tree";
-import { filterTasksForListView } from "./taskListClientFilter";
+import {
+  filterTasksByTag,
+  filterTasksForListView,
+  uniqueSortedTagsFromTasks,
+} from "./taskListClientFilter";
 
 function row(
   partial: Pick<TaskWithDepth, "id" | "title" | "status" | "priority"> &
@@ -70,6 +74,28 @@ describe("filterTasksForListView", () => {
     expect(
       filterTasksForListView(tasks, "ready", "high", "gamma"),
     ).toEqual([tasks[2]]);
+  });
+
+  describe("uniqueSortedTagsFromTasks / filterTasksByTag", () => {
+    it("collects unique tags sorted", () => {
+      expect(
+        uniqueSortedTagsFromTasks([
+          row({ id: "a", title: "A", status: "ready", priority: "low", tags: ["api", "backend"] }),
+          row({ id: "b", title: "B", status: "ready", priority: "low", tags: ["backend", "web"] }),
+          row({ id: "c", title: "C", status: "ready", priority: "low" }),
+        ]),
+      ).toEqual(["api", "backend", "web"]);
+    });
+
+    it("filters by exact tag or returns all", () => {
+      const tagged = [
+        row({ id: "a", title: "A", status: "ready", priority: "low", tags: ["api"] }),
+        row({ id: "b", title: "B", status: "ready", priority: "low", tags: ["web"] }),
+      ];
+      expect(filterTasksByTag(tagged, "all")).toEqual(tagged);
+      expect(filterTasksByTag(tagged, "api")).toEqual([tagged[0]]);
+      expect(filterTasksByTag(tagged, "missing")).toEqual([]);
+    });
   });
 
   describe("scheduled bucket", () => {

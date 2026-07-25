@@ -14,6 +14,31 @@ import type { TaskWithDepth } from "../../../task-tree";
 export type TaskListClientStatusFilter = "all" | "scheduled" | Status;
 export type TaskListClientPriorityFilter = "all" | Priority;
 
+/** Max tag chips shown under a list-row title before +N overflow. */
+export const TASK_LIST_TAG_CHIP_LIMIT = 3;
+
+/** Sorted unique tags across the given tasks (exact stored strings). */
+export function uniqueSortedTagsFromTasks(
+  tasks: ReadonlyArray<{ tags?: string[] }>,
+): string[] {
+  const seen = new Set<string>();
+  for (const task of tasks) {
+    for (const tag of task.tags ?? []) {
+      if (tag) seen.add(tag);
+    }
+  }
+  return [...seen].sort((a, b) => a.localeCompare(b));
+}
+
+/** Keep tasks that include `tagFilter`, or all when filter is `"all"`. */
+export function filterTasksByTag<T extends { tags?: string[] }>(
+  tasks: ReadonlyArray<T>,
+  tagFilter: string,
+): T[] {
+  if (tagFilter === "all") return [...tasks];
+  return tasks.filter((t) => (t.tags ?? []).includes(tagFilter));
+}
+
 /** Client-side filters for the task list (status, priority, title substring). */
 export function filterTasksForListView(
   tasks: TaskWithDepth[],

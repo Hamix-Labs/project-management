@@ -7,7 +7,9 @@ import {
 } from "react";
 import type { TaskWithDepth } from "../../../task-tree";
 import {
+  filterTasksByTag,
   filterTasksForListView,
+  uniqueSortedTagsFromTasks,
   type TaskListClientPriorityFilter,
   type TaskListClientStatusFilter,
 } from "../filters/taskListClientFilter";
@@ -22,6 +24,8 @@ type UseTaskListSectionFiltersArgs = {
   tasks: TaskWithDepth[];
   projectFilterOptions: Array<{ id: string; name: string }>;
   showProjectColumn: boolean;
+  /** When false, tag filter stays at "all" and options are empty (launch gate). */
+  tagsUiEnabled: boolean;
   onListFiltersChange: () => void;
   smoothTransitions: boolean;
 };
@@ -30,6 +34,7 @@ export function useTaskListSectionFilters({
   tasks,
   projectFilterOptions,
   showProjectColumn,
+  tagsUiEnabled,
   onListFiltersChange,
   smoothTransitions,
 }: UseTaskListSectionFiltersArgs) {
@@ -46,11 +51,17 @@ export function useTaskListSectionFilters({
   const [priorityFilter, setPriorityFilter] =
     useState<TaskListClientPriorityFilter>("all");
   const [projectFilter, setProjectFilter] = useState("all");
+  const [tagFilter, setTagFilter] = useState("all");
   const [titleSearch, setTitleSearch] = useState("");
   const [sortKey, setSortKey] = useState<TaskListSortKey>("created_at");
   const [sortDir, setSortDir] = useState<TaskListSortDir>("desc");
   const searchInputRef = useRef<HTMLInputElement>(null);
   useTaskListSearchShortcut(searchInputRef, smoothTransitions);
+
+  const tagFilterOptions = useMemo(() => {
+    if (!tagsUiEnabled) return [];
+    return uniqueSortedTagsFromTasks(tasks);
+  }, [tagsUiEnabled, tasks]);
 
   const filteredTasks = useMemo(() => {
     const base = filterTasksForListView(
@@ -65,13 +76,19 @@ export function useTaskListSectionFilters({
         : projectFilter === "none"
           ? base.filter((task) => !task.project_id)
           : base.filter((task) => task.project_id === projectFilter);
-    return sortTasksForListView(scoped, sortKey, sortDir, projectNameById);
+    const tagged = filterTasksByTag(
+      scoped,
+      tagsUiEnabled ? tagFilter : "all",
+    );
+    return sortTasksForListView(tagged, sortKey, sortDir, projectNameById);
   }, [
     tasks,
     statusFilter,
     priorityFilter,
     titleSearch,
     projectFilter,
+    tagFilter,
+    tagsUiEnabled,
     sortKey,
     sortDir,
     projectNameById,
@@ -99,6 +116,9 @@ export function useTaskListSectionFilters({
     setPriorityFilter,
     projectFilter,
     setProjectFilter,
+    tagFilter,
+    setTagFilter,
+    tagFilterOptions,
     titleSearch,
     setTitleSearch,
     sortKey,
@@ -108,6 +128,7 @@ export function useTaskListSectionFilters({
     handleSortChange,
     visibleIds,
     showProjectColumn,
+    tagsUiEnabled,
     onListFiltersChange,
   };
 }

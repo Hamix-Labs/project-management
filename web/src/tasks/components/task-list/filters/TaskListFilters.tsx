@@ -8,6 +8,9 @@ type Props = {
   projectFilter?: string;
   projectOptions?: Array<{ id: string; name: string }>;
   onProjectFilterChange?: (value: string) => void;
+  tagFilter?: string;
+  tagOptions?: string[];
+  onTagFilterChange?: (value: string) => void;
   titleSearch: string;
   onTitleSearchChange: (value: string) => void;
   searchInputRef?: RefObject<HTMLInputElement>;
@@ -20,6 +23,9 @@ export function TaskListFilters({
   projectFilter = "all",
   projectOptions = [],
   onProjectFilterChange,
+  tagFilter = "all",
+  tagOptions = [],
+  onTagFilterChange,
   titleSearch,
   onTitleSearchChange,
   searchInputRef,
@@ -30,6 +36,14 @@ export function TaskListFilters({
     ...projectOptions.map((project) => ({
       value: project.id,
       label: project.name,
+    })),
+  ];
+
+  const tagFilterSelectOptions = [
+    { value: "all", label: "All tags" },
+    ...tagOptions.map((tag) => ({
+      value: tag,
+      label: tag,
     })),
   ];
 
@@ -65,6 +79,21 @@ export function TaskListFilters({
               value={projectFilter}
               options={projectFilterOptions}
               onChange={onProjectFilterChange}
+            />
+          </div>
+        ) : null}
+        {onTagFilterChange && tagOptions.length > 0 ? (
+          <div className="task-list-filter-field task-list-filter-field--tag">
+            <CustomSelect
+              id="task-list-filter-tag"
+              label="Tag"
+              compact
+              dropdownVariant="toolbar"
+              dropdownMinWidth={200}
+              listboxName="Filter by tag"
+              value={tagFilter}
+              options={tagFilterSelectOptions}
+              onChange={onTagFilterChange}
             />
           </div>
         ) : null}
