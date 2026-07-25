@@ -12,6 +12,7 @@ Vite + React client under `web/`. All `fetch` calls live in `web/src/api/`; resp
 
 - [Routes](#routes)
 - [Board view](#board-view)
+- [Timeline view](#timeline-view)
 - [Cold start](#cold-start)
 - [Task sync (SSE cache coherence)](#task-sync-sse-cache-coherence)
 - [Task create flow](#task-create-flow)
@@ -25,7 +26,7 @@ Vite + React client under `web/`. All `fetch` calls live in `web/src/api/`; resp
 
 | Path | Module | Notes |
 | --- | --- | --- |
-| `/` | `web/src/tasks/` | Task home — list (default) or board via `?view=board` |
+| `/` | `web/src/tasks/` | Task home — list (default), board (`?view=board`), or timeline (`?view=timeline`) |
 | `/templates` | `web/src/tasks/` | Saved task templates (search, batch instantiate) |
 | `/drafts` | `web/src/tasks/` | Saved create-task drafts |
 | `/projects` | `web/src/projects/` | Project list |
@@ -41,6 +42,12 @@ Primary nav links: Tasks, Templates, Drafts, Projects, Repositories (Settings is
 Task Home supports a read-only Kanban **Board** alongside the table **List** (`/?view=board`). Columns are workflow buckets — Backlog (`ready`, `on_hold`), In Progress (`running`), Verification (`review`), Needs Attention (`blocked`, `failed`). **Done tasks are never shown** (volume accumulates; the board is for active execution).
 
 Data loads through `fetchActiveTasksForBoard` (keyset walk of `GET /tasks`, max page size 200) into `taskQueryKeys.board()` under `listRoot()`, so existing SSE / optimistic list invalidation refreshes the board. Caps: 500 active tasks or 10 pages scanned — then a truncation banner. There is no drag-and-drop; status changes come from the execution engine. A future `exclude_status=done` (or allowlist) on `GET /tasks` would avoid scanning Done rows.
+
+## Timeline view
+
+Task Home also supports a read-only **Timeline** (`/?view=timeline`) — a chronological project-activity feed (task creation, status changes, verification, agent runs). Category pills filter All / Tasks / Verification; a date-range control filters by lookback window.
+
+**This surface is fixture-backed for now** (`web/src/tasks/components/task-timeline/`). There is no cross-task activity API yet (audit events remain per-task via `GET /tasks/{id}/events`). A later feed can replace fixtures without changing the view model. Distinct from the per-task audit timeline on task detail.
 
 ## Cold start
 
