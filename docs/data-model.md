@@ -24,6 +24,7 @@ Work hierarchy is **Project → Task**. Tasks may have:
 | `pending_retry` | JSON \| null | Ephemeral operator intent between `POST /tasks/{id}/retry` or `POST /tasks/{id}/polish` and worker pickup. `{ kind?: retry|polish, mode: fresh|resume, parent_cycle_id, instructions? }`. Empty/omitted `kind` means `retry` (back-compat). Polish always uses `mode=resume` with non-empty `instructions`. Not exposed on the HTTP task JSON (`json:"-"`); consumed and cleared atomically when the worker transitions `ready→running`. |
 | `priority` | enum | `low` / `medium` / `high` / `critical`. Required at create. |
 | `project_id` | string \| null | Project membership. Required on create when `worktree_id` is set; must belong to the same repo as the worktree. |
+| `number` | int \| null | Per-project sequential display ref (`#N`). Assigned when `project_id` is set; immutable. Clearing or changing `project_id` on a numbered task is rejected. Null when the task has no project. |
 | `project_context_item_ids` | string[] | Explicit allowlist of project context items for runner snapshots. Cleared on `project_id` change. |
 | `tags` | string[] | Free-form, stored lowercase `^[a-z0-9][a-z0-9._-]{0,31}$`. Create/PATCH lowercases before validate. |
 | `milestone` | string \| null | Single anchor per task, `^[a-zA-Z0-9][a-zA-Z0-9 ._-]{0,63}$` when set. |

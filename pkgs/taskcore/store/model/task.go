@@ -14,7 +14,9 @@ type Task struct {
 	InitialPrompt string          `gorm:"type:text;not null"`
 	Status        domain.Status   `gorm:"not null;index;check:chk_tasks_status,status IN ('ready','running','blocked','review','done','failed','on_hold')"`
 	Priority      domain.Priority `gorm:"not null;check:chk_tasks_priority,priority IN ('low','medium','high','critical')"`
-	ProjectID     *string         `gorm:"index"`
+	ProjectID     *string         `gorm:"index:idx_tasks_project_number,unique,priority:1;index"`
+	// Number is the per-project sequential ref (#N). Unique with project_id when both set.
+	Number *int `gorm:"index:idx_tasks_project_number,unique,priority:2"`
 	// JSONSlice (not serializer:json): empty slices must persist as "[]". GORM's
 	// serializer:json writes "" for empty []string, which Postgres rejects on jsonb.
 	ProjectContextItemIDs datatypes.JSONSlice[string] `gorm:"column:project_context_item_ids;type:jsonb;not null;default:'[]'"`

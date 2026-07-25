@@ -29,13 +29,14 @@ var activityTypes = []string{
 
 // activityRow is the raw projection from a LEFT JOIN of task_events ⋊ tasks.
 type activityRow struct {
-	TaskID    string
-	Seq       int64
-	At        time.Time
-	Type      taskeventsdomain.EventType
-	By        taskeventsdomain.Actor
-	Data      datatypes.JSON `gorm:"column:data_json"`
-	TaskTitle *string        `gorm:"column:task_title"`
+	TaskID     string
+	Seq        int64
+	At         time.Time
+	Type       taskeventsdomain.EventType
+	By         taskeventsdomain.Actor
+	Data       datatypes.JSON `gorm:"column:data_json"`
+	TaskTitle  *string        `gorm:"column:task_title"`
+	TaskNumber *int           `gorm:"column:task_number"`
 }
 
 // List returns paginated activity events across all tasks for the fixed type
@@ -70,7 +71,7 @@ func List(ctx context.Context, db *gorm.DB, in contract.ListActivityInput) (cont
 	var rows []activityRow
 	listQ := db.WithContext(ctx).
 		Table("task_events").
-		Select("task_events.task_id, task_events.seq, task_events.at, task_events.type, task_events.by, task_events.data_json, tasks.title AS task_title").
+		Select("task_events.task_id, task_events.seq, task_events.at, task_events.type, task_events.by, task_events.data_json, tasks.title AS task_title, tasks.number AS task_number").
 		Joins("LEFT JOIN tasks ON tasks.id = task_events.task_id").
 		Where("task_events.type IN ?", activityTypes)
 	if in.Since != nil {
@@ -85,13 +86,14 @@ func List(ctx context.Context, db *gorm.DB, in contract.ListActivityInput) (cont
 	events := make([]contract.ActivityEvent, 0, len(rows))
 	for _, r := range rows {
 		ev := contract.ActivityEvent{
-			TaskID:    r.TaskID,
-			Seq:       r.Seq,
-			At:        r.At,
-			Type:      r.Type,
-			By:        taskcoredomain.Actor(r.By),
-			Data:      []byte(r.Data),
-			TaskTitle: r.TaskTitle,
+			TaskID:     r.TaskID,
+			Seq:        r.Seq,
+			At:         r.At,
+			Type:       r.Type,
+			By:         taskcoredomain.Actor(r.By),
+			Data:       []byte(r.Data),
+			TaskTitle:  r.TaskTitle,
+			TaskNumber: r.TaskNumber,
 		}
 		events = append(events, ev)
 	}

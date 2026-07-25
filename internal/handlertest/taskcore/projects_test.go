@@ -11,7 +11,6 @@ import (
 	"github.com/AlexsanderHamir/Hamix/internal/handlertest"
 
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
-	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 )
 
 func TestHTTP_projectsCRUDAndContext(t *testing.T) {
@@ -171,7 +170,11 @@ func TestHTTP_taskProjectIDCreatePatchAndClear(t *testing.T) {
 	if task.ProjectID == nil || *task.ProjectID != project.ID {
 		t.Fatalf("created task project_id = %#v, want %s", task.ProjectID, project.ID)
 	}
+	if task.Number == nil || *task.Number < 1 {
+		t.Fatalf("created task number = %#v, want >= 1", task.Number)
+	}
 
+	// Numbered tasks cannot clear project_id (immutable #N identity).
 	req, err := http.NewRequest(http.MethodPatch, srv.URL+"/tasks/"+task.ID, strings.NewReader(`{"project_id":null}`))
 	if err != nil {
 		t.Fatal(err)
@@ -182,16 +185,9 @@ func TestHTTP_taskProjectIDCreatePatchAndClear(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer res.Body.Close()
-	if res.StatusCode != http.StatusOK {
+	if res.StatusCode != http.StatusBadRequest {
 		b, _ := io.ReadAll(res.Body)
-		t.Fatalf("patch task project status %d body %s", res.StatusCode, b)
-	}
-	var cleared taskcoredomain.Task
-	if err := json.NewDecoder(res.Body).Decode(&cleared); err != nil {
-		t.Fatal(err)
-	}
-	if cleared.ProjectID != nil {
-		t.Fatalf("cleared task project_id = %#v, want nil", cleared.ProjectID)
+		t.Fatalf("patch clear project status %d body %s, want 400", res.StatusCode, b)
 	}
 }
 

@@ -59,7 +59,10 @@ import (
 // constraint) — Hamix no longer runs its own stream-idle kill; runners
 // own their own timeouts. Only max_run_duration_seconds remains as the
 // wall-clock cap.
-const SchemaRevision = 17
+//
+// Rev 18: tasks.number + projects.next_task_number; backfill dense
+// per-project numbers for existing tasks (display ref #N).
+const SchemaRevision = 18
 
 const schemaMetaRowID = 1
 

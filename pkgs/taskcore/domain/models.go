@@ -12,6 +12,9 @@ type Task struct {
 	Status        Status   `json:"status"`
 	Priority      Priority `json:"priority"`
 	ProjectID     *string  `json:"project_id,omitempty"`
+	// Number is the per-project human-facing task ref (#N). Assigned when
+	// project_id is set; immutable thereafter. Null when the task has no project.
+	Number *int `json:"number,omitempty"`
 	// ProjectContextItemIDs is the user-selected subset of project context to pass to agent runs.
 	ProjectContextItemIDs []string  `json:"project_context_item_ids,omitempty"`
 	Tags                  []string  `json:"tags,omitempty"`

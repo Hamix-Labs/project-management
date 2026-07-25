@@ -16,8 +16,11 @@ type Project struct {
 	ContextSummary string        `json:"context_summary"`
 	RepositoryID   *string       `json:"repository_id,omitempty"`
 	IsDefault      bool          `json:"is_default"`
-	CreatedAt      time.Time     `json:"created_at"`
-	UpdatedAt      time.Time     `json:"updated_at"`
+	// NextTaskNumber is the next tasks.number to allocate for this project.
+	// Persistence counter only — omitted from the project HTTP API.
+	NextTaskNumber int       `json:"-"`
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
 }
 
 // ProjectContextItem is a human-inspectable memory item attached to a project.

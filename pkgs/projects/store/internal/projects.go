@@ -69,6 +69,7 @@ func CreateProject(ctx context.Context, db *gorm.DB, input CreateProjectInput) (
 		Status:         domain.ProjectStatusActive,
 		ContextSummary: strings.TrimSpace(input.ContextSummary),
 		RepositoryID:   repoID,
+		NextTaskNumber: 1,
 		CreatedAt:      now,
 		UpdatedAt:      now,
 	}
@@ -536,6 +537,7 @@ func CreateDefaultProjectForRepo(ctx context.Context, tx *gorm.DB, repoID string
 		ContextSummary: "Default project for this repository.",
 		RepositoryID:   &repoID,
 		IsDefault:      true,
+		NextTaskNumber: 1,
 		CreatedAt:      now,
 		UpdatedAt:      now,
 	}

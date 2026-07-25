@@ -12,13 +12,14 @@ import (
 // (GET /tasks/activity). Types are the fixed set: status_changed,
 // phase_failed, approval_granted.
 type ActivityEvent struct {
-	TaskID    string
-	Seq       int64
-	At        time.Time
-	Type      taskeventsdomain.EventType
-	By        taskcoredomain.Actor
-	Data      []byte
-	TaskTitle *string
+	TaskID     string
+	Seq        int64
+	At         time.Time
+	Type       taskeventsdomain.EventType
+	By         taskcoredomain.Actor
+	Data       []byte
+	TaskTitle  *string
+	TaskNumber *int
 }
 
 // ListActivityInput is the paginated query for GET /tasks/activity.

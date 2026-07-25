@@ -301,14 +301,17 @@ func TestHTTP_taskActivity_emptyFeed(t *testing.T) {
 	}
 }
 
-// TestHTTP_taskActivity_taskTitlePresent verifies optional task_title field
-// is included when the task exists.
+// TestHTTP_taskActivity_taskTitlePresent verifies optional task_title and
+// task_number fields are included when the task exists (with a project).
 func TestHTTP_taskActivity_taskTitlePresent(t *testing.T) {
 	srv, st := handlertest.NewCreateServerWithStore(t)
 	defer srv.Close()
 
 	const title = "activity-title-task"
 	task := handlertest.PostTaskJSON(t, srv, `{"title":"`+title+`","priority":"medium"}`, http.StatusCreated)
+	if task.Number == nil {
+		t.Fatal("expected created task to have a per-project number")
+	}
 	if err := st.AppendTaskEvent(context.Background(), task.ID, taskeventsdomain.EventStatusChanged, taskcoredomain.ActorUser, []byte(`{}`)); err != nil {
 		t.Fatal(err)
 	}
@@ -316,8 +319,9 @@ func TestHTTP_taskActivity_taskTitlePresent(t *testing.T) {
 	body, _ := handlertest.MustGetJSON(t, srv.URL, "/tasks/activity")
 	var resp struct {
 		Events []struct {
-			TaskID    string  `json:"task_id"`
-			TaskTitle *string `json:"task_title"`
+			TaskID     string  `json:"task_id"`
+			TaskTitle  *string `json:"task_title"`
+			TaskNumber *int    `json:"task_number"`
 		} `json:"events"`
 	}
 	if err := json.Unmarshal(body, &resp); err != nil {
@@ -329,6 +333,9 @@ func TestHTTP_taskActivity_taskTitlePresent(t *testing.T) {
 		}
 		if ev.TaskTitle == nil || *ev.TaskTitle != title {
 			t.Errorf("task_title want %q, got %v", title, ev.TaskTitle)
+		}
+		if ev.TaskNumber == nil || *ev.TaskNumber != *task.Number {
+			t.Errorf("task_number want %v, got %v", task.Number, ev.TaskNumber)
 		}
 		return
 	}
