@@ -28,8 +28,6 @@ type effectiveSettingsLog struct {
 	RunnerVersion         string
 	Idle                  bool
 	IdleReason            string
-	VerifyRunner          string
-	VerifyRunnerStatus    string
 }
 
 func (s *Supervisor) applySettings(ctx context.Context, phase string) error {
@@ -138,8 +136,6 @@ func (s *Supervisor) handleApplySettingsUnchanged(ctx context.Context, phase str
 	eff := baseEffectiveSettings(cfg)
 	eff.RunnerVersion = version
 	eff.IdleReason = s.probeSchedulingHint(ctx)
-	eff.VerifyRunner = cfg.VerifyRunnerName
-	eff.VerifyRunnerStatus = verifyRunnerStatusForInstance(prev, cfg)
 	s.finishApplySettings(phase, eff)
 	return nil
 }
@@ -161,7 +157,7 @@ func (s *Supervisor) restartWorkerWithSettings(ctx context.Context, phase string
 		return fmt.Errorf("agent worker build runner %q: %w", cfg.Runner, err)
 	}
 
-	next, verifyStatus := s.spawnWorkerInstance(ctx, cfg, r)
+	next := s.spawnWorkerInstance(ctx, cfg, r)
 
 	s.mu.Lock()
 	if s.drained {
@@ -178,8 +174,6 @@ func (s *Supervisor) restartWorkerWithSettings(ctx context.Context, phase string
 	eff := baseEffectiveSettings(cfg)
 	eff.RunnerVersion = version
 	eff.IdleReason = s.probeSchedulingHint(ctx)
-	eff.VerifyRunner = cfg.VerifyRunnerName
-	eff.VerifyRunnerStatus = verifyStatus
 	s.finishApplySettings(phase, eff)
 	return nil
 }
@@ -194,8 +188,7 @@ func (s *Supervisor) logEffective(phase string, eff effectiveSettingsLog) {
 		"runner", eff.Runner, "runner_version", eff.RunnerVersion,
 		"cursor_bin", eff.CursorBin,
 		"cursor_model", eff.CursorModel,
-		"max_run_duration_sec", eff.MaxRunDurationSeconds,
-		"verify_runner", eff.VerifyRunner, "verify_runner_status", eff.VerifyRunnerStatus)
+		"max_run_duration_sec", eff.MaxRunDurationSeconds)
 }
 
 func (s *Supervisor) publishSettingsChanged() {

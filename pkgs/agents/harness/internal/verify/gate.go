@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"log/slog"
-	"strings"
 
 	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	checklistcontract "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/contract"
@@ -28,19 +27,11 @@ func (s *Service) LoadSnapshot(ctx context.Context, taskID string) (Snapshot, er
 	if timeoutSec <= 0 {
 		timeoutSec = settingsdomain.DefaultVerifyCommandTimeoutSeconds
 	}
-	if name := strings.TrimSpace(settings.VerifyRunnerName); name != "" {
-		slog.Warn("agent harness ignoring verify_runner_name; PhaseVerify uses execute runner",
-			"cmd", calltrace.LogCmd, "operation", "agent.harness.verify.LoadSnapshot.ignore_verify_runner",
-			"verify_runner_name", name)
-	}
 	return Snapshot{
 		Enabled:                     len(items) > 0,
 		MaxRetries:                  settings.VerifyMaxRetries,
 		VerifyCommandTimeoutSeconds: timeoutSec,
 		Criteria:                    items,
-		VerifyRunner:                s.verifyRunner,
-		// Empty: use the execute runner's default model (ADR-0084).
-		VerifyModel: "",
 	}, nil
 }
 

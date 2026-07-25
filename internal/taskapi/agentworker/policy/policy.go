@@ -47,9 +47,8 @@ func DecideIdle(ctx context.Context, cfg settingsdomain.AppSettings, checkGit Gi
 // InstanceSnapshot captures the running worker state needed for
 // material-change comparison without importing supervisor types.
 type InstanceSnapshot struct {
-	Settings        settingsdomain.AppSettings
-	RunnerVersion   string
-	HasVerifyRunner bool
+	Settings      settingsdomain.AppSettings
+	RunnerVersion string
 }
 
 // InstanceMatchesSettings reports whether the running worker already
@@ -75,12 +74,6 @@ func InstanceMatchesSettings(inst *InstanceSnapshot, cfg settingsdomain.AppSetti
 	if inst.Settings.StreamIdleStuckSeconds != cfg.StreamIdleStuckSeconds {
 		return false
 	}
-	if inst.Settings.VerifyRunnerName != cfg.VerifyRunnerName {
-		return false
-	}
-	if inst.Settings.VerifyRunnerModel != cfg.VerifyRunnerModel {
-		return false
-	}
 	if inst.Settings.AgentPaused != cfg.AgentPaused {
 		return false
 	}
@@ -88,18 +81,4 @@ func InstanceMatchesSettings(inst *InstanceSnapshot, cfg settingsdomain.AppSetti
 		return false
 	}
 	return true
-}
-
-// VerifyRunnerStatus returns the effective-config verify_runner_status
-// label for an unchanged reload.
-//
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func VerifyRunnerStatus(hasVerifyRunner bool, cfg settingsdomain.AppSettings) string {
-	if hasVerifyRunner {
-		return "ok"
-	}
-	if cfg.VerifyRunnerName == cfg.Runner && cfg.VerifyRunnerName != "" {
-		return "reuse_execute_runner"
-	}
-	return ""
 }

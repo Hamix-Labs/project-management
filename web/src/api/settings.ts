@@ -48,8 +48,6 @@ export type AppSettings = {
    */
   sse_replay_enabled: boolean;
   verify_max_retries: number;
-  verify_runner_name: string;
-  verify_runner_model: string;
   verify_command_timeout_seconds: number;
   updated_at?: string;
 };
@@ -79,8 +77,6 @@ export type AppSettingsPatch = Partial<{
   optimistic_mutations_enabled: boolean;
   sse_replay_enabled: boolean;
   verify_max_retries: number;
-  verify_runner_name: string;
-  verify_runner_model: string;
   verify_command_timeout_seconds: number;
 }>;
 
@@ -150,10 +146,6 @@ export function parseAppSettings(raw: unknown): AppSettings {
     typeof o.verify_max_retries === "number"
       ? o.verify_max_retries
       : DEFAULT_VERIFY_MAX_RETRIES;
-  const verifyRunnerName =
-    typeof o.verify_runner_name === "string" ? o.verify_runner_name : "";
-  const verifyRunnerModel =
-    typeof o.verify_runner_model === "string" ? o.verify_runner_model : "";
   const verifyCommandTimeoutSeconds =
     typeof o.verify_command_timeout_seconds === "number"
       ? o.verify_command_timeout_seconds
@@ -180,8 +172,6 @@ export function parseAppSettings(raw: unknown): AppSettings {
     optimistic_mutations_enabled: optimistic,
     sse_replay_enabled: sseReplay,
     verify_max_retries: verifyMaxRetries,
-    verify_runner_name: verifyRunnerName,
-    verify_runner_model: verifyRunnerModel,
     verify_command_timeout_seconds: verifyCommandTimeoutSeconds,
   };
   if (typeof o.updated_at === "string") {

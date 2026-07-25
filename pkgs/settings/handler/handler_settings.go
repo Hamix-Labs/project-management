@@ -55,8 +55,6 @@ func (h *Handler) patchSettings(w http.ResponseWriter, r *http.Request) {
 		AgentPickupDelaySeconds:     body.AgentPickupDelaySeconds,
 		DisplayTimezone:             body.DisplayTimezone,
 		VerifyMaxRetries:            body.VerifyMaxRetries,
-		VerifyRunnerName:            body.VerifyRunnerName,
-		VerifyRunnerModel:           body.VerifyRunnerModel,
 		VerifyCommandTimeoutSeconds: body.VerifyCommandTimeoutSeconds,
 		CursorSessionResumeEnabled:  body.CursorSessionResumeEnabled,
 	}
@@ -228,8 +226,6 @@ func settingsResponseFrom(cfg settingsdomain.AppSettings) settingsResponse {
 		OptimisticMutationsEnabled:  cfg.OptimisticMutationsEnabled,
 		SSEReplayEnabled:            cfg.SSEReplayEnabled,
 		VerifyMaxRetries:            cfg.VerifyMaxRetries,
-		VerifyRunnerName:            cfg.VerifyRunnerName,
-		VerifyRunnerModel:           cfg.VerifyRunnerModel,
 		VerifyCommandTimeoutSeconds: cfg.VerifyCommandTimeoutSeconds,
 		CursorSessionResumeEnabled:  cfg.CursorSessionResumeEnabled,
 	}

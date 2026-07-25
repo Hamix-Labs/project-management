@@ -8,44 +8,9 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi/agentworker/policy"
-	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
-	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/registry"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/worker"
 )
 
-func (s *Supervisor) buildVerifyRunner(ctx context.Context, cfg settingsdomain.AppSettings) (runner.Runner, string) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskapi.agentWorkerSupervisor.buildVerifyRunner",
-		"verify_runner", cfg.VerifyRunnerName)
-	if cfg.VerifyRunnerName == "" {
-		return nil, ""
-	}
-	if cfg.VerifyRunnerName == cfg.Runner {
-		return nil, "reuse_execute_runner"
-	}
-	probeCtx, cancel := context.WithTimeout(ctx, s.probeBudge)
-	version, _, probeErr := s.probe(probeCtx, cfg.VerifyRunnerName, cfg.CursorBin, s.probeBudge)
-	cancel()
-	if probeErr != nil {
-		slog.Warn("verify_runner_probe_failed; demoting to execute runner",
-			"cmd", calltrace.LogCmd, "operation", "taskapi.agent_worker.verify_runner_probe_err",
-			"runner", cfg.VerifyRunnerName, "binary", cfg.CursorBin, "err", probeErr)
-		return nil, "demoted_probe_failed"
-	}
-	r, err := registry.Build(cfg.VerifyRunnerName, registry.BuildOptions{
-		BinaryPath:  cfg.CursorBin,
-		Version:     version,
-		CursorModel: cfg.VerifyRunnerModel,
-	})
-	if err != nil {
-		slog.Warn("verify_runner_build_failed; demoting to execute runner",
-			"cmd", calltrace.LogCmd, "operation", "taskapi.agent_worker.verify_runner_build_err",
-			"runner", cfg.VerifyRunnerName, "err", err)
-		return nil, "demoted_build_failed"
-	}
-	return r, "ok"
-}
-
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (s *Supervisor) probeExecuteRunner(ctx context.Context, cfg settingsdomain.AppSettings) (string, error) {
 	probeCtx, cancel := context.WithTimeout(ctx, s.probeBudge)
 	defer cancel()

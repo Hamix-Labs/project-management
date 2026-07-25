@@ -53,14 +53,14 @@ func (s *Service) runLLMVerify(
 	}
 	var total cyclesdomain.TokenUsage
 	var usagePresent bool
-	res, err := s.runVerifyCursor(ctx, task, cycle, phaseSeq, runCorrelationID, snap, promptText, resumeSessionID)
+	res, err := s.runVerifyCursor(ctx, task, cycle, phaseSeq, runCorrelationID, promptText, resumeSessionID)
 	if u, ok := cyclesdomain.TokenUsageFromDetailsJSON(res.Details); ok {
 		total = cyclesdomain.AddTokenUsage(total, u)
 		usagePresent = true
 	}
 	if errors.Is(err, runner.ErrResumeSession) {
 		full := buildVerifyPrompt(ctx, s, task.ID, snap, cycle.ID, previouslyPassed, selfReport, feedback, cmdEvidence)
-		res, retryErr := s.runVerifyCursor(ctx, task, cycle, phaseSeq, runCorrelationID, snap, full, "")
+		res, retryErr := s.runVerifyCursor(ctx, task, cycle, phaseSeq, runCorrelationID, full, "")
 		if u, ok := cyclesdomain.TokenUsageFromDetailsJSON(res.Details); ok {
 			total = cyclesdomain.AddTokenUsage(total, u)
 			usagePresent = true
@@ -140,7 +140,6 @@ func (s *Service) runVerifyCursor(
 	cycle *cyclesdomain.TaskCycle,
 	phaseSeq int64,
 	runCorrelationID string,
-	snap Snapshot,
 	promptText string,
 	resumeSessionID string,
 ) (runner.Result, error) {
@@ -166,13 +165,12 @@ func (s *Service) runVerifyCursor(
 			onProgress(ev)
 		}
 	}
-	return snap.VerifyRunner.Run(runCtx, runner.Request{
+	return s.runner.Run(runCtx, runner.Request{
 		TaskID:           task.ID,
 		AttemptSeq:       cycle.AttemptSeq,
 		Phase:            cyclesdomain.PhaseVerify,
 		Prompt:           promptText,
 		WorkingDir:       s.workingDir,
-		CursorModel:      snap.VerifyModel,
 		RunCorrelationID: runCorrelationID,
 		ResumeSessionID:  resumeSessionID,
 		StreamIdleStuck:  streamIdleStuck,

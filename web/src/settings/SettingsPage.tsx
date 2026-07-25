@@ -37,8 +37,6 @@ function SettingsPageLoadedView({
   lastUpdatedFormatted,
   cursorModelsQuery,
   modelIdsFromList,
-  verifyModelsQuery,
-  verifyModelIdsFromList,
   patchPending,
   probePending,
   onField,
@@ -76,8 +74,6 @@ function SettingsPageLoadedView({
             streamIdleInvalid={streamIdleInvalid}
             cursorModelsQuery={cursorModelsQuery}
             modelIdsFromList={modelIdsFromList}
-            verifyModelsQuery={verifyModelsQuery}
-            verifyModelIdsFromList={verifyModelIdsFromList}
             onField={onField}
           />
 

@@ -20,8 +20,6 @@ type settingsResponse struct {
 	OptimisticMutationsEnabled  bool   `json:"optimistic_mutations_enabled"`
 	SSEReplayEnabled            bool   `json:"sse_replay_enabled"`
 	VerifyMaxRetries            int    `json:"verify_max_retries"`
-	VerifyRunnerName            string `json:"verify_runner_name"`
-	VerifyRunnerModel           string `json:"verify_runner_model"`
 	VerifyCommandTimeoutSeconds int    `json:"verify_command_timeout_seconds"`
 	CursorSessionResumeEnabled  bool   `json:"cursor_session_resume_enabled"`
 	UpdatedAt                   string `json:"updated_at,omitempty"`
@@ -39,8 +37,6 @@ type settingsPatchBody struct {
 	OptimisticMutationsEnabled  *bool   `json:"optimistic_mutations_enabled,omitempty"`
 	SSEReplayEnabled            *bool   `json:"sse_replay_enabled,omitempty"`
 	VerifyMaxRetries            *int    `json:"verify_max_retries,omitempty"`
-	VerifyRunnerName            *string `json:"verify_runner_name,omitempty"`
-	VerifyRunnerModel           *string `json:"verify_runner_model,omitempty"`
 	VerifyCommandTimeoutSeconds *int    `json:"verify_command_timeout_seconds,omitempty"`
 	CursorSessionResumeEnabled  *bool   `json:"cursor_session_resume_enabled,omitempty"`
 }

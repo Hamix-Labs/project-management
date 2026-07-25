@@ -14,13 +14,12 @@ import (
 )
 
 type instance struct {
-	pool         *worker.Pool
-	cancelCtx    context.CancelFunc
-	doneCh       chan struct{}
-	runTimeout   time.Duration
-	settings     settingsdomain.AppSettings
-	runner       runner.Runner
-	verifyRunner runner.Runner
+	pool       *worker.Pool
+	cancelCtx  context.CancelFunc
+	doneCh     chan struct{}
+	runTimeout time.Duration
+	settings   settingsdomain.AppSettings
+	runner     runner.Runner
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
@@ -36,19 +35,12 @@ func instanceSnapshot(inst *instance, version string) *policy.InstanceSnapshot {
 			snap.RunnerVersion = inst.runner.Version()
 		}
 	}
-	snap.HasVerifyRunner = inst.verifyRunner != nil
 	return snap
 }
 
 func instanceMatchesSettings(inst *instance, cfg settingsdomain.AppSettings, version string) bool {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskapi.instanceMatchesSettings")
 	return policy.InstanceMatchesSettings(instanceSnapshot(inst, version), cfg, version)
-}
-
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func verifyRunnerStatusForInstance(prev *instance, cfg settingsdomain.AppSettings) string {
-	hasVerify := prev != nil && prev.verifyRunner != nil
-	return policy.VerifyRunnerStatus(hasVerify, cfg)
 }
 
 func stopWorkerInstance(inst *instance, reason string) {
@@ -73,13 +65,12 @@ func stopWorkerInstance(inst *instance, reason string) {
 	}
 }
 
-func (s *Supervisor) spawnWorkerInstance(ctx context.Context, cfg settingsdomain.AppSettings, r runner.Runner) (*instance, string) {
+func (s *Supervisor) spawnWorkerInstance(ctx context.Context, cfg settingsdomain.AppSettings, r runner.Runner) *instance {
 	runTimeout := time.Duration(cfg.MaxRunDurationSeconds) * time.Second
 	streamIdleStuck := time.Duration(cfg.StreamIdleStuckSeconds) * time.Second
 	notifier := newCycleChangeSSEAdapter(s.publisher, s.notifierMetrics)
 	taskUpdatedNotifier := newTaskUpdatedSSEAdapter(s.publisher, s.store, s.notifierMetrics)
 	progressNotifier := newRunProgressSSEAdapter(s.publisher, agentRunProgressMinInterval, s.notifierMetrics)
-	verifyRunner, verifyStatus := s.buildVerifyRunner(ctx, cfg)
 	reportDir := taskapiconfig.WorkerReportDir()
 	if err := ensureWorkerReportDirWritable(reportDir); err != nil {
 		slog.Warn("agent worker report dir not writable; worker will start but verify will fail",
@@ -94,7 +85,6 @@ func (s *Supervisor) spawnWorkerInstance(ctx context.Context, cfg settingsdomain
 		TaskUpdatedNotifier: taskUpdatedNotifier,
 		ProgressNotifier:    progressNotifier,
 		Metrics:             s.metrics,
-		VerifyRunner:        verifyRunner,
 	}, taskapiconfig.AgentWorkerConcurrency())
 
 	workerCtx, cancelWorker := context.WithCancel(s.parentCtx)
@@ -110,6 +100,5 @@ func (s *Supervisor) spawnWorkerInstance(ctx context.Context, cfg settingsdomain
 	return &instance{
 		pool: w, cancelCtx: cancelWorker, doneCh: done,
 		runTimeout: runTimeout, settings: cfg, runner: r,
-		verifyRunner: verifyRunner,
-	}, verifyStatus
+	}
 }

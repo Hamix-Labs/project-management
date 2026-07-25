@@ -15,7 +15,7 @@ import type { HandleField } from "./settingsSectionTypes";
 /**
  * Phases — execute and verify configuration under one section card.
  * Each phase is a nested panel with grouped fields (worker vs runner
- * for execute; policy vs runner vs budget for verify).
+ * for execute; budget for verify).
  *
  * The runner picker is intentionally absent today: only one runner
  * (Cursor) is registered. When a second runner ships, a per-phase
@@ -28,8 +28,6 @@ export function PhasesSettingsSection({
   streamIdleInvalid,
   cursorModelsQuery,
   modelIdsFromList,
-  verifyModelsQuery,
-  verifyModelIdsFromList,
   onField,
 }: {
   form: SettingsFormState;
@@ -38,8 +36,6 @@ export function PhasesSettingsSection({
   streamIdleInvalid: boolean;
   cursorModelsQuery: UseQueryResult<ListCursorModelsResult, Error>;
   modelIdsFromList: Set<string>;
-  verifyModelsQuery: UseQueryResult<ListCursorModelsResult, Error>;
-  verifyModelIdsFromList: Set<string>;
   onField: HandleField;
 }) {
   return (
@@ -176,22 +172,8 @@ export function PhasesSettingsSection({
         <PhasePanel
           id={SECTION_IDS.verification}
           phase="verify"
-          description="Verifies done criteria after execute."
+          description="Verifies done criteria after execute using the same runner."
         >
-          <PhaseFieldGroup title="Runner">
-            <PhaseModelField
-              testId="settings-verify-model-select"
-              value={form.verifyRunnerModel}
-              onChange={(v) => onField("verifyRunnerModel", v)}
-              query={verifyModelsQuery}
-              knownIds={verifyModelIdsFromList}
-            />
-            <p className="settings-field-help">
-              Auto lets the verify runner choose. Pick a model to pin for
-              verify only.
-            </p>
-          </PhaseFieldGroup>
-
           <PhaseFieldGroup title="Budget">
             <label className="settings-field">
               <span className="settings-field-label">

@@ -1,7 +1,6 @@
 package verify
 
 import (
-	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	checklistcontract "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/contract"
 	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 )
@@ -17,8 +16,6 @@ type Snapshot struct {
 	MaxRetries                  int
 	VerifyCommandTimeoutSeconds int
 	Criteria                    []checklistcontract.ChecklistVerifyItem
-	VerifyRunner                runner.Runner
-	VerifyModel                 string
 }
 
 // Verdict is the harness-internal outcome for one criterion after verify work.

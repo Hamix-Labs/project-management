@@ -20,10 +20,9 @@ const verificationFailedReason = verify.FailedReasonPrefix
 func (h *Harness) verifySvc() *verify.Service {
 	if h.verify == nil {
 		h.verify = verify.NewService(verify.Deps{
-			Store:        h.store,
-			Runner:       h.runner,
-			VerifyRunner: h.opts.VerifyRunner,
-			ReportDir:    h.opts.ReportDir,
+			Store:      h.store,
+			Runner:     h.runner,
+			ReportDir:  h.opts.ReportDir,
 			WorkingDir:   h.opts.WorkingDir,
 			Git:          h.gitSvc(),
 			Clock:        h.opts.Clock,
@@ -44,7 +43,6 @@ func (h *Harness) verifySvc() *verify.Service {
 	}
 	h.verify.SetReportDir(h.opts.ReportDir)
 	h.verify.SetWorkingDir(h.opts.WorkingDir)
-	h.verify.SetVerifyRunner(h.opts.VerifyRunner)
 	h.verify.SetStreamIdleStuck(h.opts.StreamIdleStuck)
 	return h.verify
 }
