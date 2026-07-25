@@ -8,6 +8,7 @@ type SettingsPatch struct {
 	Runner                      *string
 	CursorBin                   *string
 	CursorModel                 *string
+	VerifyModel                 *string
 	MaxRunDurationSeconds       *int
 	StreamIdleStuckSeconds      *int
 	AgentPickupDelaySeconds     *int
@@ -28,6 +29,7 @@ func (p SettingsPatch) IsEmpty() bool {
 		p.Runner == nil &&
 		p.CursorBin == nil &&
 		p.CursorModel == nil &&
+		p.VerifyModel == nil &&
 		p.MaxRunDurationSeconds == nil &&
 		p.StreamIdleStuckSeconds == nil &&
 		p.AgentPickupDelaySeconds == nil &&

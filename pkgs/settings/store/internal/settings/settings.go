@@ -136,6 +136,9 @@ func validatePatch(patch Patch) error {
 	if patch.CursorModel != nil && len(strings.TrimSpace(*patch.CursorModel)) > 256 {
 		return fmt.Errorf("%w: cursor_model too long (max 256)", domain.ErrInvalidInput)
 	}
+	if patch.VerifyModel != nil && len(strings.TrimSpace(*patch.VerifyModel)) > 256 {
+		return fmt.Errorf("%w: verify_model too long (max 256)", domain.ErrInvalidInput)
+	}
 	if patch.DisplayTimezone != nil {
 		trimmed := strings.TrimSpace(*patch.DisplayTimezone)
 		if trimmed != "" {
@@ -169,6 +172,9 @@ func applyPatch(row *domain.AppSettings, patch Patch) {
 	}
 	if patch.CursorModel != nil {
 		row.CursorModel = strings.TrimSpace(*patch.CursorModel)
+	}
+	if patch.VerifyModel != nil {
+		row.VerifyModel = strings.TrimSpace(*patch.VerifyModel)
 	}
 	if patch.MaxRunDurationSeconds != nil {
 		row.MaxRunDurationSeconds = *patch.MaxRunDurationSeconds

@@ -20,6 +20,11 @@ export type AppSettings = {
   cursor_bin: string;
   /** Empty string = Cursor default model (`cursor-agent` omits `--model`). */
   cursor_model: string;
+  /**
+   * Optional Cursor `--model` for PhaseVerify on the same chat as execute.
+   * Empty inherits the execute effective model (task pin, else cursor_model).
+   */
+  verify_model: string;
   max_run_duration_seconds: number;
   /** Stdout silence before killing a hung run and attempting evidence recovery. 0 = off. */
   stream_idle_stuck_seconds: number;
@@ -63,6 +68,7 @@ export type AppSettingsPatch = Partial<{
   runner: string;
   cursor_bin: string;
   cursor_model: string;
+  verify_model: string;
   max_run_duration_seconds: number;
   stream_idle_stuck_seconds: number;
   agent_pickup_delay_seconds: number;
@@ -123,6 +129,8 @@ export function parseAppSettings(raw: unknown): AppSettings {
   const runner = o.runner;
   const cursorBin = o.cursor_bin;
   const cursorModel = o.cursor_model;
+  const verifyModel =
+    typeof o.verify_model === "string" ? o.verify_model : "";
   const maxDur = o.max_run_duration_seconds;
   const streamIdleStuck = o.stream_idle_stuck_seconds;
   const pickupDelay = o.agent_pickup_delay_seconds;
@@ -165,6 +173,7 @@ export function parseAppSettings(raw: unknown): AppSettings {
     runner,
     cursor_bin: cursorBin,
     cursor_model: cursorModel,
+    verify_model: verifyModel,
     max_run_duration_seconds: maxDur,
     stream_idle_stuck_seconds: streamIdleStuck,
     agent_pickup_delay_seconds: pickupDelay,

@@ -13,6 +13,7 @@ type settingsResponse struct {
 	Runner                      string `json:"runner"`
 	CursorBin                   string `json:"cursor_bin"`
 	CursorModel                 string `json:"cursor_model"`
+	VerifyModel                 string `json:"verify_model"`
 	MaxRunDurationSeconds       int    `json:"max_run_duration_seconds"`
 	StreamIdleStuckSeconds      int    `json:"stream_idle_stuck_seconds"`
 	AgentPickupDelaySeconds     int    `json:"agent_pickup_delay_seconds"`
@@ -30,6 +31,7 @@ type settingsPatchBody struct {
 	Runner                      *string `json:"runner,omitempty"`
 	CursorBin                   *string `json:"cursor_bin,omitempty"`
 	CursorModel                 *string `json:"cursor_model,omitempty"`
+	VerifyModel                 *string `json:"verify_model,omitempty"`
 	MaxRunDurationSeconds       *int    `json:"max_run_duration_seconds,omitempty"`
 	StreamIdleStuckSeconds      *int    `json:"stream_idle_stuck_seconds,omitempty"`
 	AgentPickupDelaySeconds     *int    `json:"agent_pickup_delay_seconds,omitempty"`

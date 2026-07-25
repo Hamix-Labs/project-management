@@ -10,6 +10,7 @@ export const APP_SETTINGS_DEFAULTS: AppSettings = {
   runner: "cursor",
   cursor_bin: "",
   cursor_model: "",
+  verify_model: "",
   max_run_duration_seconds: 0,
   stream_idle_stuck_seconds: 60,
   agent_pickup_delay_seconds: 5,
