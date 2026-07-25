@@ -16,10 +16,10 @@ export const taskQueryKeys = {
   /**
    * A single page of `GET /tasks`. Keyed by `{ limit, offset }` so every
    * consumer — the home list (limit=20), the depends-on picker
-   * (limit=200), the project tasks panel (limit=200) — shares the same
-   * cache tree. Previously the picker / panel keyed off `listRoot()`
-   * (the prefix itself), which created a parallel "all tasks" cache
-   * entry duplicating storage, fetches, and SSE invalidation work.
+   * (limit=200) — shares the same cache tree. Previously the picker
+   * keyed off `listRoot()` (the prefix itself), which created a
+   * parallel "all tasks" cache entry duplicating storage, fetches, and
+   * SSE invalidation work.
    */
   list: (params: TaskListParams) =>
     [...taskQueryKeys.listRoot(), params] as const,
@@ -91,6 +91,14 @@ export const taskQueryKeys = {
     [...taskQueryKeys.cycleFailuresRoot(), sort, offset] as const,
   /** GET /task-drafts list and draft mutations invalidation. */
   drafts: () => ["task-drafts"] as const,
+  /**
+   * GET /tasks/activity — prefix for all activity feed queries.
+   * Invalidated alongside cycleFailuresRoot when SSE reports task/event changes.
+   */
+  activityRoot: () => [...taskQueryKeys.all, "activity"] as const,
+  /** One page of the activity feed (since + offset identify the slice). */
+  activity: (since: string | undefined, offset: number) =>
+    [...taskQueryKeys.activityRoot(), since ?? "", offset] as const,
   /** GET /task-templates list; keyed by search, sort, order, and tag filters. */
   templates: (params?: Pick<TaskTemplateListParams, "q" | "sort" | "order" | "tag">) => {
     const key: Pick<TaskTemplateListParams, "q" | "sort" | "order" | "tag"> = {};

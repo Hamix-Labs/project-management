@@ -370,7 +370,7 @@ Default tests use SQLite via `tasktestdb.OpenSQLite`; no Postgres required.
 2. **Full-list mode loads all rows.** Default `GET /tasks/{id}/events` without params is appropriate for small histories only; the SPA always pages with `limit`.
 3. **Single interactive mutation.** Only response threads on two event types; you cannot edit `data_json` or delete rows through the API.
 4. **Mirror lag is zero only after commit.** In-flight transactions are invisible until commit; SSE may arrive before a follow-up GET sees the new seq (client should refetch).
-5. **No cross-task audit query.** Events are scoped to one `task_id`; global failure views use `GET /tasks/cycle-failures` (cycle terminal metadata, not raw event export).
+5. **No cross-task audit query for arbitrary types.** Events are scoped to one `task_id` for the full audit timeline (`GET /tasks/{id}/events`); global failure views use `GET /tasks/cycle-failures` (cycle terminal metadata, not raw event export). The cross-task activity feed `GET /tasks/activity` provides paginated offset-based access to a fixed type set (`status_changed`, `phase_failed`, `approval_granted`) across all tasks.
 6. **Dev-only types.** `sync_ping` appears in devsim rotation; production harness does not rely on it.
 
 ## See also

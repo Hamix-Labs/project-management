@@ -75,6 +75,10 @@ export async function interceptUiTestModeFetch(
     return jsonResponse(wire.demoCycleFailuresWire());
   }
 
+  if (path === "/tasks/activity") {
+    return jsonResponse({ total: 0, limit: 50, offset: 0, events: [] });
+  }
+
   if (path.startsWith("/task-drafts")) {
     return jsonResponse(wire.demoTaskDraftsWire());
   }

@@ -45,9 +45,15 @@ Data loads through `fetchActiveTasksForBoard` (keyset walk of `GET /tasks`, max 
 
 ## Timeline view
 
-Task Home also supports a read-only **Timeline** (`/?view=timeline`) — a chronological project-activity feed (task creation, status changes, verification, agent runs). Category pills filter All / Tasks / Verification; a date-range control filters by lookback window.
+Task Home also supports a read-only **Timeline** (`/?view=timeline`) — a chronological project-activity feed. A date-range dropdown maps to the `since` query parameter sent to `GET /tasks/activity` so the server filters before the client groups by calendar day.
 
-**This surface is fixture-backed for now** (`web/src/tasks/components/task-timeline/`). There is no cross-task activity API yet (audit events remain per-task via `GET /tasks/{id}/events`). A later feed can replace fixtures without changing the view model. Distinct from the per-task audit timeline on task detail.
+**Live data via `GET /tasks/activity`** — the three event types surfaced are `status_changed`, `phase_failed`, and `approval_granted`. The client maps each to a `TimelineEvent` via `activityMapper.ts`, then `groupTimelineEvents` buckets them into Today / Yesterday / N days ago groups.
+
+Timeline data is fetched through `useTasksActivity` (hook under `tasks/hooks/`), keyed at `taskQueryKeys.activityRoot()` under `["tasks","activity"]`. The key is invalidated alongside `cycleFailuresRoot()` on every SSE task/event flush in `decideFlushBatch.ts`.
+
+Deep links: when a feed event carries a `seq`, clicking the timestamp navigates to `/tasks/{id}/events/{seq}`. The task ref chip always links to the task detail page.
+
+Data implementation: `web/src/api/tasks.read.ts` (`getTaskActivity`), parser at `web/src/api/parseTaskApiActivity.ts`. Distinct from the per-task audit timeline on task detail.
 
 ## Cold start
 

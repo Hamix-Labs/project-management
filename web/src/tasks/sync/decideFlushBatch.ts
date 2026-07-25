@@ -33,6 +33,7 @@ export function decideFlushBatch(pending: PendingInvalidations): SyncFlushDecisi
       taskQueryKeys.all,
       taskQueryKeys.stats(),
       taskQueryKeys.cycleFailuresRoot(),
+      taskQueryKeys.activityRoot(),
     );
     return { invalidateKeys: keys };
   }
@@ -65,7 +66,7 @@ export function decideFlushBatch(pending: PendingInvalidations): SyncFlushDecisi
     keys.push(taskQueryKeys.commits(taskId));
   }
 
-  keys.push(...syncListStatsInvalidationKeys(), taskQueryKeys.cycleFailuresRoot());
+  keys.push(...syncListStatsInvalidationKeys(), taskQueryKeys.cycleFailuresRoot(), taskQueryKeys.activityRoot());
 
   return { invalidateKeys: keys };
 }

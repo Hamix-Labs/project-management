@@ -183,6 +183,32 @@ export function TimelineCalendarGlyph({ className }: GlyphProps) {
   );
 }
 
+export function TimelineThumbUpGlyph({ className }: GlyphProps) {
+  return (
+    <svg
+      className={className}
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M5.5 7 7 3a1.5 1.5 0 0 1 1.5 1.5V6.5H12a1 1 0 0 1 .98 1.2l-1 4.5A1 1 0 0 1 11 13H5.5V7Z"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M5.5 7H3.5a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h2V7Z"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function TimelineChevronGlyph({ className }: GlyphProps) {
   return (
     <svg
@@ -232,6 +258,7 @@ const KIND_GLYPH: Record<TimelineKind, (props: GlyphProps) => ReactElement> = {
   "agent-finished": TimelineBotGlyph,
   "status-changed": TimelineArrowGlyph,
   "task-created": TimelinePlusGlyph,
+  "review-approved": TimelineThumbUpGlyph,
   comment: TimelineCommentGlyph,
 };
 

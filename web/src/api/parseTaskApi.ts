@@ -35,3 +35,4 @@ export {
   parseTaskTokenUsageResponse,
   parseTokenUsageProjection,
 } from "./parseTaskApiTokenUsage";
+export { parseTaskActivityResponse } from "./parseTaskApiActivity";

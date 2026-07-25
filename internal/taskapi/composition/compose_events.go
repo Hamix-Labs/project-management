@@ -66,3 +66,9 @@ func (a *API) AppendTaskEventResponseMessage(ctx context.Context, taskID string,
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.AppendTaskEventResponseMessage")
 	return a.events.AppendTaskEventResponseMessage(ctx, taskID, seq, text, by)
 }
+
+// ListTaskActivity returns paginated cross-task activity events for GET /tasks/activity.
+func (a *API) ListTaskActivity(ctx context.Context, in taskeventscontract.ListActivityInput) (taskeventscontract.ListActivityResult, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ListTaskActivity")
+	return a.events.ListTaskActivity(ctx, in)
+}
