@@ -20,7 +20,11 @@ func ValidateTaskTag(tag string) error {
 		return fmt.Errorf("%w: tag must not be empty", ErrInvalidInput)
 	}
 	if !taskTagPattern.MatchString(tag) {
-		return fmt.Errorf("%w: invalid tag %q", ErrInvalidInput, tag)
+		return fmt.Errorf(
+			"%w: invalid tag %q: use lowercase letters, numbers, and . _ - only (max 32 characters, no spaces)",
+			ErrInvalidInput,
+			tag,
+		)
 	}
 	return nil
 }

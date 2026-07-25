@@ -229,6 +229,18 @@ describe("TaskCreateModal", () => {
     expect(callout).toHaveTextContent(/server returned 500/i);
   });
 
+  it("rewrites invalid tag createErrors without request ids", () => {
+    renderModal({
+      createError: new Error(
+        'invalid tag "a a a a a" (request f25133d1-f58f-4362-82e4-aad920e79fdf)',
+      ),
+    });
+    const callout = document.querySelector(".task-create-modal-err--create");
+    expect(callout).toHaveTextContent(/Tag "a a a a a" is invalid/);
+    expect(callout).toHaveTextContent(/no spaces/i);
+    expect(callout).not.toHaveTextContent(/request /i);
+  });
+
   it("keeps Create button reachable while an error is showing", () => {
     renderModal({
       title: "Reproduce me",

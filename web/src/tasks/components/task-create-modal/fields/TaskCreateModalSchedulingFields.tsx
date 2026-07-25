@@ -67,8 +67,8 @@ export function TaskCreateModalSchedulingFields({
               aria-describedby="create-tags-hint"
             />
             <p id="create-tags-hint" className="hint">
-              Lowercase letters, numbers, and . _ - (capitals are normalized on
-              save).
+              Comma-separated. 1–32 characters each: letters, numbers, and . _
+              - only (no spaces). Capitals are lowercased on save.
             </p>
           </div>
         ) : null}

@@ -17,6 +17,7 @@ func TestValidateTaskTag(t *testing.T) {
 		{"a.b_c", true},
 		{"", false},
 		{"Design", false},
+		{"a a", false},
 		{strings.Repeat("a", 33), false},
 	}
 	for _, tt := range tests {
@@ -30,6 +31,10 @@ func TestValidateTaskTag(t *testing.T) {
 				t.Fatalf("ValidateTaskTag(%q) = %v, want ErrInvalidInput", tt.tag, err)
 			}
 		})
+	}
+	err := ValidateTaskTag("a a a a a")
+	if err == nil || !strings.Contains(err.Error(), "no spaces") {
+		t.Fatalf("space tag should explain rules, got %v", err)
 	}
 }
 
