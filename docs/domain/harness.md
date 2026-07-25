@@ -27,7 +27,7 @@ Cycle choreography around `runner.Run`: phase ledger, execute/verify loop, in-me
 
 ## Overview
 
-The **harness** (`pkgs/agents/harness`) is everything wrapped around `runner.Run` that turns "run a prompt in a working directory" into a trustworthy, auditable unit of work. It owns phase choreography, prompt composition (delegating phase-specific contracts to companion docs), agent↔worker report files, adversarial verification orchestration, and crash/shutdown recovery of in-flight cycle state.
+The **harness** (`pkgs/agents/harness`) is everything wrapped around `runner.Run` that turns "run a prompt in a working directory" into a trustworthy, auditable unit of work. It owns phase choreography, prompt composition (delegating phase-specific contracts to companion docs), agent↔worker report files, executor-owned verify orchestration, and crash/shutdown recovery of in-flight cycle state.
 
 Package comment: [`doc.go`](../../pkgs/agents/harness/doc.go). Extraction rationale: [ADR-0005](../adr/ADR-0005-extract-agent-harness.md).
 
@@ -110,7 +110,7 @@ From [`admission.go`](../../pkgs/agents/worker/admission.go):
 
 ### Cursor session resume (ADR-0031)
 
-By default, execute and verify `runner.Run` calls continue the prior Cursor CLI chat via `--resume <session_id>` when a usable id exists for **that phase type** (separate execute and verify chains). Policy lives in [`cursor_resume.go`](../../pkgs/agents/harness/cursor_resume.go); recovery deltas in [`internal/prompt/recovery.go`](../../pkgs/agents/harness/internal/prompt/recovery.go).
+By default, execute and verify `runner.Run` calls use the **same execute runner**. Cursor session resume may continue the execute chat into `PhaseVerify` when policy allows ([ADR-0084](../adr/ADR-0084-executor-owned-verify.md)). Policy lives in [`cursor_resume.go`](../../pkgs/agents/harness/cursor_resume.go); recovery deltas in [`internal/prompt/recovery.go`](../../pkgs/agents/harness/internal/prompt/recovery.go).
 
 - **Fresh chat** on deny-list paths (Start over, first in chain, HEAD drift, tamper, missing id, `--resume` failure).
 - **Scrub** `criteria-report.json` only on fresh execute — resume keeps partial/invalid reports for inspection.
@@ -156,7 +156,6 @@ h.CancelCurrentRun()       // operator cancel → cancels in-flight runner conte
 | `ShutdownAbortTimeout` | Bounded background ctx for panic/shutdown cleanup (default 5s) |
 | `WorkingDir` | `app_settings.repo_root` |
 | `ReportDir` | `HAMIX_WORKER_REPORT_DIR` (default `<os.TempDir()>/hamix-worker`) |
-| `VerifyRunner` | Optional adversarial verify runner from supervisor |
 | `Notifier` | `CycleChangeNotifier` — must not block |
 | `ProgressNotifier` | Live progress SSE — must not block |
 | `Metrics` | `RunMetrics` Prometheus seam |
@@ -170,7 +169,7 @@ Numbered path in [`cycle.go`](../../pkgs/agents/harness/cycle.go):
 
 1. Initialize `processState` with empty `previouslyPassed`; defer `recoverFromPanic`.
 2. **`startCycle`** — `StartCycle` with `meta_json`: `runner`, `runner_version`, `prompt_hash` (SHA-256 of **InitialPrompt only** — see [`meta.go`](../../pkgs/agents/harness/meta.go)).
-3. **`loadVerificationSnapshot`** — criteria list, `verify_max_retries`, verify runner (execute runner fallback when unset).
+3. **`loadVerificationSnapshot`** — criteria list and `verify_max_retries`.
 4. **`runCycleLoop`** — shared with `Resume` (below).
 5. On terminal success: `applyVerifiedCompletions` (when criteria enabled), `TerminateCycle(succeeded)`, task `done`, report-dir GC, metrics.
 
@@ -370,7 +369,6 @@ Supervisor wiring → `Options` (full reference: [configuration.md](../configura
 | `max_run_duration_seconds` | `Options.RunTimeout` |
 | `stream_idle_stuck_seconds` | `Options.StreamIdleStuck` — stdout silence watchdog; see [ADR-0027](../adr/ADR-0027-stream-idle-evidence-recovery.md) |
 | `HAMIX_WORKER_REPORT_DIR` | `Options.ReportDir` |
-| Built verify runner | `Options.VerifyRunner` |
 | SSE hub adapter | `Options.Notifier`, `Options.ProgressNotifier` |
 | Prometheus adapter | `Options.Metrics` |
 
@@ -399,7 +397,7 @@ Wall-clock `max_run_duration_seconds` (`ErrTimeout`) and operator cancel do **no
 
 ### In-cycle verify-only retry
 
-When verify fails retryably **inside one cycle**, the harness may skip the next execute phase if execute artifacts and git anchors are still valid and the failure is **infra-only** (verify runner/parse/command errors — not verify-agent rejection or missing self-claim). Cross-cycle operator resume already used the same loop flag via `skipFirstExecute`; this extends it to in-cycle retries ([ADR-0028](../adr/ADR-0028-in-cycle-verify-only-retry.md)).
+When verify fails retryably **inside one cycle**, the harness may skip the next execute phase if execute artifacts and git anchors are still valid and the failure is **infra-only** (parse/command errors — not verify-phase rejection or missing self-claim). Cross-cycle operator resume already used the same loop flag via `skipFirstExecute`; this extends it to in-cycle retries ([ADR-0028](../adr/ADR-0028-in-cycle-verify-only-retry.md)).
 
 ```mermaid
 flowchart LR
@@ -417,7 +415,7 @@ The phase ledger allows `verify → verify` when the previous verify row is term
 | EC ID | Behavior | Test |
 | --- | --- | --- |
 | EC-01 | Infra verify fail → verify-only retry | `TestEdgeCase_EC01_verifyInfra_skipsExecute`; classify: `TestClassify_EC01_verifyInfra_verifyOnly` |
-| EC-02 | Verify-agent reject → full re-execute | `TestEdgeCase_EC02_verifyAgentReject_fullReexecute` |
+| EC-02 | Verify-phase reject → full re-execute | `TestEdgeCase_EC02_verifyAgentReject_fullReexecute` |
 | EC-03 | `ClaimedDone=false` → full re-execute | `TestEdgeCase_EC03_claimedNotDone_fullReexecute` |
 | EC-04 | Missing/invalid criteria-report → full re-execute | `TestEdgeCase_EC04_reportMissing_fullReexecute`; classify: `TestClassify_EC04_reportInvalid_fullReexecute` |
 | EC-05 | Git HEAD drift → full re-execute | `TestClassify_EC05_headChanged_fullReexecute` |
@@ -472,7 +470,7 @@ Structured logs on retry: `retry_mode`, `reason_code`, `skip_next_execute`.
 | [configuration.md](../configuration.md) | Env vars and `app_settings` |
 | [ADR-0005](../adr/ADR-0005-extract-agent-harness.md) | Harness extraction |
 | [ADR-0006](../adr/ADR-0006-phase-boundary-resume.md) | Phase-boundary resume |
-| [ADR-0003](../adr/ADR-0003-verify-component-upgrade.md) | Adversarial verify |
+| [ADR-0084](../adr/ADR-0084-executor-owned-verify.md) | Executor-owned verify |
 | [ADR-0012](../adr/ADR-0012-structured-verify-commands.md) | Shell verify commands |
 | [ADR-0017](../adr/ADR-0017-harness-internal-domains.md) | Internal domain packages |
 | [ADR-0018](../adr/ADR-0018-harness-orchestration-fsm.md) | Verify retry state machine |
