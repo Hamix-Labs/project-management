@@ -18,7 +18,6 @@ In-process lifecycle owner for the single worker goroutine: settings-driven boot
 - [`applySettings` pipeline](#applysettings-pipeline)
 - [Idle reasons](#idle-reasons)
 - [Worker hot-swap and material changes](#worker-hot-swap-and-material-changes)
-- [Execute vs verify runner policy](#execute-vs-verify-runner-policy)
 - [Report directory](#report-directory)
 - [SSE adapters](#sse-adapters)
 - [`CancelCurrentRun`](#cancelcurrentrun)
@@ -44,7 +43,6 @@ Configuration is **DB-driven**, not env-driven for worker behavior. Legacy `HAMI
 - `agentworker.Supervisor`: `Start`, `Reload`, `CancelCurrentRun`, `Drain`, `ProbeRunner`
 - Shared `applySettings` boot/reload pipeline
 - `decideIdle`, `decideSchedulingIdleHint`, `instanceMatchesSettings`
-- `buildVerifyRunner` demotion policy
 - `cycleChangeSSEAdapter`, `runProgressSSEAdapter`
 - `startReadyTaskAgents` (queue + pickup wake + reconcile + supervisor boot)
 - `ensureWorkerReportDirWritable`, shutdown drain deadlines
@@ -62,8 +60,8 @@ Configuration is **DB-driven**, not env-driven for worker behavior. Legacy `HAMI
 | Term | Definition |
 | --- | --- |
 | **Supervisor** | `agentworker.Supervisor` — owns worker lifecycle, not cycle logic |
-| **Instance** | `instance` — one spawned worker: `Worker`, cancel func, `doneCh`, settings snapshot, execute + optional verify runners |
-| **Material change** | Any setting that would change the next dequeue/run: pause, runner id, binary, model, repo root, per-run cap, verify runner name/model, or probed runner version |
+| **Instance** | `instance` — one spawned worker: `Worker`, cancel func, `doneCh`, settings snapshot, execute runner |
+| **Material change** | Any setting that would change the next dequeue/run: pause, runner id, binary, model, repo root, per-run cap, or probed runner version |
 | **Idle (hard)** | No worker goroutine; from `decideIdle` or execute probe/build failure |
 | **Scheduling hint** | Diagnostic `idle_reason` on logs when worker is **running** but queue is empty only because tasks are deferred — does **not** stop the worker |
 | **`applyMu`** | Serializes full `applySettings` (probe + build + spawn); separate from `s.mu` so `CancelCurrentRun` stays fast |
@@ -165,7 +163,6 @@ sequenceDiagram
       else material change
         Apply->>Apply: runStartupSweep (best-effort)
         Apply->>Reg: Build execute runner
-        Apply->>Apply: buildVerifyRunner
         Apply->>Next: worker.NewWorker + go Run
         Apply->>Next: swap s.current
         Apply->>Prev: stopWorkerInstance reload
@@ -184,7 +181,6 @@ sequenceDiagram
 | Execute `registry.Build` fails | **Error** | previous instance stopped; `current = nil` |
 | `decideIdle` true | **OK** | stopped; `current = nil` |
 | Execute probe fails | **OK** | stopped; `idle_reason=probe_failed` |
-| Verify build/probe fails | **OK** | worker runs; verify demoted ([below](#execute-vs-verify-runner-policy)) |
 | Report dir not writable | **OK** | worker runs; warn logged |
 | `drained` mid-apply | **Error** | newly spawned worker cancelled |
 
@@ -229,7 +225,7 @@ Constant: `SchedulingIdleHintReason` = `"awaiting_scheduled_task"`.
 
 ### Effective config log
 
-Every `applySettings` completion emits structured INFO `agent worker effective config` with fields including `phase`, `idle`, `idle_reason`, `runner`, `runner_version`, `verify_runner`, `verify_runner_status`. Use this line to debug operator-facing status without calling `GET /settings`.
+Every `applySettings` completion emits structured INFO `agent worker effective config` with fields including `phase`, `idle`, `idle_reason`, `runner`, `runner_version`. Use this line to debug operator-facing status without calling `GET /settings`.
 
 ## Worker hot-swap and material changes
 
@@ -241,7 +237,6 @@ V1 policy: **restart the worker goroutine** on material change instead of mutati
 | --- | --- |
 | `runner`, `cursor_bin`, `cursor_model` | string equality |
 | `repo_root`, `max_run_duration_seconds` | equality |
-| `verify_runner_name`, `verify_runner_model` | equality |
 | `agent_paused` | must match (pause flip forces reload into idle branch) |
 | Probed version | `inst.runner.Version()` vs fresh probe result |
 
@@ -262,24 +257,6 @@ On material change:
 3. `stopWorkerInstance(prev, "reload")` — cancel previous ctx, wait on `doneCh` with deadline.
 
 `stopWorkerInstance` deadline = `runTimeout + 10s` when cap > 0; when cap is **0** (no limit), `drainNoLimitTimeout` = **5 minutes**.
-
-## Execute vs verify runner policy
-
-[`buildVerifyRunner`](../../internal/taskapi/agentworker/runner_build.go) is **opt-in** and **non-blocking** for worker startup.
-
-| `verify_runner_name` | Action | `verify_runner_status` in log |
-| --- | --- | --- |
-| `""` | Worker reuses execute runner for verify | `""` |
-| Same as `runner` | Reuse without second probe/build | `reuse_execute_runner` |
-| Different id, probe OK, build OK | Separate `runner.Runner` passed as `VerifyRunner` | `ok` |
-| Different id, probe fails | `nil` verify runner; loud warn | `demoted_probe_failed` |
-| Different id, build fails | `nil` verify runner; loud warn | `demoted_build_failed` |
-
-Verify probe uses the same `cursor_bin` as execute; model comes from `verify_runner_model` in `BuildOptions`.
-
-> **Warning** — Execute runner probe/build failure **blocks** the worker. Verify misconfiguration only demotes — throughput continues, but adversarial verify may silently reuse the execute adapter until fixed.
-
-Full registry contract: [runner-adapters.md](./runner-adapters.md#runtime-lifecycle).
 
 ## Report directory
 
@@ -378,8 +355,6 @@ Authoritative catalog: [api.md](../api.md), [sse-hub.md](./sse-hub.md).
 | --- | --- |
 | `taskapi.agent_worker` | Effective config (`logEffective`) |
 | `taskapi.agent_worker.probe_err` | Execute probe failed |
-| `taskapi.agent_worker.verify_runner_probe_err` | Verify demoted (probe) |
-| `taskapi.agent_worker.verify_runner_build_err` | Verify demoted (build) |
 | `taskapi.agent_worker.report_dir_not_writable` | Scratch dir probe failed |
 | `taskapi.agent_worker.finalize_ok` | Orphan sweep counts |
 | `taskapi.agent_worker.stop` / `stop_timeout` | Instance stopped or drain timed out |
@@ -396,7 +371,6 @@ Worker behavior knobs live in **`app_settings`** ([configuration.md](../configur
 | `repo_root` | `WorkingDir`; hard idle if empty/invalid |
 | `runner`, `cursor_bin`, `cursor_model` | Execute probe/build; material change |
 | `max_run_duration_seconds` | `RunTimeout`; `0` = no limit |
-| `verify_runner_name`, `verify_runner_model` | Optional verify runner; material change |
 
 Env vars the supervisor path reads directly:
 
@@ -431,7 +405,6 @@ Black-box tests in [`supervisor_test.go`](../../internal/taskapi/agentworker/sup
 | No-op reload | `instanceMatchesSettings` skips respawn |
 | Concurrent reload | `applyMu` serialization |
 | Drain idempotency | Safe double `Drain` |
-| Verify demotion | Worker still spawns |
 
 HTTP contract tests use `fakeAgentControl` in [`handler_http_settings_contract_test.go`](../../pkgs/tasks/handler/handler_http_settings_contract_test.go).
 
@@ -442,7 +415,6 @@ Default CI uses stub probes — no real Cursor binary required.
 - **Probe before Save** — Use `POST /runners/{id}/probe` or legacy probe-cursor; supervisor uses the same registry probe at reload.
 - **Pause before maintenance** — `agent_paused` stops dequeuing without tearing down queue/reconcile.
 - **Read effective config logs** — Faster than inferring idle state from queue depth alone.
-- **Fix verify demotion promptly** — Search logs for `verify_runner_status=demoted_*`; worker keeps running but verify may not use the intended adapter.
 - **Cancel long runs before deploy** — `Drain` waits up to 5 minutes when per-run cap is "no limit".
 
 ## Limitations
@@ -452,7 +424,6 @@ Default CI uses stub probes — no real Cursor binary required.
 | **Single worker goroutine** | V1 in-process design; queue + reconcile assume one consumer |
 | **Full instance swap on material change** | Simpler than live `Worker` mutation; old run may finish on stale config briefly |
 | **Cursor-centric settings columns** | `cursor_bin` / `cursor_model` shared across runner ids until per-adapter settings exist ([runner-adapters.md](./runner-adapters.md)) |
-| **Verify demotion is silent at HTTP layer** | Only logs + effective config; PATCH still returns 200 |
 | **Duplicate `settings_changed`** | Handler + supervisor both publish on some paths |
 | **No env toggle for worker** | Worker supervisor always wired; pause is `agent_paused` |
 | **Drain timeout on no-limit runs** | 5m cap may abort very long runs during shutdown unless operator cancelled first |
