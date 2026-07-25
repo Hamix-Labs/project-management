@@ -88,13 +88,10 @@ func TestInstanceMatchesSettings(t *testing.T) {
 		CursorBin:             "/bin/cursor",
 		CursorModel:           "gpt",
 		MaxRunDurationSeconds: 600,
-		VerifyRunnerName:      "cursor",
-		VerifyRunnerModel:     "gpt",
 	}
 	inst := &policy.InstanceSnapshot{
-		Settings:        base,
-		RunnerVersion:   "1.0",
-		HasVerifyRunner: false,
+		Settings:      base,
+		RunnerVersion: "1.0",
 	}
 	if !policy.InstanceMatchesSettings(inst, base, "1.0") {
 		t.Fatal("expected match for identical settings")
@@ -106,16 +103,5 @@ func TestInstanceMatchesSettings(t *testing.T) {
 	}
 	if policy.InstanceMatchesSettings(inst, base, "2.0") {
 		t.Fatal("expected mismatch on runner version")
-	}
-}
-
-func TestVerifyRunnerStatus(t *testing.T) {
-	t.Parallel()
-	cfg := settingsdomain.AppSettings{Runner: "cursor", VerifyRunnerName: "cursor"}
-	if got := policy.VerifyRunnerStatus(false, cfg); got != "reuse_execute_runner" {
-		t.Fatalf("got %q", got)
-	}
-	if got := policy.VerifyRunnerStatus(true, cfg); got != "ok" {
-		t.Fatalf("got %q", got)
 	}
 }
