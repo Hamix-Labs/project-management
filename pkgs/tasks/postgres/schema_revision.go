@@ -48,7 +48,10 @@ import (
 //
 // Rev 14: PendingRetry polish fields (flagged/new criterion IDs, skip_verify)
 // in taskcore domain JSON. No SQL or post-AutoMigrate behavior change.
-const SchemaRevision = 14
+//
+// Rev 15: app_settings.verify_model — optional Cursor --model for PhaseVerify
+// on the same chat as execute (empty inherits execute effective model).
+const SchemaRevision = 15
 
 const schemaMetaRowID = 1
 

@@ -136,6 +136,9 @@ func validatePatch(patch Patch) error {
 	if patch.CursorModel != nil && len(strings.TrimSpace(*patch.CursorModel)) > 256 {
 		return fmt.Errorf("%w: cursor_model too long (max 256)", domain.ErrInvalidInput)
 	}
+	if patch.VerifyModel != nil && len(strings.TrimSpace(*patch.VerifyModel)) > 256 {
+		return fmt.Errorf("%w: verify_model too long (max 256)", domain.ErrInvalidInput)
+	}
 	if patch.DisplayTimezone != nil {
 		trimmed := strings.TrimSpace(*patch.DisplayTimezone)
 		if trimmed != "" {
@@ -149,9 +152,6 @@ func validatePatch(patch Patch) error {
 		if v < 0 {
 			return fmt.Errorf("%w: verify_max_retries must be >= 0", domain.ErrInvalidInput)
 		}
-	}
-	if patch.VerifyRunnerModel != nil && len(strings.TrimSpace(*patch.VerifyRunnerModel)) > 256 {
-		return fmt.Errorf("%w: verify_runner_model too long (max 256)", domain.ErrInvalidInput)
 	}
 	if patch.VerifyCommandTimeoutSeconds != nil && *patch.VerifyCommandTimeoutSeconds <= 0 {
 		return fmt.Errorf("%w: verify_command_timeout_seconds must be > 0", domain.ErrInvalidInput)
@@ -172,6 +172,9 @@ func applyPatch(row *domain.AppSettings, patch Patch) {
 	}
 	if patch.CursorModel != nil {
 		row.CursorModel = strings.TrimSpace(*patch.CursorModel)
+	}
+	if patch.VerifyModel != nil {
+		row.VerifyModel = strings.TrimSpace(*patch.VerifyModel)
 	}
 	if patch.MaxRunDurationSeconds != nil {
 		row.MaxRunDurationSeconds = *patch.MaxRunDurationSeconds
@@ -196,12 +199,6 @@ func applyPatch(row *domain.AppSettings, patch Patch) {
 	}
 	if patch.VerifyMaxRetries != nil {
 		row.VerifyMaxRetries = *patch.VerifyMaxRetries
-	}
-	if patch.VerifyRunnerName != nil {
-		row.VerifyRunnerName = strings.TrimSpace(*patch.VerifyRunnerName)
-	}
-	if patch.VerifyRunnerModel != nil {
-		row.VerifyRunnerModel = strings.TrimSpace(*patch.VerifyRunnerModel)
 	}
 	if patch.VerifyCommandTimeoutSeconds != nil {
 		row.VerifyCommandTimeoutSeconds = *patch.VerifyCommandTimeoutSeconds

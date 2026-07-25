@@ -116,7 +116,8 @@ Singleton row in Postgres (CHECK enforces `id=1`). AutoMigrate creates the table
 | `runner` | string | `"cursor"` | Identifier from `pkgs/agents/runner/registry`. Production: `cursor`. Scaffold: `claude-code` (registered but not production-ready). See [domain/runner-adapters.md](domain/runner-adapters.md). |
 | `repo_root` | string | `""` | Absolute path to the workspace the worker and `/repo/*` operate against. Set from Settings → **Agent workspace** → **Choose project folder** (stored as the absolute path taskapi sees). **Empty = not configured**: supervisor stays idle, repo routes respond `409 repo_root_not_configured`, `@`-mention validation is skipped. See [domain/workspace-repo.md](domain/workspace-repo.md). |
 | `cursor_bin` | string | `""` | Cursor CLI binary path. Empty = `PATH` lookup of `cursor`. Absolute paths pin a build. |
-| `cursor_model` | string | `""` | Optional Cursor model forwarded to the runner. Empty = omit the model flag (Cursor uses account default). |
+| `cursor_model` | string | `""` | Optional Cursor model forwarded to the execute runner. Empty = omit the model flag (Cursor uses account default). |
+| `verify_model` | string | `""` | Optional Cursor `--model` for PhaseVerify on the same chat. Empty inherits execute effective model (task pin, else `cursor_model`). |
 | `max_run_duration_seconds` | int (≥0) | `0` | Per-run wall-clock cap on `runner.Request.Timeout`. `0` = no limit. |
 | `stream_idle_stuck_seconds` | int (≥0) | `60` | Stdout silence threshold after the first line before killing a hung cursor run and attempting evidence recovery. `0` = disabled. Suspicious/kill-warning tiers are derived (`stuck/2`, `stuck−5s`). |
 | `agent_pickup_delay_seconds` | int (≥0) | `5` | Delay applied to new ready tasks before the worker can dequeue them. `0` disables. |
@@ -124,8 +125,6 @@ Singleton row in Postgres (CHECK enforces `id=1`). AutoMigrate creates the table
 | `optimistic_mutations_enabled` | bool | `true` | Always-on compatibility field. |
 | `sse_replay_enabled` | bool | `true` | Always-on compatibility field. |
 | `verify_max_retries` | int (≥0) | `2` | Max execute↔verify retry loops per cycle. |
-| `verify_runner_name` | string | `""` | Adversarial verify runner id. Empty = reuse execute runner. When set to a different id (e.g. `claudecode`), the supervisor builds and probes that runner separately at startup and on every `PATCH /settings`; build/probe failure logs `verify_runner_probe_failed` / `verify_runner_build_failed` and demotes verify to "reuse execute runner" so the worker keeps running. Setting it equal to `runner` is equivalent to leaving it empty. |
-| `verify_runner_model` | string | `""` | Optional model for the verify runner. Changing this triggers a worker restart on `PATCH /settings`. |
 | `verify_command_timeout_seconds` | int (>0) | `120` | Wall-clock cap per optional criterion shell check during verify. |
 | `cursor_session_resume_enabled` | bool | `true` | When `false`, every `runner.Run` uses a fresh Cursor chat and full prompt compose (pre-ADR-0031 behavior). See [cursor-session-resume.md](domain/cursor-session-resume.md). |
 | `updated_at` | RFC3339 (response only) | server clock | Last successful upsert. SPA shows "last changed N ago". |

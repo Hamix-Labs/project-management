@@ -10,6 +10,7 @@ export const APP_SETTINGS_DEFAULTS: AppSettings = {
   runner: "cursor",
   cursor_bin: "",
   cursor_model: "",
+  verify_model: "",
   max_run_duration_seconds: 0,
   stream_idle_stuck_seconds: 60,
   agent_pickup_delay_seconds: 5,
@@ -17,7 +18,5 @@ export const APP_SETTINGS_DEFAULTS: AppSettings = {
   optimistic_mutations_enabled: true,
   sse_replay_enabled: false,
   verify_max_retries: DEFAULT_VERIFY_MAX_RETRIES,
-  verify_runner_name: "",
-  verify_runner_model: "",
   verify_command_timeout_seconds: 120,
 };

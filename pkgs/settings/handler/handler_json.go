@@ -13,6 +13,7 @@ type settingsResponse struct {
 	Runner                      string `json:"runner"`
 	CursorBin                   string `json:"cursor_bin"`
 	CursorModel                 string `json:"cursor_model"`
+	VerifyModel                 string `json:"verify_model"`
 	MaxRunDurationSeconds       int    `json:"max_run_duration_seconds"`
 	StreamIdleStuckSeconds      int    `json:"stream_idle_stuck_seconds"`
 	AgentPickupDelaySeconds     int    `json:"agent_pickup_delay_seconds"`
@@ -20,8 +21,6 @@ type settingsResponse struct {
 	OptimisticMutationsEnabled  bool   `json:"optimistic_mutations_enabled"`
 	SSEReplayEnabled            bool   `json:"sse_replay_enabled"`
 	VerifyMaxRetries            int    `json:"verify_max_retries"`
-	VerifyRunnerName            string `json:"verify_runner_name"`
-	VerifyRunnerModel           string `json:"verify_runner_model"`
 	VerifyCommandTimeoutSeconds int    `json:"verify_command_timeout_seconds"`
 	CursorSessionResumeEnabled  bool   `json:"cursor_session_resume_enabled"`
 	UpdatedAt                   string `json:"updated_at,omitempty"`
@@ -32,6 +31,7 @@ type settingsPatchBody struct {
 	Runner                      *string `json:"runner,omitempty"`
 	CursorBin                   *string `json:"cursor_bin,omitempty"`
 	CursorModel                 *string `json:"cursor_model,omitempty"`
+	VerifyModel                 *string `json:"verify_model,omitempty"`
 	MaxRunDurationSeconds       *int    `json:"max_run_duration_seconds,omitempty"`
 	StreamIdleStuckSeconds      *int    `json:"stream_idle_stuck_seconds,omitempty"`
 	AgentPickupDelaySeconds     *int    `json:"agent_pickup_delay_seconds,omitempty"`
@@ -39,8 +39,6 @@ type settingsPatchBody struct {
 	OptimisticMutationsEnabled  *bool   `json:"optimistic_mutations_enabled,omitempty"`
 	SSEReplayEnabled            *bool   `json:"sse_replay_enabled,omitempty"`
 	VerifyMaxRetries            *int    `json:"verify_max_retries,omitempty"`
-	VerifyRunnerName            *string `json:"verify_runner_name,omitempty"`
-	VerifyRunnerModel           *string `json:"verify_runner_model,omitempty"`
 	VerifyCommandTimeoutSeconds *int    `json:"verify_command_timeout_seconds,omitempty"`
 	CursorSessionResumeEnabled  *bool   `json:"cursor_session_resume_enabled,omitempty"`
 }

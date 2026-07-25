@@ -7,7 +7,7 @@ How the execute phase implements task work via the configured runner, composed p
 | **Applies to** | Agent worker harness, execute runner, task create/edit (prompt, project context), cycle progress UI |
 | **Audience** | Contributors touching `pkgs/agents/harness`, runner adapters, or execute-phase settings |
 | **Prerequisite** | [done-criteria.md](./done-criteria.md) — criteria vocabulary and lifecycle |
-| **Companion article** | [verify-agent.md](./verify-agent.md) — adversarial judge that runs after execute; [harness.md](./harness.md) — cycle loop and worker boundary |
+| **Companion article** | [verify-agent.md](./verify-agent.md) — verify phase (same agent, worker evidence); [harness.md](./harness.md) — cycle loop and worker boundary |
 
 ## In this article
 
@@ -37,7 +37,7 @@ The **execute agent** is the LLM pass during `PhaseExecute`. The harness invokes
 
 ### Out of scope
 
-- Verify phase (LLM judge, shell checks, git tamper detection) — see [verify-agent.md](./verify-agent.md)
+- Verify phase (same runner, shell checks, git tamper detection) — see [verify-agent.md](./verify-agent.md)
 - Queue admission and ack ordering — `pkgs/agents/worker`
 - Runner adapter internals (Cursor CLI, env allowlist, registry) — [runner-adapters.md](./runner-adapters.md)
 - Gate criteria on `task.gate.criteria[]` — [data-model.md](../data-model.md) (Gate)
@@ -67,7 +67,7 @@ Schema and table definitions: [data-model.md](../data-model.md) (Checklist). HTT
 | **Operator** | Authors `initial_prompt`, criteria, and project context selection. | Trusted to define intent. |
 | **Worker (harness)** | Composes prompt, invokes runner, parses criteria report after execute, hands off to verify. | Trusted orchestrator. |
 | **Execute agent** | Implements work in `repo_root`; writes `criteria-report.json`. | **Not trusted** for final acceptance — self-claim is an assertion. |
-| **Verify agent** | Judges criteria after execute (downstream). | Trusted verdict when integrity holds — see [verify-agent.md](./verify-agent.md). |
+| **Agent verify** | Same runner; judges criteria in `PhaseVerify` (downstream). | Trusted verdict when integrity holds — see [verify-agent.md](./verify-agent.md). |
 
 ## How it works
 
@@ -194,7 +194,7 @@ You must satisfy every criterion below. When finished, write a JSON report at:
 
 Schema: {"criteria":[{"id":"<id>","claimed_done":true,"evidence":"..."}],"commits":[{"sha":"...","branch":"main"}]}
 
-claimed_done is your assertion that you completed the work; the verification agent independently decides whether each criterion is satisfied.
+claimed_done is your assertion that you completed the work; a separate verify phase (same agent) decides whether each criterion is satisfied.
 
 - [crit-001] Add a health check endpoint that returns 200 with {"status":"ok"}
 - [crit-002] All existing tests pass

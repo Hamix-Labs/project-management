@@ -6,6 +6,7 @@ import (
 	"errors"
 	"log/slog"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/cursorresume"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/git"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/orchestration"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/reports"
@@ -73,10 +74,8 @@ func (s *Service) RunPhase(
 
 	result, runErr := ports.Invoke(parentCtx, task, cycle, execPhase, plan)
 	if errors.Is(runErr, runner.ErrResumeSession) {
-		ports.emitProgress(parentCtx, task.ID, cycle.ID, execPhase,
-			runner.SetupProgressEvent(runner.ProgressRunStateRestartResume, "Restarting agent after failed resume…"))
-		fallback := ports.PlanFallback(parentCtx, task, cycle)
-		result, runErr = ports.Invoke(parentCtx, task, cycle, execPhase, fallback)
+		// Same-chat hard requirement: do not soft-fall back to a fresh full prompt.
+		runErr = cursorresume.ResumeSessionFailed(runErr)
 	}
 	operatorCancelled := false
 	if ports.ConsumeOperatorCancel != nil {

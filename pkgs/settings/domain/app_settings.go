@@ -23,8 +23,11 @@ import (
 //     (today only "cursor"). Default "cursor".
 //   - CursorBin: cursor binary path. Empty means "auto-detect from PATH"
 //     (the supervisor probes `cursor --version` at boot).
-//   - CursorModel: optional `cursor-agent --model` value. Empty means omit
-//     the flag so Cursor picks its default model for the account.
+//   - CursorModel: optional `cursor-agent --model` value for execute. Empty
+//     means omit the flag so Cursor picks its default model for the account.
+//   - VerifyModel: optional `--model` for PhaseVerify on the same Cursor chat.
+//     Empty inherits the execute effective model (task.cursor_model, else
+//     CursorModel / adapter default).
 //   - MaxRunDurationSeconds: per-run wall-clock cap in seconds. 0 means
 //     "no limit" — the worker does not wrap runner.Run with a timeout.
 //   - AgentPickupDelaySeconds: new ready tasks get pickup_not_before (see tasks
@@ -54,6 +57,7 @@ type AppSettings struct {
 	Runner                     string `json:"runner"`
 	CursorBin                  string `json:"cursor_bin"`
 	CursorModel                string `json:"cursor_model"`
+	VerifyModel                string `json:"verify_model"`
 	MaxRunDurationSeconds      int    `json:"max_run_duration_seconds"`
 	StreamIdleStuckSeconds     int    `json:"stream_idle_stuck_seconds"`
 	AgentPickupDelaySeconds    int    `json:"agent_pickup_delay_seconds"`
@@ -67,10 +71,6 @@ type AppSettings struct {
 	RunnerConfigs json.RawMessage `json:"runner_configs"`
 	// VerifyMaxRetries is the corrective execute retries after verify failure.
 	VerifyMaxRetries int `json:"verify_max_retries"`
-	// VerifyRunnerName empty means use the execute runner id.
-	VerifyRunnerName string `json:"verify_runner_name"`
-	// VerifyRunnerModel empty means use the verify runner's default model.
-	VerifyRunnerModel string `json:"verify_runner_model"`
 	// VerifyCommandTimeoutSeconds caps each optional criterion shell check during verify.
 	VerifyCommandTimeoutSeconds int `json:"verify_command_timeout_seconds"`
 	// CursorSessionResumeEnabled enables ADR-0031 --resume-by-default for Cursor CLI.
@@ -132,8 +132,6 @@ func DefaultAppSettings() AppSettings {
 		OptimisticMutationsEnabled:  true,
 		SSEReplayEnabled:            true,
 		VerifyMaxRetries:            DefaultVerifyMaxRetries,
-		VerifyRunnerName:            "",
-		VerifyRunnerModel:           "",
 		VerifyCommandTimeoutSeconds: DefaultVerifyCommandTimeoutSeconds,
 		CursorSessionResumeEnabled:  true,
 	}

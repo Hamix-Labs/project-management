@@ -8,6 +8,7 @@ type SettingsPatch struct {
 	Runner                      *string
 	CursorBin                   *string
 	CursorModel                 *string
+	VerifyModel                 *string
 	MaxRunDurationSeconds       *int
 	StreamIdleStuckSeconds      *int
 	AgentPickupDelaySeconds     *int
@@ -16,8 +17,6 @@ type SettingsPatch struct {
 	SSEReplayEnabled            *bool
 	RunnerConfigs               *json.RawMessage
 	VerifyMaxRetries            *int
-	VerifyRunnerName            *string
-	VerifyRunnerModel           *string
 	VerifyCommandTimeoutSeconds *int
 	CursorSessionResumeEnabled  *bool
 }
@@ -30,6 +29,7 @@ func (p SettingsPatch) IsEmpty() bool {
 		p.Runner == nil &&
 		p.CursorBin == nil &&
 		p.CursorModel == nil &&
+		p.VerifyModel == nil &&
 		p.MaxRunDurationSeconds == nil &&
 		p.StreamIdleStuckSeconds == nil &&
 		p.AgentPickupDelaySeconds == nil &&
@@ -38,8 +38,6 @@ func (p SettingsPatch) IsEmpty() bool {
 		p.SSEReplayEnabled == nil &&
 		p.RunnerConfigs == nil &&
 		p.VerifyMaxRetries == nil &&
-		p.VerifyRunnerName == nil &&
-		p.VerifyRunnerModel == nil &&
 		p.VerifyCommandTimeoutSeconds == nil &&
 		p.CursorSessionResumeEnabled == nil
 }

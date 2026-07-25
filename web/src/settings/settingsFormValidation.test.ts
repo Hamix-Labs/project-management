@@ -7,13 +7,12 @@ function form(overrides: Partial<SettingsFormState> = {}): SettingsFormState {
     runner: "cursor",
     cursorBin: "",
     cursorModel: "",
+    verifyModel: "",
     maxRunDurationSeconds: "3600",
     streamIdleStuckSeconds: "300",
     agentPickupDelaySeconds: "0",
     displayTimezone: "",
     verifyMaxRetries: "3",
-    verifyRunnerName: "",
-    verifyRunnerModel: "",
     ...overrides,
   };
 }

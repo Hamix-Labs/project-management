@@ -266,7 +266,7 @@ flowchart TB
   end
 
   EA[Execute agent] --> CR
-  VA[Verify agent] --> VR
+  EA --> VR
   WH[Harness parser] -->|UpsertCriteriaReports| TCR
   WH -->|UpsertVerifyReports| TVR
   WH -->|index only| TCC
@@ -277,7 +277,7 @@ flowchart TB
 | Layer | Writer | Lifetime | Authority |
 | --- | --- | --- | --- |
 | `criteria-report.json` | Execute agent (CLI) | Until cycle terminate GC | Wire format only; parse once per attempt |
-| `verify-report.json` | Verify agent (CLI) | Until cycle terminate GC | Wire format only; parse once per attempt |
+| `verify-report.json` | Execute agent — verify phase (CLI) | Until cycle terminate GC | Wire format only; parse once per attempt |
 | `task_cycle_criteria_reports` | Harness via `UpsertCriteriaReports` | FK cascade with cycle | **Durable** execute self-claims |
 | `task_cycle_verify_reports` | Harness via `UpsertVerifyReports` | FK cascade with cycle | **Durable** verify verdicts |
 | `task_checklist_completions` | Harness on terminal success | Task-scoped ledger | **Durable** operator-facing "done" |

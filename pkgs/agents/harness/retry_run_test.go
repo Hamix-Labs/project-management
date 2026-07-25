@@ -233,9 +233,14 @@ func TestVerifyOnlyCrossCycleResume_runCycleLoopSkipsRunnerExecute(t *testing.T)
 	if err != nil {
 		t.Fatal(err)
 	}
+	const parentExecSession = "sess-parent-exec"
+	execDetails, err := json.Marshal(map[string]string{"session_id": parentExecSession})
+	if err != nil {
+		t.Fatal(err)
+	}
 	if _, err := st.CompletePhase(ctx, cyclescontract.CompletePhaseInput{
 		CycleID: parent.ID, PhaseSeq: exec.PhaseSeq,
-		Status: cyclesdomain.PhaseStatusSucceeded, By: taskcoredomain.ActorAgent,
+		Status: cyclesdomain.PhaseStatusSucceeded, Details: execDetails, By: taskcoredomain.ActorAgent,
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -317,6 +322,9 @@ func TestVerifyOnlyCrossCycleResume_runCycleLoopSkipsRunnerExecute(t *testing.T)
 	}
 	if len(r.Calls()) == 0 {
 		t.Fatal("expected verify runner call")
+	}
+	if got := r.Calls()[0].ResumeSessionID; got != parentExecSession {
+		t.Fatalf("verify ResumeSessionID = %q, want parent execute session %q", got, parentExecSession)
 	}
 }
 

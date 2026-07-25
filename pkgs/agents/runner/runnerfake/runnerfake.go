@@ -12,6 +12,7 @@ package runnerfake
 import "github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -35,6 +36,7 @@ type Runner struct {
 	name         string
 	version      string
 	defaultModel string
+	autoSession  bool
 
 	mu      sync.Mutex
 	scripts map[scriptKey]scripted
@@ -61,10 +63,22 @@ type scripted struct {
 func New() *Runner {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "runnerfake.New")
 	return &Runner{
-		name:    "fake",
-		version: "v0",
-		scripts: make(map[scriptKey]scripted),
+		name:        "fake",
+		version:     "v0",
+		scripts:     make(map[scriptKey]scripted),
+		autoSession: true,
 	}
+}
+
+// WithoutAutoSessionID disables the default injection of details_json.session_id
+// on successful Runs (needed for same-chat hard-fail tests).
+//
+//funclogmeasure:skip category=hot-path reason="Test helper setter; Run emits operation traces."
+func (r *Runner) WithoutAutoSessionID() *Runner {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.autoSession = false
+	return r
 }
 
 // WithName overrides the value returned by Name().
@@ -213,7 +227,37 @@ func (r *Runner) Run(ctx context.Context, req runner.Request) (runner.Result, er
 			req.OnProgress(ev)
 		}
 	}
-	return entry.result, entry.err
+	result := entry.result
+	r.mu.Lock()
+	autoSession := r.autoSession
+	r.mu.Unlock()
+	if entry.err == nil && autoSession {
+		result = ensureFakeSessionID(result, req)
+	}
+	return result, entry.err
+}
+
+func ensureFakeSessionID(result runner.Result, req runner.Request) runner.Result {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "runnerfake.ensureFakeSessionID",
+		"task_id", req.TaskID, "phase", string(req.Phase))
+	if cyclesdomain.SessionIDFromDetailsJSON(result.Details) != "" {
+		return result
+	}
+	id := fmt.Sprintf("fake-sess-%s-%s-%d", req.TaskID, req.Phase, req.AttemptSeq)
+	var m map[string]any
+	if len(result.Details) > 0 {
+		_ = json.Unmarshal(result.Details, &m)
+	}
+	if m == nil {
+		m = map[string]any{}
+	}
+	m[cyclesdomain.PhaseDetailsSessionID] = id
+	b, err := json.Marshal(m)
+	if err != nil {
+		return result
+	}
+	result.Details = b
+	return result
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."

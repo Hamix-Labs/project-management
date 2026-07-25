@@ -4,12 +4,13 @@ import "github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 import (
 	"context"
 	"fmt"
-	cyclescontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/contract"
 	"log/slog"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/cursorresume"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/reports"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclescontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/contract"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
@@ -91,8 +92,14 @@ func (s *Service) RunPipeline(
 		verifyErr = &TamperedError{Reason: tamperReason}
 	} else if verifyErr != nil {
 		phaseStatus = cyclesdomain.PhaseStatusFailed
-		summary = FormatPhaseSummary(snap.Criteria, verdicts, false)
-		details = EncodePhaseDetails(attemptSeq, snap.Criteria, verdicts, detailsOpts)
+		if hf, ok := cursorresume.AsHardFail(verifyErr); ok {
+			summary = hf.Explain()
+			details = EncodePhaseDetails(attemptSeq, snap.Criteria, verdicts, detailsOpts)
+			details = MergeFailureDetailsIntoPhaseJSON(details, hf.Kind, hf.Message)
+		} else {
+			summary = FormatPhaseSummary(snap.Criteria, verdicts, false)
+			details = EncodePhaseDetails(attemptSeq, snap.Criteria, verdicts, detailsOpts)
+		}
 	} else {
 		details = EncodePhaseDetails(attemptSeq, snap.Criteria, verdicts, detailsOpts)
 	}

@@ -3,7 +3,7 @@
 > **Note** - Product renamed T2A to Hamix; identifiers below reflect the name at decision time unless updated inline.
 
 **Date:** 2026-06-19  
-**Status:** Accepted  
+**Status:** Partially superseded — separate execute/verify session chains and `verify_fresh_after_execute` replaced by [ADR-0085](./ADR-0085-verify-resumes-execute-session.md) (verify resumes the execute Cursor session). Resume-by-default, recovery deltas, settings opt-out, and phase-ledger rules otherwise remain.  
 **Deciders:** T2A maintainers
 
 ## Context
@@ -14,18 +14,18 @@ T2A still creates a new `task_cycle_phases` row per `runner.Run` (ADR-0030 corre
 
 ## Decision
 
-1. **Resume by default** for execute and verify when a prior `session_id` exists for **that phase type** (independent chains).
+1. **Resume by default** for execute when a prior execute `session_id` exists; for verify, resume the cycle’s last **execute** session ([ADR-0085](./ADR-0085-verify-resumes-execute-session.md)).
 2. **stdin on resume** uses structured recovery deltas (`ComposeRecoveryDelta`) instead of full prompt rehydration.
-3. **Deny-list** forces fresh chat: RetryFresh/Start over, first in chain, first verify after new execute, HEAD drift, tamper, missing id, workspace mismatch, `--resume` failure (`resume_fallback` + full prompt).
-4. **Cross-cycle RetryResume** resumes the **parent cycle's** session for the entry phase (execute or verify-only).
+3. **Deny-list** forces fresh chat: RetryFresh/Start over, first in chain (no session id), HEAD drift, tamper, missing id, workspace mismatch, `--resume` failure (`resume_fallback` + full prompt). First verify after execute **resumes** the execute session ([ADR-0085](./ADR-0085-verify-resumes-execute-session.md)).
+4. **Cross-cycle RetryResume** resumes the **parent cycle's** session for the entry phase (execute session for verify-only entry).
 5. **Settings opt-out:** `app_settings.cursor_session_resume_enabled` (default `true`).
-6. **Storage:** read `session_id` via `LastSessionID(cycleID, phase)` from `details_json`; no new table.
+6. **Storage:** read `session_id` via `LastSessionID(cycleID, phase)` from `details_json`; no new table. Verify reads the **execute** phase session.
 
 ## MUST / MUST NOT
 
-**MUST:** new phase row per run; separate execute/verify session chains; fallback to full prompt on resume failure; skip `ScrubCycleArtifacts` on execute resume only.
+**MUST:** new phase row per run; fallback to full prompt on resume failure; skip `ScrubCycleArtifacts` on execute resume only. PhaseVerify resumes the execute Cursor session ([ADR-0085](./ADR-0085-verify-resumes-execute-session.md)).
 
-**MUST NOT:** reuse phase rows; cross-wire execute/verify session ids; resume on RetryFresh; fail the cycle solely because Cursor resume failed when full-prompt fallback is viable.
+**MUST NOT:** reuse phase rows; resume on RetryFresh; fail the cycle solely because Cursor resume failed when full-prompt fallback is viable.
 
 ## Recovery hint taxonomy
 

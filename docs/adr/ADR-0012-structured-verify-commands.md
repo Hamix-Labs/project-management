@@ -8,19 +8,19 @@
 
 ## Context
 
-Early T2A stored a `check` column on checklist items for shell verification. That column was merged into free-form `text` and dropped ([migrateChecklistCheckToText](pkgs/tasks/postgres/postgres.go)). ADR-0003 moved verification to an adversarial LLM pass with no deterministic auto-pass.
+Early T2A stored a `check` column on checklist items for shell verification. That column was merged into free-form `text` and dropped ([migrateChecklistCheckToText](pkgs/tasks/postgres/postgres.go)). ADR-0003 introduced a separate verify LLM pass with no deterministic auto-pass; [ADR-0084](ADR-0084-executor-owned-verify.md) made that pass executor-owned (same agent as execute).
 
-Operators still need repeatable, machine-checkable evidence (test output, lint results) without relying on the execute agent to run commands honestly. The verify agent can interpret structured output, but the worker must produce a stable evidence bundle first.
+Operators still need repeatable, machine-checkable evidence (test output, lint results) without relying on the execute agent to run commands honestly. The verify phase can interpret structured output, but the worker must produce a stable evidence bundle first.
 
 ## Decision
 
 1. **Child table `task_checklist_item_commands`** — optional ordered shell checks per criterion (`command`, `expected_outcome`), capped at five per item. Criterion `text` remains required.
 
-2. **Verify phase execution** — after the execute agent claims `claimed_done: true` and before `runLLMVerifyAgent`, the worker runs attached commands sequentially in `app_settings.repo_root` using `adapterkit.DefaultExec` (not the LLM runner). Only criteria with commands are executed.
+2. **Verify phase execution** — after the execute agent claims `claimed_done: true` and before `runLLMVerify`, the worker runs attached commands sequentially in `app_settings.repo_root` using `adapterkit.DefaultExec` (not the LLM runner). Only criteria with commands are executed.
 
 3. **Temp-file evidence contract** — under `<ReportDir>/<cycleId>/checks/<criterionId>/<seq>.{stdout,stderr,meta.json}`. Streams truncate at 256 KiB; meta records exit code, duration, truncation, and errors. Failures do not skip the LLM verify pass.
 
-4. **LLM remains verdict authority** — success still requires `verified_by=verify_agent`. Exit code 0 does not auto-pass (`deterministic_check` stays legacy-only).
+4. **LLM remains verdict authority** — success still requires `verified_by=execute_agent`. Exit code 0 does not auto-pass (`deterministic_check` stays legacy-only).
 
 5. **Audit mirror `task_cycle_command_runs`** — exposed on `GET .../verdicts` as `command_runs[]` for the SPA timeline.
 
@@ -46,6 +46,6 @@ Operators still need repeatable, machine-checkable evidence (test output, lint r
 | Alternative | Reason Rejected |
 |-------------|-----------------|
 | JSON blob on `task_checklist_items` | Poor ordering/CRUD; blocks template library V2 |
-| Re-enable auto-pass on exit 0 | Conflicts with ADR-0003 adversarial verify model |
+| Re-enable auto-pass on exit 0 | Conflicts with executor-owned verify model ([ADR-0084](ADR-0084-executor-owned-verify.md)) |
 | Run commands in execute phase | Execute agent could interfere; verify needs post-execute snapshot |
 | Inline megabyte payloads in API | Temp files + meta paths keep HTTP and DB bounded |

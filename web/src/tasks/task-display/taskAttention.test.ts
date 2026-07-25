@@ -40,6 +40,14 @@ describe("userAttention", () => {
     });
     expect(failed.show).toBe(true);
     expect(failed.headline).toContain("failed");
+    expect(failed.body).toContain("Review what happened");
+
+    const failedWithSummary = userAttention(minimalTask("failed"), {
+      approvalPending: false,
+      failureSummary:
+        "Cursor finished execute but did not return a chat session id.",
+    });
+    expect(failedWithSummary.body).toContain("chat session id");
   });
 
   it("hides attention for other statuses when not pending approval", () => {
