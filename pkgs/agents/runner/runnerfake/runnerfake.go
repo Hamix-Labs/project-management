@@ -216,6 +216,7 @@ func (r *Runner) Run(ctx context.Context, req runner.Request) (runner.Result, er
 	return entry.result, entry.err
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (r *Runner) lookupLocked(taskID string, phase cyclesdomain.Phase, attemptSeq int64) (scripted, bool) {
 	if entry, ok := r.scripts[scriptKey{taskID: taskID, phase: phase, attemptSeq: attemptSeq}]; ok && entry.hasOutcome {
 		return entry, true

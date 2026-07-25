@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import type { Priority, Task } from "@/types";
 import { canEditTask } from "../task-display/canEditTask";
+import { validateTagsCsv } from "../create/taskTagValidation";
 import { buildPatchMutationInput } from "../mutations/buildPatchMutationInput";
 import { useTaskPatchFlow } from "./useTaskPatchFlow";
 
@@ -53,10 +54,20 @@ export function useTaskEditFlow(opts: UseTaskEditFlowOptions) {
   }, [opts.createModalOpen, changeModelTask, resetPatchError]);
 
   useEffect(() => {
-    if (editTitleRequiredError && opts.newTitle.trim()) {
+    if (editTitleRequiredError === "Title is required." && opts.newTitle.trim()) {
       setEditTitleRequiredError(null);
     }
   }, [opts.newTitle, editTitleRequiredError]);
+
+  useEffect(() => {
+    if (
+      editTitleRequiredError &&
+      editTitleRequiredError.startsWith("Tag ") &&
+      validateTagsCsv(opts.newTagsCsv) === null
+    ) {
+      setEditTitleRequiredError(null);
+    }
+  }, [opts.newTagsCsv, editTitleRequiredError]);
 
   const openEdit = useCallback(
     (t: Task) => {
@@ -118,6 +129,11 @@ export function useTaskEditFlow(opts: UseTaskEditFlowOptions) {
       if (!opts.editingTaskId || !opts.newPriority) return;
       if (!opts.newTitle.trim()) {
         setEditTitleRequiredError("Title is required.");
+        return;
+      }
+      const tagsError = validateTagsCsv(opts.newTagsCsv);
+      if (tagsError) {
+        setEditTitleRequiredError(tagsError);
         return;
       }
       setEditTitleRequiredError(null);

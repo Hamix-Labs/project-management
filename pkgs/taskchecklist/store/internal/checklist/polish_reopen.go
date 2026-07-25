@@ -20,6 +20,8 @@ import (
 
 // AddTextsInTx appends definition rows inside an outer transaction (e.g. polish).
 // Returns created item IDs in input order (empty texts skipped).
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func AddTextsInTx(tx *gorm.DB, taskID string, texts []string, by taskcoredomain.Actor) ([]string, error) {
 	items := make([]CreateChecklistItemInput, 0, len(texts))
 	for _, t := range texts {

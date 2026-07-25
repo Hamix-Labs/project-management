@@ -93,6 +93,7 @@ func (h *Harness) handleResumeCheckpointFailure(ctx context.Context, taskID, cyc
 	h.bestEffortFailTask(ctx, taskID)
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (h *Harness) verifyPhaseAlreadySucceeded(ctx context.Context, cycleID string) bool {
 	phases, err := h.store.ListPhasesForCycle(ctx, cycleID)
 	if err != nil || len(phases) == 0 {

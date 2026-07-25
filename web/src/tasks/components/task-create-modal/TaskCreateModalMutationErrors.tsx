@@ -1,4 +1,5 @@
 import { MutationErrorBanner } from "../../../shared/MutationErrorBanner";
+import { taskMutationErrorMessage } from "../../create/taskTagValidation";
 
 type Props = {
   isTaskEdit: boolean;
@@ -24,8 +25,11 @@ export function TaskCreateModalMutationErrors({
         />
 
         <MutationErrorBanner
-          error={createError}
-          fallback="Could not create task."
+          error={
+            createError
+              ? taskMutationErrorMessage(createError, "Could not create task.")
+              : null
+          }
           className="task-create-modal-err task-create-modal-err--create"
         />
       </>
@@ -39,7 +43,7 @@ export function TaskCreateModalMutationErrors({
         className="task-create-modal-err task-create-modal-err--edit"
       />
       <MutationErrorBanner
-        error={patchError}
+        error={patchError ? taskMutationErrorMessage(patchError) : null}
         className="task-edit-form-err task-create-modal-err task-create-modal-err--edit"
       />
     </>

@@ -1,4 +1,5 @@
 import { errorMessage } from "@/lib/errorMessage";
+import { taskMutationErrorMessage } from "./taskTagValidation";
 import type { useTaskCreateDraftAutosave } from "./hooks/useTaskCreateDraftAutosave";
 import type { useTaskCreateEntryActions } from "./hooks/useTaskCreateEntryActions";
 import type { useTaskCreateFormState } from "./hooks/useTaskCreateFormState";
@@ -10,13 +11,13 @@ export function deriveCreateFlowError(
   mutations: ReturnType<typeof useTaskCreateMutations>,
 ): string | null {
   if (mutations.createMutation.isError) {
-    return errorMessage(mutations.createMutation.error);
+    return taskMutationErrorMessage(mutations.createMutation.error);
   }
   if (mutations.saveTemplateMutation.isError) {
-    return errorMessage(mutations.saveTemplateMutation.error);
+    return taskMutationErrorMessage(mutations.saveTemplateMutation.error);
   }
   if (mutations.patchTemplateMutation.isError) {
-    return errorMessage(mutations.patchTemplateMutation.error);
+    return taskMutationErrorMessage(mutations.patchTemplateMutation.error);
   }
   return null;
 }

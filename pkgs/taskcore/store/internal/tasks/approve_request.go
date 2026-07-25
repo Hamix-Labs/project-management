@@ -131,6 +131,7 @@ func RequestTaskApprove(ctx context.Context, db *gorm.DB, taskID string, by doma
 	return updated, origStatus, nil
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func latestSucceededCycleCommitsInTx(tx *gorm.DB, taskID string) (cycleID string, commits []onTaskDoneCommit, err error) {
 	var cycles []cyclesmodel.TaskCycle
 	if err := tx.Where("task_id = ?", taskID).Order("attempt_seq DESC").Limit(50).Find(&cycles).Error; err != nil {

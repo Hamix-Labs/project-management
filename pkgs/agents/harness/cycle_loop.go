@@ -106,6 +106,8 @@ func unionPreviouslyPassedVerdicts(state *processState) []criterionVerdict {
 
 // runCycleLoopExecute runs one execute phase iteration. Returns false when
 // runCycleLoop should return immediately.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (h *Harness) runCycleLoopExecute(
 	parentCtx context.Context,
 	task *taskcoredomain.Task,

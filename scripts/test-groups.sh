@@ -11,6 +11,7 @@ group_packages() {
   case "$group" in
     core)
       go list ./cmd/... ./internal/... ./pkgs/repo/... ./pkgs/gitcore/... ./pkgs/gitexec/... ./pkgs/gitwork/... \
+        ./pkgs/obs/... \
         | grep -Ev '/(handlertest|agentreconcile)(/|$)'
       ;;
     tasks)

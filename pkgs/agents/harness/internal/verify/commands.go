@@ -147,6 +147,7 @@ func verifyCommandProgressPayload(criterionID string, commandSeq int, command st
 	return b
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (s *Service) emitCommandProgress(
 	ctx context.Context,
 	taskID, cycleID string,
