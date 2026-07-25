@@ -38,6 +38,10 @@ type TaskOpsStore interface {
 	RequestTaskPolish(ctx context.Context, in RequestPolishInput, by domain.Actor) (*domain.Task, error)
 	ApplyTaskGateAction(ctx context.Context, taskID string, action GateAction, by domain.Actor) (*domain.Task, error)
 	ValidateTaskWorktreeBinding(ctx context.Context, projectID *string, worktreeID string) error
+	// Close marks the task closed (idempotent). Composition cancels runs first.
+	Close(ctx context.Context, id string, by domain.Actor) (*domain.Task, error)
+	// Reopen transitions closed → ready (409 if not closed).
+	Reopen(ctx context.Context, id string, by domain.Actor) (*domain.Task, error)
 }
 
 // TaskCRUDStore composes focused task seams for wiring-edge consumers.

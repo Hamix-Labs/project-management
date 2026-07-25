@@ -45,13 +45,19 @@ func NewWorkerWithGate(st Store, q ReadyTaskQueue, r runner.Runner, opts Options
 }
 
 // CancelCurrentRun cancels the in-flight runner.Run, if any.
-//
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (w *Worker) CancelCurrentRun() bool {
 	if w == nil || w.harness == nil {
 		return false
 	}
 	return w.harness.CancelCurrentRun()
+}
+
+// CancelRunForTask cancels the in-flight run only when it belongs to taskID.
+func (w *Worker) CancelRunForTask(taskID string) bool {
+	if w == nil || w.harness == nil {
+		return false
+	}
+	return w.harness.CancelRunForTask(taskID)
 }
 
 // Run blocks on the queue and processes one task at a time until ctx cancels.

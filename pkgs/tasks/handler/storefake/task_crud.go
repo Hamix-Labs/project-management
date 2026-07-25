@@ -331,6 +331,16 @@ func (f *TaskCRUDFake) RemoveTaskDependency(ctx context.Context, taskID, depends
 	return errNotImplemented
 }
 
+//funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
+func (f *TaskCRUDFake) Close(ctx context.Context, id string, by taskcoredomain.Actor) (*taskcoredomain.Task, error) {
+	return nil, errNotImplemented
+}
+
+//funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
+func (f *TaskCRUDFake) Reopen(ctx context.Context, id string, by taskcoredomain.Actor) (*taskcoredomain.Task, error) {
+	return nil, errNotImplemented
+}
+
 var (
 	_ taskcorecontract.TaskGetter    = (*TaskCRUDFake)(nil)
 	_ taskcorecontract.TaskReader    = (*TaskCRUDFake)(nil)

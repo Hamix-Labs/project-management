@@ -86,6 +86,35 @@ func TestMemoryQueue_ReceiveKeepsPendingUntilAck(t *testing.T) {
 	}
 }
 
+func TestMemoryQueue_Drop_allowsReenqueueBeforeReceive(t *testing.T) {
+	q := NewMemoryQueue(2)
+	t1 := taskcoredomain.Task{ID: "11111111-1111-4111-8111-111111111111", Title: "a", Priority: taskcoredomain.PriorityMedium}
+	if err := q.NotifyReadyTask(context.Background(), t1); err != nil {
+		t.Fatal(err)
+	}
+	// Second enqueue rejected while pending.
+	if err := q.NotifyReadyTask(context.Background(), t1); !errors.Is(err, ErrAlreadyQueued) {
+		t.Fatalf("before Drop: want ErrAlreadyQueued got %v", err)
+	}
+	// Drop clears pending without consuming the channel.
+	q.Drop(t1.ID)
+	// Now the id is no longer pending, but the channel still has a stale snapshot.
+	if q.BufferDepth() != 1 {
+		t.Fatalf("BufferDepth after Drop = %d, want 1 (channel snapshot retained)", q.BufferDepth())
+	}
+	// A fresh enqueue is accepted (pending cleared).
+	if err := q.NotifyReadyTask(context.Background(), t1); err != nil {
+		t.Fatalf("post-Drop enqueue: %v", err)
+	}
+}
+
+func TestMemoryQueue_Drop_nilAndEmptyAreNoOps(t *testing.T) {
+	var q *MemoryQueue
+	q.Drop("11111111-1111-4111-8111-111111111111")
+	q2 := NewMemoryQueue(1)
+	q2.Drop("")
+}
+
 func TestMemoryQueue_fullReturnsErrQueueFull(t *testing.T) {
 	q := NewMemoryQueue(1)
 	t1 := taskcoredomain.Task{ID: "11111111-1111-4111-8111-111111111111", Title: "a", Priority: taskcoredomain.PriorityMedium}

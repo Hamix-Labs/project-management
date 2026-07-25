@@ -121,6 +121,16 @@ func (s *Store) Delete(ctx context.Context, id string, by domain.Actor) ([]strin
 	return tasks.Delete(ctx, s.db, id, by)
 }
 
+func (s *Store) Close(ctx context.Context, id string, by domain.Actor) (*domain.Task, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcore.store.Close", "task_id", id)
+	return tasks.Close(ctx, s.db, id, by)
+}
+
+func (s *Store) Reopen(ctx context.Context, id string, by domain.Actor) (*domain.Task, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcore.store.Reopen", "task_id", id)
+	return tasks.Reopen(ctx, s.db, id, by)
+}
+
 func (s *Store) ListFlat(ctx context.Context, limit, offset int, filter *ListFilter) ([]domain.Task, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcore.store.ListFlat")
 	return tasks.ListFlat(ctx, s.db, limit, offset, filter)

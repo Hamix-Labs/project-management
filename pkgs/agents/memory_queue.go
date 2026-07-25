@@ -78,6 +78,19 @@ func (q *MemoryQueue) AckAfterRecv(id string) {
 	q.mu.Unlock()
 }
 
+// Drop removes taskID from the pending set so reconcile will not treat it as
+// in-flight. A snapshot already buffered in the channel may still be delivered;
+// the worker stale-acks non-ready tasks (including closed). Used on task close.
+func (q *MemoryQueue) Drop(taskID string) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agents.MemoryQueue.Drop", "task_id", taskID)
+	if q == nil || taskID == "" {
+		return
+	}
+	q.mu.Lock()
+	delete(q.pending, taskID)
+	q.mu.Unlock()
+}
+
 // Receive waits for the next task and returns it. The id stays in pending until
 // AckAfterRecv so running reconcile cannot re-enqueue while a worker still owns it.
 func (q *MemoryQueue) Receive(ctx context.Context) (taskcoredomain.Task, error) {

@@ -37,8 +37,8 @@ func (h *Harness) verifySvc() *verify.Service {
 				},
 				RecordVerdict:   h.recordVerifyVerdict,
 				ObserveDuration: h.observeVerifyDuration,
-				SetRunCancel: func(cancel context.CancelFunc) {
-					h.setCurrentRunCancel(cancel)
+				SetRunCancel: func(cancel context.CancelFunc, taskID string) {
+					h.setCurrentRunCancel(cancel, taskID)
 				},
 			},
 		})

@@ -27,6 +27,8 @@ type fakeAgentControl struct{}
 
 func (f *fakeAgentControl) CancelCurrentRun() bool { return false }
 
+func (f *fakeAgentControl) CancelRunForTask(string) bool { return false }
+
 func (f *fakeAgentControl) Reload(context.Context) error { return nil }
 
 func (f *fakeAgentControl) ProbeRunner(context.Context, string, string, time.Duration) (string, string, error) {

@@ -104,6 +104,7 @@ type Harness struct {
 
 	mu                      sync.Mutex
 	currentRunCancel        context.CancelFunc
+	currentRunTaskID        string
 	currentRunCorrelationID string
 	cancelByOperator        atomic.Bool
 }
@@ -149,10 +150,34 @@ func (h *Harness) CancelCurrentRun() bool {
 	return true
 }
 
+// CancelRunForTask cancels the in-flight runner.Run only when it belongs to taskID.
+func (h *Harness) CancelRunForTask(taskID string) bool {
+	if h == nil || taskID == "" {
+		return false
+	}
+	h.mu.Lock()
+	cancel := h.currentRunCancel
+	match := cancel != nil && h.currentRunTaskID == taskID
+	h.mu.Unlock()
+	if !match {
+		return false
+	}
+	h.cancelByOperator.Store(true)
+	cancel()
+	slog.Info("agent harness run cancelled for task", "cmd", calltrace.LogCmd,
+		"operation", "agent.harness.Harness.CancelRunForTask.fired", "task_id", taskID)
+	return true
+}
+
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func (h *Harness) setCurrentRunCancel(cancel context.CancelFunc) {
+func (h *Harness) setCurrentRunCancel(cancel context.CancelFunc, taskID string) {
 	h.mu.Lock()
 	h.currentRunCancel = cancel
+	if cancel == nil {
+		h.currentRunTaskID = ""
+	} else {
+		h.currentRunTaskID = taskID
+	}
 	h.mu.Unlock()
 }
 

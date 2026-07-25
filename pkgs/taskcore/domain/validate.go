@@ -7,7 +7,7 @@ import "fmt"
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func ValidStatus(s Status) bool {
 	switch s {
-	case StatusReady, StatusRunning, StatusBlocked, StatusReview, StatusDone, StatusFailed, StatusOnHold:
+	case StatusReady, StatusRunning, StatusBlocked, StatusReview, StatusDone, StatusFailed, StatusOnHold, StatusClosed:
 		return true
 	default:
 		return false
@@ -15,9 +15,13 @@ func ValidStatus(s Status) bool {
 }
 
 // ValidClientWritableStatus reports whether a client may set s on create or PATCH.
+// closed is only set via POST /tasks/{id}/close (not create/PATCH).
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func ValidClientWritableStatus(s Status) bool {
+	if s == StatusClosed {
+		return false
+	}
 	return ValidStatus(s)
 }
 

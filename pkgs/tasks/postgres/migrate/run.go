@@ -91,5 +91,8 @@ func Run(ctx context.Context, db *gorm.DB, deps Deps) error {
 	if err := migrateBackfillTaskNumbers(ctx, db); err != nil {
 		return fmt.Errorf("backfill task numbers: %w", err)
 	}
+	if err := migrateTasksStatusClosed(ctx, db); err != nil {
+		return fmt.Errorf("tasks status closed: %w", err)
+	}
 	return nil
 }

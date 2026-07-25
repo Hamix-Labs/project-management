@@ -62,7 +62,9 @@ import (
 //
 // Rev 18: tasks.number + projects.next_task_number; backfill dense
 // per-project numbers for existing tasks (display ref #N).
-const SchemaRevision = 18
+//
+// Rev 19: tasks.status CHECK includes closed (close/reopen replaces hard delete).
+const SchemaRevision = 19
 
 const schemaMetaRowID = 1
 

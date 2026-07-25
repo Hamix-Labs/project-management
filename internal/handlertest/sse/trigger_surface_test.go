@@ -98,16 +98,16 @@ func TestHTTP_SSE_triggerSurface(t *testing.T) {
 		handlertest.MustEqualEvents(t, "PATCH /tasks/{id}/events/{seq}", got, []string{fmt.Sprintf("task_event_changed:%s/%d", task.ID, approvalSeq)})
 	})
 
-	t.Run("DELETE /tasks/{id} (no parent) emits task_deleted", func(t *testing.T) {
+	t.Run("POST /tasks/{id}/close emits task_updated", func(t *testing.T) {
 		srv, _, hub := handlertest.NewSSETriggerServer(t)
 		defer srv.Close()
 		task := postTaskJSON(t, srv, `{"title":"a","priority":"medium"}`, http.StatusCreated)
 		ch, cancel := hub.Subscribe()
 		defer cancel()
 
-		mustDoJSON(t, http.MethodDelete, srv.URL+"/tasks/"+task.ID, "", "", http.StatusNoContent)
+		mustDoJSON(t, http.MethodPost, srv.URL+"/tasks/"+task.ID+"/close", "", "", http.StatusOK)
 		got := handlertest.SummarizeSSEEvents(handlertest.DrainSSE(t, ch, 1, 2*time.Second))
-		handlertest.MustEqualEvents(t, "DELETE /tasks/{id}", got, []string{"task_deleted:" + task.ID})
+		handlertest.MustEqualEvents(t, "POST /tasks/{id}/close", got, []string{"task_updated:" + task.ID})
 	})
 
 	t.Run("POST /tasks/{id}/cycles emits task_cycle_changed", func(t *testing.T) {

@@ -15,6 +15,10 @@ const (
 	// rows simply never become eligible. The user resumes the task by
 	// flipping it back to StatusReady from the detail page.
 	StatusOnHold Status = "on_hold"
+	// StatusClosed is a terminal operator exit (replaces hard delete).
+	// Not worker-eligible. Reopen via POST /tasks/{id}/reopen → ready.
+	// Not settable via PATCH — only POST /tasks/{id}/close.
+	StatusClosed Status = "closed"
 )
 
 type Priority string

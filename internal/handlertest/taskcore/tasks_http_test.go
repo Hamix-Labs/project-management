@@ -84,7 +84,7 @@ func TestHTTP_get_not_found(t *testing.T) {
 	}
 }
 
-func TestHTTP_patch_and_delete(t *testing.T) {
+func TestHTTP_patch_and_close(t *testing.T) {
 	srv := handlertest.NewCreateServer(t)
 	defer srv.Close()
 
@@ -135,17 +135,17 @@ func TestHTTP_patch_and_delete(t *testing.T) {
 		t.Fatalf("status %s", updated.Status)
 	}
 
-	reqDel, err := http.NewRequest(http.MethodDelete, srv.URL+"/tasks/"+created.ID, nil)
+	reqClose, err := http.NewRequest(http.MethodPost, srv.URL+"/tasks/"+created.ID+"/close", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	res3, err := http.DefaultClient.Do(reqDel)
+	res3, err := http.DefaultClient.Do(reqClose)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer res3.Body.Close()
-	if res3.StatusCode != http.StatusNoContent {
-		t.Fatalf("delete status %d", res3.StatusCode)
+	if res3.StatusCode != http.StatusOK {
+		t.Fatalf("close status %d", res3.StatusCode)
 	}
 }
 
@@ -279,8 +279,8 @@ func TestHTTP_delete_not_found(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer res.Body.Close()
-	if res.StatusCode != http.StatusNotFound {
-		t.Fatalf("status %d", res.StatusCode)
+	if res.StatusCode != http.StatusMethodNotAllowed && res.StatusCode != http.StatusNotFound {
+		t.Fatalf("status %d want 404 or 405", res.StatusCode)
 	}
 }
 
@@ -383,12 +383,12 @@ func TestHTTP_domain_tasks_created_and_updated_counters(t *testing.T) {
 	}
 }
 
-func TestHTTP_domain_tasks_deleted_counter(t *testing.T) {
-	beforeD := testutil.ToFloat64(taskcorehandler.DomainTasksDeletedTotal)
+func TestHTTP_domain_tasks_closed_updates_counter(t *testing.T) {
+	beforeU := testutil.ToFloat64(taskcorehandler.DomainTasksUpdatedTotal)
 	srv := handlertest.NewCreateServer(t)
 	defer srv.Close()
 
-	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(handlertest.WithCreateChecklistForURL(srv.URL, `{"title":"to-delete","priority":"medium"}`)))
+	res, err := http.Post(srv.URL+"/tasks", "application/json", strings.NewReader(handlertest.WithCreateChecklistForURL(srv.URL, `{"title":"to-close","priority":"medium"}`)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -402,7 +402,7 @@ func TestHTTP_domain_tasks_deleted_counter(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	req, err := http.NewRequest(http.MethodDelete, srv.URL+"/tasks/"+created.ID, nil)
+	req, err := http.NewRequest(http.MethodPost, srv.URL+"/tasks/"+created.ID+"/close", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -411,11 +411,11 @@ func TestHTTP_domain_tasks_deleted_counter(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer res2.Body.Close()
-	if res2.StatusCode != http.StatusNoContent {
+	if res2.StatusCode != http.StatusOK {
 		b, _ := io.ReadAll(res2.Body)
-		t.Fatalf("delete status %d: %s", res2.StatusCode, b)
+		t.Fatalf("close status %d: %s", res2.StatusCode, b)
 	}
-	if testutil.ToFloat64(taskcorehandler.DomainTasksDeletedTotal) < beforeD+1 {
-		t.Fatalf("deleted counter did not increment (before=%v after=%v)", beforeD, testutil.ToFloat64(taskcorehandler.DomainTasksDeletedTotal))
+	if testutil.ToFloat64(taskcorehandler.DomainTasksUpdatedTotal) < beforeU+1 {
+		t.Fatalf("updated counter did not increment on close (before=%v after=%v)", beforeU, testutil.ToFloat64(taskcorehandler.DomainTasksUpdatedTotal))
 	}
 }

@@ -84,8 +84,8 @@ func (h *Harness) invokeRunnerWithDecision(
 		details, _ := json.Marshal(map[string]string{"error": err.Error()})
 		return runner.NewResult(cyclesdomain.PhaseStatusFailed, "project context selection failed", details, ""), fmt.Errorf("project context: %w: %v", runner.ErrInvalidOutput, err)
 	}
-	h.setCurrentRunCancel(cancel)
-	defer h.setCurrentRunCancel(nil)
+	h.setCurrentRunCancel(cancel, task.ID)
+	defer h.setCurrentRunCancel(nil, "")
 	onProgress := func(ev runner.ProgressEvent) {
 		h.persistProgress(runCtx, task.ID, cycle.ID, phaseRow.PhaseSeq, ev)
 		h.publishProgress(task.ID, cycle.ID, phaseRow.PhaseSeq, runCorrelationID, ev)

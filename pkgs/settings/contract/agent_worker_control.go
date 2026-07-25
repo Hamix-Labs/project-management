@@ -17,6 +17,7 @@ import (
 // validate a binary path against the configured runner before saving.
 type AgentWorkerControl interface {
 	CancelCurrentRun() bool
+	CancelRunForTask(taskID string) bool
 	Reload(ctx context.Context) error
 	ProbeRunner(ctx context.Context, runnerID, binaryPath string, timeout time.Duration) (version, resolvedBin string, err error)
 }

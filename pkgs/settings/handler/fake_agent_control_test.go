@@ -28,6 +28,11 @@ func (f *fakeAgentControl) CancelCurrentRun() bool {
 	return f.cancelResult.Load()
 }
 
+func (f *fakeAgentControl) CancelRunForTask(_ string) bool {
+	f.cancelCalls.Add(1)
+	return f.cancelResult.Load()
+}
+
 func (f *fakeAgentControl) Reload(_ context.Context) error {
 	f.reloadCalls.Add(1)
 	if e := f.reloadErr.Load(); e != nil {

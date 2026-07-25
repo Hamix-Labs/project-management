@@ -43,7 +43,7 @@ Package tradeoffs: [`pkgs/agents/doc.go`](../../pkgs/agents/doc.go).
 
 ### In scope
 
-- `MemoryQueue`, `NotifyReadyTask`, `AckAfterRecv`, `Receive`
+- `MemoryQueue`, `NotifyReadyTask`, `AckAfterRecv`, `Drop`, `Receive`
 - `ReadyTaskNotifier` store wiring
 - `PickupWakeScheduler` for future `pickup_not_before`
 - `ReconcileReadyTasksNotQueued`, `ReconcileRunningTasksNotQueued`, `RunReconcileLoop`
@@ -64,7 +64,7 @@ Package tradeoffs: [`pkgs/agents/doc.go`](../../pkgs/agents/doc.go).
 | --- | --- |
 | **MemoryQueue** | Buffered Go channel + `pending` map of task ids |
 | **NotifyReadyTask** | Producer entry; returns `ErrAlreadyQueued` or `ErrQueueFull` |
-| **Pending set** | Task ids buffered in the channel **or** still owned by a worker (`Receive` → `AckAfterRecv`); dedup at enqueue |
+| **Pending set** | Task ids buffered in the channel **or** still owned by a worker (`Receive` → `AckAfterRecv`); dedup at enqueue. **`Drop(taskID)`** (used on task close) removes an id from pending without waiting for Ack; a snapshot already in the channel may still be delivered and is stale-acked when status is not ready (including `closed`). |
 | **PickupWakeScheduler** | Min-heap + timer for deferred `pickup_not_before` |
 | **Reconcile** | SQL scan → enqueue ids missing from pending |
 | **Running reconcile** | Re-enqueue `status=running` tasks with open cycles after restart |
@@ -201,6 +201,15 @@ Admission branches:
 | Other | Warn stale; return (ack still runs) |
 
 `Receive` does **not** clear pending. **`AckAfterRecv`** after harness clears the claim. Use **`Recv()` + `AckAfterRecv`** if you consume the channel manually without `Receive`.
+
+### Close-time drop
+
+`POST /tasks/{id}/close` (see [api.md](../api.md)) needs to remove a task from the queue before persisting the terminal status transition. `MemoryQueue.Drop(taskID)` deletes the id from the **pending set** but **does not read from the channel**:
+
+- If the snapshot was still buffered in `ch`, the channel copy will eventually reach a worker via `Receive`. That worker performs the normal `reloadTask` admission check and finds the task in `status=closed`; the "Other" branch of the admission table above warns "stale" and returns. `AckAfterRecv` still runs in the surrounding defer, so the pending entry (now empty after `Drop`) stays empty.
+- If the id was already in a worker slot (`Receive` returned, harness running), composition also calls `CancelRunForTask(id)` on the supervisor — the harness only cancels when its `currentRunTaskID` matches, so unrelated pool slots are unaffected. After the cancelled cycle finishes, `AckAfterRecv` clears the (already-empty) pending entry.
+
+`Drop` is nil-safe and idempotent. It never touches the channel, so it cannot deadlock producers. This "stale-ack on delivery" pattern is why the worker admission table treats "Other" statuses as ack-and-return instead of erroring.
 
 ## Reconciliation
 

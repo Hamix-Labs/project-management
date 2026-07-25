@@ -44,6 +44,8 @@ func startReadyTaskAgents(ctx context.Context, taskStore *composition.API, hub *
 		reconcileCancel()
 		return nil, nil, nil, err
 	}
+	taskStore.SetCancelRunForTask(sup.CancelRunForTask)
+	taskStore.SetQueueDrop(agentQueue.Drop)
 	stopAgents := func() {
 		pickupWake.Stop()
 		provisioner.Stop()

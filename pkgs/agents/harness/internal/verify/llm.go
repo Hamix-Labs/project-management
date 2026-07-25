@@ -147,8 +147,8 @@ func (s *Service) runVerifyCursor(
 	runCtx, cancelCause := context.WithCancelCause(ctx)
 	cancel := func() { cancelCause(context.Canceled) }
 	if s.hooks.SetRunCancel != nil {
-		s.hooks.SetRunCancel(cancel)
-		defer s.hooks.SetRunCancel(nil)
+		s.hooks.SetRunCancel(cancel, task.ID)
+		defer s.hooks.SetRunCancel(nil, "")
 	}
 	onProgress := func(ev runner.ProgressEvent) {
 		if s.hooks.PersistProgress != nil {
