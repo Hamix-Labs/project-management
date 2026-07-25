@@ -23,9 +23,9 @@ func (h *Harness) verifySvc() *verify.Service {
 			Store:      h.store,
 			Runner:     h.runner,
 			ReportDir:  h.opts.ReportDir,
-			WorkingDir:   h.opts.WorkingDir,
-			Git:          h.gitSvc(),
-			Clock:        h.opts.Clock,
+			WorkingDir: h.opts.WorkingDir,
+			Git:        h.gitSvc(),
+			Clock:      h.opts.Clock,
 			Hooks: verify.Hooks{
 				Publish: h.publish,
 				PersistProgress: func(ctx context.Context, taskID, cycleID string, phaseSeq int64, ev runner.ProgressEvent) {
