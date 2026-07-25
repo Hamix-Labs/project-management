@@ -1,11 +1,9 @@
 import type { Task } from "@/types";
 
+export { shortId } from "@/lib/taskShortId";
+
 export const MAX_TYPEAHEAD_RESULTS = 8;
 export const TYPEAHEAD_BLUR_DELAY_MS = 120;
-
-export function shortId(id: string): string {
-  return id.length > 8 ? id.slice(0, 8) : id;
-}
 
 export function filterTypeaheadCandidates(
   projectTasks: Task[],

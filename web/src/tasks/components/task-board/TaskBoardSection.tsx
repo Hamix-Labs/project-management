@@ -2,23 +2,16 @@ import { useMemo, type ReactNode } from "react";
 import { useDelayedTrue } from "@/lib/useDelayedTrue";
 import { EmptyState, EmptyStateFilterGlyph } from "@/shared/EmptyState";
 import { Button } from "@/components/ui";
-import { isUiFeatureOmitted } from "@/launch/omittedFeatures";
 import { TaskListFilters } from "../task-list/filters/TaskListFilters";
-import {
-  filterTasksByTag,
-  filterTasksForListView,
-  uniqueSortedTagsFromTasks,
-  type TaskListClientPriorityFilter,
-} from "../task-list/filters/taskListClientFilter";
 import { TaskListSectionHeading } from "../task-list/section/TaskListSectionHeading";
-import { useTaskListSearchShortcut } from "../task-list/hooks/useTaskListSearchShortcut";
 import type { TaskWithDepth } from "../../task-tree";
 import { BOARD_COLUMNS } from "./boardColumns";
 import { BOARD_ACTIVE_CAP } from "./boardConstants";
 import { groupTasksByBoardColumn } from "./groupTasksByBoardColumn";
 import { TaskBoardColumn } from "./TaskBoardColumn";
 import { TaskBoardSkeleton } from "./TaskBoardSkeleton";
-import { useCallback, useRef, useState } from "react";
+import { BoardActivePill } from "./BoardActivePill";
+import { useTaskBoardFilters } from "./useTaskBoardFilters";
 
 type Props = {
   tasks: TaskWithDepth[];
@@ -51,68 +44,19 @@ export function TaskBoardSection({
   emptyListAction,
   smoothTransitions = true,
 }: Props) {
-  const tagsUiEnabled = !isUiFeatureOmitted("taskTags");
   const statusDelayMs = smoothTransitions ? LOADING_STATUS_DELAY_MS : 0;
   const showSkeleton = useDelayedTrue(loading, statusDelayMs);
-
-  const [priorityFilter, setPriorityFilter] =
-    useState<TaskListClientPriorityFilter>("all");
-  const [projectFilter, setProjectFilter] = useState("all");
-  const [tagFilter, setTagFilter] = useState("all");
-  const [titleSearch, setTitleSearch] = useState("");
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  useTaskListSearchShortcut(searchInputRef, smoothTransitions);
-
-  const projectNameById = useMemo(() => {
-    const m: Record<string, string> = {};
-    for (const p of projectFilterOptions) {
-      m[p.id] = p.name;
-    }
-    return m;
-  }, [projectFilterOptions]);
-
-  const tagFilterOptions = useMemo(() => {
-    if (!tagsUiEnabled) return [];
-    return uniqueSortedTagsFromTasks(tasks);
-  }, [tagsUiEnabled, tasks]);
-
-  const filteredTasks = useMemo(() => {
-    const base = filterTasksForListView(
-      tasks,
-      "all",
-      priorityFilter,
-      titleSearch,
-    );
-    const scoped =
-      projectFilter === "all"
-        ? base
-        : projectFilter === "none"
-          ? base.filter((task) => !task.project_id)
-          : base.filter((task) => task.project_id === projectFilter);
-    return filterTasksByTag(scoped, tagsUiEnabled ? tagFilter : "all");
-  }, [
+  const filters = useTaskBoardFilters({
     tasks,
-    priorityFilter,
-    titleSearch,
-    projectFilter,
-    tagFilter,
-    tagsUiEnabled,
-  ]);
+    projectFilterOptions,
+    showProjectColumn,
+    smoothTransitions,
+  });
 
   const groups = useMemo(
-    () => groupTasksByBoardColumn(filteredTasks),
-    [filteredTasks],
+    () => groupTasksByBoardColumn(filters.filteredTasks),
+    [filters.filteredTasks],
   );
-
-  const hasClientFilters =
-    priorityFilter !== "all" ||
-    projectFilter !== "all" ||
-    tagFilter !== "all" ||
-    titleSearch.trim() !== "";
-
-  const onPriorityChange = useCallback((v: string) => {
-    setPriorityFilter(v as TaskListClientPriorityFilter);
-  }, []);
 
   return (
     <section
@@ -126,23 +70,30 @@ export function TaskBoardSection({
           title="Board"
           titleId="task-board-heading"
           actions={actions}
-          summary={loading ? undefined : `${filteredTasks.length} active`}
+          summary={
+            loading ? undefined : (
+              <BoardActivePill count={filters.filteredTasks.length} />
+            )
+          }
+          description="Track engineering work across every stage."
         />
         {!loading ? (
           <TaskListFilters
-            priorityFilter={priorityFilter}
-            onPriorityFilterChange={onPriorityChange}
-            projectFilter={projectFilter}
+            priorityFilter={filters.priorityFilter}
+            onPriorityFilterChange={filters.onPriorityChange}
+            projectFilter={filters.projectFilter}
             projectOptions={showProjectColumn ? projectFilterOptions : []}
             onProjectFilterChange={
-              showProjectColumn ? setProjectFilter : undefined
+              showProjectColumn ? filters.setProjectFilter : undefined
             }
-            tagFilter={tagFilter}
-            tagOptions={tagFilterOptions}
-            onTagFilterChange={tagsUiEnabled ? setTagFilter : undefined}
-            titleSearch={titleSearch}
-            onTitleSearchChange={setTitleSearch}
-            searchInputRef={searchInputRef}
+            tagFilter={filters.tagFilter}
+            tagOptions={filters.tagFilterOptions}
+            onTagFilterChange={
+              filters.tagsUiEnabled ? filters.setTagFilter : undefined
+            }
+            titleSearch={filters.titleSearch}
+            onTitleSearchChange={filters.setTitleSearch}
+            searchInputRef={filters.searchInputRef}
           />
         ) : null}
       </div>
@@ -176,29 +127,34 @@ export function TaskBoardSection({
         <p className="sync-hint task-list-phase-msg">Syncing with server…</p>
       ) : null}
 
-      {!showSkeleton && !error && filteredTasks.length === 0 ? (
+      {!showSkeleton && !error && filters.filteredTasks.length === 0 ? (
         <EmptyState
-          title={hasClientFilters ? "No matching tasks" : "No active tasks"}
+          title={
+            filters.hasClientFilters ? "No matching tasks" : "No active tasks"
+          }
           description={
-            hasClientFilters
+            filters.hasClientFilters
               ? "Try clearing filters to see active work."
               : "Tasks in progress will show up here. Done tasks are hidden from the board."
           }
-          icon={hasClientFilters ? <EmptyStateFilterGlyph /> : undefined}
-          action={!hasClientFilters ? emptyListAction : undefined}
+          icon={
+            filters.hasClientFilters ? <EmptyStateFilterGlyph /> : undefined
+          }
+          action={!filters.hasClientFilters ? emptyListAction : undefined}
           className="empty-state--task-list-fresh"
         />
       ) : null}
 
-      {!showSkeleton && !error && filteredTasks.length > 0 ? (
+      {!showSkeleton && !error && filters.filteredTasks.length > 0 ? (
         <div className="task-board-track">
           {BOARD_COLUMNS.map((column) => (
             <TaskBoardColumn
               key={column.id}
               column={column}
               tasks={groups[column.id]}
-              projectNameById={projectNameById}
+              projectNameById={filters.projectNameById}
               showProject={showProjectColumn}
+              showTags={filters.tagsUiEnabled}
             />
           ))}
         </div>
