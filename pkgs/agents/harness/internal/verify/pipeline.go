@@ -8,6 +8,7 @@ import (
 	"log/slog"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/reports"
+	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
@@ -59,6 +60,8 @@ func (s *Service) RunPipeline(
 	s.publish(cycle.TaskID, cycle.ID)
 
 	runCorrelationID := cyclesdomain.RunCorrelationIDFromDetailsJSON(phase.DetailsJSON)
+	s.emitSetupProgress(parentCtx, cycle.TaskID, cycle.ID, phase.PhaseSeq,
+		runner.SetupProgressEvent(runner.ProgressRunStateSetupStarted, "Running verify checks…"))
 
 	pre, preErr := s.captureIntegritySnapshot(parentCtx)
 	if preErr != nil {

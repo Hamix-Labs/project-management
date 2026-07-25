@@ -119,7 +119,17 @@ function CurrentPhaseBody({
           className="task-cycle-ticker-focus task-cycle-ticker-focus--idle"
           data-testid="task-cycle-ticker-phase"
         >
-          No phase started yet.
+          Preparing workspace…
+        </p>
+      );
+    }
+    if (lastPhase.phase === "execute" && lastPhase.status === "succeeded") {
+      return (
+        <p
+          className="task-cycle-ticker-focus"
+          data-testid="task-cycle-ticker-phase"
+        >
+          Starting verify…
         </p>
       );
     }
@@ -164,14 +174,14 @@ function idlePendingMessage(items: ReadonlyArray<AgentRunProgressItem>): string 
       return "No agent output for a while — run may be stuck";
     }
   }
-  return "Waiting for the next agent update…";
+  return "Agent working…";
 }
 
 function phaseEmptyMessage(phase: string): string {
   if (phase === "verify") {
     return "Running verify checks…";
   }
-  return "Waiting for the next agent update…";
+  return "Preparing execute…";
 }
 
 function PhaseProgress({

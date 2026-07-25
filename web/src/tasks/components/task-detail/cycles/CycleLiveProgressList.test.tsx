@@ -24,11 +24,11 @@ describe("CycleLiveProgressList", () => {
       <CycleLiveProgressList
         items={[]}
         now={NOW}
-        emptyMessage="Waiting for the next agent update…"
+        emptyMessage="Preparing execute…"
       />,
     );
     expect(screen.getByTestId("task-cycle-progress-empty")).toHaveTextContent(
-      /Waiting for the next agent update/,
+      /Preparing execute/,
     );
   });
 
@@ -67,7 +67,7 @@ describe("CycleLiveProgressList", () => {
       frame({ progress: { kind: "assistant", message: "Hi" } }, NOW - 2_000),
     ];
     render(<CycleLiveProgressList items={items} now={NOW} showPendingRow />);
-    const pending = screen.getByLabelText(/waiting for the next agent update/i);
+    const pending = screen.getByLabelText(/agent working/i);
     expect(pending).toBeInTheDocument();
     expect(pending).toHaveTextContent(/Working/i);
     expect(pending).toHaveTextContent("2s ago");

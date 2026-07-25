@@ -237,6 +237,8 @@ Parser rules ([`criteria_parse.go`](../../pkgs/agents/harness/criteria_parse.go)
 | `CursorModel` | Per-task `cursor_model` override when set |
 | `OnProgress` | Persists to `task_cycle_stream_events`; publishes `agent_run_progress` SSE |
 
+Before Cursor stdout, the harness also emits worker-authored `run_state` progress (`Tool: harness_setup`) for setup milestones — phase start, git snapshot, resume plan, invoke, spawn, commit ingest, and handoff to verify — so the cycles ticker is never empty while prepare/spawn work runs. PhaseVerify uses the same pattern (same execute agent) for verify open / prompt / invoke.
+
 See [`runner.Request`](../../pkgs/agents/runner/runner.go) and [architecture.md](../architecture.md) (Runner abstraction).
 
 ### Phase and cycle metadata

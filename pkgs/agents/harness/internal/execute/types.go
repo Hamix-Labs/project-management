@@ -24,12 +24,21 @@ type PhasePorts struct {
 	PlanRun               func(ctx context.Context, task *taskcoredomain.Task, cycle *cyclesdomain.TaskCycle) (RunPlan, error)
 	PlanFallback          func(ctx context.Context, task *taskcoredomain.Task, cycle *cyclesdomain.TaskCycle) RunPlan
 	Invoke                func(ctx context.Context, task *taskcoredomain.Task, cycle *cyclesdomain.TaskCycle, exec *cyclesdomain.TaskCyclePhase, plan RunPlan) (runner.Result, error)
+	EmitProgress          func(ctx context.Context, taskID, cycleID string, phase *cyclesdomain.TaskCyclePhase, ev runner.ProgressEvent)
 	ConsumeOperatorCancel func() bool
 	Publish               func(taskID, cycleID string)
 	WorkingDir            string
 	ReportDir             string
 	RepoRoot              string
 	IsFreshOrFallback     func(mode string) bool
+}
+
+//funclogmeasure:skip category=hot-path reason="Nil-safe helper; callers emit operation traces."
+func (p PhasePorts) emitProgress(ctx context.Context, taskID, cycleID string, phase *cyclesdomain.TaskCyclePhase, ev runner.ProgressEvent) {
+	if p.EmitProgress == nil || phase == nil {
+		return
+	}
+	p.EmitProgress(ctx, taskID, cycleID, phase, ev)
 }
 
 // PhaseResult is the I/O outcome of one execute phase before Decide/Apply.

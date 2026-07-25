@@ -32,6 +32,8 @@ func (s *Service) runLLMVerify(
 ) (cyclesdomain.TokenUsage, bool, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.verify.runLLMVerify",
 		"task_id", task.ID, "cycle_id", cycle.ID, "locked_passes", len(previouslyPassed))
+	s.emitSetupProgress(ctx, task.ID, cycle.ID, phaseSeq,
+		runner.SetupProgressEvent(runner.ProgressRunStateSetupPrompt, "Preparing verify…"))
 	promptText := buildVerifyPrompt(ctx, s, task.ID, snap, cycle.ID, previouslyPassed, selfReport, feedback, cmdEvidence)
 	resumeSessionID := ""
 	if s.hooks.PlanVerifyRun != nil {
@@ -59,6 +61,8 @@ func (s *Service) runLLMVerify(
 		usagePresent = true
 	}
 	if errors.Is(err, runner.ErrResumeSession) {
+		s.emitSetupProgress(ctx, task.ID, cycle.ID, phaseSeq,
+			runner.SetupProgressEvent(runner.ProgressRunStateRestartResume, "Restarting agent after failed resume…"))
 		full := buildVerifyPrompt(ctx, s, task.ID, snap, cycle.ID, previouslyPassed, selfReport, feedback, cmdEvidence)
 		res, retryErr := s.runVerifyCursor(ctx, task, cycle, phaseSeq, runCorrelationID, snap, full, "")
 		if u, ok := cyclesdomain.TokenUsageFromDetailsJSON(res.Details); ok {
@@ -166,6 +170,11 @@ func (s *Service) runVerifyCursor(
 			onProgress(ev)
 		}
 	}
+	invokeMsg := "Starting Cursor CLI…"
+	if strings.TrimSpace(resumeSessionID) != "" {
+		invokeMsg = "Resuming Cursor session…"
+	}
+	onProgress(runner.SetupProgressEvent(runner.ProgressRunStateSetupInvoke, invokeMsg))
 	return snap.VerifyRunner.Run(runCtx, runner.Request{
 		TaskID:           task.ID,
 		AttemptSeq:       cycle.AttemptSeq,

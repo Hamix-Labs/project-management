@@ -41,6 +41,14 @@ func (h *Harness) executePhasePorts(state *processState, opts cycleLoopOpts) exe
 		Invoke: func(ctx context.Context, task *taskcoredomain.Task, cycle *cyclesdomain.TaskCycle, exec *cyclesdomain.TaskCyclePhase, plan execute.RunPlan) (runner.Result, error) {
 			return h.invokeRunnerWithTask(ctx, task, cycle, exec, decisionFromExecuteRunPlan(plan))
 		},
+		EmitProgress: func(ctx context.Context, taskID, cycleID string, phase *cyclesdomain.TaskCyclePhase, ev runner.ProgressEvent) {
+			if phase == nil {
+				return
+			}
+			corr := cyclesdomain.RunCorrelationIDFromDetailsJSON(phase.DetailsJSON)
+			h.persistProgress(ctx, taskID, cycleID, phase.PhaseSeq, ev)
+			h.publishProgress(taskID, cycleID, phase.PhaseSeq, corr, ev)
+		},
 		ConsumeOperatorCancel: h.consumeOperatorCancel,
 		Publish:               h.publish,
 		WorkingDir:            h.opts.WorkingDir,

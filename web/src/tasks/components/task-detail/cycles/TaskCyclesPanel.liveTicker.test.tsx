@@ -235,10 +235,8 @@ describe("TaskCyclesPanel live ticker", () => {
 
     const phaseLine = await screen.findByTestId("task-cycle-ticker-phase");
     await waitFor(() => {
-      expect(phaseLine).toHaveTextContent(/Between phases/);
+      expect(phaseLine).toHaveTextContent(/Starting verify/);
     });
-    expect(phaseLine).toHaveTextContent(/Execute/);
-    expect(phaseLine).toHaveTextContent(/succeeded/);
   });
 
   it("renders bounded live progress under the running phase", async () => {
@@ -291,7 +289,7 @@ describe("TaskCyclesPanel live ticker", () => {
 
     const ticker = await screen.findByTestId("task-cycle-ticker");
     expect(await within(ticker).findByTestId("task-cycle-progress-empty")).toHaveTextContent(
-      /Waiting for the next agent update/,
+      /Preparing execute/,
     );
 
     act(() => {

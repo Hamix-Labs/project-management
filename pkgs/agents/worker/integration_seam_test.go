@@ -75,15 +75,28 @@ func TestIntegration_ReadyWorkerCycleEventsStream(t *testing.T) {
 		}
 	}
 
-	stream, err := h.store.ListCycleStreamEvents(bg, cycle.ID, 0, 10)
+	stream, err := h.store.ListCycleStreamEvents(bg, cycle.ID, 0, 50)
 	if err != nil {
 		t.Fatalf("list stream: %v", err)
 	}
-	if len(stream) != 1 {
-		t.Fatalf("stream events = %d, want 1 (%+v)", len(stream), stream)
+	if len(stream) < 2 {
+		t.Fatalf("stream events = %d, want at least setup + tool_call (%+v)", len(stream), stream)
 	}
-	if stream[0].Kind != "tool_call" || stream[0].Tool != "ReadFile" {
-		t.Fatalf("stream[0] = %+v, want tool_call/ReadFile", stream[0])
+	foundSetup := false
+	foundTool := false
+	for _, ev := range stream {
+		if ev.Kind == runner.ProgressRunStateKind && ev.Tool == runner.ProgressToolHarnessSetup {
+			foundSetup = true
+		}
+		if ev.Kind == "tool_call" && ev.Tool == "ReadFile" {
+			foundTool = true
+		}
+	}
+	if !foundSetup {
+		t.Fatalf("missing harness setup stream event among %+v", stream)
+	}
+	if !foundTool {
+		t.Fatalf("missing tool_call/ReadFile among %+v", stream)
 	}
 
 	if calls := r.Calls(); len(calls) != 1 || calls[0].AttemptSeq != 1 {
