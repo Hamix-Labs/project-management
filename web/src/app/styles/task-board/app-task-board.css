@@ -1,5 +1,25 @@
 /* Task board (Kanban) — read-only workflow columns on Task Home. */
 
+/* Board body uses the same stagger language as the list when landing cold
+   (direct `?view=board` or first paint), not only after a toggle. */
+.task-board-section > .task-board-track,
+.task-board-section > .task-board-truncation,
+.task-board-section > .task-board-error,
+.task-board-section > .empty-state {
+  animation: task-list-section-enter var(--duration-ui-phase) var(--ease-ui)
+    both;
+  animation-delay: 60ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .task-board-section > .task-board-track,
+  .task-board-section > .task-board-truncation,
+  .task-board-section > .task-board-error,
+  .task-board-section > .empty-state {
+    animation: none;
+  }
+}
+
 /* —— View toggle (segmented) —— */
 
 .task-home-view-toggle {

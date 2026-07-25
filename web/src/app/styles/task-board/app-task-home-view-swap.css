@@ -1,0 +1,84 @@
+/* Task Home list ↔ board view swap transitions. */
+
+/* Prefer the View Transitions API (crossfade old ↔ new). CSS `--enter` is the
+   fallback when VT is unavailable. First paint stays on the parent
+   `.task-detail-content--enter`; `--enter` is applied only after a toggle.
+   Nested section stagger is suppressed so opacity doesn’t compound. */
+
+.task-home-view-swap {
+  view-transition-name: task-home-view;
+}
+
+.task-home-view-swap--enter {
+  animation: task-home-view-swap-enter var(--duration-ui-phase) var(--ease-ui)
+    both;
+}
+
+.task-home-view-swap--enter .task-list-section-panel > .task-list-toolbar,
+.task-home-view-swap--enter .task-list-section-panel > .task-list-content,
+.task-home-view-swap--enter .task-list-section-panel > .sync-hint,
+.task-home-view-swap--enter .task-list-section-panel > .task-list-bulk-bar,
+.task-home-view-swap--enter .task-board-section > .task-board-track,
+.task-home-view-swap--enter .task-board-section > .task-board-truncation,
+.task-home-view-swap--enter .task-board-section > .task-board-error,
+.task-home-view-swap--enter .task-board-section > .empty-state {
+  animation: none;
+}
+
+@keyframes task-home-view-swap-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Scope VT to the pane — don’t morph the whole app shell. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+
+::view-transition-group(task-home-view) {
+  animation-duration: var(--duration-ui-phase);
+  animation-timing-function: var(--ease-ui);
+}
+
+::view-transition-old(task-home-view) {
+  animation: task-home-vt-fade-out var(--duration-ui-phase) var(--ease-ui) both;
+}
+
+::view-transition-new(task-home-view) {
+  animation: task-home-vt-fade-in var(--duration-ui-phase) var(--ease-ui) both;
+}
+
+@keyframes task-home-vt-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes task-home-vt-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .task-home-view-swap {
+    view-transition-name: none;
+  }
+
+  .task-home-view-swap--enter {
+    animation: none;
+  }
+
+  ::view-transition-old(task-home-view),
+  ::view-transition-new(task-home-view) {
+    animation: none;
+  }
+}

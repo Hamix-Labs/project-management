@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useDocumentTitle } from "@/shared/useDocumentTitle";
 import { Button } from "@/components/ui";
+import { runViewTransition } from "@/lib/runViewTransition";
 import { TaskListSection } from "../components/task-list";
 import { TaskBoardSection } from "../components/task-board/TaskBoardSection";
 import { TaskHomeViewToggle } from "../components/task-board/TaskHomeViewToggle";
@@ -21,6 +22,8 @@ export function TaskHome() {
   const modals = useTasksAppModals();
   const [searchParams, setSearchParams] = useSearchParams();
   const view = parseTaskHomeView(searchParams.get("view"));
+  /** CSS enter fallback when View Transitions API is unavailable. */
+  const [viewSwapEnter, setViewSwapEnter] = useState(false);
   const projectsUiEnabled = !isUiFeatureOmitted("projects");
   const projects = useProjects({
     includeArchived: false,
@@ -48,7 +51,14 @@ export function TaskHome() {
 
   const onViewChange = useCallback(
     (next: TaskHomeView) => {
-      setSearchParams(applyTaskHomeView(searchParams, next), { replace: true });
+      const apply = () => {
+        setSearchParams(applyTaskHomeView(searchParams, next), {
+          replace: true,
+        });
+      };
+      if (runViewTransition(apply)) return;
+      setViewSwapEnter(true);
+      apply();
     },
     [searchParams, setSearchParams],
   );
@@ -176,26 +186,35 @@ export function TaskHome() {
 
   return (
     <div className="task-detail-content--enter">
-      {view === "board" ? (
-        <TaskBoardSection
-          tasks={board.tasks}
-          loading={board.loading}
-          refreshing={board.refreshing}
-          hideBackgroundRefreshHint={list.sseLive}
-          error={board.error}
-          truncated={board.truncated}
-          onRetry={() => void board.refetch()}
-          projectFilterOptions={projectFilterOptions}
-          showProjectColumn={projectsUiEnabled}
-          actions={listActions}
-          emptyListAction={emptyAction}
-        />
-      ) : (
-        <TaskListSection
-          {...listSectionProps}
-          actions={listActions}
-        />
-      )}
+      <div
+        key={view}
+        className={
+          viewSwapEnter
+            ? "task-home-view-swap task-home-view-swap--enter"
+            : "task-home-view-swap"
+        }
+      >
+        {view === "board" ? (
+          <TaskBoardSection
+            tasks={board.tasks}
+            loading={board.loading}
+            refreshing={board.refreshing}
+            hideBackgroundRefreshHint={list.sseLive}
+            error={board.error}
+            truncated={board.truncated}
+            onRetry={() => void board.refetch()}
+            projectFilterOptions={projectFilterOptions}
+            showProjectColumn={projectsUiEnabled}
+            actions={listActions}
+            emptyListAction={emptyAction}
+          />
+        ) : (
+          <TaskListSection
+            {...listSectionProps}
+            actions={listActions}
+          />
+        )}
+      </div>
     </div>
   );
 }
