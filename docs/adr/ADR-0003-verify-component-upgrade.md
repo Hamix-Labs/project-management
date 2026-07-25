@@ -3,7 +3,7 @@
 > **Note** - Product renamed T2A to Hamix; identifiers below reflect the name at decision time unless updated inline.
 
 **Date:** 2026-06-05
-**Status:** Accepted
+**Status:** Partially superseded — adversarial `VerifyRunner` / `verify_runner_name` replaced by [ADR-0084](./ADR-0084-executor-owned-verify.md) (executor-owned verify). Integrity checks, locked passes, and verdict observability from this ADR remain in force.
 **Deciders:** Backend / agents-worker maintainers
 
 ## Context
