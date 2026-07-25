@@ -104,8 +104,8 @@ func TestHTTP_taskActivity_typeFilter(t *testing.T) {
 		t.Fatalf("decode: %v", err)
 	}
 	allowed := map[string]bool{
-		"status_changed":  true,
-		"phase_failed":    true,
+		"status_changed":   true,
+		"phase_failed":     true,
 		"approval_granted": true,
 	}
 	for i, ev := range resp.Events {
