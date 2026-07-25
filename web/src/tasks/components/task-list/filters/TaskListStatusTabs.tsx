@@ -1,38 +1,32 @@
 import type { TaskStatsResponse } from "@/types";
 import {
-  taskListStatusTabCount,
+  taskListLifecycleTabCount,
   taskListStatusTabs,
   type TaskListStatusTab,
 } from "./taskListStatusTabConfig";
-import type { TaskListClientStatusFilter } from "./taskListClientFilter";
+import type { TaskListLifecycleFilter } from "./taskListClientFilter";
 
 type Props = {
-  value: TaskListClientStatusFilter;
-  onChange: (value: TaskListClientStatusFilter) => void;
+  value: TaskListLifecycleFilter;
+  onChange: (value: TaskListLifecycleFilter) => void;
   stats: TaskStatsResponse | null | undefined;
 };
 
 export function TaskListStatusTabs({ value, onChange, stats }: Props) {
-  const tabs = taskListStatusTabs().filter((tab) => {
-    if (tab.value === "all") return true;
-    if (tab.value === value) return true;
-    const count = taskListStatusTabCount(tab.value, stats);
-    if (count === null) return true;
-    return count > 0;
-  });
+  const tabs = taskListStatusTabs();
 
   return (
     <div
       className="task-list-status-tabs"
       role="tablist"
-      aria-label="Filter tasks by status"
+      aria-label="Filter tasks by open or closed"
     >
       {tabs.map((tab) => (
         <StatusTabButton
           key={tab.value}
           tab={tab}
           selected={value === tab.value}
-          count={taskListStatusTabCount(tab.value, stats)}
+          count={taskListLifecycleTabCount(tab.value, stats)}
           onSelect={() => onChange(tab.value)}
         />
       ))}

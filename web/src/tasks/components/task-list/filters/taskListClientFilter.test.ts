@@ -40,31 +40,47 @@ describe("filterTasksForListView", () => {
       status: "ready",
       priority: "high",
     }),
+    row({
+      id: "4",
+      title: "Delta closed",
+      status: "closed",
+      priority: "medium",
+    }),
   ];
 
-  it("returns all tasks when filters are all and search empty", () => {
-    expect(filterTasksForListView(tasks, "all", "all", "")).toEqual(tasks);
+  it("open lifecycle excludes closed and keeps other statuses", () => {
+    expect(filterTasksForListView(tasks, "open", "all", "all", "")).toEqual([
+      tasks[0],
+      tasks[1],
+      tasks[2],
+    ]);
   });
 
-  it("filters by status", () => {
-    expect(filterTasksForListView(tasks, "ready", "all", "")).toEqual([
+  it("closed lifecycle keeps only closed tasks", () => {
+    expect(filterTasksForListView(tasks, "closed", "all", "all", "")).toEqual([
+      tasks[3],
+    ]);
+  });
+
+  it("filters by status within open", () => {
+    expect(filterTasksForListView(tasks, "open", "ready", "all", "")).toEqual([
       tasks[0],
       tasks[2],
     ]);
   });
 
-  it("filters by priority", () => {
-    expect(filterTasksForListView(tasks, "all", "high", "")).toEqual([
+  it("filters by priority within open", () => {
+    expect(filterTasksForListView(tasks, "open", "all", "high", "")).toEqual([
       tasks[1],
       tasks[2],
     ]);
   });
 
   it("filters by title substring case-insensitively with trim", () => {
-    expect(filterTasksForListView(tasks, "all", "all", "  alpha  ")).toEqual([
-      tasks[0],
-    ]);
-    expect(filterTasksForListView(tasks, "all", "all", "ready")).toEqual([
+    expect(
+      filterTasksForListView(tasks, "open", "all", "all", "  alpha  "),
+    ).toEqual([tasks[0]]);
+    expect(filterTasksForListView(tasks, "open", "all", "all", "ready")).toEqual([
       tasks[0],
       tasks[2],
     ]);
@@ -72,8 +88,14 @@ describe("filterTasksForListView", () => {
 
   it("applies status, priority, and title together", () => {
     expect(
-      filterTasksForListView(tasks, "ready", "high", "gamma"),
+      filterTasksForListView(tasks, "open", "ready", "high", "gamma"),
     ).toEqual([tasks[2]]);
+  });
+
+  it("ignores fine status filter on the closed tab", () => {
+    expect(
+      filterTasksForListView(tasks, "closed", "ready", "all", ""),
+    ).toEqual([tasks[3]]);
   });
 
   describe("uniqueSortedTagsFromTasks / filterTasksByTag", () => {
@@ -145,6 +167,7 @@ describe("filterTasksForListView", () => {
       expect(
         filterTasksForListView(
           [inOneHour, inThePast, noSchedule, inFlight, malformed],
+          "open",
           "scheduled",
           "all",
           "",
@@ -161,7 +184,14 @@ describe("filterTasksForListView", () => {
         pickup_not_before: new Date(NOW).toISOString(),
       });
       expect(
-        filterTasksForListView([exactlyNow], "scheduled", "all", "", NOW),
+        filterTasksForListView(
+          [exactlyNow],
+          "open",
+          "scheduled",
+          "all",
+          "",
+          NOW,
+        ),
       ).toEqual([]);
     });
 
@@ -183,6 +213,7 @@ describe("filterTasksForListView", () => {
       expect(
         filterTasksForListView(
           [matching, nonMatching],
+          "open",
           "scheduled",
           "high",
           "friday",

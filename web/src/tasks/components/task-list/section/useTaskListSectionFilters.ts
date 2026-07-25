@@ -12,6 +12,7 @@ import {
   uniqueSortedTagsFromTasks,
   type TaskListClientPriorityFilter,
   type TaskListClientStatusFilter,
+  type TaskListLifecycleFilter,
 } from "../filters/taskListClientFilter";
 import {
   sortTasksForListView,
@@ -46,6 +47,8 @@ export function useTaskListSectionFilters({
     return m;
   }, [projectFilterOptions]);
 
+  const [lifecycleFilter, setLifecycleFilter] =
+    useState<TaskListLifecycleFilter>("open");
   const [statusFilter, setStatusFilter] =
     useState<TaskListClientStatusFilter>("all");
   const [priorityFilter, setPriorityFilter] =
@@ -66,6 +69,7 @@ export function useTaskListSectionFilters({
   const filteredTasks = useMemo(() => {
     const base = filterTasksForListView(
       tasks,
+      lifecycleFilter,
       statusFilter,
       priorityFilter,
       titleSearch,
@@ -83,6 +87,7 @@ export function useTaskListSectionFilters({
     return sortTasksForListView(tagged, sortKey, sortDir, projectNameById);
   }, [
     tasks,
+    lifecycleFilter,
     statusFilter,
     priorityFilter,
     titleSearch,
@@ -103,6 +108,16 @@ export function useTaskListSectionFilters({
     setSortDir(key === "created_at" ? "desc" : "asc");
   }, [sortKey]);
 
+  const handleLifecycleChange = useCallback(
+    (next: TaskListLifecycleFilter) => {
+      setLifecycleFilter(next);
+      if (next === "closed") {
+        setStatusFilter("all");
+      }
+    },
+    [],
+  );
+
   const visibleIds = useMemo(
     () => filteredTasks.map((t) => t.id),
     [filteredTasks],
@@ -110,6 +125,8 @@ export function useTaskListSectionFilters({
 
   return {
     projectNameById,
+    lifecycleFilter,
+    setLifecycleFilter: handleLifecycleChange,
     statusFilter,
     setStatusFilter,
     priorityFilter,

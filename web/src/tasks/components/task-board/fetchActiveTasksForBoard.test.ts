@@ -23,13 +23,14 @@ describe("fetchActiveTasksForBoard", () => {
     expect(listTasks).toHaveBeenCalledTimes(1);
   });
 
-  it("walks pages and keeps only non-done tasks", async () => {
+  it("walks pages and keeps only non-done, non-closed tasks", async () => {
     const listTasks = vi
       .fn()
       .mockResolvedValueOnce(
         page(
           [
             makeTask({ id: "d1", status: "done" }),
+            makeTask({ id: "c1", status: "closed" }),
             makeTask({ id: "a1", status: "ready" }),
           ],
           true,
@@ -47,7 +48,7 @@ describe("fetchActiveTasksForBoard", () => {
 
     const out = await fetchActiveTasksForBoard({
       listTasks,
-      pageSize: 2,
+      pageSize: 3,
     });
     expect(out.tasks.map((t) => t.id)).toEqual(["a1", "a2"]);
     expect(out.has_more).toBe(false);

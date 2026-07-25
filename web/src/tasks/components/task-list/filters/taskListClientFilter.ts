@@ -2,16 +2,20 @@ import type { Priority, Status } from "@/types";
 import type { TaskWithDepth } from "../../../task-tree";
 
 /**
- * The status filter accepts every real `Status`, plus "all" and a
- * synthetic "scheduled" bucket. The synthetic bucket is *not* a row
- * status — it's a virtual cross-section over `(status === "ready" &&
- * pickup_not_before > now)`, surfaced as a dedicated filter so an
- * operator can answer "show me everything queued for the future"
- * without scrolling the whole ready list. Per the locked decision
- * `scope=agent_only`, scheduled tasks are NEVER hidden from the
- * default list — this is a UX affordance only, never a data filter.
+ * GitHub-style lifecycle tabs on the task list. `open` is every status
+ * except `closed`; `closed` is only the operator-exit status.
  */
-export type TaskListClientStatusFilter = "all" | "scheduled" | Status;
+export type TaskListLifecycleFilter = "open" | "closed";
+
+/**
+ * Fine-grained status filter in the toolbar dropdown. `closed` is not
+ * listed here — the Open/Closed tabs own that axis.
+ */
+export type TaskListClientStatusFilter =
+  | "all"
+  | "scheduled"
+  | Exclude<Status, "closed">;
+
 export type TaskListClientPriorityFilter = "all" | Priority;
 
 /** Max tag chips shown under a list-row title before +N overflow. */
@@ -39,9 +43,14 @@ export function filterTasksByTag<T extends { tags?: string[] }>(
   return tasks.filter((t) => (t.tags ?? []).includes(tagFilter));
 }
 
-/** Client-side filters for the task list (status, priority, title substring). */
+/**
+ * Client-side filters for the task list (lifecycle, status, priority,
+ * title substring). Open never includes `closed`; Closed is only
+ * `status === "closed"` (status dropdown is ignored on that tab).
+ */
 export function filterTasksForListView(
   tasks: TaskWithDepth[],
+  lifecycleFilter: TaskListLifecycleFilter,
   statusFilter: TaskListClientStatusFilter,
   priorityFilter: TaskListClientPriorityFilter,
   titleSearch: string,
@@ -56,7 +65,11 @@ export function filterTasksForListView(
   const q = titleSearch.trim().toLowerCase();
   const now = nowMs ?? Date.now();
   return tasks.filter((t) => {
-    if (statusFilter === "scheduled") {
+    if (lifecycleFilter === "closed") {
+      if (t.status !== "closed") return false;
+    } else if (t.status === "closed") {
+      return false;
+    } else if (statusFilter === "scheduled") {
       if (t.status !== "ready") return false;
       if (!t.pickup_not_before) return false;
       const ts = Date.parse(t.pickup_not_before);

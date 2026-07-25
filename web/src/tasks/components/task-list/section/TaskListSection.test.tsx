@@ -67,7 +67,7 @@ describe("TaskListSection", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole("table", {
-        name: /all tasks: title with context line, status, priority, created time, project, and row actions/i,
+        name: /all tasks: title, status, priority, created time, project, and row actions/i,
       }),
     ).toBeInTheDocument();
   });
@@ -206,7 +206,7 @@ describe("TaskListSection", () => {
     expect(onRequestClose).toHaveBeenCalledWith(task);
   });
 
-  it("filters rows by status and priority", async () => {
+  it("filters rows by status dropdown and priority", async () => {
     const user = userEvent.setup();
     const tasks = [
       {
@@ -227,6 +227,15 @@ describe("TaskListSection", () => {
         ...TASK_TEST_DEFAULTS,
         depth: 0,
       },
+      {
+        id: "3",
+        title: "Closed task",
+        initial_prompt: "",
+        status: "closed" as const,
+        priority: "medium" as const,
+        ...TASK_TEST_DEFAULTS,
+        depth: 0,
+      },
     ];
     renderWithRouter(
       <TaskListSection
@@ -235,15 +244,17 @@ describe("TaskListSection", () => {
         refreshing={false}
         saving={false}
         {...listPagerDefaults}
-        rootTasksOnPage={2}
+        rootTasksOnPage={3}
         onEdit={vi.fn()}
         onRequestClose={vi.fn()}
       />,
     );
     expect(screen.getByText("Low ready")).toBeInTheDocument();
     expect(screen.getByText("High done")).toBeInTheDocument();
+    expect(screen.queryByText("Closed task")).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("tab", { name: /^ready$/i }));
+    await user.click(screen.getByRole("combobox", { name: /^status$/i }));
+    await user.click(screen.getByRole("option", { name: /^ready$/i }));
     expect(screen.getByText("Low ready")).toBeInTheDocument();
     await waitFor(
       () => {
@@ -252,7 +263,8 @@ describe("TaskListSection", () => {
       { timeout: 500 },
     );
 
-    await user.click(screen.getByRole("tab", { name: /^all$/i }));
+    await user.click(screen.getByRole("combobox", { name: /^status$/i }));
+    await user.click(screen.getByRole("option", { name: /^all statuses$/i }));
     await user.click(screen.getByRole("combobox", { name: /^priority$/i }));
     await user.click(screen.getByRole("option", { name: /^high$/i }));
     await waitFor(
@@ -262,9 +274,22 @@ describe("TaskListSection", () => {
       { timeout: 500 },
     );
     expect(screen.getByText("High done")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("combobox", { name: /^priority$/i }));
+    await user.click(screen.getByRole("option", { name: /^all priorities$/i }));
+
+    await user.click(screen.getByRole("tab", { name: /^closed$/i }));
+    await waitFor(
+      () => {
+        expect(screen.getByText("Closed task")).toBeInTheDocument();
+        expect(screen.queryByText("Low ready")).not.toBeInTheDocument();
+      },
+      { timeout: 500 },
+    );
+    expect(screen.queryByRole("combobox", { name: /^status$/i })).not.toBeInTheDocument();
   });
 
-  it("renders status tabs for filtering", () => {
+  it("renders Open and Closed lifecycle tabs", () => {
     renderWithRouter(
       <TaskListSection
         tasks={[]}
@@ -277,10 +302,12 @@ describe("TaskListSection", () => {
         onRequestClose={vi.fn()}
       />,
     );
-    expect(screen.getByRole("tablist", { name: /filter tasks by status/i })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: /^all$/i })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: /^ready$/i })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: /^in progress$/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("tablist", { name: /filter tasks by open or closed/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /^open$/i })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /^closed$/i })).toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: /^ready$/i })).not.toBeInTheDocument();
   });
 
   it("filters rows by title search", async () => {
@@ -400,7 +427,8 @@ describe("TaskListSection", () => {
         onRequestClose={vi.fn()}
       />,
     );
-    await user.click(screen.getByRole("tab", { name: /^failed$/i }));
+    await user.click(screen.getByRole("combobox", { name: /^status$/i }));
+    await user.click(screen.getByRole("option", { name: /^failed$/i }));
     await waitFor(
       () => {
         expect(screen.getByText(/no matching tasks/i)).toBeInTheDocument();

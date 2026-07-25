@@ -26,17 +26,24 @@ export function TaskListToolbar({
   projectFilterOptions,
   filters,
 }: Props) {
+  const showStatusFilter = filters.lifecycleFilter === "open";
+
   return (
     <div className="task-list-toolbar">
       <TaskListSectionHeading actions={actions} summary={headingSummary} />
       {!loading ? (
         <>
           <TaskListStatusTabs
-            value={filters.statusFilter}
-            onChange={filters.setStatusFilter}
+            value={filters.lifecycleFilter}
+            onChange={filters.setLifecycleFilter}
             stats={taskStats}
           />
           <TaskListFilters
+            showStatusFilter={showStatusFilter}
+            statusFilter={filters.statusFilter}
+            onStatusFilterChange={(v) =>
+              filters.setStatusFilter(v as typeof filters.statusFilter)
+            }
             priorityFilter={filters.priorityFilter}
             onPriorityFilterChange={(v) =>
               filters.setPriorityFilter(v as typeof filters.priorityFilter)

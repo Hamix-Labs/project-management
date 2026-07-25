@@ -9,8 +9,6 @@ import {
 } from "../../../task-display";
 import { TASK_LIST_TAG_CHIP_LIMIT } from "../filters/taskListClientFilter";
 import { TaskListDeleteGlyph, TaskListEditGlyph } from "./TaskListRowActionIcons";
-import { taskListRowSubtitle } from "./taskListRowSubtitle";
-import { previewTextFromPrompt } from "@/lib/promptFormat";
 import { formatInAppTimezone, useAppTimezone } from "@/shared/time/appTimezone";
 import { formatRelativeTime } from "@/shared/time/relativeTime";
 import { useNow } from "@/shared/useNow";
@@ -68,12 +66,10 @@ export function TaskListDataTableRow({
   prefetchTaskDetail,
   navigate,
 }: TaskListDataTableRowProps) {
-  const promptPreview = previewTextFromPrompt(t.initial_prompt);
   const projectLabel =
     showProjectColumn && t.project_id != null && t.project_id !== ""
       ? projectNameById[t.project_id]
       : undefined;
-  const titleSubtitle = taskListRowSubtitle({ promptPreview });
   const tagsUiEnabled = !isUiFeatureOmitted("taskTags");
   const rowTags = tagsUiEnabled ? (t.tags ?? []).filter(Boolean) : [];
   const rowSelected = !isExiting && selection ? selection.isSelected(t.id) : false;
@@ -144,7 +140,6 @@ export function TaskListDataTableRow({
                 →
               </span>
             </span>
-            {titleSubtitle ? <div className="cell-title-sub">{titleSubtitle}</div> : null}
             {rowTags.length > 0 ? <TaskListRowTagChips tags={rowTags} /> : null}
           </div>
         </Link>

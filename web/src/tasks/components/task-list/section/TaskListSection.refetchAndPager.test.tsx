@@ -67,7 +67,7 @@ describe("TaskListSection refetch and pager", () => {
     );
 
     const table = screen.getByRole("table", {
-      name: /all tasks: title with context line/i,
+      name: /all tasks: title,/i,
     });
     const titles = within(table)
       .getAllByRole("row")

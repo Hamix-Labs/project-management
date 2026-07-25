@@ -1,8 +1,16 @@
 import { CustomSelect } from "@/components/custom-select";
-import { TASK_LIST_PRIORITY_FILTER_OPTIONS } from "./taskListFilterSelectOptions";
+import { isUiFeatureOmitted } from "@/launch/omittedFeatures";
+import {
+  TASK_LIST_PRIORITY_FILTER_OPTIONS,
+  taskListStatusFilterOptions,
+} from "./taskListFilterSelectOptions";
 import type { RefObject } from "react";
 
 type Props = {
+  /** When false, hides the status dropdown (Closed tab owns that axis). */
+  showStatusFilter?: boolean;
+  statusFilter?: string;
+  onStatusFilterChange?: (value: string) => void;
   priorityFilter: string;
   onPriorityFilterChange: (value: string) => void;
   projectFilter?: string;
@@ -18,6 +26,9 @@ type Props = {
 };
 
 export function TaskListFilters({
+  showStatusFilter = true,
+  statusFilter = "all",
+  onStatusFilterChange,
   priorityFilter,
   onPriorityFilterChange,
   projectFilter = "all",
@@ -47,6 +58,11 @@ export function TaskListFilters({
     })),
   ];
 
+  const scheduleUiEnabled = !isUiFeatureOmitted("schedule");
+  const statusOptions = taskListStatusFilterOptions({
+    includeScheduled: scheduleUiEnabled,
+  });
+
   return (
     <div
       className="task-list-filters task-list-filters--redesign"
@@ -54,6 +70,21 @@ export function TaskListFilters({
       aria-label="Filter tasks"
     >
       <div className="task-list-filters__controls">
+        {showStatusFilter && onStatusFilterChange ? (
+          <div className="task-list-filter-field">
+            <CustomSelect
+              id="task-list-filter-status"
+              label="Status"
+              compact
+              dropdownVariant="toolbar"
+              dropdownMinWidth={220}
+              listboxName="Filter by status"
+              value={statusFilter}
+              options={statusOptions}
+              onChange={onStatusFilterChange}
+            />
+          </div>
+        ) : null}
         <div className="task-list-filter-field">
           <CustomSelect
             id="task-list-filter-priority"
