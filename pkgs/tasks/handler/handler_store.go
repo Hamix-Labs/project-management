@@ -8,4 +8,4 @@ type HandlerAPI = wire.HandlerAPI
 
 // HandlerStore is a deprecated alias of HandlerAPI (B-40 / F-COMPLEX-9).
 // Prefer HandlerAPI in new code.
-type HandlerStore = HandlerAPI
+type HandlerStore = wire.HandlerAPI
