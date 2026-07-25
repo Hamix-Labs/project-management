@@ -31,13 +31,13 @@ func (h *cycleVerifyHookRunner) Run(ctx context.Context, req runner.Request) (ru
 	return h.Runner.Run(ctx, req)
 }
 
-type infraFailVerifyRunner struct {
+type infraFailRunner struct {
 	runner.Runner
 	inner   *runnerfake.Runner
 	attempt atomic.Int32
 }
 
-func (r *infraFailVerifyRunner) Run(ctx context.Context, req runner.Request) (runner.Result, error) {
+func (r *infraFailRunner) Run(ctx context.Context, req runner.Request) (runner.Result, error) {
 	if req.Phase == cyclesdomain.PhaseVerify {
 		n := r.attempt.Add(1)
 		if n == 1 {
@@ -140,7 +140,7 @@ func TestEdgeCase_EC01_verifyInfra_skipsExecute(t *testing.T) {
 	workDir := t.TempDir()
 	reportDir := t.TempDir()
 	execBase := runnerfake.New()
-	execRunner := &infraFailVerifyRunner{Runner: execBase, inner: execBase}
+	execRunner := &infraFailRunner{Runner: execBase, inner: execBase}
 	execHook := &cycleVerifyHookRunner{Runner: execRunner, preRun: func(req runner.Request) {
 		cycles, _ := st.ListCyclesForTask(context.Background(), req.TaskID, 1)
 		if len(cycles) == 0 {
@@ -378,7 +378,7 @@ func TestEdgeCase_EC09_partialPass_infraVerifyOnly(t *testing.T) {
 	workDir := t.TempDir()
 	reportDir := t.TempDir()
 	execBase := runnerfake.New()
-	execRunner := &infraFailVerifyRunner{Runner: execBase, inner: execBase}
+	execRunner := &infraFailRunner{Runner: execBase, inner: execBase}
 	execHook := &cycleVerifyHookRunner{Runner: execRunner, preRun: func(req runner.Request) {
 		cycles, _ := st.ListCyclesForTask(context.Background(), req.TaskID, 1)
 		if len(cycles) == 0 {

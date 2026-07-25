@@ -1,9 +1,7 @@
 package verify
 
-import "github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 import (
 	"context"
-	"log/slog"
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/contract"
@@ -14,50 +12,43 @@ import (
 
 // Service runs the verify pipeline stages against explicit dependencies.
 type Service struct {
-	store        contract.Store
-	runner       runner.Runner
-	verifyRunner runner.Runner
-	reportDir    string
-	workingDir   string
-	git          *git.Service
-	clock        func() time.Time
-	hooks        Hooks
+	store      contract.Store
+	runner     runner.Runner
+	reportDir  string
+	workingDir string
+	git        *git.Service
+	clock      func() time.Time
+	hooks      Hooks
 }
 
 // Deps bundles Service construction inputs from harness root.
 type Deps struct {
-	Store        contract.Store
-	Runner       runner.Runner
-	VerifyRunner runner.Runner
-	ReportDir    string
-	WorkingDir   string
-	Git          *git.Service
-	Clock        func() time.Time
-	Hooks        Hooks
+	Store      contract.Store
+	Runner     runner.Runner
+	ReportDir  string
+	WorkingDir string
+	Git        *git.Service
+	Clock      func() time.Time
+	Hooks      Hooks
 }
 
 // NewService constructs a verify Service. PhaseVerify always uses the execute
-// Runner (ADR-0084); Deps.VerifyRunner is ignored when non-nil.
+// runner (ADR-0084).
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func NewService(deps Deps) *Service {
-	if deps.VerifyRunner != nil {
-		slog.Warn("agent harness ignoring VerifyRunner; PhaseVerify uses execute runner",
-			"cmd", calltrace.LogCmd, "operation", "agent.harness.verify.NewService.ignore_verify_runner")
-	}
 	clock := deps.Clock
 	if clock == nil {
 		clock = func() time.Time { return time.Now().UTC() }
 	}
 	return &Service{
-		store:        deps.Store,
-		runner:       deps.Runner,
-		verifyRunner: deps.Runner,
-		reportDir:    deps.ReportDir,
-		workingDir:   deps.WorkingDir,
-		git:          deps.Git,
-		clock:        clock,
-		hooks:        deps.Hooks,
+		store:      deps.Store,
+		runner:     deps.Runner,
+		reportDir:  deps.ReportDir,
+		workingDir: deps.WorkingDir,
+		git:        deps.Git,
+		clock:      clock,
+		hooks:      deps.Hooks,
 	}
 }
 
@@ -71,21 +62,7 @@ func (s *Service) SetWorkingDir(dir string) {
 	s.workingDir = dir
 }
 
-// SetVerifyRunner is a no-op retained for harness wiring until Options.VerifyRunner
-// is removed (ADR-0084: verify always uses the execute runner).
-//
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func (s *Service) SetVerifyRunner(r runner.Runner) {
-	if r != nil {
-		slog.Warn("agent harness ignoring SetVerifyRunner; PhaseVerify uses execute runner",
-			"cmd", calltrace.LogCmd, "operation", "agent.harness.verify.SetVerifyRunner.ignore")
-	}
-	s.verifyRunner = s.runner
-}
-
 func (s *Service) SetStreamIdleStuck(d time.Duration) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.verify.SetStreamIdleStuck",
-		"stuck_ns", int64(d))
 	s.hooks.StreamIdleStuck = d
 }
 
