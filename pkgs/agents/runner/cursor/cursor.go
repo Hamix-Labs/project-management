@@ -4,7 +4,6 @@ import "github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -156,7 +155,6 @@ type cursorProcessOutput struct {
 func (a *Adapter) invokeCursorProcess(
 	runCtx context.Context,
 	req runner.Request,
-	cancel context.CancelCauseFunc,
 	env []string,
 	argv []string,
 ) cursorProcessOutput {
@@ -168,32 +166,15 @@ func (a *Adapter) invokeCursorProcess(
 		req.OnProgress(runner.SetupProgressEvent(runner.ProgressRunStateSetupSpawn, "Launching cursor-agent…"))
 	}
 	if a.streamExec != nil {
-		if req.StreamIdleStuck > 0 {
-			out.stdout, out.stderr, out.exitCode, out.execErr = adapterkit.DefaultStreamExecWithIdle(
-				runCtx,
-				req.WorkingDir,
-				env,
-				[]byte(req.Prompt),
-				a.binaryPath,
-				lineCallback,
-				adapterkit.StreamIdleConfig{
-					Stuck:  req.StreamIdleStuck,
-					Cancel: cancel,
-					OnIdle: mapStreamIdleCallback(req.OnStreamIdle),
-				},
-				argv...,
-			)
-		} else {
-			out.stdout, out.stderr, out.exitCode, out.execErr = a.streamExec(
-				runCtx,
-				req.WorkingDir,
-				env,
-				[]byte(req.Prompt),
-				a.binaryPath,
-				lineCallback,
-				argv...,
-			)
-		}
+		out.stdout, out.stderr, out.exitCode, out.execErr = a.streamExec(
+			runCtx,
+			req.WorkingDir,
+			env,
+			[]byte(req.Prompt),
+			a.binaryPath,
+			lineCallback,
+			argv...,
+		)
 		return out
 	}
 	out.stdout, out.stderr, out.exitCode, out.execErr = a.exec(
@@ -230,13 +211,6 @@ func (a *Adapter) resultForProcessError(
 	out cursorProcessOutput,
 	rawOutput string,
 ) (runner.Result, error) {
-	if errors.Is(context.Cause(runCtx), adapterkit.ErrStreamIdle) {
-		return runner.NewResult(cyclesdomain.PhaseStatusFailed, staleSummary(req.StreamIdleStuck),
-				failureDetails("stream_idle", out.execErr, out.stdout, out.stderr, a.homePaths, map[string]any{
-					"stream_idle_stuck_ns": int64(req.StreamIdleStuck),
-				}), rawOutput),
-			fmt.Errorf("cursor: %w: %v", runner.ErrStale, out.execErr)
-	}
 	if isCtxErr(runCtx) {
 		return runner.NewResult(cyclesdomain.PhaseStatusFailed, timeoutSummary(req.Timeout),
 				failureDetails("timeout", out.execErr, out.stdout, out.stderr, a.homePaths, map[string]any{
@@ -330,8 +304,7 @@ func (a *Adapter) Run(ctx context.Context, req runner.Request) (runner.Result, e
 		return runner.Result{}, fmt.Errorf("cursor: %w: %v", runner.ErrTimeout, err)
 	}
 
-	runCtx, cancel := context.WithCancelCause(ctx)
-	defer cancel(context.Canceled)
+	runCtx := ctx
 	if req.Timeout > 0 {
 		var timeoutCancel context.CancelFunc
 		runCtx, timeoutCancel = context.WithTimeout(runCtx, req.Timeout)
@@ -340,7 +313,7 @@ func (a *Adapter) Run(ctx context.Context, req runner.Request) (runner.Result, e
 
 	env := buildEnv(req.Env, a.extraKeys)
 	argv := a.argvFor(req)
-	out := a.invokeCursorProcess(runCtx, req, cancel, env, argv)
+	out := a.invokeCursorProcess(runCtx, req, env, argv)
 	rawOutput := redact(adapterkit.CombineStreams(out.stdout, out.stderr), a.homePaths)
 	out.execErr = clearClosedPipeAfterStdout(runCtx, out.stdout, out.stderr, out.execErr)
 

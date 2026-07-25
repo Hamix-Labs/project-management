@@ -56,6 +56,5 @@ type PhaseResult struct {
 	IngestErr         error
 	OperatorCancelled bool
 	CommitCount       int
-	StaleRecovery     bool
 	PostRunInput      orchestration.ExecutePostRunInput
 }

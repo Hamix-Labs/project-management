@@ -56,9 +56,6 @@ function mergeFormAfterSettingsPatch(
   if (cur.maxRunDurationSeconds === formAtSubmit.maxRunDurationSeconds) {
     merged.maxRunDurationSeconds = String(next.max_run_duration_seconds);
   }
-  if (cur.streamIdleStuckSeconds === formAtSubmit.streamIdleStuckSeconds) {
-    merged.streamIdleStuckSeconds = String(next.stream_idle_stuck_seconds);
-  }
   if (cur.agentPickupDelaySeconds === formAtSubmit.agentPickupDelaySeconds) {
     merged.agentPickupDelaySeconds = String(next.agent_pickup_delay_seconds);
   }
@@ -196,8 +193,8 @@ async function submitSettingsForm(params: {
   setStatus: Dispatch<SetStateAction<SettingsStatus>>;
 }): Promise<void> {
   const { settings, form, numericValidation, patch, setForm, setStatus } = params;
-  const { maxInvalid, streamIdleInvalid, pickupInvalid } = numericValidation;
-  if (maxInvalid || streamIdleInvalid || pickupInvalid) return;
+  const { maxInvalid, pickupInvalid } = numericValidation;
+  if (maxInvalid || pickupInvalid) return;
   const body = diffPatch(settings, form);
   if (Object.keys(body).length === 0) return;
   const formAtSubmit = form;

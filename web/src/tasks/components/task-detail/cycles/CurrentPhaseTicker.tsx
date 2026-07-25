@@ -167,12 +167,6 @@ function idlePendingMessage(items: ReadonlyArray<AgentRunProgressItem>): string 
     if (entry.progress.message?.trim()) {
       return entry.progress.message;
     }
-    if (entry.progress.subtype === "idle_kill_pending") {
-      return "Terminating agent soon if no output";
-    }
-    if (entry.progress.subtype === "idle_suspicious") {
-      return "No agent output for a while — run may be stuck";
-    }
   }
   return "Agent working…";
 }

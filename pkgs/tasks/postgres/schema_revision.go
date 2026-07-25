@@ -51,7 +51,12 @@ import (
 //
 // Rev 15: app_settings.verify_model — optional Cursor --model for PhaseVerify
 // on the same chat as execute (empty inherits execute effective model).
-const SchemaRevision = 15
+//
+// Rev 16: drop app_settings.stream_idle_stuck_seconds (and its check
+// constraint) — Hamix no longer runs its own stream-idle kill; runners
+// own their own timeouts. Only max_run_duration_seconds remains as the
+// wall-clock cap.
+const SchemaRevision = 16
 
 const schemaMetaRowID = 1
 

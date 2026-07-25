@@ -37,13 +37,11 @@ func (h *Harness) verifySvc() *verify.Service {
 				SetRunCancel: func(cancel context.CancelFunc) {
 					h.setCurrentRunCancel(cancel)
 				},
-				StreamIdleStuck: h.opts.StreamIdleStuck,
 			},
 		})
 	}
 	h.verify.SetReportDir(h.opts.ReportDir)
 	h.verify.SetWorkingDir(h.opts.WorkingDir)
-	h.verify.SetStreamIdleStuck(h.opts.StreamIdleStuck)
 	return h.verify
 }
 

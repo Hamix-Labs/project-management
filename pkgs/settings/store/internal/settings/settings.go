@@ -124,9 +124,6 @@ func validatePatch(patch Patch) error {
 	if patch.MaxRunDurationSeconds != nil && *patch.MaxRunDurationSeconds < 0 {
 		return fmt.Errorf("%w: max_run_duration_seconds must be >= 0", domain.ErrInvalidInput)
 	}
-	if patch.StreamIdleStuckSeconds != nil && *patch.StreamIdleStuckSeconds < 0 {
-		return fmt.Errorf("%w: stream_idle_stuck_seconds must be >= 0", domain.ErrInvalidInput)
-	}
 	if patch.AgentPickupDelaySeconds != nil {
 		v := *patch.AgentPickupDelaySeconds
 		if v < 0 || v > 604800 {
@@ -178,9 +175,6 @@ func applyPatch(row *domain.AppSettings, patch Patch) {
 	}
 	if patch.MaxRunDurationSeconds != nil {
 		row.MaxRunDurationSeconds = *patch.MaxRunDurationSeconds
-	}
-	if patch.StreamIdleStuckSeconds != nil {
-		row.StreamIdleStuckSeconds = *patch.StreamIdleStuckSeconds
 	}
 	if patch.AgentPickupDelaySeconds != nil {
 		row.AgentPickupDelaySeconds = *patch.AgentPickupDelaySeconds

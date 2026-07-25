@@ -18,7 +18,6 @@ func TestErrCapabilityNotSupported_distinct(t *testing.T) {
 		runner.ErrTimeout,
 		runner.ErrNonZeroExit,
 		runner.ErrInvalidOutput,
-		runner.ErrStale,
 		runner.ErrCapabilityNotSupported,
 	}
 	for i, a := range all {

@@ -18,9 +18,7 @@ type Hooks struct {
 	RecordVerdict   func(kind checklistdomain.VerifierKind, passed bool)
 	ObserveDuration func(d time.Duration)
 	// SetRunCancel registers or clears the in-flight verify cursor cancel func.
-	SetRunCancel    func(cancel context.CancelFunc)
-	StreamIdleStuck time.Duration
-	OnStreamIdle    func(kind runner.StreamIdleKind)
+	SetRunCancel func(cancel context.CancelFunc)
 	// PlanVerifyRun selects prompt + cursor resume fields before verify runner.Run.
 	PlanVerifyRun func(ctx context.Context, in PlanVerifyRunInput) (VerifyRunPlan, error)
 	// OnVerifyPhaseEnded is called after verify phase row closes (success or failure).

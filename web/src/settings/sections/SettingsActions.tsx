@@ -1,14 +1,12 @@
 export function SettingsActions({
   isDirty,
   maxInvalid,
-  streamIdleInvalid,
   pickupInvalid,
   patchPending,
   onDiscard,
 }: {
   isDirty: boolean;
   maxInvalid: boolean;
-  streamIdleInvalid: boolean;
   pickupInvalid: boolean;
   patchPending: boolean;
   onDiscard: () => void;
@@ -16,7 +14,7 @@ export function SettingsActions({
   return (
     <div className="settings-actions" data-dirty={isDirty ? "true" : "false"}>
       <div className="settings-actions-status" aria-hidden="true">
-        {maxInvalid || streamIdleInvalid || pickupInvalid ? (
+        {maxInvalid || pickupInvalid ? (
           <span className="settings-actions-hint settings-actions-hint--warn">
             Resolve the errors above to save.
           </span>
@@ -49,7 +47,6 @@ export function SettingsActions({
             !isDirty ||
             patchPending ||
             maxInvalid ||
-            streamIdleInvalid ||
             pickupInvalid
           }
         >

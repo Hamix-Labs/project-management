@@ -25,6 +25,5 @@ type ExecutePostRunInput struct {
 	RunnerOutcome     ExecuteRunnerOutcome
 	OperatorCancelled bool
 	ContextCancelled  bool
-	EvidenceRecovery  bool
 	CommitIngest      ExecuteCommitIngestSummary
 }

@@ -155,14 +155,6 @@ func (s *Service) runVerifyCursor(
 			s.hooks.PersistProgress(ctx, task.ID, cycle.ID, phaseSeq, ev)
 		}
 	}
-	streamIdleStuck := s.hooks.StreamIdleStuck
-	var onStreamIdle func(runner.StreamIdleKind)
-	if streamIdleStuck > 0 {
-		onStreamIdle = func(kind runner.StreamIdleKind) {
-			ev := runner.StreamIdleProgressEvent(kind, streamIdleStuck)
-			onProgress(ev)
-		}
-	}
 	invokeMsg := "Starting Cursor CLI…"
 	if strings.TrimSpace(resumeSessionID) != "" {
 		invokeMsg = "Resuming Cursor session…"
@@ -177,8 +169,6 @@ func (s *Service) runVerifyCursor(
 		CursorModel:      EffectiveVerifyModel(task, snap),
 		RunCorrelationID: runCorrelationID,
 		ResumeSessionID:  resumeSessionID,
-		StreamIdleStuck:  streamIdleStuck,
-		OnStreamIdle:     onStreamIdle,
 		OnProgress:       onProgress,
 	})
 }
@@ -227,13 +217,10 @@ func (s *Service) assembleVerdictsFromVerifyReport(
 func verifyLLMRunError(runErr error, parseErr error) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.verify.verifyLLMRunError",
 		"has_run_err", runErr != nil, "has_parse_err", parseErr != nil)
-	if runErr != nil && !errors.Is(runErr, runner.ErrStale) {
+	if runErr != nil {
 		return runErr
 	}
 	if parseErr != nil {
-		if errors.Is(runErr, runner.ErrStale) {
-			return fmt.Errorf("verify stream idle: %w", parseErr)
-		}
 		return parseErr
 	}
 	return nil

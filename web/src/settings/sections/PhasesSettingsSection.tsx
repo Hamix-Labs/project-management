@@ -25,7 +25,6 @@ export function PhasesSettingsSection({
   form,
   pickupInvalid,
   maxInvalid,
-  streamIdleInvalid,
   cursorModelsQuery,
   modelIdsFromList,
   onField,
@@ -33,7 +32,6 @@ export function PhasesSettingsSection({
   form: SettingsFormState;
   pickupInvalid: boolean;
   maxInvalid: boolean;
-  streamIdleInvalid: boolean;
   cursorModelsQuery: UseQueryResult<ListCursorModelsResult, Error>;
   modelIdsFromList: Set<string>;
   onField: HandleField;
@@ -129,41 +127,6 @@ export function PhasesSettingsSection({
               ) : null}
             </div>
 
-            <div className="settings-field-block">
-              <label className="settings-field">
-                <span className="settings-field-label">Agent silence limit</span>
-                <span className="settings-field-input-suffix">
-                  <input
-                    type="number"
-                    min={0}
-                    step={1}
-                    value={form.streamIdleStuckSeconds}
-                    onChange={(e) =>
-                      onField("streamIdleStuckSeconds", e.target.value)
-                    }
-                    aria-invalid={streamIdleInvalid}
-                  />
-                  <span className="settings-field-suffix" aria-hidden="true">
-                    seconds
-                  </span>
-                </span>
-              </label>
-              <div className="settings-field-help-block">
-                <p className="settings-field-help">
-                  Stops the run when the agent produces no new output for this
-                  long. Hamix may use git commits or reports the agent already
-                  wrote and move on to verify.
-                </p>
-                <p className="settings-field-help settings-field-help-meta">
-                  Default <code>60</code>s. Set <code>0</code> to disable.
-                </p>
-              </div>
-              {streamIdleInvalid ? (
-                <p role="alert" className="settings-field-error">
-                  Must be a non-negative integer.
-                </p>
-              ) : null}
-            </div>
           </PhaseFieldGroup>
         </PhasePanel>
 

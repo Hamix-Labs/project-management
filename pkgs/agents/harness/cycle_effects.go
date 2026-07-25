@@ -25,7 +25,6 @@ func (h *Harness) applyExecuteEffects(
 	commitCount int,
 	snap git.PhaseSnapshot,
 	operatorCancelled bool,
-	streamIdleRecovery bool,
 ) bool {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.applyExecuteEffects",
 		"task_id", task.ID, "cycle_id", cycle.ID, "continue", effects.ContinueToVerify,
@@ -43,9 +42,6 @@ func (h *Harness) applyExecuteEffects(
 	phaseStatus := executePhaseStatusFromEffects(effects)
 	phaseDetails := mergeRunnerDetailsWithGit(detailsBytes(result), snap, commitCount)
 	phaseDetails = git.MergeCriteriaReportProbeErr(phaseDetails, state.verify.reportParseErr)
-	if streamIdleRecovery && effects.ContinueToVerify {
-		phaseDetails = mergeStreamIdleRecoveryDetails(phaseDetails, h.opts.StreamIdleStuck)
-	}
 
 	if effects.ContinueToVerify && state.verify.verifySnap.Enabled {
 		corr := cyclesdomain.RunCorrelationIDFromDetailsJSON(execPhase.DetailsJSON)
