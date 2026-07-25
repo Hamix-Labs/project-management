@@ -16,6 +16,7 @@ const NODE_TONE: Record<TimelineKind, string> = {
   "agent-finished": "task-home-timeline-node--brand",
   "status-changed": "task-home-timeline-node--neutral",
   "task-created": "task-home-timeline-node--neutral",
+  "review-approved": "task-home-timeline-node--success",
   comment: "task-home-timeline-node--neutral",
 };
 
@@ -28,6 +29,11 @@ export function TimelineEventItem({
   const groupLabel = timelineDateGroupLabel(at, now);
   const clock = formatTimelineClock(at);
   const nodeClass = `task-home-timeline-node ${NODE_TONE[event.kind]}`;
+
+  const eventLink =
+    event.taskId && event.seq != null
+      ? `/tasks/${encodeURIComponent(event.taskId)}/events/${event.seq}`
+      : null;
 
   return (
     <li className="task-home-timeline-item">
@@ -42,9 +48,20 @@ export function TimelineEventItem({
       </span>
       <div className="task-home-timeline-item__body">
         <div className="task-home-timeline-item__meta">
-          <time dateTime={event.at}>
-            {groupLabel}, {clock}
-          </time>
+          {eventLink ? (
+            <Link
+              className="task-home-timeline-item__time-link"
+              to={eventLink}
+            >
+              <time dateTime={event.at}>
+                {groupLabel}, {clock}
+              </time>
+            </Link>
+          ) : (
+            <time dateTime={event.at}>
+              {groupLabel}, {clock}
+            </time>
+          )}
           {event.taskRef && event.taskId ? (
             <Link
               className="task-home-timeline-item__task-ref"

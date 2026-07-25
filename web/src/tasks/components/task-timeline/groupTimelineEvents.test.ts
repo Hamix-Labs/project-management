@@ -12,8 +12,8 @@ describe("groupTimelineEvents", () => {
     expect(timelineDateGroupLabel(yesterday, now)).toBe("Yesterday");
   });
 
-  it("groups all events under 7d by default fixtures", () => {
-    const groups = groupTimelineEvents(fixtures, "all", "7d", now);
+  it("groups all events by day (no filter or range on client)", () => {
+    const groups = groupTimelineEvents(fixtures, now);
     expect(groups.map((g) => g.label)).toEqual([
       "Today",
       "Yesterday",
@@ -22,16 +22,17 @@ describe("groupTimelineEvents", () => {
     expect(groups.reduce((n, g) => n + g.events.length, 0)).toBe(8);
   });
 
-  it("filters verification category", () => {
-    const groups = groupTimelineEvents(fixtures, "verification", "7d", now);
-    const kinds = groups.flatMap((g) => g.events.map((e) => e.kind));
-    expect(kinds).toEqual(["verification-passed", "verification-failed"]);
+  it("sorts newest first within each group", () => {
+    const groups = groupTimelineEvents(fixtures, now);
+    const today = groups.find((g) => g.label === "Today");
+    expect(today).toBeDefined();
+    // ev-1 at 10:42 should come before ev-2 at 10:31 in newest-first order
+    expect(today!.events[0].id).toBe("ev-1");
+    expect(today!.events[1].id).toBe("ev-2");
   });
 
-  it("excludes older events for 24h range", () => {
-    const groups = groupTimelineEvents(fixtures, "all", "24h", now);
-    const ids = groups.flatMap((g) => g.events.map((e) => e.id));
-    expect(ids).toContain("ev-1");
-    expect(ids).not.toContain("ev-8");
+  it("returns empty array for empty input", () => {
+    const groups = groupTimelineEvents([], now);
+    expect(groups).toHaveLength(0);
   });
 });

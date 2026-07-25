@@ -9,6 +9,7 @@ import {
   type TaskStatsResponse,
   type CycleFailuresListResponse,
   type TaskDependencyEdge,
+  type TaskActivityResponse,
 } from "@/types";
 import {
   parseTask,
@@ -20,6 +21,7 @@ import {
   parseTaskListResponse,
   parseTaskStatsResponse,
   parseCycleFailuresListResponse,
+  parseTaskActivityResponse,
 } from "./parseTaskApi";
 import {
   parseDependenciesEnvelope,
@@ -210,6 +212,41 @@ export async function getTaskDraft(
     { headers: { Accept: "application/json" }, signal: options?.signal },
     parseTaskDraftDetail,
   );
+}
+
+/**
+ * Cross-task activity feed (`GET /tasks/activity`).
+ * Fixed event type set: status_changed, phase_failed, approval_granted.
+ * Default server behaviour is newest-first (limit 50).
+ */
+export async function getTaskActivity(options: {
+  signal?: AbortSignal;
+  limit?: number;
+  offset?: number;
+  since?: string;
+}): Promise<TaskActivityResponse> {
+  const limitStr =
+    options.limit === undefined
+      ? "50"
+      : assertListIntQuery("limit", options.limit, 1, 200);
+  const offsetStr =
+    options.offset === undefined
+      ? "0"
+      : assertNonNegativeOffset("offset", options.offset);
+  const q = new URLSearchParams({
+    limit: limitStr,
+    offset: offsetStr,
+  });
+  if (options.since) {
+    q.set("since", options.since);
+  }
+  const res = await fetchWithTimeout(`/tasks/activity?${q}`, {
+    headers: { Accept: "application/json" },
+    signal: options.signal,
+  });
+  if (!res.ok) throw await apiErrorFromResponse(res);
+  const raw: unknown = await res.json();
+  return parseTaskActivityResponse(raw);
 }
 
 export async function listTaskDependencies(

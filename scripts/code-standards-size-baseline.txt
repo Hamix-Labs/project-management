@@ -49,6 +49,7 @@ web/src/tasks/components/task-create-modal/fields/useTaskCreateDependsOnPickerSt
 web/src/tasks/components/task-detail/checklist/TaskDetailChecklistSection.tsx
 web/src/tasks/components/task-list/section/TaskListSection.tsx
 web/src/tasks/components/task-list/section/useTaskListSectionBulkActions.ts
+web/src/tasks/components/task-timeline/TimelineGlyphs.tsx
 web/src/tasks/create/hooks/useTaskCreateFormState.ts
 web/src/tasks/hooks/useTaskCycles.ts
 web/src/tasks/hooks/useTaskDeleteFlow.ts
