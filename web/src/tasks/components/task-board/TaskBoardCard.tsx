@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { PriorityBadge } from "@/tasks/task-display";
-import { shortId } from "@/lib/taskShortId";
+import { taskDisplayRef } from "@/lib/taskShortId";
 import { previewTextFromPrompt } from "@/lib/promptFormat";
 import { taskListRowSubtitle } from "../task-list/table/taskListRowSubtitle";
 import { formatRelativeTime } from "@/shared/time/relativeTime";
@@ -60,7 +60,7 @@ export function TaskBoardCard({
       className="task-board-card"
     >
       <div className="task-board-card__top">
-        <span className="task-board-card__id">{shortId(task.id)}</span>
+        <span className="task-board-card__id">{taskDisplayRef(task)}</span>
         <PriorityBadge priority={task.priority} />
       </div>
 

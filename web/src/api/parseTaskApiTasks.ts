@@ -139,6 +139,12 @@ export function parseTask(value: unknown): Task {
       "pickup_not_before",
     );
   }
+  if (value.number !== undefined && value.number !== null) {
+    if (typeof value.number !== "number" || !Number.isFinite(value.number)) {
+      throw new Error("Invalid API response: number must be a finite number");
+    }
+    base.number = value.number;
+  }
   if (value.created_at !== undefined && value.created_at !== null) {
     base.created_at = parseISO8601Required(value.created_at, "created_at");
   }

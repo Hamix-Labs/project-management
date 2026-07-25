@@ -1,14 +1,24 @@
-import {
-  TaskListDeleteGlyph,
-  TaskListEditGlyph,
-} from "@/shared/ListRowActionGlyphs";
+import { TaskListEditGlyph } from "@/shared/ListRowActionGlyphs";
 
 type Props = {
   saving: boolean;
-  /** When false, edit is disabled (e.g. task is running). Delete stays available. */
+  /** When false, edit is disabled (e.g. task is running). Close stays available. */
   canEdit?: boolean;
   onEdit: () => void;
-  onDelete: () => void;
+  /**
+   * Click handler for the Close action (POST /tasks/{id}/close). Rendered
+   * for every non-closed task; on `closed` tasks the toolbar swaps in
+   * `onReopen` instead.
+   */
+  onClose?: () => void;
+  closePending?: boolean;
+  /**
+   * Click handler for the Reopen action (POST /tasks/{id}/reopen).
+   * Rendered only when the current task's status is `closed` so the
+   * user can reverse a close without leaving the detail page.
+   */
+  onReopen?: () => void;
+  reopenPending?: boolean;
   /** When set, shows retry actions for a failed task (POST /retry). */
   onRetryFresh?: () => void;
   onRetryResume?: () => void;
@@ -47,7 +57,10 @@ export function TaskDetailToolbarActions({
   saving,
   canEdit = true,
   onEdit,
-  onDelete,
+  onClose,
+  closePending = false,
+  onReopen,
+  reopenPending = false,
   onRetryFresh,
   onRetryResume,
   retryPending,
@@ -143,15 +156,25 @@ export function TaskDetailToolbarActions({
           Model configuration
         </button>
       ) : null}
-      <button
-        type="button"
-        className="task-detail-btn-delete"
-        onClick={onDelete}
-        disabled={saving}
-      >
-        <TaskListDeleteGlyph />
-        Delete
-      </button>
+      {onReopen ? (
+        <button
+          type="button"
+          className="task-detail-btn-reopen"
+          onClick={onReopen}
+          disabled={saving || reopenPending}
+        >
+          {reopenPending ? "Reopening…" : "Reopen"}
+        </button>
+      ) : onClose ? (
+        <button
+          type="button"
+          className="task-detail-btn-close"
+          onClick={onClose}
+          disabled={saving || closePending}
+        >
+          {closePending ? "Closing…" : "Close"}
+        </button>
+      ) : null}
     </div>
   );
 }

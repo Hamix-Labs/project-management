@@ -95,7 +95,7 @@ TanStack Query staleTime tiers live in [`web/src/lib/queryPolicy.ts`](../web/src
 
 1. [ADR-0025](./adr/ADR-0025-frontend-data-coherence.md) — query tiers, mutation guard M1–M3, render isolation
 2. `queryPolicy.ts` — `QUERY_POLICY` constants consumed by `queryClient`, list hooks, prefetch
-3. [`tasks/mutations/`](../web/src/tasks/mutations/) — guarded optimistic task writes (patch/delete/checklist, create/instantiate cache seed, bulk schedule/delete)
+3. [`tasks/mutations/`](../web/src/tasks/mutations/) — guarded optimistic task writes (patch/close/checklist, create/instantiate cache seed, bulk schedule/close)
 4. [`tasks/checklist/`](../web/src/tasks/checklist/) — detail checklist mutations with guard
 5. [`tasks/app/TasksAppProvider.tsx`](../web/src/tasks/app/TasksAppProvider.tsx) — narrow selector hooks
 

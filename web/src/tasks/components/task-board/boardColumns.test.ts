@@ -35,12 +35,14 @@ describe("groupTasksByBoardColumn", () => {
       makeTask({ id: "5", status: "blocked" }),
       makeTask({ id: "6", status: "failed" }),
       makeTask({ id: "7", status: "done" }),
+      makeTask({ id: "8", status: "closed" }),
     ];
     const groups = groupTasksByBoardColumn(tasks);
     expect(groups.backlog.map((t) => t.id)).toEqual(["1", "2"]);
     expect(groups.in_progress.map((t) => t.id)).toEqual(["3"]);
     expect(groups.verification.map((t) => t.id)).toEqual(["4"]);
     expect(groups.needs_attention.map((t) => t.id)).toEqual(["5", "6"]);
+    expect(groups.closed.map((t) => t.id)).toEqual(["8"]);
   });
 
   it("returns empty bags for empty input", () => {
@@ -49,5 +51,6 @@ describe("groupTasksByBoardColumn", () => {
     expect(groups.in_progress).toEqual([]);
     expect(groups.verification).toEqual([]);
     expect(groups.needs_attention).toEqual([]);
+    expect(groups.closed).toEqual([]);
   });
 });

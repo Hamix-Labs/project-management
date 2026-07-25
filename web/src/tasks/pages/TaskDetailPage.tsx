@@ -1,7 +1,6 @@
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { errorMessage } from "@/lib/errorMessage";
 import { TaskDetailPageSkeleton } from "../components/skeletons";
-import { useTaskDetailDeleteNavigate } from "../hooks/useTaskDetailDeleteNavigate";
 import { useTaskDetailMutations } from "../hooks/useTaskDetailMutations";
 import { useTaskDetailPageQueries } from "../hooks/useTaskDetailPageQueries";
 import { useTaskDetailScheduling } from "../hooks/useTaskDetailScheduling";
@@ -46,7 +45,6 @@ export function TaskDetailPage() {
   const modals = useTasksAppModals();
   const { saving } = useTasksAppMeta();
   const { taskId = "" } = useParams<{ taskId: string }>();
-  const navigate = useNavigate();
   const { taskQuery, dependencySummaries } = useTaskDetailPageQueries(taskId);
   const scheduling = useTaskDetailScheduling(taskId);
   const {
@@ -65,13 +63,6 @@ export function TaskDetailPage() {
     polishMutation,
     autonomyMutation,
   } = useTaskDetailMutations(taskId);
-
-  useTaskDetailDeleteNavigate(
-    taskId,
-    navigate,
-    modals.deleteSuccess,
-    modals.deleteVariables,
-  );
 
   if (!taskId) {
     return renderMissingTaskId();

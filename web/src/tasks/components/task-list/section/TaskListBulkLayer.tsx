@@ -1,5 +1,5 @@
 import {
-  TaskBulkDeleteConfirmModal,
+  TaskBulkCloseConfirmModal,
   TaskBulkRescheduleModal,
   TaskListBulkActionBar,
 } from "../bulk";
@@ -25,19 +25,19 @@ export function TaskListBulkLayer({
         scheduledCount={bulk.selectedScheduledIds.length}
         rescheduleDisabled={bulk.selectedIncludesDone}
         showScheduleActions={scheduleUiEnabled}
-        busy={bulk.bulkSchedule.isPending || bulk.bulkDelete.isPending}
+        busy={bulk.bulkSchedule.isPending || bulk.bulkClose.isPending}
         onReschedule={bulk.openRescheduleModal}
         onClearSchedule={bulk.handleClearSchedule}
-        onDelete={bulk.openBulkDeleteModal}
+        onClose={bulk.openBulkCloseModal}
         onCancel={bulk.handleCancelSelection}
       />
-      {bulk.bulkDeleteModalOpen && bulk.selectedRowsForBulkDelete.length > 0 ? (
-        <TaskBulkDeleteConfirmModal
-          tasks={bulk.selectedRowsForBulkDelete}
-          busy={bulk.bulkDelete.isPending}
-          error={bulk.bulkDeleteError}
-          onCancel={bulk.closeBulkDelete}
-          onConfirm={bulk.handleBulkDeleteConfirm}
+      {bulk.bulkCloseModalOpen && bulk.selectedRowsForBulkClose.length > 0 ? (
+        <TaskBulkCloseConfirmModal
+          tasks={bulk.selectedRowsForBulkClose}
+          busy={bulk.bulkClose.isPending}
+          error={bulk.bulkCloseError}
+          onCancel={bulk.closeBulkClose}
+          onConfirm={bulk.handleBulkCloseConfirm}
         />
       ) : null}
       {bulk.rescheduleModalOpen ? (

@@ -7,7 +7,7 @@ type Props = {
    *   - `Error | null` — what react-query's `mutation.error` is typed as
    *     (`react-query` v5). Caller passes it through as-is.
    *   - `string | null` — what the flow hooks (`useTaskPatchFlow`,
-   *     `useTaskDeleteFlow`) expose after pre-coercing the underlying
+   *     `useTaskCloseFlow`) expose after pre-coercing the underlying
    *     `Error` via `errorMessage(...)`. Caller passes it through as-is.
    * Either way the banner runs the value through `errorMessage(error,
    * fallback)` so the wire shape is consistent: `Error` instances always
@@ -64,7 +64,7 @@ type Props = {
  * Why a single component instead of leaving the `<div className="err"
  * role="alert">` JSX inline at every call site:
  *   - Six call sites (ChecklistCriterionModal, SubtaskCreateModal,
- *     TaskCreateModal create + edit, DeleteConfirmDialog) had drifted
+ *     TaskCreateModal create + edit, CloseConfirmDialog) had drifted
  *     into two different inner-shape patterns (`<p>{message}</p>` vs.
  *     bare text) — unifying here gives every alert the same DOM shape
  *     and lets the canonical `.err > p { margin: 0 }` rule own the

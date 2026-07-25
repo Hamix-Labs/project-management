@@ -8,7 +8,8 @@ export type Status =
   | "review"
   | "done"
   | "failed"
-  | "on_hold";
+  | "on_hold"
+  | "closed";
 
 export type Priority = "low" | "medium" | "high" | "critical";
 
@@ -24,6 +25,13 @@ export type TaskDependencyEdge = {
 
 export type Task = {
   id: string;
+  /**
+   * Per-project sequential number surfaced in the SPA as `#N`. Server
+   * assigns on create for tasks that belong to a project (see
+   * docs/data-model.md). Absent (or `null`) for legacy tasks and for
+   * global tasks that were created before the numbering migration ran.
+   */
+  number?: number | null;
   title: string;
   initial_prompt: string;
   status: Status;
@@ -105,6 +113,12 @@ export type TaskActivityEvent = {
   by: string;
   data: Record<string, unknown>;
   task_title?: string;
+  /**
+   * Per-project sequential task number surfaced by the server when the
+   * owning task has one. When present the SPA renders `#N` on the
+   * timeline; otherwise it falls back to the shortened UUID.
+   */
+  task_number?: number | null;
 };
 
 /** Response envelope for GET /tasks/activity. */
@@ -289,10 +303,18 @@ export const STATUSES: Status[] = [
   "done",
   "failed",
   "on_hold",
+  "closed",
 ];
 
-/** Status values operators may set via create/PATCH. */
-export const CLIENT_WRITABLE_STATUSES: Status[] = [...STATUSES];
+/**
+ * Status values operators may set via create/PATCH. `closed` is
+ * intentionally excluded — it is reached only via `POST /tasks/{id}/close`
+ * (see docs/data-model.md) so PATCH-status edits and create-form
+ * status pickers never surface it as a writable choice.
+ */
+export const CLIENT_WRITABLE_STATUSES: Status[] = STATUSES.filter(
+  (s) => s !== "closed",
+);
 
 export const PRIORITIES: Priority[] = [
   "low",

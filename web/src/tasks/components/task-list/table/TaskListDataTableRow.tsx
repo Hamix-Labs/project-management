@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import type { Task } from "@/types";
 import { isUiFeatureOmitted } from "@/launch/omittedFeatures";
-import type { DeleteTargetInput } from "../../../hooks/useTaskDeleteFlow";
+import type { CloseTargetInput } from "../../../hooks/useTaskCloseFlow";
 import {
   canEditTask,
   PriorityBadge,
@@ -25,7 +25,7 @@ export type TaskListDataTableRowProps = {
   projectNameById: Record<string, string>;
   saving: boolean;
   onEdit: (t: Task) => void;
-  onRequestDelete: (t: DeleteTargetInput) => void;
+  onRequestClose: (t: CloseTargetInput) => void;
   prefetchTaskDetail: (id: string) => void;
   navigate: (path: string) => void;
 };
@@ -64,7 +64,7 @@ export function TaskListDataTableRow({
   projectNameById,
   saving,
   onEdit,
-  onRequestDelete,
+  onRequestClose,
   prefetchTaskDetail,
   navigate,
 }: TaskListDataTableRowProps) {
@@ -194,8 +194,8 @@ export function TaskListDataTableRow({
           <button
             type="button"
             className="task-list-icon-btn task-list-icon-btn--delete"
-            aria-label={`Delete task "${t.title}"`}
-            onClick={() => onRequestDelete(t)}
+            aria-label={`Close task "${t.title}"`}
+            onClick={() => onRequestClose(t)}
             disabled={saving || isExiting}
           >
             <TaskListDeleteGlyph />

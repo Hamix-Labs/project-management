@@ -1,12 +1,12 @@
 import { useCallback, useMemo, useState } from "react";
 import type { TaskWithDepth } from "../../../task-tree";
 import {
-  useBulkDeleteMutation,
+  useBulkCloseMutation,
   useBulkScheduleMutation,
   useTaskListSelection,
 } from "../bulk";
 import {
-  formatBulkDeleteFailure,
+  formatBulkCloseFailure,
   formatBulkFailure,
 } from "./taskListSectionBulkUtils";
 
@@ -23,11 +23,11 @@ export function useTaskListSectionBulkActions({
 }: UseTaskListSectionBulkActionsArgs) {
   const selection = useTaskListSelection(visibleIds);
   const bulkSchedule = useBulkScheduleMutation();
-  const bulkDelete = useBulkDeleteMutation();
+  const bulkClose = useBulkCloseMutation();
   const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
-  const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
+  const [bulkCloseModalOpen, setBulkCloseModalOpen] = useState(false);
   const [bulkErrorBanner, setBulkErrorBanner] = useState<string | null>(null);
-  const [bulkDeleteError, setBulkDeleteError] = useState<string | null>(null);
+  const [bulkCloseError, setBulkCloseError] = useState<string | null>(null);
 
   const selectedScheduledIds = useMemo(() => {
     const visibleSelected = new Set(selection.selectedVisibleIds);
@@ -46,13 +46,14 @@ export function useTaskListSectionBulkActions({
     );
   }, [filteredTasks, selection.selectedVisibleIds]);
 
-  const selectedRowsForBulkDelete = useMemo(() => {
+  const selectedRowsForBulkClose = useMemo(() => {
     const visibleSelected = new Set(selection.selectedVisibleIds);
     return filteredTasks
       .filter((t) => visibleSelected.has(t.id))
       .map((t) => ({
         id: t.id,
         title: t.title,
+        number: t.number,
       }));
   }, [filteredTasks, selection.selectedVisibleIds]);
 
@@ -61,11 +62,11 @@ export function useTaskListSectionBulkActions({
     bulkSchedule.reset();
   }, [bulkSchedule]);
 
-  const closeBulkDelete = useCallback(() => {
-    setBulkDeleteModalOpen(false);
-    bulkDelete.reset();
-    setBulkDeleteError(null);
-  }, [bulkDelete]);
+  const closeBulkClose = useCallback(() => {
+    setBulkCloseModalOpen(false);
+    bulkClose.reset();
+    setBulkCloseError(null);
+  }, [bulkClose]);
 
   const handleRescheduleSubmit = useCallback(
     async (next: string | null) => {
@@ -112,69 +113,69 @@ export function useTaskListSectionBulkActions({
     }
   }, [bulkSchedule, selectedScheduledIds, selection]);
 
-  const handleBulkDeleteConfirm = useCallback(async () => {
+  const handleBulkCloseConfirm = useCallback(async () => {
     const ids = selection.selectedVisibleIds;
     if (ids.length === 0) {
-      closeBulkDelete();
+      closeBulkClose();
       return;
     }
-    const result = await bulkDelete.run(ids);
+    const result = await bulkClose.run(ids);
     if (result.failed.length === 0) {
-      setBulkDeleteModalOpen(false);
-      bulkDelete.reset();
+      setBulkCloseModalOpen(false);
+      bulkClose.reset();
       selection.clearSelection();
-      setBulkDeleteError(null);
+      setBulkCloseError(null);
     } else {
-      setBulkDeleteError(
-        formatBulkDeleteFailure(result.failed.length, result.attempted),
+      setBulkCloseError(
+        formatBulkCloseFailure(result.failed.length, result.attempted),
       );
     }
-  }, [bulkDelete, closeBulkDelete, selection]);
+  }, [bulkClose, closeBulkClose, selection]);
 
   const handleCancelSelection = useCallback(() => {
     selection.clearSelection();
     setBulkErrorBanner(null);
-    setBulkDeleteModalOpen(false);
-    bulkDelete.reset();
-    setBulkDeleteError(null);
+    setBulkCloseModalOpen(false);
+    bulkClose.reset();
+    setBulkCloseError(null);
     setRescheduleModalOpen(false);
     bulkSchedule.reset();
-  }, [bulkDelete, bulkSchedule, selection]);
+  }, [bulkClose, bulkSchedule, selection]);
 
   const openRescheduleModal = useCallback(() => {
-    setBulkDeleteModalOpen(false);
-    bulkDelete.reset();
+    setBulkCloseModalOpen(false);
+    bulkClose.reset();
     if (selectedIncludesDone) return;
     setBulkErrorBanner(null);
     setRescheduleModalOpen(true);
-  }, [bulkDelete, selectedIncludesDone]);
+  }, [bulkClose, selectedIncludesDone]);
 
-  const openBulkDeleteModal = useCallback(() => {
+  const openBulkCloseModal = useCallback(() => {
     setRescheduleModalOpen(false);
     bulkSchedule.reset();
     setBulkErrorBanner(null);
-    setBulkDeleteError(null);
-    setBulkDeleteModalOpen(true);
+    setBulkCloseError(null);
+    setBulkCloseModalOpen(true);
   }, [bulkSchedule]);
 
   return {
     selection,
     bulkSchedule,
-    bulkDelete,
+    bulkClose,
     rescheduleModalOpen: scheduleUiEnabled && rescheduleModalOpen,
-    bulkDeleteModalOpen,
+    bulkCloseModalOpen,
     bulkErrorBanner,
-    bulkDeleteError,
+    bulkCloseError,
     selectedScheduledIds,
     selectedIncludesDone,
-    selectedRowsForBulkDelete,
+    selectedRowsForBulkClose,
     closeReschedule,
-    closeBulkDelete,
+    closeBulkClose,
     handleRescheduleSubmit,
     handleClearSchedule,
-    handleBulkDeleteConfirm,
+    handleBulkCloseConfirm,
     handleCancelSelection,
     openRescheduleModal,
-    openBulkDeleteModal,
+    openBulkCloseModal,
   };
 }

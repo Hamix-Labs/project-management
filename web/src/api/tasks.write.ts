@@ -372,12 +372,45 @@ export async function patchTaskGate(
   return parseTask(raw);
 }
 
-export async function deleteTask(id: string): Promise<void> {
+/**
+ * POST /tasks/{id}/close — transitions a task into the terminal `closed`
+ * status. Any in-flight cycle is cancelled server-side (see
+ * `docs/domain/agent-queue.md` and `docs/api.md`). The task row itself
+ * is retained so operators can reopen later.
+ */
+export async function closeTask(id: string): Promise<Task> {
   const tid = assertTaskPathId(id);
-  const res = await fetchWithTimeout(`/tasks/${encodeURIComponent(tid)}`, {
-    method: "DELETE",
-  });
+  const res = await fetchWithTimeout(
+    `/tasks/${encodeURIComponent(tid)}/close`,
+    {
+      method: "POST",
+      headers: jsonHeaders,
+      body: "{}",
+    },
+  );
   if (!res.ok) throw await apiErrorFromResponse(res);
+  const raw: unknown = await res.json();
+  return parseTask(raw);
+}
+
+/**
+ * POST /tasks/{id}/reopen — reverses a `closed` task back to `ready`
+ * (see `docs/api.md`). The server rejects the call for non-closed
+ * tasks so callers only surface Reopen when `task.status === "closed"`.
+ */
+export async function reopenTask(id: string): Promise<Task> {
+  const tid = assertTaskPathId(id);
+  const res = await fetchWithTimeout(
+    `/tasks/${encodeURIComponent(tid)}/reopen`,
+    {
+      method: "POST",
+      headers: jsonHeaders,
+      body: "{}",
+    },
+  );
+  if (!res.ok) throw await apiErrorFromResponse(res);
+  const raw: unknown = await res.json();
+  return parseTask(raw);
 }
 
 export async function addChecklistItem(

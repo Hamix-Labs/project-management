@@ -1,5 +1,5 @@
 import "./taskListSection.testMocks";
-import { deleteTask, patchTask } from "@/api";
+import { closeTask, patchTask } from "@/api";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -12,7 +12,7 @@ import {
 } from "./taskListSection.testSetup";
 
 const mockPatchTask = vi.mocked(patchTask);
-const mockDeleteTask = vi.mocked(deleteTask);
+const mockCloseTask = vi.mocked(closeTask);
 
 describe("TaskListSection bulk reschedule", () => {
   describe("bulk reschedule", () => {
@@ -31,7 +31,7 @@ describe("TaskListSection bulk reschedule", () => {
           {...listPagerDefaults}
           rootTasksOnPage={2}
           onEdit={vi.fn()}
-          onRequestDelete={vi.fn()}
+          onRequestClose={vi.fn()}
         />,
       );
       await user.click(screen.getByTestId("task-list-select-row-a"));
@@ -58,7 +58,7 @@ describe("TaskListSection bulk reschedule", () => {
           {...listPagerDefaults}
           rootTasksOnPage={2}
           onEdit={vi.fn()}
-          onRequestDelete={vi.fn()}
+          onRequestClose={vi.fn()}
         />,
       );
       expect(
@@ -88,7 +88,7 @@ describe("TaskListSection bulk reschedule", () => {
           {...listPagerDefaults}
           rootTasksOnPage={3}
           onEdit={vi.fn()}
-          onRequestDelete={vi.fn()}
+          onRequestClose={vi.fn()}
         />,
       );
       await user.click(screen.getByTestId("task-list-select-all"));
@@ -127,7 +127,7 @@ describe("TaskListSection bulk reschedule", () => {
           {...listPagerDefaults}
           rootTasksOnPage={3}
           onEdit={vi.fn()}
-          onRequestDelete={vi.fn()}
+          onRequestClose={vi.fn()}
         />,
       );
       await user.click(screen.getByTestId("task-list-select-row-a"));
@@ -186,7 +186,7 @@ describe("TaskListSection bulk reschedule", () => {
           {...listPagerDefaults}
           rootTasksOnPage={3}
           onEdit={vi.fn()}
-          onRequestDelete={vi.fn()}
+          onRequestClose={vi.fn()}
         />,
       );
       await user.click(screen.getByTestId("task-list-select-all"));
@@ -213,7 +213,7 @@ describe("TaskListSection bulk reschedule", () => {
           {...listPagerDefaults}
           rootTasksOnPage={2}
           onEdit={vi.fn()}
-          onRequestDelete={vi.fn()}
+          onRequestClose={vi.fn()}
         />,
       );
       await user.click(screen.getByTestId("task-list-select-all"));
@@ -255,7 +255,7 @@ describe("TaskListSection bulk reschedule", () => {
           {...listPagerDefaults}
           rootTasksOnPage={3}
           onEdit={vi.fn()}
-          onRequestDelete={vi.fn()}
+          onRequestClose={vi.fn()}
         />,
       );
       await user.click(screen.getByTestId("task-list-select-all"));
@@ -289,13 +289,13 @@ describe("TaskListSection bulk reschedule", () => {
           {...listPagerDefaults}
           rootTasksOnPage={2}
           onEdit={vi.fn()}
-          onRequestDelete={vi.fn()}
+          onRequestClose={vi.fn()}
         />,
       );
       await user.click(screen.getByTestId("task-list-select-all"));
       await user.click(screen.getByTestId("task-list-bulk-bar-cancel"));
       expect(mockPatchTask).not.toHaveBeenCalled();
-      expect(mockDeleteTask).not.toHaveBeenCalled();
+      expect(mockCloseTask).not.toHaveBeenCalled();
       expect(
         screen.queryByTestId("task-list-bulk-bar"),
       ).not.toBeInTheDocument();
@@ -316,7 +316,7 @@ describe("TaskListSection bulk reschedule", () => {
           {...listPagerDefaults}
           rootTasksOnPage={2}
           onEdit={vi.fn()}
-          onRequestDelete={vi.fn()}
+          onRequestClose={vi.fn()}
         />,
       );
       await user.click(screen.getByTestId("task-list-select-row-a"));
@@ -345,7 +345,7 @@ describe("TaskListSection bulk reschedule", () => {
           {...listPagerDefaults}
           rootTasksOnPage={3}
           onEdit={vi.fn()}
-          onRequestDelete={vi.fn()}
+          onRequestClose={vi.fn()}
         />,
       );
       await user.click(screen.getByRole("tab", { name: /^scheduled$/i }));

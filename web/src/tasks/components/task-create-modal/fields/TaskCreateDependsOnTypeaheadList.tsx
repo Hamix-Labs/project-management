@@ -1,5 +1,5 @@
 import type { Task } from "@/types";
-import { shortId } from "./taskCreateDependsOnUtils";
+import { taskDisplayRef } from "@/lib/taskShortId";
 
 type Props = {
   listboxId: string;
@@ -37,7 +37,9 @@ export function TaskCreateDependsOnTypeaheadList({
             <span className="task-create-deps__option-title">
               {t.title || "(untitled task)"}
             </span>
-            <span className="task-create-deps__option-meta">{shortId(t.id)}</span>
+            <span className="task-create-deps__option-meta">
+              {taskDisplayRef(t)}
+            </span>
           </button>
         </li>
       ))}

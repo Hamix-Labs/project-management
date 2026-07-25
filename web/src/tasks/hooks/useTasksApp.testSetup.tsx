@@ -13,7 +13,8 @@ vi.mock("../../api", () => ({
   deleteTaskDraft: vi.fn(),
   createTask: vi.fn(),
   patchTask: vi.fn(),
-  deleteTask: vi.fn(),
+  closeTask: vi.fn(),
+  reopenTask: vi.fn(),
   addChecklistItem: vi.fn(),
 }));
 
@@ -28,7 +29,8 @@ import {
   saveTaskDraft,
   getTaskDraft,
   createTask,
-  deleteTask,
+  closeTask,
+  reopenTask,
 } from "../../api";
 import { ensureRepositoriesRegistered } from "@/lib/ensureRepositoriesRegistered";
 
@@ -38,7 +40,8 @@ const mockedListDrafts = vi.mocked(listTaskDrafts);
 const mockedSaveDraft = vi.mocked(saveTaskDraft);
 const mockedGetDraft = vi.mocked(getTaskDraft);
 const mockedCreateTask = vi.mocked(createTask);
-const mockedDeleteTask = vi.mocked(deleteTask);
+const mockedCloseTask = vi.mocked(closeTask);
+const mockedReopenTask = vi.mocked(reopenTask);
 const mockedEnsureRepos = vi.mocked(ensureRepositoriesRegistered);
 
 async function openCreateModalReady(
@@ -77,7 +80,8 @@ export {
   mockedSaveDraft,
   mockedGetDraft,
   mockedCreateTask,
-  mockedDeleteTask,
+  mockedCloseTask,
+  mockedReopenTask,
   mockedEnsureRepos,
   openCreateModalReady,
   makeWrapper,

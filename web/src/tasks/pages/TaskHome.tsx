@@ -65,7 +65,7 @@ export function TaskHome() {
   );
 
   /** Row-level busy state for the list only; excludes create so modal typing does not re-render the table. */
-  const listSaving = list.patchPending || list.deletePending;
+  const listSaving = list.patchPending || list.closePending;
 
   const projectFilterOptions = projectsUiEnabled
     ? (projects.data?.projects ?? [])
@@ -88,7 +88,7 @@ export function TaskHome() {
       hasNextPage: list.hasNextTaskPage,
       hasPrevPage: list.hasPrevTaskPage,
       onEdit: modals.openEdit,
-      onRequestDelete: modals.requestDelete,
+      onRequestClose: modals.requestClose,
       taskStats: list.taskStats ?? null,
     }),
     [
@@ -107,7 +107,7 @@ export function TaskHome() {
       list.hasNextTaskPage,
       list.hasPrevTaskPage,
       modals.openEdit,
-      modals.requestDelete,
+      modals.requestClose,
       list.taskStats,
     ],
   );

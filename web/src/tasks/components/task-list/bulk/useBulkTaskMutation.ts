@@ -33,7 +33,7 @@ type Options = {
 };
 
 export type BulkTaskRunOptions = {
-  /** Optimistic list surgery before concurrent API calls (schedule/delete). */
+  /** Optimistic list surgery before concurrent API calls (schedule/close). */
   applyOptimistic?: (taskIds: ReadonlyArray<string>) => void | Promise<void>;
 };
 

@@ -39,6 +39,7 @@ export function TaskDetailLoadedToolbar({
   autonomyMutation,
 }: TaskDetailLoadedToolbarProps) {
   const inReview = task.status === "review";
+  const isClosed = task.status === "closed";
 
   return (
     <div className="task-detail-toolbar">
@@ -48,9 +49,21 @@ export function TaskDetailLoadedToolbar({
       </div>
       <TaskDetailToolbarActions
         saving={saving}
-        canEdit={canEditTask(task.status)}
+        canEdit={canEditTask(task.status) && !isClosed}
         onEdit={() => modals.openEdit(task)}
-        onDelete={() => modals.requestDelete(task)}
+        onClose={
+          isClosed
+            ? undefined
+            : () =>
+                modals.requestClose({
+                  id: task.id,
+                  title: task.title,
+                  number: task.number,
+                })
+        }
+        closePending={modals.closePending}
+        onReopen={isClosed ? () => modals.reopen(task.id) : undefined}
+        reopenPending={modals.reopenPending}
         onApprove={inReview ? () => setApproveConfirmOpen(true) : undefined}
         approvePending={approveMutation.isPending}
         onPolish={inReview ? () => setPolishDialogOpen(true) : undefined}

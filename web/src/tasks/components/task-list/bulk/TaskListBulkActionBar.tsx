@@ -21,7 +21,13 @@ type Props = {
   busy: boolean;
   onReschedule: () => void;
   onClearSchedule: () => void;
-  onDelete: () => void;
+  /**
+   * Click handler for the bulk close action. Opens the confirm modal;
+   * the parent fires `POST /tasks/{id}/close` for each selected row.
+   * Renamed from `onDelete` — hard delete was retired in favour of the
+   * reversible close/reopen lifecycle (see docs/api.md).
+   */
+  onClose: () => void;
   onCancel: () => void;
 };
 
@@ -41,8 +47,9 @@ type Props = {
  *    is "remove the deferred-pickup time"; if nothing has one,
  *    there's nothing to clear). For N > 5 the parent renders a
  *    `confirm()` step before firing.
- *  - **Delete** (destructive): opens a confirmation modal; on confirm
- *    the parent DELETEs each selected task (server cascade per id).
+ *  - **Close** (destructive-styled): opens a confirmation modal; on
+ *    confirm the parent POSTs `/tasks/{id}/close` for each selected
+ *    task (reversible via reopen).
  *  - **Cancel** (tertiary): clears the running selection without
  *    firing any mutations.
  *
@@ -58,7 +65,7 @@ export function TaskListBulkActionBar({
   busy,
   onReschedule,
   onClearSchedule,
-  onDelete,
+  onClose,
   onCancel,
 }: Props) {
   if (selectedCount === 0) return null;
@@ -115,11 +122,11 @@ export function TaskListBulkActionBar({
         <button
           type="button"
           className="danger"
-          onClick={onDelete}
+          onClick={onClose}
           disabled={busy}
-          data-testid="task-list-bulk-bar-delete"
+          data-testid="task-list-bulk-bar-close"
         >
-          Delete
+          Close
         </button>
         <button
           type="button"

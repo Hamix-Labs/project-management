@@ -7,10 +7,10 @@ export type {
 } from "./useBulkScheduleMutation";
 export { TaskListBulkActionBar } from "./TaskListBulkActionBar";
 export { TaskBulkRescheduleModal } from "./TaskBulkRescheduleModal";
-export { TaskBulkDeleteConfirmModal } from "./TaskBulkDeleteConfirmModal";
-export type { TaskBulkDeleteRow } from "./TaskBulkDeleteConfirmModal";
-export { useBulkDeleteMutation } from "./useBulkDeleteMutation";
+export { TaskBulkCloseConfirmModal } from "./TaskBulkCloseConfirmModal";
+export type { TaskBulkCloseRow } from "./TaskBulkCloseConfirmModal";
+export { useBulkCloseMutation } from "./useBulkCloseMutation";
 export type {
-  BulkDeleteFailure,
-  BulkDeleteResult,
-} from "./useBulkDeleteMutation";
+  BulkCloseFailure,
+  BulkCloseResult,
+} from "./useBulkCloseMutation";
