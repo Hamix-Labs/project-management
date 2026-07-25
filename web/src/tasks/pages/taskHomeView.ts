@@ -1,10 +1,11 @@
-export type TaskHomeView = "list" | "board";
+export type TaskHomeView = "list" | "board" | "timeline";
 
 /** Parse `view` search param; unknown / missing → list. */
 export function parseTaskHomeView(
   viewParam: string | null | undefined,
 ): TaskHomeView {
   if (viewParam === "board") return "board";
+  if (viewParam === "timeline") return "timeline";
   return "list";
 }
 
@@ -20,7 +21,7 @@ export function applyTaskHomeView(
   if (view === "list") {
     next.delete("view");
   } else {
-    next.set("view", "board");
+    next.set("view", view);
   }
   return next;
 }
