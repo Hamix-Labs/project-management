@@ -80,7 +80,7 @@ func (s *Service) runVerifyChecks(
 		if cmdErr != nil {
 			return nil, "", mirrorDegraded, cyclesdomain.TokenUsage{}, false, cmdErr
 		}
-		runUsage, runUsagePresent, runErr := s.runLLMVerifyAgent(parentCtx, task, cycle, phaseSeq, runCorrelationID, snap, previouslyPassed, selfReport, feedback, cmdEvidence, int(attemptSeq)-1)
+		runUsage, runUsagePresent, runErr := s.runLLMVerify(parentCtx, task, cycle, phaseSeq, runCorrelationID, snap, previouslyPassed, selfReport, feedback, cmdEvidence, int(attemptSeq)-1)
 		if runUsagePresent {
 			usage = cyclesdomain.AddTokenUsage(usage, runUsage)
 			usagePresent = true

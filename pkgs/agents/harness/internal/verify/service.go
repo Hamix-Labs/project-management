@@ -36,13 +36,14 @@ type Deps struct {
 	Hooks        Hooks
 }
 
-// NewService constructs a verify Service. VerifyRunner falls back to Runner when nil.
+// NewService constructs a verify Service. PhaseVerify always uses the execute
+// Runner (ADR-0084); Deps.VerifyRunner is ignored when non-nil.
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func NewService(deps Deps) *Service {
-	verifyRunner := deps.Runner
 	if deps.VerifyRunner != nil {
-		verifyRunner = deps.VerifyRunner
+		slog.Warn("agent harness ignoring VerifyRunner; PhaseVerify uses execute runner",
+			"cmd", calltrace.LogCmd, "operation", "agent.harness.verify.NewService.ignore_verify_runner")
 	}
 	clock := deps.Clock
 	if clock == nil {
@@ -51,7 +52,7 @@ func NewService(deps Deps) *Service {
 	return &Service{
 		store:        deps.Store,
 		runner:       deps.Runner,
-		verifyRunner: verifyRunner,
+		verifyRunner: deps.Runner,
 		reportDir:    deps.ReportDir,
 		workingDir:   deps.WorkingDir,
 		git:          deps.Git,
@@ -70,13 +71,16 @@ func (s *Service) SetWorkingDir(dir string) {
 	s.workingDir = dir
 }
 
+// SetVerifyRunner is a no-op retained for harness wiring until Options.VerifyRunner
+// is removed (ADR-0084: verify always uses the execute runner).
+//
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (s *Service) SetVerifyRunner(r runner.Runner) {
 	if r != nil {
-		s.verifyRunner = r
-	} else {
-		s.verifyRunner = s.runner
+		slog.Warn("agent harness ignoring SetVerifyRunner; PhaseVerify uses execute runner",
+			"cmd", calltrace.LogCmd, "operation", "agent.harness.verify.SetVerifyRunner.ignore")
 	}
+	s.verifyRunner = s.runner
 }
 
 func (s *Service) SetStreamIdleStuck(d time.Duration) {

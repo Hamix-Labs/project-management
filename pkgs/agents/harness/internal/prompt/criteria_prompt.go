@@ -58,7 +58,7 @@ func InjectCriteria(prompt string, items []ChecklistItem, reportPath string, alr
 	criteria.WriteString("Use only `schema_version`, `criteria`, and `commits` top-level fields — no extra keys; put metadata in `evidence`.\n")
 	criteria.WriteString("List commits **created in this execute visit** under `commits` (incremental is fine — the worker accumulates them).\n")
 	criteria.WriteString("Git discipline: create **new commits only** — never amend, rebase, squash, or delete history; fix mistakes with a follow-up commit.\n")
-	criteria.WriteString("claimed_done is your assertion that you completed the work; the verification agent independently decides whether each criterion is satisfied.\n")
+	criteria.WriteString("claimed_done is your assertion that you completed the work; after execute, you will verify each criterion against worker command evidence (do not treat the claim as final acceptance).\n")
 	if len(locked) > 0 {
 		criteria.WriteString("(Report only the criteria below; do NOT include already-verified IDs.)\n")
 	}
