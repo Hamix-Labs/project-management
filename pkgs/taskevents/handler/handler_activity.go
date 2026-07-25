@@ -17,13 +17,14 @@ import (
 )
 
 type activityEntry struct {
-	TaskID    string                     `json:"task_id"`
-	Seq       int64                      `json:"seq"`
-	At        time.Time                  `json:"at"`
-	Type      taskeventsdomain.EventType `json:"type"`
-	By        taskcoredomain.Actor       `json:"by"`
-	Data      json.RawMessage            `json:"data"`
-	TaskTitle *string                    `json:"task_title,omitempty"`
+	TaskID     string                     `json:"task_id"`
+	Seq        int64                      `json:"seq"`
+	At         time.Time                  `json:"at"`
+	Type       taskeventsdomain.EventType `json:"type"`
+	By         taskcoredomain.Actor       `json:"by"`
+	Data       json.RawMessage            `json:"data"`
+	TaskTitle  *string                    `json:"task_title,omitempty"`
+	TaskNumber *int                       `json:"task_number,omitempty"`
 }
 
 type activityResponse struct {
@@ -61,13 +62,14 @@ func activityEntriesToJSON(events []contract.ActivityEvent) []activityEntry {
 	out := make([]activityEntry, 0, len(events))
 	for _, e := range events {
 		out = append(out, activityEntry{
-			TaskID:    e.TaskID,
-			Seq:       e.Seq,
-			At:        e.At,
-			Type:      e.Type,
-			By:        e.By,
-			Data:      normalizeJSONObjectForResponse(e.Data),
-			TaskTitle: e.TaskTitle,
+			TaskID:     e.TaskID,
+			Seq:        e.Seq,
+			At:         e.At,
+			Type:       e.Type,
+			By:         e.By,
+			Data:       normalizeJSONObjectForResponse(e.Data),
+			TaskTitle:  e.TaskTitle,
+			TaskNumber: e.TaskNumber,
 		})
 	}
 	return out

@@ -239,6 +239,11 @@ func createTaskInTx(tx *gorm.DB, t *domain.Task, in CreateInput, by domain.Actor
 		if n == 0 {
 			return fmt.Errorf("%w: project not found", domain.ErrInvalidInput)
 		}
+		num, err := allocateNextTaskNumber(tx, *t.ProjectID)
+		if err != nil {
+			return err
+		}
+		t.Number = &num
 	}
 	contextIDs, err := normalizeProjectContextItemIDs(in.ProjectContextItemIDs)
 	if err != nil {

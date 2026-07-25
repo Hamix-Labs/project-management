@@ -25,6 +25,7 @@ func TestTask_roundTrip(t *testing.T) {
 		Priority:              domain.PriorityHigh,
 		InitialPrompt:         "do the thing",
 		ProjectID:             &pid,
+		Number:                intPtr(7),
 		WorktreeID:            &wb,
 		CursorModel:           cm,
 		PickupNotBefore:       &now,
@@ -99,3 +100,5 @@ func TestTaskDependency_roundTrip(t *testing.T) {
 }
 
 func strPtr(s string) *string { return &s }
+
+func intPtr(n int) *int { return &n }

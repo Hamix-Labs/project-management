@@ -119,6 +119,9 @@ func applyProjectPatch(tx *gorm.DB, cur *domain.Task, project *ProjectFieldPatch
 		return nil
 	}
 	if project.Clear {
+		if cur.Number != nil {
+			return fmt.Errorf("%w: cannot clear project_id on numbered task", domain.ErrInvalidInput)
+		}
 		cur.ProjectID = nil
 		cur.ProjectContextItemIDs = nil
 		return nil
@@ -127,6 +130,12 @@ func applyProjectPatch(tx *gorm.DB, cur *domain.Task, project *ProjectFieldPatch
 	if pid == "" {
 		return fmt.Errorf("%w: project_id", domain.ErrInvalidInput)
 	}
+	if cur.Number != nil {
+		if cur.ProjectID != nil && *cur.ProjectID == pid {
+			return nil
+		}
+		return fmt.Errorf("%w: cannot move numbered task to another project", domain.ErrInvalidInput)
+	}
 	var n int64
 	if err := tx.Model(&projectmodel.Project{}).Where("id = ? AND status = ?", pid, projectsdomain.ProjectStatusActive).Count(&n).Error; err != nil {
 		return fmt.Errorf("project lookup: %w", err)
@@ -134,7 +143,12 @@ func applyProjectPatch(tx *gorm.DB, cur *domain.Task, project *ProjectFieldPatch
 	if n == 0 {
 		return fmt.Errorf("%w: project not found", domain.ErrInvalidInput)
 	}
+	num, err := allocateNextTaskNumber(tx, pid)
+	if err != nil {
+		return err
+	}
 	cur.ProjectID = &pid
+	cur.Number = &num
 	cur.ProjectContextItemIDs = nil
 	return nil
 }

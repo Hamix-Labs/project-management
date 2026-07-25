@@ -88,5 +88,8 @@ func Run(ctx context.Context, db *gorm.DB, deps Deps) error {
 	if err := migrateUnlinkedProjects(ctx, db); err != nil {
 		return fmt.Errorf("unlinked projects: %w", err)
 	}
+	if err := migrateBackfillTaskNumbers(ctx, db); err != nil {
+		return fmt.Errorf("backfill task numbers: %w", err)
+	}
 	return nil
 }

@@ -6,6 +6,10 @@ import "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func FromDomainProject(d domain.Project) Project {
+	n := d.NextTaskNumber
+	if n < 1 {
+		n = 1
+	}
 	return Project{
 		ID:             d.ID,
 		Name:           d.Name,
@@ -14,6 +18,7 @@ func FromDomainProject(d domain.Project) Project {
 		ContextSummary: d.ContextSummary,
 		RepositoryID:   d.RepositoryID,
 		IsDefault:      d.IsDefault,
+		NextTaskNumber: n,
 		CreatedAt:      d.CreatedAt,
 		UpdatedAt:      d.UpdatedAt,
 	}
@@ -31,6 +36,7 @@ func ToDomainProject(m Project) domain.Project {
 		ContextSummary: m.ContextSummary,
 		RepositoryID:   m.RepositoryID,
 		IsDefault:      m.IsDefault,
+		NextTaskNumber: m.NextTaskNumber,
 		CreatedAt:      m.CreatedAt,
 		UpdatedAt:      m.UpdatedAt,
 	}

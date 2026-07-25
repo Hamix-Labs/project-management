@@ -149,7 +149,7 @@ Task rows bind a project and an explicit context allowlist:
 
 2. **Select items** — Set `project_context_item_ids` to an ordered list of context item ids (max **20**, deduped, no empty strings). Every id must exist on the task's current project ([`validateProjectContextSelection`](../../pkgs/tasks/store/internal/tasks/project_context_selection.go)). Requires `project_id` when the list is non-empty.
 
-3. **Changing project clears selection** — PATCH `project_id` to a new value resets `project_context_item_ids` to empty. Operators must re-select items for the new project.
+3. **Changing project clears selection** — PATCH `project_id` to a new value resets `project_context_item_ids` to empty. Operators must re-select items for the new project. **Numbered tasks cannot change or clear `project_id`** (per-project `#N` is immutable).
 
 4. **SPA parity** — The create/edit UI stores selection in `project_context_item_ids` (not parsed from prompt chips). See `web/src/projects/projectContextRefs.ts` (`MAX_SELECTED_PROJECT_CONTEXT_ITEMS = 20` mirrors the store cap).
 
