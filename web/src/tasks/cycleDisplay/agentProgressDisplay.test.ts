@@ -31,6 +31,10 @@ describe("agentProgressDisplay", () => {
     ["run_state", "idle_suspicious", undefined, "May be stuck"],
     ["run_state", "idle_kill_pending", undefined, "Terminating soon"],
     ["run_state", "idle_recovered", undefined, "Recovered"],
+    ["run_state", "setup_started", "harness_setup", "Setup"],
+    ["run_state", "setup_spawn", "harness_setup", "Setup"],
+    ["run_state", "handoff_verify", "harness_setup", "Setup"],
+    ["run_state", "restart_resume", "harness_setup", "Setup"],
     ["custom_event", undefined, undefined, "custom event"],
   ] as const)(
     "agentProgressKindLabel(%s, %s, %s) → %s",

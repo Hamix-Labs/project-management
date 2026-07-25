@@ -66,7 +66,7 @@ export function toLiveTimelineRows(
       key: "pending",
       icon: "working",
       kindLabel: "Working",
-      kindTitle: "Waiting for the next agent update",
+      kindTitle: "Agent working",
       message: pendingMessage,
       messageEmphasis: "secondary",
       timeLabel: latest

@@ -53,13 +53,13 @@ describe("toLiveTimelineRows", () => {
     ];
     const rows = toLiveTimelineRows(items, NOW, {
       showPendingRow: true,
-      pendingMessage: "Waiting for the next agent update…",
+      pendingMessage: "Agent working…",
     });
     expect(rows[0]).toMatchObject({
       isPending: true,
       icon: "working",
       kindLabel: "Working",
-      message: "Waiting for the next agent update…",
+      message: "Agent working…",
       messageEmphasis: "secondary",
       timeLabel: "2s ago",
     });

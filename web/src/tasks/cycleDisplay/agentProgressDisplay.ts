@@ -98,6 +98,17 @@ export function agentProgressKindDescriptor(
         tone: "done",
       };
     }
+    if (
+      subtype?.startsWith("setup_") ||
+      subtype === "handoff_verify" ||
+      subtype === "restart_resume"
+    ) {
+      return {
+        label: "Setup",
+        title: "Worker is preparing the agent run",
+        tone: "session",
+      };
+    }
   }
   if (kind === "system") {
     return {
