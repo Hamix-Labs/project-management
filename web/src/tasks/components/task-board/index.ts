@@ -19,3 +19,5 @@ export {
   type FetchActiveTasksForBoardOptions,
   type ListTasksFn,
 } from "./fetchActiveTasksForBoard";
+export { TaskBoardSection } from "./TaskBoardSection";
+export { TaskHomeViewToggle } from "./TaskHomeViewToggle";
