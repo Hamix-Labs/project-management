@@ -14,20 +14,12 @@ var (
 	taskapiDomainTasksUpdatedTotal = promauto.NewCounter(prometheus.CounterOpts{
 		Namespace: "taskapi",
 		Name:      "domain_tasks_updated_total",
-		Help:      "Tasks successfully updated via PATCH /tasks/{id} (HTTP 200).",
-	})
-	taskapiDomainTasksDeletedTotal = promauto.NewCounter(prometheus.CounterOpts{
-		Namespace: "taskapi",
-		Name:      "domain_tasks_deleted_total",
-		Help:      "Tasks successfully removed via DELETE /tasks/{id} (HTTP 204).",
+		Help:      "Tasks successfully updated via PATCH /tasks/{id} or POST /tasks/{id}/close|reopen (HTTP 200).",
 	})
 )
 
 // DomainTasksCreatedTotal counts successful POST /tasks responses.
 var DomainTasksCreatedTotal = taskapiDomainTasksCreatedTotal
 
-// DomainTasksUpdatedTotal counts successful PATCH /tasks/{id} responses.
+// DomainTasksUpdatedTotal counts successful PATCH /tasks/{id} or POST /tasks/{id}/close|reopen responses.
 var DomainTasksUpdatedTotal = taskapiDomainTasksUpdatedTotal
-
-// DomainTasksDeletedTotal counts successful DELETE /tasks/{id} responses.
-var DomainTasksDeletedTotal = taskapiDomainTasksDeletedTotal

@@ -205,7 +205,6 @@ Lossless reconnects via `Last-Event-ID`: a ring buffer (default 1024 entries) re
 | `task_created` | `POST /tasks` succeeds. | `{ type, id, data: <task> }` |
 | `task_updated` | Task-row mutations (PATCH, checklist, gate, retry; agent terminal status). `data` carries the full flat task when the publisher enriches post-commit; hint-only frames omit `data`. | `{ type, id, data?: <task> }` |
 | `task_event_changed` | Audit event thread append (`PATCH /tasks/{id}/events/{seq}`). Does not mutate the `tasks` row. | `{ type, id, event_seq }` |
-| `task_deleted` | `DELETE /tasks/{id}`. | `{ type, id }` |
 | `task_dependency_changed` | Dependency add/remove/replace. | `{ type, id }` |
 | `task_gate_changed` | Gate create/patch/action. | `{ type, id }` |
 | `task_cycle_changed` | Cycle/phase mutation. | `{ type, id, cycle_id, data?: <cycle detail> }` |
