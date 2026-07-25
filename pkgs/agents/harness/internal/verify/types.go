@@ -16,6 +16,9 @@ type Snapshot struct {
 	MaxRetries                  int
 	VerifyCommandTimeoutSeconds int
 	Criteria                    []checklistcontract.ChecklistVerifyItem
+	// VerifyModel is the optional settings pin for PhaseVerify (--model).
+	// Empty means inherit task.CursorModel / execute runner default.
+	VerifyModel string
 }
 
 // Verdict is the harness-internal outcome for one criterion after verify work.

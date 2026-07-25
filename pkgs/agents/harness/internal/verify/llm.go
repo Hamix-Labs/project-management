@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"strings"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/cursorresume"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/git"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/prompt"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/reports"
@@ -55,21 +56,13 @@ func (s *Service) runLLMVerify(
 	}
 	var total cyclesdomain.TokenUsage
 	var usagePresent bool
-	res, err := s.runVerifyCursor(ctx, task, cycle, phaseSeq, runCorrelationID, promptText, resumeSessionID)
+	res, err := s.runVerifyCursor(ctx, task, cycle, phaseSeq, runCorrelationID, promptText, resumeSessionID, snap)
 	if u, ok := cyclesdomain.TokenUsageFromDetailsJSON(res.Details); ok {
 		total = cyclesdomain.AddTokenUsage(total, u)
 		usagePresent = true
 	}
 	if errors.Is(err, runner.ErrResumeSession) {
-		s.emitSetupProgress(ctx, task.ID, cycle.ID, phaseSeq,
-			runner.SetupProgressEvent(runner.ProgressRunStateRestartResume, "Restarting agent after failed resume…"))
-		full := buildVerifyPrompt(ctx, s, task.ID, snap, cycle.ID, previouslyPassed, selfReport, feedback, cmdEvidence)
-		res, retryErr := s.runVerifyCursor(ctx, task, cycle, phaseSeq, runCorrelationID, full, "")
-		if u, ok := cyclesdomain.TokenUsageFromDetailsJSON(res.Details); ok {
-			total = cyclesdomain.AddTokenUsage(total, u)
-			usagePresent = true
-		}
-		err = retryErr
+		err = cursorresume.ResumeSessionFailed(err)
 	}
 	return total, usagePresent, err
 }
@@ -146,6 +139,7 @@ func (s *Service) runVerifyCursor(
 	runCorrelationID string,
 	promptText string,
 	resumeSessionID string,
+	snap Snapshot,
 ) (runner.Result, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.verify.runVerifyCursor",
 		"task_id", task.ID, "cycle_id", cycle.ID, "phase_seq", phaseSeq,
@@ -180,6 +174,7 @@ func (s *Service) runVerifyCursor(
 		Phase:            cyclesdomain.PhaseVerify,
 		Prompt:           promptText,
 		WorkingDir:       s.workingDir,
+		CursorModel:      EffectiveVerifyModel(task, snap),
 		RunCorrelationID: runCorrelationID,
 		ResumeSessionID:  resumeSessionID,
 		StreamIdleStuck:  streamIdleStuck,

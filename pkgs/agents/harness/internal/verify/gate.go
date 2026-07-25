@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"strings"
 
 	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	checklistcontract "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/contract"
@@ -32,6 +33,7 @@ func (s *Service) LoadSnapshot(ctx context.Context, taskID string) (Snapshot, er
 		MaxRetries:                  settings.VerifyMaxRetries,
 		VerifyCommandTimeoutSeconds: timeoutSec,
 		Criteria:                    items,
+		VerifyModel:                 strings.TrimSpace(settings.VerifyModel),
 	}, nil
 }
 

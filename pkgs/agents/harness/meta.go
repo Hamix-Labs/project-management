@@ -161,6 +161,11 @@ func stringSliceFromCycleMeta(cycle *cyclesdomain.TaskCycle, key string) []strin
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func mergeFailureDetails(base []byte, extra map[string]any) []byte {
+	return mergeCycleMetaBytes(base, extra)
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func mergeCycleMetaBytes(base []byte, extra map[string]any) []byte {
 	if len(extra) == 0 {
 		return base

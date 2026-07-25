@@ -7,10 +7,12 @@ import (
 	"log/slog"
 	"strings"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/cursorresume"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/orchestration"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/prompt"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/reports"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/verify"
+	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
@@ -128,6 +130,7 @@ func (h *Harness) runCycleLoopExecute(
 	operatorCancelled := phaseOut.OperatorCancelled
 
 	effects := orchestration.DecideExecutePostRun(phaseOut.PostRunInput)
+	result, effects = h.enforceExecuteSessionID(parentCtx, result, effects)
 	if phaseOut.StaleRecovery && effects.ContinueToVerify {
 		recovered := streamIdleRecoveredEvent()
 		h.persistProgress(parentCtx, task.ID, cycle.ID, execPhase.PhaseSeq, recovered)
@@ -139,6 +142,48 @@ func (h *Harness) runCycleLoopExecute(
 		h.anchorPostExecuteState(parentCtx, state, execPhase.PhaseSeq, snap, phaseOut.IngestAttempted, phaseOut.IngestOutcome, phaseOut.IngestErr)
 	}
 	return cont
+}
+
+// enforceExecuteSessionID fails a successful Cursor execute that omitted session_id
+// when resume is enabled (same-chat hard requirement).
+func (h *Harness) enforceExecuteSessionID(
+	ctx context.Context,
+	result runner.Result,
+	effects orchestration.ExecuteEffects,
+) (runner.Result, orchestration.ExecuteEffects) {
+	if !effects.ContinueToVerify {
+		return result, effects
+	}
+	if h.runner == nil || !isCursorSessionRunner(h.runner) {
+		return result, effects
+	}
+	settings, err := h.store.GetSettings(ctx)
+	if err != nil || !settings.CursorSessionResumeEnabled {
+		return result, effects
+	}
+	if cyclesdomain.SessionIDFromDetailsJSON(detailsBytes(result)) != "" {
+		return result, effects
+	}
+	hf := cursorresume.MissingSessionAfterExecute()
+	result.Details = mergeFailureDetails(detailsBytes(result), hf.DetailsMap())
+	if result.Summary == "" {
+		result.Summary = "Cursor chat session id missing"
+	}
+	return result, orchestration.ExecuteEffects{
+		TerminateFailed: true,
+		TransitionTask:  taskcoredomain.StatusFailed,
+		Reason:          orchestration.ReasonCursorMissingSessionID,
+		ResultSummary:   hf.Explain(),
+	}
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure runner name check without I/O."
+func isCursorSessionRunner(r runner.Runner) bool {
+	if r == nil {
+		return false
+	}
+	n := strings.ToLower(strings.TrimSpace(r.Name()))
+	return n == "cursor" || n == "cursor-cli" || strings.HasPrefix(n, "cursor")
 }
 
 // runCycleLoopVerify runs verification for one loop iteration. retryLoop is
@@ -178,6 +223,12 @@ func (h *Harness) runCycleLoopVerify(
 	}
 	if verifyErr == nil {
 		return false, false, false
+	}
+
+	if hf, ok := cursorresume.AsHardFail(verifyErr); ok {
+		effects := orchestration.VerifyEffects{TerminalFailure: true}
+		retry, term := h.applyVerifyEffects(parentCtx, task, cycle, state, effects, hf.FormatReason())
+		return retry, term, false
 	}
 
 	var result orchestration.VerifyResult

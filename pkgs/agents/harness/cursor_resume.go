@@ -5,6 +5,7 @@ import (
 	"context"
 	"log/slog"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/cursorresume"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/prompt"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/reports"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/verify"
@@ -88,15 +89,12 @@ func (h *Harness) planVerifyRun(
 	}
 	decision, err := h.resolveCursorResume(ctx, cyclesdomain.PhaseVerify, task, cycle, state, opts, false)
 	if err != nil {
-		slog.Warn("agent harness verify cursor resume policy failed; using fresh prompt", "cmd", calltrace.LogCmd,
-			"operation", "agent.harness.Harness.planVerifyRun.fallback",
-			"cycle_id", cycle.ID, "err", err)
-		decision = CursorResumeDecision{
-			Mode:       CursorResumeFresh,
-			Prompt:     h.verifySvc().BuildVerifyPrompt(ctx, task.ID, snap, cycle.ID, state.verify.previouslyPassed, selfReport, feedback, cmdEvidence),
-			DenyReason: "policy_error",
-		}
-	} else if decision.Mode == CursorResumeFresh || decision.Mode == CursorResumeFallback {
+		return verify.VerifyRunPlan{}, err
+	}
+	if decision.DenyReason == "no_session_id" {
+		return verify.VerifyRunPlan{}, cursorresume.MissingSessionForVerify()
+	}
+	if decision.Mode == CursorResumeFresh || decision.Mode == CursorResumeFallback {
 		decision.Prompt = h.verifySvc().BuildVerifyPrompt(ctx, task.ID, snap, cycle.ID, state.verify.previouslyPassed, selfReport, feedback, cmdEvidence)
 	} else {
 		rc := h.buildRecoveryContext(cyclesdomain.PhaseVerify, task, cycle, state, opts, retryModeFromCycleMeta(cycle))
