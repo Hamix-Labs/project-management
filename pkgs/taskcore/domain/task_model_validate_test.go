@@ -67,3 +67,14 @@ func TestNormalizeTaskTags_dedupes(t *testing.T) {
 		t.Fatalf("got %v", got)
 	}
 }
+
+func TestNormalizeTaskTags_lowercases(t *testing.T) {
+	t.Parallel()
+	got := NormalizeTaskTags([]string{"Backend", "API", "backend"})
+	if len(got) != 2 || got[0] != "backend" || got[1] != "api" {
+		t.Fatalf("got %v", got)
+	}
+	if err := ValidateTaskTags(got); err != nil {
+		t.Fatalf("normalized tags should validate: %v", err)
+	}
+}

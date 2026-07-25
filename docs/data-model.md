@@ -25,7 +25,7 @@ Work hierarchy is **Project → Task**. Tasks may have:
 | `priority` | enum | `low` / `medium` / `high` / `critical`. Required at create. |
 | `project_id` | string \| null | Project membership. Required on create when `worktree_id` is set; must belong to the same repo as the worktree. |
 | `project_context_item_ids` | string[] | Explicit allowlist of project context items for runner snapshots. Cleared on `project_id` change. |
-| `tags` | string[] | Free-form, `^[a-z0-9][a-z0-9._-]{0,31}$`. |
+| `tags` | string[] | Free-form, stored lowercase `^[a-z0-9][a-z0-9._-]{0,31}$`. Create/PATCH lowercases before validate. |
 | `milestone` | string \| null | Single anchor per task, `^[a-zA-Z0-9][a-zA-Z0-9 ._-]{0,63}$` when set. |
 | `depends_on` | object[] | Hydrated from `task_dependencies`: `{ task_id, satisfies }` where `satisfies` is `done` (default and only value). |
 | `criteria_satisfied_at` | RFC3339 UTC \| null | Set when all checklist items are verified complete; informational cache on the task row (dependency edges use predecessor `status = done`). |

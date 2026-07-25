@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { buildComposePayloadFromForm, hydrateFormFromComposePayload } from "./composePayload";
+import {
+  buildComposePayloadFromForm,
+  hydrateFormFromComposePayload,
+  parseTagsFromCsv,
+} from "./composePayload";
 import type { TaskCreateFormFields } from "./types";
 
 const baseFields: TaskCreateFormFields = {
@@ -38,5 +42,14 @@ describe("composePayload", () => {
     expect(hydrated.tagsCsv).toBe("alpha, beta");
     expect(hydrated.dependsOn).toEqual(["dep-1"]);
     expect(hydrated.checklistItems).toEqual([{ text: "Criterion one" }]);
+  });
+
+  it("lowercases and dedupes tags from Title Case CSV", () => {
+    expect(parseTagsFromCsv("Backend, API, backend")).toEqual(["backend", "api"]);
+    const payload = buildComposePayloadFromForm({
+      ...baseFields,
+      newTagsCsv: "Backend",
+    });
+    expect(payload.tags).toEqual(["backend"]);
   });
 });
