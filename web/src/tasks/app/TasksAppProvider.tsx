@@ -51,6 +51,7 @@ export function useTasksAppList() {
       requestDelete: app.requestDelete,
       taskStats: app.taskStats,
       taskStatsLoading: app.taskStatsLoading,
+      homeDataReady: app.homeDataReady,
     }),
     [
       app.tasks,
@@ -70,6 +71,7 @@ export function useTasksAppList() {
       app.requestDelete,
       app.taskStats,
       app.taskStatsLoading,
+      app.homeDataReady,
     ],
   );
 }

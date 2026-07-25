@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ROUTER_FUTURE_FLAGS } from "@/lib/routerFutureFlags";
 import { projectsListEmpty } from "@/test/handlers/projects";
+import { tasksListEmpty } from "@/test/handlers/tasks";
 import { server } from "@/test/server";
 import type { useTasksApp } from "../hooks/useTasksApp";
 import { TasksAppProvider } from "../app/TasksAppProvider";
@@ -11,6 +12,30 @@ import { TaskHome } from "./TaskHome";
 
 vi.mock("../components/task-list", () => ({
   TaskListSection: () => <div data-testid="task-list-section" />,
+}));
+
+vi.mock("../components/task-board/TaskBoardSection", () => ({
+  TaskBoardSection: () => <div data-testid="task-board-section" />,
+}));
+
+vi.mock("../components/task-board/TaskHomeViewToggle", () => ({
+  TaskHomeViewToggle: ({
+    value,
+    onChange,
+  }: {
+    value: string;
+    onChange: (v: "list" | "board") => void;
+  }) => (
+    <div data-testid="view-toggle">
+      <button type="button" onClick={() => onChange("list")}>
+        List
+      </button>
+      <button type="button" onClick={() => onChange("board")}>
+        Board
+      </button>
+      <span data-testid="view-value">{value}</span>
+    </div>
+  ),
 }));
 
 type App = ReturnType<typeof useTasksApp>;
@@ -50,18 +75,19 @@ function makeApp(overrides: Partial<App> = {}): App {
     resumeDraftError: null,
     taskStats: undefined,
     taskStatsLoading: true,
+    homeDataReady: true,
     ...overrides,
   } as unknown as App;
 }
 
-function renderHome(app: App) {
+function renderHome(app: App, entries: string[] = ["/"]) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, staleTime: Infinity } },
   });
   return render(
     <QueryClientProvider client={client}>
       <TasksAppProvider value={app}>
-        <MemoryRouter future={ROUTER_FUTURE_FLAGS}>
+        <MemoryRouter initialEntries={entries} future={ROUTER_FUTURE_FLAGS}>
           <TaskHome />
         </MemoryRouter>
       </TasksAppProvider>
@@ -71,7 +97,7 @@ function renderHome(app: App) {
 
 describe("TaskHome", () => {
   beforeEach(() => {
-    server.use(projectsListEmpty());
+    server.use(projectsListEmpty(), tasksListEmpty());
   });
 
   it("renders the task list without KPI stats cards", () => {
@@ -80,5 +106,11 @@ describe("TaskHome", () => {
     expect(screen.getByTestId("task-list-section")).toBeInTheDocument();
     expect(screen.queryByLabelText("Task overview")).not.toBeInTheDocument();
     expect(screen.queryByText(/total tasks/i)).not.toBeInTheDocument();
+  });
+
+  it("renders the board section when view=board", () => {
+    renderHome(makeApp(), ["/?view=board"]);
+    expect(screen.getByTestId("task-board-section")).toBeInTheDocument();
+    expect(screen.queryByTestId("task-list-section")).not.toBeInTheDocument();
   });
 });

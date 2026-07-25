@@ -1,17 +1,26 @@
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useDocumentTitle } from "@/shared/useDocumentTitle";
 import { Button } from "@/components/ui";
 import { TaskListSection } from "../components/task-list";
+import { TaskBoardSection } from "../components/task-board/TaskBoardSection";
+import { TaskHomeViewToggle } from "../components/task-board/TaskHomeViewToggle";
 import { useTasksAppList, useTasksAppModals } from "../app/TasksAppProvider";
+import { useTasksBoard } from "../hooks/useTasksBoard";
 import { isUiFeatureOmitted } from "@/launch/omittedFeatures";
 import { useProjects } from "@/hooks/useProjects";
+import {
+  applyTaskHomeView,
+  parseTaskHomeView,
+  type TaskHomeView,
+} from "./taskHomeView";
 
 export function TaskHome() {
   useDocumentTitle(undefined);
   const list = useTasksAppList();
   const modals = useTasksAppModals();
   const [searchParams, setSearchParams] = useSearchParams();
+  const view = parseTaskHomeView(searchParams.get("view"));
   const projectsUiEnabled = !isUiFeatureOmitted("projects");
   const projects = useProjects({
     includeArchived: false,
@@ -19,6 +28,12 @@ export function TaskHome() {
     enabled: projectsUiEnabled,
   });
   const { openCreateModal, createModalOpen } = modals;
+
+  const board = useTasksBoard({
+    view,
+    dataEnabled: list.homeDataReady,
+    bootstrapSettled: true,
+  });
 
   const createIntent = searchParams.get("create");
   const projectIntent = projectsUiEnabled
@@ -31,8 +46,19 @@ export function TaskHome() {
     setSearchParams({}, { replace: true });
   }, [openCreateModal, createIntent, projectIntent, setSearchParams]);
 
+  const onViewChange = useCallback(
+    (next: TaskHomeView) => {
+      setSearchParams(applyTaskHomeView(searchParams, next), { replace: true });
+    },
+    [searchParams, setSearchParams],
+  );
+
   /** Row-level busy state for the list only; excludes create so modal typing does not re-render the table. */
   const listSaving = list.patchPending || list.deletePending;
+
+  const projectFilterOptions = projectsUiEnabled
+    ? (projects.data?.projects ?? [])
+    : [];
 
   const listSectionProps = useMemo(
     () => ({
@@ -44,9 +70,7 @@ export function TaskHome() {
       hideBackgroundRefreshHint: list.sseLive,
       listPage: list.taskListPage,
       listPageSize: list.taskListPageSize,
-      projectFilterOptions: projectsUiEnabled
-        ? (projects.data?.projects ?? [])
-        : [],
+      projectFilterOptions,
       showProjectColumn: projectsUiEnabled,
       onListPageChange: list.setTaskListPage,
       onListFiltersChange: list.resetTaskListPage,
@@ -65,8 +89,8 @@ export function TaskHome() {
       list.sseLive,
       list.taskListPage,
       list.taskListPageSize,
+      projectFilterOptions,
       projectsUiEnabled,
-      projects.data?.projects,
       list.setTaskListPage,
       list.resetTaskListPage,
       list.hasNextTaskPage,
@@ -80,6 +104,7 @@ export function TaskHome() {
   const listActions = useMemo(
     () => (
       <>
+        <TaskHomeViewToggle value={view} onChange={onViewChange} />
         <Button
           variant="secondary"
           className="task-home-new-template-btn"
@@ -131,12 +156,46 @@ export function TaskHome() {
         </Button>
       </>
     ),
-    [openCreateModal, modals.openTemplateCreateModal, createModalOpen],
+    [
+      view,
+      onViewChange,
+      openCreateModal,
+      modals.openTemplateCreateModal,
+      createModalOpen,
+    ],
+  );
+
+  const emptyAction = useMemo(
+    () => ({
+      label: "New task",
+      onClick: () => openCreateModal(),
+      disabled: createModalOpen,
+    }),
+    [openCreateModal, createModalOpen],
   );
 
   return (
     <div className="task-detail-content--enter">
-      <TaskListSection {...listSectionProps} actions={listActions} />
+      {view === "board" ? (
+        <TaskBoardSection
+          tasks={board.tasks}
+          loading={board.loading}
+          refreshing={board.refreshing}
+          hideBackgroundRefreshHint={list.sseLive}
+          error={board.error}
+          truncated={board.truncated}
+          onRetry={() => void board.refetch()}
+          projectFilterOptions={projectFilterOptions}
+          showProjectColumn={projectsUiEnabled}
+          actions={listActions}
+          emptyListAction={emptyAction}
+        />
+      ) : (
+        <TaskListSection
+          {...listSectionProps}
+          actions={listActions}
+        />
+      )}
     </div>
   );
 }

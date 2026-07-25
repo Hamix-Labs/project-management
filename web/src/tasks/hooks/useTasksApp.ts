@@ -34,6 +34,7 @@ export function useTasksApp({
   dataEnabled = true,
   bootstrapSettled = true,
 }: UseTasksAppOptions) {
+  const homeDataReady = dataEnabled && bootstrapSettled;
   const {
     createFlowError,
     editingTaskId,
@@ -190,6 +191,8 @@ export function useTasksApp({
     taskListPageSize: list.taskListPageSize,
     hasNextTaskPage: list.hasNextTaskPage,
     hasPrevTaskPage: list.hasPrevTaskPage,
+    /** True when home list/board queries may run (route + bootstrap). */
+    homeDataReady,
   };
 }
 
