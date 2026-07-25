@@ -143,33 +143,6 @@ func (h *Handler) stats(w http.ResponseWriter, r *http.Request) {
 	h.httpPort.WriteJSONWithETag(w, r, op, http.StatusOK, taskStatsResponseFromStore(stats))
 }
 
-func (h *Handler) delete(w http.ResponseWriter, r *http.Request) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.delete")
-	const op = "tasks.delete"
-	r = calltrace.WithRequestRoot(r, op)
-	id, err := h.parseTaskPathID(r.PathValue("id"))
-	if err != nil {
-		h.httpPort.WriteStoreError(w, r, op, err)
-		return
-	}
-	h.debugHTTPRequest(r, op, "task_id", id)
-	by := h.httpPort.ActorFromRequest(r)
-	deletedIDs, err := h.tasks.Delete(r.Context(), id, by)
-	if err != nil {
-		h.httpPort.WriteStoreError(w, r, op, err)
-		return
-	}
-	for _, deletedID := range deletedIDs {
-		h.notifyChangeSafe(contract.ChangeTaskDeleted, deletedID)
-		taskapiDomainTasksDeletedTotal.Inc()
-	}
-	h.debugHTTPOut(r.Context(), op, http.StatusNoContent,
-		"task_id", id,
-		"deleted_count", len(deletedIDs),
-		"response_empty", true)
-	w.WriteHeader(http.StatusNoContent)
-}
-
 func parseListParams(ctx context.Context, q url.Values) (limit, offset int, afterID string, err error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.parseListParams")
 	ctx = calltrace.Push(ctx, "parseListParams")

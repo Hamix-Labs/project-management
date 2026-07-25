@@ -29,6 +29,9 @@ type API struct {
 	cycles    *cyclesstore.Store
 	events    *taskeventsstore.Store
 	hooks     *storehooks.Runtime
+
+	cancelRunForTask CancelRunForTaskFunc
+	queueDrop        QueueDropFunc
 }
 
 // NewAPI constructs BC stores sharing db.

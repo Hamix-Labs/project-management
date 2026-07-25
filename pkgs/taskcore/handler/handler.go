@@ -90,9 +90,10 @@ func Register(m *http.ServeMux, deps Deps) {
 	m.Handle("POST /tasks/{id}/retry", http.HandlerFunc(h.postTaskRetry))
 	m.Handle("POST /tasks/{id}/approve", http.HandlerFunc(h.postTaskApprove))
 	m.Handle("POST /tasks/{id}/polish", http.HandlerFunc(h.postTaskPolish))
+	m.Handle("POST /tasks/{id}/close", http.HandlerFunc(h.postTaskClose))
+	m.Handle("POST /tasks/{id}/reopen", http.HandlerFunc(h.postTaskReopen))
 	m.Handle("GET /tasks/{id}", http.HandlerFunc(h.get))
 	m.Handle("PATCH /tasks/{id}", http.HandlerFunc(h.patch))
-	m.Handle("DELETE /tasks/{id}", http.HandlerFunc(h.delete))
 }
 
 //funclogmeasure:skip category=delegate-already-logs reason="SSE notify callback; HTTP handler chokepoint emits trace."

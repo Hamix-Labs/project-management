@@ -12,7 +12,7 @@ type Task struct {
 	ID            string          `gorm:"primaryKey"`
 	Title         string          `gorm:"not null"`
 	InitialPrompt string          `gorm:"type:text;not null"`
-	Status        domain.Status   `gorm:"not null;index;check:chk_tasks_status,status IN ('ready','running','blocked','review','done','failed','on_hold')"`
+	Status        domain.Status   `gorm:"not null;index;check:chk_tasks_status,status IN ('ready','running','blocked','review','done','failed','on_hold','closed')"`
 	Priority      domain.Priority `gorm:"not null;check:chk_tasks_priority,priority IN ('low','medium','high','critical')"`
 	ProjectID     *string         `gorm:"index:idx_tasks_project_number,unique,priority:1;index"`
 	// Number is the per-project sequential ref (#N). Unique with project_id when both set.

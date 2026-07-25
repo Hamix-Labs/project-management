@@ -116,6 +116,18 @@ func (s *Supervisor) CancelCurrentRun() bool {
 	return inst.pool.CancelCurrentRun()
 }
 
+// CancelRunForTask cancels the in-flight run for taskID only, if any.
+func (s *Supervisor) CancelRunForTask(taskID string) bool {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskapi.agentWorkerSupervisor.CancelRunForTask", "task_id", taskID)
+	s.mu.Lock()
+	inst := s.current
+	s.mu.Unlock()
+	if inst == nil || inst.pool == nil {
+		return false
+	}
+	return inst.pool.CancelRunForTask(taskID)
+}
+
 // Drain cancels the worker context and waits for Worker.Run to return.
 func (s *Supervisor) Drain() {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskapi.agentWorkerSupervisor.Drain")

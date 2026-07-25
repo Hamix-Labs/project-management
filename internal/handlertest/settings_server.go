@@ -40,6 +40,12 @@ func (f *FakeAgentControl) CancelCurrentRun() bool {
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Test double; not part of production trace paths."
+func (f *FakeAgentControl) CancelRunForTask(_ string) bool {
+	f.CancelCalls.Add(1)
+	return f.CancelResult.Load()
+}
+
+//funclogmeasure:skip category=tool-required-noop reason="Test double; not part of production trace paths."
 func (f *FakeAgentControl) Reload(_ context.Context) error {
 	f.ReloadCalls.Add(1)
 	if e := f.ReloadErr.Load(); e != nil {

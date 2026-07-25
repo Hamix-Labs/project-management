@@ -80,6 +80,22 @@ func (p *Pool) CancelCurrentRun() bool {
 	return cancelled
 }
 
+// CancelRunForTask cancels an in-flight run on any slot that owns taskID.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func (p *Pool) CancelRunForTask(taskID string) bool {
+	if p == nil {
+		return false
+	}
+	cancelled := false
+	for _, slot := range p.slots {
+		if slot != nil && slot.CancelRunForTask(taskID) {
+			cancelled = true
+		}
+	}
+	return cancelled
+}
+
 // Slots exposes pool workers for tests.
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."

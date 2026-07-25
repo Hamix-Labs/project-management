@@ -260,6 +260,12 @@ func applyStatusPatch(tx *gorm.DB, taskID string, cur *domain.Task, st *domain.S
 	if *st == cur.Status {
 		return nil
 	}
+	if cur.Status == domain.StatusClosed {
+		return fmt.Errorf("%w: closed task requires POST /tasks/{id}/reopen", domain.ErrInvalidInput)
+	}
+	if *st == domain.StatusClosed {
+		return fmt.Errorf("%w: status closed requires POST /tasks/{id}/close", domain.ErrInvalidInput)
+	}
 	if *st == domain.StatusDone {
 		return fmt.Errorf("%w: status done requires POST /tasks/{id}/approve", domain.ErrInvalidInput)
 	}
