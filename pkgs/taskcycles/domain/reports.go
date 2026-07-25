@@ -41,7 +41,7 @@ type TaskCycleCriteriaReport struct {
 //
 // VerifierKind is recorded so the SPA can distinguish a deterministic
 // check pass (`deterministic_check`) from an LLM verifier pass
-// (`verify_agent`) without re-parsing the workflow — same field as
+// (`execute_agent`) without re-parsing the workflow — same field as
 // task_checklist_completions.VerifiedBy.
 type TaskCycleVerifyReport struct {
 	ID           string                       `json:"id"`

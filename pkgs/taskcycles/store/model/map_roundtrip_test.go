@@ -37,7 +37,7 @@ func TestTaskCycleVerifyReport_roundTrip(t *testing.T) {
 		AttemptSeq:   1,
 		CriterionID:  "crit-1",
 		Verified:     true,
-		VerifierKind: checklistdomain.VerifierVerifyAgent,
+		VerifierKind: checklistdomain.VerifierExecuteAgent,
 		Reasoning:    "looks good",
 		WrittenAt:    now,
 	}

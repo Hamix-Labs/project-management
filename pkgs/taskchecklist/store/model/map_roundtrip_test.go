@@ -39,7 +39,7 @@ func TestTaskChecklistCompletion_roundTrip(t *testing.T) {
 	orig := checklistdomain.TaskChecklistCompletion{
 		TaskID: "task-1", ItemID: "item-1", At: now,
 		By: "agent", Evidence: "ok",
-		VerifiedBy:        checklistdomain.VerifierVerifyAgent,
+		VerifiedBy:        checklistdomain.VerifierExecuteAgent,
 		VerifierReasoning: "tests pass", CycleID: "cyc-1",
 	}
 	m := FromDomainTaskChecklistCompletion(orig)

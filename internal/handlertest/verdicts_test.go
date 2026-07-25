@@ -56,7 +56,7 @@ func TestHandler_GetCycleVerdicts_returnsBothReports(t *testing.T) {
 		t.Fatalf("envelope ids mismatch: %+v", resp)
 	}
 
-	// Mirror what the worker would persist: c1 passes via verify_agent
+	// Mirror what the worker would persist: c1 passes via execute_agent
 	// on attempt 1; c2 is claimed-but-not-verified on attempt 1.
 	if err := st.UpsertCriteriaReports(ctx, cycle.ID, 1, []cyclesstore.CriteriaReportEntry{
 		{CriterionID: c1.ID, ClaimedDone: true, Evidence: "ev-c1"},
@@ -68,13 +68,13 @@ func TestHandler_GetCycleVerdicts_returnsBothReports(t *testing.T) {
 		{
 			CriterionID:  c1.ID,
 			Verified:     true,
-			VerifierKind: checklistdomain.VerifierVerifyAgent,
+			VerifierKind: checklistdomain.VerifierExecuteAgent,
 			Reasoning:    "criterion one passes",
 		},
 		{
 			CriterionID:  c2.ID,
 			Verified:     false,
-			VerifierKind: checklistdomain.VerifierVerifyAgent,
+			VerifierKind: checklistdomain.VerifierExecuteAgent,
 			Reasoning:    "criterion two failed",
 		},
 	}); err != nil {
@@ -89,8 +89,8 @@ func TestHandler_GetCycleVerdicts_returnsBothReports(t *testing.T) {
 		t.Fatalf("verify_reports len = %d, want 2", len(resp.VerifyReports))
 	}
 	for i, row := range resp.VerifyReports {
-		if row.VerifierKind != string(checklistdomain.VerifierVerifyAgent) {
-			t.Errorf("verify_reports[%d].verifier_kind = %q, want %q", i, row.VerifierKind, checklistdomain.VerifierVerifyAgent)
+		if row.VerifierKind != string(checklistdomain.VerifierExecuteAgent) {
+			t.Errorf("verify_reports[%d].verifier_kind = %q, want %q", i, row.VerifierKind, checklistdomain.VerifierExecuteAgent)
 		}
 	}
 	if resp.VerifyReports[0].Verified == resp.VerifyReports[1].Verified {

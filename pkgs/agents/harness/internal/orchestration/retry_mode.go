@@ -52,7 +52,7 @@ func ClassifyFailureClass(verdicts []verify.Verdict, pipelineFailed bool) Verify
 			continue
 		}
 		switch v.Verifier {
-		case checklistdomain.VerifierAgentSelf, checklistdomain.VerifierVerifyAgent:
+		case checklistdomain.VerifierAgentSelf, checklistdomain.VerifierExecuteAgent:
 			return VerifyRetryFailureImplementation
 		}
 	}

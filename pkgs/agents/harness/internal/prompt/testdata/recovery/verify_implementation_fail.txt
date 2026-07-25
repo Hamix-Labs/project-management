@@ -8,7 +8,7 @@ Verification rejected the implementation. Address the failures below.
 
 ### Verification failures
 
-- **[criterion-a]** (verify_agent)
+- **[criterion-a]** (execute_agent)
   Reasoning: missing handler
   Required: address this before claiming done again.
 
