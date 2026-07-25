@@ -43,11 +43,15 @@ func (s *Service) RunPhase(
 			"cycle_id", cycle.ID, "err", err)
 		return PhaseResult{FatalReason: "execute_git_snapshot_failed", ExecPhase: execPhase}
 	}
+	ports.emitProgress(parentCtx, task.ID, cycle.ID, execPhase,
+		runner.SetupProgressEvent(runner.ProgressRunStateSetupGit, "Captured git snapshot…"))
 
 	plan, err := ports.PlanRun(parentCtx, task, cycle)
 	if err != nil {
 		return PhaseResult{FatalReason: "cursor_resume_plan_failed", ExecPhase: execPhase, Snap: snap}
 	}
+	ports.emitProgress(parentCtx, task.ID, cycle.ID, execPhase,
+		runner.SetupProgressEvent(runner.ProgressRunStateSetupPlan, "Planned Cursor session…"))
 	reportDir := ports.ReportDir
 	if reportDir == "" {
 		reportDir = s.reportDir
@@ -69,6 +73,8 @@ func (s *Service) RunPhase(
 
 	result, runErr := ports.Invoke(parentCtx, task, cycle, execPhase, plan)
 	if errors.Is(runErr, runner.ErrResumeSession) {
+		ports.emitProgress(parentCtx, task.ID, cycle.ID, execPhase,
+			runner.SetupProgressEvent(runner.ProgressRunStateRestartResume, "Restarting agent after failed resume…"))
 		fallback := ports.PlanFallback(parentCtx, task, cycle)
 		result, runErr = ports.Invoke(parentCtx, task, cycle, execPhase, fallback)
 	}
@@ -93,6 +99,8 @@ func (s *Service) RunPhase(
 
 	if (runErr == nil || out.StaleRecovery) && !operatorCancelled && !snap.Skipped {
 		out.IngestAttempted = true
+		ports.emitProgress(parentCtx, task.ID, cycle.ID, execPhase,
+			runner.SetupProgressEvent(runner.ProgressRunStateSetupIngest, "Indexing commits…"))
 		publish := ports.Publish
 		out.IngestOutcome, out.IngestErr = s.git.IngestExecuteCommits(parentCtx, task.ID, cycle, execPhase.PhaseSeq, snap, publish)
 		if out.IngestErr != nil {

@@ -47,6 +47,13 @@ func (h *Harness) applyExecuteEffects(
 		phaseDetails = mergeStreamIdleRecoveryDetails(phaseDetails, h.opts.StreamIdleStuck)
 	}
 
+	if effects.ContinueToVerify {
+		corr := cyclesdomain.RunCorrelationIDFromDetailsJSON(execPhase.DetailsJSON)
+		ev := runner.SetupProgressEvent(runner.ProgressRunStateHandoffVerify, "Handing off to verify…")
+		h.persistProgress(parentCtx, task.ID, cycle.ID, execPhase.PhaseSeq, ev)
+		h.publishProgress(task.ID, cycle.ID, execPhase.PhaseSeq, corr, ev)
+	}
+
 	if !h.completeExecutePhase(parentCtx, state, cycle, execPhase, phaseStatus, result, phaseDetails) {
 		h.bestEffortTerminate(parentCtx, state, task.ID, cyclesdomain.CycleStatusFailed, completePhaseFailedReason)
 		return false

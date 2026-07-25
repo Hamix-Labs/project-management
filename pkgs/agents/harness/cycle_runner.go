@@ -9,6 +9,7 @@ import (
 	cyclescontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/contract"
 	cyclesstore "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/prompt"
@@ -36,6 +37,9 @@ func (h *Harness) startExecutePhase(ctx context.Context, cycle *cyclesdomain.Tas
 	state.phase.runCorrelationID = cyclesdomain.RunCorrelationIDFromDetailsJSON(exec.DetailsJSON)
 	h.setPhaseRunCorrelationID(state.phase.runCorrelationID)
 	h.publish(cycle.TaskID, cycle.ID)
+	started := runner.SetupProgressEvent(runner.ProgressRunStateSetupStarted, "Preparing execute…")
+	h.persistProgress(ctx, cycle.TaskID, cycle.ID, exec.PhaseSeq, started)
+	h.publishProgress(cycle.TaskID, cycle.ID, exec.PhaseSeq, state.phase.runCorrelationID, started)
 	return exec, true
 }
 
@@ -88,6 +92,7 @@ func (h *Harness) invokeRunnerWithDecision(
 	}
 	streamIdleStuck, onStreamIdle := h.streamIdleRunnerFields(onProgress)
 	promptText := prompt.WrapWithProjectContext(decision.Prompt, projectContext.Text)
+	onProgress(setupInvokeProgress(decision))
 	return h.runner.Run(runCtx, runner.Request{
 		TaskID:           task.ID,
 		AttemptSeq:       cycle.AttemptSeq,
@@ -170,6 +175,15 @@ func progressStreamSource(ev runner.ProgressEvent) string {
 		return "worker"
 	}
 	return "cursor"
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O."
+func setupInvokeProgress(decision CursorResumeDecision) runner.ProgressEvent {
+	msg := "Starting Cursor CLI…"
+	if decision.Mode == CursorResumeContinue && strings.TrimSpace(decision.ResumeSessionID) != "" {
+		msg = "Resuming Cursor session…"
+	}
+	return runner.SetupProgressEvent(runner.ProgressRunStateSetupInvoke, msg)
 }
 
 // withRunTimeout returns parent unchanged when d <= 0; otherwise wraps with WithTimeout.

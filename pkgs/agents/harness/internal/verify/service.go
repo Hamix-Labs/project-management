@@ -106,6 +106,14 @@ func (s *Service) recordVerdict(kind checklistdomain.VerifierKind, passed bool) 
 	}
 }
 
+//funclogmeasure:skip category=hot-path reason="Nil-safe helper; PersistProgress emits operation traces."
+func (s *Service) emitSetupProgress(ctx context.Context, taskID, cycleID string, phaseSeq int64, ev runner.ProgressEvent) {
+	if s == nil || s.hooks.PersistProgress == nil {
+		return
+	}
+	s.hooks.PersistProgress(ctx, taskID, cycleID, phaseSeq, ev)
+}
+
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (s *Service) observeDuration(d time.Duration) {
 	if s.hooks.ObserveDuration != nil {

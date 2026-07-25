@@ -88,10 +88,19 @@ func TestHarness_PublishesRunnerProgressWithCycleAndPhaseContext(t *testing.T) {
 	env.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusReview)
 
 	calls := progress.Snapshot()
-	if len(calls) != 1 {
-		t.Fatalf("progress calls: got %d want 1 (%+v)", len(calls), calls)
+	if len(calls) < 2 {
+		t.Fatalf("progress calls: got %d want at least 2 setup + runner events (%+v)", len(calls), calls)
 	}
-	got := calls[0]
+	var got *notifierfake.ProgressCall
+	for i := range calls {
+		if calls[i].Event.Kind == "tool_call" && calls[i].Event.Tool == "ReadFile" {
+			got = &calls[i]
+			break
+		}
+	}
+	if got == nil {
+		t.Fatalf("missing runner tool_call progress among %+v", calls)
+	}
 	if got.TaskID != tsk.ID {
 		t.Fatalf("TaskID: got %q want %q", got.TaskID, tsk.ID)
 	}
@@ -104,11 +113,27 @@ func TestHarness_PublishesRunnerProgressWithCycleAndPhaseContext(t *testing.T) {
 	if got.RunCorrelationID == "" {
 		t.Fatal("RunCorrelationID must be populated")
 	}
-	stream, err := env.Store.ListCycleStreamEvents(context.Background(), got.CycleID, 0, 10)
+	stream, err := env.Store.ListCycleStreamEvents(context.Background(), got.CycleID, 0, 50)
 	if err != nil {
 		t.Fatalf("list persisted progress: %v", err)
 	}
-	if len(stream) != 1 {
-		t.Fatalf("persisted stream events: got %d want 1", len(stream))
+	if len(stream) < 2 {
+		t.Fatalf("persisted stream events: got %d want at least 2", len(stream))
+	}
+	foundSetup := false
+	foundTool := false
+	for _, ev := range stream {
+		if ev.Kind == runner.ProgressRunStateKind && ev.Tool == runner.ProgressToolHarnessSetup {
+			foundSetup = true
+		}
+		if ev.Kind == "tool_call" && ev.Tool == "ReadFile" {
+			foundTool = true
+		}
+	}
+	if !foundSetup {
+		t.Fatal("expected harness setup stream event")
+	}
+	if !foundTool {
+		t.Fatal("expected tool_call stream event")
 	}
 }
