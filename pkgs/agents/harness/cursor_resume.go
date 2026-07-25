@@ -82,6 +82,8 @@ func (h *Harness) planVerifyRun(
 	cmdEvidence []verify.CommandEvidence,
 	selfReport map[string]reports.CriteriaEntry,
 ) (verify.VerifyRunPlan, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.planVerifyRun",
+		"task_id", task.ID, "cycle_id", cycle.ID, "verify_attempt", verifyAttempt)
 	opts := cycleLoopOpts{
 		resumeNotice:     state.resume.resumeNotice,
 		interruptedPhase: state.resume.interruptedPhase,

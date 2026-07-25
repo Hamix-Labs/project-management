@@ -151,6 +151,8 @@ func (h *Harness) enforceExecuteSessionID(
 	result runner.Result,
 	effects orchestration.ExecuteEffects,
 ) (runner.Result, orchestration.ExecuteEffects) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.enforceExecuteSessionID",
+		"continue_to_verify", effects.ContinueToVerify)
 	if !effects.ContinueToVerify {
 		return result, effects
 	}

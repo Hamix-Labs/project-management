@@ -62,6 +62,7 @@ func (s *Service) SetWorkingDir(dir string) {
 	s.workingDir = dir
 }
 
+//funclogmeasure:skip category=hot-path reason="Setter only; verify pipeline logs at RunPipeline."
 func (s *Service) SetStreamIdleStuck(d time.Duration) {
 	s.hooks.StreamIdleStuck = d
 }

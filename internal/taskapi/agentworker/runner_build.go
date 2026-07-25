@@ -12,6 +12,8 @@ import (
 )
 
 func (s *Supervisor) probeExecuteRunner(ctx context.Context, cfg settingsdomain.AppSettings) (string, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskapi.agentWorkerSupervisor.probeExecuteRunner",
+		"runner", cfg.Runner)
 	probeCtx, cancel := context.WithTimeout(ctx, s.probeBudge)
 	defer cancel()
 	version, _, probeErr := s.probe(probeCtx, cfg.Runner, cfg.CursorBin, s.probeBudge)

@@ -72,6 +72,8 @@ func New() *Runner {
 
 // WithoutAutoSessionID disables the default injection of details_json.session_id
 // on successful Runs (needed for same-chat hard-fail tests).
+//
+//funclogmeasure:skip category=hot-path reason="Test helper setter; Run emits operation traces."
 func (r *Runner) WithoutAutoSessionID() *Runner {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -236,6 +238,8 @@ func (r *Runner) Run(ctx context.Context, req runner.Request) (runner.Result, er
 }
 
 func ensureFakeSessionID(result runner.Result, req runner.Request) runner.Result {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "runnerfake.ensureFakeSessionID",
+		"task_id", req.TaskID, "phase", string(req.Phase))
 	if cyclesdomain.SessionIDFromDetailsJSON(result.Details) != "" {
 		return result
 	}

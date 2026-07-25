@@ -28,6 +28,7 @@ type HardFailError struct {
 	Cause   error
 }
 
+//funclogmeasure:skip category=hot-path reason="error.Error implementation; callers log at harness chokepoints."
 func (e *HardFailError) Error() string {
 	if e == nil {
 		return ""
@@ -44,6 +45,7 @@ func (e *HardFailError) Error() string {
 	return "cursor session hard failure"
 }
 
+//funclogmeasure:skip category=hot-path reason="error.Unwrap implementation; callers log at harness chokepoints."
 func (e *HardFailError) Unwrap() error {
 	if e == nil {
 		return nil
@@ -53,6 +55,8 @@ func (e *HardFailError) Unwrap() error {
 
 // MissingSessionAfterExecute returns a hard-fail for a successful Cursor execute
 // that omitted session_id while resume is enabled.
+//
+//funclogmeasure:skip category=hot-path reason="Pure constructor without I/O; operation trace is emitted by the calling chokepoint."
 func MissingSessionAfterExecute() *HardFailError {
 	return &HardFailError{
 		Kind:    FailureKindMissingSessionID,
@@ -61,6 +65,8 @@ func MissingSessionAfterExecute() *HardFailError {
 }
 
 // MissingSessionForVerify returns a hard-fail when PhaseVerify needs an execute session_id.
+//
+//funclogmeasure:skip category=hot-path reason="Pure constructor without I/O; operation trace is emitted by the calling chokepoint."
 func MissingSessionForVerify() *HardFailError {
 	return &HardFailError{
 		Kind:    FailureKindMissingSessionID,
@@ -69,6 +75,8 @@ func MissingSessionForVerify() *HardFailError {
 }
 
 // ResumeSessionFailed wraps ErrResumeSession (or equivalent) without promising a fresh chat.
+//
+//funclogmeasure:skip category=hot-path reason="Pure constructor without I/O; operation trace is emitted by the calling chokepoint."
 func ResumeSessionFailed(cause error) *HardFailError {
 	return &HardFailError{
 		Kind:    FailureKindResumeSession,
@@ -78,6 +86,8 @@ func ResumeSessionFailed(cause error) *HardFailError {
 }
 
 // AsHardFail extracts *HardFailError from err.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func AsHardFail(err error) (*HardFailError, bool) {
 	var hf *HardFailError
 	if errors.As(err, &hf) && hf != nil {
@@ -87,6 +97,8 @@ func AsHardFail(err error) (*HardFailError, bool) {
 }
 
 // DetailsMap returns failure_kind + standardized_message for phase details_json.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (e *HardFailError) DetailsMap() map[string]any {
 	if e == nil {
 		return nil
@@ -102,6 +114,8 @@ func (e *HardFailError) DetailsMap() map[string]any {
 }
 
 // FormatReason returns a stable cycle terminate reason code.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (e *HardFailError) FormatReason() string {
 	if e == nil || e.Kind == "" {
 		return "cursor_session_hard_fail"
@@ -110,6 +124,8 @@ func (e *HardFailError) FormatReason() string {
 }
 
 // Explain returns Message or a fallback for summaries.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (e *HardFailError) Explain() string {
 	if e == nil {
 		return ""
