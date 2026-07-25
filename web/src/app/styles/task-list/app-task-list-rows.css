@@ -409,6 +409,37 @@
   -webkit-line-clamp: 2;
 }
 
+.task-list-row-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  max-width: min(52ch, 100%);
+  margin-top: 0.1rem;
+}
+
+.task-list-tag-chip {
+  max-width: 12ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  line-height: 1.2;
+  padding-block: 0.1rem;
+  padding-inline: 0.4rem;
+  color: var(--text-secondary);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+}
+
+.task-list-tag-overflow {
+  font-size: var(--text-xs);
+  line-height: 1.2;
+  color: var(--text-tertiary);
+  font-weight: 500;
+}
+
 .cell-pill--status-table {
   display: inline-flex;
   align-items: center;

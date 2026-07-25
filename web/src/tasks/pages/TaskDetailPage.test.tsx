@@ -263,7 +263,7 @@ describe("TaskDetailPage", () => {
 
   it("hides Dependencies and Release gate when launch omits them", async () => {
     isUiFeatureOmitted.mockImplementation(
-      (feature) => feature === "tagsAndDependencies" || feature === "releaseGates",
+      (feature) => feature === "taskDependencies" || feature === "releaseGates",
     );
     useTaskDetailHandlers(taskDetail("tnd", "No deps task"));
 

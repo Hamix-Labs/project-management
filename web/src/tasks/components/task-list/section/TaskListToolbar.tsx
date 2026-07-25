@@ -46,6 +46,11 @@ export function TaskListToolbar({
             onProjectFilterChange={
               showProjectColumn ? filters.setProjectFilter : undefined
             }
+            tagFilter={filters.tagFilter}
+            tagOptions={filters.tagFilterOptions}
+            onTagFilterChange={
+              filters.tagsUiEnabled ? filters.setTagFilter : undefined
+            }
             titleSearch={filters.titleSearch}
             onTitleSearchChange={filters.setTitleSearch}
             searchInputRef={filters.searchInputRef}

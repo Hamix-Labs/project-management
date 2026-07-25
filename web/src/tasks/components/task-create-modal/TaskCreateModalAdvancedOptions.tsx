@@ -69,7 +69,8 @@ export function TaskCreateModalAdvancedOptions({
             milestone,
             dependsOn,
             includeSchedule: presentation.scheduleUiEnabled,
-            includeTagsAndDependencies: presentation.tagsAndDependenciesUiEnabled,
+            includeTags: presentation.tagsUiEnabled,
+            includeDependencies: presentation.dependenciesUiEnabled,
           })}
         </span>
       </summary>
@@ -115,14 +116,16 @@ export function TaskCreateModalAdvancedOptions({
           )
         ) : null}
 
-        {presentation.tagsAndDependenciesUiEnabled ? (
+        {presentation.tagsUiEnabled || presentation.dependenciesUiEnabled ? (
           <TaskCreateModalSchedulingFields
             disabled={presentation.disabled}
             tagsCsv={tagsCsv}
             milestone={milestone}
             projectId={projectId}
             dependsOn={dependsOn}
-            showDependsOn
+            showTags={presentation.tagsUiEnabled}
+            showMilestone={presentation.dependenciesUiEnabled}
+            showDependsOn={presentation.dependenciesUiEnabled}
             dependsOnDisabled={presentation.isTaskEdit}
             onTagsCsvChange={onTagsCsvChange}
             onMilestoneChange={onMilestoneChange}

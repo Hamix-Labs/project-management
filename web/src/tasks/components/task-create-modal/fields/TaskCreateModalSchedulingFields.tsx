@@ -15,6 +15,10 @@ type Props = {
   onTagsCsvChange: (value: string) => void;
   onMilestoneChange: (value: string) => void;
   onDependsOnChange: (value: string[]) => void;
+  /** When false, hides the tags CSV field (launch gate). */
+  showTags?: boolean;
+  /** When false, hides the milestone field (launch gate). */
+  showMilestone?: boolean;
   /** When false, hides the depends-on field (detail page owns dependency edits). */
   showDependsOn?: boolean;
   /** When true, depends-on picker is read-only while tags/milestone stay editable. */
@@ -30,35 +34,51 @@ export function TaskCreateModalSchedulingFields({
   onTagsCsvChange,
   onMilestoneChange,
   onDependsOnChange,
+  showTags = true,
+  showMilestone = true,
   showDependsOn = true,
   dependsOnDisabled = false,
 }: Props) {
+  const showAny = showTags || showMilestone || showDependsOn;
+  if (!showAny) {
+    return null;
+  }
+
+  const legend =
+    showTags && !showMilestone && !showDependsOn
+      ? "Tags"
+      : showTags
+        ? "Tags & dependencies"
+        : "Dependencies";
+
   return (
     <fieldset className="task-create-scheduling" disabled={disabled}>
-      <legend className="task-create-scheduling__legend">
-        Tags & dependencies
-      </legend>
+      <legend className="task-create-scheduling__legend">{legend}</legend>
       <div className="task-create-scheduling__grid">
-        <div className="task-create-scheduling__field">
-          <FieldLabel htmlFor="create-tags">Tags</FieldLabel>
-          <input
-            id="create-tags"
-            className="input"
-            value={tagsCsv}
-            onChange={(e) => onTagsCsvChange(e.target.value)}
-            placeholder="e.g. backend, api"
-          />
-        </div>
-        <div className="task-create-scheduling__field">
-          <FieldLabel htmlFor="create-milestone">Milestone</FieldLabel>
-          <input
-            id="create-milestone"
-            className="input"
-            value={milestone}
-            onChange={(e) => onMilestoneChange(e.target.value)}
-            placeholder="e.g. M1 — auth"
-          />
-        </div>
+        {showTags ? (
+          <div className="task-create-scheduling__field">
+            <FieldLabel htmlFor="create-tags">Tags</FieldLabel>
+            <input
+              id="create-tags"
+              className="input"
+              value={tagsCsv}
+              onChange={(e) => onTagsCsvChange(e.target.value)}
+              placeholder="e.g. backend, api"
+            />
+          </div>
+        ) : null}
+        {showMilestone ? (
+          <div className="task-create-scheduling__field">
+            <FieldLabel htmlFor="create-milestone">Milestone</FieldLabel>
+            <input
+              id="create-milestone"
+              className="input"
+              value={milestone}
+              onChange={(e) => onMilestoneChange(e.target.value)}
+              placeholder="e.g. M1 — auth"
+            />
+          </div>
+        ) : null}
         {showDependsOn ? (
           <div className="task-create-scheduling__field task-create-scheduling__field--full">
             <TaskCreateDependsOnPicker

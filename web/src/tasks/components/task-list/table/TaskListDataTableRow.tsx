@@ -1,11 +1,13 @@
 import { Link } from "react-router-dom";
 import type { Task } from "@/types";
+import { isUiFeatureOmitted } from "@/launch/omittedFeatures";
 import type { DeleteTargetInput } from "../../../hooks/useTaskDeleteFlow";
 import {
   canEditTask,
   PriorityBadge,
   StatusBadge,
 } from "../../../task-display";
+import { TASK_LIST_TAG_CHIP_LIMIT } from "../filters/taskListClientFilter";
 import { TaskListDeleteGlyph, TaskListEditGlyph } from "./TaskListRowActionIcons";
 import { taskListRowSubtitle } from "./taskListRowSubtitle";
 import { previewTextFromPrompt } from "@/lib/promptFormat";
@@ -35,6 +37,25 @@ function isTaskListRowNavExcluded(target: EventTarget | null): boolean {
   );
 }
 
+function TaskListRowTagChips({ tags }: { tags: string[] }) {
+  const visible = tags.slice(0, TASK_LIST_TAG_CHIP_LIMIT);
+  const overflow = tags.length - visible.length;
+  return (
+    <div className="task-list-row-tags" data-testid="task-list-row-tags">
+      {visible.map((tag) => (
+        <span key={tag} className="cell-pill task-list-tag-chip">
+          {tag}
+        </span>
+      ))}
+      {overflow > 0 ? (
+        <span className="task-list-tag-overflow" aria-label={`${overflow} more tags`}>
+          +{overflow}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
 export function TaskListDataTableRow({
   row: { task: t, isEntering, isExiting, isFilterExit },
   showSelectionCol,
@@ -53,6 +74,8 @@ export function TaskListDataTableRow({
       ? projectNameById[t.project_id]
       : undefined;
   const titleSubtitle = taskListRowSubtitle({ promptPreview });
+  const tagsUiEnabled = !isUiFeatureOmitted("taskTags");
+  const rowTags = tagsUiEnabled ? (t.tags ?? []).filter(Boolean) : [];
   const rowSelected = !isExiting && selection ? selection.isSelected(t.id) : false;
   const rowClass = [
     "task-list-row",
@@ -122,6 +145,7 @@ export function TaskListDataTableRow({
               </span>
             </span>
             {titleSubtitle ? <div className="cell-title-sub">{titleSubtitle}</div> : null}
+            {rowTags.length > 0 ? <TaskListRowTagChips tags={rowTags} /> : null}
           </div>
         </Link>
       </td>

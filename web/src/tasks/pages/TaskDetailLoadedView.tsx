@@ -69,7 +69,7 @@ export function TaskDetailLoadedView({
   setModelConfigOpen,
 }: TaskDetailLoadedViewProps) {
   const sanitizedInitialPrompt = sanitizePromptHtml(task.initial_prompt);
-  const dependenciesUiEnabled = !isUiFeatureOmitted("tagsAndDependencies");
+  const dependenciesUiEnabled = !isUiFeatureOmitted("taskDependencies");
   const releaseGatesUiEnabled = !isUiFeatureOmitted("releaseGates");
 
   return (

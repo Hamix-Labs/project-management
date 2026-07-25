@@ -7,7 +7,8 @@ export type TaskCreateModalPresentation = {
   isTemplateMode: boolean;
   isEdit: boolean;
   disabled: boolean;
-  tagsAndDependenciesUiEnabled: boolean;
+  tagsUiEnabled: boolean;
+  dependenciesUiEnabled: boolean;
   scheduleUiEnabled: boolean;
   modalBusy: boolean;
   modalTitle: string;
@@ -96,7 +97,8 @@ export function resolveTaskCreateModalPresentation(
   const mode = resolveTaskCreateModalMode(input);
   const preset = PRESENTATION_PRESETS[mode];
   const disabled = input.pending || input.saving;
-  const tagsAndDependenciesUiEnabled = !isUiFeatureOmitted("tagsAndDependencies");
+  const tagsUiEnabled = !isUiFeatureOmitted("taskTags");
+  const dependenciesUiEnabled = !isUiFeatureOmitted("taskDependencies");
   const scheduleUiEnabled = !isUiFeatureOmitted("schedule");
   const status = input.composeStatus ?? "ready";
   const showTestScenarios = !isEdit && Boolean(input.onApplyTestScenario);
@@ -107,7 +109,8 @@ export function resolveTaskCreateModalPresentation(
     isTemplateMode,
     isEdit,
     disabled,
-    tagsAndDependenciesUiEnabled,
+    tagsUiEnabled,
+    dependenciesUiEnabled,
     scheduleUiEnabled,
     modalBusy: preset.modalBusy(input),
     modalTitle: preset.modalTitle,

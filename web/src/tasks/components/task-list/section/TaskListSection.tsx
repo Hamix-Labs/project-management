@@ -96,6 +96,7 @@ export const TaskListSection = memo(function TaskListSection({
   taskStats,
 }: Props) {
   const scheduleUiEnabled = !isUiFeatureOmitted("schedule");
+  const tagsUiEnabled = !isUiFeatureOmitted("taskTags");
   const statusDelayMs = smoothTransitions ? LOADING_STATUS_DELAY_MS : 0;
   const showLoadingLine = useDelayedTrue(loading, statusDelayMs);
   const appTimezone = useAppTimezone();
@@ -104,6 +105,7 @@ export const TaskListSection = memo(function TaskListSection({
     tasks,
     projectFilterOptions,
     showProjectColumn,
+    tagsUiEnabled,
     onListFiltersChange,
     smoothTransitions,
   });
@@ -128,6 +130,7 @@ export const TaskListSection = memo(function TaskListSection({
     filters.statusFilter,
     filters.priorityFilter,
     filters.projectFilter,
+    filters.tagFilter,
     filters.titleSearch,
     filters.sortKey,
     filters.sortDir,

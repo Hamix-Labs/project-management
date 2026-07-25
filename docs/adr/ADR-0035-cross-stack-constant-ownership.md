@@ -39,7 +39,7 @@ Values may exist on the wire or in parsers but are **not** fully surfaced in pro
 
 | Omission | Registry | Notes |
 | --- | --- | --- |
-| Launch UI gates (projects, tags/deps, gates, schedule) | [`docs/omitted-features.md`](../omitted-features.md), [`web/src/launch/omittedFeatures.ts`](../../web/src/launch/omittedFeatures.ts) | Backend routes remain for tests |
+| Launch UI gates (projects, task tags, deps/milestone, gates, schedule) | [`docs/omitted-features.md`](../omitted-features.md), [`web/src/launch/omittedFeatures.ts`](../../web/src/launch/omittedFeatures.ts) | Backend routes remain for tests |
 | `on_task_done` audit event | parser + generic label only | No PR/commit panel UI |
 | `subtask_added`, `task_type` event types | excluded from manifest tests | Removed per ADR-0010 / ADR-0011 |
 | `navigation_timing` RUM | `RUM_FORWARD_COMPAT_TYPES` in web only | Server `validRUMTypes` unchanged until ADR-0026 Phase 2 |

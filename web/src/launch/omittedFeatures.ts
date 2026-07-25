@@ -5,8 +5,10 @@
 export const OMITTED_UI_FEATURES = {
   /** Project nav, pages, list column/filter, and create/edit project picker. */
   projects: false,
-  /** Tags, milestone, depends-on fields, and task detail dependencies panel. */
-  tagsAndDependencies: true,
+  /** Task tags create/edit field, list filter, and list row chips. */
+  taskTags: false,
+  /** Milestone, depends-on fields, and task detail dependencies panel. */
+  taskDependencies: true,
   /** Schedule for / pickup-not-before in the create/edit task modal. */
   schedule: true,
   /** Task detail release gate panel and operator gate actions. */
