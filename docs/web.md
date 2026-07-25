@@ -11,6 +11,7 @@ Vite + React client under `web/`. All `fetch` calls live in `web/src/api/`; resp
 ## In this article
 
 - [Routes](#routes)
+- [Board view](#board-view)
 - [Cold start](#cold-start)
 - [Task sync (SSE cache coherence)](#task-sync-sse-cache-coherence)
 - [Task create flow](#task-create-flow)
@@ -24,7 +25,7 @@ Vite + React client under `web/`. All `fetch` calls live in `web/src/api/`; resp
 
 | Path | Module | Notes |
 | --- | --- | --- |
-| `/` | `web/src/tasks/` | Task home list |
+| `/` | `web/src/tasks/` | Task home — list (default) or board via `?view=board` |
 | `/templates` | `web/src/tasks/` | Saved task templates (search, batch instantiate) |
 | `/drafts` | `web/src/tasks/` | Saved create-task drafts |
 | `/projects` | `web/src/projects/` | Project list |
@@ -34,6 +35,12 @@ Vite + React client under `web/`. All `fetch` calls live in `web/src/api/`; resp
 | `/tasks/:id` | `web/src/tasks/pages/` | Task detail |
 
 Primary nav links: Tasks, Templates, Drafts, Projects, Repositories (Settings is header gear). Register a repo via `/repositories` or `/repositories?register=1` — see [domain/worktrees-and-branches.md](./domain/worktrees-and-branches.md). Legacy `/worktrees` and `/worktrees/:repositoryId` redirect to `/repositories`.
+
+## Board view
+
+Task Home supports a read-only Kanban **Board** alongside the table **List** (`/?view=board`). Columns are workflow buckets — Backlog (`ready`, `on_hold`), In Progress (`running`), Verification (`review`), Needs Attention (`blocked`, `failed`). **Done tasks are never shown** (volume accumulates; the board is for active execution).
+
+Data loads through `fetchActiveTasksForBoard` (keyset walk of `GET /tasks`, max page size 200) into `taskQueryKeys.board()` under `listRoot()`, so existing SSE / optimistic list invalidation refreshes the board. Caps: 500 active tasks or 10 pages scanned — then a truncation banner. There is no drag-and-drop; status changes come from the execution engine. A future `exclude_status=done` (or allowlist) on `GET /tasks` would avoid scanning Done rows.
 
 ## Cold start
 
