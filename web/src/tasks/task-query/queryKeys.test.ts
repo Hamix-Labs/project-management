@@ -21,6 +21,11 @@ describe("taskQueryKeys", () => {
     ]);
   });
 
+  it("places board key under listRoot for invalidation and optimistic updates", () => {
+    expect(taskQueryKeys.board()).toEqual(["tasks", "list", "board"]);
+    expect(taskQueryKeys.board().slice(0, 2)).toEqual(taskQueryKeys.listRoot());
+  });
+
   it("defines eventsRoot prefix covering paged and infinite event queries", () => {
     const root = taskQueryKeys.eventsRoot("t1");
     expect(root).toEqual(["tasks", "detail", "t1", "events"]);

@@ -23,6 +23,12 @@ export const taskQueryKeys = {
    */
   list: (params: TaskListParams) =>
     [...taskQueryKeys.listRoot(), params] as const,
+  /**
+   * Aggregated active (non-done) tasks for the home board view.
+   * Value must remain a `TaskListResponse` so `optimisticTaskList`
+   * helpers that scan `listRoot()` keep working.
+   */
+  board: () => [...taskQueryKeys.listRoot(), "board"] as const,
   /** Prefix for all task detail queries (SSE flush partial match). */
   detailRoot: () => [...taskQueryKeys.all, "detail"] as const,
   detail: (id: string) => [...taskQueryKeys.all, "detail", id] as const,
