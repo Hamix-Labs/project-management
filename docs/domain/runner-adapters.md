@@ -47,7 +47,7 @@ Package contracts: [`pkgs/agents/runner/doc.go`](../../pkgs/agents/runner/doc.go
 - Global registry: `Register`, `List`, `Build`, `Probe`, `ListModelsForRunner`
 - Optional capability interfaces (`Prober`, `ModelLister`, …)
 - Shared CLI mechanics in `adapterkit`
-- Supervisor build/probe policy (execute vs verify runner)
+- Supervisor build/probe policy (execute runner only)
 - HTTP `/runners/*` and legacy `/settings/probe-cursor`
 
 ### Out of scope
@@ -65,8 +65,7 @@ Package contracts: [`pkgs/agents/runner/doc.go`](../../pkgs/agents/runner/doc.go
 | **Descriptor** | Registry metadata (`id`, `label`, `default_binary_hint`) exposed to the SPA. |
 | **Factory** | `registry.Factory` — constructs a `Runner` from `BuildOptions`. |
 | **Capability** | Optional interface in [`schema.go`](../../pkgs/agents/runner/schema.go); detected at runtime via type assertion. |
-| **Execute runner** | Built from `app_settings.runner`. Probe failure **blocks** worker startup. |
-| **Verify runner** | Optional `app_settings.verify_runner_name`. Build/probe failure **demotes** to the execute runner. |
+| **Execute runner** | Built from `app_settings.runner`. Used for both `PhaseExecute` and `PhaseVerify` ([ADR-0084](../adr/ADR-0084-executor-owned-verify.md)). Probe failure **blocks** worker startup. |
 | **adapterkit** | Shared exec, env policy, redaction, diagnostics, and probe helpers — not runner-specific. |
 | **runnerfake** | Deterministic in-memory runner for tests; never registered in production. |
 
@@ -250,7 +249,7 @@ Default CI must not require a real CLI binary or outbound network.
 
 ### 7. Settings and persistence (when needed)
 
-Today, binary path and model fields are **Cursor-centric** in `app_settings` (`cursor_bin`, `cursor_model`, `verify_runner_model`). `registry.BuildOptions.CursorModel` is forwarded to adapters that understand it.
+Today, binary path and model fields are **Cursor-centric** in `app_settings` (`cursor_bin`, `cursor_model`). `registry.BuildOptions.CursorModel` is forwarded to adapters that understand it.
 
 A new adapter can reuse these fields when the Settings UX still maps one binary path and optional model string. Per-runner opaque config blobs are partially supported via `ConfigSchemaProvider` / `ConfigValidator`; adding dedicated `app_settings` columns for a new adapter is a separate schema and ADR decision.
 
@@ -263,7 +262,7 @@ A new adapter can reuse these fields when the Settings UX still maps one binary 
 
 ## Runtime lifecycle
 
-### Probe policy: execute vs verify
+### Probe policy
 
 ```mermaid
 flowchart TD
@@ -272,9 +271,6 @@ flowchart TD
   ExecFail["Worker idle reason=probe_failed"]
   ExecBuild{"Build execute runner"}
   BuildFail["Worker idle reason=build_failed"]
-  VerifySet{"verify_runner_name set and differs from runner?"}
-  VerifyProbe{"Probe verify runner"}
-  VerifyDemote["Demote verify reuse execute runner"]
   WorkerStart["Start worker.Worker"]
   RunPhase["Harness invokes runner.Run per phase"]
 
@@ -282,16 +278,11 @@ flowchart TD
   ExecProbe -->|fail| ExecFail
   ExecProbe -->|ok| ExecBuild
   ExecBuild -->|fail| BuildFail
-  ExecBuild -->|ok| VerifySet
-  VerifySet -->|no| WorkerStart
-  VerifySet -->|yes| VerifyProbe
-  VerifyProbe -->|fail| VerifyDemote
-  VerifyProbe -->|ok| WorkerStart
-  VerifyDemote --> WorkerStart
+  ExecBuild -->|ok| WorkerStart
   WorkerStart --> RunPhase
 ```
 
-> **Warning** — Execute runner probe or build failure **prevents** the worker from starting. Verify runner misconfiguration logs `demoted_probe_failed` or `demoted_build_failed` and the worker **still runs**, reusing the execute runner for verify phases.
+> **Warning** — Execute runner probe or build failure **prevents** the worker from starting. The same built runner serves execute and verify phases.
 
 ### Step-by-step
 
@@ -299,10 +290,9 @@ flowchart TD
 2. **Settings read** — `agentWorkerSupervisor` reads `app_settings` on boot and after every successful `PATCH /settings`.
 3. **Execute runner probe** — `registry.Probe(ctx, cfg.Runner, cfg.CursorBin, …)`. Failure sets idle reason `probe_failed` and stops the worker ([`run_agentworker.go`](../../cmd/taskapi/run_agentworker.go)).
 4. **Execute runner build** — `registry.Build` with probed `Version`, `BinaryPath`, and `CursorModel`.
-5. **Verify runner** — when `verify_runner_name` is non-empty and **different** from `runner`: separate probe + build. Same id as execute → `reuse_execute_runner` without a second build. Failures demote with loud `Warn` logs.
-6. **Worker construction** — `worker.NewWorker(..., executeRunner, Options{ VerifyRunner: verifyRunner, … })`.
-7. **Phase invocation** — harness builds `runner.Request` (prompt, phase, timeout, working dir, optional `CursorModel`, `OnProgress` callback). Worker may call `MetricsLabels` / `CycleMeta` via type assertion before the cycle loop runs.
-8. **Progress** — adapters that parse streaming CLI output invoke `req.OnProgress` with `runner.ProgressEvent`. The worker publishes throttled `agent_run_progress` SSE frames; this is **not** part of the `Runner` interface and is not persisted in `task_events`.
+5. **Worker construction** — `worker.NewWorker(..., executeRunner, Options{ … })`.
+6. **Phase invocation** — harness builds `runner.Request` (prompt, phase, timeout, working dir, optional `CursorModel`, `OnProgress` callback). Worker may call `MetricsLabels` / `CycleMeta` via type assertion before the cycle loop runs.
+7. **Progress** — adapters that parse streaming CLI output invoke `req.OnProgress` with `runner.ProgressEvent`. The worker publishes throttled `agent_run_progress` SSE frames; this is **not** part of the `Runner` interface and is not persisted in `task_events`.
 
 ## Wire contracts
 
@@ -378,9 +368,7 @@ Full field reference: [configuration.md](../configuration.md). Operator-visible 
 | --- | --- |
 | `runner` | Execute adapter id (registry descriptor `id`) |
 | `cursor_bin` | CLI binary path; empty → PATH lookup via descriptor `default_binary_hint` |
-| `cursor_model` | Optional model for execute runner |
-| `verify_runner_name` | Optional verify adapter id; empty or same as `runner` → reuse execute runner |
-| `verify_runner_model` | Optional model for verify runner |
+| `cursor_model` | Optional model for execute runner (verify phase uses the same runner) |
 | `max_run_duration_seconds` | Wall-clock cap → `Request.Timeout` |
 | `repo_root` | Working directory for every `Run` |
 
@@ -410,9 +398,8 @@ Supervisor reload triggers on successful `PATCH /settings`; changing runner-rela
 | --- | --- |
 | Compile-time registration only | No dynamic plugin loading or runtime `.so` injection |
 | `BuildOptions.CursorModel` name | Legacy; not runner-neutral |
-| Shared `cursor_bin` | Verify runner uses the same binary path field even when `verify_runner_name` differs |
 | `claude-code` scaffold | Registered but `Run` always fails — not production-ready |
-| Single-process worker | One execute (and optional verify) runner instance per supervisor reload |
+| Single-process worker | One execute runner instance per supervisor reload (execute + verify phases) |
 | Progress is adapter-specific | Only Cursor normalizes stream-json into `agent_run_progress` today |
 | Binary path default in probe HTTP | Empty `binary_path` falls back to `cursor_bin` only for `cursor`; other ids require explicit path in request body until settings generalize |
 
@@ -427,7 +414,7 @@ Supervisor reload triggers on successful `PATCH /settings`; changing runner-rela
 | [sse-hub.md](./sse-hub.md) | SSE fanout (not worker queue) |
 | [harness.md](./harness.md) | Cycle loop, error classification, meta recording |
 | [execute-agent.md](./execute-agent.md) | Execute phase prompt and runner invocation |
-| [verify-agent.md](./verify-agent.md) | Verify phase and optional separate verify runner |
+| [verify-agent.md](./verify-agent.md) | Verify phase (same execute runner) |
 | [architecture.md](../architecture.md) | System overview; Cursor adapter summary |
 | [configuration.md](../configuration.md) | `app_settings` and env vars |
 | [api.md](../api.md) | `/runners/*` routes and status codes |

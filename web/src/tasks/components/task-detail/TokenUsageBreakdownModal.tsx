@@ -43,7 +43,7 @@ export function TokenUsageBreakdownModal({ tokenUsage, onClose }: Props) {
             value={tokenUsage.execute_consumed_tokens}
           />
           <BreakdownRow
-            label="Verify agent"
+            label="Verify phase"
             value={tokenUsage.verify_consumed_tokens}
           />
           <BreakdownRow label="Total" value={tokenUsage.consumed_tokens} />

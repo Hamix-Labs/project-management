@@ -213,8 +213,8 @@ export function ChecklistVerifyCommandsSection({
       </summary>
       <div className="task-checklist-verify-commands__body">
         <p className="task-checklist-verify-commands__note">
-          Shell commands run in the repo during the verify phase. The verify agent
-          interprets stdout/stderr against each expected outcome — exit code alone
+          Shell commands run in the repo during the verify phase. The same execute
+          agent interprets stdout/stderr against each expected outcome — exit code alone
           does not pass the criterion.
         </p>
         <ChecklistVerifyCommandsTable

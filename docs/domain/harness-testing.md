@@ -32,7 +32,7 @@ After the verify-phase split, each file maps to edge cases in [harness.md § Ver
 | `verify_phase_infra_retry_test.go` | EC-01, EC-09 (carry passes, verify-only retry) |
 | `verify_phase_terminal_test.go` | EC-07 tamper, EC-08 budget exhausted |
 | `verify_phase_progress_test.go` | Progress events under verify `phase_seq` |
-| `verify_phase_separate_runner_test.go` | `Options.VerifyRunner` routing |
+| `verify_phase_separate_runner_test.go` | `PhaseVerify` always uses execute runner (ADR-0084) |
 | `verify_phase_integrity_test.go` | Repo cleanliness, report-dir GC |
 | `verify_phase_helpers_test.go` | Shared runners and report writers (no tests) |
 
