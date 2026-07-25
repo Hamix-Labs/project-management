@@ -64,7 +64,12 @@ export function TaskCreateModalSchedulingFields({
               value={tagsCsv}
               onChange={(e) => onTagsCsvChange(e.target.value)}
               placeholder="e.g. backend, api"
+              aria-describedby="create-tags-hint"
             />
+            <p id="create-tags-hint" className="hint">
+              Lowercase letters, numbers, and . _ - (capitals are normalized on
+              save).
+            </p>
           </div>
         ) : null}
         {showMilestone ? (

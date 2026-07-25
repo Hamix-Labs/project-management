@@ -56,7 +56,9 @@ func ValidateTaskMilestone(milestone string) error {
 	return nil
 }
 
-// NormalizeTaskTags trims, drops empties, and de-duplicates while preserving order.
+// NormalizeTaskTags trims, lowercases, drops empties, and de-duplicates while
+// preserving order. Lowercasing matches ValidateTaskTag wire rules so operators
+// can type Title Case (e.g. "Backend") without a create/PATCH failure.
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func NormalizeTaskTags(tags []string) []string {
@@ -66,7 +68,7 @@ func NormalizeTaskTags(tags []string) []string {
 	out := make([]string, 0, len(tags))
 	seen := make(map[string]struct{}, len(tags))
 	for _, tag := range tags {
-		tag = strings.TrimSpace(tag)
+		tag = strings.ToLower(strings.TrimSpace(tag))
 		if tag == "" {
 			continue
 		}
