@@ -33,8 +33,6 @@ export type SettingsFormState = {
   agentPickupDelaySeconds: string;
   displayTimezone: string;
   verifyMaxRetries: string;
-  verifyRunnerName: string;
-  verifyRunnerModel: string;
 };
 
 export type SettingsStatus =
@@ -55,8 +53,6 @@ export function toFormState(s: AppSettings): SettingsFormState {
     agentPickupDelaySeconds: String(s.agent_pickup_delay_seconds),
     displayTimezone: s.display_timezone,
     verifyMaxRetries: String(s.verify_max_retries),
-    verifyRunnerName: s.verify_runner_name,
-    verifyRunnerModel: s.verify_runner_model,
   };
 }
 
@@ -108,14 +104,6 @@ export function diffPatch(
     parsedRetries !== initial.verify_max_retries
   ) {
     out.verify_max_retries = parsedRetries;
-  }
-  const verifyName = form.verifyRunnerName.trim();
-  if (verifyName !== initial.verify_runner_name) {
-    out.verify_runner_name = verifyName;
-  }
-  const verifyModel = form.verifyRunnerModel.trim();
-  if (verifyModel !== initial.verify_runner_model) {
-    out.verify_runner_model = verifyModel;
   }
   return out;
 }

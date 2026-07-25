@@ -16,8 +16,7 @@ import type { HandleField } from "./settingsSectionTypes";
  * verify it works. Per-phase choices (which model to pass for execute
  * vs verify) live under the Phases section. This mirrors the backend:
  * `cursor_bin` is a runner setting (shared across phases), while
- * `cursor_model` and `verify_runner_model` are phase-keyed model
- * overrides handed to that one runner.
+ * `cursor_model` is the execute-phase model override handed to that runner.
  *
  * The card retains `id="cursor-agent"` so legacy deep links from
  * TaskModelConfigModal still land on a meaningful target.

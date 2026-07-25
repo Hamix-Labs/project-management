@@ -12,8 +12,6 @@ function form(overrides: Partial<SettingsFormState> = {}): SettingsFormState {
     agentPickupDelaySeconds: "0",
     displayTimezone: "",
     verifyMaxRetries: "3",
-    verifyRunnerName: "",
-    verifyRunnerModel: "",
     ...overrides,
   };
 }
