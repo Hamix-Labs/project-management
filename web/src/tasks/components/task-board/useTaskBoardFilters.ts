@@ -48,6 +48,7 @@ export function useTaskBoardFilters({
   const filteredTasks = useMemo(() => {
     const base = filterTasksForListView(
       tasks,
+      "open",
       "all",
       priorityFilter,
       titleSearch,

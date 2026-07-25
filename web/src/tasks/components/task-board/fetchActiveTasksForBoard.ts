@@ -56,10 +56,8 @@ export async function fetchActiveTasksForBoard(
     pages += 1;
 
     for (const task of res.tasks) {
-      // `done` is a completion sink and never belongs on the workflow
-      // board. `closed` stays so the Closed column can surface operator
-      // exits (see docs/api.md — `/close` + `/reopen`).
-      if (task.status === "done") continue;
+      // Terminal / exit statuses that never belong on the workflow board.
+      if (task.status === "done" || task.status === "closed") continue;
       active.push(task);
       if (active.length >= activeCap) {
         hitActiveCap = true;

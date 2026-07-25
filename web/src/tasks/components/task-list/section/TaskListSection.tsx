@@ -71,7 +71,7 @@ type Props = {
 const LOADING_STATUS_DELAY_MS = 220;
 
 const TASK_LIST_TABLE_CAPTION =
-  "All tasks: title with context line, status, priority, created time, project, and row actions.";
+  "All tasks: title, status, priority, created time, project, and row actions.";
 
 export const TaskListSection = memo(function TaskListSection({
   tasks,
@@ -127,6 +127,7 @@ export const TaskListSection = memo(function TaskListSection({
     onListFiltersChange();
     clearSelection();
   }, [
+    filters.lifecycleFilter,
     filters.statusFilter,
     filters.priorityFilter,
     filters.projectFilter,

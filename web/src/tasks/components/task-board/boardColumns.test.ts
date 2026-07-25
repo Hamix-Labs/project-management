@@ -5,7 +5,7 @@ import { groupTasksByBoardColumn } from "./groupTasksByBoardColumn";
 import { makeTask } from "@/test/taskDefaults";
 
 describe("BOARD_COLUMNS", () => {
-  it("assigns every status except done to exactly one column", () => {
+  it("assigns every status except done and closed to exactly one column", () => {
     const seen = new Map<string, string>();
     for (const col of BOARD_COLUMNS) {
       for (const status of col.statuses) {
@@ -14,9 +14,9 @@ describe("BOARD_COLUMNS", () => {
       }
     }
     for (const status of STATUSES) {
-      if (status === "done") {
-        expect(seen.has("done")).toBe(false);
-        expect(boardColumnIdForStatus("done")).toBeNull();
+      if (status === "done" || status === "closed") {
+        expect(seen.has(status)).toBe(false);
+        expect(boardColumnIdForStatus(status)).toBeNull();
         continue;
       }
       expect(seen.get(status)).toBeDefined();
@@ -26,7 +26,7 @@ describe("BOARD_COLUMNS", () => {
 });
 
 describe("groupTasksByBoardColumn", () => {
-  it("buckets by workflow column and drops done", () => {
+  it("buckets by workflow column and drops done and closed", () => {
     const tasks = [
       makeTask({ id: "1", status: "ready" }),
       makeTask({ id: "2", status: "on_hold" }),
@@ -42,7 +42,6 @@ describe("groupTasksByBoardColumn", () => {
     expect(groups.in_progress.map((t) => t.id)).toEqual(["3"]);
     expect(groups.verification.map((t) => t.id)).toEqual(["4"]);
     expect(groups.needs_attention.map((t) => t.id)).toEqual(["5", "6"]);
-    expect(groups.closed.map((t) => t.id)).toEqual(["8"]);
   });
 
   it("returns empty bags for empty input", () => {
@@ -51,6 +50,5 @@ describe("groupTasksByBoardColumn", () => {
     expect(groups.in_progress).toEqual([]);
     expect(groups.verification).toEqual([]);
     expect(groups.needs_attention).toEqual([]);
-    expect(groups.closed).toEqual([]);
   });
 });

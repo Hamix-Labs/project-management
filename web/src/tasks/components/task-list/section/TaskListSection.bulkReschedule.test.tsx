@@ -321,7 +321,8 @@ describe("TaskListSection bulk reschedule", () => {
       );
       await user.click(screen.getByTestId("task-list-select-row-a"));
       expect(screen.getByTestId("task-list-bulk-bar")).toBeInTheDocument();
-      await user.click(screen.getByRole("tab", { name: /^done$/i }));
+      await user.click(screen.getByRole("combobox", { name: /^status$/i }));
+      await user.click(screen.getByRole("option", { name: /^done$/i }));
       expect(
         screen.queryByTestId("task-list-bulk-bar"),
       ).not.toBeInTheDocument();
@@ -348,7 +349,10 @@ describe("TaskListSection bulk reschedule", () => {
           onRequestClose={vi.fn()}
         />,
       );
-      await user.click(screen.getByRole("tab", { name: /^scheduled$/i }));
+      await user.click(screen.getByRole("combobox", { name: /^status$/i }));
+      await user.click(
+        screen.getByRole("option", { name: /^scheduled \(deferred\)$/i }),
+      );
       expect(screen.getByText("Future ready")).toBeInTheDocument();
       await waitFor(
         () => {

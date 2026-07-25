@@ -33,9 +33,11 @@ describe("taskListFilterSelectOptions", () => {
       expect(otherHeaderIdx).toBeGreaterThan(2);
     });
 
-    it("includes every status once plus all and the synthetic scheduled bucket", () => {
+    it("includes every open status once plus all and the synthetic scheduled bucket", () => {
       const values = optionValues(TASK_LIST_STATUS_FILTER_OPTIONS);
-      expect(values.sort()).toEqual(["all", "scheduled", ...STATUSES].sort());
+      const openStatuses = STATUSES.filter((s) => s !== "closed");
+      expect(values.sort()).toEqual(["all", "scheduled", ...openStatuses].sort());
+      expect(values).not.toContain("closed");
     });
 
     it("lists needs-user statuses before the other-activity header", () => {
@@ -43,8 +45,8 @@ describe("taskListFilterSelectOptions", () => {
       const otherHeaderIdx = o.findIndex(
         (x) => isCustomSelectHeader(x) && x.label === "Other activity",
       );
-      const needsUser: Status[] = STATUSES.filter((s) =>
-        statusNeedsUserInput(s),
+      const needsUser: Status[] = STATUSES.filter(
+        (s) => s !== "closed" && statusNeedsUserInput(s),
       );
       for (const s of needsUser) {
         const idx = o.findIndex(
@@ -66,7 +68,9 @@ describe("taskListFilterSelectOptions", () => {
         taskListStatusFilterOptions({ includeScheduled: false }),
       );
       expect(values).not.toContain("scheduled");
-      expect(values.sort()).toEqual(["all", ...STATUSES].sort());
+      expect(values.sort()).toEqual(
+        ["all", ...STATUSES.filter((s) => s !== "closed")].sort(),
+      );
     });
   });
 

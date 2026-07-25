@@ -5,16 +5,14 @@ export type BoardColumnId =
   | "backlog"
   | "in_progress"
   | "verification"
-  | "needs_attention"
-  | "closed";
+  | "needs_attention";
 
 export type BoardColumnDef = {
   id: BoardColumnId;
   label: string;
   /**
-   * Disjoint status sets; never includes `done` (filtered out of the
-   * board walk). `closed` has its own column so operator exits stay
-   * findable without leaving the board.
+   * Disjoint status sets; never includes `done` or `closed` (both are
+   * filtered out of the board's active-task walk).
    */
   statuses: readonly Status[];
   tone: StatusTone;
@@ -48,12 +46,6 @@ export const BOARD_COLUMNS: readonly BoardColumnDef[] = [
     label: "Needs Attention",
     statuses: ["blocked", "failed"],
     tone: "danger",
-  },
-  {
-    id: "closed",
-    label: "Closed",
-    statuses: ["closed"],
-    tone: "neutral",
   },
 ] as const;
 

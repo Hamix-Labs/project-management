@@ -1,10 +1,15 @@
 import type { CustomSelectOption } from "@/components/custom-select";
-import { PRIORITIES, STATUSES } from "@/types";
+import { PRIORITIES, STATUSES, type Status } from "@/types";
 import { priorityPillClass, statusNeedsUserInput, statusPillClass } from "../../../task-display";
 import { statusListLabel } from "../../../task-display/statusListLabel";
 
-const needsUserStatuses = STATUSES.filter((s) => statusNeedsUserInput(s));
-const otherStatuses = STATUSES.filter((s) => !statusNeedsUserInput(s));
+/** Statuses offered in the toolbar filter (Closed is a lifecycle tab). */
+const FILTERABLE_STATUSES: Status[] = STATUSES.filter((s) => s !== "closed");
+
+const needsUserStatuses = FILTERABLE_STATUSES.filter((s) =>
+  statusNeedsUserInput(s),
+);
+const otherStatuses = FILTERABLE_STATUSES.filter((s) => !statusNeedsUserInput(s));
 
 function priorityFilterLabel(priority: (typeof PRIORITIES)[number]): string {
   return priority.charAt(0).toUpperCase() + priority.slice(1);
@@ -22,7 +27,8 @@ function priorityFilterLabel(priority: (typeof PRIORITIES)[number]): string {
  * the matching predicate.
  *
  * Real statuses use semantic pills (same hues as the table). Synthetic
- * `scheduled` and section headers stay plain text.
+ * `scheduled` and section headers stay plain text. `closed` is omitted —
+ * Open/Closed tabs own that axis.
  */
 export const TASK_LIST_STATUS_FILTER_OPTIONS: CustomSelectOption[] = [
   { value: "all", label: "All statuses" },
