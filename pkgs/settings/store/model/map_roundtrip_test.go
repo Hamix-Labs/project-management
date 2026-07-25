@@ -27,8 +27,6 @@ func TestAppSettings_roundTrip(t *testing.T) {
 		SSEReplayEnabled:            true,
 		RunnerConfigs:               cfg,
 		VerifyMaxRetries:            1,
-		VerifyRunnerName:            "cursor",
-		VerifyRunnerModel:           "gpt",
 		VerifyCommandTimeoutSeconds: 90,
 		CursorSessionResumeEnabled:  false,
 		UpdatedAt:                   now,

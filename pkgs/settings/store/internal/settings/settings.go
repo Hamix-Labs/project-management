@@ -150,9 +150,6 @@ func validatePatch(patch Patch) error {
 			return fmt.Errorf("%w: verify_max_retries must be >= 0", domain.ErrInvalidInput)
 		}
 	}
-	if patch.VerifyRunnerModel != nil && len(strings.TrimSpace(*patch.VerifyRunnerModel)) > 256 {
-		return fmt.Errorf("%w: verify_runner_model too long (max 256)", domain.ErrInvalidInput)
-	}
 	if patch.VerifyCommandTimeoutSeconds != nil && *patch.VerifyCommandTimeoutSeconds <= 0 {
 		return fmt.Errorf("%w: verify_command_timeout_seconds must be > 0", domain.ErrInvalidInput)
 	}
@@ -196,12 +193,6 @@ func applyPatch(row *domain.AppSettings, patch Patch) {
 	}
 	if patch.VerifyMaxRetries != nil {
 		row.VerifyMaxRetries = *patch.VerifyMaxRetries
-	}
-	if patch.VerifyRunnerName != nil {
-		row.VerifyRunnerName = strings.TrimSpace(*patch.VerifyRunnerName)
-	}
-	if patch.VerifyRunnerModel != nil {
-		row.VerifyRunnerModel = strings.TrimSpace(*patch.VerifyRunnerModel)
 	}
 	if patch.VerifyCommandTimeoutSeconds != nil {
 		row.VerifyCommandTimeoutSeconds = *patch.VerifyCommandTimeoutSeconds
