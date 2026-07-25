@@ -6,7 +6,7 @@ import type { Task } from "@/types";
  */
 export function userAttention(
   task: Task,
-  meta: { approvalPending: boolean },
+  meta: { approvalPending: boolean; failureSummary?: string },
 ): {
   show: boolean;
   headline: string;
@@ -32,12 +32,16 @@ export function userAttention(
         headline: "Blocked",
         body: "The agent is blocked. Review context and unblock or adjust the task.",
       };
-    case "failed":
+    case "failed": {
+      const summary = (meta.failureSummary ?? "").trim();
       return {
         show: true,
         headline: "Task failed",
-        body: "The agent reported a failure. Review what happened and decide whether to retry or change scope.",
+        body: summary
+          ? summary
+          : "The agent reported a failure. Review what happened and decide whether to retry or change scope.",
       };
+    }
     default:
       return { show: false, headline: "", body: "" };
   }

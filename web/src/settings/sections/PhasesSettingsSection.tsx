@@ -172,8 +172,22 @@ export function PhasesSettingsSection({
         <PhasePanel
           id={SECTION_IDS.verification}
           phase="verify"
-          description="Verifies done criteria after execute using the same runner."
+          description="Verifies done criteria after execute using the same runner and Cursor chat."
         >
+          <PhaseFieldGroup title="Runner">
+            <PhaseModelField
+              testId="settings-verify-model-select"
+              value={form.verifyModel}
+              onChange={(v) => onField("verifyModel", v)}
+              query={cursorModelsQuery}
+              knownIds={modelIdsFromList}
+            />
+            <p className="settings-field-help">
+              Auto inherits the execute model. Pick a model to pin for verify
+              only — Hamix still resumes the same Cursor chat.
+            </p>
+          </PhaseFieldGroup>
+
           <PhaseFieldGroup title="Budget">
             <label className="settings-field">
               <span className="settings-field-label">
