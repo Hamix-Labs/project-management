@@ -9,7 +9,8 @@ textarea {
    .btn-utility / .task-event-data-tab are excluded (see app-task-timeline.css).
    .task-detail-agent-model-cta is a compact secondary control (model config panel; app-task-detail.css).
    Workspace folder picker rows/crumbs use workspace-picker.css.
-   Table sort headers use app-task-list-card.css. */
+   Table sort headers use app-task-list-card.css.
+   .task-home-view-toggle__btn is the List|Board segmented control (app-task-board.css). */
 :where(
   button:not(.custom-select-trigger):not(.settings-dropdown-trigger):not(.btn-utility):not(
       .task-event-data-tab
@@ -19,7 +20,7 @@ textarea {
       .templates-tag-chip
     ):not(.templates-toolbar__search-clear):not(.ui-btn):not(.task-list-table-sort-btn):not(
       .task-list-status-tab
-    )
+    ):not(.task-home-view-toggle__btn)
 ) {
   font: inherit;
   font-weight: 500;
@@ -43,7 +44,9 @@ textarea {
     .workspace-picker-back
   ):not(.workspace-picker-row):not(.workspace-picker-crumb):not(.templates-tag-chip):not(
     .templates-toolbar__search-clear
-  ):not(.ui-btn):not(.task-list-table-sort-btn):not(.task-list-status-tab)
+  ):not(.ui-btn):not(.task-list-table-sort-btn):not(.task-list-status-tab):not(
+    .task-home-view-toggle__btn
+  )
 ):not(:disabled):hover {
   background: var(--control-primary-hover-bg);
   box-shadow: none;
@@ -58,7 +61,9 @@ textarea {
     .workspace-picker-back
   ):not(.workspace-picker-row):not(.workspace-picker-crumb):not(.templates-tag-chip):not(
     .templates-toolbar__search-clear
-  ):not(.ui-btn):not(.task-list-table-sort-btn):not(.task-list-status-tab)
+  ):not(.ui-btn):not(.task-list-table-sort-btn):not(.task-list-status-tab):not(
+    .task-home-view-toggle__btn
+  )
 ):not(:disabled):active {
   transform: scale(0.98);
   box-shadow: none;
