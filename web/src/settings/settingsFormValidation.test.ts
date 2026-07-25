@@ -9,7 +9,6 @@ function form(overrides: Partial<SettingsFormState> = {}): SettingsFormState {
     cursorModel: "",
     verifyModel: "",
     maxRunDurationSeconds: "3600",
-    streamIdleStuckSeconds: "300",
     agentPickupDelaySeconds: "0",
     displayTimezone: "",
     verifyMaxRetries: "3",
@@ -21,7 +20,6 @@ describe("parseSettingsNumericValidation", () => {
   it("returns no invalid flags when form is null", () => {
     expect(parseSettingsNumericValidation(null)).toEqual({
       maxInvalid: false,
-      streamIdleInvalid: false,
       pickupInvalid: false,
     });
   });

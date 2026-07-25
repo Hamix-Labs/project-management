@@ -1,5 +1,9 @@
 package runner
 
+// ProgressRunStateKind is the ProgressEvent.Kind for worker-authored
+// run_state events (setup / handoff progress).
+const ProgressRunStateKind = "run_state"
+
 // Harness-owned setup / handoff progress (fills ticker silence before Cursor stdout).
 const (
 	ProgressToolHarnessSetup = "harness_setup"

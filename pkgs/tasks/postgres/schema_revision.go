@@ -54,7 +54,12 @@ import (
 //
 // Rev 16: task_events composite index (type, at, seq) for GET /tasks/activity
 // cross-task filtered pagination (status_changed, phase_failed, approval_granted).
-const SchemaRevision = 16
+//
+// Rev 17: drop app_settings.stream_idle_stuck_seconds (and its check
+// constraint) — Hamix no longer runs its own stream-idle kill; runners
+// own their own timeouts. Only max_run_duration_seconds remains as the
+// wall-clock cap.
+const SchemaRevision = 17
 
 const schemaMetaRowID = 1
 

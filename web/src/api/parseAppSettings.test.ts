@@ -7,7 +7,6 @@ const requiredSettings = {
   cursor_bin: "cursor-agent",
   cursor_model: "",
   max_run_duration_seconds: 600,
-  stream_idle_stuck_seconds: 120,
   agent_pickup_delay_seconds: 5,
 };
 

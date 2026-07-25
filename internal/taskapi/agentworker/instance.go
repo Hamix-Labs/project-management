@@ -67,7 +67,6 @@ func stopWorkerInstance(inst *instance, reason string) {
 
 func (s *Supervisor) spawnWorkerInstance(ctx context.Context, cfg settingsdomain.AppSettings, r runner.Runner) *instance {
 	runTimeout := time.Duration(cfg.MaxRunDurationSeconds) * time.Second
-	streamIdleStuck := time.Duration(cfg.StreamIdleStuckSeconds) * time.Second
 	notifier := newCycleChangeSSEAdapter(s.publisher, s.notifierMetrics)
 	taskUpdatedNotifier := newTaskUpdatedSSEAdapter(s.publisher, s.store, s.notifierMetrics)
 	progressNotifier := newRunProgressSSEAdapter(s.publisher, agentRunProgressMinInterval, s.notifierMetrics)
@@ -79,7 +78,6 @@ func (s *Supervisor) spawnWorkerInstance(ctx context.Context, cfg settingsdomain
 	}
 	w := worker.NewPool(s.store, s.queue, r, worker.Options{
 		RunTimeout:          runTimeout,
-		StreamIdleStuck:     streamIdleStuck,
 		ReportDir:           reportDir,
 		Notifier:            notifier,
 		TaskUpdatedNotifier: taskUpdatedNotifier,

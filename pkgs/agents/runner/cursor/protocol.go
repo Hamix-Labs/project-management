@@ -115,7 +115,47 @@ func parseStdout(stdout []byte) (cursorOutput, error) {
 		}
 		return cursorOutput{}, errors.New("stream-json: no terminal result event")
 	}
+	// ADR-0031: keep the earliest observed session_id when the terminal
+	// result event omits it, so success details always carry the id
+	// captured from the init frame.
+	if strings.TrimSpace(out.SessionID) == "" && lastSessionID != "" {
+		out.SessionID = lastSessionID
+	}
 	return out, nil
+}
+
+// sessionIDFromLine returns the trimmed session_id from a single NDJSON
+// stream event line, or "" when the line is blank, malformed, or has no
+// session_id field. Pure helper; safe on partial buffers.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by callers."
+func sessionIDFromLine(raw []byte) string {
+	raw = bytes.TrimSpace(raw)
+	if len(raw) == 0 {
+		return ""
+	}
+	var head streamEventHead
+	if err := json.Unmarshal(raw, &head); err != nil {
+		return ""
+	}
+	return strings.TrimSpace(head.SessionID)
+}
+
+// sessionIDFromStdout scans NDJSON stdout and returns the first non-empty
+// session_id observed on any stream-json event, or "" when none exists.
+// Pure helper reusing splitNDJSON; safe on partial or malformed buffers.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by callers."
+func sessionIDFromStdout(stdout []byte) string {
+	if len(stdout) == 0 {
+		return ""
+	}
+	for _, raw := range splitNDJSON(stdout) {
+		if id := sessionIDFromLine(raw); id != "" {
+			return id
+		}
+	}
+	return ""
 }
 
 func updateOpenToolCalls(open map[string]struct{}, openAnonymous *int, head streamEventHead) {

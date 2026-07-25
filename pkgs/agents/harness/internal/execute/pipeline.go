@@ -88,7 +88,6 @@ func (s *Service) RunPhase(
 		RunErr:            runErr,
 		Snap:              snap,
 		OperatorCancelled: operatorCancelled,
-		StaleRecovery:     errors.Is(runErr, runner.ErrStale),
 	}
 
 	if parentCtx.Err() != nil {
@@ -96,7 +95,7 @@ func (s *Service) RunPhase(
 		return out
 	}
 
-	if (runErr == nil || out.StaleRecovery) && !operatorCancelled && !snap.Skipped {
+	if runErr == nil && !operatorCancelled && !snap.Skipped {
 		out.IngestAttempted = true
 		ports.emitProgress(parentCtx, task.ID, cycle.ID, execPhase,
 			runner.SetupProgressEvent(runner.ProgressRunStateSetupIngest, "Indexing commits…"))

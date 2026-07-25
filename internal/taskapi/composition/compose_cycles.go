@@ -53,6 +53,14 @@ func (a *API) CompletePhase(ctx context.Context, in cyclescontract.CompletePhase
 	return a.cycles.CompletePhase(ctx, in)
 }
 
+// PatchPhaseDetails shallow-merges patch into a running phase's details_json.
+// See taskcycles/store/internal/cycles.PatchPhaseDetails for merge semantics.
+func (a *API) PatchPhaseDetails(ctx context.Context, cycleID string, phaseSeq int64, patch []byte) error {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.PatchPhaseDetails",
+		"cycle_id", cycleID, "phase_seq", phaseSeq)
+	return a.cycles.PatchPhaseDetails(ctx, cycleID, phaseSeq, patch)
+}
+
 // ListPhasesForCycle returns phases for cycleID in execution order (phase_seq ASC).
 func (a *API) ListPhasesForCycle(ctx context.Context, cycleID string) ([]cyclesdomain.TaskCyclePhase, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ListPhasesForCycle")

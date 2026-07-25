@@ -15,12 +15,14 @@ import (
 type Hooks struct {
 	Publish         func(taskID, cycleID string)
 	PersistProgress func(ctx context.Context, taskID, cycleID string, phaseSeq int64, ev runner.ProgressEvent)
-	RecordVerdict   func(kind checklistdomain.VerifierKind, passed bool)
-	ObserveDuration func(d time.Duration)
+	// PersistSessionID is invoked at most once per verify runner.Run when the
+	// adapter first observes a non-empty Cursor stream-json session_id
+	// (ADR-0031, Layer B). Best-effort; nil means skip early persistence.
+	PersistSessionID func(ctx context.Context, cycleID string, phaseSeq int64, sessionID string)
+	RecordVerdict    func(kind checklistdomain.VerifierKind, passed bool)
+	ObserveDuration  func(d time.Duration)
 	// SetRunCancel registers or clears the in-flight verify cursor cancel func.
-	SetRunCancel    func(cancel context.CancelFunc)
-	StreamIdleStuck time.Duration
-	OnStreamIdle    func(kind runner.StreamIdleKind)
+	SetRunCancel func(cancel context.CancelFunc)
 	// PlanVerifyRun selects prompt + cursor resume fields before verify runner.Run.
 	PlanVerifyRun func(ctx context.Context, in PlanVerifyRunInput) (VerifyRunPlan, error)
 	// OnVerifyPhaseEnded is called after verify phase row closes (success or failure).

@@ -131,13 +131,8 @@ func (h *Harness) runCycleLoopExecute(
 
 	effects := orchestration.DecideExecutePostRun(phaseOut.PostRunInput)
 	result, effects = h.enforceExecuteSessionID(parentCtx, result, effects)
-	if phaseOut.StaleRecovery && effects.ContinueToVerify {
-		recovered := streamIdleRecoveredEvent()
-		h.persistProgress(parentCtx, task.ID, cycle.ID, execPhase.PhaseSeq, recovered)
-		h.publishProgress(task.ID, cycle.ID, execPhase.PhaseSeq, state.phase.runCorrelationID, recovered)
-	}
 	h.probeCriteriaReport(state, cycle.ID)
-	cont := h.applyExecuteEffects(parentCtx, task, cycle, state, execPhase, result, effects, phaseOut.CommitCount, snap, operatorCancelled, phaseOut.StaleRecovery)
+	cont := h.applyExecuteEffects(parentCtx, task, cycle, state, execPhase, result, effects, phaseOut.CommitCount, snap, operatorCancelled)
 	if cont {
 		h.anchorPostExecuteState(parentCtx, state, execPhase.PhaseSeq, snap, phaseOut.IngestAttempted, phaseOut.IngestOutcome, phaseOut.IngestErr)
 	}

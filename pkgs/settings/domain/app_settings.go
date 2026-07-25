@@ -59,7 +59,6 @@ type AppSettings struct {
 	CursorModel                string `json:"cursor_model"`
 	VerifyModel                string `json:"verify_model"`
 	MaxRunDurationSeconds      int    `json:"max_run_duration_seconds"`
-	StreamIdleStuckSeconds     int    `json:"stream_idle_stuck_seconds"`
 	AgentPickupDelaySeconds    int    `json:"agent_pickup_delay_seconds"`
 	DisplayTimezone            string `json:"display_timezone"`
 	OptimisticMutationsEnabled bool   `json:"optimistic_mutations_enabled"`
@@ -90,10 +89,6 @@ const DefaultRunner = "cursor"
 // DefaultAgentPickupDelaySeconds is the seed value for AgentPickupDelaySeconds
 // on first boot (seconds before the worker may dequeue a newly created ready task).
 const DefaultAgentPickupDelaySeconds = 5
-
-// DefaultStreamIdleStuckSeconds is the stdout-silence threshold before
-// the worker kills a hung cursor-agent run and attempts evidence recovery.
-const DefaultStreamIdleStuckSeconds = 60
 
 // DefaultVerifyMaxRetries is the seed value for VerifyMaxRetries on first boot.
 const DefaultVerifyMaxRetries = 2
@@ -126,7 +121,6 @@ func DefaultAppSettings() AppSettings {
 		Runner:                      DefaultRunner,
 		CursorBin:                   "",
 		MaxRunDurationSeconds:       0,
-		StreamIdleStuckSeconds:      DefaultStreamIdleStuckSeconds,
 		AgentPickupDelaySeconds:     DefaultAgentPickupDelaySeconds,
 		DisplayTimezone:             DefaultDisplayTimezone,
 		OptimisticMutationsEnabled:  true,

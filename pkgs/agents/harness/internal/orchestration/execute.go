@@ -1,9 +1,7 @@
 package orchestration
 
-import "github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 import (
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	"log/slog"
 )
 
 // DecideExecutePostRun maps execute post-run facts to effects. The harness root
@@ -13,10 +11,6 @@ import (
 func DecideExecutePostRun(in ExecutePostRunInput) ExecuteEffects {
 	if in.ContextCancelled {
 		return ExecuteEffects{StopLoop: true}
-	}
-
-	if in.EvidenceRecovery {
-		return decideExecuteAfterEvidenceRecovery(in)
 	}
 
 	effects := executeEffectsFromRunner(in.RunnerOutcome)
@@ -55,44 +49,6 @@ func DecideExecutePostRun(in ExecutePostRunInput) ExecuteEffects {
 		}
 	}
 
-	return ExecuteEffects{ContinueToVerify: true}
-}
-
-func decideExecuteAfterEvidenceRecovery(in ExecutePostRunInput) ExecuteEffects {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.orchestration.decideExecuteAfterEvidenceRecovery",
-		"operator_cancelled", in.OperatorCancelled, "evidence_recovery", in.EvidenceRecovery)
-	if in.OperatorCancelled {
-		return ExecuteEffects{
-			TerminateFailed: true,
-			TransitionTask:  taskcoredomain.StatusFailed,
-			Reason:          ReasonCancelledByOperator,
-			ResultSummary:   "cancelled by operator",
-		}
-	}
-
-	if in.CommitIngest.GitSnapshotSkipped || !in.CommitIngest.IngestAttempted {
-		return ExecuteEffects{ContinueToVerify: true}
-	}
-	if in.CommitIngest.IngestErr {
-		return ExecuteEffects{
-			TerminateFailed: true,
-			TransitionTask:  taskcoredomain.StatusFailed,
-			Reason:          ReasonExecuteInvalidCommit,
-			ResultSummary:   string(ReasonExecuteInvalidCommit),
-		}
-	}
-	if in.CommitIngest.FailReason != "" {
-		reason := TerminationReason(in.CommitIngest.FailReason)
-		if reason == "" {
-			reason = ReasonRunnerStale
-		}
-		return ExecuteEffects{
-			TerminateFailed: true,
-			TransitionTask:  taskcoredomain.StatusFailed,
-			Reason:          reason,
-			ResultSummary:   in.CommitIngest.FailReason,
-		}
-	}
 	return ExecuteEffects{ContinueToVerify: true}
 }
 

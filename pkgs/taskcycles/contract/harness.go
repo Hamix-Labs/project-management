@@ -69,6 +69,10 @@ type CycleHarnessStore interface {
 	AppendCycleStreamEvent(ctx context.Context, in AppendCycleStreamEventInput) (*cyclesdomain.TaskCycleStreamEvent, error)
 	ListRunningCycles(ctx context.Context) ([]cyclesdomain.TaskCycle, error)
 	ListRunningCyclePhases(ctx context.Context) ([]cyclesdomain.TaskCyclePhase, error)
+	// PatchPhaseDetails shallow-merges patch into details_json for a
+	// non-terminal phase row. See taskcycles/store/internal/cycles.PatchPhaseDetails
+	// for merge / first-wins semantics (ADR-0031).
+	PatchPhaseDetails(ctx context.Context, cycleID string, phaseSeq int64, patch []byte) error
 }
 
 // CycleWorkerStore lists in-flight cycles for reconcile and worker startup sweeps.
