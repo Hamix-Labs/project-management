@@ -184,11 +184,15 @@ func composeHumanPolishRecoveryDelta(b *strings.Builder, ctx RecoveryContext) {
 //funclogmeasure:skip category=hot-path reason="Pure string builder; ComposeRecoveryDelta logs byte metrics."
 func composeVerifyRecoveryDelta(b *strings.Builder, ctx RecoveryContext) {
 	fmt.Fprintf(b, recoverySectionContinuation+"\n\n", ctx.AttemptSeq)
-	b.WriteString("You are continuing the same verify Cursor session. Do not modify source files.\n\n")
+	b.WriteString("You are continuing the same Cursor session after execute. Now verify. Do not modify source files.\n\n")
 	b.WriteString("### What changed\n\n")
 	switch ctx.Kind {
 	case RecoveryVerifyInfra:
-		b.WriteString("Infrastructure or command checks produced new evidence since the last verify attempt.\n\n")
+		if ctx.VerifyAttempt <= 0 {
+			b.WriteString("Execute finished for this cycle. Judge each active criterion using your work and any worker command evidence below.\n\n")
+		} else {
+			b.WriteString("Infrastructure or command checks produced new evidence since the last verify attempt.\n\n")
+		}
 		formatCommandEvidenceDelta(b, ctx.CommandEvidenceDelta)
 	case RecoveryVerifyFeedback:
 		b.WriteString("Prior verification feedback still applies. Re-run judgment with any new evidence.\n\n")

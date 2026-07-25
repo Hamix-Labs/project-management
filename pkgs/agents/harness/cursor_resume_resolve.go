@@ -26,16 +26,15 @@ func (h *Harness) resolveCursorResume(
 		"cycle_id", cycle.ID, "phase", string(phase), "force_fresh", forceFresh)
 
 	facts := CursorResumeFacts{
-		ForceFresh:              forceFresh,
-		RetryMode:               retryModeFromCycleMeta(cycle),
-		Phase:                   phase,
-		ResumeNotice:            opts.resumeNotice,
-		ReportTampered:          state.verify.reportTampered,
-		FirstVerifyAfterExecute: firstVerifyAfterNewExecute(state),
-		GitSkipped:              state.git.gitSnap.Skipped,
-		HasPostExecuteHead:      state.git.postExecuteHeadSHA != "",
-		HeadMatchesAnchor:       true,
-		WorkingDir:              h.opts.WorkingDir,
+		ForceFresh:         forceFresh,
+		RetryMode:          retryModeFromCycleMeta(cycle),
+		Phase:              phase,
+		ResumeNotice:       opts.resumeNotice,
+		ReportTampered:     state.verify.reportTampered,
+		GitSkipped:         state.git.gitSnap.Skipped,
+		HasPostExecuteHead: state.git.postExecuteHeadSHA != "",
+		HeadMatchesAnchor:  true,
+		WorkingDir:         h.opts.WorkingDir,
 	}
 	if !forceFresh {
 		settings, err := h.store.GetSettings(ctx)
@@ -63,7 +62,8 @@ func (h *Harness) resolveCursorResume(
 
 	if !forceFresh {
 		lookupCycleID := h.sessionLookupCycleID(ctx, cycle, phase, facts.RetryMode, opts)
-		sessionID, err := h.store.LastSessionID(ctx, lookupCycleID, phase)
+		sessionPhase := cursorresume.SessionPhaseForResume(phase)
+		sessionID, err := h.store.LastSessionID(ctx, lookupCycleID, sessionPhase)
 		if err != nil {
 			return CursorResumeDecision{}, err
 		}
@@ -99,7 +99,8 @@ func (h *Harness) sessionLookupCycleID(
 	if retryMode == taskcoredomain.RetryResume && cycle.ParentCycleID != nil {
 		parentID := strings.TrimSpace(*cycle.ParentCycleID)
 		if parentID != "" {
-			childID, err := h.store.LastSessionID(ctx, cycle.ID, phase)
+			sessionPhase := cursorresume.SessionPhaseForResume(phase)
+			childID, err := h.store.LastSessionID(ctx, cycle.ID, sessionPhase)
 			if err == nil && strings.TrimSpace(childID) == "" {
 				switch {
 				case phase == cyclesdomain.PhaseExecute:
@@ -173,14 +174,6 @@ func (h *Harness) selectRecoveryKind(
 		ResumeNotice:      opts.resumeNotice,
 		HasFailedVerdicts: len(state.verify.lastFailedVerdicts) > 0,
 	})
-}
-
-//funclogmeasure:skip category=hot-path reason="Pure state comparison for verify fresh-after-execute deny."
-func firstVerifyAfterNewExecute(state *processState) bool {
-	return cursorresume.FirstVerifyAfterNewExecute(
-		state.phase.lastVerifyAfterExecuteSeq,
-		state.phase.lastCompletedExecutePhaseSeq,
-	)
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure verdict to DTO mapping."
