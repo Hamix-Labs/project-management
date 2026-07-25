@@ -194,7 +194,6 @@ export function TaskHome() {
         <TaskListSection
           {...listSectionProps}
           actions={listActions}
-          emptyListAction={emptyAction}
         />
       )}
     </div>
