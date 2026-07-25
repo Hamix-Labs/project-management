@@ -74,8 +74,9 @@ func (h *Handler) registerRoutes(m *http.ServeMux) {
 		},
 	})
 	eventhandler.Register(m, eventhandler.Deps{
-		Events: h.store,
-		Tasks:  h.store,
+		Events:   h.store,
+		Activity: h.store,
+		Tasks:    h.store,
 		NotifyTaskEventChanged: func(taskID string, eventSeq int64) {
 			h.notifyTaskEventChanged(taskID, eventSeq)
 		},

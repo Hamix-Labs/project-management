@@ -32,3 +32,8 @@ func (unimplementedHandlerStore) ApprovalPending(context.Context, string) (bool,
 func (unimplementedHandlerStore) AppendTaskEventResponseMessage(context.Context, string, int64, string, taskcoredomain.Actor) error {
 	return errNotImplemented
 }
+
+//funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
+func (unimplementedHandlerStore) ListTaskActivity(context.Context, taskeventscontract.ListActivityInput) (taskeventscontract.ListActivityResult, error) {
+	return taskeventscontract.ListActivityResult{}, errNotImplemented
+}

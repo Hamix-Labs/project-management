@@ -10,3 +10,7 @@ import (
 func TestStore_implements_TaskEventStore(t *testing.T) {
 	var _ contract.TaskEventStore = (*store.Store)(nil)
 }
+
+func TestStore_implements_TaskActivityStore(t *testing.T) {
+	var _ contract.TaskActivityStore = (*store.Store)(nil)
+}
