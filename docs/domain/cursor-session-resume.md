@@ -1,13 +1,13 @@
 # Cursor session resume
 
-ADR-0031 adds **CLI session continuity** on top of the existing harness phase ledger. A new phase row is still created for every `runner.Run`; continuing a Cursor chat does not reuse a phase row.
+ADR-0031 adds **CLI session continuity** on top of the existing harness phase ledger. A new phase row is still created for every `runner.Run`; continuing a Cursor chat does not reuse a phase row. [ADR-0085](../adr/ADR-0085-verify-resumes-execute-session.md) makes PhaseVerify continue the **execute** chat.
 
 | | |
 | --- | --- |
 | **Applies to** | Cursor CLI `--resume`, harness phase ledger, `cursor_session_resume_enabled` |
 | **Audience** | Contributors touching `pkgs/agents/harness/cursor_resume.go` or cursor adapter |
 | **Prerequisite** | [harness.md](./harness.md) — cycle loop and phase model |
-| **Decision record** | [ADR-0031](../adr/ADR-0031-cursor-session-resume-default.md) |
+| **Decision record** | [ADR-0031](../adr/ADR-0031-cursor-session-resume-default.md), [ADR-0085](../adr/ADR-0085-verify-resumes-execute-session.md) |
 
 ## In this article
 
@@ -28,17 +28,19 @@ ADR-0031 adds **CLI session continuity** on top of the existing harness phase le
 
 ## Session chains
 
-Execute and verify maintain **separate** `session_id` chains. Never pass an execute session id to a verify run.
+Execute and verify share **one Cursor chat** per cycle of work: verify `--resume`s the latest terminal **execute** `session_id` (ADR-0085). Phase ledger rows remain separate (one row per `runner.Run`).
 
 Typical in-cycle pattern:
 
 ```text
 phase 1  execute  →  session E1 (new)
-phase 2  verify   →  session V1 (new)
-phase 3  execute  →  resume E1
-phase 4  verify   →  fresh V2 (new execute since last verify)
-phase 5  verify   →  resume V2 (verify-only retry)
+phase 2  verify   →  resume E1 (same chat; recovery delta)
+phase 3  execute  →  resume E1 (or fresh on RetryFresh / safety deny)
+phase 4  verify   →  resume E1 (last execute session)
+phase 5  verify   →  resume E1 (verify-only retry; still execute's session)
 ```
+
+Polish with verify: polish execute resumes the prior execute session; verify then resumes that polish execute session. Instructions-only polish (`SkipVerify`) never starts a verify run.
 
 ## Policy chokepoint
 
@@ -50,27 +52,31 @@ phase 5  verify   →  resume V2 (verify-only retry)
 | `resume` | `--resume` + `ComposeRecoveryDelta` stdin |
 | `resume_fallback` | Resume failed once; retried with full prompt |
 
+For `PhaseVerify`, session lookup uses `LastSessionID(cycleID, PhaseExecute)` via `SessionPhaseForResume`.
+
 ## Storage
 
 - **Write:** `task_cycle_phases.details_json.session_id` on phase complete (cursor adapter).
-- **Read:** `store.LastSessionID(ctx, cycleID, phase)` — latest **terminal** row for that phase in the cycle.
+- **Read (execute):** `store.LastSessionID(ctx, cycleID, PhaseExecute)`.
+- **Read (verify):** same — last terminal **execute** session for the cycle (ADR-0085).
 
-Cross-cycle **Resume from failure** reads the **parent** cycle's session for the entry phase when the child cycle has no prior phase of that type yet.
+Cross-cycle **Resume from failure** reads the **parent** cycle's execute session when the child has no execute session yet (including verify-only entry).
 
 ## Operator grep examples
 
 ```text
-cursor_resume_mode=resume recovery_hint_kind=verify_implementation_fail
+cursor_resume_mode=resume recovery_hint_kind=verify_infra_retry
 deny_reason=head_drift cursor_resume_mode=fresh
 cursor_resume_mode=resume_fallback
 ```
 
 ## Configuration
 
-`app_settings.cursor_session_resume_enabled` (default `true`). When `false`, behavior matches pre-ADR-0031 (always fresh chat). See [configuration.md](../configuration.md).
+`app_settings.cursor_session_resume_enabled` (default `true`). When `false`, behavior matches always-fresh chat. See [configuration.md](../configuration.md).
 
 ## See also
 
 - [harness.md](./harness.md) — cycle loop and worker boundary
 - [retry-resume.md](./retry-resume.md) — operator Resume from failure
 - [ADR-0031](../adr/ADR-0031-cursor-session-resume-default.md)
+- [ADR-0085](../adr/ADR-0085-verify-resumes-execute-session.md)
