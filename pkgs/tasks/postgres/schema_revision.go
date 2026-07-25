@@ -51,7 +51,10 @@ import (
 //
 // Rev 15: app_settings.verify_model — optional Cursor --model for PhaseVerify
 // on the same chat as execute (empty inherits execute effective model).
-const SchemaRevision = 15
+//
+// Rev 16: task_events composite index (type, at, seq) for GET /tasks/activity
+// cross-task filtered pagination (status_changed, phase_failed, approval_granted).
+const SchemaRevision = 16
 
 const schemaMetaRowID = 1
 

@@ -18,9 +18,9 @@ func (taskEventParentTask) TableName() string { return "tasks" }
 // TaskEvent is the GORM persistence shape for domain.TaskEvent.
 type TaskEvent struct {
 	TaskID         string                     `gorm:"primaryKey;index:task_events_task_id_at,priority:1;index:task_events_task_id_type,priority:1"`
-	Seq            int64                      `gorm:"primaryKey;check:chk_task_events_seq,seq > 0"`
-	At             time.Time                  `gorm:"not null;index:task_events_task_id_at,priority:2"`
-	Type           taskeventsdomain.EventType `gorm:"column:type;not null;index:task_events_task_id_type,priority:2"`
+	Seq            int64                      `gorm:"primaryKey;check:chk_task_events_seq,seq > 0;index:task_events_activity_idx,priority:3"`
+	At             time.Time                  `gorm:"not null;index:task_events_task_id_at,priority:2;index:task_events_activity_idx,priority:2"`
+	Type           taskeventsdomain.EventType `gorm:"column:type;not null;index:task_events_task_id_type,priority:2;index:task_events_activity_idx,priority:1"`
 	By             taskeventsdomain.Actor     `gorm:"column:by;not null"`
 	Data           datatypes.JSON             `gorm:"column:data_json;type:jsonb;not null;default:'{}'"`
 	UserResponse   *string                    `gorm:"column:user_response;type:text"`

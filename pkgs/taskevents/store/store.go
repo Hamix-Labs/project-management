@@ -8,6 +8,7 @@ import (
 
 	taskeventscontract "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/contract"
 	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/internal/activity"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/internal/events"
 	"gorm.io/gorm"
 )
@@ -81,4 +82,11 @@ func (s *Store) ApprovalPending(ctx context.Context, taskID string) (bool, error
 func (s *Store) AppendTaskEventResponseMessage(ctx context.Context, taskID string, seq int64, text string, by taskeventsdomain.Actor) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskevents.store.AppendTaskEventResponseMessage")
 	return events.AppendResponseMessage(ctx, s.db, taskID, seq, text, by)
+}
+
+// ListTaskActivity returns paginated cross-task activity events for
+// GET /tasks/activity (status_changed, phase_failed, approval_granted).
+func (s *Store) ListTaskActivity(ctx context.Context, in taskeventscontract.ListActivityInput) (taskeventscontract.ListActivityResult, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskevents.store.ListTaskActivity")
+	return activity.List(ctx, s.db, in)
 }

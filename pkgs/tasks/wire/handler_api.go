@@ -20,6 +20,7 @@ type HandlerAPI interface {
 	settingscontract.SettingsStore
 	taskcorecontract.TaskCRUDStore
 	taskeventscontract.TaskEventStore
+	taskeventscontract.TaskActivityStore
 	checklistcontract.ChecklistStore
 	cyclescontract.CycleStore
 	cyclescontract.CycleFailuresStore
