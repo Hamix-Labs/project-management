@@ -8,6 +8,76 @@ type Props = {
 const LIST_PANEL_ID = "task-list-panel";
 const BOARD_PANEL_ID = "task-board-panel";
 
+function ListIcon() {
+  return (
+    <svg
+      className="task-home-view-toggle__icon"
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M3 4h10M3 8h10M3 12h10"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function BoardIcon() {
+  return (
+    <svg
+      className="task-home-view-toggle__icon"
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      aria-hidden="true"
+    >
+      <rect
+        x="2.5"
+        y="2.5"
+        width="4.5"
+        height="4.5"
+        rx="1"
+        stroke="currentColor"
+        strokeWidth="1.3"
+      />
+      <rect
+        x="9"
+        y="2.5"
+        width="4.5"
+        height="4.5"
+        rx="1"
+        stroke="currentColor"
+        strokeWidth="1.3"
+      />
+      <rect
+        x="2.5"
+        y="9"
+        width="4.5"
+        height="4.5"
+        rx="1"
+        stroke="currentColor"
+        strokeWidth="1.3"
+      />
+      <rect
+        x="9"
+        y="9"
+        width="4.5"
+        height="4.5"
+        rx="1"
+        stroke="currentColor"
+        strokeWidth="1.3"
+      />
+    </svg>
+  );
+}
+
 /**
  * List | Board control for Task Home. Tab-like segmented buttons with
  * aria-controls pointing at the active view's tabpanel.
@@ -39,6 +109,7 @@ export function TaskHomeViewToggle({ value, onChange }: Props) {
           }
         }}
       >
+        <ListIcon />
         List
       </button>
       <button
@@ -61,6 +132,7 @@ export function TaskHomeViewToggle({ value, onChange }: Props) {
           }
         }}
       >
+        <BoardIcon />
         Board
       </button>
     </div>
