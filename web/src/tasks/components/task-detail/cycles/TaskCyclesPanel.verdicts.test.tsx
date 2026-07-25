@@ -70,7 +70,7 @@ describe("TaskCyclesPanel verdicts", () => {
               attempt_seq: 1,
               criterion_id: "crit-a",
               verified: true,
-              verifier_kind: "verify_agent",
+              verifier_kind: "execute_agent",
               reasoning: "verifier ran the test suite independently",
               written_at: "2026-04-18T10:00:58.000Z",
             },
@@ -91,7 +91,7 @@ describe("TaskCyclesPanel verdicts", () => {
     const verdicts = await within(row).findByTestId("task-cycle-verdicts");
     expect(verdicts).toHaveTextContent(/Verdicts/);
     expect(verdicts).toHaveTextContent(/Verified/);
-    expect(verdicts).toHaveTextContent(/Verify agent/);
+    expect(verdicts).toHaveTextContent(/Agent verify/);
     expect(verdicts).toHaveTextContent(/verifier ran the test suite independently/);
     expect(verdicts).toHaveTextContent(/crit-a/);
   });

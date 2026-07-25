@@ -23,7 +23,7 @@ const DONE_VERIFIED: TaskChecklistItemView = {
   sort_order: 3,
   text: "The summary names the primary language, runtime, and main entry point.",
   done: true,
-  verified_by: "verify_agent",
+  verified_by: "execute_agent",
   evidence: "CODEBASE_TOUR.md names Go 1.25+ as the primary backend language.",
   verifier_reasoning:
     "CODEBASE_TOUR.md paragraph explicitly names Go 1.25+ (matches go.mod go 1.25.0).",

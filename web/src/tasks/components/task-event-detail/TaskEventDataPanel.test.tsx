@@ -83,7 +83,7 @@ describe("TaskEventDataPanel", () => {
                   criterion_id: "c1",
                   text: "Each branch has a test",
                   verified: false,
-                  verifier_kind: "verify_agent",
+                  verifier_kind: "execute_agent",
                   reasoning: "Missing limit=201 coverage",
                 },
               ],

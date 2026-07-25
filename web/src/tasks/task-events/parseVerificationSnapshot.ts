@@ -32,7 +32,7 @@ function parseVerifierKind(v: unknown): VerifierKind | "" {
   const s = str(v);
   if (!s) return "";
   switch (s) {
-    case "verify_agent":
+    case "execute_agent":
     case "agent_self":
     case "deterministic_check":
     case "human_override":
@@ -99,8 +99,8 @@ export function parseVerificationSnapshot(
 
 export function verifierKindLabel(kind: VerifierKind | ""): string {
   switch (kind) {
-    case "verify_agent":
-      return "Verify agent";
+    case "execute_agent":
+      return "Agent verify";
     case "agent_self":
       return "Self-reported";
     case "deterministic_check":
