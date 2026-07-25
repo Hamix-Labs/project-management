@@ -17,7 +17,5 @@ export const APP_SETTINGS_DEFAULTS: AppSettings = {
   optimistic_mutations_enabled: true,
   sse_replay_enabled: false,
   verify_max_retries: DEFAULT_VERIFY_MAX_RETRIES,
-  verify_runner_name: "",
-  verify_runner_model: "",
   verify_command_timeout_seconds: 120,
 };

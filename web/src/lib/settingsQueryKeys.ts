@@ -13,6 +13,4 @@ export const settingsQueryKeys = {
   /** Shared runner + effective binary path (create modal, etc.). */
   cursorModels: (runner: string, binaryPath: string) =>
     [...settingsQueryKeys.modelsRoot(), "cursor", runner, binaryPath] as const,
-  verifyModels: (runner: string, formBin: string | undefined) =>
-    [...settingsQueryKeys.all, "verify-models", runner, formBin] as const,
 };

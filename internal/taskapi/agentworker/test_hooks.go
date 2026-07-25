@@ -2,11 +2,8 @@ package agentworker
 
 import (
 	"context"
-	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	"time"
 	"unsafe"
-
-	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 )
 
 // HasRunningInstance reports whether a worker instance is currently active.
@@ -56,11 +53,6 @@ func (s *Supervisor) SetProbeForTest(fn func(ctx context.Context, id, binaryPath
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (s *Supervisor) SetProbeBudgetForTest(d time.Duration) {
 	s.probeBudge = d
-}
-
-// BuildVerifyRunnerForTest exposes buildVerifyRunner for cmd tests.
-func (s *Supervisor) BuildVerifyRunnerForTest(ctx context.Context, cfg settingsdomain.AppSettings) (runner.Runner, string) {
-	return s.buildVerifyRunner(ctx, cfg)
 }
 
 // ProbeSchedulingHintForTest exposes probeSchedulingHint for cmd tests.

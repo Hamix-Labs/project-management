@@ -16,8 +16,6 @@ type SettingsPatch struct {
 	SSEReplayEnabled            *bool
 	RunnerConfigs               *json.RawMessage
 	VerifyMaxRetries            *int
-	VerifyRunnerName            *string
-	VerifyRunnerModel           *string
 	VerifyCommandTimeoutSeconds *int
 	CursorSessionResumeEnabled  *bool
 }
@@ -38,8 +36,6 @@ func (p SettingsPatch) IsEmpty() bool {
 		p.SSEReplayEnabled == nil &&
 		p.RunnerConfigs == nil &&
 		p.VerifyMaxRetries == nil &&
-		p.VerifyRunnerName == nil &&
-		p.VerifyRunnerModel == nil &&
 		p.VerifyCommandTimeoutSeconds == nil &&
 		p.CursorSessionResumeEnabled == nil
 }

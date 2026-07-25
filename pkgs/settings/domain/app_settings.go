@@ -67,10 +67,6 @@ type AppSettings struct {
 	RunnerConfigs json.RawMessage `json:"runner_configs"`
 	// VerifyMaxRetries is the corrective execute retries after verify failure.
 	VerifyMaxRetries int `json:"verify_max_retries"`
-	// VerifyRunnerName empty means use the execute runner id.
-	VerifyRunnerName string `json:"verify_runner_name"`
-	// VerifyRunnerModel empty means use the verify runner's default model.
-	VerifyRunnerModel string `json:"verify_runner_model"`
 	// VerifyCommandTimeoutSeconds caps each optional criterion shell check during verify.
 	VerifyCommandTimeoutSeconds int `json:"verify_command_timeout_seconds"`
 	// CursorSessionResumeEnabled enables ADR-0031 --resume-by-default for Cursor CLI.
@@ -132,8 +128,6 @@ func DefaultAppSettings() AppSettings {
 		OptimisticMutationsEnabled:  true,
 		SSEReplayEnabled:            true,
 		VerifyMaxRetries:            DefaultVerifyMaxRetries,
-		VerifyRunnerName:            "",
-		VerifyRunnerModel:           "",
 		VerifyCommandTimeoutSeconds: DefaultVerifyCommandTimeoutSeconds,
 		CursorSessionResumeEnabled:  true,
 	}

@@ -88,7 +88,6 @@ type Options struct {
 	Notifier             CycleChangeNotifier
 	ProgressNotifier     ProgressNotifier
 	TaskUpdatedNotifier  TaskUpdatedNotifier
-	VerifyRunner         runner.Runner
 	Metrics              RunMetrics
 	Clock                func() time.Time
 }

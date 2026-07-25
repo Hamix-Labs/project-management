@@ -1,4 +1,3 @@
-import type { AppSettings } from "@/api/settings";
 import {
   detectBrowserTimezone,
   formatInAppTimezone,
@@ -42,18 +41,6 @@ export function parseSettingsNumericValidation(
     streamIdleInvalid: parseNonNegativeIntField(form.streamIdleStuckSeconds),
     pickupInvalid,
   };
-}
-
-export function resolveVerifyEffectiveRunner(
-  form: SettingsFormState,
-  settings: AppSettings,
-): string {
-  return (
-    (form.verifyRunnerName ?? "").trim() ||
-    form.runner ||
-    settings.runner ||
-    "cursor"
-  );
 }
 
 export function computeTimezoneDisplayContext(

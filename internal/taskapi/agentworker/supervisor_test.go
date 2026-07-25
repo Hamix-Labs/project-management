@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	settingscontract "github.com/AlexsanderHamir/Hamix/pkgs/settings/contract"
-	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 	"sync"
 	"sync/atomic"
@@ -394,63 +393,5 @@ func TestSupervisor_probeSchedulingHint_silentWhenNothingScheduled(t *testing.T)
 	rig := newSupervisorTestRig(t, ctx, nil)
 	if hint := rig.sup.ProbeSchedulingHintForTest(ctx); hint != "" {
 		t.Fatalf("probeSchedulingHint = %q, want \"\"", hint)
-	}
-}
-
-func TestSupervisor_buildVerifyRunner_returnsNilWhenUnconfigured(t *testing.T) {
-	t.Parallel()
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	rig := newSupervisorTestRig(t, ctx, func(_ context.Context, _, _ string, _ time.Duration) (string, string, error) {
-		t.Fatal("probe must not be called when VerifyRunnerName is empty")
-		return "", "", nil
-	})
-	r, status := rig.sup.BuildVerifyRunnerForTest(ctx, settingsdomain.AppSettings{Runner: "cursor", VerifyRunnerName: ""})
-	if r != nil || status != "" {
-		t.Fatalf("buildVerifyRunner(unconfigured) = (%v, %q), want (nil, \"\")", r, status)
-	}
-}
-
-func TestSupervisor_buildVerifyRunner_demotesOnProbeFailure(t *testing.T) {
-	t.Parallel()
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	probeCalls := 0
-	rig := newSupervisorTestRig(t, ctx, func(_ context.Context, id, _ string, _ time.Duration) (string, string, error) {
-		probeCalls++
-		return "", "", errors.New("verify binary not found")
-	})
-	r, status := rig.sup.BuildVerifyRunnerForTest(ctx, settingsdomain.AppSettings{
-		Runner:           "cursor",
-		VerifyRunnerName: "claudecode",
-	})
-	if r != nil {
-		t.Fatalf("expected nil runner on probe failure, got %v", r)
-	}
-	if status != "demoted_probe_failed" {
-		t.Fatalf("status = %q, want demoted_probe_failed", status)
-	}
-	if probeCalls != 1 {
-		t.Fatalf("probe calls = %d, want 1", probeCalls)
-	}
-}
-
-func TestSupervisor_buildVerifyRunner_reuseExecuteRunnerWhenSameName(t *testing.T) {
-	t.Parallel()
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	rig := newSupervisorTestRig(t, ctx, func(_ context.Context, _, _ string, _ time.Duration) (string, string, error) {
-		t.Fatal("probe must not be called when verify == execute")
-		return "", "", nil
-	})
-	r, status := rig.sup.BuildVerifyRunnerForTest(ctx, settingsdomain.AppSettings{
-		Runner:           "cursor",
-		VerifyRunnerName: "cursor",
-	})
-	if r != nil || status != "reuse_execute_runner" {
-		t.Fatalf("buildVerifyRunner(same name) = (%v, %q), want (nil, reuse_execute_runner)", r, status)
 	}
 }

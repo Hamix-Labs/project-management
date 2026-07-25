@@ -11,10 +11,9 @@ import (
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
-// TestWorker_VerifyPhase_usesExecuteRunnerEvenWhenVerifyRunnerConfigured pins
-// ADR-0084: PhaseVerify always uses the execute runner. Options.VerifyRunner
-// is ignored; verify requests land on the runner passed to StartHarnessRun.
-func TestWorker_VerifyPhase_usesExecuteRunnerEvenWhenVerifyRunnerConfigured(t *testing.T) {
+// TestWorker_VerifyPhase_usesExecuteRunner pins ADR-0084: PhaseVerify always
+// uses the execute runner passed to StartHarnessRun.
+func TestWorker_VerifyPhase_usesExecuteRunner(t *testing.T) {
 	t.Parallel()
 	h := newHarness(t)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -47,14 +46,9 @@ func TestWorker_VerifyPhase_usesExecuteRunnerEvenWhenVerifyRunnerConfigured(t *t
 	execRunner.Script(tsk.ID, cyclesdomain.PhaseVerify, runner.NewResult(
 		cyclesdomain.PhaseStatusSucceeded, "verify ok", nil, ""))
 
-	ignoredVerifyRunner := runnerfake.New().WithName("ignored-verify-runner")
-	ignoredVerifyRunner.Script(tsk.ID, cyclesdomain.PhaseVerify, runner.NewResult(
-		cyclesdomain.PhaseStatusFailed, "should not run", nil, ""))
-
 	done := h.StartHarnessRun(ctx, tsk, hook, harness.Options{
-		WorkingDir:   workDir,
-		ReportDir:    reportDir,
-		VerifyRunner: ignoredVerifyRunner,
+		WorkingDir: workDir,
+		ReportDir:  reportDir,
 	})
 	h.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusReview)
 	<-done
@@ -68,8 +62,5 @@ func TestWorker_VerifyPhase_usesExecuteRunnerEvenWhenVerifyRunnerConfigured(t *t
 	}
 	if verifyCalls != 1 {
 		t.Fatalf("execute runner verify calls = %d, want 1", verifyCalls)
-	}
-	if len(ignoredVerifyRunner.Calls()) != 0 {
-		t.Fatalf("VerifyRunner must be ignored; got calls %+v", ignoredVerifyRunner.Calls())
 	}
 }

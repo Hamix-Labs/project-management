@@ -1,10 +1,10 @@
-# Verify agent
+# Verify phase
 
-How the verify phase judges done criteria after execute succeeds: LLM verdict, criterion shell checks, git integrity, and retry behavior.
+How the verify phase judges done criteria after execute: same execute agent, worker-owned shell evidence, git integrity, and retry behavior.
 
 | | |
 | --- | --- |
-| **Applies to** | Agent worker harness, verify runner configuration, cycle verdict API |
+| **Applies to** | Agent worker harness, verify prompt contract, cycle verdict API |
 | **Audience** | Contributors touching `pkgs/agents/harness`, verify settings, or verdict UI |
 | **Prerequisite** | [done-criteria.md](./done-criteria.md) — full criteria lifecycle and completion ledger |
 | **Companion article** | [execute-agent.md](./execute-agent.md) — execute phase prompt composition and criteria self-report; [harness.md](./harness.md) — cycle loop and verify retry orchestration |
@@ -26,19 +26,21 @@ How the verify phase judges done criteria after execute succeeds: LLM verdict, c
 
 ## Overview
 
-The **verify agent** is an LLM pass that runs after execute when a task has at least one done criterion. It is the **sole authority** for marking criteria complete with `verified_by=verify_agent`.
+The **verify phase** is a second harness step after execute when a task has at least one done criterion. The **same execute agent** (same `runner.Runner`) writes `verify-report.json`. On success the worker persists `verified_by=execute_agent` (`verifier_kind=execute_agent` in verdict mirrors).
 
-Three roles participate in verification:
+This is **self-grading with guardrails**: a phase barrier lets the worker run shell checks and assemble evidence before the LLM judges; git integrity still forbids working-tree mutation during `PhaseVerify`.
+
+Three roles participate:
 
 | Role | Responsibility |
 | --- | --- |
-| **Execute agent** | Does the work and writes a self-report (`claimed_done` + evidence). Assertion only — cannot mark criteria done in the completion ledger. |
-| **Worker (harness)** | Gates on `claimed_done`, runs optional shell checks, assembles the verify prompt, invokes the verify runner, parses `verify-report.json`, enforces git integrity, and decides pass / retry / fail. |
-| **Verify agent** | Reads evidence and returns per-criterion `verified` + `reasoning`. |
+| **Execute agent** | Implements work in `PhaseExecute`; writes `criteria-report.json` (`claimed_done` + evidence). Assertion only — cannot mark criteria done in the completion ledger. |
+| **Worker (harness)** | Gates on `claimed_done`, runs optional shell checks, assembles the verify prompt, invokes the execute runner for `PhaseVerify`, parses `verify-report.json`, enforces git integrity, and decides pass / retry / fail. |
+| **Agent verify** (`PhaseVerify`) | Same agent identity as execute; reads evidence and returns per-criterion `verified` + `reasoning`. |
 
 > **Note** — Tasks with **zero criteria** (legacy rows) skip verify entirely; a successful execute alone marks the task `done`. See [data-model.md](../data-model.md).
 
-Execute-side prompt composition and criteria self-report: [execute-agent.md](./execute-agent.md). Schema and table definitions: [data-model.md](../data-model.md) (Checklist). HTTP surfaces: [api.md](../api.md).
+Execute-side prompt composition: [execute-agent.md](./execute-agent.md). Schema: [data-model.md](../data-model.md) (Checklist). HTTP: [api.md](../api.md).
 
 ## Key concepts
 
@@ -48,7 +50,7 @@ Execute-side prompt composition and criteria self-report: [execute-agent.md](./e
 | **Command evidence** | Worker-captured stdout/stderr/meta from shell verify commands; input to the verify prompt. |
 | **Locked pass** | Criterion verified on an earlier attempt; carried in `previouslyPassed` and omitted from re-verify. |
 | **Verify tampered** | Terminal cycle outcome when git integrity detects working-tree or HEAD changes during verify. |
-| **Adversarial separation** | Optional different runner/model for verify vs execute ([ADR-0003](../adr/ADR-0003-verify-component-upgrade.md)). |
+| **Executor-owned verify** | `PhaseVerify` always uses the execute runner; no separate verify runner ([ADR-0084](../adr/ADR-0084-executor-owned-verify.md)). |
 
 ### Actors and trust
 
@@ -56,11 +58,11 @@ Execute-side prompt composition and criteria self-report: [execute-agent.md](./e
 | --- | --- | --- |
 | Execute agent | Implement work; write `criteria-report.json` | Self-assertion only |
 | Worker | Gate, shell commands, prompt assembly, parse reports, git snapshots | Trusted orchestrator |
-| Verify agent | Per-criterion pass/fail + reasoning | Trusted verdict (when integrity holds) |
+| Agent verify (same runner) | Per-criterion pass/fail + reasoning in `verify-report.json` | Trusted verdict when integrity holds; accepted self-grade bias |
 
-> **Important** — The worker does **not** auto-pass a criterion when a verify command exits 0. Shell output is evidence for the verify agent to interpret. See [ADR-0012](../adr/ADR-0012-structured-verify-commands.md).
+> **Important** — The worker does **not** auto-pass a criterion when a verify command exits 0. Shell output is evidence for the agent to interpret in verify. See [ADR-0012](../adr/ADR-0012-structured-verify-commands.md).
 
-When `app_settings.verify_runner_name` is set to a different runner than execute, verify is **adversarially separated**. Build/probe failure demotes verify to reuse the execute runner with a loud log; the worker keeps running. See [ADR-0003](../adr/ADR-0003-verify-component-upgrade.md).
+> **Note** — There is no second model or adversarial judge. Mitigations for self-grading: worker-owned command evidence, minimum reasoning length when `verified=true`, git integrity during verify, and honest operator docs.
 
 ## How it works
 
@@ -74,13 +76,13 @@ flowchart TD
   subgraph workerHarness [Worker harness]
     Gate[claimed_done gate]
     Cmds[runCriterionCommands]
-    LLM[runLLMVerifyAgent]
+    LLM[runLLMVerify]
     Parse[parseVerifyReport]
     Integrity[git integrity check]
     Gate --> Cmds --> LLM --> Parse
     LLM --> Integrity
   end
-  subgraph verifyPhase [Verify agent]
+  subgraph verifyPhase [Verify phase]
     VR[verify-report.json]
     LLM --> VR
   end
@@ -91,27 +93,27 @@ flowchart TD
   Decision -->|tampered| Terminal[verify_tampered terminal]
 ```
 
-Report files live under `HAMIX_WORKER_REPORT_DIR` (outside `repo_root`). The verify runner receives `WorkingDir` set to `repo_root` so it can inspect uncommitted changes via diff and file tools.
+Report files live under `HAMIX_WORKER_REPORT_DIR` (outside `repo_root`). The execute runner receives `WorkingDir` set to `repo_root` for both phases so the agent can inspect uncommitted changes via diff and file tools.
 
 ## Verification workflow
 
 1. **Execute** — The execute agent finishes work and writes `criteria-report.json` to the worker-managed report dir. The prompt prepends all active criteria with stable ids. See [`criteria_prompt.go`](../../pkgs/agents/harness/criteria_prompt.go).
 
-2. **Gate** — For each criterion, if `claimed_done` is false, the worker records an immediate failure (`verified_by=agent_self`, reasoning: execute did not claim done). Those ids are **not** sent to the verify LLM. See `runVerifyChecks` in [`verification.go`](../../pkgs/agents/harness/verification.go).
+2. **Gate** — For each criterion, if `claimed_done` is false, the worker records an immediate failure (`verified_by=agent_self`, reasoning: execute did not claim done). Those ids are **not** sent to the verify LLM. See `runVerifyChecks` in [`internal/verify/checks.go`](../../pkgs/agents/harness/internal/verify/checks.go).
 
 3. **Worker commands** — For criteria with `claimed_done: true` and attached `verify_commands`, the worker runs each command sequentially via shell (`sh -c` / `cmd /C`) in `WorkingDir` (`app_settings.repo_root`). stdout, stderr, and meta JSON are written under `<report_dir>/<cycle_id>/checks/<criterion_id>/<seq>.*`. While each command runs, the worker emits live progress (`tool=verify_command`, stream `source=worker`) so the SPA cycles ticker is not blank before the LLM starts. See [`commands.go`](../../pkgs/agents/harness/internal/verify/commands.go) and [ADR-0012](../adr/ADR-0012-structured-verify-commands.md).
 
-4. **Verify LLM** — The harness builds the verify prompt (below), then calls `verifyRunner.Run` with `WorkingDir` set to the repo root. Progress streams on the verify phase's `phase_seq`.
+4. **Verify LLM** — The harness builds the verify prompt (below), then calls the **execute** `runner.Run` with `phase=verify` and `WorkingDir` set to the repo root. Progress streams on the verify phase's `phase_seq`. Implementation: `runLLMVerify` in [`internal/verify/llm.go`](../../pkgs/agents/harness/internal/verify/llm.go).
 
-5. **Parse and decision** — The worker parses `verify-report.json`. All criteria pass → atomic `SetDoneWithEvidence` and task `done`. Any fail → retry execute up to `verify_max_retries`, or terminate with `verification_failed:<id>,...` and **no** completion rows.
+5. **Parse and decision** — The worker parses `verify-report.json`. All criteria pass → atomic `SetDoneWithEvidence` with `verified_by=execute_agent` and task `done`. Any fail → retry execute up to `verify_max_retries`, or terminate with `verification_failed:<id>,...` and **no** completion rows.
 
-6. **Locked passes** — Criteria verified on earlier attempts in the same cycle are carried in memory (`previouslyPassed`). They are omitted from the verify prompt, short-circuited without re-running the LLM, and listed under "Already verified" in the next execute prompt. Nothing is written to `task_checklist_completions` until the cycle terminates succeeded. See [ADR-0003](../adr/ADR-0003-verify-component-upgrade.md).
+6. **Locked passes** — Criteria verified on earlier attempts in the same cycle are carried in memory (`previouslyPassed`). They are omitted from the verify prompt, short-circuited without re-running the LLM, and listed under "Already verified" in the next execute prompt. Nothing is written to `task_checklist_completions` until the cycle terminates succeeded. See [ADR-0003](../adr/ADR-0003-verify-component-upgrade.md) (locked passes retained; adversarial runner superseded by [ADR-0084](../adr/ADR-0084-executor-owned-verify.md)).
 
 ## Verify prompt contract
 
-The prompt is assembled in `runLLMVerifyAgent` ([`verification.go`](../../pkgs/agents/harness/verification.go)). Section order:
+The prompt is assembled in `buildVerifyPrompt` ([`internal/verify/llm.go`](../../pkgs/agents/harness/internal/verify/llm.go)). Section order:
 
-1. Role line: verification agent; do not modify source files.
+1. Role line: continuation of the implementer — you implemented this task; now verify against the criteria. Do not modify source files.
 2. Output path: write only the absolute path to `verify-report.json` (under `HAMIX_WORKER_REPORT_DIR`, not under `repo_root`).
 3. JSON schema: `{"criteria":[{"id":"...","verified":true|false,"reasoning":"..."}]}`.
 4. **Locked passes** (retry only) — ids already verified; do not include in the report.
@@ -120,12 +122,13 @@ The prompt is assembled in `runLLMVerifyAgent` ([`verification.go`](../../pkgs/a
 7. **`Diff:`** — Output of `git diff HEAD` (truncated at 200 KiB), or a clean-tree hint when commit policy is on and the tree is clean. See [`resume_prompt.go`](../../pkgs/agents/harness/resume_prompt.go).
 8. **Previous verification feedback** (retry only) — Appended when a prior verify attempt failed. See `appendVerifyFeedback` in [`criteria_prompt.go`](../../pkgs/agents/harness/criteria_prompt.go).
 
-`WorkingDir` (repo root) is passed on `runner.Request`, not repeated in the prompt text. The verify runner can use its normal tools to read files in the repo if the diff and previews are insufficient.
+`WorkingDir` (repo root) is passed on `runner.Request`, not repeated in the prompt text. The agent can use its normal tools to read files in the repo if the diff and previews are insufficient.
 
 ### Example prompt (illustrative)
 
 ```text
-You are the verification agent. Do not modify source files.
+You implemented this task. Now verify each criterion below against the repo and evidence.
+Do not modify source files.
 Write `/tmp/hamix-worker/cycle-abc123/verify-report.json` only.
 
 Schema: {"criteria":[{"id":"...","verified":true|false,"reasoning":"..."}]}
@@ -187,7 +190,7 @@ Operators attach optional shell checks per criterion via `verify_commands` on ta
 
 | Property | Behavior |
 | --- | --- |
-| Who runs them | Worker harness, not execute or verify LLM |
+| Who runs them | Worker harness, not the LLM |
 | When | After gate, before verify LLM; only for `claimed_done: true` |
 | Where | `app_settings.repo_root` (execute's uncommitted changes visible) |
 | Timeout | `verify_command_timeout_seconds` (default 120s) per command |
@@ -214,12 +217,12 @@ Durable index: `task_cycle_command_runs` (see [data-model.md](../data-model.md))
 | Artifact | Writer | Lifetime |
 | --- | --- | --- |
 | `criteria-report.json` | Execute agent | Ephemeral; GC at cycle terminate |
-| `verify-report.json` | Verify agent | Ephemeral; GC at cycle terminate |
+| `verify-report.json` | Execute agent (`PhaseVerify`) | Ephemeral; GC at cycle terminate |
 | Check stdout/stderr/meta | Worker | Ephemeral; GC at cycle terminate |
 | `task_cycle_criteria_reports` | Worker (mirror) | Durable |
 | `task_cycle_verify_reports` | Worker (mirror) | Durable |
 | `task_cycle_command_runs` | Worker (mirror) | Durable |
-| `task_checklist_completions` | Worker | Written only on terminal cycle success |
+| `task_checklist_completions` | Worker | Written only on terminal cycle success (`verified_by=execute_agent`) |
 
 Report dir root: `HAMIX_WORKER_REPORT_DIR` (default `<os.TempDir()>/hamix-worker`). Per-cycle subdirs are created before verify and removed at terminate. See [ADR-0004](../adr/ADR-0004-verdicts-on-the-db.md).
 
@@ -227,22 +230,21 @@ Report dir root: `HAMIX_WORKER_REPORT_DIR` (default `<os.TempDir()>/hamix-worker
 
 Before `StartPhase(verify)`, the worker captures `git status --porcelain` and `git rev-parse HEAD`. After verify completes, it captures again. Any working-tree change, HEAD movement, or snapshot error → terminal `verify_tampered` (no retries, no completion rows). Report files live outside the repo, so the whitelist is empty — any porcelain diff during verify is tampering.
 
-> **Warning** — Operators editing the workspace during verify (save, commit, checkout) trip the same check as a misbehaving verify runner. Do not modify `repo_root` while verify is in flight. Operator-facing summary: [execute-and-verify.md](../execute-and-verify.md#do-not-edit-the-workspace-during-verify).
+> **Warning** — Operators editing the workspace during verify (save, commit, checkout) trip the same check as an agent that mutates the tree during `PhaseVerify`. Do not modify `repo_root` while verify is in flight. Operator-facing summary: [execute-and-verify.md](../execute-and-verify.md#do-not-edit-the-workspace-during-verify).
 
 When the working dir is not a git repo, the check is bypassed (logged once at startup). Non-git fixtures therefore have no tamper enforcement. See [`verify_integrity.go`](../../pkgs/agents/harness/verify_integrity.go) and [ADR-0003](../adr/ADR-0003-verify-component-upgrade.md).
 
-> **Note** — The verify agent runs in the **same working dir as execute** (where uncommitted changes live) so it can inspect actual file contents via diff and runner tools. A fresh git worktree at HEAD would be empty and unusable for verifying execute's edits — see ADR-0003 alternatives.
+> **Note** — Verify runs in the **same working dir as execute** (where uncommitted changes live) so the agent can inspect actual file contents via diff and runner tools. A fresh git worktree at HEAD would be empty and unusable for verifying execute's edits — see ADR-0003 alternatives.
 
 ## Configuration
 
 | Setting | Role |
 | --- | --- |
-| `verify_runner_name` | Separate verify runner id; empty = reuse execute runner |
-| `verify_runner_model` | Optional model override for verify |
 | `verify_max_retries` | Max execute↔verify loops per cycle (default 2) |
 | `verify_command_timeout_seconds` | Per-command wall clock (default 120s) |
 | `max_run_duration_seconds` | LLM verify call wall clock (`0` = no limit) |
 | `HAMIX_WORKER_REPORT_DIR` | Scratch root for report files and command evidence |
+| `runner`, `cursor_bin`, `cursor_model` | Execute runner used for both execute and verify phases |
 
 Verify prompts include a worker-indexed git context block from **`ListCommitsForTask(task_id)`** plus live `git diff HEAD`. See [cycle-commits.md](./cycle-commits.md).
 
@@ -250,9 +252,9 @@ Full reference: [configuration.md](../configuration.md).
 
 ## Best practices
 
-- **Adversarial separation** — Optional different runner/model for verify vs execute reduces self-grading.
+- **Treat verify as a second phase, not a second agent** — Same runner; prompts describe continuation of the implementer.
+- **Worker-owned evidence** — Shell checks run without relying on execute honesty; results are in the verify prompt.
 - **Execute self-report not trusted** — Gate rejects unclaimed criteria; verify LLM must affirm claimed ones.
-- **Independent command evidence** — Worker runs shell checks without relying on execute honesty.
 - **Git tamper detection** — Fail-safe: snapshot errors and any working-tree mutation during verify terminate the cycle.
 - **Retry efficiency** — Locked passes skip re-verification of settled criteria while preserving atomic completion.
 - **Observable** — Metrics (`hamix_verify_verdict_total`, phase duration, retries per cycle); DB verdict mirror; `verification_failed:<ids>` terminate reason.
@@ -262,16 +264,17 @@ Full reference: [configuration.md](../configuration.md).
 
 | Limitation | Detail |
 | --- | --- |
+| Self-grading bias | Same agent judges its own work; mitigated by worker evidence and integrity checks, not a separate model. |
 | Non-deterministic LLM verdicts | No multi-judge ensemble; flaky re-evaluation possible though locked passes mitigate retries. |
 | No deterministic auto-pass | Exit code 0 on verify commands does not mark a criterion done by design ([ADR-0012](../adr/ADR-0012-structured-verify-commands.md)). |
 | `previouslyPassed` is in-memory only | Worker restart re-runs verify for all criteria in the cycle ([ADR-0003](../adr/ADR-0003-verify-component-upgrade.md)). |
 | Integrity requires git | Non-git working dirs skip tamper checks silently per cycle. |
-| Prompt is partial | Diff + stdout preview only; full stderr and arbitrary files require the verify runner to read paths/tools. |
+| Prompt is partial | Diff + stdout preview only; full stderr and arbitrary files require the agent to read paths/tools. |
 | Truncation | Command output (256 KiB), diff (200 KiB), and stdout preview can hide tail failures. |
 | Ephemeral report files | Post-cycle debugging relies on DB verdict rows, logs, or metrics — not JSON files on disk. |
 | Mutating verify commands | Can cause `verify_tampered` if they change the working tree. |
 | Zero-criteria legacy tasks | Skip verify entirely; execute success alone completes the task. |
-| Same working dir | Verify agent *could* modify source; only post-hoc git check catches it (not prevention). |
+| Same working dir | Agent *could* modify source during verify; post-hoc git check catches it (not prevention). |
 
 ## See also
 
@@ -279,13 +282,14 @@ Full reference: [configuration.md](../configuration.md).
 
 | Doc | Content |
 | --- | --- |
-| [runner-adapters.md](./runner-adapters.md) | Verify runner selection, probe demotion, registry |
+| [runner-adapters.md](./runner-adapters.md) | Execute runner registry and supervisor wiring |
 | [harness.md](./harness.md) | Cycle loop, resume, recovery (orchestration) |
 | [execute-agent.md](./execute-agent.md) | Execute pass deep-dive (companion article) |
 | [done-criteria.md](./done-criteria.md) | Full criteria lifecycle (companion article) |
 | [data-model.md](../data-model.md) (Checklist) | Schema, worker loop summary, report contracts |
 | [api.md](../api.md) | Checklist CRUD, `GET .../verdicts` |
-| [ADR-0003](../adr/ADR-0003-verify-component-upgrade.md) | Adversarial verify, integrity, locked passes |
+| [ADR-0084](../adr/ADR-0084-executor-owned-verify.md) | Executor-owned verify decision |
+| [ADR-0003](../adr/ADR-0003-verify-component-upgrade.md) | Integrity, locked passes (historical adversarial runner superseded) |
 | [ADR-0012](../adr/ADR-0012-structured-verify-commands.md) | Criterion shell checks |
 | [ADR-0004](../adr/ADR-0004-verdicts-on-the-db.md) | Durable verdict tables |
 | [ADR-0005](../adr/ADR-0005-extract-agent-harness.md) | Harness extraction |
@@ -294,7 +298,8 @@ Full reference: [configuration.md](../configuration.md).
 
 | File | Content |
 | --- | --- |
-| [`pkgs/agents/harness/verification.go`](../../pkgs/agents/harness/verification.go) | Verify pipeline and prompt assembly |
+| [`pkgs/agents/harness/internal/verify/`](../../pkgs/agents/harness/internal/verify/) | Verify pipeline, `runLLMVerify`, `buildVerifyPrompt` |
+| [`pkgs/agents/harness/verification.go`](../../pkgs/agents/harness/verification.go) | Harness delegators |
 | [`pkgs/agents/harness/verify_commands.go`](../../pkgs/agents/harness/verify_commands.go) | Shell execution and evidence formatting |
 | [`pkgs/agents/harness/verify_integrity.go`](../../pkgs/agents/harness/verify_integrity.go) | Pre/post git snapshots |
 | [`pkgs/agents/harness/criteria_parse.go`](../../pkgs/agents/harness/criteria_parse.go) | Report paths and parsing |

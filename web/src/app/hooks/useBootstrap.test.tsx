@@ -49,8 +49,6 @@ const SAMPLE_BOOTSTRAP = {
     optimistic_mutations_enabled: true,
     sse_replay_enabled: true,
     verify_max_retries: 1,
-    verify_runner_name: "",
-    verify_runner_model: "",
   },
   tasks: {
     tasks: [],

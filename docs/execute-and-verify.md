@@ -1,6 +1,6 @@
-# Execute and verify agents
+# Execute and verify
 
-How Hamix runs a task with two agents. Execute implements work; verify judges your checklist. This article explains what your criteria mean in practice.
+How Hamix runs a task in two phases with one agent. Execute implements work; the verify phase judges your checklist. This article explains what your criteria mean in practice.
 
 | | |
 | --- | --- |
@@ -12,7 +12,7 @@ How Hamix runs a task with two agents. Execute implements work; verify judges yo
 
 - [Overview](#overview)
 - [One task at a time](#one-task-at-a-time)
-- [Execute and verify agents](#execute-and-verify-agents)
+- [Execute and verify phases](#execute-and-verify-phases)
 - [Report files (behind the scenes)](#report-files-behind-the-scenes)
 - [Creating tasks and criteria](#creating-tasks-and-criteria)
 - [What happens when a task runs](#what-happens-when-a-task-runs)
@@ -25,12 +25,12 @@ How Hamix runs a task with two agents. Execute implements work; verify judges yo
 
 ## Overview
 
-Every task with done criteria goes through a **two step review**:
+Every task with done criteria goes through a **two step review** with the **same agent**:
 
-1. **Execute agent.** Implements the task and states what it believes it finished.
-2. **Verify agent.** Independently checks whether each criterion is actually satisfied.
+1. **Execute phase.** Implements the task and states what it believes it finished.
+2. **Verify phase.** Reviews worker-collected evidence and judges whether each criterion is actually satisfied.
 
-A task reaches **done** only when verify accepts every active criterion, not when execute merely claims success.
+A task reaches **done** only when the verify phase accepts every active criterion (`verified_by=execute_agent`), not when execute merely claims success.
 
 You define the contract when you create the task: the task description and checklist items. The system handles the rest.
 
@@ -46,14 +46,14 @@ The agent worker still runs **one task at a time**. If you create 100 tasks and 
 
 Tasks that are blocked (for example, waiting on dependencies or a deferred pickup time) stay out of the queue until they become ready.
 
-## Execute and verify agents
+## Execute and verify phases
 
-| Agent | Role | Trusted for final acceptance? |
+| Phase | Role | Trusted for final acceptance? |
 | --- | --- | --- |
 | **Execute** | Reads your task prompt and criteria, changes the repo, commits when required, and reports what it claims to have done. | **No.** Self claim only. |
-| **Verify** | Inspects the repo (and optional shell checks you attach), then judges each criterion pass or fail. | **Yes.** Sole authority for marking criteria done on success. |
+| **Verify** | The same agent reviews the repo (plus optional shell checks the worker ran for you) and judges each criterion pass or fail. | **Yes.** Sole authority for marking criteria done on success. |
 
-Execute and verify can use the **same or different** AI runners/models (see Settings). Separation is intentional: one agent builds; another judges.
+The worker runs shell verify commands **before** the verify LLM pass and feeds that output into the prompt. That is independent evidence — not a separate AI judge.
 
 ## Report files (behind the scenes)
 
@@ -62,7 +62,7 @@ While a cycle runs, agents write short JSON reports to a **worker scratch folder
 | File | Written by | Purpose |
 | --- | --- | --- |
 | `criteria-report.json` | Execute agent | Per criterion **self claim**: `claimed_done` + `evidence`. Optional git `commits[]`. |
-| `verify-report.json` | Verify agent | Per criterion **verdict**: `verified` + `reasoning`. |
+| `verify-report.json` | Execute agent (verify phase) | Per criterion **verdict**: `verified` + `reasoning`. |
 
 These files are **temporary**. The worker parses them once, stores durable results in the database, and deletes the scratch folder when the cycle ends. For support and history, use the task UI (checklist, cycle events, verdicts), not the JSON paths.
 
@@ -92,9 +92,9 @@ When you create a task, you supply:
 2. Gate
    → any claimed_done: false → fail (no verify for that item)
 
-3. Verify agent runs
-   → optional shell verify commands run first
-   → writes verify-report.json (pass/fail per criterion)
+3. Verify phase runs (same agent)
+   → worker runs optional shell verify commands first
+   → agent writes verify-report.json (pass/fail per criterion)
 
 4. Decision
    → all pass → task marked done; checklist completions recorded
@@ -148,7 +148,7 @@ Mechanism and rationale: [domain/verify-agent.md](./domain/verify-agent.md#integ
 
 ## Writing good criteria
 
-Write criteria that an agent and a separate verifier can evaluate without guesswork.
+Write criteria the agent can evaluate in both phases without guesswork.
 
 **Do**
 
@@ -168,7 +168,7 @@ Write criteria that an agent and a separate verifier can evaluate without guessw
 - Criteria that require subjective judgment only.
 - Destructive verify commands (mutate the tree, install globally, etc.). Use read only checks.
 
-> **Warning:** A verify command exiting 0 does **not** automatically mark a criterion done. The verify agent still makes the final call.
+> **Warning:** A verify command exiting 0 does **not** automatically mark a criterion done. The verify phase still makes the final call.
 
 ## Retries and locked passes
 
@@ -202,5 +202,5 @@ You do not need access to `criteria-report.json` or `verify-report.json` for nor
 | [domain/done-criteria.md](./domain/done-criteria.md) | Full verification loop and wire contracts |
 | [domain/execute-agent.md](./domain/execute-agent.md) | Execute prompt and report format |
 | [domain/verify-agent.md](./domain/verify-agent.md) | Verify prompt, shell checks, integrity rules |
-| [configuration.md](./configuration.md) | Verify retries, runners, `HAMIX_WORKER_REPORT_DIR` |
+| [configuration.md](./configuration.md) | Verify retries, execute runner, `HAMIX_WORKER_REPORT_DIR` |
 | [api.md](./api.md) | Create task body (`checklist_items`), checklist routes |

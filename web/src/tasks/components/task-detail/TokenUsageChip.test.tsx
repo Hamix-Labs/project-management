@@ -48,7 +48,7 @@ describe("TokenUsageChip", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Token usage" })).toBeInTheDocument();
     expect(screen.getByText("Execute agent")).toBeInTheDocument();
-    expect(screen.getByText("Verify agent")).toBeInTheDocument();
+    expect(screen.getByText("Verify phase")).toBeInTheDocument();
     expect(screen.getByText("Total")).toBeInTheDocument();
   });
 

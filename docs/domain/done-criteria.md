@@ -6,7 +6,7 @@ Per-task acceptance requirements: how operators define them, how the agent worke
 | --- | --- |
 | **Applies to** | Checklist API, task create flow, agent worker harness, checklist UI |
 | **Audience** | Contributors touching store, harness, handlers, or SPA checklist surfaces |
-| **Companion article** | [verify-agent.md](./verify-agent.md) — verify-phase LLM judge; [execute-agent.md](./execute-agent.md) — execute-phase prompt composition; [harness.md](./harness.md) — cycle loop and retry orchestration |
+| **Companion article** | [verify-agent.md](./verify-agent.md) — verify-phase self-grade with worker evidence; [execute-agent.md](./execute-agent.md) — execute-phase prompt composition; [harness.md](./harness.md) — cycle loop and retry orchestration |
 
 ## In this article
 
@@ -53,7 +53,7 @@ Schema tables and HTTP contracts remain authoritative in [data-model.md](../data
 | **Done criterion** | A row in `task_checklist_items` with stable `id` and `text`. |
 | **Verify command** | Optional shell check in `task_checklist_item_commands`, run by the worker before LLM verify. |
 | **Self-claim** | Execute agent assertion (`claimed_done`) in `criteria-report.json`. Not final acceptance. |
-| **Verify verdict** | Verify agent judgment (`verified`) in `verify-report.json`. Sole authority for `verified_by=verify_agent`. |
+| **Verify verdict** | Execute agent judgment (`verified`) in `verify-report.json` during `PhaseVerify`. Sole authority for `verified_by=execute_agent`. |
 | **Completion ledger** | `task_checklist_completions` rows written only when the execution cycle terminates successfully. |
 | **Locked pass** | Criterion verified on an earlier attempt in the same cycle; carried in `previouslyPassed` and omitted from re-verify. |
 
@@ -69,7 +69,7 @@ flowchart LR
 
   subgraph untrusted [Untrusted - must be checked]
     Exec[Execute agent]
-    Ver[Verify agent]
+    Ver[Agent verify same runner]
   end
 
   subgraph operator [Operator]
@@ -91,7 +91,7 @@ flowchart LR
 | **Operator** | Authors criterion text and optional verify commands via REST/SPA. Cannot directly mark criteria done (completion writes are `ActorAgent` only). | Trusted to define intent. Verify commands are a trusted-operator surface (shell injection risk bounded by timeout and output caps). |
 | **Execute agent** | Does the work; writes `criteria-report.json` with `claimed_done` and `evidence`. | **Not trusted** for final acceptance. `claimed_done` is an assertion only. |
 | **Worker shell** | Runs `task_checklist_item_commands` in `app_settings.repo_root` before LLM verify. | Trusted executor of operator-defined commands. Output is evidence input, not a pass/fail verdict. |
-| **Verify agent** | Reads work and evidence; writes `verify-report.json`. Sole writer of `verified_by=verify_agent` on success. | Adversarial judge — may use a different runner/model than execute. Must not modify the working tree (enforced by git integrity check). |
+| **Agent verify** (`PhaseVerify`) | Same execute runner; reads work and evidence; writes `verify-report.json`. Sole writer of `verified_by=execute_agent` on success. | Self-grade with worker evidence and git integrity — must not modify the working tree during verify. |
 | **Store** | Persists definitions, per-attempt verdict mirrors, and — only after cycle success — `task_checklist_completions`. | Source of truth for task-level "criterion is done." |
 
 > **Important** — Nothing is written to `task_checklist_completions` until the execution cycle terminates successfully. Criteria that passed on attempt 1 but failed the overall cycle on attempt 2 leave **no** completion rows.
@@ -131,7 +131,7 @@ sequenceDiagram
   participant Exec as ExecuteAgent
   participant Pipe as runVerificationPipeline
   participant Cmd as ShellChecks
-  participant Ver as VerifyAgent
+  participant Ver as AgentVerify
   participant DB as Store
 
   Loop->>Exec: Prompt with criteria ids + report path
@@ -156,7 +156,7 @@ sequenceDiagram
 1. **Execute** — [`injectCriteria`](../../pkgs/agents/harness/criteria_prompt.go) prepends active criteria and the absolute path to `criteria-report.json`. Criteria already passed in earlier attempts appear under "Already verified (do not re-do)" and are omitted from the report's expected ID set. Full prompt contract: [execute-agent.md](./execute-agent.md).
 2. **Self-claim gate** — For each non-locked criterion, `claimed_done: false` fails immediately with `verified_by=agent_self`. No LLM verify runs for those IDs.
 3. **Shell checks** (optional) — For criteria with `verify_commands`, the worker runs commands sequentially in `repo_root`, writing artifacts under `<report_dir>/<cycle_id>/checks/<criterion_id>/`. Failures do not skip LLM verify ([ADR-0012](../adr/ADR-0012-structured-verify-commands.md)).
-4. **Verify agent** — LLM pass for every criterion that passed the self-claim gate. Optional separate runner/model via `app_settings.verify_runner_name`. See [verify-agent.md](./verify-agent.md).
+4. **Verify phase** — LLM pass (same execute runner) for every criterion that passed the self-claim gate. See [verify-agent.md](./verify-agent.md).
 5. **Integrity check** — Pre/post `git status --porcelain` + `git rev-parse HEAD` on the working dir. Any working-tree change or HEAD movement → `verify_tampered` (terminal, no retries, no completions). Non-git repos: check bypassed (logged once at startup).
 6. **Decision** — All pass → [`applyVerifiedCompletions`](../../pkgs/agents/harness/verification.go) + task `done`. Any fail → retry execute up to `verify_max_retries`, carrying passed verdicts in `previouslyPassed`. Exhausted retries → cycle fails with `verification_failed:<id>,…` (prefix-stable; truncated at 256 chars).
 
@@ -196,9 +196,9 @@ Path: `<report_dir>/<cycle_id>/criteria-report.json`. Injected into execute prom
 
 | Field | Writer | Notes |
 | --- | --- | --- |
-| `criteria[].id` | Verify agent | One entry per criterion evaluated this attempt |
-| `criteria[].verified` | Verify agent | `true` only if criterion satisfied |
-| `criteria[].reasoning` | Verify agent | ≤ 16 KB; ≥ 40 chars when `verified=true` |
+| `criteria[].id` | Execute agent (verify phase) | One entry per criterion evaluated this attempt |
+| `criteria[].verified` | Execute agent (verify phase) | `true` only if criterion satisfied |
+| `criteria[].reasoning` | Execute agent (verify phase) | ≤ 16 KB; ≥ 40 chars when `verified=true` |
 
 Full prompt contract: [verify-agent.md](./verify-agent.md).
 
@@ -208,14 +208,15 @@ Written only on **cycle success**, one row per passed criterion:
 
 | Field | Meaning |
 | --- | --- |
-| `verified_by` | `verify_agent` on success; `agent_self` never written on success (failure-only) |
+| `verified_by` | `execute_agent` on success; `agent_self` never written on success (failure-only) |
 | `evidence` | From execute report |
 | `verifier_reasoning` | From verify report |
 | `cycle_id` | Producing cycle |
 
 | `verified_by` | Meaning |
 | --- | --- |
-| `verify_agent` | Verify pass accepted (current worker) |
+| `execute_agent` | Verify phase accepted (current worker) |
+| `verify_agent` | Legacy wire value; superseded by `execute_agent` ([ADR-0084](../adr/ADR-0084-executor-owned-verify.md)) |
 | `agent_self` | Failure-only: execute did not claim done |
 | `deterministic_check` | Legacy rows only; never written by current worker |
 | `human_override` | Reserved; schema only |
@@ -245,8 +246,6 @@ Exposed on `GET /tasks/{id}/cycles/{cycleId}/verdicts`. Pre-verdict cycles retur
 | Setting | Source | Default | Effect on criteria |
 | --- | --- | --- | --- |
 | `verify_max_retries` | `app_settings` | `2` | Max execute↔verify retry loops per cycle |
-| `verify_runner_name` | `app_settings` | `""` | Empty = verify uses execute runner. Non-empty = separate runner (probe failure demotes to execute runner with warn) |
-| `verify_runner_model` | `app_settings` | `""` | Optional model override for verify runner |
 | `verify_command_timeout_seconds` | `app_settings` | `120` | Wall-clock cap per shell verify command |
 | `HAMIX_WORKER_REPORT_DIR` | env | `<tmp>/hamix-worker` | Scratch root for report files (outside `repo_root`) |
 | `repo_root` | `app_settings` | — | Working dir for execute + shell checks + verify integrity snapshot |
@@ -256,13 +255,13 @@ See [configuration.md](../configuration.md) for validation rules and supervisor 
 ## Best practices
 
 - **Explicit acceptance contract** — Stable criterion IDs survive retries; operators and agents share the same checklist.
-- **Separation of claim vs proof** — Execute asserts `claimed_done`; verify independently judges.
-- **Adversarial verify option** — Different runner/model from execute ([ADR-0003](../adr/ADR-0003-verify-component-upgrade.md)).
+- **Separation of claim vs proof** — Execute asserts `claimed_done`; verify phase independently judges with worker evidence.
+- **Executor-owned verify** — Same runner for both phases; worker shell evidence mitigates self-grading ([ADR-0084](../adr/ADR-0084-executor-owned-verify.md)).
 - **Atomic completion honesty** — No partial completion rows on failed cycles.
 - **Retry efficiency** — Passed criteria carried in `previouslyPassed`; execute prompts and verify short-circuit settled items.
 - **Deterministic evidence channel** — Optional shell commands produce inspectable artifacts without bypassing LLM judgment ([ADR-0012](../adr/ADR-0012-structured-verify-commands.md)).
 - **Rich audit trail** — Per-attempt verdict tables + `details.verification` on verify phase events for SPA timeline.
-- **Tamper detection** — Post-verify git snapshot catches a verifier modifying source (when working dir is a git repo).
+- **Tamper detection** — Post-verify git snapshot catches tree mutation during `PhaseVerify` (when working dir is a git repo).
 - **Clean working tree** — Report files live outside `repo_root`.
 
 > **Warning** — Use read-only verify commands (tests, lint, grep). Commands that mutate the working tree can trigger `verify_tampered`.
@@ -293,7 +292,8 @@ See [configuration.md](../configuration.md) for validation rules and supervisor 
 | [api.md](../api.md) | Checklist routes, create validation, verdicts endpoint |
 | [architecture.md](../architecture.md) | Worker + harness placement in `taskapi` |
 | [configuration.md](../configuration.md) | Verify settings and report dir |
-| [ADR-0003](../adr/ADR-0003-verify-component-upgrade.md) | Adversarial verify, integrity check, retry efficiency |
+| [ADR-0084](../adr/ADR-0084-executor-owned-verify.md) | Executor-owned verify, `execute_agent` wire kind |
+| [ADR-0003](../adr/ADR-0003-verify-component-upgrade.md) | Integrity check, locked passes, retry efficiency |
 | [ADR-0012](../adr/ADR-0012-structured-verify-commands.md) | Shell checks and evidence layout |
 | [ADR-0010](../adr/ADR-0010-remove-subtasks.md) | Flat tasks; no checklist inheritance |
 

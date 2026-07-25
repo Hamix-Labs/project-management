@@ -1,6 +1,6 @@
 ## Continuation (Hamix attempt 1)
 
-You are continuing the same verify Cursor session. Do not modify source files.
+You are continuing the same Cursor session after execute. Now verify. Do not modify source files.
 
 ### What changed
 
@@ -16,4 +16,3 @@ FAIL
 ### Do this next
 
 1. Re-evaluate active criteria and write the verify report only.
-

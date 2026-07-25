@@ -54,13 +54,12 @@ func TestDecide_table(t *testing.T) {
 			wantDeny: "retry_fresh",
 		},
 		{
-			name: "verify fresh after execute",
+			name: "verify continues when session id present",
 			mutate: func(f *Facts) {
 				f.Phase = cyclesdomain.PhaseVerify
-				f.FirstVerifyAfterExecute = true
 			},
-			wantMode: ModeFresh,
-			wantDeny: "verify_fresh_after_execute",
+			wantMode:  ModeContinue,
+			wantAllow: true,
 		},
 		{
 			name: "head drift",

@@ -280,7 +280,7 @@ The queue is single-process: multiple `taskapi` replicas with the worker enabled
 
 `pkgs/agents/worker` runs an in-process **pool** of N queue consumers on one shared `MemoryQueue` (default N=4 via `HAMIX_AGENT_WORKER_CONCURRENCY`). Each slot handles queue admission (reload, readiness, ready→running, ack ordering) and delegates cycle choreography to `pkgs/agents/harness`. The worker runs when `app_settings.repo_root` is set and can be toggled from the Settings page. Supervisor boot, reload, and hot-swap: [domain/agent-supervisor.md](domain/agent-supervisor.md).
 
-The harness (`pkgs/agents/harness`) wraps `runner.Run`: execute/verify phase loop, criteria injection, report-file contracts, adversarial verification, git integrity checks, and crash/shutdown recovery of in-flight cycle state. See [domain/harness.md](./domain/harness.md), [ADR-0005](./adr/ADR-0005-extract-agent-harness.md), [domain/done-criteria.md](./domain/done-criteria.md), [domain/execute-agent.md](./domain/execute-agent.md), and [domain/verify-agent.md](./domain/verify-agent.md).
+The harness (`pkgs/agents/harness`) wraps `runner.Run`: execute/verify phase loop, criteria injection, report-file contracts, executor-owned verify, git integrity checks, and crash/shutdown recovery of in-flight cycle state. See [domain/harness.md](./domain/harness.md), [ADR-0005](./adr/ADR-0005-extract-agent-harness.md), [domain/done-criteria.md](./domain/done-criteria.md), [domain/execute-agent.md](./domain/execute-agent.md), and [domain/verify-agent.md](./domain/verify-agent.md).
 
 ### Worktree-bounded parallelism
 

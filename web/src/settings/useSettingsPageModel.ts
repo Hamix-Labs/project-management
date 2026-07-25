@@ -30,7 +30,6 @@ import {
   buildTimezoneSelectValueSet,
   computeTimezoneDisplayContext,
   parseSettingsNumericValidation,
-  resolveVerifyEffectiveRunner,
   type SettingsNumericValidation,
 } from "./settingsFormValidation";
 
@@ -162,23 +161,9 @@ function useSettingsCursorModelQueries(
     },
   );
 
-  const verifyEffectiveRunner =
-    form && settings ? resolveVerifyEffectiveRunner(form, settings) : "cursor";
-
-  const { query: verifyModelsQuery, modelIds: verifyModelIdsFromList } = useCursorModels(
-    verifyEffectiveRunner,
-    formBin,
-    {
-      enabled: Boolean(settings && form),
-      queryKey: settingsQueryKeys.verifyModels(verifyEffectiveRunner, form?.cursorBin),
-    },
-  );
-
   return {
     cursorModelsQuery,
     modelIdsFromList,
-    verifyModelsQuery,
-    verifyModelIdsFromList,
   };
 }
 
@@ -274,8 +259,6 @@ export type SettingsPageLoadedViewProps = {
   lastUpdatedFormatted: string;
   cursorModelsQuery: UseQueryResult<ListCursorModelsResult, Error>;
   modelIdsFromList: Set<string>;
-  verifyModelsQuery: UseQueryResult<ListCursorModelsResult, Error>;
-  verifyModelIdsFromList: Set<string>;
   patchPending: boolean;
   probePending: boolean;
   onField: ReturnType<typeof createSettingsFieldHandler>;
@@ -303,8 +286,6 @@ export function useSettingsPageModel() {
   const {
     cursorModelsQuery,
     modelIdsFromList,
-    verifyModelsQuery,
-    verifyModelIdsFromList,
   } = useSettingsCursorModelQueries(settings, form);
 
   const tzSelectOptions = useMemo(() => getTimezoneSelectOptions(), []);
@@ -335,8 +316,6 @@ export function useSettingsPageModel() {
       lastUpdatedFormatted,
       cursorModelsQuery,
       modelIdsFromList,
-      verifyModelsQuery,
-      verifyModelIdsFromList,
       patchPending: patch.isPending,
       probePending: probe.isPending,
       onField: handleField,
@@ -373,8 +352,6 @@ export function useSettingsPageModel() {
     tzValueSet,
     cursorModelsQuery,
     modelIdsFromList,
-    verifyModelsQuery,
-    verifyModelIdsFromList,
     patch,
     probe,
     handleField,
