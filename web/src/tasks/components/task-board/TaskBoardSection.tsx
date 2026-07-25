@@ -37,6 +37,15 @@ type Props = {
 
 const LOADING_STATUS_DELAY_MS = 220;
 
+function BoardActivePill({ count }: { count: number }) {
+  return (
+    <span className="task-board-active-pill">
+      <span className="task-board-active-pill__dot" aria-hidden="true" />
+      {count} active
+    </span>
+  );
+}
+
 export function TaskBoardSection({
   tasks,
   loading,
@@ -126,7 +135,12 @@ export function TaskBoardSection({
           title="Board"
           titleId="task-board-heading"
           actions={actions}
-          summary={loading ? undefined : `${filteredTasks.length} active`}
+          summary={
+            loading ? undefined : (
+              <BoardActivePill count={filteredTasks.length} />
+            )
+          }
+          description="Track engineering work across every stage."
         />
         {!loading ? (
           <TaskListFilters
@@ -199,6 +213,7 @@ export function TaskBoardSection({
               tasks={groups[column.id]}
               projectNameById={projectNameById}
               showProject={showProjectColumn}
+              showTags={tagsUiEnabled}
             />
           ))}
         </div>
