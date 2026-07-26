@@ -16,3 +16,11 @@ FAIL
 ### Do this next
 
 1. Re-evaluate active criteria and write the verify report only.
+
+Write `/tmp/hamix/cycle-1/verify-report.json` only.
+
+Schema: {"criteria":[{"id":"...","verified":true|false,"reasoning":"..."}]}
+
+- [lint] tests pass
+  execute claimed_done: true (assertion only)
+  execute evidence: npm test ok

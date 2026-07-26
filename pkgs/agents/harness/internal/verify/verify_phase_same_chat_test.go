@@ -3,6 +3,7 @@ package verify_test
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness"
@@ -82,6 +83,15 @@ func TestWorker_VerifyPhase_resumesExecuteSession(t *testing.T) {
 	}
 	if verifyReq.ResumeSessionID != execSession {
 		t.Fatalf("verify ResumeSessionID = %q, want execute session %q", verifyReq.ResumeSessionID, execSession)
+	}
+	if !strings.Contains(verifyReq.Prompt, "verify-report.json") {
+		t.Fatalf("same-chat verify prompt missing verify-report path: %q", verifyReq.Prompt)
+	}
+	if !strings.Contains(verifyReq.Prompt, `Schema: {"criteria"`) {
+		t.Fatalf("same-chat verify prompt missing schema: %q", verifyReq.Prompt)
+	}
+	if strings.Contains(verifyReq.Prompt, "criteria-report.json") {
+		t.Fatalf("same-chat verify prompt must not ask for criteria-report.json: %q", verifyReq.Prompt)
 	}
 }
 

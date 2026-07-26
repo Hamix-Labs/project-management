@@ -59,6 +59,9 @@ type RecoveryContext struct {
 	InterruptedPhase     cyclesdomain.Phase
 	GitPorcelain         string
 	PriorVerifyFeedback  string
+	// VerifyContract is the shared verify-report artifact body for PhaseVerify
+	// resume (same path/schema/criteria as fresh BuildVerifyPrompt).
+	VerifyContract VerifyReportContract
 	// Polish drives RecoveryHumanPolish deltas (ComposePolishDirective).
 	Polish PolishNoticeInput
 }
@@ -78,9 +81,13 @@ func ComposeRecoveryDelta(ctx RecoveryContext) string {
 	var b strings.Builder
 	if ctx.Phase == cyclesdomain.PhaseVerify {
 		composeVerifyRecoveryDelta(&b, ctx)
-	} else {
-		composeExecuteRecoveryDelta(&b, ctx)
+		// Do not truncate verify stdin: the verify-report contract must stay intact.
+		out := b.String()
+		slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "prompt.ComposeRecoveryDelta.done",
+			"recovery_hint_kind", string(ctx.Kind), "recovery_hint_bytes", len(out))
+		return out
 	}
+	composeExecuteRecoveryDelta(&b, ctx)
 	out := truncateRecoveryBytes(b.String(), recoveryMaxTotalBytes)
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "prompt.ComposeRecoveryDelta.done",
 		"recovery_hint_kind", string(ctx.Kind), "recovery_hint_bytes", len(out))
@@ -214,7 +221,14 @@ func composeVerifyRecoveryDelta(b *strings.Builder, ctx RecoveryContext) {
 		b.WriteString("### Do not\n\n")
 		b.WriteString("- Re-evaluate locked criteria: ")
 		b.WriteString(strings.Join(ctx.LockedCriteria, ", "))
-		b.WriteString("\n")
+		b.WriteString("\n\n")
+	}
+	contract := ctx.VerifyContract
+	if strings.TrimSpace(contract.ReportPath) == "" && strings.TrimSpace(ctx.ReportPath) != "" {
+		contract.ReportPath = ctx.ReportPath
+	}
+	if strings.TrimSpace(contract.ReportPath) != "" || len(contract.Criteria) > 0 {
+		b.WriteString(FormatVerifyReportContract(contract))
 	}
 }
 

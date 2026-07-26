@@ -30,11 +30,11 @@ ADR-0031 adds **CLI session continuity** on top of the existing harness phase le
 
 Effective `verify_chat_mode` (task override, else `app_settings`, else `same_chat`) selects the chain:
 
-**`same_chat` (default):** verify `--resume`s the latest terminal **execute** `session_id` (ADR-0085). Optional `verify_model` may change `--model` without a new chat.
+**`same_chat` (default):** verify `--resume`s the latest terminal **execute** `session_id` (ADR-0085). Optional `verify_model` may change `--model` without a new chat. Resume stdin is a short continuation framing **plus** the same verify-report contract as a fresh verify prompt (absolute `verify-report.json` path, schema, active criteria, evidence, diff) — not a criteria-report update.
 
 ```text
 phase 1  execute  →  session E1 (new; session_id required when resume on)
-phase 2  verify   →  resume E1 (same chat; optional verify_model; recovery delta)
+phase 2  verify   →  resume E1 (same chat; optional verify_model; recovery delta + verify-report contract)
 phase 3  execute  →  resume E1 (or fresh on RetryFresh / safety deny)
 phase 4  verify   →  resume E1 (last execute session)
 phase 5  verify   →  resume E1 (verify-only retry; still execute's session)

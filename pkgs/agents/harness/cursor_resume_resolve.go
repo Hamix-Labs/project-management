@@ -137,6 +137,9 @@ func (h *Harness) buildRecoveryContext(
 	retryMode taskcoredomain.RetryMode,
 ) prompt.RecoveryContext {
 	reportPath := reports.CriteriaReportPath(h.opts.ReportDir, cycle.ID)
+	if phase == cyclesdomain.PhaseVerify {
+		reportPath = reports.VerifyReportPath(h.opts.ReportDir, cycle.ID)
+	}
 	locked := lockedCriterionIDs(state.verify.previouslyPassed)
 	expected := activeCriterionIDs(state)
 	runKind := runKindFromCycleMeta(cycle)
