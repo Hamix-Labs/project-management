@@ -319,9 +319,12 @@ func TestHTTP_taskActivity_taskTitlePresent(t *testing.T) {
 	body, _ := handlertest.MustGetJSON(t, srv.URL, "/tasks/activity")
 	var resp struct {
 		Events []struct {
-			TaskID     string  `json:"task_id"`
-			TaskTitle  *string `json:"task_title"`
-			TaskNumber *int    `json:"task_number"`
+			TaskID        string   `json:"task_id"`
+			TaskTitle     *string  `json:"task_title"`
+			TaskNumber    *int     `json:"task_number"`
+			TaskPriority  *string  `json:"task_priority"`
+			TaskProjectID *string  `json:"task_project_id"`
+			TaskTags      []string `json:"task_tags"`
 		} `json:"events"`
 	}
 	if err := json.Unmarshal(body, &resp); err != nil {
@@ -336,6 +339,14 @@ func TestHTTP_taskActivity_taskTitlePresent(t *testing.T) {
 		}
 		if ev.TaskNumber == nil || *ev.TaskNumber != *task.Number {
 			t.Errorf("task_number want %v, got %v", task.Number, ev.TaskNumber)
+		}
+		if ev.TaskPriority == nil || *ev.TaskPriority != "medium" {
+			t.Errorf("task_priority want medium, got %v", ev.TaskPriority)
+		}
+		if task.ProjectID != nil {
+			if ev.TaskProjectID == nil || *ev.TaskProjectID != *task.ProjectID {
+				t.Errorf("task_project_id want %v, got %v", task.ProjectID, ev.TaskProjectID)
+			}
 		}
 		return
 	}

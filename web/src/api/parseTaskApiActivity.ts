@@ -1,8 +1,10 @@
 import type {
+  Priority,
   TaskActivityEvent,
   TaskActivityEventType,
   TaskActivityResponse,
 } from "@/types";
+import { PRIORITIES } from "@/types";
 
 const ACTIVITY_EVENT_TYPES: readonly TaskActivityEventType[] = [
   "status_changed",
@@ -15,6 +17,23 @@ function isActivityEventType(v: unknown): v is TaskActivityEventType {
     typeof v === "string" &&
     (ACTIVITY_EVENT_TYPES as readonly string[]).includes(v)
   );
+}
+
+function parseOptionalPriority(v: unknown): Priority | undefined {
+  if (typeof v !== "string") return undefined;
+  if (!(PRIORITIES as readonly string[]).includes(v)) return undefined;
+  return v as Priority;
+}
+
+function parseOptionalTags(v: unknown): string[] | undefined {
+  if (!Array.isArray(v)) return undefined;
+  const tags: string[] = [];
+  for (const raw of v) {
+    if (typeof raw === "string" && raw.trim()) {
+      tags.push(raw.trim());
+    }
+  }
+  return tags;
 }
 
 function parseActivityEvent(raw: unknown): TaskActivityEvent | null {
@@ -52,6 +71,15 @@ function parseActivityEvent(raw: unknown): TaskActivityEvent | null {
       ? o.task_number
       : undefined;
 
+  const task_priority = parseOptionalPriority(o.task_priority);
+
+  const task_project_id =
+    typeof o.task_project_id === "string" && o.task_project_id.trim()
+      ? o.task_project_id.trim()
+      : undefined;
+
+  const task_tags = parseOptionalTags(o.task_tags);
+
   return {
     task_id,
     seq,
@@ -61,6 +89,9 @@ function parseActivityEvent(raw: unknown): TaskActivityEvent | null {
     data,
     task_title,
     task_number,
+    task_priority,
+    task_project_id,
+    task_tags,
   };
 }
 

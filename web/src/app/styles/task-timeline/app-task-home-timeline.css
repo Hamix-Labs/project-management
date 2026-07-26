@@ -9,9 +9,19 @@
 .task-home-timeline__toolbar {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-3);
+}
+
+.task-home-timeline__toolbar-filters {
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
+.task-home-timeline__toolbar-range {
+  flex: 0 0 auto;
+  margin-left: auto;
 }
 
 .task-home-timeline__feed {
@@ -262,6 +272,22 @@
   font-size: var(--text-xs);
   font-weight: 500;
   color: var(--text-tertiary, var(--text-secondary));
+}
+
+.task-home-timeline-item__time-link {
+  color: var(--brand);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.task-home-timeline-item__time-link:hover {
+  text-decoration: underline;
+}
+
+.task-home-timeline-item__time-link:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus, 0 0 0 3px var(--focus-ring));
+  border-radius: var(--radius-sm);
 }
 
 .task-home-timeline-item__task-ref {

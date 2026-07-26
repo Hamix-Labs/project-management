@@ -17,14 +17,17 @@ import (
 )
 
 type activityEntry struct {
-	TaskID     string                     `json:"task_id"`
-	Seq        int64                      `json:"seq"`
-	At         time.Time                  `json:"at"`
-	Type       taskeventsdomain.EventType `json:"type"`
-	By         taskcoredomain.Actor       `json:"by"`
-	Data       json.RawMessage            `json:"data"`
-	TaskTitle  *string                    `json:"task_title,omitempty"`
-	TaskNumber *int                       `json:"task_number,omitempty"`
+	TaskID        string                     `json:"task_id"`
+	Seq           int64                      `json:"seq"`
+	At            time.Time                  `json:"at"`
+	Type          taskeventsdomain.EventType `json:"type"`
+	By            taskcoredomain.Actor       `json:"by"`
+	Data          json.RawMessage            `json:"data"`
+	TaskTitle     *string                    `json:"task_title,omitempty"`
+	TaskNumber    *int                       `json:"task_number,omitempty"`
+	TaskPriority  *taskcoredomain.Priority   `json:"task_priority,omitempty"`
+	TaskProjectID *string                    `json:"task_project_id,omitempty"`
+	TaskTags      []string                   `json:"task_tags,omitempty"`
 }
 
 type activityResponse struct {
@@ -61,16 +64,26 @@ func (h *Handler) taskActivity(w http.ResponseWriter, r *http.Request) {
 func activityEntriesToJSON(events []contract.ActivityEvent) []activityEntry {
 	out := make([]activityEntry, 0, len(events))
 	for _, e := range events {
-		out = append(out, activityEntry{
-			TaskID:     e.TaskID,
-			Seq:        e.Seq,
-			At:         e.At,
-			Type:       e.Type,
-			By:         e.By,
-			Data:       normalizeJSONObjectForResponse(e.Data),
-			TaskTitle:  e.TaskTitle,
-			TaskNumber: e.TaskNumber,
-		})
+		tags := e.TaskTags
+		if tags == nil {
+			tags = []string{}
+		}
+		entry := activityEntry{
+			TaskID:        e.TaskID,
+			Seq:           e.Seq,
+			At:            e.At,
+			Type:          e.Type,
+			By:            e.By,
+			Data:          normalizeJSONObjectForResponse(e.Data),
+			TaskTitle:     e.TaskTitle,
+			TaskNumber:    e.TaskNumber,
+			TaskPriority:  e.TaskPriority,
+			TaskProjectID: e.TaskProjectID,
+		}
+		if len(tags) > 0 {
+			entry.TaskTags = tags
+		}
+		out = append(out, entry)
 	}
 	return out
 }

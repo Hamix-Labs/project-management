@@ -45,7 +45,7 @@ Data loads through `fetchActiveTasksForBoard` (keyset walk of `GET /tasks`, max 
 
 ## Timeline view
 
-Task Home also supports a read-only **Timeline** (`/?view=timeline`) — a chronological project-activity feed. A date-range dropdown maps to the `since` query parameter sent to `GET /tasks/activity` so the server filters before the client groups by calendar day.
+Task Home also supports a read-only **Timeline** (`/?view=timeline`) — a chronological project-activity feed. A date-range dropdown maps to the `since` query parameter sent to `GET /tasks/activity` so the server filters before the client groups by calendar day. The Timeline also reuses the board’s client-side filters (priority, project, tag, title search) against joined task fields on each activity row (`task_priority`, `task_project_id`, `task_tags`, `task_title`).
 
 **Live data via `GET /tasks/activity`** — the three event types surfaced are `status_changed`, `phase_failed`, and `approval_granted`. The client maps each to a `TimelineEvent` via `activityMapper.ts`, then `groupTimelineEvents` buckets them into Today / Yesterday / N days ago groups.
 

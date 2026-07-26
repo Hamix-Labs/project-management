@@ -29,14 +29,17 @@ var activityTypes = []string{
 
 // activityRow is the raw projection from a LEFT JOIN of task_events ⋊ tasks.
 type activityRow struct {
-	TaskID     string
-	Seq        int64
-	At         time.Time
-	Type       taskeventsdomain.EventType
-	By         taskeventsdomain.Actor
-	Data       datatypes.JSON `gorm:"column:data_json"`
-	TaskTitle  *string        `gorm:"column:task_title"`
-	TaskNumber *int           `gorm:"column:task_number"`
+	TaskID        string
+	Seq           int64
+	At            time.Time
+	Type          taskeventsdomain.EventType
+	By            taskeventsdomain.Actor
+	Data          datatypes.JSON              `gorm:"column:data_json"`
+	TaskTitle     *string                     `gorm:"column:task_title"`
+	TaskNumber    *int                        `gorm:"column:task_number"`
+	TaskPriority  *taskcoredomain.Priority    `gorm:"column:task_priority"`
+	TaskProjectID *string                     `gorm:"column:task_project_id"`
+	TaskTags      datatypes.JSONSlice[string] `gorm:"column:task_tags"`
 }
 
 // List returns paginated activity events across all tasks for the fixed type
@@ -71,7 +74,7 @@ func List(ctx context.Context, db *gorm.DB, in contract.ListActivityInput) (cont
 	var rows []activityRow
 	listQ := db.WithContext(ctx).
 		Table("task_events").
-		Select("task_events.task_id, task_events.seq, task_events.at, task_events.type, task_events.by, task_events.data_json, tasks.title AS task_title, tasks.number AS task_number").
+		Select("task_events.task_id, task_events.seq, task_events.at, task_events.type, task_events.by, task_events.data_json, tasks.title AS task_title, tasks.number AS task_number, tasks.priority AS task_priority, tasks.project_id AS task_project_id, tasks.tags AS task_tags").
 		Joins("LEFT JOIN tasks ON tasks.id = task_events.task_id").
 		Where("task_events.type IN ?", activityTypes)
 	if in.Since != nil {
@@ -85,15 +88,22 @@ func List(ctx context.Context, db *gorm.DB, in contract.ListActivityInput) (cont
 
 	events := make([]contract.ActivityEvent, 0, len(rows))
 	for _, r := range rows {
+		tags := []string(r.TaskTags)
+		if tags == nil {
+			tags = []string{}
+		}
 		ev := contract.ActivityEvent{
-			TaskID:     r.TaskID,
-			Seq:        r.Seq,
-			At:         r.At,
-			Type:       r.Type,
-			By:         taskcoredomain.Actor(r.By),
-			Data:       []byte(r.Data),
-			TaskTitle:  r.TaskTitle,
-			TaskNumber: r.TaskNumber,
+			TaskID:        r.TaskID,
+			Seq:           r.Seq,
+			At:            r.At,
+			Type:          r.Type,
+			By:            taskcoredomain.Actor(r.By),
+			Data:          []byte(r.Data),
+			TaskTitle:     r.TaskTitle,
+			TaskNumber:    r.TaskNumber,
+			TaskPriority:  r.TaskPriority,
+			TaskProjectID: r.TaskProjectID,
+			TaskTags:      tags,
 		}
 		events = append(events, ev)
 	}

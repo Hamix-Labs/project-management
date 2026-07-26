@@ -11,15 +11,22 @@ import (
 // ActivityEvent is one row in the cross-task activity feed
 // (GET /tasks/activity). Types are the fixed set: status_changed,
 // phase_failed, approval_granted.
+//
+// Task* fields are joined from the owning tasks row when it still
+// exists; they power client-side timeline filters (priority / project /
+// tag / title search) without a second round-trip.
 type ActivityEvent struct {
-	TaskID     string
-	Seq        int64
-	At         time.Time
-	Type       taskeventsdomain.EventType
-	By         taskcoredomain.Actor
-	Data       []byte
-	TaskTitle  *string
-	TaskNumber *int
+	TaskID        string
+	Seq           int64
+	At            time.Time
+	Type          taskeventsdomain.EventType
+	By            taskcoredomain.Actor
+	Data          []byte
+	TaskTitle     *string
+	TaskNumber    *int
+	TaskPriority  *taskcoredomain.Priority
+	TaskProjectID *string
+	TaskTags      []string
 }
 
 // ListActivityInput is the paginated query for GET /tasks/activity.

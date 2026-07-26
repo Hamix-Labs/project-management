@@ -119,6 +119,12 @@ export type TaskActivityEvent = {
    * timeline; otherwise it falls back to the shortened UUID.
    */
   task_number?: number | null;
+  /** Joined from the owning task — Timeline priority filter. */
+  task_priority?: Priority;
+  /** Joined from the owning task — Timeline project filter. */
+  task_project_id?: string | null;
+  /** Joined from the owning task — Timeline tag filter. */
+  task_tags?: string[];
 };
 
 /** Response envelope for GET /tasks/activity. */

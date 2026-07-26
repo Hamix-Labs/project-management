@@ -1,3 +1,5 @@
+import type { Priority } from "@/types";
+
 export type TimelineCategory = "tasks" | "agents" | "verification";
 
 export type TimelineKind =
@@ -17,11 +19,15 @@ export type TimelineEvent = {
   /** ISO timestamp — source of truth for grouping. */
   at: string;
   title: string;
+  /**
+   * Contextual non-ID phrase after the title. Empty when there is nothing
+   * useful beyond the task ref (shown once beside the timestamp).
+   */
   highlight: string;
   detail: string;
   /** Full task id for deep links when available. */
   taskId?: string;
-  /** Short display id (e.g. first 8 hex chars). */
+  /** Short display id (e.g. `#N` or first 8 hex chars) — shown once. */
   taskRef?: string;
   /**
    * Audit-trail sequence number on the owning task. When present,
@@ -29,6 +35,14 @@ export type TimelineEvent = {
    */
   seq?: number;
   meta?: string[];
+  /** Joined task title — Timeline title search only (not rendered). */
+  taskTitle?: string;
+  /** Joined task priority — Timeline priority filter. */
+  taskPriority?: Priority;
+  /** Joined task project id — Timeline project filter. */
+  taskProjectId?: string;
+  /** Joined task tags — Timeline tag filter. */
+  taskTags?: string[];
 };
 
 /** Range identifier for the date-range dropdown. */

@@ -78,10 +78,15 @@ export function TimelineEventItem({
         <p className="task-home-timeline-item__title">
           <span className="task-home-timeline-item__title-lead">
             {event.title}
-          </span>{" "}
-          <span className="task-home-timeline-item__title-highlight">
-            {event.highlight}
           </span>
+          {event.highlight ? (
+            <>
+              {" "}
+              <span className="task-home-timeline-item__title-highlight">
+                {event.highlight}
+              </span>
+            </>
+          ) : null}
         </p>
         <p className="task-home-timeline-item__detail">{event.detail}</p>
         {event.meta && event.meta.length > 0 ? (
