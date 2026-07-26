@@ -1,0 +1,141 @@
+/* Task board cards — chips, title, and hover lift. */
+
+.task-board-card {
+  display: flex;
+  flex-direction: column;
+  padding: 0.875rem;
+  background: var(--surface-card);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  text-decoration: none;
+  color: inherit;
+  transition:
+    border-color var(--duration-normal) var(--ease-out),
+    box-shadow var(--duration-normal) var(--ease-out),
+    transform var(--duration-normal) var(--ease-out);
+}
+
+.task-board-card:hover {
+  border-color: var(--brand-border-soft, var(--border-strong, var(--border-hairline)));
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.task-board-card:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus, 0 0 0 3px var(--focus-ring));
+}
+
+.task-board-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.task-board-card__id {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--text-tertiary, var(--text-secondary));
+}
+
+.task-board-card__title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.35;
+  text-wrap: pretty;
+}
+
+.task-board-card__summary {
+  margin-top: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.task-board-card__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: var(--space-3);
+}
+
+.task-board-card__branch-chip,
+.task-board-card__project-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: var(--radius-md);
+  background: var(--neutral-fill-subtle);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 500;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-board-card__chip-icon {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  color: var(--text-tertiary, var(--text-secondary));
+}
+
+.task-board-card__tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: var(--radius-md);
+  background: var(--brand-muted);
+  color: var(--brand-deep, var(--brand));
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.task-board-card__tag-chip .task-board-card__chip-icon {
+  color: currentColor;
+  opacity: 0.75;
+}
+
+.task-board-card__tag-overflow {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-tertiary, var(--text-secondary));
+  padding: 2px 4px;
+}
+
+.task-board-card__footer {
+  display: flex;
+  align-items: center;
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-hairline);
+}
+
+.task-board-card__time {
+  font-size: 11px;
+  color: var(--text-tertiary, var(--text-secondary));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .task-board-card {
+    transition: none;
+  }
+
+  .task-board-card:hover {
+    transform: none;
+  }
+}

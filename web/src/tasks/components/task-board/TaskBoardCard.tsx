@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { PriorityBadge } from "@/tasks/task-display";
+import { ProjectsStackIcon } from "@/components/project/ProjectsStackIcon";
 import { taskDisplayRef } from "@/lib/taskShortId";
 import { previewTextFromPrompt } from "@/lib/promptFormat";
 import { taskListRowSubtitle } from "../task-list/table/taskListRowSubtitle";
@@ -36,6 +37,27 @@ function BranchGlyph() {
         strokeWidth="1.2"
         strokeLinecap="round"
       />
+    </svg>
+  );
+}
+
+function TagGlyph() {
+  return (
+    <svg
+      className="task-board-card__chip-icon"
+      width="12"
+      height="12"
+      viewBox="0 0 16 16"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M2.5 2.5h5.2L13.5 8.3a1.2 1.2 0 0 1 0 1.7l-3.5 3.5a1.2 1.2 0 0 1-1.7 0L2.5 7.7V2.5Z"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinejoin="round"
+      />
+      <circle cx="5.2" cy="5.2" r="1" fill="currentColor" />
     </svg>
   );
 }
@@ -81,10 +103,14 @@ export function TaskBoardCard({
             {branch}
           </span>
           {showProjectChip ? (
-            <span className="task-board-card__project-chip">{projectName}</span>
+            <span className="task-board-card__project-chip">
+              <ProjectsStackIcon className="task-board-card__chip-icon" />
+              {projectName}
+            </span>
           ) : null}
           {visibleTags.map((tag) => (
             <span key={tag} className="task-board-card__tag-chip">
+              <TagGlyph />
               {tag}
             </span>
           ))}
