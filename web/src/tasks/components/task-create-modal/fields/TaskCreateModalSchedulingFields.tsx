@@ -1,5 +1,8 @@
 import { FieldLabel } from "@/shared/FieldLabel";
+import { AgentListIcon, AgentTagIcon } from "./TaskCreateAgentIcons";
+import { TaskCreateConfigSectionHeader } from "./TaskCreateConfigSectionHeader";
 import { TaskCreateDependsOnPicker } from "./TaskCreateDependsOnPicker";
+import { TaskCreateTagsPillsField } from "./TaskCreateTagsPillsField";
 
 type Props = {
   disabled: boolean;
@@ -23,6 +26,8 @@ type Props = {
   showDependsOn?: boolean;
   /** When true, depends-on picker is read-only while tags/milestone stay editable. */
   dependsOnDisabled?: boolean;
+  /** When true, use the agent-config section chrome (create modal advanced body). */
+  configChrome?: boolean;
 };
 
 export function TaskCreateModalSchedulingFields({
@@ -38,10 +43,80 @@ export function TaskCreateModalSchedulingFields({
   showMilestone = true,
   showDependsOn = true,
   dependsOnDisabled = false,
+  configChrome = false,
 }: Props) {
   const showAny = showTags || showMilestone || showDependsOn;
   if (!showAny) {
     return null;
+  }
+
+  const showDepsBlock = showMilestone || showDependsOn;
+
+  if (configChrome) {
+    return (
+      <div className="task-create-scheduling task-create-scheduling--config">
+        {showTags ? (
+          <section
+            className="task-create-config-section"
+            aria-labelledby="task-create-tags-heading"
+          >
+            <TaskCreateConfigSectionHeader
+              id="task-create-tags-heading"
+              title="Tags"
+              icon={<AgentTagIcon />}
+            />
+            <TaskCreateTagsPillsField
+              id="create-tags"
+              disabled={disabled}
+              tagsCsv={tagsCsv}
+              onTagsCsvChange={onTagsCsvChange}
+            />
+          </section>
+        ) : null}
+
+        {showTags && showDepsBlock ? (
+          <div className="task-create-advanced__divider" role="separator" />
+        ) : null}
+
+        {showDepsBlock ? (
+          <section
+            className="task-create-config-section"
+            aria-labelledby="task-create-deps-heading"
+          >
+            <TaskCreateConfigSectionHeader
+              id="task-create-deps-heading"
+              title={showMilestone && showDependsOn ? "Dependencies" : showMilestone ? "Milestone" : "Dependencies"}
+              icon={<AgentListIcon />}
+            />
+            <div className="task-create-scheduling__grid">
+              {showMilestone ? (
+                <div className="task-create-scheduling__field">
+                  <FieldLabel htmlFor="create-milestone">Milestone</FieldLabel>
+                  <input
+                    id="create-milestone"
+                    className="input"
+                    value={milestone}
+                    disabled={disabled}
+                    onChange={(e) => onMilestoneChange(e.target.value)}
+                    placeholder="e.g. M1 — auth"
+                  />
+                </div>
+              ) : null}
+              {showDependsOn ? (
+                <div className="task-create-scheduling__field task-create-scheduling__field--full">
+                  <TaskCreateDependsOnPicker
+                    projectId={projectId}
+                    selected={dependsOn}
+                    onChange={onDependsOnChange}
+                    disabled={disabled || dependsOnDisabled}
+                  />
+                </div>
+              ) : null}
+            </div>
+          </section>
+        ) : null}
+      </div>
+    );
   }
 
   const legend =
@@ -57,19 +132,12 @@ export function TaskCreateModalSchedulingFields({
       <div className="task-create-scheduling__grid">
         {showTags ? (
           <div className="task-create-scheduling__field">
-            <FieldLabel htmlFor="create-tags">Tags</FieldLabel>
-            <input
+            <TaskCreateTagsPillsField
               id="create-tags"
-              className="input"
-              value={tagsCsv}
-              onChange={(e) => onTagsCsvChange(e.target.value)}
-              placeholder="e.g. backend, api"
-              aria-describedby="create-tags-hint"
+              disabled={disabled}
+              tagsCsv={tagsCsv}
+              onTagsCsvChange={onTagsCsvChange}
             />
-            <p id="create-tags-hint" className="hint">
-              Comma-separated. 1–32 characters each: letters, numbers, and . _
-              - only (no spaces). Capitals are lowercased on save.
-            </p>
           </div>
         ) : null}
         {showMilestone ? (

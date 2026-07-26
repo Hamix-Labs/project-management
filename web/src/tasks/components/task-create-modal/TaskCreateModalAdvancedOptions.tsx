@@ -3,6 +3,11 @@ import { SchedulePicker } from "@/shared/time/SchedulePicker";
 import { useTaskCreateAgentOptions } from "@/tasks/create/hooks/useTaskCreateAgentOptions";
 import { advancedSummaryLine } from "./advancedSummaryLine";
 import { TaskCreateModalAgentSection } from "./fields/TaskCreateModalAgentSection";
+import {
+  AgentCalendarIcon,
+  AgentListIcon,
+} from "./fields/TaskCreateAgentIcons";
+import { TaskCreateConfigSectionHeader } from "./fields/TaskCreateConfigSectionHeader";
 import { TaskCreateModalPickupScheduleField } from "./fields/TaskCreateModalPickupScheduleField";
 import { TaskCreateModalSchedulingFields } from "./fields/TaskCreateModalSchedulingFields";
 import { TaskCreateModalStatusField } from "./fields/TaskCreateModalStatusField";
@@ -56,6 +61,14 @@ export function TaskCreateModalAdvancedOptions({
   const agentRunner = presentation.isTaskEdit ? editingTaskRunner : taskRunner;
   const agentOptions = useTaskCreateAgentOptions(agentRunner);
 
+  const showStatus = Boolean(
+    presentation.isTaskEdit && onComposeStatusChange,
+  );
+  const showSchedule = presentation.scheduleUiEnabled;
+  const showTagsOrDeps =
+    presentation.tagsUiEnabled || presentation.dependenciesUiEnabled;
+  const showAfterTags = showStatus || showSchedule;
+
   return (
     <details className="task-create-advanced">
       <summary
@@ -79,14 +92,14 @@ export function TaskCreateModalAdvancedOptions({
         </span>
       </summary>
       <div className="task-create-advanced__body">
-        {presentation.isTaskEdit && onComposeStatusChange ? (
-          <TaskCreateModalStatusField
-            id={`${presentation.idsPrefix}-status`}
-            status={presentation.status}
-            disabled={presentation.disabled}
-            onChange={onComposeStatusChange}
-          />
-        ) : null}
+        <header className="task-create-advanced__lede">
+          <h2 className="task-create-advanced__lede-title">
+            Agent configuration
+          </h2>
+          <p className="task-create-advanced__lede-sub">
+            Choose how this agent runs and how its work is verified.
+          </p>
+        </header>
 
         <TaskCreateModalAgentSection
           disabled={presentation.disabled}
@@ -101,44 +114,88 @@ export function TaskCreateModalAdvancedOptions({
           onVerifyChatModeChange={onTaskVerifyChatModeChange}
         />
 
-        {presentation.scheduleUiEnabled ? (
-          presentation.isTaskEdit ? (
-            <TaskCreateModalPickupScheduleField
-              status={presentation.status}
-              value={schedule}
-              onChange={onScheduleChange}
-              appTimezone={appTimezone}
+        {showTagsOrDeps ? (
+          <>
+            <div className="task-create-advanced__divider" role="separator" />
+            <TaskCreateModalSchedulingFields
               disabled={presentation.disabled}
-              idPrefix={`${presentation.idsPrefix}-modal`}
+              tagsCsv={tagsCsv}
+              milestone={milestone}
+              projectId={projectId}
+              dependsOn={dependsOn}
+              showTags={presentation.tagsUiEnabled}
+              showMilestone={presentation.dependenciesUiEnabled}
+              showDependsOn={presentation.dependenciesUiEnabled}
+              dependsOnDisabled={presentation.isTaskEdit}
+              configChrome
+              onTagsCsvChange={onTagsCsvChange}
+              onMilestoneChange={onMilestoneChange}
+              onDependsOnChange={
+                presentation.isTaskEdit
+                  ? noopOnDependsOnChange
+                  : onDependsOnChange
+              }
             />
-          ) : (
-            <SchedulePicker
-              value={schedule}
-              onChange={onScheduleChange}
-              appTimezone={appTimezone}
-              disabled={presentation.disabled}
-              idPrefix="task-create-modal"
-            />
-          )
+          </>
         ) : null}
 
-        {presentation.tagsUiEnabled || presentation.dependenciesUiEnabled ? (
-          <TaskCreateModalSchedulingFields
-            disabled={presentation.disabled}
-            tagsCsv={tagsCsv}
-            milestone={milestone}
-            projectId={projectId}
-            dependsOn={dependsOn}
-            showTags={presentation.tagsUiEnabled}
-            showMilestone={presentation.dependenciesUiEnabled}
-            showDependsOn={presentation.dependenciesUiEnabled}
-            dependsOnDisabled={presentation.isTaskEdit}
-            onTagsCsvChange={onTagsCsvChange}
-            onMilestoneChange={onMilestoneChange}
-            onDependsOnChange={
-              presentation.isTaskEdit ? noopOnDependsOnChange : onDependsOnChange
-            }
-          />
+        {showAfterTags ? (
+          <div className="task-create-advanced__divider" role="separator" />
+        ) : null}
+
+        {showSchedule ? (
+          <section
+            className="task-create-config-section"
+            aria-labelledby="task-create-schedule-heading"
+          >
+            <TaskCreateConfigSectionHeader
+              id="task-create-schedule-heading"
+              title="Schedule"
+              icon={<AgentCalendarIcon />}
+            />
+            {presentation.isTaskEdit ? (
+              <TaskCreateModalPickupScheduleField
+                status={presentation.status}
+                value={schedule}
+                onChange={onScheduleChange}
+                appTimezone={appTimezone}
+                disabled={presentation.disabled}
+                idPrefix={`${presentation.idsPrefix}-modal`}
+              />
+            ) : (
+              <SchedulePicker
+                value={schedule}
+                onChange={onScheduleChange}
+                appTimezone={appTimezone}
+                disabled={presentation.disabled}
+                idPrefix="task-create-modal"
+              />
+            )}
+          </section>
+        ) : null}
+
+        {showStatus && onComposeStatusChange ? (
+          <>
+            {showSchedule ? (
+              <div className="task-create-advanced__divider" role="separator" />
+            ) : null}
+            <section
+              className="task-create-config-section"
+              aria-labelledby="task-create-status-heading"
+            >
+              <TaskCreateConfigSectionHeader
+                id="task-create-status-heading"
+                title="Status"
+                icon={<AgentListIcon />}
+              />
+              <TaskCreateModalStatusField
+                id={`${presentation.idsPrefix}-status`}
+                status={presentation.status}
+                disabled={presentation.disabled}
+                onChange={onComposeStatusChange}
+              />
+            </section>
+          </>
         ) : null}
       </div>
     </details>
