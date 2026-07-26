@@ -37,6 +37,7 @@ func taskCreateJSONToCompose(body taskCreateJSON) taskComposePayloadJSON {
 		ProjectContextItemIDs: body.ProjectContextItemIDs,
 		Runner:                body.Runner,
 		CursorModel:           body.CursorModel,
+		VerifyChatMode:        body.VerifyChatMode,
 		PickupNotBefore:       body.PickupNotBefore,
 		Tags:                  body.Tags,
 		Milestone:             body.Milestone,
@@ -115,6 +116,7 @@ func (h *Handler) CreateTaskFromComposeJSON(
 		ProjectContextItemIDs: payload.ProjectContextItemIDs,
 		Runner:                runner,
 		CursorModel:           cursorModel,
+		VerifyChatMode:        resolveVerifyChatModeField(payload.VerifyChatMode),
 		PickupNotBefore:       pickupNotBefore,
 		Tags:                  payload.Tags,
 		Milestone:             payload.Milestone,
@@ -185,6 +187,9 @@ func (h *Handler) ValidateCompose(ctx context.Context, payload TaskComposePayloa
 	}
 	if _, _, err := resolveRunnerModelFields(payload.Runner, payload.CursorModel, settings, h.runners); err != nil {
 		return err
+	}
+	if _, ok := settingsdomain.NormalizeVerifyChatMode(resolveVerifyChatModeField(payload.VerifyChatMode)); !ok {
+		return fmt.Errorf("%w: verify_chat_mode must be same_chat, different_chat, or empty", domain.ErrInvalidInput)
 	}
 	if _, err := resolvePickupNotBeforeForCreate(payload.PickupNotBefore, payload.Status, settings); err != nil {
 		return err

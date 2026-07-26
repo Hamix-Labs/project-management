@@ -64,7 +64,10 @@ import (
 // per-project numbers for existing tasks (display ref #N).
 //
 // Rev 19: tasks.status CHECK includes closed (close/reopen replaces hard delete).
-const SchemaRevision = 19
+//
+// Rev 20 (ADR-0086): app_settings.verify_chat_mode (same_chat | different_chat
+// default) and tasks.verify_chat_mode (empty inherits settings).
+const SchemaRevision = 20
 
 const schemaMetaRowID = 1
 

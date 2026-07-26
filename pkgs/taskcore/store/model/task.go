@@ -25,6 +25,7 @@ type Task struct {
 	Gate                  *domain.TaskGate            `gorm:"column:gate;serializer:json;type:jsonb"`
 	Runner                string                      `gorm:"not null;default:'cursor'"`
 	CursorModel           string                      `gorm:"not null;default:''"`
+	VerifyChatMode        string                      `gorm:"not null;default:''"`
 	RunnerConfig          datatypes.JSON              `gorm:"column:runner_config;type:jsonb;not null;default:'{}'"`
 	PickupNotBefore       *time.Time                  `gorm:"index"`
 	CriteriaSatisfiedAt   *time.Time                  `gorm:"index"`

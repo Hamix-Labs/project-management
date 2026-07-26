@@ -92,7 +92,7 @@ func Update(ctx context.Context, db *gorm.DB, id string, in UpdateInput, by doma
 	if id == "" {
 		return nil, "", fmt.Errorf("%w: id", domain.ErrInvalidInput)
 	}
-	if in.Title == nil && in.InitialPrompt == nil && in.Status == nil && in.Priority == nil && in.Project == nil && in.ProjectContextItemIDs == nil && in.PickupNotBefore == nil && in.CursorModel == nil && in.Tags == nil && in.Milestone == nil && in.Gate == nil && in.DependsOn == nil && in.PendingRetry == nil && !in.ClearPendingRetry && in.WorktreeID == nil {
+	if in.Title == nil && in.InitialPrompt == nil && in.Status == nil && in.Priority == nil && in.Project == nil && in.ProjectContextItemIDs == nil && in.PickupNotBefore == nil && in.CursorModel == nil && in.VerifyChatMode == nil && in.Tags == nil && in.Milestone == nil && in.Gate == nil && in.DependsOn == nil && in.PendingRetry == nil && !in.ClearPendingRetry && in.WorktreeID == nil {
 		return nil, "", fmt.Errorf("%w: no fields to update", domain.ErrInvalidInput)
 	}
 	var updated *domain.Task
@@ -208,6 +208,7 @@ func buildCreateTaskFromInput(in CreateInput, by domain.Actor) (t *domain.Task, 
 		ProjectContextItemIDs: nil,
 		Runner:                runner,
 		CursorModel:           in.CursorModel,
+		VerifyChatMode:        in.VerifyChatMode,
 		PickupNotBefore:       in.PickupNotBefore,
 		WorktreeID:            normalizeOptionalID(in.WorktreeID),
 	}

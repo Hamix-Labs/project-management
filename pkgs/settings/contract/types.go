@@ -9,6 +9,7 @@ type SettingsPatch struct {
 	CursorBin                  *string
 	CursorModel                *string
 	VerifyModel                *string
+	VerifyChatMode             *string
 	MaxRunDurationSeconds      *int
 	AgentPickupDelaySeconds    *int
 	DisplayTimezone            *string
@@ -28,6 +29,7 @@ func (p SettingsPatch) IsEmpty() bool {
 		p.CursorBin == nil &&
 		p.CursorModel == nil &&
 		p.VerifyModel == nil &&
+		p.VerifyChatMode == nil &&
 		p.MaxRunDurationSeconds == nil &&
 		p.AgentPickupDelaySeconds == nil &&
 		p.DisplayTimezone == nil &&

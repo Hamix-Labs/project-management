@@ -1,7 +1,7 @@
 # ADR-0085: Verify resumes the execute Cursor session
 
 **Date:** 2026-07-25
-**Status:** Accepted (amended: optional verify model; hard-fail missing session / resume)
+**Status:** Accepted (amended: optional verify model; hard-fail missing session / resume; default mode under [ADR-0086](./ADR-0086-verify-chat-modes.md))
 **Deciders:** Backend / agents-worker maintainers
 
 ## Context
@@ -23,17 +23,22 @@ same-chat product rule.
 
 ## Decision
 
-1. **Same chat** — For `PhaseVerify`, Cursor `--resume` uses the cycle’s
-   **last terminal execute** `session_id` (`LastSessionID(cycle, PhaseExecute)`),
-   including verify-only retries and polish-then-verify.
-2. **Delete** the `verify_fresh_after_execute` deny and
-   `FirstVerifyAfterNewExecute` helper.
-3. **Supersede** ADR-0031 rules that required separate execute/verify session
-   chains and forbade cross-wiring execute session ids into verify runs.
+1. **Same chat (default mode)** — When effective `verify_chat_mode` is
+   `same_chat` ([ADR-0086](./ADR-0086-verify-chat-modes.md)), PhaseVerify
+   Cursor `--resume` uses the cycle’s **last terminal execute** `session_id`
+   (`LastSessionID(cycle, PhaseExecute)`), including verify-only retries and
+   polish-then-verify.
+2. **Remove sole-policy denials** — The unconditional `verify_fresh_after_execute`
+   deny and always-on separate chains are no longer the only product path;
+   `different_chat` restores them when selected (ADR-0086).
+3. **Supersede** ADR-0031 rules that *required* separate execute/verify session
+   chains for all tasks; those rules apply only under `different_chat`.
 4. **Optional verify model** — `app_settings.verify_model` may pin a different
-   `--model` on the verify `Run` while still `--resume`ing the execute chat.
-   Empty inherits the execute effective model (task pin, else `cursor_model`).
-5. **Hard-fail session contract** (Cursor + `cursor_session_resume_enabled`):
+   `--model` on the verify `Run` while still `--resume`ing the execute chat
+   under `same_chat`. Empty inherits the execute effective model (task pin,
+   else `cursor_model`).
+5. **Hard-fail session contract** (Cursor + `cursor_session_resume_enabled` +
+   effective `same_chat`):
    - Successful execute without `session_id` → fail execute phase
      (`cursor_missing_session_id`); do not enter verify.
    - Verify with deny `no_session_id` → fail verify; **zero** Cursor Runs.

@@ -25,6 +25,7 @@ type CreateTaskInput struct {
 	ProjectContextItemIDs []string
 	Runner                string
 	CursorModel           string
+	VerifyChatMode        string
 	PickupNotBefore       *time.Time
 	Tags                  []string
 	Milestone             *string
@@ -67,6 +68,7 @@ type UpdateTaskInput struct {
 	ProjectContextItemIDs *[]string
 	PickupNotBefore       *PickupNotBeforePatch
 	CursorModel           *string
+	VerifyChatMode        *string
 	Tags                  *[]string
 	Milestone             *string
 	// Gate uses **TaskGate: nil = leave unchanged; non-nil pointer to nil = clear;

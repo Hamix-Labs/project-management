@@ -29,6 +29,9 @@ type Task struct {
 	// CursorModel is forwarded to cursor-agent as --model when non-empty;
 	// empty means omit the flag for this task (same semantics as app settings).
 	CursorModel string `json:"cursor_model"`
+	// VerifyChatMode overrides app_settings.verify_chat_mode when non-empty
+	// (same_chat | different_chat). Empty inherits the settings default.
+	VerifyChatMode string `json:"verify_chat_mode"`
 	// RunnerConfig stores per-task runner config overrides as a JSON blob.
 	// When non-empty, the worker merges this with the global runner config
 	// from app_settings.runner_configs for the matching runner ID.

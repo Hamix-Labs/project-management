@@ -20,6 +20,7 @@ func TestAppSettings_roundTrip(t *testing.T) {
 		CursorBin:                  "/bin/cursor",
 		CursorModel:                "opus",
 		VerifyModel:                "composer-2.5-fast",
+		VerifyChatMode:             "different_chat",
 		MaxRunDurationSeconds:      120,
 		AgentPickupDelaySeconds:    3,
 		DisplayTimezone:            "America/Los_Angeles",

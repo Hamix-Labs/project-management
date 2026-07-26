@@ -19,6 +19,7 @@ type taskComposePayloadJSON struct {
 	ProjectContextItemIDs []string                                    `json:"project_context_item_ids"`
 	Runner                *string                                     `json:"runner"`
 	CursorModel           *string                                     `json:"cursor_model"`
+	VerifyChatMode        *string                                     `json:"verify_chat_mode"`
 	PickupNotBefore       *string                                     `json:"pickup_not_before,omitempty"`
 	Tags                  []string                                    `json:"tags,omitempty"`
 	Milestone             *string                                     `json:"milestone,omitempty"`
