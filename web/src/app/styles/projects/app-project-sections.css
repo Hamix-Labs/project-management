@@ -189,7 +189,7 @@
 .project-context-node-modal,
 .project-context-import-modal {
   display: grid;
-  gap: var(--space-4);
+  gap: var(--space-5);
   margin: 0;
 }
 
@@ -198,8 +198,169 @@
   margin: 0;
   color: var(--text);
   font-size: var(--text-xl);
-  font-weight: 760;
+  font-weight: 700;
   letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+/* Import memory — match inspiration: medium dialog, airy fields, brand CTA */
+.modal-shell--wide:has(.project-context-import-modal) {
+  width: min(100%, 32rem);
+}
+
+.modal-sheet.project-context-import-modal {
+  padding: var(--space-6);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+}
+
+.project-context-import-modal .project-context-form__heading {
+  align-items: flex-start;
+}
+
+.project-context-import-modal .project-context-form__heading > div {
+  min-width: 0;
+  flex: 1 1 auto;
+  padding-inline-end: var(--space-2);
+}
+
+.project-context-import-modal .project-context-form__heading p {
+  margin: var(--space-2) 0 0;
+  max-width: 42ch;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.pc__import-close {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  margin: calc(-1 * var(--space-1)) calc(-1 * var(--space-1)) 0 0;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition:
+    color var(--duration-normal) var(--ease-default),
+    background-color var(--duration-normal) var(--ease-default);
+}
+
+.pc__import-close:not(:disabled):hover {
+  color: var(--text);
+  background: var(--bg-subtle);
+}
+
+.pc__import-close:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.pc__import-close:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.project-context-import-modal .field-label-with-req {
+  gap: 0.15rem;
+  margin-bottom: var(--space-2);
+}
+
+.project-context-import-modal .field-label-with-req label {
+  color: var(--text);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.project-context-import-modal .field input:not([type="file"]):not([type="checkbox"]):not([type="radio"]),
+.project-context-import-modal .field textarea {
+  min-height: 2.5rem;
+  border-color: var(--border-hairline);
+  box-shadow: none;
+}
+
+.project-context-import-modal .field textarea {
+  min-height: 5.5rem;
+}
+
+.project-context-import-modal .pc__import-actions {
+  justify-content: flex-start;
+  margin-top: var(--space-2);
+  gap: var(--space-3);
+}
+
+.project-context-import-modal button.pc__import-submit {
+  min-width: 5.5rem;
+  min-height: 2.5rem;
+  padding: 0 var(--space-5);
+  border: none;
+  border-radius: var(--radius-full);
+  background: var(--brand);
+  color: var(--text-on-brand);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  box-shadow: none;
+}
+
+.project-context-import-modal button.pc__import-submit:not(:disabled):hover {
+  background: var(--brand-hover);
+  box-shadow: none;
+  transform: none;
+}
+
+.project-context-import-modal button.pc__import-submit:not(:disabled):active {
+  background: var(--brand-deep);
+  transform: scale(0.98);
+}
+
+.project-context-import-modal button.pc__import-submit:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.project-context-import-modal button.pc__import-submit:disabled {
+  border: none;
+  background: color-mix(in srgb, var(--brand) 40%, var(--bg-subtle));
+  color: var(--text-on-brand);
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+.project-context-import-modal button.pc__import-cancel {
+  min-width: 0;
+  min-height: 2.5rem;
+  padding: 0 var(--space-3);
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  box-shadow: none;
+}
+
+.project-context-import-modal button.pc__import-cancel:not(:disabled):hover {
+  background: var(--bg-subtle);
+  color: var(--text);
+  box-shadow: none;
+  transform: none;
+}
+
+.project-context-import-modal button.pc__import-cancel:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.project-context-import-modal button.pc__import-cancel:disabled {
+  color: var(--text-tertiary);
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 /* Match worktrees / task-create modal field chrome */
@@ -356,12 +517,14 @@
 
 .pc__dropzone {
   display: grid;
+  align-content: center;
+  justify-items: stretch;
   gap: var(--space-2);
-  min-height: 5.5rem;
-  padding: var(--space-4);
+  min-height: 6.5rem;
+  padding: var(--space-5) var(--space-4);
   border: 1px dashed var(--border-hairline);
   border-radius: var(--radius-md);
-  background: var(--bg-subtle, var(--bg-elevated));
+  background: var(--bg-elevated);
   cursor: pointer;
   transition:
     border-color var(--duration-normal, 150ms) var(--ease-default, ease),
@@ -370,7 +533,8 @@
 
 .pc__dropzone:hover,
 .pc__dropzone--active {
-  border-color: var(--accent, var(--brand));
+  border-color: var(--brand);
+  background: color-mix(in srgb, var(--brand-muted) 35%, var(--bg-elevated));
 }
 
 .pc__dropzone:focus-visible {
@@ -380,21 +544,35 @@
 
 .pc__dropzone--selected {
   border-style: solid;
+  border-color: var(--border-strong);
+  background: var(--bg-subtle);
 }
 
 .pc__dropzone-prompt {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
+  gap: var(--space-3);
   color: var(--text-secondary);
-  font-size: 0.8125rem;
-  line-height: 1.4;
+  font-size: var(--text-sm);
+  line-height: 1.45;
+}
+
+.pc__dropzone-icon {
+  flex: 0 0 auto;
+  color: var(--text-tertiary);
+}
+
+.pc__dropzone-prompt-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
 }
 
 .pc__dropzone-browse {
-  color: var(--accent, var(--brand));
+  flex: 0 0 auto;
+  margin-inline-start: auto;
+  color: var(--link, var(--brand));
   font-weight: 600;
 }
 
@@ -403,7 +581,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2) var(--space-3);
-  font-size: 0.8125rem;
+  font-size: var(--text-sm);
 }
 
 .pc__dropzone-filename {
@@ -419,25 +597,19 @@
   line-height: 1.4;
 }
 
-.pc__import-preview {
-  margin: 0;
-  max-height: 12rem;
-  overflow: auto;
-  padding: var(--space-3);
-  border: 1px solid var(--border-hairline);
-  border-radius: var(--radius-md);
-  background: var(--bg-elevated);
-  color: var(--text-secondary);
-  font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: var(--text-sm, 0.875rem);
-  line-height: 1.45;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .pc__dropzone {
     transition: none;
+  }
+
+  .pc__import-close,
+  .project-context-import-modal button.pc__import-submit,
+  .project-context-import-modal button.pc__import-cancel {
+    transition: none;
+  }
+
+  .project-context-import-modal button.pc__import-submit:not(:disabled):active {
+    transform: none;
   }
 }
 
