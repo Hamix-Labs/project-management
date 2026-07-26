@@ -59,18 +59,34 @@ func TestComposeRecoveryDelta_verifyInfra(t *testing.T) {
 		Phase:         cyclesdomain.PhaseVerify,
 		AttemptSeq:    1,
 		VerifyAttempt: 1,
+		ReportPath:    "/tmp/hamix/cycle-1/verify-report.json",
 		CommandEvidenceDelta: []CommandEvidenceLine{{
 			CriterionID: "lint",
 			Command:     "npm test",
 			ExitCode:    1,
 			Preview:     "FAIL",
 		}},
+		VerifyContract: VerifyReportContract{
+			ReportPath: "/tmp/hamix/cycle-1/verify-report.json",
+			Criteria: []VerifyCriterionLine{{
+				ID: "lint", Text: "tests pass", Evidence: "npm test ok",
+			}},
+		},
 	})
 	if !strings.Contains(delta, "### New command evidence") {
 		t.Fatalf("missing command evidence section: %q", delta)
 	}
 	if !strings.Contains(delta, "npm test") {
 		t.Fatalf("missing command: %q", delta)
+	}
+	if !strings.Contains(delta, "verify-report.json") {
+		t.Fatalf("missing verify report path: %q", delta)
+	}
+	if !strings.Contains(delta, `Schema: {"criteria"`) {
+		t.Fatalf("missing verify schema: %q", delta)
+	}
+	if strings.Contains(delta, "criteria-report.json") {
+		t.Fatalf("must not ask for criteria-report.json: %q", delta)
 	}
 }
 
@@ -230,17 +246,32 @@ func TestComposeRecoveryDelta_goldenFiles(t *testing.T) {
 			Phase:         cyclesdomain.PhaseVerify,
 			AttemptSeq:    1,
 			VerifyAttempt: 1,
+			ReportPath:    "/tmp/hamix/cycle-1/verify-report.json",
 			CommandEvidenceDelta: []CommandEvidenceLine{{
 				CriterionID: "lint", Command: "npm test", ExitCode: 1, Preview: "FAIL",
 			}},
+			VerifyContract: VerifyReportContract{
+				ReportPath: "/tmp/hamix/cycle-1/verify-report.json",
+				Criteria: []VerifyCriterionLine{{
+					ID: "lint", Text: "tests pass", Evidence: "npm test ok",
+				}},
+			},
 		},
 		"verify_feedback_carry": {
 			Kind:                RecoveryVerifyFeedback,
 			Phase:               cyclesdomain.PhaseVerify,
 			AttemptSeq:          1,
 			VerifyAttempt:       2,
+			ReportPath:          "/tmp/hamix/cycle-1/verify-report.json",
 			PriorVerifyFeedback: "criterion-a: still failing",
 			LockedCriteria:      []string{"criterion-b"},
+			VerifyContract: VerifyReportContract{
+				ReportPath: "/tmp/hamix/cycle-1/verify-report.json",
+				LockedIDs:  []string{"criterion-b"},
+				Criteria: []VerifyCriterionLine{{
+					ID: "criterion-a", Text: "still open", Evidence: "prior claim",
+				}},
+			},
 		},
 	}
 	for name, ctx := range cases {

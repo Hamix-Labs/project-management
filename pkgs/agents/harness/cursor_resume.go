@@ -103,6 +103,9 @@ func (h *Harness) planVerifyRun(
 	} else {
 		rc := h.buildRecoveryContext(cyclesdomain.PhaseVerify, task, cycle, state, opts, retryModeFromCycleMeta(cycle))
 		rc.CommandEvidenceDelta = commandEvidenceLines(cmdEvidence)
+		rc.VerifyContract = h.verifySvc().BuildVerifyReportContract(
+			ctx, task.ID, snap, cycle.ID, state.verify.previouslyPassed, selfReport, feedback, cmdEvidence,
+		)
 		decision.Prompt = prompt.ComposeRecoveryDelta(rc)
 	}
 	state.resume.lastCursorResumeMode = decision.Mode

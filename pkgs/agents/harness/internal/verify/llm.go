@@ -4,8 +4,8 @@ import "github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
+	"sort"
 	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/cursorresume"
@@ -96,41 +96,57 @@ func buildVerifyPrompt(
 ) string {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.verify.buildVerifyPrompt",
 		"task_id", taskID, "cycle_id", cycleID, "locked_passes", len(previouslyPassed))
-	commits := s.loadTaskCommits(ctx, taskID)
 	var b strings.Builder
 	b.WriteString("You implemented this task. Now verify each criterion below.\n")
 	b.WriteString("Do not modify source files.\n")
-	b.WriteString(fmt.Sprintf("Write `%s` only.\n\n", reports.VerifyReportPath(s.reportDir, cycleID)))
-	b.WriteString("Schema: {\"criteria\":[{\"id\":\"...\",\"verified\":true|false,\"reasoning\":\"...\"}]}\n\n")
-	if len(previouslyPassed) > 0 {
-		b.WriteString("## Locked passes (do not re-evaluate)\n\n")
-		b.WriteString("These criteria were verified in earlier attempts. Do NOT include them in your report.\n\n")
-		for id := range previouslyPassed {
-			b.WriteString(fmt.Sprintf("- [%s]\n", id))
-		}
-		b.WriteString("\n")
+	b.WriteString(prompt.FormatVerifyReportContract(
+		s.BuildVerifyReportContract(ctx, taskID, snap, cycleID, previouslyPassed, selfReport, feedback, cmdEvidence),
+	))
+	return b.String()
+}
+
+// BuildVerifyReportContract assembles the shared verify-report artifact body
+// used by fresh prompts and same-chat resume deltas.
+func (s *Service) BuildVerifyReportContract(
+	ctx context.Context,
+	taskID string,
+	snap Snapshot,
+	cycleID string,
+	previouslyPassed map[string]Verdict,
+	selfReport map[string]reports.CriteriaEntry,
+	feedback string,
+	cmdEvidence []CommandEvidence,
+) prompt.VerifyReportContract {
+	commits := s.loadTaskCommits(ctx, taskID)
+	locked := make([]string, 0, len(previouslyPassed))
+	for id := range previouslyPassed {
+		locked = append(locked, id)
 	}
+	sort.Strings(locked)
+	criteria := make([]prompt.VerifyCriterionLine, 0, len(snap.Criteria))
 	for _, it := range snap.Criteria {
-		if _, locked := previouslyPassed[it.ID]; locked {
+		if _, ok := previouslyPassed[it.ID]; ok {
 			continue
 		}
 		e, ok := selfReport[it.ID]
 		if !ok || !e.ClaimedDone {
 			continue
 		}
-		b.WriteString(fmt.Sprintf("- [%s] %s\n  execute claimed_done: true (assertion only)\n  execute evidence: %s\n", it.ID, it.Text, e.Evidence))
+		criteria = append(criteria, prompt.VerifyCriterionLine{
+			ID:       it.ID,
+			Text:     it.Text,
+			Evidence: e.Evidence,
+		})
 	}
-	b.WriteString(FormatCommandEvidenceSection(cmdEvidence))
-	if gitBlock := git.FormatGitContextForPrompt(commits); gitBlock != "" {
-		b.WriteString(gitBlock)
+	return prompt.VerifyReportContract{
+		ReportPath:             reports.VerifyReportPath(s.reportDir, cycleID),
+		LockedIDs:              locked,
+		Criteria:               criteria,
+		CommandEvidenceSection: FormatCommandEvidenceSection(cmdEvidence),
+		GitContext:             git.FormatGitContextForPrompt(commits),
+		DiffSection:            DiffSection(s.workingDir),
+		Feedback:               feedback,
 	}
-	b.WriteString("\nDiff:\n")
-	b.WriteString(DiffSection(s.workingDir))
-	promptText := b.String()
-	if feedback != "" {
-		promptText = prompt.AppendVerifyFeedback(promptText, feedback)
-	}
-	return promptText
 }
 
 func (s *Service) runVerifyCursor(

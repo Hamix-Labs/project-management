@@ -17,3 +17,17 @@ criterion-a: still failing
 ### Do not
 
 - Re-evaluate locked criteria: criterion-b
+
+Write `/tmp/hamix/cycle-1/verify-report.json` only.
+
+Schema: {"criteria":[{"id":"...","verified":true|false,"reasoning":"..."}]}
+
+## Locked passes (do not re-evaluate)
+
+These criteria were verified in earlier attempts. Do NOT include them in your report.
+
+- [criterion-b]
+
+- [criterion-a] still open
+  execute claimed_done: true (assertion only)
+  execute evidence: prior claim
