@@ -8,23 +8,20 @@ describe("parseTaskHomeView", () => {
     expect(parseTaskHomeView("")).toBe("list");
     expect(parseTaskHomeView("table")).toBe("list");
     expect(parseTaskHomeView("list")).toBe("list");
+    expect(parseTaskHomeView("timeline")).toBe("list");
   });
 
-  it("accepts board and timeline", () => {
+  it("accepts board", () => {
     expect(parseTaskHomeView("board")).toBe("board");
-    expect(parseTaskHomeView("timeline")).toBe("timeline");
   });
 });
 
 describe("applyTaskHomeView", () => {
-  it("omits view for list and sets board/timeline, preserving other params", () => {
+  it("omits view for list and sets board, preserving other params", () => {
     const base = new URLSearchParams("project=p1&view=board");
     expect(applyTaskHomeView(base, "list").toString()).toBe("project=p1");
     expect(applyTaskHomeView(base, "board").toString()).toBe(
       "project=p1&view=board",
-    );
-    expect(applyTaskHomeView(base, "timeline").toString()).toBe(
-      "project=p1&view=timeline",
     );
   });
 });
