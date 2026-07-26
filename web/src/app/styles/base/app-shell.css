@@ -291,7 +291,7 @@
 
 .app-nav__link[aria-current="page"] {
   color: var(--text-primary);
-  background: var(--neutral-fill-subtle);
+  background: transparent;
   border-color: transparent;
   border-radius: var(--radius-lg);
   font-weight: 500;
