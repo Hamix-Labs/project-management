@@ -47,6 +47,9 @@ describe("TaskBoardCard", () => {
       document.querySelector(".task-board-card__project-chip svg"),
     ).toBeTruthy();
     expect(screen.getByText("backend")).toBeInTheDocument();
+    expect(
+      document.querySelector(".task-board-card__tag-chip svg"),
+    ).toBeTruthy();
     expect(screen.getByText("+1")).toBeInTheDocument();
     expect(screen.getByText(/h ago|min ago|just now/)).toBeInTheDocument();
     expect(screen.queryByText(/assigned/i)).not.toBeInTheDocument();
