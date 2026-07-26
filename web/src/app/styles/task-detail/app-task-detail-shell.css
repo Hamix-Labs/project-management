@@ -1,4 +1,5 @@
 /* Task detail shell split by header, model config, and action surfaces. */
 @import "./app-task-detail-header.css";
 @import "./app-task-detail-model-config.css";
+@import "./app-task-detail-verify-chat.css";
 @import "./app-task-detail-actions.css";

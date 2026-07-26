@@ -117,6 +117,8 @@ func (s *Service) BuildVerifyReportContract(
 	feedback string,
 	cmdEvidence []CommandEvidence,
 ) prompt.VerifyReportContract {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.verify.BuildVerifyReportContract",
+		"task_id", taskID, "cycle_id", cycleID, "locked_passes", len(previouslyPassed))
 	commits := s.loadTaskCommits(ctx, taskID)
 	locked := make([]string, 0, len(previouslyPassed))
 	for id := range previouslyPassed {

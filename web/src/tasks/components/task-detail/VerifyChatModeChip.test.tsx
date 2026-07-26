@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { settingsQueryKeys } from "@/lib/settingsQueryKeys";
-import { testAppSettings } from "@/test/settingsDefaults";
+import { APP_SETTINGS_DEFAULTS } from "@/test/settingsDefaults";
 import { VerifyChatModeChip } from "./VerifyChatModeChip";
 
 function renderChip(taskMode: string | undefined, settingsMode: string) {
@@ -10,7 +10,7 @@ function renderChip(taskMode: string | undefined, settingsMode: string) {
     defaultOptions: { queries: { retry: false } },
   });
   qc.setQueryData(settingsQueryKeys.app(), {
-    ...testAppSettings,
+    ...APP_SETTINGS_DEFAULTS,
     verify_chat_mode: settingsMode,
   });
   return render(
