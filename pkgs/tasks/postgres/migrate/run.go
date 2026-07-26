@@ -18,7 +18,7 @@ type Deps struct {
 // models. Callers record schema revision after Run returns.
 func Run(ctx context.Context, db *gorm.DB, deps Deps) error {
 	slog.Debug("trace", "operation", "migrate.Run")
-	if db.Dialector != nil && db.Dialector.Name() == "postgres" {
+	if db.Dialector != nil && db.Dialector.Name() == "postgres" && db.Migrator().HasTable("project_context_items") {
 		if err := db.WithContext(ctx).Exec(`ALTER TABLE project_context_items DROP CONSTRAINT IF EXISTS chk_project_context_kind`).Error; err != nil {
 			return fmt.Errorf("drop project context kind constraint: %w", err)
 		}
@@ -99,6 +99,9 @@ func Run(ctx context.Context, db *gorm.DB, deps Deps) error {
 	}
 	if err := migrateContextKindToTag(ctx, db); err != nil {
 		return fmt.Errorf("context kind to tag: %w", err)
+	}
+	if err := migrateRemoveProjectContext(ctx, db); err != nil {
+		return fmt.Errorf("migrate remove project context: %w", err)
 	}
 	return nil
 }

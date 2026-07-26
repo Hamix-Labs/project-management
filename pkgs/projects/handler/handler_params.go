@@ -1,24 +1,10 @@
 package handler
 
 import (
-	"net/http"
 	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
 )
-
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func parseProjectContextPath(r *http.Request) (projectID, itemID string, err error) {
-	projectID, err = handlerhttp.ParsePathID(r.PathValue("id"))
-	if err != nil {
-		return "", "", err
-	}
-	itemID, err = handlerhttp.ParsePathID(r.PathValue("contextId"))
-	if err != nil {
-		return "", "", err
-	}
-	return projectID, itemID, nil
-}
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func parseProjectListParams(q map[string][]string) (limit int, includeArchived bool, err error) {
@@ -28,14 +14,4 @@ func parseProjectListParams(q map[string][]string) (limit int, includeArchived b
 	}
 	includeArchived = strings.EqualFold(strings.TrimSpace(handlerhttp.FirstQueryValue(q, "include_archived")), "true")
 	return limit, includeArchived, nil
-}
-
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func parseProjectContextListParams(q map[string][]string) (limit int, includeUnpinned bool, err error) {
-	limit, err = handlerhttp.ParseBoundedLimit(q, 50, 100)
-	if err != nil {
-		return 0, false, err
-	}
-	includeUnpinned = !strings.EqualFold(strings.TrimSpace(handlerhttp.FirstQueryValue(q, "pinned_only")), "true")
-	return limit, includeUnpinned, nil
 }

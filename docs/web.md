@@ -92,9 +92,9 @@ Project and git writes invalidate React Query through a shared catalog — not i
 
 1. [ADR-0044](./adr/ADR-0044-query-invalidation-catalog.md) — catalog scopes and vertical mutation ownership
 2. [`lib/queryInvalidation/`](../web/src/lib/queryInvalidation/) — `decideProjectInvalidationKeys`, `decideGitInvalidationKeys`, `applyQueryInvalidations`
-3. [`projects/mutations/`](../web/src/projects/mutations/) — project create/delete/patch/context hooks
+3. [`projects/mutations/`](../web/src/projects/mutations/) — project create/delete/patch hooks
 4. [`worktrees/mutations/`](../web/src/worktrees/mutations/) — global and legacy git hooks
-5. [`tasks/sync/decideSyncFrame.ts`](../web/src/tasks/sync/decideSyncFrame.ts) — SSE `project` / `project_context` frames use the same project scopes
+5. [`tasks/sync/decideSyncFrame.ts`](../web/src/tasks/sync/decideSyncFrame.ts) — SSE `project` frames use the same project scopes
 
 ## Task detail — execution cycles
 

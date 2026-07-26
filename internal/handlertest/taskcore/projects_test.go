@@ -13,12 +13,12 @@ import (
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 )
 
-func TestHTTP_projectsCRUDAndContext(t *testing.T) {
+func TestHTTP_projectsCRUD(t *testing.T) {
 	srv := handlertest.NewCreateServer(t)
 	defer srv.Close()
 	git := handlertest.MustGitBinding(t, srv.URL)
 
-	res, err := http.Post(srv.URL+"/projects", "application/json", strings.NewReader(`{"name":"Moat","description":"Long work","context_summary":"Shared memory","repository_id":"`+git.RepositoryID+`"}`))
+	res, err := http.Post(srv.URL+"/projects", "application/json", strings.NewReader(`{"name":"Moat","description":"Long work","repository_id":"`+git.RepositoryID+`"}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -43,66 +43,13 @@ func TestHTTP_projectsCRUDAndContext(t *testing.T) {
 		t.Fatalf("project repository_id = %#v, want %s", project.RepositoryID, git.RepositoryID)
 	}
 
-	itemRes, err := http.Post(srv.URL+"/projects/"+project.ID+"/context", "application/json", strings.NewReader(`{"tag":"requirement","title":"Use relational context","description":"Pick when deciding memory architecture","body":"No vector store in v1","pinned":true}`))
-	if err != nil {
-		t.Fatal(err)
-	}
-	itemBytes, err := io.ReadAll(itemRes.Body)
-	if cerr := itemRes.Body.Close(); cerr != nil {
-		t.Fatal(cerr)
-	}
-	if err != nil {
-		t.Fatal(err)
-	}
-	if itemRes.StatusCode != http.StatusCreated {
-		t.Fatalf("create context status %d body %s", itemRes.StatusCode, itemBytes)
-	}
-	var item projectsdomain.ProjectContextItem
-	if err := json.Unmarshal(itemBytes, &item); err != nil {
-		t.Fatal(err)
-	}
-	if item.ProjectID != project.ID || item.Tag != "requirement" || item.Description != "Pick when deciding memory architecture" || !item.Pinned {
-		t.Fatalf("context item = %#v", item)
-	}
-	secondItemRes, err := http.Post(srv.URL+"/projects/"+project.ID+"/context", "application/json", strings.NewReader(`{"tag":"Payment rules","title":"Explicit selection","body":"Tasks choose context nodes."}`))
-	if err != nil {
-		t.Fatal(err)
-	}
-	secondItemBytes, err := io.ReadAll(secondItemRes.Body)
-	if cerr := secondItemRes.Body.Close(); cerr != nil {
-		t.Fatal(cerr)
-	}
-	if err != nil {
-		t.Fatal(err)
-	}
-	if secondItemRes.StatusCode != http.StatusCreated {
-		t.Fatalf("create second context status %d body %s", secondItemRes.StatusCode, secondItemBytes)
-	}
-	var secondItem projectsdomain.ProjectContextItem
-	if err := json.Unmarshal(secondItemBytes, &secondItem); err != nil {
-		t.Fatal(err)
-	}
-
-	listRes, err := http.Get(srv.URL + "/projects/" + project.ID + "/context")
+	listRes, err := http.Get(srv.URL + "/projects")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer listRes.Body.Close()
 	if listRes.StatusCode != http.StatusOK {
-		t.Fatalf("context list status %d", listRes.StatusCode)
-	}
-	var list struct {
-		Items []projectsdomain.ProjectContextItem `json:"items"`
-		Edges []projectsdomain.ProjectContextEdge `json:"edges"`
-	}
-	if err := json.NewDecoder(listRes.Body).Decode(&list); err != nil {
-		t.Fatal(err)
-	}
-	if len(list.Items) != 2 || list.Items[0].ID != item.ID || list.Items[1].ID != secondItem.ID {
-		t.Fatalf("items = %#v", list.Items)
-	}
-	if list.Edges == nil || len(list.Edges) != 0 {
-		t.Fatalf("edges = %#v, want empty array", list.Edges)
+		t.Fatalf("list projects status %d", listRes.StatusCode)
 	}
 
 	req, err := http.NewRequest(http.MethodPatch, srv.URL+"/projects/"+project.ID, strings.NewReader(`{"status":"archived"}`))
@@ -126,37 +73,24 @@ func TestHTTP_projectsCRUDAndContext(t *testing.T) {
 	if updated.Status != projectsdomain.ProjectStatusArchived {
 		t.Fatalf("updated status = %q", updated.Status)
 	}
-}
 
-func TestHTTP_projectContextListEmptyUsesJSONArrays(t *testing.T) {
-	srv := handlertest.NewCreateServer(t)
-	defer srv.Close()
-	git := handlertest.MustGitBinding(t, srv.URL)
-
-	project := postProjectJSON(t, srv, `{"name":"Empty context","repository_id":"`+git.RepositoryID+`"}`, http.StatusCreated)
-
-	listRes, err := http.Get(srv.URL + "/projects/" + project.ID + "/context")
+	getRes, err := http.Get(srv.URL + "/projects/" + project.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer listRes.Body.Close()
-	body, err := io.ReadAll(listRes.Body)
+	defer getRes.Body.Close()
+	if getRes.StatusCode != http.StatusOK {
+		t.Fatalf("get project status %d", getRes.StatusCode)
+	}
+
+	// Context memory routes are removed.
+	ctxRes, err := http.Get(srv.URL + "/projects/" + project.ID + "/context")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if listRes.StatusCode != http.StatusOK {
-		t.Fatalf("context list status %d body %s", listRes.StatusCode, body)
-	}
-
-	var top map[string]json.RawMessage
-	if err := json.Unmarshal(body, &top); err != nil {
-		t.Fatal(err)
-	}
-	if string(top["items"]) != "[]" {
-		t.Fatalf("items = %s, want []", top["items"])
-	}
-	if string(top["edges"]) != "[]" {
-		t.Fatalf("edges = %s, want []", top["edges"])
+	defer ctxRes.Body.Close()
+	if ctxRes.StatusCode != http.StatusNotFound {
+		t.Fatalf("context list status %d, want 404", ctxRes.StatusCode)
 	}
 }
 

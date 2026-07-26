@@ -3,7 +3,7 @@
 > **Note** - Product renamed T2A to Hamix; identifiers below reflect the name at decision time unless updated inline.
 
 **Date:** 2026-04-26
-**Status:** Accepted
+**Status:** Superseded by [ADR-0087](./ADR-0087-remove-project-context.md)
 **Deciders:** T2A maintainers
 
 ## Context

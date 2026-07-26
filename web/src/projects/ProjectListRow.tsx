@@ -48,7 +48,7 @@ export function ProjectListRow({
       <div className="pl__row-main">
         <span className="pl__row-name">{displayName}</span>
         <span className="pl__row-desc">
-          {project.description || project.context_summary || "No description"}
+          {project.description || "No description"}
         </span>
       </div>
       <div className="pl__row-meta">

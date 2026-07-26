@@ -42,7 +42,7 @@ Features that **exist in the codebase** but are **hidden or fixed for a specific
 
 **Still implemented**
 
-- REST: `GET/POST /projects`, `GET/PATCH/DELETE /projects/{id}`, project context routes — see [api.md](./api.md).
+- REST: `GET/POST /projects`, `GET/PATCH/DELETE /projects/{id}` — see [api.md](./api.md).
 - Postgres seed of the built-in default project (`pkgs/tasks/postgres/postgres.go`).
 - `web/src/projects/` pages, hooks, and tests.
 - `project_id` on tasks in the data model — [data-model.md](./data-model.md).

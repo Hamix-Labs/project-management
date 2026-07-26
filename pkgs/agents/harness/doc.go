@@ -4,7 +4,7 @@
 // in a working directory" into a trustworthy, auditable unit of work:
 //
 //   - Phase choreography: StartCycle → execute → (verify → execute)* → TerminateCycle
-//   - Prompt engineering: criteria injection, verify feedback, project context
+//   - Prompt engineering: criteria injection, verify feedback
 //   - Agent↔worker report-file contracts (criteria-report.json, verify-report.json)
 //   - Adversarial verification and git integrity (tamper detection)
 //   - Crash/shutdown recovery of in-flight cycle state

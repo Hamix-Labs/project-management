@@ -14,12 +14,11 @@ const DefaultProjectName = "Default"
 //funclogmeasure:skip category=hot-path reason="Test/migration fixture only."
 func LegacyGlobalDefaultProject(now time.Time) Project {
 	return Project{
-		ID:             LegacyGlobalDefaultProjectID,
-		Name:           "Default project",
-		Description:    "Built-in project for general task context.",
-		Status:         ProjectStatusActive,
-		ContextSummary: "Shared context selected for tasks that do not need a custom project.",
-		CreatedAt:      now.UTC(),
-		UpdatedAt:      now.UTC(),
+		ID:          LegacyGlobalDefaultProjectID,
+		Name:        "Default project",
+		Description: "Built-in project for general task context.",
+		Status:      ProjectStatusActive,
+		CreatedAt:   now.UTC(),
+		UpdatedAt:   now.UTC(),
 	}
 }

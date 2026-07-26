@@ -79,15 +79,14 @@ func ensureDefaultProjectForRepo(ctx context.Context, tx *gorm.DB, repoID string
 	}
 	now = now.UTC()
 	row := projectmodel.Project{
-		ID:             uuid.NewString(),
-		Name:           projectsdomain.DefaultProjectName,
-		Description:    "Built-in project for tasks tied to this repository.",
-		Status:         projectsdomain.ProjectStatusActive,
-		ContextSummary: "Default project for this repository.",
-		RepositoryID:   &repoID,
-		IsDefault:      true,
-		CreatedAt:      now,
-		UpdatedAt:      now,
+		ID:           uuid.NewString(),
+		Name:         projectsdomain.DefaultProjectName,
+		Description:  "Built-in project for tasks tied to this repository.",
+		Status:       projectsdomain.ProjectStatusActive,
+		RepositoryID: &repoID,
+		IsDefault:    true,
+		CreatedAt:    now,
+		UpdatedAt:    now,
 	}
 	if err := tx.WithContext(ctx).Create(&row).Error; err != nil {
 		return projectmodel.Project{}, err
@@ -136,16 +135,37 @@ func reassignTasksToRepoDefaultProjects(ctx context.Context, db *gorm.DB) error 
 func deleteLegacyGlobalDefaultProject(ctx context.Context, db *gorm.DB) error {
 	slog.Debug("trace", "operation", "postgres.deleteLegacyGlobalDefaultProject")
 	legacyID := projectsdomain.LegacyGlobalDefaultProjectID
-	if err := db.WithContext(ctx).
-		Where("project_id = ?", legacyID).
-		Delete(&projectmodel.ProjectContextEdge{}).Error; err != nil {
-		return err
-	}
-	if err := db.WithContext(ctx).
-		Where("project_id = ?", legacyID).
-		Delete(&projectmodel.ProjectContextItem{}).Error; err != nil {
+	if err := deleteProjectContextRowsIfPresent(ctx, db, []string{legacyID}); err != nil {
 		return err
 	}
 	res := db.WithContext(ctx).Delete(&projectmodel.Project{}, "id = ?", legacyID)
 	return res.Error
+}
+
+// deleteProjectContextRowsIfPresent clears legacy context rows when those tables
+// still exist (pre–schema-rev-22 databases). Fresh installs skip AutoMigrate for
+// those tables, so deletes are no-ops when the table is absent.
+//
+//funclogmeasure:skip category=hot-path reason="Schema cleanup helper; caller deleteLegacyGlobalDefaultProject / migrateOrphanRepoProjects emit migrate traces."
+func deleteProjectContextRowsIfPresent(ctx context.Context, db *gorm.DB, projectIDs []string) error {
+	if len(projectIDs) == 0 {
+		return nil
+	}
+	tx := db.WithContext(ctx)
+	if tx.Migrator().HasTable("project_context_edges") {
+		if err := tx.Exec("DELETE FROM project_context_edges WHERE project_id IN ?", projectIDs).Error; err != nil {
+			return err
+		}
+	}
+	if tx.Migrator().HasTable("project_context_items") {
+		if err := tx.Exec("DELETE FROM project_context_items WHERE project_id IN ?", projectIDs).Error; err != nil {
+			return err
+		}
+	}
+	if tx.Migrator().HasTable("task_context_snapshots") {
+		if err := tx.Exec("DELETE FROM task_context_snapshots WHERE project_id IN ?", projectIDs).Error; err != nil {
+			return err
+		}
+	}
+	return nil
 }

@@ -32,19 +32,19 @@ func (h *Handler) patch(w http.ResponseWriter, r *http.Request) {
 		dependsOnPatch = &body.DependsOn.value
 	}
 	in := store.UpdateTaskInput{
-		Title:                 body.Title,
-		InitialPrompt:         body.InitialPrompt,
-		Status:                body.Status,
-		Priority:              body.Priority,
+		Title:           body.Title,
+		InitialPrompt:   body.InitialPrompt,
+		Status:          body.Status,
+		Priority:        body.Priority,
 		Project:         projectFieldPatchToStore(body.ProjectID),
 		PickupNotBefore: pickupNotBeforePatchToStore(body.PickupNotBefore),
-		CursorModel:           body.CursorModel,
-		VerifyChatMode:        body.VerifyChatMode,
-		Tags:                  body.Tags,
-		Milestone:             body.Milestone,
-		Gate:                  gateFieldPatchToStore(body.Gate),
-		DependsOn:             dependsOnPatch,
-		WorktreeID:            body.WorktreeID,
+		CursorModel:     body.CursorModel,
+		VerifyChatMode:  body.VerifyChatMode,
+		Tags:            body.Tags,
+		Milestone:       body.Milestone,
+		Gate:            gateFieldPatchToStore(body.Gate),
+		DependsOn:       dependsOnPatch,
+		WorktreeID:      body.WorktreeID,
 	}
 	if body.InitialPrompt != nil {
 		cur, getErr := h.tasks.Get(r.Context(), id)

@@ -95,7 +95,6 @@ No dedicated checkpoint table. `internal/resume` reconstructs checkpoint from:
 - Phase ledger tail → execute vs verify resume branch
 - `task_cycle_verify_reports` → locked passes, verify attempt, retry feedback
 - Task row → base prompt
-- `task_context_snapshots` for `cycle_id` → project context block
 - `task_cycle_commits` → worker-indexed SHAs for resume/verify prompts (see [cycle-commits.md](../../docs/domain/cycle-commits.md))
 
 The composed prompt is what the runner sees; `WorkingDir` remains `app_settings.repo_root`.
