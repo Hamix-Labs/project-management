@@ -26,10 +26,9 @@ func TestAppSettings_roundTrip(t *testing.T) {
 		OptimisticMutationsEnabled:  true,
 		SSEReplayEnabled:            true,
 		RunnerConfigs:               cfg,
-		VerifyMaxRetries:            1,
-		VerifyCommandTimeoutSeconds: 90,
-		CursorSessionResumeEnabled:  false,
-		UpdatedAt:                   now,
+		VerifyMaxRetries:           1,
+		CursorSessionResumeEnabled: false,
+		UpdatedAt:                  now,
 	}
 	m := FromDomainAppSettings(orig)
 	back := ToDomainAppSettings(m)

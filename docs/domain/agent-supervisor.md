@@ -243,10 +243,9 @@ V1 policy: **restart the worker goroutine** on material change instead of mutati
 Fields **not** compared (no worker restart on PATCH alone):
 
 - `verify_max_retries`, `agent_pickup_delay_seconds`, `display_timezone`
-- `verify_command_timeout_seconds`
 - UI-only flags (`optimistic_mutations_enabled`, `sse_replay_enabled`)
 
-Those affect harness behavior on the **next** cycle boundary via store reads inside the harness, not supervisor wiring.
+Those affect harness behavior on the **next** cycle boundary via store reads inside the harness, not supervisor wiring. Per-command `timeout_seconds` lives on checklist verify commands, not settings.
 
 ### Swap ordering
 

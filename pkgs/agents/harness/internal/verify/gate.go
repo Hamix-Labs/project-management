@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"strings"
 
-	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	checklistcontract "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/contract"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 )
@@ -24,16 +23,11 @@ func (s *Service) LoadSnapshot(ctx context.Context, taskID string) (Snapshot, er
 	if err != nil {
 		return Snapshot{}, err
 	}
-	timeoutSec := settings.VerifyCommandTimeoutSeconds
-	if timeoutSec <= 0 {
-		timeoutSec = settingsdomain.DefaultVerifyCommandTimeoutSeconds
-	}
 	return Snapshot{
-		Enabled:                     len(items) > 0,
-		MaxRetries:                  settings.VerifyMaxRetries,
-		VerifyCommandTimeoutSeconds: timeoutSec,
-		Criteria:                    items,
-		VerifyModel:                 strings.TrimSpace(settings.VerifyModel),
+		Enabled:     len(items) > 0,
+		MaxRetries:  settings.VerifyMaxRetries,
+		Criteria:    items,
+		VerifyModel: strings.TrimSpace(settings.VerifyModel),
 	}, nil
 }
 

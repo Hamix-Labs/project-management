@@ -733,7 +733,7 @@ button.task-checklist-verification-trigger:focus-visible {
 
 .task-checklist-criterion-modal-sheet .task-checklist-verify-commands__row {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.9fr) minmax(7.5rem, 0.85fr) auto;
   gap: var(--space-2);
   align-items: center;
 }
@@ -843,6 +843,35 @@ button.task-checklist-verification-trigger:focus-visible {
 
 .task-checklist-criterion-modal-sheet .task-checklist-verify-command-input {
   font-family: var(--font-mono, ui-monospace, "Cascadia Code", "SF Mono", monospace);
+}
+
+.task-checklist-criterion-modal-sheet .task-checklist-verify-command-timeout {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.task-checklist-criterion-modal-sheet .task-checklist-verify-command-timeout-mode {
+  min-width: 0;
+  flex: 1 1 auto;
+  font-size: var(--text-xs);
+  min-height: 2.25rem;
+  padding: 0.35rem 0.5rem;
+}
+
+.task-checklist-criterion-modal-sheet .task-checklist-verify-command-timeout-input {
+  width: 4.25rem;
+  flex: 0 0 auto;
+  font-size: var(--text-sm);
+  min-height: 2.25rem;
+  padding: 0.35rem 0.5rem;
+}
+
+.task-checklist-criterion-modal-sheet .task-checklist-verify-command-timeout-unit {
+  flex: 0 0 auto;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
 }
 
 .task-checklist-criterion-modal-sheet

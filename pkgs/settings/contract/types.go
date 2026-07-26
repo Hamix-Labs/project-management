@@ -14,10 +14,9 @@ type SettingsPatch struct {
 	DisplayTimezone             *string
 	OptimisticMutationsEnabled  *bool
 	SSEReplayEnabled            *bool
-	RunnerConfigs               *json.RawMessage
-	VerifyMaxRetries            *int
-	VerifyCommandTimeoutSeconds *int
-	CursorSessionResumeEnabled  *bool
+	RunnerConfigs              *json.RawMessage
+	VerifyMaxRetries           *int
+	CursorSessionResumeEnabled *bool
 }
 
 // IsEmpty reports whether the patch has nothing to apply.
@@ -36,6 +35,5 @@ func (p SettingsPatch) IsEmpty() bool {
 		p.SSEReplayEnabled == nil &&
 		p.RunnerConfigs == nil &&
 		p.VerifyMaxRetries == nil &&
-		p.VerifyCommandTimeoutSeconds == nil &&
 		p.CursorSessionResumeEnabled == nil
 }

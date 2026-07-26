@@ -15,6 +15,12 @@ type ChecklistVerifyCommandRowProps = {
   onRemove: (index: number) => void;
 };
 
+function timeoutMode(row: ChecklistVerifyCommandInput): "none" | "seconds" {
+  return typeof row.timeout_seconds === "number" && row.timeout_seconds > 0
+    ? "seconds"
+    : "none";
+}
+
 function ChecklistVerifyCommandRow({
   row,
   index,
@@ -23,6 +29,7 @@ function ChecklistVerifyCommandRow({
   onUpdate,
   onRemove,
 }: ChecklistVerifyCommandRowProps) {
+  const mode = timeoutMode(row);
   return (
     <div
       className="task-checklist-verify-commands__row"
@@ -77,6 +84,79 @@ function ChecklistVerifyCommandRow({
           disabled={controlsDisabled}
           readOnly={readOnly}
         />
+      </div>
+      <div
+        className="task-checklist-verify-commands__cell task-checklist-verify-commands__cell--timeout"
+        role="cell"
+      >
+        <div className="task-checklist-verify-command-timeout">
+          <label
+            htmlFor={`checklist-verify-timeout-mode-${index}`}
+            className="visually-hidden"
+          >
+            Timeout mode for command {index + 1}
+          </label>
+          <select
+            id={`checklist-verify-timeout-mode-${index}`}
+            className="task-checklist-verify-command-timeout-mode"
+            value={mode}
+            disabled={controlsDisabled || readOnly}
+            onChange={(ev) => {
+              if (ev.target.value === "none") {
+                onUpdate(index, { timeout_seconds: null });
+                return;
+              }
+              const current =
+                typeof row.timeout_seconds === "number" &&
+                row.timeout_seconds > 0
+                  ? row.timeout_seconds
+                  : 120;
+              onUpdate(index, { timeout_seconds: current });
+            }}
+          >
+            <option value="none">No timeout</option>
+            <option value="seconds">Timeout</option>
+          </select>
+          {mode === "seconds" ? (
+            <>
+              <label
+                htmlFor={`checklist-verify-timeout-sec-${index}`}
+                className="visually-hidden"
+              >
+                Timeout seconds for command {index + 1}
+              </label>
+              <input
+                id={`checklist-verify-timeout-sec-${index}`}
+                className="task-checklist-verify-command-timeout-input"
+                type="number"
+                min={1}
+                step={1}
+                value={row.timeout_seconds ?? ""}
+                disabled={controlsDisabled || readOnly}
+                readOnly={readOnly}
+                onChange={(ev) => {
+                  const raw = ev.target.value;
+                  if (raw === "") {
+                    onUpdate(index, { timeout_seconds: null });
+                    return;
+                  }
+                  const n = Number(raw);
+                  if (!Number.isFinite(n)) return;
+                  onUpdate(index, {
+                    timeout_seconds: Math.max(1, Math.floor(n)),
+                  });
+                }}
+                aria-label={`Timeout seconds for command ${index + 1}`}
+              />
+              <span
+                className="task-checklist-verify-command-timeout-unit"
+                aria-hidden="true"
+              >
+                s
+              </span>
+            </>
+          ) : null}
+        </div>
       </div>
       {!readOnly ? (
         <div
@@ -139,6 +219,12 @@ function ChecklistVerifyCommandsTable({
           role="columnheader"
         >
           Expected outcome
+        </span>
+        <span
+          className="task-checklist-verify-commands__cell task-checklist-verify-commands__cell--timeout"
+          role="columnheader"
+        >
+          Timeout
         </span>
         <span
           className="task-checklist-verify-commands__cell task-checklist-verify-commands__cell--action visually-hidden"
@@ -213,9 +299,10 @@ export function ChecklistVerifyCommandsSection({
       </summary>
       <div className="task-checklist-verify-commands__body">
         <p className="task-checklist-verify-commands__note">
-          Shell commands run in the repo during the verify phase. The same execute
-          agent interprets stdout/stderr against each expected outcome — exit code alone
-          does not pass the criterion.
+          Shell commands run in the repo during the verify phase. Default is no
+          timeout — unbounded commands run until the cycle is cancelled. Set an
+          optional per-command timeout when you want a wall-clock kill. Exit code
+          alone does not pass the criterion.
         </p>
         <ChecklistVerifyCommandsTable
           verifyCommands={verifyCommands}

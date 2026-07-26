@@ -21,7 +21,6 @@ type AppSettings struct {
 	SSEReplayEnabled            bool           `gorm:"not null;default:true"`
 	RunnerConfigs               datatypes.JSON `gorm:"column:runner_configs;type:jsonb;not null;default:'{}'"`
 	VerifyMaxRetries            int            `gorm:"not null;default:2;check:chk_app_settings_verify_max_retries,verify_max_retries >= 0"`
-	VerifyCommandTimeoutSeconds int            `gorm:"not null;default:120;check:chk_app_settings_verify_command_timeout_seconds,verify_command_timeout_seconds > 0"`
 	CursorSessionResumeEnabled  bool           `gorm:"not null;default:true"`
 	UpdatedAt                   time.Time      `gorm:"not null"`
 }

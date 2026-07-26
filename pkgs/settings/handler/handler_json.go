@@ -19,26 +19,24 @@ type settingsResponse struct {
 	DisplayTimezone             string `json:"display_timezone"`
 	OptimisticMutationsEnabled  bool   `json:"optimistic_mutations_enabled"`
 	SSEReplayEnabled            bool   `json:"sse_replay_enabled"`
-	VerifyMaxRetries            int    `json:"verify_max_retries"`
-	VerifyCommandTimeoutSeconds int    `json:"verify_command_timeout_seconds"`
-	CursorSessionResumeEnabled  bool   `json:"cursor_session_resume_enabled"`
-	UpdatedAt                   string `json:"updated_at,omitempty"`
+	VerifyMaxRetries           int    `json:"verify_max_retries"`
+	CursorSessionResumeEnabled bool   `json:"cursor_session_resume_enabled"`
+	UpdatedAt                  string `json:"updated_at,omitempty"`
 }
 
 type settingsPatchBody struct {
-	AgentPaused                 *bool   `json:"agent_paused,omitempty"`
-	Runner                      *string `json:"runner,omitempty"`
-	CursorBin                   *string `json:"cursor_bin,omitempty"`
-	CursorModel                 *string `json:"cursor_model,omitempty"`
-	VerifyModel                 *string `json:"verify_model,omitempty"`
-	MaxRunDurationSeconds       *int    `json:"max_run_duration_seconds,omitempty"`
-	AgentPickupDelaySeconds     *int    `json:"agent_pickup_delay_seconds,omitempty"`
-	DisplayTimezone             *string `json:"display_timezone,omitempty"`
-	OptimisticMutationsEnabled  *bool   `json:"optimistic_mutations_enabled,omitempty"`
-	SSEReplayEnabled            *bool   `json:"sse_replay_enabled,omitempty"`
-	VerifyMaxRetries            *int    `json:"verify_max_retries,omitempty"`
-	VerifyCommandTimeoutSeconds *int    `json:"verify_command_timeout_seconds,omitempty"`
-	CursorSessionResumeEnabled  *bool   `json:"cursor_session_resume_enabled,omitempty"`
+	AgentPaused                *bool   `json:"agent_paused,omitempty"`
+	Runner                     *string `json:"runner,omitempty"`
+	CursorBin                  *string `json:"cursor_bin,omitempty"`
+	CursorModel                *string `json:"cursor_model,omitempty"`
+	VerifyModel                *string `json:"verify_model,omitempty"`
+	MaxRunDurationSeconds      *int    `json:"max_run_duration_seconds,omitempty"`
+	AgentPickupDelaySeconds    *int    `json:"agent_pickup_delay_seconds,omitempty"`
+	DisplayTimezone            *string `json:"display_timezone,omitempty"`
+	OptimisticMutationsEnabled *bool   `json:"optimistic_mutations_enabled,omitempty"`
+	SSEReplayEnabled           *bool   `json:"sse_replay_enabled,omitempty"`
+	VerifyMaxRetries           *int    `json:"verify_max_retries,omitempty"`
+	CursorSessionResumeEnabled *bool   `json:"cursor_session_resume_enabled,omitempty"`
 }
 
 type probeRequest struct {

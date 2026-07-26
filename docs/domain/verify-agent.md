@@ -186,14 +186,14 @@ Parser rules ([`criteria_parse.go`](../../pkgs/agents/harness/criteria_parse.go)
 
 ## Criterion commands
 
-Operators attach optional shell checks per criterion via `verify_commands` on task create or checklist API. Limits: 5 commands per criterion; command ≤ 512 chars; `expected_outcome` ≤ 2048 chars ([`verify_commands.go`](../../pkgs/tasks/domain/verify_commands.go)).
+Operators attach optional shell checks per criterion via `verify_commands` on task create or checklist API. Limits: 5 commands per criterion; command ≤ 512 chars; `expected_outcome` ≤ 2048 chars ([`verify_commands.go`](../../pkgs/taskchecklist/domain/verify_commands.go)). Optional `timeout_seconds` (> 0) caps that command; omit or null means no wall-clock timeout (cancel only via the parent cycle context).
 
 | Property | Behavior |
 | --- | --- |
 | Who runs them | Worker harness, not the LLM |
 | When | After gate, before verify LLM; only for `claimed_done: true` |
-| Where | `app_settings.repo_root` (execute's uncommitted changes visible) |
-| Timeout | `verify_command_timeout_seconds` (default 120s) per command |
+| Where | Task worktree / `repo_root` (execute's uncommitted changes visible) |
+| Timeout | Per-command `timeout_seconds`; omit/null = unlimited |
 | Output cap | 256 KiB per stdout/stderr stream; `truncated=true` in meta when clipped |
 | stdout preview in prompt | Full content if ≤ 4 KiB; else first 40 lines (or first 4 KiB) |
 | Exit code 0 | Does **not** auto-pass the criterion |
@@ -241,7 +241,7 @@ When the working dir is not a git repo, the check is bypassed (logged once at st
 | Setting | Role |
 | --- | --- |
 | `verify_max_retries` | Max execute↔verify loops per cycle (default 2) |
-| `verify_command_timeout_seconds` | Per-command wall clock (default 120s) |
+| Per-command `timeout_seconds` | Optional wall-clock on each verify command (omit = unlimited) |
 | `max_run_duration_seconds` | LLM verify call wall clock (`0` = no limit) |
 | `HAMIX_WORKER_REPORT_DIR` | Scratch root for report files and command evidence |
 | `runner`, `cursor_bin`, `cursor_model` | Execute runner used for both execute and verify phases |

@@ -22,14 +22,19 @@ func TestTaskChecklistItem_roundTrip(t *testing.T) {
 
 func TestTaskChecklistItemCommand_roundTrip(t *testing.T) {
 	t.Parallel()
+	timeout := 300
 	orig := checklistdomain.TaskChecklistItemCommand{
 		ID: "cmd-1", ItemID: "item-1", SortOrder: 0,
 		Command: "go test ./...", ExpectedOutcome: "pass",
+		TimeoutSeconds: &timeout,
 	}
 	m := FromDomainTaskChecklistItemCommand(orig)
 	back := ToDomainTaskChecklistItemCommand(m)
 	if !reflect.DeepEqual(orig, back) {
 		t.Fatalf("round-trip mismatch: %+v vs %+v", orig, back)
+	}
+	if back.TimeoutSeconds == &timeout {
+		t.Fatal("TimeoutSeconds must be cloned, not aliased")
 	}
 }
 

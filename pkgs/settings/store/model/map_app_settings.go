@@ -21,11 +21,10 @@ func FromDomainAppSettings(d domain.AppSettings) AppSettings {
 		DisplayTimezone:             d.DisplayTimezone,
 		OptimisticMutationsEnabled:  d.OptimisticMutationsEnabled,
 		SSEReplayEnabled:            d.SSEReplayEnabled,
-		RunnerConfigs:               jsonmap.DatatypesFromRaw(d.RunnerConfigs),
-		VerifyMaxRetries:            d.VerifyMaxRetries,
-		VerifyCommandTimeoutSeconds: d.VerifyCommandTimeoutSeconds,
-		CursorSessionResumeEnabled:  d.CursorSessionResumeEnabled,
-		UpdatedAt:                   d.UpdatedAt,
+		RunnerConfigs:              jsonmap.DatatypesFromRaw(d.RunnerConfigs),
+		VerifyMaxRetries:           d.VerifyMaxRetries,
+		CursorSessionResumeEnabled: d.CursorSessionResumeEnabled,
+		UpdatedAt:                  d.UpdatedAt,
 	}
 }
 
@@ -34,21 +33,20 @@ func FromDomainAppSettings(d domain.AppSettings) AppSettings {
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func ToDomainAppSettings(m AppSettings) domain.AppSettings {
 	return domain.AppSettings{
-		ID:                          m.ID,
-		AgentPaused:                 m.AgentPaused,
-		Runner:                      m.Runner,
-		CursorBin:                   m.CursorBin,
-		CursorModel:                 m.CursorModel,
-		VerifyModel:                 m.VerifyModel,
-		MaxRunDurationSeconds:       m.MaxRunDurationSeconds,
-		AgentPickupDelaySeconds:     m.AgentPickupDelaySeconds,
-		DisplayTimezone:             m.DisplayTimezone,
-		OptimisticMutationsEnabled:  m.OptimisticMutationsEnabled,
-		SSEReplayEnabled:            m.SSEReplayEnabled,
-		RunnerConfigs:               jsonmap.RawFromDatatypes(m.RunnerConfigs),
-		VerifyMaxRetries:            m.VerifyMaxRetries,
-		VerifyCommandTimeoutSeconds: m.VerifyCommandTimeoutSeconds,
-		CursorSessionResumeEnabled:  m.CursorSessionResumeEnabled,
-		UpdatedAt:                   m.UpdatedAt,
+		ID:                         m.ID,
+		AgentPaused:                m.AgentPaused,
+		Runner:                     m.Runner,
+		CursorBin:                  m.CursorBin,
+		CursorModel:                m.CursorModel,
+		VerifyModel:                m.VerifyModel,
+		MaxRunDurationSeconds:      m.MaxRunDurationSeconds,
+		AgentPickupDelaySeconds:    m.AgentPickupDelaySeconds,
+		DisplayTimezone:            m.DisplayTimezone,
+		OptimisticMutationsEnabled: m.OptimisticMutationsEnabled,
+		SSEReplayEnabled:           m.SSEReplayEnabled,
+		RunnerConfigs:              jsonmap.RawFromDatatypes(m.RunnerConfigs),
+		VerifyMaxRetries:           m.VerifyMaxRetries,
+		CursorSessionResumeEnabled: m.CursorSessionResumeEnabled,
+		UpdatedAt:                  m.UpdatedAt,
 	}
 }

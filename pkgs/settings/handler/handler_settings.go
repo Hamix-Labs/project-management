@@ -46,17 +46,16 @@ func (h *Handler) patchSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	patch := contract.SettingsPatch{
-		AgentPaused:                 body.AgentPaused,
-		Runner:                      body.Runner,
-		CursorBin:                   body.CursorBin,
-		CursorModel:                 body.CursorModel,
-		VerifyModel:                 body.VerifyModel,
-		MaxRunDurationSeconds:       body.MaxRunDurationSeconds,
-		AgentPickupDelaySeconds:     body.AgentPickupDelaySeconds,
-		DisplayTimezone:             body.DisplayTimezone,
-		VerifyMaxRetries:            body.VerifyMaxRetries,
-		VerifyCommandTimeoutSeconds: body.VerifyCommandTimeoutSeconds,
-		CursorSessionResumeEnabled:  body.CursorSessionResumeEnabled,
+		AgentPaused:                body.AgentPaused,
+		Runner:                     body.Runner,
+		CursorBin:                  body.CursorBin,
+		CursorModel:                body.CursorModel,
+		VerifyModel:                body.VerifyModel,
+		MaxRunDurationSeconds:      body.MaxRunDurationSeconds,
+		AgentPickupDelaySeconds:    body.AgentPickupDelaySeconds,
+		DisplayTimezone:            body.DisplayTimezone,
+		VerifyMaxRetries:           body.VerifyMaxRetries,
+		CursorSessionResumeEnabled: body.CursorSessionResumeEnabled,
 	}
 	if patch.IsEmpty() {
 		handlerhttp.WriteJSONError(w, r, op, http.StatusBadRequest, "patch body must include at least one field")
@@ -215,19 +214,18 @@ func SettingsWireFrom(cfg settingsdomain.AppSettings) SettingsWireResponse {
 func settingsResponseFrom(cfg settingsdomain.AppSettings) settingsResponse {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "settings.handler.settingsResponseFrom")
 	resp := settingsResponse{
-		AgentPaused:                 cfg.AgentPaused,
-		Runner:                      cfg.Runner,
-		CursorBin:                   cfg.CursorBin,
-		CursorModel:                 cfg.CursorModel,
-		VerifyModel:                 cfg.VerifyModel,
-		MaxRunDurationSeconds:       cfg.MaxRunDurationSeconds,
-		AgentPickupDelaySeconds:     cfg.AgentPickupDelaySeconds,
-		DisplayTimezone:             cfg.DisplayTimezone,
-		OptimisticMutationsEnabled:  cfg.OptimisticMutationsEnabled,
-		SSEReplayEnabled:            cfg.SSEReplayEnabled,
-		VerifyMaxRetries:            cfg.VerifyMaxRetries,
-		VerifyCommandTimeoutSeconds: cfg.VerifyCommandTimeoutSeconds,
-		CursorSessionResumeEnabled:  cfg.CursorSessionResumeEnabled,
+		AgentPaused:                cfg.AgentPaused,
+		Runner:                     cfg.Runner,
+		CursorBin:                  cfg.CursorBin,
+		CursorModel:                cfg.CursorModel,
+		VerifyModel:                cfg.VerifyModel,
+		MaxRunDurationSeconds:      cfg.MaxRunDurationSeconds,
+		AgentPickupDelaySeconds:    cfg.AgentPickupDelaySeconds,
+		DisplayTimezone:            cfg.DisplayTimezone,
+		OptimisticMutationsEnabled: cfg.OptimisticMutationsEnabled,
+		SSEReplayEnabled:           cfg.SSEReplayEnabled,
+		VerifyMaxRetries:           cfg.VerifyMaxRetries,
+		CursorSessionResumeEnabled: cfg.CursorSessionResumeEnabled,
 	}
 	if !cfg.UpdatedAt.IsZero() {
 		resp.UpdatedAt = cfg.UpdatedAt.UTC().Format(time.RFC3339)

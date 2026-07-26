@@ -12,10 +12,9 @@ const FailedReasonPrefix = failedReasonPrefix
 
 // Snapshot captures verify settings and checklist criteria for one task run.
 type Snapshot struct {
-	Enabled                     bool
-	MaxRetries                  int
-	VerifyCommandTimeoutSeconds int
-	Criteria                    []checklistcontract.ChecklistVerifyItem
+	Enabled    bool
+	MaxRetries int
+	Criteria   []checklistcontract.ChecklistVerifyItem
 	// VerifyModel is the optional settings pin for PhaseVerify (--model).
 	// Empty means inherit task.CursorModel / execute runner default.
 	VerifyModel string

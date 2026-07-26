@@ -15,12 +15,32 @@ export function parseChecklistVerifyCommand(
   if (!isRecord(value)) {
     throw new Error(`Invalid API response: ${path} must be an object`);
   }
+  let timeout_seconds: number | null | undefined;
+  if (value.timeout_seconds === null) {
+    timeout_seconds = null;
+  } else if (typeof value.timeout_seconds === "number") {
+    if (
+      !Number.isFinite(value.timeout_seconds) ||
+      value.timeout_seconds <= 0 ||
+      !Number.isInteger(value.timeout_seconds)
+    ) {
+      throw new Error(
+        `Invalid API response: ${path}.timeout_seconds must be a positive integer when set`,
+      );
+    }
+    timeout_seconds = value.timeout_seconds;
+  } else if (value.timeout_seconds !== undefined) {
+    throw new Error(
+      `Invalid API response: ${path}.timeout_seconds must be a number or null`,
+    );
+  }
   return {
     command: parseString(value.command, `${path}.command`),
     expected_outcome:
       typeof value.expected_outcome === "string"
         ? value.expected_outcome
         : undefined,
+    ...(timeout_seconds !== undefined ? { timeout_seconds } : {}),
   };
 }
 

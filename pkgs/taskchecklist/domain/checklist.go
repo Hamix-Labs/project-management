@@ -24,6 +24,9 @@ type TaskChecklistItemCommand struct {
 	SortOrder       int    `json:"sort_order"`
 	Command         string `json:"command"`
 	ExpectedOutcome string `json:"expected_outcome"`
+	// TimeoutSeconds is an optional per-command wall-clock cap. Nil means no
+	// timeout (cancel only via the parent cycle context).
+	TimeoutSeconds *int `json:"timeout_seconds,omitempty"`
 }
 
 // TaskChecklistCompletion records that subject TaskID satisfied checklist item ItemID.

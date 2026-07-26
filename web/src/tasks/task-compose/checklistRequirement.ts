@@ -25,9 +25,16 @@ export function normalizeVerifyCommands(
     const command = raw.command.trim();
     if (!command) continue;
     const expected = raw.expected_outcome?.trim();
+    const timeout =
+      typeof raw.timeout_seconds === "number" &&
+      Number.isFinite(raw.timeout_seconds) &&
+      raw.timeout_seconds > 0
+        ? Math.floor(raw.timeout_seconds)
+        : undefined;
     out.push({
       command,
       ...(expected ? { expected_outcome: expected } : {}),
+      ...(timeout !== undefined ? { timeout_seconds: timeout } : {}),
     });
     if (out.length >= MAX_VERIFY_COMMANDS_PER_ITEM) break;
   }

@@ -70,8 +70,6 @@ type AppSettings struct {
 	RunnerConfigs json.RawMessage `json:"runner_configs"`
 	// VerifyMaxRetries is the corrective execute retries after verify failure.
 	VerifyMaxRetries int `json:"verify_max_retries"`
-	// VerifyCommandTimeoutSeconds caps each optional criterion shell check during verify.
-	VerifyCommandTimeoutSeconds int `json:"verify_command_timeout_seconds"`
 	// CursorSessionResumeEnabled enables ADR-0031 --resume-by-default for Cursor CLI.
 	CursorSessionResumeEnabled bool      `json:"cursor_session_resume_enabled"`
 	UpdatedAt                  time.Time `json:"updated_at"`
@@ -93,9 +91,6 @@ const DefaultAgentPickupDelaySeconds = 5
 // DefaultVerifyMaxRetries is the seed value for VerifyMaxRetries on first boot.
 const DefaultVerifyMaxRetries = 2
 
-// DefaultVerifyCommandTimeoutSeconds is the per-command wall-clock cap during verify.
-const DefaultVerifyCommandTimeoutSeconds = 120
-
 // DefaultDisplayTimezone is the seed value for DisplayTimezone on first
 // boot. Empty string is the "auto-detect" sentinel: the SPA reads it as
 // "no explicit operator choice yet" and falls back to the browser's own
@@ -116,17 +111,16 @@ const DefaultDisplayTimezone = ""
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func DefaultAppSettings() AppSettings {
 	return AppSettings{
-		ID:                          AppSettingsRowID,
-		AgentPaused:                 false,
-		Runner:                      DefaultRunner,
-		CursorBin:                   "",
-		MaxRunDurationSeconds:       0,
-		AgentPickupDelaySeconds:     DefaultAgentPickupDelaySeconds,
-		DisplayTimezone:             DefaultDisplayTimezone,
-		OptimisticMutationsEnabled:  true,
-		SSEReplayEnabled:            true,
-		VerifyMaxRetries:            DefaultVerifyMaxRetries,
-		VerifyCommandTimeoutSeconds: DefaultVerifyCommandTimeoutSeconds,
-		CursorSessionResumeEnabled:  true,
+		ID:                         AppSettingsRowID,
+		AgentPaused:                false,
+		Runner:                     DefaultRunner,
+		CursorBin:                  "",
+		MaxRunDurationSeconds:      0,
+		AgentPickupDelaySeconds:    DefaultAgentPickupDelaySeconds,
+		DisplayTimezone:            DefaultDisplayTimezone,
+		OptimisticMutationsEnabled: true,
+		SSEReplayEnabled:           true,
+		VerifyMaxRetries:           DefaultVerifyMaxRetries,
+		CursorSessionResumeEnabled: true,
 	}
 }

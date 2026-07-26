@@ -3,8 +3,6 @@ package verify
 import (
 	"context"
 	"encoding/json"
-	checklistcontract "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/contract"
-	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 	"os"
 	"path/filepath"
 	"strings"
@@ -16,8 +14,9 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/storefake"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/runnerfake"
-	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
+	checklistcontract "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/contract"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 )
 
 func TestRunCriterionCommands_writesEvidenceAndPromptSection(t *testing.T) {
@@ -63,10 +62,7 @@ func TestRunCriterionCommands_writesEvidenceAndPromptSection(t *testing.T) {
 	selfReport := map[string]reports.CriteriaEntry{
 		items[0].ID: {ClaimedDone: true, Evidence: "done"},
 	}
-	snap := Snapshot{
-		VerifyCommandTimeoutSeconds: settingsdomain.DefaultVerifyCommandTimeoutSeconds,
-		Criteria:                    items,
-	}
+	snap := Snapshot{Criteria: items}
 
 	evidence, err := svc.RunCriterionCommands(ctx, task.ID, cycleID, 1, 1, snap, selfReport, func(ctx context.Context, dir, command string) ([]byte, []byte, int, error) {
 		if command != "echo hello" {
@@ -97,6 +93,9 @@ func TestRunCriterionCommands_writesEvidenceAndPromptSection(t *testing.T) {
 	}
 	if meta.ExpectedOutcome != "prints hello" || meta.ExitCode != 0 {
 		t.Fatalf("meta = %+v", meta)
+	}
+	if meta.TimeoutSeconds != nil {
+		t.Fatalf("want nil TimeoutSeconds for unlimited command, got %v", meta.TimeoutSeconds)
 	}
 
 	section := FormatCommandEvidenceSection(evidence)
@@ -162,10 +161,7 @@ func TestRunCriterionCommands_emitsLiveProgress(t *testing.T) {
 	selfReport := map[string]reports.CriteriaEntry{
 		items[0].ID: {ClaimedDone: true, Evidence: "done"},
 	}
-	snap := Snapshot{
-		VerifyCommandTimeoutSeconds: settingsdomain.DefaultVerifyCommandTimeoutSeconds,
-		Criteria:                    items,
-	}
+	snap := Snapshot{Criteria: items}
 
 	_, err = svc.RunCriterionCommands(ctx, task.ID, "cycle-progress", 2, 1, snap, selfReport,
 		func(ctx context.Context, dir, command string) ([]byte, []byte, int, error) {
@@ -214,6 +210,7 @@ func TestRunCriterionCommands_heartbeatsContinuePastExecTimeout(t *testing.T) {
 	st := storefake.New(t).API
 	ctx := context.Background()
 
+	execTimeoutSec := 1
 	task, err := st.Create(ctx, taskcorestore.CreateTaskInput{
 		Title:         "verify-cmd-past-timeout",
 		InitialPrompt: "do work",
@@ -224,6 +221,7 @@ func TestRunCriterionCommands_heartbeatsContinuePastExecTimeout(t *testing.T) {
 			VerifyCommands: []checklistcontract.VerifyCommandInput{{
 				Command:         "slow-check",
 				ExpectedOutcome: "Exit code 0.",
+				TimeoutSeconds:  &execTimeoutSec,
 			}},
 		}},
 	}, taskcoredomain.ActorUser)
@@ -254,12 +252,7 @@ func TestRunCriterionCommands_heartbeatsContinuePastExecTimeout(t *testing.T) {
 	selfReport := map[string]reports.CriteriaEntry{
 		items[0].ID: {ClaimedDone: true, Evidence: "done"},
 	}
-	// Kill timer fires quickly; execFn ignores ctx and keeps blocking (Wait outliving kill).
-	const execTimeoutSec = 1
-	snap := Snapshot{
-		VerifyCommandTimeoutSeconds: execTimeoutSec,
-		Criteria:                    items,
-	}
+	snap := Snapshot{Criteria: items}
 
 	timeoutFired := make(chan struct{})
 	_, err = svc.RunCriterionCommands(ctx, task.ID, "cycle-past-timeout", 2, 1, snap, selfReport,
@@ -314,6 +307,70 @@ func TestRunCriterionCommands_heartbeatsContinuePastExecTimeout(t *testing.T) {
 	case <-timeoutFired:
 	default:
 		t.Fatal("execFn never observed execCtx cancellation")
+	}
+}
+
+func TestRunCriterionCommands_noTimeoutUsesParentCtxOnly(t *testing.T) {
+	t.Parallel()
+	st := storefake.New(t).API
+	ctx := context.Background()
+
+	task, err := st.Create(ctx, taskcorestore.CreateTaskInput{
+		Title:         "verify-cmd-no-timeout",
+		InitialPrompt: "do work",
+		Status:        taskcoredomain.StatusReady,
+		Priority:      taskcoredomain.PriorityMedium,
+		ChecklistItems: []checklistcontract.CreateChecklistItemInput{{
+			Text: "tests pass",
+			VerifyCommands: []checklistcontract.VerifyCommandInput{{
+				Command:         "slow-unlimited",
+				ExpectedOutcome: "Exit code 0.",
+			}},
+		}},
+	}, taskcoredomain.ActorUser)
+	if err != nil {
+		t.Fatal(err)
+	}
+	items, err := st.ListChecklistForVerify(ctx, task.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	svc := NewService(Deps{
+		Store:      st,
+		Runner:     runnerfake.New(),
+		ReportDir:  t.TempDir(),
+		WorkingDir: t.TempDir(),
+	})
+	selfReport := map[string]reports.CriteriaEntry{
+		items[0].ID: {ClaimedDone: true, Evidence: "done"},
+	}
+	snap := Snapshot{Criteria: items}
+
+	sawDeadline := false
+	evidence, err := svc.RunCriterionCommands(ctx, task.ID, "cycle-no-timeout", 1, 1, snap, selfReport,
+		func(cmdCtx context.Context, dir, command string) ([]byte, []byte, int, error) {
+			if _, ok := cmdCtx.Deadline(); ok {
+				sawDeadline = true
+			}
+			// Would have been killed under the old 120s global default if a short
+			// timeout were wrongly applied; here we only sleep briefly.
+			time.Sleep(50 * time.Millisecond)
+			select {
+			case <-cmdCtx.Done():
+				t.Fatal("execCtx cancelled despite no timeout_seconds")
+			default:
+			}
+			return []byte("ok\n"), nil, 0, nil
+		})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sawDeadline {
+		t.Fatal("execCtx unexpectedly had a deadline when timeout_seconds was omitted")
+	}
+	if len(evidence) != 1 || evidence[0].ExitCode != 0 {
+		t.Fatalf("evidence = %+v", evidence)
 	}
 }
 
