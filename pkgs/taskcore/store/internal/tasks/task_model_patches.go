@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/model"
 	"gorm.io/gorm"
@@ -142,5 +143,10 @@ func normalizeCreateTaskModelFields(t *domain.Task, in CreateInput) error {
 		}
 	}
 	t.Gate = in.Gate
+	normalized, ok := settingsdomain.NormalizeVerifyChatMode(in.VerifyChatMode)
+	if !ok {
+		return fmt.Errorf("%w: verify_chat_mode must be same_chat, different_chat, or empty", domain.ErrInvalidInput)
+	}
+	t.VerifyChatMode = normalized
 	return nil
 }

@@ -40,6 +40,7 @@ func (h *Handler) patch(w http.ResponseWriter, r *http.Request) {
 		ProjectContextItemIDs: body.ProjectContextItemIDs,
 		PickupNotBefore:       pickupNotBeforePatchToStore(body.PickupNotBefore),
 		CursorModel:           body.CursorModel,
+		VerifyChatMode:        body.VerifyChatMode,
 		Tags:                  body.Tags,
 		Milestone:             body.Milestone,
 		Gate:                  gateFieldPatchToStore(body.Gate),

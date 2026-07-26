@@ -117,7 +117,8 @@ Singleton row in Postgres (CHECK enforces `id=1`). AutoMigrate creates the table
 | `repo_root` | string | `""` | Absolute path to the workspace the worker and `/repo/*` operate against. Set from Settings → **Agent workspace** → **Choose project folder** (stored as the absolute path taskapi sees). **Empty = not configured**: supervisor stays idle, repo routes respond `409 repo_root_not_configured`, `@`-mention validation is skipped. See [domain/workspace-repo.md](domain/workspace-repo.md). |
 | `cursor_bin` | string | `""` | Cursor CLI binary path. Empty = `PATH` lookup of `cursor`. Absolute paths pin a build. |
 | `cursor_model` | string | `""` | Optional Cursor model forwarded to the execute runner. Empty = omit the model flag (Cursor uses account default). |
-| `verify_model` | string | `""` | Optional Cursor `--model` for PhaseVerify on the same chat. Empty inherits execute effective model (task pin, else `cursor_model`). |
+| `verify_model` | string | `""` | Optional Cursor `--model` for PhaseVerify. Empty inherits execute effective model (task pin, else `cursor_model`). |
+| `verify_chat_mode` | string | `"same_chat"` | Global default for PhaseVerify chat policy: `same_chat` (resume execute session) or `different_chat` (separate verify chain). Tasks may override via `tasks.verify_chat_mode`. See [ADR-0086](adr/ADR-0086-verify-chat-modes.md). |
 | `max_run_duration_seconds` | int (≥0) | `0` | Per-run wall-clock cap on `runner.Request.Timeout`. `0` = no limit. |
 | `agent_pickup_delay_seconds` | int (≥0) | `5` | Delay applied to new ready tasks before the worker can dequeue them. `0` disables. |
 | `display_timezone` | string | `""` | IANA timezone for SPA timestamps. Empty = browser auto-detect. Validated via `time.LoadLocation`. |
