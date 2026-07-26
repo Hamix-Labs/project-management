@@ -26,9 +26,9 @@ type taskTemplatePatchJSON struct {
 }
 
 type taskTemplateInstantiateItemJSON struct {
-	TemplateID        string                 `json:"template_id"`
-	Count             *int                   `json:"count,omitempty"`
-	FunctionBindings  []functionBindingJSON  `json:"function_bindings,omitempty"`
+	TemplateID       string                `json:"template_id"`
+	Count            *int                  `json:"count,omitempty"`
+	FunctionBindings []functionBindingJSON `json:"function_bindings,omitempty"`
 }
 
 type taskTemplateInstantiateJSON struct {

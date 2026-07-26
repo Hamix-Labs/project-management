@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	taskcorehandler "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/handler"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	taskcorehandler "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/handler"
 )
 
 const maxFunctionBindingValues = 10

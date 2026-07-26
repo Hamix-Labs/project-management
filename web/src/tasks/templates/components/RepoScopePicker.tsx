@@ -4,7 +4,7 @@ import {
   searchRepoSymbols,
   type RepoSearchEntry,
   type RepoSymbolHit,
-} from "@/api/repo";
+} from "@/api/repoScope";
 import { useDebouncedTrimmedValue } from "@/hooks/useDebouncedTrimmedValue";
 import type {
   TemplateFunctionInputKind,

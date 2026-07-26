@@ -155,7 +155,6 @@ func (h *Handler) instantiateTaskTemplates(w http.ResponseWriter, r *http.Reques
 			})
 			continue
 		}
-		payloadRaw := detail.Payload
 		applied, applyErr := applyFunctionBindingsToPayload(detail.Payload, item.FunctionBindings)
 		if applyErr != nil {
 			resp.Errors = append(resp.Errors, taskTemplateInstantiateErrorJSON{
@@ -164,7 +163,7 @@ func (h *Handler) instantiateTaskTemplates(w http.ResponseWriter, r *http.Reques
 			})
 			continue
 		}
-		payloadRaw = applied
+		payloadRaw := applied
 		for range item.Count {
 			task, err := h.instantiateFromTemplate(r.Context(), r, op, payloadRaw, by)
 			if err != nil {
