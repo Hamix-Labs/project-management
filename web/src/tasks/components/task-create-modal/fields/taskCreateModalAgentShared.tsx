@@ -24,6 +24,8 @@ export type TaskCreateModalAgentSectionProps = {
   runner: string;
   cursorModel: string;
   verifyChatMode?: string;
+  /** Workspace settings default used when task verify mode is empty. */
+  workspaceVerifyChatMode?: "same_chat" | "different_chat";
   modelIds: Set<string>;
   modelsForSelect: CursorModelOption[];
   modelSelectBusy: boolean;
