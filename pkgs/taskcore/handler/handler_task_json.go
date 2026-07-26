@@ -19,7 +19,6 @@ type taskCreateJSON struct {
 	Status                domain.Status   `json:"status"`
 	Priority              domain.Priority `json:"priority"`
 	ProjectID             *string         `json:"project_id"`
-	ProjectContextItemIDs []string        `json:"project_context_item_ids"`
 	Runner                *string         `json:"runner"`
 	CursorModel           *string         `json:"cursor_model"`
 	VerifyChatMode        *string         `json:"verify_chat_mode"`
@@ -45,7 +44,6 @@ type taskPatchJSON struct {
 	Status                *domain.Status            `json:"status"`
 	Priority              *domain.Priority          `json:"priority"`
 	ProjectID             patchProjectField         `json:"project_id"`
-	ProjectContextItemIDs *[]string                 `json:"project_context_item_ids"`
 	PickupNotBefore       patchPickupNotBeforeField `json:"pickup_not_before"`
 	// CursorModel sets tasks.cursor_model when the key is present (including
 	// the empty string, which clears per-task override). JSON null is decoded

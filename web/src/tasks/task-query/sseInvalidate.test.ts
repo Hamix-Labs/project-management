@@ -237,8 +237,6 @@ describe("parseTaskChangeFrame", () => {
       [SSE_CHANGE_TYPE.projectCreated]: '{"type":"project_created","id":"p-1"}',
       [SSE_CHANGE_TYPE.projectUpdated]: '{"type":"project_updated","id":"p-1"}',
       [SSE_CHANGE_TYPE.projectDeleted]: '{"type":"project_deleted","id":"p-1"}',
-      [SSE_CHANGE_TYPE.projectContextChanged]:
-        '{"type":"project_context_changed","id":"p-1"}',
       [SSE_CHANGE_TYPE.settingsChanged]: '{"type":"settings_changed"}',
       [SSE_CHANGE_TYPE.agentRunCancelled]: '{"type":"agent_run_cancelled"}',
       [SSE_CHANGE_TYPE.resync]: '{"type":"resync"}',

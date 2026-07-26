@@ -3,17 +3,12 @@ package worker_test
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"strings"
 	"testing"
-
-	projectsstore "github.com/AlexsanderHamir/Hamix/pkgs/projects/store"
-	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/runnerfake"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/worker"
-	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
@@ -119,110 +114,6 @@ func TestWorker_HappyPath_writesOnePhaseAndFourMirrors(t *testing.T) {
 	}
 	if !strings.Contains(runnerCalls[0].Prompt, "do the thing") {
 		t.Fatalf("runner prompt missing task text: %#v", runnerCalls)
-	}
-	if _, err := h.store.GetTaskContextSnapshotForCycle(bg, cycle.ID); !errors.Is(err, taskcoredomain.ErrNotFound) {
-		t.Fatalf("projectless snapshot err = %v, want ErrNotFound", err)
-	}
-}
-
-func TestWorker_SelectedProjectContext_injectsAndSnapshotsOnlySelectedItems(t *testing.T) {
-	t.Parallel()
-	h := newHarness(t)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	repoID := h.repositoryID()
-	project, err := h.store.CreateProject(ctx, projectsstore.CreateProjectInput{
-		Name:           "Moat",
-		ContextSummary: "Use user-selected shared memory only.",
-		RepositoryID:   &repoID,
-	})
-	if err != nil {
-		t.Fatalf("create project: %v", err)
-	}
-	selected, err := h.store.CreateProjectContext(ctx, project.ID, projectsstore.CreateProjectContextInput{
-		Tag:       "Payment rules",
-		Title:     "Decision",
-		Body:      "The user chose this item.",
-		CreatedBy: projectsdomain.ActorUser,
-	})
-	if err != nil {
-		t.Fatalf("create selected context: %v", err)
-	}
-	selectedConstraint, err := h.store.CreateProjectContext(ctx, project.ID, projectsstore.CreateProjectContextInput{
-		Tag:       "Payment rules",
-		Title:     "Constraint",
-		Body:      "The user chose this related node.",
-		CreatedBy: projectsdomain.ActorUser,
-	})
-	if err != nil {
-		t.Fatalf("create selected constraint: %v", err)
-	}
-	unselected, err := h.store.CreateProjectContext(ctx, project.ID, projectsstore.CreateProjectContextInput{
-		Tag:       "General",
-		Title:     "Unselected",
-		Body:      "The worker must not include this.",
-		CreatedBy: projectsdomain.ActorUser,
-	})
-	if err != nil {
-		t.Fatalf("create unselected context: %v", err)
-	}
-	wb := h.gitBinding()
-	tsk, err := h.store.Create(ctx, taskcorestore.CreateTaskInput{
-		Title:                 "with selected context",
-		InitialPrompt:         "do the selected thing",
-		Status:                taskcoredomain.StatusReady,
-		Priority:              taskcoredomain.PriorityMedium,
-		ProjectID:             &project.ID,
-		ProjectContextItemIDs: []string{selected.ID, selectedConstraint.ID},
-		WorktreeID:            wb,
-	}, taskcoredomain.ActorUser)
-	if err != nil {
-		t.Fatalf("create task: %v", err)
-	}
-
-	r := runnerfake.New()
-	r.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(
-		cyclesdomain.PhaseStatusSucceeded, "all green",
-		json.RawMessage(`{"ok":true}`), "",
-	))
-
-	_, done := h.startWorker(ctx, r, worker.Options{})
-	h.waitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusReview)
-	cancel()
-	if err := <-done; err != nil {
-		t.Fatalf("worker exit err: %v", err)
-	}
-
-	calls := r.Calls()
-	if len(calls) != 1 {
-		t.Fatalf("runner calls = %d, want 1", len(calls))
-	}
-	if !strings.Contains(calls[0].Prompt, "The user chose this item.") {
-		t.Fatalf("runner prompt missing selected context:\n%s", calls[0].Prompt)
-	}
-	if !strings.Contains(calls[0].Prompt, selectedConstraint.Body) {
-		t.Fatalf("runner prompt missing selected constraint:\n%s", calls[0].Prompt)
-	}
-	if strings.Contains(calls[0].Prompt, "Relationships:") {
-		t.Fatalf("runner prompt included relationships section:\n%s", calls[0].Prompt)
-	}
-	if strings.Contains(calls[0].Prompt, unselected.Body) {
-		t.Fatalf("runner prompt included unselected context:\n%s", calls[0].Prompt)
-	}
-	cycle := assertCycleStatus(t, h.store, tsk.ID, 1, cyclesdomain.CycleStatusSucceeded)
-	snapshot, err := h.store.GetTaskContextSnapshotForCycle(context.Background(), cycle.ID)
-	if err != nil {
-		t.Fatalf("get context snapshot: %v", err)
-	}
-	if snapshot.ProjectID != project.ID || !strings.Contains(snapshot.RenderedContext, selected.Body) {
-		t.Fatalf("snapshot = %#v", snapshot)
-	}
-	if !strings.Contains(string(snapshot.ContextJSON), selected.ID) || strings.Contains(string(snapshot.ContextJSON), unselected.ID) {
-		t.Fatalf("snapshot context_json = %s", snapshot.ContextJSON)
-	}
-	if !strings.Contains(string(snapshot.ContextJSON), `"edges":[]`) {
-		t.Fatalf("snapshot context_json missing empty edges: %s", snapshot.ContextJSON)
 	}
 }
 

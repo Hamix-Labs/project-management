@@ -24,7 +24,6 @@ func TestIsScopelessHint(t *testing.T) {
 		realtime.ProjectCreated,
 		realtime.ProjectUpdated,
 		realtime.ProjectDeleted,
-		realtime.ProjectContextChanged,
 		realtime.SettingsChanged,
 		realtime.AgentRunCancelled,
 		realtime.Resync,

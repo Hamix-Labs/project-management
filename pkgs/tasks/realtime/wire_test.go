@@ -15,7 +15,6 @@ func productionChangeTypes() []ChangeType {
 		ProjectCreated,
 		ProjectUpdated,
 		ProjectDeleted,
-		ProjectContextChanged,
 		SettingsChanged,
 		AgentRunCancelled,
 		Resync,
@@ -26,8 +25,8 @@ func TestProductionChangeTypesManifest(t *testing.T) {
 	t.Parallel()
 
 	types := productionChangeTypes()
-	if len(types) != 15 {
-		t.Fatalf("productionChangeTypes len = %d, want 15 (update manifest when adding ChangeType)", len(types))
+	if len(types) != 14 {
+		t.Fatalf("productionChangeTypes len = %d, want 14 (update manifest when adding ChangeType)", len(types))
 	}
 
 	seen := make(map[ChangeType]struct{}, len(types))

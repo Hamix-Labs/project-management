@@ -15,7 +15,6 @@ const (
 	ProjectCreated        ChangeType = "project_created"
 	ProjectUpdated        ChangeType = "project_updated"
 	ProjectDeleted        ChangeType = "project_deleted"
-	ProjectContextChanged ChangeType = "project_context_changed"
 	SettingsChanged       ChangeType = "settings_changed"
 	AgentRunCancelled     ChangeType = "agent_run_cancelled"
 	Resync                ChangeType = "resync"

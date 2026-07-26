@@ -15,8 +15,8 @@ type Task struct {
 	// Number is the per-project human-facing task ref (#N). Assigned when
 	// project_id is set; immutable thereafter. Null when the task has no project.
 	Number *int `json:"number,omitempty"`
-	// ProjectContextItemIDs is the user-selected subset of project context to pass to agent runs.
-	ProjectContextItemIDs []string  `json:"project_context_item_ids,omitempty"`
+	// ProjectContextItemIDs is unused (memory selection removed); column remains until schema drop.
+	ProjectContextItemIDs []string  `json:"-"`
 	Tags                  []string  `json:"tags,omitempty"`
 	Milestone             *string   `json:"milestone,omitempty"`
 	Gate                  *TaskGate `json:"gate,omitempty"`
@@ -53,8 +53,8 @@ type Task struct {
 	WorktreeID *string `json:"worktree_id,omitempty"`
 }
 
-// TaskContextSnapshot records the exact project context bundle handed to one
-// task execution attempt. It is immutable audit data, not canonical project memory.
+// TaskContextSnapshot records an immutable audit bundle for one cycle.
+// Retained until schema drop removes task_context_snapshots.
 type TaskContextSnapshot struct {
 	ID              string          `json:"id"`
 	TaskID          string          `json:"task_id"`

@@ -5,14 +5,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	cyclescontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/contract"
 	cyclesstore "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store"
 	"log/slog"
 	"strings"
 	"time"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/prompt"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/verify"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
@@ -79,11 +77,6 @@ func (h *Harness) invokeRunnerWithDecision(
 	}
 	cancel := func() { cancelCause(context.Canceled) }
 	defer cancel()
-	projectContext, err := h.selectedProjectContext(runCtx, task, cycle)
-	if err != nil {
-		details, _ := json.Marshal(map[string]string{"error": err.Error()})
-		return runner.NewResult(cyclesdomain.PhaseStatusFailed, "project context selection failed", details, ""), fmt.Errorf("project context: %w: %v", runner.ErrInvalidOutput, err)
-	}
 	h.setCurrentRunCancel(cancel, task.ID)
 	defer h.setCurrentRunCancel(nil, "")
 	onProgress := func(ev runner.ProgressEvent) {
@@ -93,13 +86,12 @@ func (h *Harness) invokeRunnerWithDecision(
 	onSessionID := func(sessionID string) {
 		h.persistSessionID(runCtx, cycle.ID, phaseRow.PhaseSeq, sessionID)
 	}
-	promptText := prompt.WrapWithProjectContext(decision.Prompt, projectContext.Text)
 	onProgress(setupInvokeProgress(decision))
 	return h.runner.Run(runCtx, runner.Request{
 		TaskID:           task.ID,
 		AttemptSeq:       cycle.AttemptSeq,
 		Phase:            phase,
-		Prompt:           promptText,
+		Prompt:           decision.Prompt,
 		WorkingDir:       h.opts.WorkingDir,
 		Timeout:          h.opts.RunTimeout,
 		CursorModel:      cursorModel,
