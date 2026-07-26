@@ -75,7 +75,7 @@ export function TaskDetailLoadedDialogs({
                   autonomyMutation.error,
                   autonomyEnable
                     ? "Couldn't resume autonomous execution."
-                    : "Couldn't put this task on hold.",
+                    : "Couldn't pause this task.",
                 )
               : null
           }

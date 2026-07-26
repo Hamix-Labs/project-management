@@ -32,6 +32,6 @@ describe("TaskGatePanel", () => {
       />,
     );
     expect(screen.getByText("Pending release")).toBeInTheDocument();
-    expect(screen.getByText("On hold")).toBeInTheDocument();
+    expect(screen.getByText("Paused")).toBeInTheDocument();
   });
 });

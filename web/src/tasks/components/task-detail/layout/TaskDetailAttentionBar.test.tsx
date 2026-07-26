@@ -173,11 +173,11 @@ describe("TaskDetailToolbarActions", () => {
         />,
       );
       expect(
-        screen.queryByRole("button", { name: /^(resume|put on hold)$/i }),
+        screen.queryByRole("button", { name: /^(resume|pause)$/i }),
       ).not.toBeInTheDocument();
     });
 
-    it("renders 'Put on hold' when autonomyMode=ready", async () => {
+    it("renders 'Pause' when autonomyMode=ready", async () => {
       const user = userEvent.setup();
       const onToggleAutonomy = vi.fn();
       render(
@@ -189,7 +189,7 @@ describe("TaskDetailToolbarActions", () => {
           onToggleAutonomy={onToggleAutonomy}
         />,
       );
-      const button = screen.getByRole("button", { name: /^put on hold$/i });
+      const button = screen.getByRole("button", { name: /^pause$/i });
       await user.click(button);
       expect(onToggleAutonomy).toHaveBeenCalledOnce();
     });
@@ -222,7 +222,7 @@ describe("TaskDetailToolbarActions", () => {
           autonomyPending
         />,
       );
-      const button = screen.getByRole("button", { name: /^holding…$/i });
+      const button = screen.getByRole("button", { name: /^pausing…$/i });
       expect(button).toBeDisabled();
     });
   });

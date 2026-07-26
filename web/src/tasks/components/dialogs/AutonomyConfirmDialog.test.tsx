@@ -26,7 +26,7 @@ describe("AutonomyConfirmDialog", () => {
     ).toBeInTheDocument();
   });
 
-  it("uses 'Put on hold' copy and confirm button when enable=false", () => {
+  it("uses 'Pause' copy and confirm button when enable=false", () => {
     render(
       <AutonomyConfirmDialog
         enable={false}
@@ -38,10 +38,10 @@ describe("AutonomyConfirmDialog", () => {
       />,
     );
     expect(
-      screen.getByRole("dialog", { name: /put this task on hold/i }),
+      screen.getByRole("dialog", { name: /pause this task/i }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /^put on hold$/i }),
+      screen.getByRole("button", { name: /^pause$/i }),
     ).toBeInTheDocument();
     expect(
       screen.getByText(/agent will stop considering this task/i),

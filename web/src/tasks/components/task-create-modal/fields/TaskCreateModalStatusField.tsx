@@ -1,5 +1,6 @@
 import { CLIENT_WRITABLE_STATUSES, type Status } from "@/types";
 import { FieldLabel } from "@/shared/FieldLabel";
+import { statusListLabel } from "@/lib/taskStatusDisplay";
 
 type Props = {
   id?: string;
@@ -32,7 +33,7 @@ export function TaskCreateModalStatusField({
       >
         {options.map((s) => (
           <option key={s} value={s}>
-            {s}
+            {statusListLabel(s)}
           </option>
         ))}
       </select>

@@ -38,7 +38,7 @@ type Props = {
   /**
    * Autonomous-execution mode for this task. `"hidden"` suppresses the
    * toggle entirely (e.g. running, done, failed — the autonomy concept
-   * does not apply). `"ready"` shows a "Put on hold" action; `"on_hold"`
+   * does not apply). `"ready"` shows a "Pause" action; `"on_hold"`
    * shows a "Resume" action. Both actions go through a confirm dialog
    * upstream of `onToggleAutonomy`.
    */
@@ -77,9 +77,9 @@ export function TaskDetailToolbarActions({
   const showAutonomy =
     autonomyMode !== "hidden" && typeof onToggleAutonomy === "function";
   const autonomyLabel =
-    autonomyMode === "on_hold" ? "Resume" : "Put on hold";
+    autonomyMode === "on_hold" ? "Resume" : "Pause";
   const autonomyPendingLabel =
-    autonomyMode === "on_hold" ? "Resuming…" : "Holding…";
+    autonomyMode === "on_hold" ? "Resuming…" : "Pausing…";
 
   return (
     <div className="task-detail-actions">
