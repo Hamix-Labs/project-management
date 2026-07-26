@@ -56,10 +56,7 @@ export function TaskCreateModalSchedulingFields({
     return (
       <div className="task-create-scheduling task-create-scheduling--config">
         {showTags ? (
-          <section
-            className="task-create-config-section"
-            aria-labelledby="task-create-tags-heading"
-          >
+          <div className="task-create-config-section">
             <TaskCreateConfigSectionHeader
               id="task-create-tags-heading"
               title="Tags"
@@ -71,7 +68,7 @@ export function TaskCreateModalSchedulingFields({
               tagsCsv={tagsCsv}
               onTagsCsvChange={onTagsCsvChange}
             />
-          </section>
+          </div>
         ) : null}
 
         {showTags && showDepsBlock ? (
@@ -79,13 +76,16 @@ export function TaskCreateModalSchedulingFields({
         ) : null}
 
         {showDepsBlock ? (
-          <section
-            className="task-create-config-section"
-            aria-labelledby="task-create-deps-heading"
-          >
+          <div className="task-create-config-section">
             <TaskCreateConfigSectionHeader
               id="task-create-deps-heading"
-              title={showMilestone && showDependsOn ? "Dependencies" : showMilestone ? "Milestone" : "Dependencies"}
+              title={
+                showMilestone && showDependsOn
+                  ? "Dependencies"
+                  : showMilestone
+                    ? "Milestone"
+                    : "Dependencies"
+              }
               icon={<AgentListIcon />}
             />
             <div className="task-create-scheduling__grid">
@@ -113,7 +113,7 @@ export function TaskCreateModalSchedulingFields({
                 </div>
               ) : null}
             </div>
-          </section>
+          </div>
         ) : null}
       </div>
     );

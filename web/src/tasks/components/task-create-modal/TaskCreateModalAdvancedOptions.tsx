@@ -144,10 +144,7 @@ export function TaskCreateModalAdvancedOptions({
         ) : null}
 
         {showSchedule ? (
-          <section
-            className="task-create-config-section"
-            aria-labelledby="task-create-schedule-heading"
-          >
+          <div className="task-create-config-section">
             <TaskCreateConfigSectionHeader
               id="task-create-schedule-heading"
               title="Schedule"
@@ -171,7 +168,7 @@ export function TaskCreateModalAdvancedOptions({
                 idPrefix="task-create-modal"
               />
             )}
-          </section>
+          </div>
         ) : null}
 
         {showStatus && onComposeStatusChange ? (
@@ -179,10 +176,7 @@ export function TaskCreateModalAdvancedOptions({
             {showSchedule ? (
               <div className="task-create-advanced__divider" role="separator" />
             ) : null}
-            <section
-              className="task-create-config-section"
-              aria-labelledby="task-create-status-heading"
-            >
+            <div className="task-create-config-section">
               <TaskCreateConfigSectionHeader
                 id="task-create-status-heading"
                 title="Status"
@@ -194,7 +188,7 @@ export function TaskCreateModalAdvancedOptions({
                 disabled={presentation.disabled}
                 onChange={onComposeStatusChange}
               />
-            </section>
+            </div>
           </>
         ) : null}
       </div>
