@@ -18,7 +18,7 @@ export type TaskListClientStatusFilter =
 
 export type TaskListClientPriorityFilter = "all" | Priority;
 
-/** Max tag chips shown under a list-row title before +N overflow. */
+/** Max tag chips shown in the list Tags column before +N overflow. */
 export const TASK_LIST_TAG_CHIP_LIMIT = 3;
 
 /** Sorted unique tags across the given tasks (exact stored strings). */

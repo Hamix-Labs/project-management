@@ -27,6 +27,7 @@ type Props = {
   hasPrevPage: boolean;
   showTaskPager: boolean;
   showProjectColumn: boolean;
+  showTagsColumn: boolean;
   emptyListAction?: EmptyStateAction;
   onEdit: (t: Task) => void;
   onRequestClose: (t: CloseTargetInput) => void;
@@ -50,6 +51,7 @@ export function TaskListTableRegion({
   hasPrevPage,
   showTaskPager,
   showProjectColumn,
+  showTagsColumn,
   emptyListAction,
   onEdit,
   onRequestClose,
@@ -80,6 +82,7 @@ export function TaskListTableRegion({
             onRequestClose={onRequestClose}
             projectNameById={filters.projectNameById}
             showProjectColumn={showProjectColumn}
+            showTagsColumn={showTagsColumn}
             sortKey={filters.sortKey}
             sortDir={filters.sortDir}
             onSortChange={filters.handleSortChange}

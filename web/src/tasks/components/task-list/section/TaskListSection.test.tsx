@@ -67,7 +67,7 @@ describe("TaskListSection", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole("table", {
-        name: /all tasks: title, status, priority, created time, project, and row actions/i,
+        name: /all tasks: title, status, priority, tags, created time, project, and row actions/i,
       }),
     ).toBeInTheDocument();
   });

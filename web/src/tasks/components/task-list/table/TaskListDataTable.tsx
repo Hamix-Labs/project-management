@@ -29,6 +29,7 @@ type Props = {
   selection?: BulkSelectionProps;
   projectNameById?: Record<string, string>;
   showProjectColumn?: boolean;
+  showTagsColumn?: boolean;
   sortKey?: TaskListSortKey;
   sortDir?: TaskListSortDir;
   onSortChange?: (key: TaskListSortKey) => void;
@@ -46,6 +47,7 @@ export function TaskListDataTable({
   selection,
   projectNameById = {},
   showProjectColumn = true,
+  showTagsColumn = true,
   sortKey,
   sortDir,
   onSortChange,
@@ -60,7 +62,11 @@ export function TaskListDataTable({
   }, [selection]);
 
   const showSelectionCol = Boolean(selection);
-  const colSpan = (showSelectionCol ? 1 : 0) + 5 + (showProjectColumn ? 1 : 0);
+  const colSpan =
+    (showSelectionCol ? 1 : 0) +
+    5 +
+    (showProjectColumn ? 1 : 0) +
+    (showTagsColumn ? 1 : 0);
   return (
     <div className="table-wrap task-list-table-wrap">
       <table className="task-list-table" aria-busy={refreshing}>
@@ -70,6 +76,7 @@ export function TaskListDataTable({
           <col className="task-list-col-title" />
           <col className="task-list-col-status" />
           <col className="task-list-col-priority" />
+          {showTagsColumn ? <col className="task-list-col-tags" /> : null}
           <col className="task-list-col-created" />
           {showProjectColumn ? <col className="task-list-col-project" /> : null}
           <col className="task-list-col-actions" />
@@ -77,6 +84,7 @@ export function TaskListDataTable({
         <TaskListTableHeader
           showSelectionCol={showSelectionCol}
           showProjectColumn={showProjectColumn}
+          showTagsColumn={showTagsColumn}
           selection={selection}
           headerCheckboxRef={headerCheckboxRef}
           filteredTasksLength={filteredTasks.length}
@@ -91,6 +99,7 @@ export function TaskListDataTable({
           emptyListAction={emptyListAction}
           showSelectionCol={showSelectionCol}
           showProjectColumn={showProjectColumn}
+          showTagsColumn={showTagsColumn}
           selection={selection}
           projectNameById={projectNameById}
           saving={saving}

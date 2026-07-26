@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import type { Task } from "@/types";
-import { isUiFeatureOmitted } from "@/launch/omittedFeatures";
+import { taskDisplayRef } from "@/lib/taskShortId";
 import type { CloseTargetInput } from "../../../hooks/useTaskCloseFlow";
 import {
   canEditTask,
@@ -19,6 +19,7 @@ export type TaskListDataTableRowProps = {
   row: TaskListRowRenderState;
   showSelectionCol: boolean;
   showProjectColumn: boolean;
+  showTagsColumn: boolean;
   selection: BulkSelectionProps | undefined;
   projectNameById: Record<string, string>;
   saving: boolean;
@@ -58,6 +59,7 @@ export function TaskListDataTableRow({
   row: { task: t, isEntering, isExiting, isFilterExit },
   showSelectionCol,
   showProjectColumn,
+  showTagsColumn,
   selection,
   projectNameById,
   saving,
@@ -70,8 +72,8 @@ export function TaskListDataTableRow({
     showProjectColumn && t.project_id != null && t.project_id !== ""
       ? projectNameById[t.project_id]
       : undefined;
-  const tagsUiEnabled = !isUiFeatureOmitted("taskTags");
-  const rowTags = tagsUiEnabled ? (t.tags ?? []).filter(Boolean) : [];
+  const rowTags = showTagsColumn ? (t.tags ?? []).filter(Boolean) : [];
+  const displayRef = taskDisplayRef(t);
   const rowSelected = !isExiting && selection ? selection.isSelected(t.id) : false;
   const rowClass = [
     "task-list-row",
@@ -131,16 +133,16 @@ export function TaskListDataTableRow({
         <Link
           to={taskHref}
           className={["cell-title-link", "cell-title-link--cell"].filter(Boolean).join(" ")}
-          aria-label={`Open task details: ${t.title}`}
+          aria-label={`Open task details: ${displayRef} ${t.title}`}
         >
           <div className="cell-title-stack">
             <span className="cell-title-main">
+              <span className="task-list-row__id">{displayRef}</span>
               <span className="cell-title-text cell-title-text--primary">{t.title}</span>
               <span className="cell-title-open-hint" aria-hidden="true">
                 →
               </span>
             </span>
-            {rowTags.length > 0 ? <TaskListRowTagChips tags={rowTags} /> : null}
           </div>
         </Link>
       </td>
@@ -150,6 +152,15 @@ export function TaskListDataTableRow({
       <td className="cell-priority">
         <PriorityBadge priority={t.priority} />
       </td>
+      {showTagsColumn ? (
+        <td className="cell-tags">
+          {rowTags.length > 0 ? (
+            <TaskListRowTagChips tags={rowTags} />
+          ) : (
+            <span className="task-list-tags-empty">—</span>
+          )}
+        </td>
+      ) : null}
       <td className="cell-created">
         {createdLabel ? (
           <time dateTime={t.created_at} title={createdTitle}>
