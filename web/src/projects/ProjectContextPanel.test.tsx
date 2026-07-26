@@ -18,7 +18,7 @@ function jsonResponse(body: unknown, init: ResponseInit = { status: 200 }): Resp
 const contextItem: ProjectContextItem = {
   id: "ctx-1",
   project_id: "project-1",
-  kind: "note",
+  tag: "note",
   title: "API plan",
   description: "",
   body: "Use REST for v1.",

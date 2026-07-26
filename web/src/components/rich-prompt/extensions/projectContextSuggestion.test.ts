@@ -12,7 +12,7 @@ function makeItem(overrides: Partial<ProjectContextItem>): ProjectContextItem {
   return {
     id: overrides.id ?? "ctx-1",
     project_id: projectId,
-    kind: overrides.kind ?? "decision",
+    tag: overrides.tag ?? "decision",
     title: overrides.title ?? "Decision title",
     description: overrides.description ?? "",
     body: overrides.body ?? "Decision body",
@@ -28,7 +28,7 @@ describe("ProjectContextSuggestion", () => {
   it("forwards every active project item to the dropdown when the trigger fires", () => {
     const items = [
       makeItem({ id: "ctx-decision", title: "API plan" }),
-      makeItem({ id: "ctx-constraint", title: "Latency", kind: "constraint" }),
+      makeItem({ id: "ctx-constraint", title: "Latency", tag: "constraint" }),
     ];
     const getItems = vi.fn(() => items);
     const editor = new Editor({

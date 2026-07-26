@@ -408,7 +408,7 @@ export function demoContextWire(projectId: string): unknown {
       {
         id: C1,
         project_id: DEMO_PRIMARY_PROJECT_ID,
-        kind: "decision",
+        tag: "decision",
         title: "JWT-first for partner APIs",
         description: "Partner auth choice",
         body: "Partners accept bearer tokens only; cookies reserved for first-party.",
@@ -420,7 +420,7 @@ export function demoContextWire(projectId: string): unknown {
       {
         id: C2,
         project_id: DEMO_PRIMARY_PROJECT_ID,
-        kind: "constraint",
+        tag: "constraint",
         title: "No PII in logs",
         description: "Logging redaction rule",
         body: "Structured logs must redact email and phone by default.",
@@ -432,7 +432,7 @@ export function demoContextWire(projectId: string): unknown {
       {
         id: C3,
         project_id: DEMO_PRIMARY_PROJECT_ID,
-        kind: "note",
+        tag: "note",
         title: "Rotation cadence",
         description: "Key rotation schedule",
         body: "Signing keys rotate every 30 days; overlap window 72h.",
@@ -444,7 +444,7 @@ export function demoContextWire(projectId: string): unknown {
       {
         id: C4,
         project_id: DEMO_PRIMARY_PROJECT_ID,
-        kind: "decision",
+        tag: "decision",
         title: "Session fixation mitigation",
         description: "Session hardening",
         body: "Regenerate session id post-auth; SameSite=Lax default.",
@@ -456,7 +456,7 @@ export function demoContextWire(projectId: string): unknown {
       {
         id: C5,
         project_id: DEMO_PRIMARY_PROJECT_ID,
-        kind: "constraint",
+        tag: "constraint",
         title: "EU residency",
         description: "Data residency constraint",
         body: "Auth metadata stores primary region EU.",
@@ -468,7 +468,7 @@ export function demoContextWire(projectId: string): unknown {
       {
         id: C6,
         project_id: DEMO_PRIMARY_PROJECT_ID,
-        kind: "note",
+        tag: "note",
         title: "Load test window",
         description: "Allowed load-test hours",
         body: "Saturdays 02:00–06:00 UTC only.",

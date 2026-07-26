@@ -83,7 +83,7 @@ describe("project API parsers", () => {
         {
           id: "ctx-1",
           project_id: projectWire.id,
-          kind: "risk",
+          tag: "risk",
           title: "Use relational context",
           body: "Defer embeddings.",
           created_by: "user",
@@ -108,7 +108,7 @@ describe("project API parsers", () => {
       limit: 50,
     });
 
-    expect(out.items[0].kind).toBe("risk");
+    expect(out.items[0].tag).toBe("risk");
     expect(out.items[0].description).toBe("");
     // Legacy edge payloads are ignored; the client always stores [].
     expect(out.edges).toEqual([]);
@@ -120,7 +120,7 @@ describe("project API parsers", () => {
         {
           id: "ctx-1",
           project_id: projectWire.id,
-          kind: "note",
+          tag: "note",
           title: "CONTRIBUTING",
           description: "Repo contribution guide",
           body: "# Contributing\n...",
@@ -174,7 +174,7 @@ describe("project API parsers", () => {
     const itemWire = {
       id: "22222222-2222-4222-8222-222222222222",
       project_id: projectWire.id,
-      kind: "requirement",
+      tag: "requirement",
       title: "Remember",
       body: "Keep context explicit.",
       created_by: "user",
@@ -199,7 +199,7 @@ describe("project API parsers", () => {
       .mockResolvedValueOnce(new Response(null, { status: 204 }));
 
     await createProjectContext(projectWire.id, {
-      kind: "requirement",
+      tag: "requirement",
       title: "Remember",
       body: "Keep context explicit.",
       pinned: false,

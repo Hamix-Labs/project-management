@@ -13,7 +13,7 @@ const items: ProjectContextItem[] = [
   {
     id: "ctx-decision",
     project_id: projectId,
-    kind: "decision",
+    tag: "decision",
     title: "API plan",
     description: "",
     body: "Use HTTP",
@@ -25,7 +25,7 @@ const items: ProjectContextItem[] = [
   {
     id: "ctx-constraint",
     project_id: projectId,
-    kind: "constraint",
+    tag: "constraint",
     title: "Request budget",
     description: "",
     body: "Stay under 200ms",
