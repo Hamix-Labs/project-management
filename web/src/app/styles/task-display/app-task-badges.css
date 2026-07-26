@@ -35,6 +35,13 @@
   --task-badge-dot: var(--badge-tone-warning-fg);
 }
 
+.task-status-badge--tone-review {
+  --task-badge-bg: var(--badge-tone-review-bg);
+  --task-badge-fg: var(--badge-tone-review-fg);
+  --task-badge-ring: var(--badge-tone-review-ring);
+  --task-badge-dot: var(--badge-tone-review-fg);
+}
+
 .task-status-badge--tone-danger {
   --task-badge-bg: var(--badge-tone-danger-bg);
   --task-badge-fg: var(--badge-tone-danger-fg);
