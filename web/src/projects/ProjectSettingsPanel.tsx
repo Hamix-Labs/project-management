@@ -37,10 +37,28 @@ export function ProjectSettingsPanel({ project }: Props) {
   return (
     <section className="pd__card" aria-labelledby="pd-settings-title">
       <div className="pd__card-head">
-        <h2 id="pd-settings-title" className="pd__card-title">
-          Project settings
-        </h2>
-        <p className="pd__card-desc">Manage the core details for this project</p>
+        <svg
+          className="pd__card-head-icon"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden="true"
+        >
+          <path
+            d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"
+            stroke="currentColor"
+            strokeWidth="1.75"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+        <div className="pd__card-head-text">
+          <h2 id="pd-settings-title" className="pd__card-title">
+            Project settings
+          </h2>
+          <p className="pd__card-desc">Manage the core details for this project.</p>
+        </div>
       </div>
 
       {isDefaultProject ? (
@@ -50,39 +68,41 @@ export function ProjectSettingsPanel({ project }: Props) {
       ) : null}
 
       <form className="pd__settings-form" onSubmit={submitProject}>
-        <div className="field">
-          <label htmlFor="project-edit-name">Name</label>
-          <input
-            id="project-edit-name"
-            name="name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            disabled={isDefaultProject}
-            autoComplete="off"
-          />
-        </div>
+        <div className="pd__settings-form-body">
+          <div className="field">
+            <label htmlFor="project-edit-name">Name</label>
+            <input
+              id="project-edit-name"
+              name="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              disabled={isDefaultProject}
+              autoComplete="off"
+            />
+          </div>
 
-        <div className="field">
-          <label htmlFor="project-edit-description">
-            Description{" "}
-            <span className="pd__settings-form-optional">— optional</span>
-          </label>
-          <textarea
-            id="project-edit-description"
-            name="description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="One line of context that helps your team and agents understand what this project is for."
-            rows={3}
-            disabled={isDefaultProject}
-          />
+          <div className="field">
+            <label htmlFor="project-edit-description">
+              Description{" "}
+              <span className="pd__settings-form-optional">— optional</span>
+            </label>
+            <textarea
+              id="project-edit-description"
+              name="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="One line of context that helps your team and agents understand what this project is for."
+              rows={3}
+              disabled={isDefaultProject}
+            />
+          </div>
         </div>
 
         <div className="pd__settings-form-actions">
           <button
             type="button"
-            className="secondary"
+            className="pd__settings-cancel"
             disabled={isDefaultProject || patchProjectMutation.isPending}
             onClick={cancelEdits}
           >

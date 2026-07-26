@@ -11,6 +11,10 @@ import {
   type KeyboardEvent,
 } from "react";
 import {
+  ImportMemoryCloseIcon,
+  ImportMemoryUploadIcon,
+} from "./ProjectContextImportMemoryIcons";
+import {
   MAX_PROJECT_CONTEXT_BODY_BYTES,
   MAX_PROJECT_CONTEXT_DESCRIPTION_CHARS,
   MEMORY_IMPORT_ACCEPT,
@@ -19,7 +23,6 @@ import {
 import {
   formatMemoryImportBytes,
   MemoryImportError,
-  previewMemoryImportText,
   readMemoryImportFile,
   sanitizeMemoryAlias,
   validateMemoryAlias,
@@ -184,6 +187,15 @@ export function ProjectContextImportMemoryModal({
               task.
             </p>
           </div>
+          <button
+            type="button"
+            className="pc__import-close"
+            aria-label="Close"
+            disabled={isPending}
+            onClick={onClose}
+          >
+            <ImportMemoryCloseIcon />
+          </button>
         </div>
 
         <div className="field grow">
@@ -240,7 +252,10 @@ export function ProjectContextImportMemoryModal({
               </div>
             ) : (
               <div className="pc__dropzone-prompt">
-                <span>Drop a .txt or .md file here, or browse</span>
+                <ImportMemoryUploadIcon />
+                <span className="pc__dropzone-prompt-text">
+                  Drop a .txt or .md file here, or browse
+                </span>
                 <span className="pc__dropzone-browse">Browse</span>
               </div>
             )}
@@ -287,7 +302,7 @@ export function ProjectContextImportMemoryModal({
             aria-describedby={descriptionHintId}
             disabled={busy || !imported}
             maxLength={MAX_PROJECT_CONTEXT_DESCRIPTION_CHARS}
-            rows={2}
+            rows={3}
             placeholder="One or two sentences explaining when to use this memory"
             onChange={(event) => setDescription(event.target.value)}
           />
@@ -302,32 +317,23 @@ export function ProjectContextImportMemoryModal({
           ) : null}
         </div>
 
-        {imported ? (
-          <div className="field grow">
-            <FieldLabel htmlFor={`${dropzoneId}-preview`}>Preview</FieldLabel>
-            <pre
-              id={`${dropzoneId}-preview`}
-              className="pc__import-preview"
-              tabIndex={0}
-            >
-              {previewMemoryImportText(imported.text)}
-            </pre>
-          </div>
-        ) : null}
-
         {error ? (
           <div id={errorId} className="pd__inline-error" role="alert">
             {error}
           </div>
         ) : null}
 
-        <div className="row stack-row-actions">
-          <button type="submit" disabled={!canSubmit}>
+        <div className="row stack-row-actions pc__import-actions">
+          <button
+            type="submit"
+            className="pc__import-submit"
+            disabled={!canSubmit}
+          >
             {isPending ? "Importing..." : reading ? "Reading..." : "Import"}
           </button>
           <button
             type="button"
-            className="secondary"
+            className="pc__import-cancel"
             disabled={isPending}
             onClick={onClose}
           >
