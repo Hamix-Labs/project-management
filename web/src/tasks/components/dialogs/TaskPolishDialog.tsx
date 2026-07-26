@@ -83,7 +83,7 @@ export function TaskPolishDialog({
               </h2>
               <p className="task-polish-dialog__blurb" id={descriptionId}>
                 Resume the existing agent conversation with new instructions.
-                The task returns to awaiting review when the polish finishes.
+                The task returns to review when the polish finishes.
               </p>
             </div>
           </div>

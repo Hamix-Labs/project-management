@@ -377,7 +377,7 @@ describe("TaskCreateModal", () => {
       const toggle = getAutonomyCheckbox();
       expect(toggle).not.toBeChecked();
       expect(
-        screen.getByText(/created on hold until you resume/i),
+        screen.getByText(/created paused until you resume/i),
       ).toBeInTheDocument();
     });
 

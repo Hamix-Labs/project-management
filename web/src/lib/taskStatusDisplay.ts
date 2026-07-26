@@ -10,13 +10,13 @@ export function statusListLabel(status: Status): string {
     case "blocked":
       return "Blocked";
     case "review":
-      return "Awaiting review";
+      return "Review";
     case "done":
       return "Done";
     case "failed":
       return "Failed";
     case "on_hold":
-      return "On hold";
+      return "Paused";
     case "closed":
       return "Closed";
   }

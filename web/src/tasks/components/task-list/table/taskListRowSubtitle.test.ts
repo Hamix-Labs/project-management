@@ -33,7 +33,11 @@ describe("statusListLabel", () => {
     expect(statusListLabel("running")).toBe("Running");
   });
 
-  it("maps review to awaiting-review copy", () => {
-    expect(statusListLabel("review")).toBe("Awaiting review");
+  it("maps review to short review copy", () => {
+    expect(statusListLabel("review")).toBe("Review");
+  });
+
+  it("maps on_hold to paused copy", () => {
+    expect(statusListLabel("on_hold")).toBe("Paused");
   });
 });

@@ -1,4 +1,5 @@
 import type { TaskGate } from "@/types";
+import { statusListLabel } from "@/lib/taskStatusDisplay";
 import { taskGateStatusLabel } from "../../../task-display/taskGateDisplay";
 
 type GateAction = "release" | "hold" | "clear_hold";
@@ -62,7 +63,11 @@ export function TaskGatePanel({
         <span className={`pd__chip pd__chip--gate pd__chip--${status}`}>
           {taskGateStatusLabel(status)}
         </span>
-        {gate.hold ? <span className="pd__chip pd__chip--hold">On hold</span> : null}
+        {gate.hold ? (
+          <span className="pd__chip pd__chip--hold">
+            {statusListLabel("on_hold")}
+          </span>
+        ) : null}
       </div>
       {gate.pending_release_deadline ? (
         <p className="task-detail-gate-deadline">

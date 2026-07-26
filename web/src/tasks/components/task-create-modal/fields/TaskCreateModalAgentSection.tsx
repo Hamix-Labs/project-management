@@ -1,4 +1,4 @@
-import { useId, useMemo } from "react";
+import { useId } from "react";
 import { Link } from "react-router-dom";
 import { CustomSelect, type CustomSelectOption } from "@/components/custom-select";
 import { verifyChatModeLabel } from "../../../task-display/verifyChatModeDisplay";
@@ -11,15 +11,10 @@ import {
 import { TaskCreateModalModelField } from "./TaskCreateModalModelField";
 import { TaskCreateModalRunnerField } from "./TaskCreateModalRunnerField";
 
-function buildVerifyModeOptions(
-  workspaceDefault: "same_chat" | "different_chat",
-): CustomSelectOption[] {
-  return (["same_chat", "different_chat"] as const).map((value) => ({
-    value,
-    label: verifyChatModeLabel(value),
-    ...(value === workspaceDefault ? { rowTag: "Default" } : {}),
-  }));
-}
+const VERIFY_MODE_OPTIONS: CustomSelectOption[] = [
+  { value: "same_chat", label: verifyChatModeLabel("same_chat") },
+  { value: "different_chat", label: verifyChatModeLabel("different_chat") },
+];
 
 /**
  * TaskCreateModalAgentSection - runtime configuration panel for the
@@ -54,11 +49,6 @@ export function TaskCreateModalAgentSection({
 
   const isModelDialog = variant === "modelDialog";
   const isCreateModal = variant === "createModal";
-
-  const verifyOptions = useMemo(
-    () => buildVerifyModeOptions(workspaceVerifyChatMode),
-    [workspaceVerifyChatMode],
-  );
 
   // Empty task value inherits workspace settings — show that concrete
   // mode in the select rather than a third "Use workspace default" row.
@@ -145,7 +135,7 @@ export function TaskCreateModalAgentSection({
               id={verifyChatId}
               label="Verification mode"
               value={verifySelectValue}
-              options={verifyOptions}
+              options={VERIFY_MODE_OPTIONS}
               disabled={disabled}
               onChange={handleVerifyModeChange}
               className="task-create-agent-custom-select"
@@ -154,7 +144,7 @@ export function TaskCreateModalAgentSection({
             />
             <p className="task-create-agent-help">
               Controls whether PhaseVerify continues in the same chat or starts
-              a different one. The workspace default is marked in the list.
+              a different one.
             </p>
           </div>
         ) : null}

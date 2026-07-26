@@ -454,15 +454,15 @@
   box-shadow: var(--shadow-inset-field), var(--shadow-inset-lip);
 }
 
-.task-create input[type="text"],
-.task-create input:not([type]) {
+.task-create input[type="text"]:not(.task-create-tags-pills__input),
+.task-create input:not([type]):not(.task-create-tags-pills__input) {
   border-radius: var(--radius-md);
   background: var(--bg-elevated);
   box-shadow: var(--shadow-inset-field);
 }
 
-.task-create input[type="text"]:hover,
-.task-create input:not([type]):hover {
+.task-create input[type="text"]:not(.task-create-tags-pills__input):hover,
+.task-create input:not([type]):not(.task-create-tags-pills__input):hover {
   border-color: var(--border-chrome-soft);
 }
 
