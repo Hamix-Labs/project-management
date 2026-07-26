@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { PriorityBadge } from "@/tasks/task-display";
+import { ProjectsStackIcon } from "@/components/project/ProjectsStackIcon";
 import { taskDisplayRef } from "@/lib/taskShortId";
 import { previewTextFromPrompt } from "@/lib/promptFormat";
 import { taskListRowSubtitle } from "../task-list/table/taskListRowSubtitle";
@@ -81,7 +82,10 @@ export function TaskBoardCard({
             {branch}
           </span>
           {showProjectChip ? (
-            <span className="task-board-card__project-chip">{projectName}</span>
+            <span className="task-board-card__project-chip">
+              <ProjectsStackIcon className="task-board-card__chip-icon" />
+              {projectName}
+            </span>
           ) : null}
           {visibleTags.map((tag) => (
             <span key={tag} className="task-board-card__tag-chip">

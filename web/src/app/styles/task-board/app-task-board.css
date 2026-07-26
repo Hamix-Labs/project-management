@@ -337,6 +337,8 @@
 
 .task-board-card__chip-icon {
   flex-shrink: 0;
+  width: 12px;
+  height: 12px;
   color: var(--text-tertiary, var(--text-secondary));
 }
 
