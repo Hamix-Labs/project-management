@@ -73,7 +73,7 @@ describe("ProjectDetailPage", () => {
     expect(screen.getByRole("heading", { name: "Default project" })).toBeInTheDocument();
     expect(screen.getByText("active")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Project settings" })).toBeInTheDocument();
-    expect(screen.getByText("Manage the core details for this project")).toBeInTheDocument();
+    expect(screen.getByText("Manage the core details for this project.")).toBeInTheDocument();
     expect(screen.queryByLabelText(/^Status$/)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
     expect(screen.getByText(/Memory nodes/)).toBeInTheDocument();

@@ -32,6 +32,30 @@ export function ProjectContextEntryCard({ projectId }: Props) {
       aria-labelledby="pd-context-title"
       aria-label={`Open project context. ${label}`}
     >
+      <span className="pd__context-icon" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <ellipse
+            cx="12"
+            cy="5"
+            rx="8"
+            ry="3"
+            stroke="currentColor"
+            strokeWidth="1.75"
+          />
+          <path
+            d="M4 5v6c0 1.66 3.58 3 8 3s8-1.34 8-3V5"
+            stroke="currentColor"
+            strokeWidth="1.75"
+            strokeLinecap="round"
+          />
+          <path
+            d="M4 11v6c0 1.66 3.58 3 8 3s8-1.34 8-3v-6"
+            stroke="currentColor"
+            strokeWidth="1.75"
+            strokeLinecap="round"
+          />
+        </svg>
+      </span>
       <span className="pd__context-text">
         <span id="pd-context-title" className="pd__context-title">
           Project context
