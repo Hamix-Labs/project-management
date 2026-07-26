@@ -9,16 +9,16 @@ import (
 // settingsResponse is the on-the-wire shape of GET /settings and the
 // PATCH /settings response.
 type settingsResponse struct {
-	AgentPaused                 bool   `json:"agent_paused"`
-	Runner                      string `json:"runner"`
-	CursorBin                   string `json:"cursor_bin"`
-	CursorModel                 string `json:"cursor_model"`
-	VerifyModel                 string `json:"verify_model"`
-	MaxRunDurationSeconds       int    `json:"max_run_duration_seconds"`
-	AgentPickupDelaySeconds     int    `json:"agent_pickup_delay_seconds"`
-	DisplayTimezone             string `json:"display_timezone"`
-	OptimisticMutationsEnabled  bool   `json:"optimistic_mutations_enabled"`
-	SSEReplayEnabled            bool   `json:"sse_replay_enabled"`
+	AgentPaused                bool   `json:"agent_paused"`
+	Runner                     string `json:"runner"`
+	CursorBin                  string `json:"cursor_bin"`
+	CursorModel                string `json:"cursor_model"`
+	VerifyModel                string `json:"verify_model"`
+	MaxRunDurationSeconds      int    `json:"max_run_duration_seconds"`
+	AgentPickupDelaySeconds    int    `json:"agent_pickup_delay_seconds"`
+	DisplayTimezone            string `json:"display_timezone"`
+	OptimisticMutationsEnabled bool   `json:"optimistic_mutations_enabled"`
+	SSEReplayEnabled           bool   `json:"sse_replay_enabled"`
 	VerifyMaxRetries           int    `json:"verify_max_retries"`
 	CursorSessionResumeEnabled bool   `json:"cursor_session_resume_enabled"`
 	UpdatedAt                  string `json:"updated_at,omitempty"`
