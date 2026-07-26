@@ -1,6 +1,7 @@
 import { type UseQueryResult } from "@tanstack/react-query";
 import type { ListCursorModelsResult } from "@/api/settings";
 import { DEFAULT_VERIFY_MAX_RETRIES } from "@/types/task";
+import { SettingsSelect, type SettingsSelectOption } from "../SettingsSelect";
 import type { SettingsFormState } from "../settingsForm";
 import { SECTION_IDS } from "./sectionIds";
 import {
@@ -11,6 +12,11 @@ import {
   SectionCard,
 } from "./settingsSectionLayout";
 import type { HandleField } from "./settingsSectionTypes";
+
+const VERIFY_CHAT_MODE_OPTIONS: SettingsSelectOption[] = [
+  { value: "same_chat", label: "Continue execute chat" },
+  { value: "different_chat", label: "Start new chat" },
+];
 
 /**
  * Phases — execute and verify configuration under one section card.
@@ -140,25 +146,21 @@ export function PhasesSettingsSection({
           <PhaseFieldGroup title="Chat">
             <label className="settings-field">
               <span className="settings-field-label">Verify chat mode</span>
-              <select
-                data-testid="settings-verify-chat-mode"
+              <SettingsSelect
+                testId="settings-verify-chat-mode"
                 value={form.verifyChatMode}
-                onChange={(e) =>
+                onChange={(next) =>
                   onField(
                     "verifyChatMode",
-                    e.target.value === "different_chat"
-                      ? "different_chat"
-                      : "same_chat",
+                    next === "different_chat" ? "different_chat" : "same_chat",
                   )
                 }
-              >
-                <option value="same_chat">Same chat as execute</option>
-                <option value="different_chat">Different chat</option>
-              </select>
+                options={VERIFY_CHAT_MODE_OPTIONS}
+                searchable={false}
+              />
             </label>
             <p className="settings-field-help">
-              Same chat resumes the execute Cursor session. Different chat opens
-              a fresh verify conversation after each execute (tasks can override).
+              Workspace default. Tasks can override.
             </p>
           </PhaseFieldGroup>
 

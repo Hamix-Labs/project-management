@@ -106,8 +106,8 @@ export function TaskCreateModalAgentSection({
               onChange={(e) => onVerifyChatModeChange(e.target.value)}
             >
               <option value="">Use workspace default</option>
-              <option value="same_chat">Same chat as execute</option>
-              <option value="different_chat">Different chat</option>
+              <option value="same_chat">Continue execute chat</option>
+              <option value="different_chat">Start new chat</option>
             </select>
           </label>
         ) : null}
