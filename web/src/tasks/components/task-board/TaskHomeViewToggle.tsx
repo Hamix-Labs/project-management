@@ -8,14 +8,12 @@ type Props = {
 
 const LIST_PANEL_ID = "task-list-panel";
 const BOARD_PANEL_ID = "task-board-panel";
-const TIMELINE_PANEL_ID = "task-timeline-panel";
 
-const VIEW_ORDER: TaskHomeView[] = ["list", "board", "timeline"];
+const VIEW_ORDER: TaskHomeView[] = ["list", "board"];
 
 const PANEL_BY_VIEW: Record<TaskHomeView, string> = {
   list: LIST_PANEL_ID,
   board: BOARD_PANEL_ID,
-  timeline: TIMELINE_PANEL_ID,
 };
 
 function ListIcon() {
@@ -88,29 +86,6 @@ function BoardIcon() {
   );
 }
 
-function TimelineIcon() {
-  return (
-    <svg
-      className="task-home-view-toggle__icon"
-      width="16"
-      height="16"
-      viewBox="0 0 16 16"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M8 2.5v11"
-        stroke="currentColor"
-        strokeWidth="1.3"
-        strokeLinecap="round"
-      />
-      <circle cx="8" cy="4" r="1.4" fill="currentColor" />
-      <circle cx="8" cy="8" r="1.4" fill="currentColor" />
-      <circle cx="8" cy="12" r="1.4" fill="currentColor" />
-    </svg>
-  );
-}
-
 function neighborView(current: TaskHomeView, delta: 1 | -1): TaskHomeView {
   const idx = VIEW_ORDER.indexOf(current);
   const next = (idx + delta + VIEW_ORDER.length) % VIEW_ORDER.length;
@@ -126,12 +101,11 @@ type TabDef = {
 const TABS: TabDef[] = [
   { view: "list", label: "List", icon: ListIcon },
   { view: "board", label: "Board", icon: BoardIcon },
-  { view: "timeline", label: "Timeline", icon: TimelineIcon },
 ];
 
 /**
- * List | Board | Timeline control for Task Home. Tab-like segmented
- * buttons with aria-controls pointing at the active view's tabpanel.
+ * List | Board control for Task Home. Tab-like segmented buttons with
+ * aria-controls pointing at the active view's tabpanel.
  */
 export function TaskHomeViewToggle({ value, onChange }: Props) {
   return (

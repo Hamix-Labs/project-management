@@ -24,19 +24,13 @@ vi.mock("../components/task-board/TaskBoardSection", () => ({
   ),
 }));
 
-vi.mock("../components/task-timeline/TaskTimelineSection", () => ({
-  TaskTimelineSection: ({ actions }: { actions?: ReactNode }) => (
-    <div data-testid="task-timeline-section">{actions}</div>
-  ),
-}));
-
 vi.mock("../components/task-board/TaskHomeViewToggle", () => ({
   TaskHomeViewToggle: ({
     value,
     onChange,
   }: {
     value: string;
-    onChange: (v: "list" | "board" | "timeline") => void;
+    onChange: (v: "list" | "board") => void;
   }) => (
     <div data-testid="view-toggle">
       <button type="button" onClick={() => onChange("list")}>
@@ -44,9 +38,6 @@ vi.mock("../components/task-board/TaskHomeViewToggle", () => ({
       </button>
       <button type="button" onClick={() => onChange("board")}>
         Board
-      </button>
-      <button type="button" onClick={() => onChange("timeline")}>
-        Timeline
       </button>
       <span data-testid="view-value">{value}</span>
     </div>
@@ -129,10 +120,10 @@ describe("TaskHome", () => {
     expect(screen.queryByTestId("task-list-section")).not.toBeInTheDocument();
   });
 
-  it("renders the timeline section when view=timeline", () => {
+  it("falls back to the list when view=timeline", () => {
     renderHome(makeApp(), ["/?view=timeline"]);
-    expect(screen.getByTestId("task-timeline-section")).toBeInTheDocument();
-    expect(screen.queryByTestId("task-list-section")).not.toBeInTheDocument();
+    expect(screen.getByTestId("task-list-section")).toBeInTheDocument();
+    expect(screen.queryByTestId("task-board-section")).not.toBeInTheDocument();
   });
 
   it("animates the view pane after toggling list ↔ board", async () => {

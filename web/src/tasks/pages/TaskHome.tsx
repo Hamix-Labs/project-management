@@ -6,7 +6,6 @@ import { runViewTransition } from "@/lib/runViewTransition";
 import { TaskListSection } from "../components/task-list";
 import { TaskBoardSection } from "../components/task-board/TaskBoardSection";
 import { TaskHomeViewToggle } from "../components/task-board/TaskHomeViewToggle";
-import { TaskTimelineSection } from "../components/task-timeline/TaskTimelineSection";
 import { useTasksAppList, useTasksAppModals } from "../app/TasksAppProvider";
 import { useTasksBoard } from "../hooks/useTasksBoard";
 import { isUiFeatureOmitted } from "@/launch/omittedFeatures";
@@ -208,14 +207,6 @@ export function TaskHome() {
             showProjectColumn={projectsUiEnabled}
             actions={listActions}
             emptyListAction={emptyAction}
-          />
-        ) : view === "timeline" ? (
-          <TaskTimelineSection
-            actions={listActions}
-            view={view}
-            dataEnabled={list.homeDataReady}
-            projectFilterOptions={projectFilterOptions}
-            showProjectColumn={projectsUiEnabled}
           />
         ) : (
           <TaskListSection

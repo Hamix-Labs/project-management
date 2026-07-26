@@ -1,11 +1,10 @@
-export type TaskHomeView = "list" | "board" | "timeline";
+export type TaskHomeView = "list" | "board";
 
 /** Parse `view` search param; unknown / missing → list. */
 export function parseTaskHomeView(
   viewParam: string | null | undefined,
 ): TaskHomeView {
   if (viewParam === "board") return "board";
-  if (viewParam === "timeline") return "timeline";
   return "list";
 }
 
