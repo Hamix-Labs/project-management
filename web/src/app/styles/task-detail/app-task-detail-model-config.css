@@ -169,6 +169,33 @@ a.task-create-agent-lock-notice-link:hover {
     border-color var(--duration-normal) var(--ease-out);
 }
 
+.task-verify-chat-mode-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: var(--touch-target-min);
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-soft);
+  max-width: 100%;
+}
+
+.task-verify-chat-mode-chip-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.task-verify-chat-mode-chip-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .task-token-usage-chip:not(:disabled):hover {
   background: var(--bg-subtle);
   border-color: var(--border-chrome-muted);

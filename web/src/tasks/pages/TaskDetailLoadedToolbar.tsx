@@ -3,6 +3,7 @@ import {
   TaskDetailToolbarActions,
 } from "../components/task-detail";
 import { TokenUsageChip } from "../components/task-detail/TokenUsageChip";
+import { VerifyChatModeChip } from "../components/task-detail/VerifyChatModeChip";
 import { canEditTask } from "../task-display/canEditTask";
 import type { TaskDetailLoadedViewProps } from "./TaskDetailLoadedView";
 
@@ -45,6 +46,7 @@ export function TaskDetailLoadedToolbar({
     <div className="task-detail-toolbar">
       <div className="task-detail-toolbar-left">
         <TokenUsageChip taskId={task.id} />
+        <VerifyChatModeChip task={task} />
         <TaskDetailSchedule task={task} />
       </div>
       <TaskDetailToolbarActions
