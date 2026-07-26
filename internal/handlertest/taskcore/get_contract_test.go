@@ -46,7 +46,7 @@ func TestHTTP_getTask_flatTaskEnvelope(t *testing.T) {
 		t.Fatalf("decode envelope: %v body=%s", err, raw)
 	}
 
-	wantKeys := []string{"created_at", "cursor_model", "id", "initial_prompt", "number", "pickup_not_before", "priority", "project_id", "runner", "runner_config", "status", "title", "worktree_id"}
+	wantKeys := []string{"created_at", "cursor_model", "id", "initial_prompt", "number", "pickup_not_before", "priority", "project_id", "runner", "runner_config", "status", "title", "verify_chat_mode", "worktree_id"}
 	gotKeys := make([]string, 0, len(top))
 	for k := range top {
 		gotKeys = append(gotKeys, k)
