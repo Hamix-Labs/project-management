@@ -187,11 +187,8 @@ func CreateContext(ctx context.Context, db *gorm.DB, projectID string, input Cre
 		return domain.ProjectContextItem{}, fmt.Errorf("%w: project id required", domain.ErrInvalidInput)
 	}
 	id := storekernel.ResolveID(input.ID)
-	kind := domain.ProjectContextKind(strings.TrimSpace(string(input.Kind)))
-	if kind == "" {
-		kind = domain.ProjectContextKindNote
-	}
-	if err := validateContextKind(kind); err != nil {
+	tag := strings.TrimSpace(input.Tag)
+	if err := domain.ValidateProjectContextTag(tag); err != nil {
 		return domain.ProjectContextItem{}, err
 	}
 	title := strings.TrimSpace(input.Title)
@@ -217,7 +214,7 @@ func CreateContext(ctx context.Context, db *gorm.DB, projectID string, input Cre
 	drow := domain.ProjectContextItem{
 		ID:            id,
 		ProjectID:     projectID,
-		Kind:          kind,
+		Tag:           tag,
 		Title:         title,
 		Description:   description,
 		Body:          body,
@@ -443,8 +440,8 @@ func applyProjectPatch(row *domain.Project, input UpdateProjectInput) {
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func validateContextPatch(input UpdateContextInput) error {
-	if input.Kind != nil {
-		if err := validateContextKind(*input.Kind); err != nil {
+	if input.Tag != nil {
+		if err := domain.ValidateProjectContextTag(strings.TrimSpace(*input.Tag)); err != nil {
 			return err
 		}
 	}
@@ -468,8 +465,8 @@ func validateContextPatch(input UpdateContextInput) error {
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func applyContextPatch(row *domain.ProjectContextItem, input UpdateContextInput) {
-	if input.Kind != nil {
-		row.Kind = domain.ProjectContextKind(strings.TrimSpace(string(*input.Kind)))
+	if input.Tag != nil {
+		row.Tag = strings.TrimSpace(*input.Tag)
 	}
 	if input.Title != nil {
 		row.Title = strings.TrimSpace(*input.Title)
@@ -483,18 +480,6 @@ func applyContextPatch(row *domain.ProjectContextItem, input UpdateContextInput)
 	if input.Pinned != nil {
 		row.Pinned = *input.Pinned
 	}
-}
-
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func validateContextKind(kind domain.ProjectContextKind) error {
-	trimmed := strings.TrimSpace(string(kind))
-	if trimmed == "" {
-		return fmt.Errorf("%w: context kind required", domain.ErrInvalidInput)
-	}
-	if len(trimmed) > 24 {
-		return fmt.Errorf("%w: context kind must be 24 characters or fewer", domain.ErrInvalidInput)
-	}
-	return nil
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."

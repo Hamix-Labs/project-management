@@ -60,20 +60,18 @@ Schema and table definitions: [data-model.md](../data-model.md) (Project context
 | Term | Definition |
 | --- | --- |
 | **Project** | Long-lived container with `name`, `description`, `context_summary`, and `active` / `archived` status. Not a task parent. |
-| **Context item** | Human-inspectable node (`project_context_items`): `kind`, `title`, optional `description`, `body`, optional `source_task_id` / `source_cycle_id`, `pinned`. |
+| **Context item** | Human-inspectable node (`project_context_items`): `tag`, `title`, optional `description`, `body`, optional `source_task_id` / `source_cycle_id`, `pinned`. |
 | **Context edge** | User-curated link between two items in the same project: `relation` + `strength` (1–5) + optional `note`. |
 | **Selection** | Task JSONB `project_context_item_ids` — ordered allowlist of item ids (max 20, deduped). |
 | **Rendered context** | Plain-text `<project_context>…</project_context>` block built by the harness. |
 | **Context snapshot** | One immutable `task_context_snapshots` row per cycle: full JSON bundle + rendered text + token estimate. |
 
-### Context item kinds and edge relations
+### Context item tags and edge relations
 
-| Kind (`project_context_items.kind`) | Typical use |
+| Tag (`project_context_items.tag`) | Typical use |
 | --- | --- |
-| `note` | General durable fact |
-| `decision` | Chosen direction |
-| `constraint` | Non-negotiable boundary |
-| `handoff` | Cross-task continuity |
+| Freeform label (1–40 Unicode chars) | Groups related memory nodes in the SPA (e.g. `Codebase tour`, `Payment rules`). Required on create. |
+| `General` | Default assigned when migrating legacy role-kind rows (`note` / `decision` / `constraint` / `handoff`). |
 
 | Relation (`project_context_edges.relation`) | Meaning in prompt |
 | --- | --- |
@@ -129,7 +127,7 @@ Operators maintain canonical memory via project APIs ([`handler_projects.go`](..
 
 1. **Create or pick a project** — `POST /projects` or use the seeded default project (`00000000-0000-4000-8000-000000000001`). See [`domain.DefaultProjectID`](../../pkgs/tasks/domain/project_defaults.go).
 
-2. **Add context items** — Import a local `.txt` or `.md` file from the project context page (alias = `title`, short description required in the SPA, file text = `body`, `kind` = `note`), or call `POST /projects/{id}/context` with `kind`, `title`, `body`, optional `description`, `pinned`, `source_task_id`, `source_cycle_id`. Store requires non-empty title and body; title ≤ **200** Unicode characters; description ≤ **400** Unicode characters (empty allowed); body ≤ **512 KiB** UTF-8 bytes (reject, never truncate). See [`ValidateProjectContextTitle`](../../pkgs/projects/domain/limits.go) / [`ValidateProjectContextDescription`](../../pkgs/projects/domain/limits.go) / [`ValidateProjectContextBody`](../../pkgs/projects/domain/limits.go) and [`CreateContext`](../../pkgs/projects/store/internal/projects.go).
+2. **Add context items** — Import a local `.txt` or `.md` file from the project context page (alias = `title`, short description required in the SPA, file text = `body`, required `tag` for grouping), or call `POST /projects/{id}/context` with `tag`, `title`, `body`, optional `description`, `pinned`, `source_task_id`, `source_cycle_id`. Store requires non-empty tag, title, and body; tag ≤ **40** Unicode characters; title ≤ **200** Unicode characters; description ≤ **400** Unicode characters (empty allowed); body ≤ **512 KiB** UTF-8 bytes (reject, never truncate). See [`ValidateProjectContextTag`](../../pkgs/projects/domain/limits.go) / [`ValidateProjectContextTitle`](../../pkgs/projects/domain/limits.go) / [`ValidateProjectContextDescription`](../../pkgs/projects/domain/limits.go) / [`ValidateProjectContextBody`](../../pkgs/projects/domain/limits.go) and [`CreateContext`](../../pkgs/projects/store/internal/projects.go).
 
 3. **Link items (optional)** — `POST /projects/{id}/context/edges` with `source_context_id`, `target_context_id`, `relation`, `strength` (1–5), optional `note`. Both nodes must belong to the same project.
 
@@ -208,10 +206,10 @@ To change which context items a run sees, start a **new cycle** (new `cycle_id` 
 Project: {project.name}
 Summary: {project.context_summary}   ← omitted when blank
 
-[{kind}] {title}
+[{tag}] {title}
 {body}
 
-[{kind}] {title}
+[{tag}] {title}
 {body}
 
 Relationships:
@@ -251,7 +249,7 @@ Validation errors surface as `400` with `domain.ErrInvalidInput` messages (e.g. 
 | Field | Notes |
 | --- | --- |
 | `id` | Server-assigned UUID |
-| `kind` | `note` \| `decision` \| `constraint` \| `handoff` |
+| `tag` | Required freeform group label (1–40 Unicode chars) |
 | `title`, `body` | Required on create |
 | `description` | Optional short blurb for selection UX (0–400 Unicode chars); empty allowed |
 | `pinned` | List API returns pinned items first |
@@ -328,7 +326,7 @@ See [configuration.md](../configuration.md) for worker and repo settings that af
 - Keep selected bundles small — the 20-item cap is a manual bound; there is no semantic retrieval ([ADR-0001](../adr/ADR-0001-project-context.md)).
 - Use **edges** only between items you expect to co-select; partial selection drops edges that reference unselected nodes.
 - After changing `project_id`, re-pick `project_context_item_ids` before the next run.
-- Prefer explicit **kinds** (`decision`, `constraint`) so execute agents scan structured sections quickly.
+- Prefer clear **tags** (group labels) so the SPA and execute prompt sections stay scannable.
 - To refresh context mid-initiative, edit project items **and** start a new cycle if a in-flight cycle must see updates.
 
 ## Limitations

@@ -25,18 +25,18 @@ type Project struct {
 
 // ProjectContextItem is a human-inspectable memory item attached to a project.
 type ProjectContextItem struct {
-	ID            string             `json:"id"`
-	ProjectID     string             `json:"project_id"`
-	Kind          ProjectContextKind `json:"kind"`
-	Title         string             `json:"title"`
-	Description   string             `json:"description"`
-	Body          string             `json:"body"`
-	SourceTaskID  *string            `json:"source_task_id,omitempty"`
-	SourceCycleID *string            `json:"source_cycle_id,omitempty"`
-	CreatedBy     Actor              `json:"created_by"`
-	Pinned        bool               `json:"pinned"`
-	CreatedAt     time.Time          `json:"created_at"`
-	UpdatedAt     time.Time          `json:"updated_at"`
+	ID            string    `json:"id"`
+	ProjectID     string    `json:"project_id"`
+	Tag           string    `json:"tag"`
+	Title         string    `json:"title"`
+	Description   string    `json:"description"`
+	Body          string    `json:"body"`
+	SourceTaskID  *string   `json:"source_task_id,omitempty"`
+	SourceCycleID *string   `json:"source_cycle_id,omitempty"`
+	CreatedBy     Actor     `json:"created_by"`
+	Pinned        bool      `json:"pinned"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
 }
 
 // ProjectContextEdge is a user-curated relationship between two context nodes

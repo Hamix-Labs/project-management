@@ -141,7 +141,7 @@ func TestWorker_SelectedProjectContext_injectsAndSnapshotsOnlySelectedItems(t *t
 		t.Fatalf("create project: %v", err)
 	}
 	selected, err := h.store.CreateProjectContext(ctx, project.ID, projectsstore.CreateProjectContextInput{
-		Kind:      projectsdomain.ProjectContextKindDecision,
+		Tag:       "Payment rules",
 		Title:     "Decision",
 		Body:      "The user chose this item.",
 		CreatedBy: projectsdomain.ActorUser,
@@ -150,7 +150,7 @@ func TestWorker_SelectedProjectContext_injectsAndSnapshotsOnlySelectedItems(t *t
 		t.Fatalf("create selected context: %v", err)
 	}
 	selectedConstraint, err := h.store.CreateProjectContext(ctx, project.ID, projectsstore.CreateProjectContextInput{
-		Kind:      projectsdomain.ProjectContextKindConstraint,
+		Tag:       "Payment rules",
 		Title:     "Constraint",
 		Body:      "The user chose this related node.",
 		CreatedBy: projectsdomain.ActorUser,
@@ -159,7 +159,7 @@ func TestWorker_SelectedProjectContext_injectsAndSnapshotsOnlySelectedItems(t *t
 		t.Fatalf("create selected constraint: %v", err)
 	}
 	unselected, err := h.store.CreateProjectContext(ctx, project.ID, projectsstore.CreateProjectContextInput{
-		Kind:      projectsdomain.ProjectContextKindNote,
+		Tag:       "General",
 		Title:     "Unselected",
 		Body:      "The worker must not include this.",
 		CreatedBy: projectsdomain.ActorUser,

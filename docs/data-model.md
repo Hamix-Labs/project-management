@@ -337,7 +337,7 @@ Instantiate (`POST /task-templates/instantiate`) maps payload → `POST /tasks` 
 
 ## Project context
 
-Curated context nodes (`project_context_items`: `kind`, `title`, optional `description`, `body`, provenance, `pinned`) and user-curated relationships (`project_context_edges`, typed `relation` + `1..5 strength`) owned by a project. A task's run captures the user-selected bundle in `task_context_snapshots` — immutable, cycle-scoped.
+Curated context nodes (`project_context_items`: `tag`, `title`, optional `description`, `body`, provenance, `pinned`) and user-curated relationships (`project_context_edges`, typed `relation` + `1..5 strength`) owned by a project. A task's run captures the user-selected bundle in `task_context_snapshots` — immutable, cycle-scoped.
 
 Mental model: project = process, task = thread. Project = shared memory; task = reader; run = immutable snapshot of what the runner actually saw.
 

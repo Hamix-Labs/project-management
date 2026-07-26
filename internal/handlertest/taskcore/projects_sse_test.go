@@ -20,7 +20,7 @@ func TestHTTP_projectRoutesPublishSSE(t *testing.T) {
 	handlertest.MustEqualEvents(t, "POST /projects", got, []string{"project_created:" + project.ID})
 
 	handlertest.MustDoJSON(t, http.MethodPost, srv.URL+"/projects/"+project.ID+"/context",
-		`{"kind":"note","title":"Pinned","body":"Context","pinned":true}`, "", http.StatusCreated)
+		`{"tag":"General","title":"Pinned","body":"Context","pinned":true}`, "", http.StatusCreated)
 	got = handlertest.SummarizeSSEEvents(handlertest.DrainSSE(t, ch, 1, 2*time.Second))
 	handlertest.MustEqualEvents(t, "POST /projects/{id}/context", got, []string{"project_context_changed:" + project.ID})
 

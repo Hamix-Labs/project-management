@@ -24,7 +24,7 @@ type UpdateProjectInput struct {
 // CreateProjectContextInput is the store input for appending a project context item.
 type CreateProjectContextInput struct {
 	ID            string
-	Kind          domain.ProjectContextKind
+	Tag           string
 	Title         string
 	Description   string
 	Body          string
@@ -36,7 +36,7 @@ type CreateProjectContextInput struct {
 
 // UpdateProjectContextInput is a partial patch for one project context item.
 type UpdateProjectContextInput struct {
-	Kind        *domain.ProjectContextKind
+	Tag         *string
 	Title       *string
 	Description *string
 	Body        *string

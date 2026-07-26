@@ -29,7 +29,7 @@ func BuildProjectContextSection(in ProjectContextInput) string {
 	}
 	for _, item := range in.Items {
 		b.WriteString("\n[")
-		b.WriteString(string(item.Kind))
+		b.WriteString(item.Tag)
 		b.WriteString("] ")
 		b.WriteString(item.Title)
 		b.WriteString("\n")
