@@ -30,7 +30,6 @@ var HintOnlyChangeTypes = []realtime.ChangeType{
 	realtime.ProjectCreated,
 	realtime.ProjectUpdated,
 	realtime.ProjectDeleted,
-	realtime.ProjectContextChanged,
 	realtime.SettingsChanged,
 }
 

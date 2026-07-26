@@ -245,7 +245,7 @@ export type TaskChangeType =
   | "project_created"
   | "project_updated"
   | "project_deleted"
-  | "project_context_changed";
+;
 
 /**
  * Wire shape of a single SSE frame on `GET /events` (legacy narrow subset).
@@ -278,7 +278,6 @@ export const SSE_CHANGE_TYPE = {
   projectCreated: "project_created",
   projectUpdated: "project_updated",
   projectDeleted: "project_deleted",
-  projectContextChanged: "project_context_changed",
   settingsChanged: "settings_changed",
   agentRunCancelled: "agent_run_cancelled",
   resync: "resync",
@@ -302,7 +301,6 @@ export const SSE_PROJECT_HINT_TYPES = [
   SSE_CHANGE_TYPE.projectCreated,
   SSE_CHANGE_TYPE.projectUpdated,
   SSE_CHANGE_TYPE.projectDeleted,
-  SSE_CHANGE_TYPE.projectContextChanged,
 ] as const;
 
 export const STATUSES: Status[] = [

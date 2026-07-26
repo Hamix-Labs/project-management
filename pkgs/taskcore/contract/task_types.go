@@ -22,7 +22,6 @@ type CreateTaskInput struct {
 	Status                domain.Status
 	Priority              domain.Priority
 	ProjectID             *string
-	ProjectContextItemIDs []string
 	Runner                string
 	CursorModel           string
 	VerifyChatMode        string
@@ -65,7 +64,6 @@ type UpdateTaskInput struct {
 	Status                *domain.Status
 	Priority              *domain.Priority
 	Project               *ProjectFieldPatch
-	ProjectContextItemIDs *[]string
 	PickupNotBefore       *PickupNotBeforePatch
 	CursorModel           *string
 	VerifyChatMode        *string

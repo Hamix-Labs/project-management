@@ -148,7 +148,7 @@ func (h *Handler) createProjectContext(w http.ResponseWriter, r *http.Request) {
 		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
-	h.notifyChange(realtime.ProjectContextChanged, projectID)
+	h.notifyChange(realtime.ProjectUpdated, projectID)
 	handlerhttp.WriteJSON(w, r, op, http.StatusCreated, item)
 }
 
@@ -213,7 +213,7 @@ func (h *Handler) patchProjectContext(w http.ResponseWriter, r *http.Request) {
 		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
-	h.notifyChange(realtime.ProjectContextChanged, projectID)
+	h.notifyChange(realtime.ProjectUpdated, projectID)
 	handlerhttp.WriteJSON(w, r, op, http.StatusOK, item)
 }
 
@@ -230,6 +230,6 @@ func (h *Handler) deleteProjectContext(w http.ResponseWriter, r *http.Request) {
 		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
-	h.notifyChange(realtime.ProjectContextChanged, projectID)
+	h.notifyChange(realtime.ProjectUpdated, projectID)
 	w.WriteHeader(http.StatusNoContent)
 }

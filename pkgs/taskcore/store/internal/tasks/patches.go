@@ -31,9 +31,6 @@ func applyTaskPatches(tx *gorm.DB, taskID string, cur *domain.Task, in UpdateInp
 	if err := applyProjectPatch(tx, cur, in.Project); err != nil {
 		return err
 	}
-	if err := applyProjectContextSelectionPatch(tx, cur, in.ProjectContextItemIDs); err != nil {
-		return err
-	}
 	if err := applyStatusPatch(tx, taskID, cur, in.Status, by, &seqPtr); err != nil {
 		return err
 	}
@@ -96,27 +93,6 @@ func applyPendingRetryPatch(cur *domain.Task, set *domain.PendingRetry, clear bo
 	return nil
 }
 
-func applyProjectContextSelectionPatch(tx *gorm.DB, cur *domain.Task, ids *[]string) error {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.tasks.applyProjectContextSelectionPatch")
-	if ids == nil {
-		return nil
-	}
-	contextIDs, err := normalizeProjectContextItemIDs(*ids)
-	if err != nil {
-		return err
-	}
-	if len(contextIDs) > 0 {
-		if cur.ProjectID == nil || strings.TrimSpace(*cur.ProjectID) == "" {
-			return fmt.Errorf("%w: project_id required for project context selection", domain.ErrInvalidInput)
-		}
-		if err := validateProjectContextSelection(tx, *cur.ProjectID, contextIDs); err != nil {
-			return err
-		}
-	}
-	cur.ProjectContextItemIDs = contextIDs
-	return nil
-}
-
 func applyProjectPatch(tx *gorm.DB, cur *domain.Task, project *ProjectFieldPatch) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.tasks.applyProjectPatch")
 	if project == nil {
@@ -127,7 +103,6 @@ func applyProjectPatch(tx *gorm.DB, cur *domain.Task, project *ProjectFieldPatch
 			return fmt.Errorf("%w: cannot clear project_id on numbered task", domain.ErrInvalidInput)
 		}
 		cur.ProjectID = nil
-		cur.ProjectContextItemIDs = nil
 		return nil
 	}
 	pid := strings.TrimSpace(project.ID)
@@ -153,7 +128,6 @@ func applyProjectPatch(tx *gorm.DB, cur *domain.Task, project *ProjectFieldPatch
 	}
 	cur.ProjectID = &pid
 	cur.Number = &num
-	cur.ProjectContextItemIDs = nil
 	return nil
 }
 
