@@ -4,6 +4,8 @@ Historical **why** behind structural and behavioral choices. Schema, routes, and
 
 | ADR | Status | Topic |
 | --- | --- | --- |
+| [ADR-0086](./ADR-0086-verify-chat-modes.md) | Accepted | Configurable verify chat modes |
+| [ADR-0087](./ADR-0087-remove-project-context.md) | Accepted | Remove project memory (supersedes ADR-0001) |
 | [ADR-0039](./ADR-0039-domain-persistence-separation.md) | Proposed | Separate GORM models from `domain/` types (issue #61; follow-up to PR #56) |
 | [ADR-0038](./ADR-0038-shared-git-exec-core.md) | Accepted | Shared `pkgs/gitcore` for git subprocess I/O |
 | [ADR-0037](./ADR-0037-global-repos-project-tree.md) | Accepted | Global repos, worktree/branch tree |

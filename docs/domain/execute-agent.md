@@ -4,7 +4,7 @@ How the execute phase implements task work via the configured runner, composed p
 
 | | |
 | --- | --- |
-| **Applies to** | Agent worker harness, execute runner, task create/edit (prompt, project context), cycle progress UI |
+| **Applies to** | Agent worker harness, execute runner, task create/edit (prompt), cycle progress UI |
 | **Audience** | Contributors touching `pkgs/agents/harness`, runner adapters, or execute-phase settings |
 | **Prerequisite** | [done-criteria.md](./done-criteria.md) — criteria vocabulary and lifecycle |
 | **Companion article** | [verify-agent.md](./verify-agent.md) — verify phase (same agent, worker evidence); [harness.md](./harness.md) — cycle loop and worker boundary |
@@ -29,7 +29,7 @@ The **execute agent** is the LLM pass during `PhaseExecute`. The harness invokes
 
 ### In scope
 
-- Prompt composition (criteria, resume, git policy, project context)
+- Prompt composition (criteria, resume, git policy)
 - Runner invocation, progress streaming, and phase persistence
 - Criteria self-report wire format and parser expectations
 - Retry inputs (locked criteria, verify feedback) and resume branches
@@ -54,7 +54,7 @@ Schema and table definitions: [data-model.md](../data-model.md) (Checklist). HTT
 | Term | Definition |
 | --- | --- |
 | **InitialPrompt** | Operator-authored rich text on the task row (`initial_prompt`); base input to composition. |
-| **Composed prompt** | String built by `composeExecutePrompt` before project-context wrapping. |
+| **Composed prompt** | String built by `composeExecutePrompt` and passed to the runner. |
 | **Report dir** | `HAMIX_WORKER_REPORT_DIR/<cycle_id>/` — outside the git repo; holds `criteria-report.json`. |
 | **Self-claim** | `claimed_done` + `evidence` in the criteria report; assertion only, not final acceptance. |
 | **Locked criterion** | Passed on a prior verify attempt in the same cycle; listed as "Already verified (do not re-do)". |
@@ -64,7 +64,7 @@ Schema and table definitions: [data-model.md](../data-model.md) (Checklist). HTT
 
 | Actor | Role | Trust |
 | --- | --- | --- |
-| **Operator** | Authors `initial_prompt`, criteria, and project context selection. | Trusted to define intent. |
+| **Operator** | Authors `initial_prompt` and criteria. | Trusted to define intent. |
 | **Worker (harness)** | Composes prompt, invokes runner, parses criteria report after execute, hands off to verify. | Trusted orchestrator. |
 | **Execute agent** | Implements work in `repo_root`; writes `criteria-report.json`. | **Not trusted** for final acceptance — self-claim is an assertion. |
 | **Agent verify** | Same runner; judges criteria in `PhaseVerify` (downstream). | Trusted verdict when integrity holds — see [verify-agent.md](./verify-agent.md). |
@@ -106,7 +106,7 @@ Each execute attempt follows this sequence in [`cycle_loop.go`](../../pkgs/agent
 
 3. **`composeExecutePrompt`** — Builds the composed prompt (see [Execute prompt contract](#execute-prompt-contract)). Assigns it to a copy of the task as `InitialPrompt` for the runner call.
 
-4. **`invokeRunner`** — Loads or reuses the project context snapshot, wraps the composed prompt in `<task_prompt>`, and calls `runner.Run` with timeout and cancel support. Progress callbacks persist to `task_cycle_stream_events` and publish ephemeral SSE. See [`cycle.go`](../../pkgs/agents/harness/cycle.go).
+4. **`invokeRunner`** — Calls `runner.Run` with the composed prompt, timeout, and cancel support. Progress callbacks persist to `task_cycle_stream_events` and publish ephemeral SSE. See [`cycle.go`](../../pkgs/agents/harness/cycle.go).
 
 5. **Outcome classification** — `classifyRunOutcome` maps the runner error to phase/cycle/task status and a stable reason string (`runner_timeout`, `runner_non_zero_exit`, `runner_invalid_output`, `runner_error`). Operator cancel overrides with `cancelled_by_operator`.
 
@@ -121,7 +121,6 @@ Each execute attempt follows this sequence in [`cycle_loop.go`](../../pkgs/agent
 | **Operator cancel** | `CancelCurrentRun` cancels the in-flight context; cycle terminates with `cancelled_by_operator`. See [`harness.go`](../../pkgs/agents/harness/harness.go). |
 | **Process shutdown** | Parent context cancelled mid-run → `handleShutdownAfterRun` → cycle `aborted`, reason `shutdown`. See [`recovery.go`](../../pkgs/agents/harness/recovery.go). |
 | **Panic** | Deferred `recoverFromPanic` best-effort `CompletePhase(failed, "panic")` + `TerminateCycle(failed, "panic")`. |
-| **Project context failure** | Execute fails before runner starts with `runner.ErrInvalidOutput` and summary `project context selection failed`. |
 
 ## Execute prompt contract
 
@@ -135,21 +134,7 @@ Each execute attempt follows this sequence in [`cycle_loop.go`](../../pkgs/agent
 | 4 | Operator `initial_prompt` | Task row | Always |
 | 5 | Previous verification feedback | `appendVerifyFeedback` | Retry after verify failure |
 
-At invoke time, **project context** wraps the composed body ([`project_context.go`](../../pkgs/agents/harness/project_context.go)):
-
-```text
-<project_context>
-Project: ...
-Summary: ...
-[item blocks]
-</project_context>
-
-<task_prompt>
-  ...composed sections...
-</task_prompt>
-```
-
-If the task has no project context selection, the wrapper is omitted and only the composed prompt is sent.
+The composed prompt is passed to the runner as-is (no `<project_context>` wrap — see [ADR-0087](../adr/ADR-0087-remove-project-context.md)).
 
 ### Git commit policy
 
@@ -278,7 +263,6 @@ Execute-specific resume prompts tell the agent to inspect the working tree (and 
 | Task `cursor_model` | task row | Per-run model override forwarded to runner |
 | `max_run_duration_seconds` | `app_settings` | Wall-clock cap on execute (and verify LLM) runs; `0` = no limit |
 | `HAMIX_WORKER_REPORT_DIR` | env | Scratch root for `criteria-report.json` |
-| `project_id` + `project_context_item_ids` | task row | Project context snapshot for the cycle |
 
 See [configuration.md](../configuration.md) for validation rules and supervisor hot-reload behavior.
 
@@ -298,7 +282,6 @@ See [configuration.md](../configuration.md) for validation rules and supervisor 
 | Composed prompt not hashed | Audit trail correlates operator prompt only via `prompt_hash` |
 | Runner is stateless | No mid-CLI session resume ([ADR-0006](../adr/ADR-0006-phase-boundary-resume.md)) |
 | Report files ephemeral | GC at cycle terminate; durable criteria mirror written during verify pipeline |
-| Project context snapshot once per cycle | Changing selected context items mid-cycle requires a new cycle |
 | Zero-criteria legacy | No criteria report required; execute-only completion path |
 | Progress adapter-specific | Normalized events depend on the registered runner (V1: Cursor `stream-json`) |
 
@@ -326,7 +309,6 @@ See [configuration.md](../configuration.md) for validation rules and supervisor 
 | [`pkgs/agents/harness/cycle.go`](../../pkgs/agents/harness/cycle.go) | `startExecutePhase`, `invokeRunner`, `completeExecutePhase`, `classifyRunOutcome` |
 | [`pkgs/agents/harness/criteria_prompt.go`](../../pkgs/agents/harness/criteria_prompt.go) | Criteria + verify feedback injection |
 | [`pkgs/agents/harness/resume_prompt.go`](../../pkgs/agents/harness/resume_prompt.go) | Resume notice, git commit policy |
-| [`pkgs/agents/harness/project_context.go`](../../pkgs/agents/harness/project_context.go) | Context snapshot + prompt wrapping |
 | [`pkgs/agents/harness/criteria_parse.go`](../../pkgs/agents/harness/criteria_parse.go) | Report paths, parse limits |
 | [`pkgs/agents/harness/resume.go`](../../pkgs/agents/harness/resume.go) | Resume entry point |
 | [`pkgs/agents/harness/resume_state.go`](../../pkgs/agents/harness/resume_state.go) | Checkpoint reconstruction |

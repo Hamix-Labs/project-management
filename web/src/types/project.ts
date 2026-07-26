@@ -5,7 +5,6 @@ export type Project = {
   name: string;
   description: string;
   status: ProjectStatus;
-  context_summary: string;
   repository_id?: string;
   is_default: boolean;
   created_at: string;

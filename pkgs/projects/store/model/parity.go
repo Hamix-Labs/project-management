@@ -16,25 +16,4 @@ var ParityPairs = []ParityPair{
 		Model:  &Project{},
 		Table:  "projects",
 	},
-	{
-		Name:   "ProjectContextItem",
-		Domain: &projectsdomain.ProjectContextItem{},
-		Model:  &ProjectContextItem{},
-		Table:  "project_context_items",
-		ModelMigrateExtra: []any{
-			&Project{},
-			&TaskRow{},
-			&CycleRow{},
-		},
-	},
-	{
-		Name:   "ProjectContextEdge",
-		Domain: &projectsdomain.ProjectContextEdge{},
-		Model:  &ProjectContextEdge{},
-		Table:  "project_context_edges",
-		ModelMigrateExtra: []any{
-			&Project{},
-			&ProjectContextItem{},
-		},
-	},
 }

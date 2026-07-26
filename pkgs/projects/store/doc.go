@@ -1,2 +1,2 @@
-// Package store implements GORM-backed persistence for projects and project context.
+// Package store implements GORM-backed persistence for projects.
 package store

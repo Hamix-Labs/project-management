@@ -1,14 +1,14 @@
 # `pkgs/projects`
 
-Bounded context for first-class projects, curated project context (items + edges), and immutable task context snapshots. Extracted from `pkgs/tasks` per [ADR-0045](../../docs/adr/ADR-0045-bounded-context-projects.md).
+Bounded context for first-class projects (CRUD, per-repo defaults, task membership). Extracted from `pkgs/tasks` per [ADR-0045](../../docs/adr/ADR-0045-bounded-context-projects.md). Project memory/context nodes were removed in [ADR-0087](../../docs/adr/ADR-0087-remove-project-context.md).
 
-HTTP routes (`/projects`, `/projects/{id}/context`, …) and JSON shapes are unchanged from the pre-extraction API. `pkgs/tasks/handler` registers routes via `pkgs/projects/handler.Register`.
+HTTP routes (`/projects`, `/projects/{id}`) and JSON shapes are registered via `pkgs/projects/handler.Register` from `pkgs/tasks/handler`.
 
 ## Layout
 
 | Package | Path | Responsibility |
 | --- | --- | --- |
-| Domain | [`domain/`](./domain/) | `Project`, context types, enums, sentinel errors — stdlib only |
+| Domain | [`domain/`](./domain/) | `Project`, status enums, sentinel errors — stdlib only |
 | Contract | [`contract/`](./contract/) | `ProjectStore` interface + store wire input types |
 | Store | [`store/`](./store/) | GORM persistence facade; `internal/` holds CRUD; `model/` holds GORM rows + mappers |
 | Handler | [`handler/`](./handler/) | `/projects*` REST handlers and wire DTOs |
@@ -16,8 +16,7 @@ HTTP routes (`/projects`, `/projects/{id}/context`, …) and JSON shapes are unc
 ## Wiring
 
 - **`cmd/taskapi`** constructs `internal/taskapi/composition.API` via `composition.NewAPI(db)` ([ADR-0079](../../docs/adr/ADR-0079-facade-deletion.md)).
-- Composition holds `*projectsstore.Store` and satisfies `contract.ProjectStore` for HTTP and harness callers.
-- Harness and worker load project context through composition; contract types use `pkgs/projects/domain`.
+- Composition holds `*projectsstore.Store` and satisfies `contract.ProjectStore` for HTTP callers.
 - Model registration for AutoMigrate lives in [`pkgs/tasks/postgres/migrate/migrate_models.go`](../tasks/postgres/migrate/migrate_models.go).
 
 ## Dependency rules
@@ -39,6 +38,6 @@ go test ./pkgs/projects/... -count=1
 ## See also
 
 - [docs/api.md](../../docs/api.md) — `/projects*` contract
-- [docs/domain/project-context.md](../../docs/domain/project-context.md) — harness context selection
 - [pkgs/projects/contract/project.go](./contract/project.go) — `ProjectStore` interface
 - [ADR-0055](../../docs/adr/ADR-0055-contract-colocation.md) — contract colocation
+- [ADR-0087](../../docs/adr/ADR-0087-remove-project-context.md) — project memory teardown

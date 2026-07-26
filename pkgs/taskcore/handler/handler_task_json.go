@@ -12,16 +12,16 @@ import (
 )
 
 type taskCreateJSON struct {
-	ID                    string          `json:"id"`
-	DraftID               string          `json:"draft_id"`
-	Title                 string          `json:"title"`
-	InitialPrompt         string          `json:"initial_prompt"`
-	Status                domain.Status   `json:"status"`
-	Priority              domain.Priority `json:"priority"`
-	ProjectID             *string         `json:"project_id"`
-	Runner                *string         `json:"runner"`
-	CursorModel           *string         `json:"cursor_model"`
-	VerifyChatMode        *string         `json:"verify_chat_mode"`
+	ID             string          `json:"id"`
+	DraftID        string          `json:"draft_id"`
+	Title          string          `json:"title"`
+	InitialPrompt  string          `json:"initial_prompt"`
+	Status         domain.Status   `json:"status"`
+	Priority       domain.Priority `json:"priority"`
+	ProjectID      *string         `json:"project_id"`
+	Runner         *string         `json:"runner"`
+	CursorModel    *string         `json:"cursor_model"`
+	VerifyChatMode *string         `json:"verify_chat_mode"`
 	// PickupNotBefore is an optional RFC3339 instant. When provided,
 	// the worker will not pick up the task until this time has passed
 	// (see docs/data-model.md). Omitted/null = no schedule = pick up
@@ -39,12 +39,12 @@ type taskCreateJSON struct {
 }
 
 type taskPatchJSON struct {
-	Title                 *string                   `json:"title"`
-	InitialPrompt         *string                   `json:"initial_prompt"`
-	Status                *domain.Status            `json:"status"`
-	Priority              *domain.Priority          `json:"priority"`
-	ProjectID             patchProjectField         `json:"project_id"`
-	PickupNotBefore       patchPickupNotBeforeField `json:"pickup_not_before"`
+	Title           *string                   `json:"title"`
+	InitialPrompt   *string                   `json:"initial_prompt"`
+	Status          *domain.Status            `json:"status"`
+	Priority        *domain.Priority          `json:"priority"`
+	ProjectID       patchProjectField         `json:"project_id"`
+	PickupNotBefore patchPickupNotBeforeField `json:"pickup_not_before"`
 	// CursorModel sets tasks.cursor_model when the key is present (including
 	// the empty string, which clears per-task override). JSON null is decoded
 	// as nil and means "no change", same as omitting the key.

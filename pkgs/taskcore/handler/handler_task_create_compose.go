@@ -28,21 +28,21 @@ type CreateTaskComposeOpts struct {
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func taskCreateJSONToCompose(body taskCreateJSON) taskComposePayloadJSON {
 	return taskComposePayloadJSON{
-		Title:                 body.Title,
-		InitialPrompt:         body.InitialPrompt,
-		Status:                body.Status,
-		Priority:              body.Priority,
+		Title:           body.Title,
+		InitialPrompt:   body.InitialPrompt,
+		Status:          body.Status,
+		Priority:        body.Priority,
 		ProjectID:       body.ProjectID,
 		RepositoryID:    body.RepositoryID,
 		Runner:          body.Runner,
-		CursorModel:           body.CursorModel,
-		VerifyChatMode:        body.VerifyChatMode,
-		PickupNotBefore:       body.PickupNotBefore,
-		Tags:                  body.Tags,
-		Milestone:             body.Milestone,
-		DependsOn:             body.DependsOn,
-		ChecklistItems:        body.ChecklistItems,
-		WorktreeID:            body.WorktreeID,
+		CursorModel:     body.CursorModel,
+		VerifyChatMode:  body.VerifyChatMode,
+		PickupNotBefore: body.PickupNotBefore,
+		Tags:            body.Tags,
+		Milestone:       body.Milestone,
+		DependsOn:       body.DependsOn,
+		ChecklistItems:  body.ChecklistItems,
+		WorktreeID:      body.WorktreeID,
 	}
 }
 
@@ -105,23 +105,23 @@ func (h *Handler) CreateTaskFromComposeJSON(
 		return nil, err
 	}
 	t, err := h.tasks.Create(ctx, taskcorecontract.CreateTaskInput{
-		ID:                    taskID,
-		DraftID:               draftID,
-		Title:                 payload.Title,
-		InitialPrompt:         payload.InitialPrompt,
-		Status:                payload.Status,
-		Priority:              payload.Priority,
+		ID:              taskID,
+		DraftID:         draftID,
+		Title:           payload.Title,
+		InitialPrompt:   payload.InitialPrompt,
+		Status:          payload.Status,
+		Priority:        payload.Priority,
 		ProjectID:       payload.ProjectID,
 		Runner:          runner,
-		CursorModel:           cursorModel,
-		VerifyChatMode:        resolveVerifyChatModeField(payload.VerifyChatMode),
-		PickupNotBefore:       pickupNotBefore,
-		Tags:                  payload.Tags,
-		Milestone:             payload.Milestone,
-		Gate:                  opts.Gate,
-		DependsOn:             dependsOn,
-		ChecklistItems:        checklistItems,
-		WorktreeID:            nil,
+		CursorModel:     cursorModel,
+		VerifyChatMode:  resolveVerifyChatModeField(payload.VerifyChatMode),
+		PickupNotBefore: pickupNotBefore,
+		Tags:            payload.Tags,
+		Milestone:       payload.Milestone,
+		Gate:            opts.Gate,
+		DependsOn:       dependsOn,
+		ChecklistItems:  checklistItems,
+		WorktreeID:      nil,
 	}, by)
 	if err != nil {
 		return nil, err

@@ -5,56 +5,24 @@ import (
 )
 
 type projectCreateJSON struct {
-	ID             string  `json:"id"`
-	Name           string  `json:"name"`
-	Description    string  `json:"description"`
-	ContextSummary string  `json:"context_summary"`
-	RepositoryID   *string `json:"repository_id"`
+	ID           string  `json:"id"`
+	Name         string  `json:"name"`
+	Description  string  `json:"description"`
+	RepositoryID *string `json:"repository_id"`
 }
 
 type projectPatchJSON struct {
-	Name           *string               `json:"name"`
-	Description    *string               `json:"description"`
-	Status         *domain.ProjectStatus `json:"status"`
-	ContextSummary *string               `json:"context_summary"`
+	Name        *string               `json:"name"`
+	Description *string               `json:"description"`
+	Status      *domain.ProjectStatus `json:"status"`
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (p projectPatchJSON) isEmpty() bool {
-	return p.Name == nil && p.Description == nil && p.Status == nil && p.ContextSummary == nil
+	return p.Name == nil && p.Description == nil && p.Status == nil
 }
 
 type projectsListResponse struct {
 	Projects []domain.Project `json:"projects"`
 	Limit    int              `json:"limit"`
-}
-
-type projectContextCreateJSON struct {
-	ID            string  `json:"id"`
-	Tag           string  `json:"tag"`
-	Title         string  `json:"title"`
-	Description   string  `json:"description"`
-	Body          string  `json:"body"`
-	SourceTaskID  *string `json:"source_task_id"`
-	SourceCycleID *string `json:"source_cycle_id"`
-	Pinned        bool    `json:"pinned"`
-}
-
-type projectContextPatchJSON struct {
-	Tag         *string `json:"tag"`
-	Title       *string `json:"title"`
-	Description *string `json:"description"`
-	Body        *string `json:"body"`
-	Pinned      *bool   `json:"pinned"`
-}
-
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func (p projectContextPatchJSON) isEmpty() bool {
-	return p.Tag == nil && p.Title == nil && p.Description == nil && p.Body == nil && p.Pinned == nil
-}
-
-type projectContextListResponse struct {
-	Items []domain.ProjectContextItem `json:"items"`
-	Edges []domain.ProjectContextEdge `json:"edges"`
-	Limit int                         `json:"limit"`
 }

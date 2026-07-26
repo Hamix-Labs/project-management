@@ -4,9 +4,8 @@ Core project types and validation for the projects bounded context. No imports f
 
 | File | Contents |
 | --- | --- |
-| `project.go` | `Project`, `ProjectContextItem`, `ProjectContextEdge` |
-| `enums.go` | `ProjectStatus`, `ProjectContextRelation`, `Actor` |
-| `limits.go` | Title/description/body/tag size limits and validators |
+| `project.go` | `Project` |
+| `enums.go` | `ProjectStatus` |
 | `default_project.go` | Legacy global default project helpers |
 | `errors.go` | `ErrNotFound`, `ErrInvalidInput`, `ErrConflict` |
 

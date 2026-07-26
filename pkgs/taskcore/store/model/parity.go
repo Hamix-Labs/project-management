@@ -28,15 +28,4 @@ var ParityPairs = []ParityPair{
 			&Task{},
 		},
 	},
-	{
-		Name:   "TaskContextSnapshot",
-		Domain: &taskcoredomain.TaskContextSnapshot{},
-		Model:  &TaskContextSnapshot{},
-		Table:  "task_context_snapshots",
-		ModelMigrateExtra: []any{
-			&Task{},
-			&CycleRow{},
-			&ProjectRow{},
-		},
-	},
 }

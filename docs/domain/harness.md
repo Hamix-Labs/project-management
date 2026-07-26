@@ -232,7 +232,6 @@ Phase-specific behavior:
 | Phase ledger tail | Execute vs verify resume branch |
 | `task_cycle_verify_reports` | Locked passes, verify attempt, retry feedback |
 | Task row | Base prompt |
-| `task_context_snapshots` | Project context block |
 | `task_cycle_commits` | Worker-indexed SHAs from agent `commits[]` claims; verify reads task-wide ledger per [cycle-commits.md](./cycle-commits.md) |
 
 Cross-cycle operator resume loads a **ContinuationBundle** from the parent attempt ([resume-continuation.md](./resume-continuation.md)): scope lock, known commits, verify-only routing when execute succeeded and task has indexed commits.
@@ -378,7 +377,7 @@ Read at runtime from store inside harness methods:
 | `verify_max_retries` | Max execute↔verify loops per cycle |
 | Per-command `timeout_seconds` | Optional wall-clock on each checklist verify command (omit = unlimited) |
 
-Task-level fields consumed in the loop: `cursor_model`, `project_id`, `project_context_item_ids`.
+Task-level fields consumed in the loop: `cursor_model`, `project_id`.
 
 ### In-cycle verify-only retry
 
@@ -442,7 +441,7 @@ Structured logs on retry: `retry_mode`, `reason_code`, `skip_next_execute`.
 | Doc | Content |
 | --- | --- |
 | [persistence.md](./persistence.md) | Store writes, dual-write mirrors, verdict tables |
-| [project-context.md](./project-context.md) | Context snapshots injected before execute |
+| [project-context.md](./project-context.md) | Project memory removed (ADR-0087) |
 | [agent-supervisor.md](./agent-supervisor.md) | Worker supervisor boundary before admission |
 | [sse-hub.md](./sse-hub.md) | SSE fanout, cycle/progress publish, resync |
 | [agent-queue.md](./agent-queue.md) | Worker queue admission and ack ordering |

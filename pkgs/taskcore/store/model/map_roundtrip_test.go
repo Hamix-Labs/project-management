@@ -19,23 +19,22 @@ func TestTask_roundTrip(t *testing.T) {
 	gate := &domain.TaskGate{Status: domain.GateStatusPendingRelease, Hold: true}
 	retry := &domain.PendingRetry{Mode: domain.RetryResume, ParentCycleID: "cyc-1"}
 	orig := domain.Task{
-		ID:                    "task-1",
-		Title:                 "Ship it",
-		Status:                domain.StatusReady,
-		Priority:              domain.PriorityHigh,
-		InitialPrompt:         "do the thing",
-		ProjectID:             &pid,
-		Number:                intPtr(7),
-		WorktreeID:            &wb,
-		CursorModel:           cm,
-		VerifyChatMode:        "different_chat",
-		PickupNotBefore:       &now,
-		PendingRetry:          retry,
-		Gate:                  gate,
-		Tags:                  []string{"a", "b"},
-		ProjectContextItemIDs: []string{},
-		Milestone:             strPtr("m1"),
-		RunnerConfig:          json.RawMessage("{}"),
+		ID:              "task-1",
+		Title:           "Ship it",
+		Status:          domain.StatusReady,
+		Priority:        domain.PriorityHigh,
+		InitialPrompt:   "do the thing",
+		ProjectID:       &pid,
+		Number:          intPtr(7),
+		WorktreeID:      &wb,
+		CursorModel:     cm,
+		VerifyChatMode:  "different_chat",
+		PickupNotBefore: &now,
+		PendingRetry:    retry,
+		Gate:            gate,
+		Tags:            []string{"a", "b"},
+		Milestone:       strPtr("m1"),
+		RunnerConfig:    json.RawMessage("{}"),
 	}
 	m := FromDomainTask(orig)
 	back := ToDomainTask(m)
@@ -60,7 +59,6 @@ func TestFromDomainTask_emptyTagsDriverValue(t *testing.T) {
 		val  interface{ Value() (driver.Value, error) }
 	}{
 		{name: "tags", val: m.Tags},
-		{name: "project_context_item_ids", val: m.ProjectContextItemIDs},
 	} {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {

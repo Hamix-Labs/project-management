@@ -1,11 +1,10 @@
 // package internal owns persistence for first-class projects, curated project
-// context items, and immutable task context snapshots.
+// CRUD.
 package internal
 
 import "github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -16,8 +15,6 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
-	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	taskmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -27,23 +24,6 @@ type CreateProjectInput = contract.CreateProjectInput
 
 // UpdateProjectInput is a partial patch for project metadata.
 type UpdateProjectInput = contract.UpdateProjectInput
-
-// CreateContextInput is the store input for appending a project context item.
-type CreateContextInput = contract.CreateProjectContextInput
-
-// UpdateContextInput is a partial patch for one project context item.
-type UpdateContextInput = contract.UpdateProjectContextInput
-
-// CreateSnapshotInput records the exact context bundle handed to one cycle.
-type CreateSnapshotInput struct {
-	ID              string
-	TaskID          string
-	CycleID         string
-	ProjectID       string
-	ContextJSON     json.RawMessage
-	RenderedContext string
-	TokenEstimate   int
-}
 
 // CreateProject inserts a new active project.
 func CreateProject(ctx context.Context, db *gorm.DB, input CreateProjectInput) (domain.Project, error) {
@@ -67,7 +47,6 @@ func CreateProject(ctx context.Context, db *gorm.DB, input CreateProjectInput) (
 		Name:           name,
 		Description:    strings.TrimSpace(input.Description),
 		Status:         domain.ProjectStatusActive,
-		ContextSummary: strings.TrimSpace(input.ContextSummary),
 		RepositoryID:   repoID,
 		NextTaskNumber: 1,
 		CreatedAt:      now,
@@ -178,221 +157,6 @@ func DeleteProject(ctx context.Context, db *gorm.DB, id string) error {
 	return nil
 }
 
-// CreateContext inserts one context item for a project.
-func CreateContext(ctx context.Context, db *gorm.DB, projectID string, input CreateContextInput) (domain.ProjectContextItem, error) {
-	defer storekernel.DeferLatency(storekernel.OpCreateProjectContext)()
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.projects.CreateContext")
-	projectID = strings.TrimSpace(projectID)
-	if projectID == "" {
-		return domain.ProjectContextItem{}, fmt.Errorf("%w: project id required", domain.ErrInvalidInput)
-	}
-	id := storekernel.ResolveID(input.ID)
-	tag := strings.TrimSpace(input.Tag)
-	if err := domain.ValidateProjectContextTag(tag); err != nil {
-		return domain.ProjectContextItem{}, err
-	}
-	title := strings.TrimSpace(input.Title)
-	if err := domain.ValidateProjectContextTitle(title); err != nil {
-		return domain.ProjectContextItem{}, err
-	}
-	description := strings.TrimSpace(input.Description)
-	if err := domain.ValidateProjectContextDescription(description); err != nil {
-		return domain.ProjectContextItem{}, err
-	}
-	body := strings.TrimSpace(input.Body)
-	if err := domain.ValidateProjectContextBody(body); err != nil {
-		return domain.ProjectContextItem{}, err
-	}
-	actor := input.CreatedBy
-	if actor == "" {
-		actor = domain.ActorUser
-	}
-	if err := taskcoredomain.ValidateActor(taskcoredomain.Actor(actor)); err != nil {
-		return domain.ProjectContextItem{}, err
-	}
-	now := time.Now().UTC()
-	drow := domain.ProjectContextItem{
-		ID:            id,
-		ProjectID:     projectID,
-		Tag:           tag,
-		Title:         title,
-		Description:   description,
-		Body:          body,
-		SourceTaskID:  trimOptional(input.SourceTaskID),
-		SourceCycleID: trimOptional(input.SourceCycleID),
-		CreatedBy:     actor,
-		Pinned:        input.Pinned,
-		CreatedAt:     now,
-		UpdatedAt:     now,
-	}
-	row := projectmodel.FromDomainProjectContextItem(drow)
-	if err := db.WithContext(ctx).Create(&row).Error; err != nil {
-		return domain.ProjectContextItem{}, storekernel.MapWriteError(err, "duplicate project row", domain.ErrConflict, domain.ErrInvalidInput)
-	}
-	return drow, nil
-}
-
-// ListContext returns context items for a project, pinned items first.
-func ListContext(ctx context.Context, db *gorm.DB, projectID string, includeUnpinned bool, limit int) ([]domain.ProjectContextItem, error) {
-	defer storekernel.DeferLatency(storekernel.OpListProjectContext)()
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.projects.ListContext")
-	projectID = strings.TrimSpace(projectID)
-	if projectID == "" {
-		return nil, fmt.Errorf("%w: project id required", domain.ErrInvalidInput)
-	}
-	if limit <= 0 {
-		limit = 50
-	}
-	if limit > 100 {
-		limit = 100
-	}
-	q := db.WithContext(ctx).Where("project_id = ?", projectID).Order("pinned DESC").Order("updated_at DESC").Limit(limit)
-	if !includeUnpinned {
-		q = q.Where("pinned = ?", true)
-	}
-	var rows []projectmodel.ProjectContextItem
-	if err := q.Find(&rows).Error; err != nil {
-		return nil, fmt.Errorf("list project context: %w", err)
-	}
-	return projectmodel.ToDomainProjectContextItems(rows), nil
-}
-
-// ListContextByIDs returns selected context items for one project in caller order.
-func ListContextByIDs(ctx context.Context, db *gorm.DB, projectID string, ids []string) ([]domain.ProjectContextItem, error) {
-	defer storekernel.DeferLatency(storekernel.OpListProjectContext)()
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.projects.ListContextByIDs")
-	projectID = strings.TrimSpace(projectID)
-	if projectID == "" {
-		return nil, fmt.Errorf("%w: project id required", domain.ErrInvalidInput)
-	}
-	if len(ids) == 0 {
-		return nil, nil
-	}
-	var rows []projectmodel.ProjectContextItem
-	if err := db.WithContext(ctx).Where("project_id = ? AND id IN ?", projectID, ids).Find(&rows).Error; err != nil {
-		return nil, fmt.Errorf("list selected project context: %w", err)
-	}
-	byID := make(map[string]domain.ProjectContextItem, len(rows))
-	for _, row := range rows {
-		d := projectmodel.ToDomainProjectContextItem(row)
-		byID[d.ID] = d
-	}
-	out := make([]domain.ProjectContextItem, 0, len(ids))
-	for _, id := range ids {
-		row, ok := byID[strings.TrimSpace(id)]
-		if !ok {
-			return nil, domain.ErrNotFound
-		}
-		out = append(out, row)
-	}
-	return out, nil
-}
-
-// UpdateContext applies a partial patch to one context item.
-func UpdateContext(ctx context.Context, db *gorm.DB, projectID, itemID string, input UpdateContextInput) (domain.ProjectContextItem, error) {
-	defer storekernel.DeferLatency(storekernel.OpUpdateProjectContext)()
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.projects.UpdateContext")
-	projectID = strings.TrimSpace(projectID)
-	itemID = strings.TrimSpace(itemID)
-	if projectID == "" || itemID == "" {
-		return domain.ProjectContextItem{}, fmt.Errorf("%w: project id and context id required", domain.ErrInvalidInput)
-	}
-	if err := validateContextPatch(input); err != nil {
-		return domain.ProjectContextItem{}, err
-	}
-	var out domain.ProjectContextItem
-	err := db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		var row projectmodel.ProjectContextItem
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&row, "id = ? AND project_id = ?", itemID, projectID).Error; err != nil {
-			return storekernel.MapNotFound(err, domain.ErrNotFound)
-		}
-		drow := projectmodel.ToDomainProjectContextItem(row)
-		applyContextPatch(&drow, input)
-		drow.UpdatedAt = time.Now().UTC()
-		row = projectmodel.FromDomainProjectContextItem(drow)
-		if err := tx.Save(&row).Error; err != nil {
-			return storekernel.MapWriteError(err, "duplicate project row", domain.ErrConflict, domain.ErrInvalidInput)
-		}
-		out = drow
-		return nil
-	})
-	if err != nil {
-		return domain.ProjectContextItem{}, err
-	}
-	return out, nil
-}
-
-// DeleteContext removes one context item.
-func DeleteContext(ctx context.Context, db *gorm.DB, projectID, itemID string) error {
-	defer storekernel.DeferLatency(storekernel.OpDeleteProjectContext)()
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.projects.DeleteContext")
-	projectID = strings.TrimSpace(projectID)
-	itemID = strings.TrimSpace(itemID)
-	if projectID == "" || itemID == "" {
-		return fmt.Errorf("%w: project id and context id required", domain.ErrInvalidInput)
-	}
-	return db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("project_id = ? AND (source_context_id = ? OR target_context_id = ?)", projectID, itemID, itemID).Delete(&projectmodel.ProjectContextEdge{}).Error; err != nil {
-			return storekernel.MapWriteError(err, "duplicate project row", domain.ErrConflict, domain.ErrInvalidInput)
-		}
-		res := tx.Where("id = ? AND project_id = ?", itemID, projectID).Delete(&projectmodel.ProjectContextItem{})
-		if res.Error != nil {
-			return storekernel.MapWriteError(res.Error, "duplicate project row", domain.ErrConflict, domain.ErrInvalidInput)
-		}
-		if res.RowsAffected == 0 {
-			return domain.ErrNotFound
-		}
-		return nil
-	})
-}
-
-// CreateSnapshot inserts an immutable task context snapshot.
-func CreateSnapshot(ctx context.Context, db *gorm.DB, input CreateSnapshotInput) (taskcoredomain.TaskContextSnapshot, error) {
-	defer storekernel.DeferLatency(storekernel.OpCreateContextSnapshot)()
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.projects.CreateSnapshot")
-	id := storekernel.ResolveID(input.ID)
-	if strings.TrimSpace(input.TaskID) == "" || strings.TrimSpace(input.CycleID) == "" || strings.TrimSpace(input.ProjectID) == "" {
-		return taskcoredomain.TaskContextSnapshot{}, fmt.Errorf("%w: task_id, cycle_id, and project_id required", domain.ErrInvalidInput)
-	}
-	if input.TokenEstimate < 0 {
-		return taskcoredomain.TaskContextSnapshot{}, fmt.Errorf("%w: token_estimate must be >= 0", domain.ErrInvalidInput)
-	}
-	contextJSON, err := storekernel.NormalizeJSONObject(input.ContextJSON, "context_json", domain.ErrInvalidInput)
-	if err != nil {
-		return taskcoredomain.TaskContextSnapshot{}, err
-	}
-	drow := taskcoredomain.TaskContextSnapshot{
-		ID:              id,
-		TaskID:          strings.TrimSpace(input.TaskID),
-		CycleID:         strings.TrimSpace(input.CycleID),
-		ProjectID:       strings.TrimSpace(input.ProjectID),
-		ContextJSON:     json.RawMessage(contextJSON),
-		RenderedContext: strings.TrimSpace(input.RenderedContext),
-		TokenEstimate:   input.TokenEstimate,
-		CreatedAt:       time.Now().UTC(),
-	}
-	row := taskmodel.FromDomainTaskContextSnapshot(drow)
-	if err := db.WithContext(ctx).Create(&row).Error; err != nil {
-		return taskcoredomain.TaskContextSnapshot{}, storekernel.MapWriteError(err, "duplicate project row", taskcoredomain.ErrConflict, taskcoredomain.ErrInvalidInput)
-	}
-	return drow, nil
-}
-
-// GetSnapshotForCycle returns the context snapshot recorded for a cycle.
-func GetSnapshotForCycle(ctx context.Context, db *gorm.DB, cycleID string) (taskcoredomain.TaskContextSnapshot, error) {
-	defer storekernel.DeferLatency(storekernel.OpGetContextSnapshot)()
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.projects.GetSnapshotForCycle")
-	cycleID = strings.TrimSpace(cycleID)
-	if cycleID == "" {
-		return taskcoredomain.TaskContextSnapshot{}, fmt.Errorf("%w: cycle id required", domain.ErrInvalidInput)
-	}
-	var row taskmodel.TaskContextSnapshot
-	if err := db.WithContext(ctx).First(&row, "cycle_id = ?", cycleID).Error; err != nil {
-		return taskcoredomain.TaskContextSnapshot{}, storekernel.MapNotFound(err, taskcoredomain.ErrNotFound)
-	}
-	return taskmodel.ToDomainTaskContextSnapshot(row), nil
-}
-
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func validateProjectPatch(input UpdateProjectInput) error {
 	if input.Name != nil && strings.TrimSpace(*input.Name) == "" {
@@ -433,53 +197,6 @@ func applyProjectPatch(row *domain.Project, input UpdateProjectInput) {
 	if input.Status != nil {
 		row.Status = *input.Status
 	}
-	if input.ContextSummary != nil {
-		row.ContextSummary = strings.TrimSpace(*input.ContextSummary)
-	}
-}
-
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func validateContextPatch(input UpdateContextInput) error {
-	if input.Tag != nil {
-		if err := domain.ValidateProjectContextTag(strings.TrimSpace(*input.Tag)); err != nil {
-			return err
-		}
-	}
-	if input.Title != nil {
-		if err := domain.ValidateProjectContextTitle(strings.TrimSpace(*input.Title)); err != nil {
-			return err
-		}
-	}
-	if input.Body != nil {
-		if err := domain.ValidateProjectContextBody(strings.TrimSpace(*input.Body)); err != nil {
-			return err
-		}
-	}
-	if input.Description != nil {
-		if err := domain.ValidateProjectContextDescription(strings.TrimSpace(*input.Description)); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func applyContextPatch(row *domain.ProjectContextItem, input UpdateContextInput) {
-	if input.Tag != nil {
-		row.Tag = strings.TrimSpace(*input.Tag)
-	}
-	if input.Title != nil {
-		row.Title = strings.TrimSpace(*input.Title)
-	}
-	if input.Description != nil {
-		row.Description = strings.TrimSpace(*input.Description)
-	}
-	if input.Body != nil {
-		row.Body = strings.TrimSpace(*input.Body)
-	}
-	if input.Pinned != nil {
-		row.Pinned = *input.Pinned
-	}
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
@@ -519,7 +236,6 @@ func CreateDefaultProjectForRepo(ctx context.Context, tx *gorm.DB, repoID string
 		Name:           domain.DefaultProjectName,
 		Description:    "Built-in project for tasks tied to this repository.",
 		Status:         domain.ProjectStatusActive,
-		ContextSummary: "Default project for this repository.",
 		RepositoryID:   &repoID,
 		IsDefault:      true,
 		NextTaskNumber: 1,
@@ -609,21 +325,6 @@ func DeleteProjectsForRepository(ctx context.Context, db *gorm.DB, repoID string
 	}
 	if len(ids) == 0 {
 		return nil
-	}
-	if err := db.WithContext(ctx).
-		Where("project_id IN ?", ids).
-		Delete(&projectmodel.ProjectContextEdge{}).Error; err != nil {
-		return fmt.Errorf("delete project context edges: %w", err)
-	}
-	if err := db.WithContext(ctx).
-		Where("project_id IN ?", ids).
-		Delete(&projectmodel.ProjectContextItem{}).Error; err != nil {
-		return fmt.Errorf("delete project context items: %w", err)
-	}
-	// Snapshots live in taskcore; delete by column without importing that model.
-	if err := db.WithContext(ctx).
-		Exec("DELETE FROM task_context_snapshots WHERE project_id IN ?", ids).Error; err != nil {
-		return fmt.Errorf("delete task context snapshots: %w", err)
 	}
 	if err := db.WithContext(ctx).
 		Where("id IN ?", ids).

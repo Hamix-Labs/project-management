@@ -36,7 +36,6 @@ export function parseProject(value: unknown): Project {
     name: parseString(value.name, "name"),
     description: parseString(value.description, "description"),
     status: parseProjectStatus(value.status),
-    context_summary: parseString(value.context_summary, "context_summary"),
     repository_id: parseOptionalNonEmptyId(value.repository_id, "repository_id"),
     is_default: parseBooleanField(value.is_default, "is_default"),
     created_at: parseISO8601Required(value.created_at, "created_at"),
@@ -95,7 +94,6 @@ export async function createProject(input: {
   name: string;
   id?: string;
   description?: string;
-  context_summary?: string;
   repository_id: string;
 }): Promise<Project> {
   const res = await fetchWithTimeout("/projects", {
@@ -113,7 +111,6 @@ export async function patchProject(
     name?: string;
     description?: string;
     status?: ProjectStatus;
-    context_summary?: string;
   },
 ): Promise<Project> {
   const projectID = assertTaskPathId(id, "project id");

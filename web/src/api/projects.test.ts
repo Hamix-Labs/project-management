@@ -11,7 +11,6 @@ const projectWire = {
   name: "Context moat",
   description: "Long-running work",
   status: "active",
-  context_summary: "Shared memory",
   created_at: "2026-04-26T00:00:00Z",
   updated_at: "2026-04-26T00:00:00Z",
 };
