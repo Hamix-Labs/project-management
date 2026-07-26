@@ -4,6 +4,13 @@ import { normalizeChecklistItems } from "../task-compose/checklistRequirement";
 import { createSubmitStatusForAutonomy, defaultCursorModelFromSettings, defaultRunnerFromSettings } from "./defaults";
 import type { TaskCreateFormFields } from "./types";
 
+/** Server `NormalizeTaskTags` shape after lowercasing (docs/data-model.md). */
+export const TASK_TAG_PATTERN = /^[a-z0-9][a-z0-9._-]{0,31}$/;
+
+export function isValidTaskTag(tag: string): boolean {
+  return TASK_TAG_PATTERN.test(tag);
+}
+
 /** Shared tag CSV parse for create + edit (comma / semicolon / newline).
  * Lowercases to match server `NormalizeTaskTags` / wire rules. */
 export function parseTagsFromCsv(csv: string): string[] {
@@ -16,6 +23,11 @@ export function parseTagsFromCsv(csv: string): string[] {
     out.push(tag);
   }
   return out;
+}
+
+/** Serialize tags for the create/edit form CSV field. */
+export function formatTagsCsv(tags: string[]): string {
+  return tags.join(", ");
 }
 
 export function buildComposePayloadFromForm(

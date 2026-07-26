@@ -1,4 +1,5 @@
 import { CustomSelect } from "@/components/custom-select";
+import { AgentCpuIcon } from "./TaskCreateAgentIcons";
 import {
   RUNNER_OPTIONS,
   type TaskCreateModalAgentSectionVariant,
@@ -34,6 +35,7 @@ export function TaskCreateModalRunnerField({
         disabled={disabled || lockRunner}
         onChange={onRunnerChange}
         className="task-create-agent-custom-select"
+        leadingIcon={<AgentCpuIcon />}
       />
       {showRunnerHelp ? (
         <p className="task-create-agent-help">

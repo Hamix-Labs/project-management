@@ -1,11 +1,20 @@
 import { useId } from "react";
 import { Link } from "react-router-dom";
+import { CustomSelect, type CustomSelectOption } from "@/components/custom-select";
+import { AgentBotIcon, AgentShieldCheckIcon } from "./TaskCreateAgentIcons";
+import { TaskCreateConfigSectionHeader } from "./TaskCreateConfigSectionHeader";
 import {
   AGENT_HEADING_ID,
   type TaskCreateModalAgentSectionProps,
 } from "./taskCreateModalAgentShared";
 import { TaskCreateModalModelField } from "./TaskCreateModalModelField";
 import { TaskCreateModalRunnerField } from "./TaskCreateModalRunnerField";
+
+const VERIFY_CHAT_OPTIONS: CustomSelectOption[] = [
+  { value: "", label: "Use workspace default" },
+  { value: "same_chat", label: "Continue execute chat" },
+  { value: "different_chat", label: "Start new chat" },
+];
 
 /**
  * TaskCreateModalAgentSection - runtime configuration panel for the
@@ -52,9 +61,17 @@ export function TaskCreateModalAgentSection({
         .join(" ")}
       aria-labelledby={AGENT_HEADING_ID}
     >
-      <h3 id={AGENT_HEADING_ID} className="task-create-subtasks-heading">
-        Agent
-      </h3>
+      {isCreateModal ? (
+        <TaskCreateConfigSectionHeader
+          id={AGENT_HEADING_ID}
+          title="Agent"
+          icon={<AgentBotIcon />}
+        />
+      ) : (
+        <h3 id={AGENT_HEADING_ID} className="task-create-subtasks-heading">
+          Agent
+        </h3>
+      )}
       <div className="task-create-agent-panel">
         {lockRunner && !isModelDialog ? (
           <p className="task-create-agent-lock-notice" role="note">
@@ -96,20 +113,23 @@ export function TaskCreateModalAgentSection({
           />
         </div>
         {!isModelDialog && onVerifyChatModeChange ? (
-          <label className="task-create-agent-verify-chat" htmlFor={verifyChatId}>
-            <span className="task-create-field-label">Verify chat</span>
-            <select
+          <div className="task-create-agent-verify-chat">
+            <CustomSelect
               id={verifyChatId}
-              data-testid="task-verify-chat-mode"
-              disabled={disabled}
+              label="Verify chat"
               value={verifyChatMode}
-              onChange={(e) => onVerifyChatModeChange(e.target.value)}
-            >
-              <option value="">Use workspace default</option>
-              <option value="same_chat">Continue execute chat</option>
-              <option value="different_chat">Start new chat</option>
-            </select>
-          </label>
+              options={VERIFY_CHAT_OPTIONS}
+              disabled={disabled}
+              onChange={onVerifyChatModeChange}
+              className="task-create-agent-custom-select"
+              triggerTestId="task-verify-chat-mode"
+              leadingIcon={<AgentShieldCheckIcon />}
+            />
+            <p className="task-create-agent-help">
+              Controls whether PhaseVerify continues the execute chat or starts
+              a new one.
+            </p>
+          </div>
         ) : null}
       </div>
     </section>
