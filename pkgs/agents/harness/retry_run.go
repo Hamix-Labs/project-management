@@ -154,7 +154,7 @@ func (h *Harness) runPolish(parentCtx context.Context, task *taskcoredomain.Task
 		h.bestEffortFailTask(parentCtx, task.ID)
 		return
 	}
-	snap, err := h.loadVerificationSnapshot(parentCtx, task.ID)
+	snap, err := h.loadVerificationSnapshot(parentCtx, task)
 	if err != nil {
 		slog.Error("agent harness polish verification snapshot failed", "cmd", calltrace.LogCmd,
 			"operation", "agent.harness.Harness.runPolish.verify_snap_err",
@@ -215,7 +215,7 @@ func (h *Harness) runFreshCycle(parentCtx context.Context, task *taskcoredomain.
 		h.bestEffortFailTask(parentCtx, task.ID)
 		return
 	}
-	snap, err := h.loadVerificationSnapshot(parentCtx, task.ID)
+	snap, err := h.loadVerificationSnapshot(parentCtx, task)
 	if err != nil {
 		slog.Error("agent harness fresh-cycle verification snapshot failed", "cmd", calltrace.LogCmd,
 			"operation", "agent.harness.Harness.runFreshCycle.verify_snap_err",

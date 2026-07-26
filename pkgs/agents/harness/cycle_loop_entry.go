@@ -66,7 +66,7 @@ func (h *Harness) enterCycleLoopFromCheckpoint(
 	cp resumeCheckpoint,
 	kind cycleLoopEntryKind,
 ) {
-	snap, err := h.loadVerificationSnapshot(parentCtx, task.ID)
+	snap, err := h.loadVerificationSnapshot(parentCtx, task)
 	if err != nil {
 		slog.Error("agent harness verification snapshot failed", "cmd", calltrace.LogCmd,
 			"operation", "agent.harness.Harness.enterCycleLoopFromCheckpoint.verify_snap_err",

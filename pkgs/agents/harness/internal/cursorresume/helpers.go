@@ -9,6 +9,14 @@ import (
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
+// FirstVerifyAfterNewExecute reports whether verify should force fresh after a
+// newly completed execute phase (ADR-0031 / different_chat).
+//
+//funclogmeasure:skip category=hot-path reason="Pure state comparison for verify fresh-after-execute deny."
+func FirstVerifyAfterNewExecute(lastVerifyAfterExecuteSeq, lastCompletedExecutePhaseSeq int64) bool {
+	return lastVerifyAfterExecuteSeq < lastCompletedExecutePhaseSeq
+}
+
 // RecoveryKindInput is the pure input to SelectRecoveryKind.
 type RecoveryKindInput struct {
 	Phase             cyclesdomain.Phase

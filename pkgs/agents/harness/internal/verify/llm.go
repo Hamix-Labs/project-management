@@ -62,6 +62,8 @@ func (s *Service) runLLMVerify(
 		usagePresent = true
 	}
 	if errors.Is(err, runner.ErrResumeSession) {
+		// same_chat: hard-fail (ADR-0085). different_chat: also hard-fail on
+		// mid-chain resume miss — first verify is already forced fresh.
 		err = cursorresume.ResumeSessionFailed(err)
 	}
 	return total, usagePresent, err

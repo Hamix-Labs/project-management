@@ -7,12 +7,13 @@ import (
 	"log/slog"
 	"strings"
 
+	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	checklistcontract "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/contract"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 )
 
 // LoadSnapshot reads app settings and checklist criteria for verify gating.
-func (s *Service) LoadSnapshot(ctx context.Context, taskID string) (Snapshot, error) {
+func (s *Service) LoadSnapshot(ctx context.Context, taskID, taskVerifyChatMode string) (Snapshot, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.verify.LoadSnapshot",
 		"task_id", taskID)
 	settings, err := s.store.GetSettings(ctx)
@@ -24,10 +25,11 @@ func (s *Service) LoadSnapshot(ctx context.Context, taskID string) (Snapshot, er
 		return Snapshot{}, err
 	}
 	return Snapshot{
-		Enabled:     len(items) > 0,
-		MaxRetries:  settings.VerifyMaxRetries,
-		Criteria:    items,
-		VerifyModel: strings.TrimSpace(settings.VerifyModel),
+		Enabled:        len(items) > 0,
+		MaxRetries:     settings.VerifyMaxRetries,
+		Criteria:       items,
+		VerifyModel:    strings.TrimSpace(settings.VerifyModel),
+		VerifyChatMode: settingsdomain.EffectiveVerifyChatMode(taskVerifyChatMode, settings.VerifyChatMode),
 	}, nil
 }
 

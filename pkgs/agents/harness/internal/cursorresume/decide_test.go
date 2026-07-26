@@ -62,6 +62,15 @@ func TestDecide_table(t *testing.T) {
 			wantAllow: true,
 		},
 		{
+			name: "verify fresh after execute",
+			mutate: func(f *Facts) {
+				f.Phase = cyclesdomain.PhaseVerify
+				f.FirstVerifyAfterExecute = true
+			},
+			wantMode: ModeFresh,
+			wantDeny: "verify_fresh_after_execute",
+		},
+		{
 			name: "head drift",
 			mutate: func(f *Facts) {
 				f.HasPostExecuteHead = true

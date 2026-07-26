@@ -3,6 +3,7 @@ package cursorresume
 import (
 	"strings"
 
+	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
@@ -18,17 +19,18 @@ const (
 
 // Facts is the pure input to Decide (I/O pre-resolved).
 type Facts struct {
-	ForceFresh           bool
-	SessionResumeEnabled bool
-	RetryMode            taskcoredomain.RetryMode
-	Phase                cyclesdomain.Phase
-	ResumeNotice         bool
-	ReportTampered       bool
-	GitSkipped           bool
-	HasPostExecuteHead   bool
-	HeadMatchesAnchor    bool
-	SessionID            string
-	WorkingDir           string
+	ForceFresh              bool
+	SessionResumeEnabled    bool
+	RetryMode               taskcoredomain.RetryMode
+	Phase                   cyclesdomain.Phase
+	ResumeNotice            bool
+	ReportTampered          bool
+	FirstVerifyAfterExecute bool
+	GitSkipped              bool
+	HasPostExecuteHead      bool
+	HeadMatchesAnchor       bool
+	SessionID               string
+	WorkingDir              string
 }
 
 // Policy is the pure resume/deny decision before prompt composition.
@@ -38,7 +40,7 @@ type Policy struct {
 	AllowResume bool
 }
 
-// Decide implements the ADR-0031 / ADR-0085 session-resume decision table.
+// Decide implements the ADR-0031 / ADR-0085 / ADR-0086 session-resume decision table.
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func Decide(in Facts) Policy {
@@ -54,6 +56,9 @@ func Decide(in Facts) Policy {
 	// Interrupt execute path checks tamper before later gates (deny reason preserved).
 	if in.ResumeNotice && in.RetryMode != taskcoredomain.RetryResume && in.Phase == cyclesdomain.PhaseExecute && in.ReportTampered {
 		return Policy{Mode: ModeFresh, DenyReason: "tamper"}
+	}
+	if in.Phase == cyclesdomain.PhaseVerify && in.FirstVerifyAfterExecute {
+		return Policy{Mode: ModeFresh, DenyReason: "verify_fresh_after_execute"}
 	}
 	if !in.GitSkipped && in.HasPostExecuteHead && !in.HeadMatchesAnchor {
 		return Policy{Mode: ModeFresh, DenyReason: "head_drift"}
@@ -71,11 +76,12 @@ func Decide(in Facts) Policy {
 }
 
 // SessionPhaseForResume returns the phase whose terminal session_id should
-// be loaded for --resume. PhaseVerify continues the execute chat (ADR-0085).
+// be loaded for --resume. Under same_chat, PhaseVerify continues the execute
+// chat (ADR-0085). Under different_chat, verify uses its own chain (ADR-0031).
 //
 //funclogmeasure:skip category=hot-path reason="Pure phase mapping without I/O."
-func SessionPhaseForResume(phase cyclesdomain.Phase) cyclesdomain.Phase {
-	if phase == cyclesdomain.PhaseVerify {
+func SessionPhaseForResume(phase cyclesdomain.Phase, mode settingsdomain.VerifyChatMode) cyclesdomain.Phase {
+	if phase == cyclesdomain.PhaseVerify && mode != settingsdomain.VerifyChatModeDifferentChat {
 		return cyclesdomain.PhaseExecute
 	}
 	return phase
