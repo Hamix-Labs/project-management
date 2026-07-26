@@ -43,7 +43,7 @@ Root `harness` owns `Harness`, cycle entrypoints, effect application (`cycle_eff
 | `git_alias.go` | Thin delegators to `internal/git` |
 | `resume_alias.go` | Thin delegators to `internal/resume` |
 | `reports_alias.go` | Re-exports report sentinel errors |
-| `project_context_load.go` | Loads store data for prompt assembly via `internal/prompt` |
+| `prompt_helpers.go` | Checklist/continuation helpers for prompt assembly |
 | `execute_criteria_mirror.go` | Best-effort criteria mirror after execute |
 | `meta.go` | Cycle `MetaJSON` and phase `details_json` normalization |
 | `metrics.go` | `RunMetrics` seam and observation helpers |
