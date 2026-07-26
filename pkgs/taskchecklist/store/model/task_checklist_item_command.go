@@ -7,6 +7,7 @@ type TaskChecklistItemCommand struct {
 	SortOrder       int    `gorm:"not null"`
 	Command         string `gorm:"not null;type:text"`
 	ExpectedOutcome string `gorm:"not null;default:'';type:text"`
+	TimeoutSeconds  *int   `gorm:"column:timeout_seconds"`
 
 	Item *TaskChecklistItem `gorm:"foreignKey:ItemID;references:ID;constraint:OnDelete:CASCADE"`
 }

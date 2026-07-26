@@ -124,7 +124,6 @@ Singleton row in Postgres (CHECK enforces `id=1`). AutoMigrate creates the table
 | `optimistic_mutations_enabled` | bool | `true` | Always-on compatibility field. |
 | `sse_replay_enabled` | bool | `true` | Always-on compatibility field. |
 | `verify_max_retries` | int (≥0) | `2` | Max execute↔verify retry loops per cycle. |
-| `verify_command_timeout_seconds` | int (>0) | `120` | Wall-clock cap per optional criterion shell check during verify. |
 | `cursor_session_resume_enabled` | bool | `true` | When `false`, every `runner.Run` uses a fresh Cursor chat and full prompt compose (pre-ADR-0031 behavior). See [cursor-session-resume.md](domain/cursor-session-resume.md). |
 | `updated_at` | RFC3339 (response only) | server clock | Last successful upsert. SPA shows "last changed N ago". |
 

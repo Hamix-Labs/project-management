@@ -93,6 +93,7 @@ func FromDomainTaskChecklistItemCommand(d checklistdomain.TaskChecklistItemComma
 		SortOrder:       d.SortOrder,
 		Command:         d.Command,
 		ExpectedOutcome: d.ExpectedOutcome,
+		TimeoutSeconds:  cloneTimeoutSeconds(d.TimeoutSeconds),
 	}
 }
 
@@ -104,7 +105,17 @@ func ToDomainTaskChecklistItemCommand(m TaskChecklistItemCommand) checklistdomai
 		SortOrder:       m.SortOrder,
 		Command:         m.Command,
 		ExpectedOutcome: m.ExpectedOutcome,
+		TimeoutSeconds:  cloneTimeoutSeconds(m.TimeoutSeconds),
 	}
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func cloneTimeoutSeconds(in *int) *int {
+	if in == nil {
+		return nil
+	}
+	v := *in
+	return &v
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."

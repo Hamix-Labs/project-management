@@ -376,8 +376,7 @@ Read at runtime from store inside harness methods:
 | Setting | Effect |
 | --- | --- |
 | `verify_max_retries` | Max execute↔verify loops per cycle |
-| `verify_command_timeout_seconds` | Per-command wall clock during verify |
-| `verify_command_timeout_seconds` | Per shell verify command |
+| Per-command `timeout_seconds` | Optional wall-clock on each checklist verify command (omit = unlimited) |
 
 Task-level fields consumed in the loop: `cursor_model`, `project_id`, `project_context_item_ids`.
 

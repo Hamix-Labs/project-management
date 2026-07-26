@@ -170,7 +170,7 @@ sequenceDiagram
     {
       "text": "Unit tests pass",
       "verify_commands": [
-        { "command": "go test ./...", "expected_outcome": "All tests green" }
+        { "command": "go test ./...", "expected_outcome": "All tests green", "timeout_seconds": 300 }
       ]
     }
   ]
@@ -246,9 +246,9 @@ Exposed on `GET /tasks/{id}/cycles/{cycleId}/verdicts`. Pre-verdict cycles retur
 | Setting | Source | Default | Effect on criteria |
 | --- | --- | --- | --- |
 | `verify_max_retries` | `app_settings` | `2` | Max execute↔verify retry loops per cycle |
-| `verify_command_timeout_seconds` | `app_settings` | `120` | Wall-clock cap per shell verify command |
+| `timeout_seconds` | per `verify_commands[]` row | omit (unlimited) | Optional wall-clock cap for that shell check |
 | `HAMIX_WORKER_REPORT_DIR` | env | `<tmp>/hamix-worker` | Scratch root for report files (outside `repo_root`) |
-| `repo_root` | `app_settings` | — | Working dir for execute + shell checks + verify integrity snapshot |
+| `repo_root` / task worktree | settings / git binding | — | Working dir for execute + shell checks + verify integrity snapshot |
 
 See [configuration.md](../configuration.md) for validation rules and supervisor hot-reload behavior.
 

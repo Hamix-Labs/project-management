@@ -64,6 +64,9 @@ func Run(ctx context.Context, db *gorm.DB, deps Deps) error {
 	if err := migrateDropStreamIdleStuckColumn(ctx, db); err != nil {
 		return fmt.Errorf("drop app_settings.stream_idle_stuck_seconds: %w", err)
 	}
+	if err := migrateDropVerifyCommandTimeoutColumn(ctx, db); err != nil {
+		return fmt.Errorf("drop app_settings.verify_command_timeout_seconds: %w", err)
+	}
 	if err := migrateSeedWorktreeBranchTree(ctx, db); err != nil {
 		return fmt.Errorf("seed worktree-branch tree: %w", err)
 	}

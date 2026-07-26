@@ -23,6 +23,9 @@ type CreateChecklistItemInput struct {
 type VerifyCommandInput struct {
 	Command         string `json:"command"`
 	ExpectedOutcome string `json:"expected_outcome,omitempty"`
+	// TimeoutSeconds caps this command's wall clock. Nil/omit = no timeout.
+	// When set, must be > 0.
+	TimeoutSeconds *int `json:"timeout_seconds,omitempty"`
 }
 
 // VerifyCommandView is a persisted command row on checklist API responses.
@@ -30,4 +33,6 @@ type VerifyCommandView struct {
 	SortOrder       int    `json:"sort_order"`
 	Command         string `json:"command"`
 	ExpectedOutcome string `json:"expected_outcome,omitempty"`
+	// TimeoutSeconds is omitted when null (unlimited).
+	TimeoutSeconds *int `json:"timeout_seconds,omitempty"`
 }

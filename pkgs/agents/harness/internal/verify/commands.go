@@ -16,7 +16,6 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/reports"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/adapterkit"
-	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 )
 
 const maxCommandOutputBytes = 256 * 1024
@@ -54,12 +53,14 @@ type commandMetaFile struct {
 	Seq             int    `json:"seq"`
 	Command         string `json:"command"`
 	ExpectedOutcome string `json:"expected_outcome"`
-	ExitCode        int    `json:"exit_code"`
-	DurationMS      int64  `json:"duration_ms"`
-	StdoutBytes     int    `json:"stdout_bytes"`
-	StderrBytes     int    `json:"stderr_bytes"`
-	Truncated       bool   `json:"truncated"`
-	Error           string `json:"error,omitempty"`
+	// TimeoutSeconds is the configured wall-clock cap; omitted when unlimited.
+	TimeoutSeconds *int   `json:"timeout_seconds,omitempty"`
+	ExitCode       int    `json:"exit_code"`
+	DurationMS     int64  `json:"duration_ms"`
+	StdoutBytes    int    `json:"stdout_bytes"`
+	StderrBytes    int    `json:"stderr_bytes"`
+	Truncated      bool   `json:"truncated"`
+	Error          string `json:"error,omitempty"`
 }
 
 type shellExecFunc func(ctx context.Context, dir string, command string) (stdout, stderr []byte, exitCode int, err error)
@@ -239,10 +240,6 @@ func (s *Service) RunCriterionCommands(
 	if execFn == nil {
 		execFn = defaultShellExec
 	}
-	timeout := time.Duration(snap.VerifyCommandTimeoutSeconds) * time.Second
-	if timeout <= 0 {
-		timeout = time.Duration(settingsdomain.DefaultVerifyCommandTimeoutSeconds) * time.Second
-	}
 	var out []CommandEvidence
 	var persist []cyclesstore.CommandRunEntry
 	for _, it := range snap.Criteria {
@@ -269,7 +266,11 @@ func (s *Service) RunCriterionCommands(
 				fmt.Sprintf("Running: %s", commandLabel),
 				it.ID, seq, cmd.Command)
 
-			execCtx, cancel := context.WithTimeout(parentCtx, timeout)
+			execCtx := parentCtx
+			cancel := func() {}
+			if cmd.TimeoutSeconds != nil && *cmd.TimeoutSeconds > 0 {
+				execCtx, cancel = context.WithTimeout(parentCtx, time.Duration(*cmd.TimeoutSeconds)*time.Second)
+			}
 			started := s.clock()
 			stopHeartbeat := s.startCommandProgressHeartbeat(
 				progressCtx, execCtx, taskID, cycleID, phaseSeq, commandLabel, it.ID, seq, cmd.Command, started,
@@ -295,6 +296,7 @@ func (s *Service) RunCriterionCommands(
 				Seq:             seq,
 				Command:         cmd.Command,
 				ExpectedOutcome: cmd.ExpectedOutcome,
+				TimeoutSeconds:  cmd.TimeoutSeconds,
 				ExitCode:        exitCode,
 				DurationMS:      durationMS,
 				StdoutBytes:     len(stdout),

@@ -4,20 +4,19 @@ import "encoding/json"
 
 // SettingsPatch is the partial-update payload for app_settings.
 type SettingsPatch struct {
-	AgentPaused                 *bool
-	Runner                      *string
-	CursorBin                   *string
-	CursorModel                 *string
-	VerifyModel                 *string
-	MaxRunDurationSeconds       *int
-	AgentPickupDelaySeconds     *int
-	DisplayTimezone             *string
-	OptimisticMutationsEnabled  *bool
-	SSEReplayEnabled            *bool
-	RunnerConfigs               *json.RawMessage
-	VerifyMaxRetries            *int
-	VerifyCommandTimeoutSeconds *int
-	CursorSessionResumeEnabled  *bool
+	AgentPaused                *bool
+	Runner                     *string
+	CursorBin                  *string
+	CursorModel                *string
+	VerifyModel                *string
+	MaxRunDurationSeconds      *int
+	AgentPickupDelaySeconds    *int
+	DisplayTimezone            *string
+	OptimisticMutationsEnabled *bool
+	SSEReplayEnabled           *bool
+	RunnerConfigs              *json.RawMessage
+	VerifyMaxRetries           *int
+	CursorSessionResumeEnabled *bool
 }
 
 // IsEmpty reports whether the patch has nothing to apply.
@@ -36,6 +35,5 @@ func (p SettingsPatch) IsEmpty() bool {
 		p.SSEReplayEnabled == nil &&
 		p.RunnerConfigs == nil &&
 		p.VerifyMaxRetries == nil &&
-		p.VerifyCommandTimeoutSeconds == nil &&
 		p.CursorSessionResumeEnabled == nil
 }

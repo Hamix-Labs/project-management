@@ -14,22 +14,21 @@ func TestAppSettings_roundTrip(t *testing.T) {
 	now := time.Date(2026, 3, 1, 12, 0, 0, 0, time.UTC)
 	cfg := json.RawMessage(`{"cursor":{"binary_path":"/bin/cursor"}}`)
 	orig := domain.AppSettings{
-		ID:                          domain.AppSettingsRowID,
-		AgentPaused:                 true,
-		Runner:                      "cursor",
-		CursorBin:                   "/bin/cursor",
-		CursorModel:                 "opus",
-		VerifyModel:                 "composer-2.5-fast",
-		MaxRunDurationSeconds:       120,
-		AgentPickupDelaySeconds:     3,
-		DisplayTimezone:             "America/Los_Angeles",
-		OptimisticMutationsEnabled:  true,
-		SSEReplayEnabled:            true,
-		RunnerConfigs:               cfg,
-		VerifyMaxRetries:            1,
-		VerifyCommandTimeoutSeconds: 90,
-		CursorSessionResumeEnabled:  false,
-		UpdatedAt:                   now,
+		ID:                         domain.AppSettingsRowID,
+		AgentPaused:                true,
+		Runner:                     "cursor",
+		CursorBin:                  "/bin/cursor",
+		CursorModel:                "opus",
+		VerifyModel:                "composer-2.5-fast",
+		MaxRunDurationSeconds:      120,
+		AgentPickupDelaySeconds:    3,
+		DisplayTimezone:            "America/Los_Angeles",
+		OptimisticMutationsEnabled: true,
+		SSEReplayEnabled:           true,
+		RunnerConfigs:              cfg,
+		VerifyMaxRetries:           1,
+		CursorSessionResumeEnabled: false,
+		UpdatedAt:                  now,
 	}
 	m := FromDomainAppSettings(orig)
 	back := ToDomainAppSettings(m)

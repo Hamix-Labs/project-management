@@ -150,9 +150,6 @@ func validatePatch(patch Patch) error {
 			return fmt.Errorf("%w: verify_max_retries must be >= 0", domain.ErrInvalidInput)
 		}
 	}
-	if patch.VerifyCommandTimeoutSeconds != nil && *patch.VerifyCommandTimeoutSeconds <= 0 {
-		return fmt.Errorf("%w: verify_command_timeout_seconds must be > 0", domain.ErrInvalidInput)
-	}
 	return nil
 }
 
@@ -193,9 +190,6 @@ func applyPatch(row *domain.AppSettings, patch Patch) {
 	}
 	if patch.VerifyMaxRetries != nil {
 		row.VerifyMaxRetries = *patch.VerifyMaxRetries
-	}
-	if patch.VerifyCommandTimeoutSeconds != nil {
-		row.VerifyCommandTimeoutSeconds = *patch.VerifyCommandTimeoutSeconds
 	}
 	if patch.CursorSessionResumeEnabled != nil {
 		row.CursorSessionResumeEnabled = *patch.CursorSessionResumeEnabled

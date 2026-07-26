@@ -2,6 +2,11 @@
 export type ChecklistVerifyCommandInput = {
   command: string;
   expected_outcome?: string;
+  /**
+   * Wall-clock cap in seconds. Omit or null = no timeout (runs until cycle
+   * cancel). When set, must be a positive integer.
+   */
+  timeout_seconds?: number | null;
 };
 
 /** Draft criterion row in create/edit modals before persistence. */

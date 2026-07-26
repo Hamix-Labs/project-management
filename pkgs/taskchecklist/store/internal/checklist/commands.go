@@ -42,9 +42,18 @@ func NormalizeVerifyCommandInputs(in []VerifyCommandInput) ([]VerifyCommandInput
 		if len(expected) > checklistdomain.MaxVerifyExpectedOutcomeLen {
 			return nil, fmt.Errorf("%w: expected_outcome exceeds %d characters", taskcoredomain.ErrInvalidInput, checklistdomain.MaxVerifyExpectedOutcomeLen)
 		}
+		var timeout *int
+		if raw.TimeoutSeconds != nil {
+			if *raw.TimeoutSeconds <= 0 {
+				return nil, fmt.Errorf("%w: timeout_seconds must be > 0 when set (omit for no timeout)", taskcoredomain.ErrInvalidInput)
+			}
+			v := *raw.TimeoutSeconds
+			timeout = &v
+		}
 		out = append(out, VerifyCommandInput{
 			Command:         cmd,
 			ExpectedOutcome: expected,
+			TimeoutSeconds:  timeout,
 		})
 	}
 	if len(out) > checklistdomain.MaxVerifyCommandsPerItem {
@@ -65,6 +74,7 @@ func replaceCommandsInTx(tx *gorm.DB, itemID string, cmds []VerifyCommandInput) 
 			SortOrder:       i,
 			Command:         c.Command,
 			ExpectedOutcome: c.ExpectedOutcome,
+			TimeoutSeconds:  c.TimeoutSeconds,
 		}
 		mrow := checklistmodel.FromDomainTaskChecklistItemCommand(drow)
 		if err := tx.Create(&mrow).Error; err != nil {
@@ -90,6 +100,7 @@ func commandsForItemsInTx(tx *gorm.DB, itemIDs []string) (map[string][]VerifyCom
 			SortOrder:       dr.SortOrder,
 			Command:         dr.Command,
 			ExpectedOutcome: dr.ExpectedOutcome,
+			TimeoutSeconds:  dr.TimeoutSeconds,
 		})
 	}
 	return out, nil
