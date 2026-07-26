@@ -23,6 +23,7 @@ type Handler struct {
 func Register(m *http.ServeMux, deps Deps) {
 	h := &Handler{provider: deps.Provider}
 	m.Handle("GET /repo/search", http.HandlerFunc(h.repoSearch))
+	m.Handle("GET /repo/symbols", http.HandlerFunc(h.repoSymbols))
 	m.Handle("GET /repo/file", http.HandlerFunc(h.repoFile))
 	m.Handle("GET /repo/validate-range", http.HandlerFunc(h.repoValidateRange))
 	m.Handle("GET /repo/diff", http.HandlerFunc(h.repoDiff))

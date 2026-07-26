@@ -36,7 +36,8 @@
 //   - GET    /tasks/{id}      — 200 + task JSON
 //   - PATCH  /tasks/{id}      — partial update; 200 + task JSON
 //   - DELETE /tasks/{id}      — 204, no body
-//   - GET    /repo/search     — optional; JSON paths (q=); requires worktree_id query param
+//   - GET    /repo/search     — optional; JSON paths (+ optional entries when kinds=); requires worktree_id query param
+//   - GET    /repo/symbols    — optional; JSON symbol hits (q=); requires worktree_id
 //   - GET    /repo/file       — optional; JSON file preview for path= (UTF-8 text or binary); requires worktree_id
 //   - GET    /repo/diff       — optional; JSON commit patch for sha= (git show); requires worktree_id
 //   - GET    /repo/validate-range — optional; JSON ok/warning (path, start, end); 503 if unset

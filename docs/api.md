@@ -174,7 +174,8 @@ Deep dive: [domain/workspace-repo.md](./domain/workspace-repo.md). Wired only wh
 
 | Method | Path | Notes |
 |---|---|---|
-| GET | `/repo/search?q=` | Capped list of repo-relative paths; `q` ≤ 512 bytes. |
+| GET | `/repo/search?q=&worktree_id=` | `{ paths: string[], entries?: [{ path, kind }] }`. `paths` is always the file hits (compat for `@`-mentions). Optional `kinds=file,dir` (comma-separated); when set, `entries` includes matching files and/or directories. Default kinds = files only. Caps: empty `q` ≤ 250 browse hits; filtered ≤ 100. `q` ≤ 512 bytes. **400** on invalid `kinds`. Requires `worktree_id`. |
+| GET | `/repo/symbols?q=&worktree_id=` | `{ symbols: [{ path, name, line, kind }] }`. Best-effort declaration search (Go/TS/JS/Python/Rust regex). Empty `q` → empty `symbols`. Cap 50. `q` ≤ 512 bytes. Requires `worktree_id`. |
 | GET | `/repo/file?path=` | `{ path, content, binary, truncated, size_bytes, line_count, warning? }`. Binary or invalid UTF-8 returns `binary: true` with empty `content`. Files over 32 MiB are truncated. |
 | GET | `/repo/validate-range?path=&start=&end=` | `{ ok, line_count?, warning? }`. Used by the SPA to warn about invalid `@`-mentions inline. |
 | GET | `/repo/diff?worktree_id=&sha=` | `{ sha, patch, truncated, size_bytes, author?, author_email?, parent_sha?, files_changed?, insertions?, deletions? }`. Unified diff for one commit via `git show` in the worktree opened by `worktree_id` (required); `sha` is 7–40 hex chars (≤ 64 bytes query). Patch capped at 512 KiB (`truncated: true` when clipped). Author and shortstat come from `git show --format` / `--shortstat`. **400** when `worktree_id` is missing; **404** when the worktree or SHA is absent. |

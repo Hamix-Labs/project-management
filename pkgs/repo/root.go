@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	"io/fs"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -108,51 +107,6 @@ func (r *Root) Resolve(rel string) (string, error) {
 		return "", fmt.Errorf("%w: path escapes repo root via symlink", taskcoredomain.ErrInvalidInput)
 	}
 	return clean, nil
-}
-
-// Search returns repo-relative paths matching query (substring, case-insensitive).
-// Empty query lists up to maxSearchResultsBrowse files (walk order); non-empty query up to maxSearchResultsFilter matches.
-func (r *Root) Search(query string) ([]string, error) {
-	slog.Debug("trace", "operation", "repo.Root.Search")
-	q := strings.ToLower(strings.TrimSpace(query))
-	limit := maxSearchResultsFilter
-	if q == "" {
-		limit = maxSearchResultsBrowse
-	}
-	var out []string
-	err := filepath.WalkDir(r.abs, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if d.IsDir() {
-			name := d.Name()
-			switch name {
-			case ".git", "node_modules", "vendor":
-				return filepath.SkipDir
-			// Build / cache trees — skip for @-mention browse speed (large workspaces, OneDrive, etc.)
-			case "dist", "build", "out", "target", "coverage", ".next", ".nuxt", ".turbo",
-				"__pycache__", ".pytest_cache", ".venv", "venv", ".mypy_cache", ".tox":
-				return filepath.SkipDir
-			}
-			return nil
-		}
-		rel, err := filepath.Rel(r.abs, path)
-		if err != nil {
-			return nil
-		}
-		rel = filepath.ToSlash(rel)
-		if q == "" || strings.Contains(strings.ToLower(rel), q) {
-			out = append(out, rel)
-			if len(out) >= limit {
-				return fs.SkipAll
-			}
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 // ValidatePromptMentions checks every parsed mention against the repo root.
