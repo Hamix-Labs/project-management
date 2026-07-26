@@ -1,8 +1,12 @@
 import { statusListLabel } from "@/lib/taskStatusDisplay";
 import { taskDisplayRef } from "@/lib/taskShortId";
+import type { Priority, Status, TaskActivityEvent } from "@/types";
+import { PRIORITIES, STATUSES } from "@/types";
 import { parseVerificationSnapshot } from "../../task-events/parseVerificationSnapshot";
-import type { Status, TaskActivityEvent } from "@/types";
-import { STATUSES } from "@/types";
+import {
+  firstFailedCriterionHighlight,
+  phaseFailureDetail,
+} from "./phaseFailureDetail";
 import type { TimelineEvent, TimelineKind } from "./timelineTypes";
 
 /**
@@ -16,10 +20,9 @@ function activityEventId(ev: TaskActivityEvent): string {
 /**
  * Canonical short reference for a timeline row: prefers the per-project
  * `#N` when the server surfaced `task_number`, else the short UUID.
- * `task_title` is intentionally NOT used — see the Timeline spec: the
- * timeline is a stream of tiny "what changed" cards and titles blow up
- * the layout / leak edited titles into the audit trail. The full title
- * lives on the task detail page reached via `taskId`.
+ * `task_title` is intentionally NOT used in the title/highlight — see
+ * the Timeline spec: titles blow up the layout / leak edited titles
+ * into the audit trail. Title is kept on the envelope for search only.
  */
 function taskRef(ev: Pick<TaskActivityEvent, "task_id" | "task_number">): string {
   return taskDisplayRef({ id: ev.task_id, number: ev.task_number });
@@ -27,6 +30,22 @@ function taskRef(ev: Pick<TaskActivityEvent, "task_id" | "task_number">): string
 
 function isStatus(s: unknown): s is Status {
   return typeof s === "string" && (STATUSES as readonly string[]).includes(s);
+}
+
+function isPriority(v: unknown): v is Priority {
+  return typeof v === "string" && (PRIORITIES as readonly string[]).includes(v);
+}
+
+function filterFields(ev: TaskActivityEvent): Pick<
+  TimelineEvent,
+  "taskTitle" | "taskPriority" | "taskProjectId" | "taskTags"
+> {
+  return {
+    taskTitle: ev.task_title,
+    taskPriority: isPriority(ev.task_priority) ? ev.task_priority : undefined,
+    taskProjectId: ev.task_project_id ?? undefined,
+    taskTags: ev.task_tags,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -45,10 +64,6 @@ function mapStatusChanged(ev: TaskActivityEvent): TimelineEvent {
     fromLabel && toLabel
       ? `${fromLabel} → ${toLabel}`
       : "Status updated.";
-  const meta: string[] = [];
-  if (fromLabel && toLabel) {
-    meta.push(`${fromLabel} → ${toLabel}`);
-  }
 
   return {
     id: activityEventId(ev),
@@ -56,12 +71,12 @@ function mapStatusChanged(ev: TaskActivityEvent): TimelineEvent {
     category: "tasks",
     at: ev.at,
     title: "Status changed",
-    highlight: ref,
+    highlight: "",
     detail,
     taskId: ev.task_id,
     taskRef: ref,
     seq: ev.seq,
-    meta: meta.length > 0 ? meta : undefined,
+    ...filterFields(ev),
   };
 }
 
@@ -89,41 +104,36 @@ function phaseDisplayLabel(phase: unknown): string {
 
 function mapPhaseFailed(ev: TaskActivityEvent): TimelineEvent {
   const phase = typeof ev.data.phase === "string" ? ev.data.phase : "";
-  const summary =
-    typeof ev.data.failure_summary === "string" && ev.data.failure_summary
-      ? ev.data.failure_summary
-      : typeof ev.data.summary === "string" && ev.data.summary
-        ? ev.data.summary
-        : "";
-
   const snapshot = parseVerificationSnapshot(ev.data.details);
 
   const phaseLabel = KNOWN_PHASES.has(phase)
     ? phaseDisplayLabel(phase)
     : "Phase";
   const ref = taskRef(ev);
-  const detail =
-    summary || (snapshot ? `${snapshot.failedCount} criteria failed` : `${phaseLabel} phase failed.`);
+  const detail = phaseFailureDetail(ev.data, phaseLabel, snapshot);
+  const highlight = firstFailedCriterionHighlight(snapshot);
 
   const meta: string[] = [];
   if (snapshot) {
     meta.push(`${snapshot.passedCount} passed`, `${snapshot.failedCount} failed`);
-  } else if (summary) {
-    meta.push(`${phaseLabel} failed`);
   }
+
+  const title =
+    phase === "verify" ? "Verification failed" : `${phaseLabel} phase failed`;
 
   return {
     id: activityEventId(ev),
     kind: "verification-failed" as TimelineKind,
     category: "verification",
     at: ev.at,
-    title: `${phaseLabel} phase failed`,
-    highlight: ref,
+    title,
+    highlight,
     detail,
     taskId: ev.task_id,
     taskRef: ref,
     seq: ev.seq,
     meta: meta.length > 0 ? meta : undefined,
+    ...filterFields(ev),
   };
 }
 
@@ -139,11 +149,12 @@ function mapApprovalGranted(ev: TaskActivityEvent): TimelineEvent {
     category: "tasks",
     at: ev.at,
     title: "Review approved",
-    highlight: ref,
+    highlight: "",
     detail: "Approval granted — task cleared for the next step.",
     taskId: ev.task_id,
     taskRef: ref,
     seq: ev.seq,
+    ...filterFields(ev),
   };
 }
 

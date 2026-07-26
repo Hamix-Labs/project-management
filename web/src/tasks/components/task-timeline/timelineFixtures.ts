@@ -51,12 +51,12 @@ export function createTimelineFixtures(now: Date = new Date()): TimelineEvent[] 
       category: "tasks",
       at: atLocal(now, 0, 9, 7),
       title: "Status changed",
-      highlight: "on f0000151",
-      detail:
-        "In Progress moved forward as the Redis migration entered review.",
+      highlight: "",
+      detail: "In Progress → Verification",
       taskId: "f0000151-0000-4000-8000-000000000151",
       taskRef: "f0000151",
-      meta: ["In Progress → Verification"],
+      taskPriority: "high",
+      taskTitle: "Redis migration",
     },
     {
       id: "ev-4",
@@ -64,12 +64,12 @@ export function createTimelineFixtures(now: Date = new Date()): TimelineEvent[] 
       category: "tasks",
       at: atLocal(now, 1, 16, 18),
       title: "Status changed",
-      highlight: "on f0000131",
-      detail:
-        "In review → Ready for agent after the reviewer approved the split.",
+      highlight: "",
+      detail: "In review → Ready for agent",
       taskId: "f0000131-0000-4000-8000-000000000131",
       taskRef: "f0000131",
-      meta: ["In review → Ready for agent"],
+      taskPriority: "medium",
+      taskTitle: "Split auth middleware",
     },
     {
       id: "ev-5",
@@ -81,6 +81,8 @@ export function createTimelineFixtures(now: Date = new Date()): TimelineEvent[] 
       detail: "2 of 9 assertions failed — timeout on retry logic under load.",
       taskId: "f0000142-0000-4000-8000-000000000142",
       taskRef: "f0000142",
+      taskPriority: "critical",
+      taskTitle: "Fix retry logic on payment webhook",
       meta: ["2 / 9 failed", "timeout"],
     },
     {
@@ -89,7 +91,7 @@ export function createTimelineFixtures(now: Date = new Date()): TimelineEvent[] 
       category: "tasks",
       at: atLocal(now, 1, 11, 24),
       title: "New comment",
-      highlight: "on f0000127",
+      highlight: "",
       detail:
         '"The flake only reproduces when the seed data runs in parallel."',
       taskId: "f0000127-0000-4000-8000-000000000127",
@@ -114,11 +116,13 @@ export function createTimelineFixtures(now: Date = new Date()): TimelineEvent[] 
       category: "tasks",
       at: atLocal(now, 2, 9, 0),
       title: "Task created",
-      highlight: "f0000142",
+      highlight: "",
       detail:
         '"Add retry with backoff to the sync worker" was added to Backlog.',
       taskId: "f0000142-0000-4000-8000-000000000142",
       taskRef: "f0000142",
+      taskPriority: "high",
+      taskTitle: "Add retry with backoff to the sync worker",
       meta: ["Backlog", "High"],
     },
   ];
