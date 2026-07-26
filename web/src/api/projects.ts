@@ -1,7 +1,6 @@
 import type {
   Project,
   ProjectContextItem,
-  ProjectContextKind,
   ProjectContextListResponse,
   ProjectListResponse,
   ProjectStatus,
@@ -31,9 +30,9 @@ function parseProjectStatus(value: unknown): ProjectStatus {
   return value as ProjectStatus;
 }
 
-function parseProjectContextKind(value: unknown): ProjectContextKind {
+function parseProjectContextTag(value: unknown): string {
   if (typeof value !== "string" || !value.trim()) {
-    throw new Error("Invalid API response: context kind must be a string");
+    throw new Error("Invalid API response: context tag must be a non-empty string");
   }
   return value;
 }
@@ -76,7 +75,7 @@ export function parseProjectContextItem(value: unknown): ProjectContextItem {
   const item: ProjectContextItem = {
     id: parseNonEmptyString(value.id, "id"),
     project_id: parseNonEmptyString(value.project_id, "project_id"),
-    kind: parseProjectContextKind(value.kind),
+    tag: parseProjectContextTag(value.tag),
     title: parseString(value.title, "title"),
     description:
       value.description === undefined || value.description === null
@@ -225,7 +224,7 @@ export async function createProjectContext(
   projectId: string,
   input: {
     id?: string;
-    kind?: ProjectContextKind;
+    tag: string;
     title: string;
     description?: string;
     body: string;
@@ -251,7 +250,7 @@ export async function patchProjectContext(
   projectId: string,
   contextId: string,
   input: {
-    kind?: ProjectContextKind;
+    tag?: string;
     title?: string;
     description?: string;
     body?: string;

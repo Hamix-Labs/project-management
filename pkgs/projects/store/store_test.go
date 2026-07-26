@@ -99,6 +99,7 @@ func TestProjectsStore_CreateContext_rejectsOversizeTitleAndBody(t *testing.T) {
 	}
 
 	item, err := s.CreateProjectContext(ctx, project.ID, CreateProjectContextInput{
+		Tag:         "General",
 		Title:       "alias",
 		Description: "when to use this memory",
 		Body:        "imported content",

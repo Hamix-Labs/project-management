@@ -67,7 +67,10 @@ import (
 //
 // Rev 20 (ADR-0086): app_settings.verify_chat_mode (same_chat | different_chat
 // default) and tasks.verify_chat_mode (empty inherits settings).
-const SchemaRevision = 20
+//
+// Rev 21: project_context_items.tag replaces kind for UI grouping; migrate
+// legacy role kinds (note/decision/constraint/handoff) to tag=General.
+const SchemaRevision = 21
 
 const schemaMetaRowID = 1
 

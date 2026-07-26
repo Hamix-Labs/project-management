@@ -135,7 +135,7 @@ func (h *Handler) createProjectContext(w http.ResponseWriter, r *http.Request) {
 	}
 	item, err := h.store.CreateProjectContext(r.Context(), projectID, contract.CreateProjectContextInput{
 		ID:            body.ID,
-		Kind:          body.Kind,
+		Tag:           body.Tag,
 		Title:         body.Title,
 		Description:   body.Description,
 		Body:          body.Body,
@@ -203,7 +203,7 @@ func (h *Handler) patchProjectContext(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	item, err := h.store.UpdateProjectContext(r.Context(), projectID, itemID, contract.UpdateProjectContextInput{
-		Kind:        body.Kind,
+		Tag:         body.Tag,
 		Title:       body.Title,
 		Description: body.Description,
 		Body:        body.Body,

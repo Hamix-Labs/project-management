@@ -7,7 +7,7 @@ func FromDomainProjectContextItem(d domain.ProjectContextItem) ProjectContextIte
 	return ProjectContextItem{
 		ID:            d.ID,
 		ProjectID:     d.ProjectID,
-		Kind:          d.Kind,
+		Tag:           d.Tag,
 		Title:         d.Title,
 		Description:   d.Description,
 		Body:          d.Body,
@@ -25,7 +25,7 @@ func ToDomainProjectContextItem(m ProjectContextItem) domain.ProjectContextItem 
 	return domain.ProjectContextItem{
 		ID:            m.ID,
 		ProjectID:     m.ProjectID,
-		Kind:          m.Kind,
+		Tag:           m.Tag,
 		Title:         m.Title,
 		Description:   m.Description,
 		Body:          m.Body,

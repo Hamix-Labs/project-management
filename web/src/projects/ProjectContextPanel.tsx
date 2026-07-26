@@ -3,6 +3,7 @@ import { useProjectContext } from "./hooks";
 import { ProjectContextImportMemoryModal } from "./ProjectContextImportMemoryModal";
 import { ProjectContextPanelWorkspace } from "./ProjectContextPanelWorkspace";
 import { firstProjectContextMutationError } from "./projectContextPanelHelpers";
+import { collectProjectContextTags } from "./projectContextTags";
 import { useProjectContextMutations } from "./mutations";
 import { useProjectContextFormState } from "./useProjectContextFormState";
 
@@ -19,6 +20,7 @@ export function ProjectContextPanel({ projectId }: Props) {
 
   const mutationError = firstProjectContextMutationError(mutations);
   const items = context.data?.items ?? EMPTY_CONTEXT_ITEMS;
+  const existingTags = collectProjectContextTags(items);
 
   return (
     <section className="pc__workspace">
@@ -26,6 +28,7 @@ export function ProjectContextPanel({ projectId }: Props) {
         open={form.importOpen}
         onClose={() => form.setImportOpen(false)}
         isPending={mutations.createContextMutation.isPending}
+        existingTags={existingTags}
         onImport={form.submitImport}
       />
       {mutationError ? (

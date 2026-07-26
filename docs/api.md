@@ -37,8 +37,8 @@ Data model semantics: [data-model.md](./data-model.md). Configuration: [configur
 | PATCH | `/projects/{id}` | Partial. At least one of `name`, `description`, `status`, `context_summary`. Default project (`00000000-0000-4000-8000-000000000001`) cannot be renamed / archived (409). Publishes `project_updated`. |
 | DELETE | `/projects/{id}` | `204`. Blocked while tasks reference it (409). Default project cannot be deleted. Publishes `project_deleted`. |
 | GET | `/projects/{id}/context` | List context items + edges (`{ items, edges, limit }`; empty lists are `[]`, never `null`). `?limit`, `?pinned_only=true`. |
-| POST | `/projects/{id}/context` | Create context item. `title` required (1–200 Unicode chars); `description` optional (0–400 Unicode chars); `body` required (non-empty, ≤512 KiB UTF-8 bytes). Oversized fields → **400** (not truncated). Publishes `project_context_changed`. |
-| PATCH | `/projects/{id}/context/{contextId}` | Partial. Same title/description/body size rules when those fields are present. Publishes `project_context_changed`. |
+| POST | `/projects/{id}/context` | Create context item. `tag` required (1–40 Unicode chars); `title` required (1–200 Unicode chars); `description` optional (0–400 Unicode chars); `body` required (non-empty, ≤512 KiB UTF-8 bytes). Oversized fields → **400** (not truncated). Publishes `project_context_changed`. |
+| PATCH | `/projects/{id}/context/{contextId}` | Partial. Same tag/title/description/body size rules when those fields are present. Publishes `project_context_changed`. |
 | DELETE | `/projects/{id}/context/{contextId}` | `204`. Publishes `project_context_changed`. |
 | POST | `/projects/{id}/context/edges` | Create edge between two items. `relation ∈ supports | blocks | refines | depends_on | related`, `strength 1..5`. Publishes `project_context_changed`. |
 | PATCH | `/projects/{id}/context/edges/{edgeId}` | Partial. Publishes `project_context_changed`. |

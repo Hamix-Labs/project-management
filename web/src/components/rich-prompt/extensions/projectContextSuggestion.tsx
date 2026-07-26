@@ -64,7 +64,7 @@ function matchesQuery(item: ProjectContextItem, query: string): boolean {
   return (
     item.title.toLowerCase().includes(q) ||
     item.description.toLowerCase().includes(q) ||
-    item.kind.toLowerCase().includes(q) ||
+    item.tag.toLowerCase().includes(q) ||
     item.id.toLowerCase().includes(q) ||
     item.body.toLowerCase().includes(q)
   );

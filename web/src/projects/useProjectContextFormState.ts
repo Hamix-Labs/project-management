@@ -7,13 +7,14 @@ export function useProjectContextFormState(
   const [importOpen, setImportOpen] = useState(false);
 
   function submitImport(input: {
+    tag: string;
     title: string;
     description: string;
     body: string;
   }) {
     mutations.createContextMutation.mutate(
       {
-        kind: "note",
+        tag: input.tag,
         title: input.title,
         description: input.description,
         body: input.body,

@@ -12,6 +12,10 @@ const (
 	MaxProjectContextBodyBytes        = 512 << 10 // 512 KiB
 	MaxProjectContextTitleChars       = 200
 	MaxProjectContextDescriptionChars = 400
+	MaxProjectContextTagChars         = 40
+	// DefaultProjectContextTag is used when migrating legacy role-kind rows
+	// (note/decision/constraint/handoff) that were not freeform group labels.
+	DefaultProjectContextTag = "General"
 )
 
 // ValidateProjectContextTitle reports ErrInvalidInput when title is empty or
@@ -50,6 +54,20 @@ func ValidateProjectContextBody(body string) error {
 func ValidateProjectContextDescription(description string) error {
 	if utf8.RuneCountInString(description) > MaxProjectContextDescriptionChars {
 		return fmt.Errorf("%w: context description must be %d characters or fewer", ErrInvalidInput, MaxProjectContextDescriptionChars)
+	}
+	return nil
+}
+
+// ValidateProjectContextTag reports ErrInvalidInput when tag is empty or longer
+// than MaxProjectContextTagChars (Unicode code points).
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func ValidateProjectContextTag(tag string) error {
+	if tag == "" {
+		return fmt.Errorf("%w: context tag required", ErrInvalidInput)
+	}
+	if utf8.RuneCountInString(tag) > MaxProjectContextTagChars {
+		return fmt.Errorf("%w: context tag must be %d characters or fewer", ErrInvalidInput, MaxProjectContextTagChars)
 	}
 	return nil
 }

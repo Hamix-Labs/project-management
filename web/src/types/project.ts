@@ -1,7 +1,5 @@
 export type ProjectStatus = "active" | "archived";
 
-export type ProjectContextKind = string;
-
 export type Project = {
   id: string;
   name: string;
@@ -17,7 +15,7 @@ export type Project = {
 export type ProjectContextItem = {
   id: string;
   project_id: string;
-  kind: ProjectContextKind;
+  tag: string;
   title: string;
   description: string;
   body: string;
@@ -42,9 +40,3 @@ export type ProjectContextListResponse = {
 };
 
 export const PROJECT_STATUSES: ProjectStatus[] = ["active", "archived"];
-
-export const PROJECT_CONTEXT_KIND_SUGGESTIONS: ProjectContextKind[] = [
-  "note",
-  "decision",
-  "constraint",
-];

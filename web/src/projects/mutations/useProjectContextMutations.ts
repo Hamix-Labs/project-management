@@ -4,7 +4,6 @@ import {
   deleteProjectContext,
   patchProjectContext,
 } from "@/api";
-import type { ProjectContextKind } from "@/types";
 import { invalidateProjectCache } from "./invalidateProjectCache";
 
 export function useProjectContextMutations(projectId: string) {
@@ -15,7 +14,7 @@ export function useProjectContextMutations(projectId: string) {
 
   const createContextMutation = useMutation({
     mutationFn: (input: {
-      kind: ProjectContextKind;
+      tag: string;
       title: string;
       description: string;
       body: string;
@@ -26,7 +25,7 @@ export function useProjectContextMutations(projectId: string) {
   const patchContextMutation = useMutation({
     mutationFn: (input: {
       id: string;
-      kind: ProjectContextKind;
+      tag: string;
       title: string;
       description: string;
       body: string;

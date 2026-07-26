@@ -8,7 +8,7 @@ function makeItem(overrides: Partial<ProjectContextItem> = {}): ProjectContextIt
   return {
     id: overrides.id ?? "ctx-1",
     project_id: "project-1",
-    kind: overrides.kind ?? "decision",
+    tag: overrides.tag ?? "decision",
     title: overrides.title ?? "Decision",
     description: overrides.description ?? "",
     body: "",
@@ -21,10 +21,10 @@ function makeItem(overrides: Partial<ProjectContextItem> = {}): ProjectContextIt
 }
 
 describe("ProjectContextSuggestionList", () => {
-  it("renders title, kind, and short id for each item", () => {
+  it("renders title, tag, and short id for each item", () => {
     const items = [
       { item: makeItem({ id: "ctx-decision", title: "Use HTTP" }) },
-      { item: makeItem({ id: "ctx-constraint-2026", title: "Latency", kind: "constraint" }) },
+      { item: makeItem({ id: "ctx-constraint-2026", title: "Latency", tag: "constraint" }) },
     ];
     render(
       <ProjectContextSuggestionList items={items} command={vi.fn()} />,

@@ -14,7 +14,7 @@ const contextItems: ProjectContextItem[] = [
   {
     id: "ctx-risk",
     project_id: projectId,
-    kind: "risk",
+    tag: "risk",
     title: "New One",
     description: "",
     body: "Risk details",
@@ -26,7 +26,7 @@ const contextItems: ProjectContextItem[] = [
   {
     id: "ctx-decision",
     project_id: projectId,
-    kind: "decision",
+    tag: "decision",
     title: "Decision node",
     description: "",
     body: "Decision details",
@@ -81,7 +81,7 @@ describe("ProjectContextPicker", () => {
 
     await user.type(
       within(dialog).getByPlaceholderText(
-        /search by title, body, or kind/i,
+        /search by title, body, or tag/i,
       ),
       "risk",
     );

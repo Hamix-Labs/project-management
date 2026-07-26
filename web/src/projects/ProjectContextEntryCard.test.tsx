@@ -29,7 +29,7 @@ describe("ProjectContextEntryCard", () => {
             {
               id: "11111111-1111-4111-8111-111111111111",
               project_id: "proj-1",
-              kind: "constraint",
+              tag: "constraint",
               title: "A",
               description: "",
               body: "B",

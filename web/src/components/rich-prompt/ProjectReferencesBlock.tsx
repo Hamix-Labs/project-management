@@ -63,7 +63,7 @@ export function ProjectReferencesBlock({ items, disabled, onRemove }: Props) {
                   </span>
                 ) : null}
                 <span className="rich-prompt-references__chip-kind muted">
-                  {item.kind}
+                  {item.tag}
                 </span>
               </span>
               {onRemove ? (

@@ -19,6 +19,7 @@ import {
   MAX_PROJECT_CONTEXT_DESCRIPTION_CHARS,
   MEMORY_IMPORT_ACCEPT,
   validateProjectContextDescription,
+  validateProjectContextTag,
 } from "./projectContextLimits";
 import {
   formatMemoryImportBytes,
@@ -28,12 +29,15 @@ import {
   validateMemoryAlias,
   type MemoryImportFileResult,
 } from "./readMemoryImportFile";
+import { ProjectContextTagPicker } from "./ProjectContextTagPicker";
 
 type Props = {
   open: boolean;
   onClose: () => void;
   isPending: boolean;
+  existingTags: string[];
   onImport: (input: {
+    tag: string;
     title: string;
     description: string;
     body: string;
@@ -44,6 +48,7 @@ export function ProjectContextImportMemoryModal({
   open,
   onClose,
   isPending,
+  existingTags,
   onImport,
 }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -57,6 +62,7 @@ export function ProjectContextImportMemoryModal({
   const [imported, setImported] = useState<MemoryImportFileResult | null>(null);
   const [alias, setAlias] = useState("");
   const [description, setDescription] = useState("");
+  const [tag, setTag] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [reading, setReading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
@@ -66,6 +72,7 @@ export function ProjectContextImportMemoryModal({
       setImported(null);
       setAlias("");
       setDescription("");
+      setTag("");
       setError(null);
       setReading(false);
       setDragActive(false);
@@ -100,12 +107,14 @@ export function ProjectContextImportMemoryModal({
   const aliasError = alias ? validateMemoryAlias(alias) : null;
   const trimmedDescription = description.trim();
   const descriptionError = validateProjectContextDescription(description);
+  const tagError = validateProjectContextTag(tag);
   const canSubmit =
     Boolean(imported) &&
     !aliasError &&
     sanitizeMemoryAlias(alias).length > 0 &&
     trimmedDescription.length > 0 &&
     !descriptionError &&
+    !tagError &&
     !busy;
 
   function openFilePicker() {
@@ -162,7 +171,16 @@ export function ProjectContextImportMemoryModal({
       setError(descriptionError);
       return;
     }
-    onImport({ title, description: trimmedDescription, body: imported.text });
+    if (tagError) {
+      setError(tagError);
+      return;
+    }
+    onImport({
+      tag: tag.trim(),
+      title,
+      description: trimmedDescription,
+      body: imported.text,
+    });
   }
 
   return (
@@ -266,6 +284,13 @@ export function ProjectContextImportMemoryModal({
           </p>
         </div>
 
+        <ProjectContextTagPicker
+          value={tag}
+          onChange={setTag}
+          existingTags={existingTags}
+          disabled={busy || !imported}
+        />
+
         <div className="field grow">
           <FieldLabel htmlFor={aliasId} requirement="required">
             Alias
@@ -307,8 +332,10 @@ export function ProjectContextImportMemoryModal({
             onChange={(event) => setDescription(event.target.value)}
           />
           <p id={descriptionHintId} className="pc__field-hint">
-            Shown when selecting this node. Max{" "}
-            {MAX_PROJECT_CONTEXT_DESCRIPTION_CHARS} characters.
+            Shown when selecting this node.{" "}
+            <span className="pc__char-count">
+              {description.length}/{MAX_PROJECT_CONTEXT_DESCRIPTION_CHARS}
+            </span>
           </p>
           {descriptionError ? (
             <p className="pd__inline-error" role="alert">
@@ -325,19 +352,19 @@ export function ProjectContextImportMemoryModal({
 
         <div className="row stack-row-actions pc__import-actions">
           <button
-            type="submit"
-            className="pc__import-submit"
-            disabled={!canSubmit}
-          >
-            {isPending ? "Importing..." : reading ? "Reading..." : "Import"}
-          </button>
-          <button
             type="button"
             className="pc__import-cancel"
             disabled={isPending}
             onClick={onClose}
           >
             Cancel
+          </button>
+          <button
+            type="submit"
+            className="pc__import-submit"
+            disabled={!canSubmit}
+          >
+            {isPending ? "Importing..." : reading ? "Reading..." : "Import"}
           </button>
         </div>
       </form>

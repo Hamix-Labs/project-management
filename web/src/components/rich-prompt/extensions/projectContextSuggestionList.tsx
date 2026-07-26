@@ -16,7 +16,7 @@ type ListProps = {
  * Dropdown rendered by the `#` suggestion plugin. Mirrors the visual
  * structure of `RepoFileSuggestionList` so the editor reads as one
  * mention system with two triggers (`@` for repo files, `#` for project
- * memory). Each row shows the node title, kind tag, and short id so
+ * memory). Each row shows the node title, tag, and short id so
  * operators can disambiguate same-titled nodes from different projects.
  */
 export function ProjectContextSuggestionList({
@@ -54,7 +54,7 @@ export function ProjectContextSuggestionList({
                   ) : null}
                   <span className="tiptap-suggestion-list__meta">
                     <span className="tiptap-suggestion-list__kind">
-                      {item.kind}
+                      {item.tag}
                     </span>
                     {shortId ? (
                       <span className="tiptap-suggestion-list__short-id">
