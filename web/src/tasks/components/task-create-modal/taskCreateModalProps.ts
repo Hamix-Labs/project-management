@@ -44,6 +44,8 @@ export type TaskCreateModalCriteria = {
   onRemoveChecklistRow: (index: number) => void;
   tagsCsv: string;
   onTagsCsvChange: (value: string) => void;
+  functionInputs: import("@/types").TemplateFunctionInputDef[];
+  onFunctionInputsChange: (next: import("@/types").TemplateFunctionInputDef[]) => void;
 };
 
 export type TaskCreateModalGitBinding = {

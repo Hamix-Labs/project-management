@@ -23,6 +23,7 @@ const baseFields: TaskCreateFormFields = {
   newWorktreeID: "wt-1",
   newChecklistItems: [{ text: "Criterion one" }],
   newDraftID: "draft-1",
+  newFunctionInputs: [],
 };
 
 describe("composePayload", () => {

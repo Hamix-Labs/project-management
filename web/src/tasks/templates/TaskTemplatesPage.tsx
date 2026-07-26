@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useDocumentTitle } from "@/shared/useDocumentTitle";
 import { useTasksAppContext } from "../app/TasksAppProvider";
 import { TemplateBatchBar } from "./components/TemplateBatchBar";
+import { TemplateFunctionBindModal } from "./components/TemplateFunctionBindModal";
 import { TemplatePageBody } from "./components/TemplatePageBody";
 import { TemplatePageHeader } from "./components/TemplatePageHeader";
 import { TemplateTagFilters } from "./components/TemplateTagFilters";
@@ -73,6 +74,16 @@ export function TaskTemplatesPage() {
         onApplyToAll={model.applyBatchDefaultToSelected}
         onCreate={() => void model.runBatchCreate()}
       />
+      {model.bindDrafts ? (
+        <TemplateFunctionBindModal
+          drafts={model.bindDrafts}
+          pending={app.instantiateTemplatesPending}
+          error={model.bindError}
+          onChange={model.setBindDrafts}
+          onCancel={model.closeBindModal}
+          onConfirm={() => void model.confirmBindAndCreate()}
+        />
+      ) : null}
     </section>
   );
 }

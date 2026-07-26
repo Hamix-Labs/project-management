@@ -19,6 +19,7 @@ const baseFields: TaskCreateFormFields = {
   newWorktreeID: "",
   newChecklistItems: [{ text: "One" }],
   newDraftID: "draft-a",
+  newFunctionInputs: [],
 };
 
 describe("computeDraftAutosaveSignature", () => {

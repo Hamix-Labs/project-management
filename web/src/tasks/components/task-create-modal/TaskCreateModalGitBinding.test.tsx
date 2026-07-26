@@ -52,6 +52,8 @@ const flatDefaults = {
   autonomyEnabled: true,
   onAutonomyChange: vi.fn(),
   tagsCsv: "",
+  functionInputs: [],
+  onFunctionInputsChange: vi.fn(),
   milestone: "",
   repositoryId: "",
   projectId: "",

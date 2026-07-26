@@ -87,6 +87,7 @@ export function assertPositiveSeq(name: string, n: number): string {
 export type TaskTemplateInstantiateItem = {
   template_id: string;
   count: number;
+  function_bindings?: import("@/types").TemplateFunctionBinding[];
 };
 
 export function assertInstantiateTemplateItems(
@@ -115,7 +116,28 @@ export function assertInstantiateTemplateItems(
     if (total > maxTemplateInstantiateTotalCreates) {
       throw new Error(`total creates must not exceed ${maxTemplateInstantiateTotalCreates}`);
     }
-    normalized.push({ template_id, count: item.count });
+    const row: TaskTemplateInstantiateItem = { template_id, count: item.count };
+    if (item.function_bindings && item.function_bindings.length > 0) {
+      row.function_bindings = item.function_bindings.map((b) => ({
+        input_id: String(b.input_id ?? "").trim(),
+        ...(b.paths ? { paths: b.paths.map((p) => String(p).trim()).filter(Boolean) } : {}),
+        ...(b.functions
+          ? {
+              functions: b.functions.map((f) => ({
+                path: String(f.path ?? "").trim(),
+                name: String(f.name ?? "").trim(),
+                line: f.line,
+              })),
+            }
+          : {}),
+      }));
+      for (const b of row.function_bindings) {
+        if (!b.input_id) {
+          throw new Error("function_bindings.input_id is required");
+        }
+      }
+    }
+    normalized.push(row);
   }
   return normalized;
 }

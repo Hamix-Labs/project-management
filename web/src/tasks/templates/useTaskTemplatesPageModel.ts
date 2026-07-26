@@ -1,21 +1,43 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { listTaskTemplates } from "@/api";
+import { getTaskTemplate, listGlobalGitWorktrees, listTaskTemplates } from "@/api";
 import { TASK_TIMINGS } from "@/constants/tasks";
 import { useDelayedTrue } from "@/lib/useDelayedTrue";
 import { useDebouncedTrimmedValue } from "@/hooks/useDebouncedTrimmedValue";
-import type { TaskTemplateSummary } from "@/types";
+import type { TaskTemplateSummary, TemplateFunctionBinding } from "@/types";
 import { useDeleteWithExitAnimation } from "../hooks/useDeleteWithExitAnimation";
 import { taskQueryKeys } from "../task-query";
 import type { useTasksAppContext } from "../app/TasksAppProvider";
 import { TEMPLATE_CATEGORY_LABELS } from "./templateCategories";
 import type { TemplateSortKey } from "./components/TemplateToolbar";
 import {
+  bindingsFromDrafts,
+  buildBindDraftsFromDetails,
+  type TemplateBindDraft,
+  validateBindDrafts,
+} from "./components/TemplateFunctionBindModal";
+import {
   clampInstanceCount,
   formatInstantiateBatchError,
   sumSelectedInstanceCounts,
 } from "./templateUtils";
+
+async function resolveWorktreeIdForTemplate(detail: {
+  payload: { worktree_id?: string; repository_id?: string };
+}): Promise<string | null> {
+  const fromPayload = detail.payload.worktree_id?.trim();
+  if (fromPayload) return fromPayload;
+  const repoId = detail.payload.repository_id?.trim();
+  if (!repoId) return null;
+  try {
+    const trees = await listGlobalGitWorktrees(repoId);
+    const main = trees.find((wt) => wt.is_main);
+    return main?.id ?? null;
+  } catch {
+    return null;
+  }
+}
 
 type TaskTemplatesApp = ReturnType<typeof useTasksAppContext>;
 
@@ -37,6 +59,8 @@ export function useTaskTemplatesPageModel(app: TaskTemplatesApp, navigate: Retur
   const [batchDefaultCount, setBatchDefaultCount] = useState(1);
   const [instanceCounts, setInstanceCounts] = useState<Record<string, number>>({});
   const [batchError, setBatchError] = useState<string | null>(null);
+  const [bindDrafts, setBindDrafts] = useState<TemplateBindDraft[] | null>(null);
+  const [bindError, setBindError] = useState<string | null>(null);
 
   const apiSort = sortToApiParams(sort);
   const queryParams = useMemo(() => {
@@ -142,28 +166,77 @@ export function useTaskTemplatesPageModel(app: TaskTemplatesApp, navigate: Retur
     setActiveTag("all");
   };
 
-  const runBatchCreate = async () => {
-    if (selectedIds.length === 0) return;
+  const executeInstantiate = async (
+    bindingByTemplate: Record<string, TemplateFunctionBinding[]>,
+  ) => {
     setBatchError(null);
+    setBindError(null);
     try {
       const items = selectedIds.map((id) => ({
         template_id: id,
         count: instanceCounts[id] ?? 1,
+        ...(bindingByTemplate[id]?.length
+          ? { function_bindings: bindingByTemplate[id] }
+          : {}),
       }));
       const result = await app.instantiateTemplates(items);
       const batchMessage = formatInstantiateBatchError(result);
       if (batchMessage !== null) {
         setBatchError(batchMessage);
+        setBindDrafts(null);
         if (result.errors.length > 0 && result.tasks.length > 0) {
           setSelectedIds([...new Set(result.errors.map((entry) => entry.template_id))]);
         }
         return;
       }
+      setBindDrafts(null);
       setSelectedIds([]);
       navigate("/");
     } catch (err) {
-      setBatchError(err instanceof Error ? err.message : "Could not create tasks from templates.");
+      const message =
+        err instanceof Error ? err.message : "Could not create tasks from templates.";
+      if (bindDrafts) {
+        setBindError(message);
+      } else {
+        setBatchError(message);
+      }
     }
+  };
+
+  const runBatchCreate = async () => {
+    if (selectedIds.length === 0) return;
+    setBatchError(null);
+    const selected = templates.filter((t) => selectedIds.includes(t.id));
+    const functionTemplates = selected.filter((t) => t.is_function);
+    if (functionTemplates.length === 0) {
+      await executeInstantiate({});
+      return;
+    }
+    try {
+      const details = await Promise.all(functionTemplates.map((t) => getTaskTemplate(t.id)));
+      const worktreeByTemplate: Record<string, string | null> = {};
+      await Promise.all(
+        details.map(async (d) => {
+          worktreeByTemplate[d.id] = await resolveWorktreeIdForTemplate(d);
+        }),
+      );
+      setBindDrafts(buildBindDraftsFromDetails(details, worktreeByTemplate));
+      setBindError(null);
+    } catch (err) {
+      setBatchError(
+        err instanceof Error ? err.message : "Could not load template function inputs.",
+      );
+    }
+  };
+
+  const confirmBindAndCreate = async () => {
+    if (!bindDrafts) return;
+    const msg = validateBindDrafts(bindDrafts);
+    if (msg) {
+      setBindError(msg);
+      return;
+    }
+    await executeInstantiate(bindingsFromDrafts(bindDrafts));
   };
 
   return {
@@ -201,6 +274,14 @@ export function useTaskTemplatesPageModel(app: TaskTemplatesApp, navigate: Retur
     clearFilters,
     deleteTemplate: deleteWithExit,
     runBatchCreate,
+    bindDrafts,
+    setBindDrafts,
+    bindError,
+    confirmBindAndCreate,
+    closeBindModal: () => {
+      setBindDrafts(null);
+      setBindError(null);
+    },
   };
 }
 

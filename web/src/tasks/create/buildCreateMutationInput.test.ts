@@ -19,6 +19,7 @@ const baseFields: TaskCreateFormFields = {
   newWorktreeID: "",
   newChecklistItems: [],
   newDraftID: "",
+  newFunctionInputs: [],
 };
 
 describe("buildCreateTaskMutationInput", () => {

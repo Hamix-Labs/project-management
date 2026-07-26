@@ -33,6 +33,15 @@ export function formatTagsCsv(tags: string[]): string {
 export function buildComposePayloadFromForm(
   fields: TaskCreateFormFields,
 ): TaskComposePayload {
+  const functionInputs = fields.newFunctionInputs
+    .map((row) => ({
+      id: row.id.trim(),
+      kind: row.kind,
+      label: row.label.trim(),
+      ...(row.required === false ? { required: false } : {}),
+      ...(row.multiple ? { multiple: true } : {}),
+    }))
+    .filter((row) => row.id !== "" && row.label !== "");
   return {
     title: fields.newTitle.trim(),
     initial_prompt: fields.newPrompt,
@@ -48,6 +57,7 @@ export function buildComposePayloadFromForm(
     milestone: fields.newMilestone.trim() || undefined,
     depends_on: fields.newDependsOn.map((task_id) => ({ task_id, satisfies: "done" as const })),
     checklist_items: normalizeChecklistItems(fields.newChecklistItems),
+    ...(functionInputs.length > 0 ? { function_inputs: functionInputs } : {}),
   };
 }
 
@@ -69,6 +79,7 @@ export function hydrateFormFromComposePayload(
   milestone: string;
   dependsOn: string[];
   checklistItems: ChecklistItemDraft[];
+  functionInputs: TaskCreateFormFields["newFunctionInputs"];
 } {
   const runner =
     typeof payload.runner === "string" && payload.runner.trim()
@@ -102,5 +113,6 @@ export function hydrateFormFromComposePayload(
       text: item.text,
       ...(item.verify_commands?.length ? { verify_commands: item.verify_commands } : {}),
     })),
+    functionInputs: (payload.function_inputs ?? []).map((row) => ({ ...row })),
   };
 }

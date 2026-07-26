@@ -782,6 +782,68 @@
   margin: var(--space-4);
 }
 
+.task-create-function-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.task-create-function-inputs__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: flex-end;
+}
+
+.repo-scope-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.repo-scope-picker__list {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  max-height: 12rem;
+  overflow: auto;
+}
+
+.repo-scope-picker__list button {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  padding: var(--space-2);
+  cursor: pointer;
+}
+
+.repo-scope-picker__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.repo-scope-picker__chip {
+  font-size: var(--text-sm);
+}
+
+.template-function-bind-modal__block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.template-function-bind-modal__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .template-row--exit,
   .templates-page-header__new-btn,
