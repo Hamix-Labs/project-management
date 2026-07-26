@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTaskTokenUsage } from "../../hooks/useTaskTokenUsage";
 import { formatTokenCount } from "../../task-display/formatTokenCount";
+import { CoinsGlyph } from "./ExecutionBarGlyphs";
 import { TokenUsageBreakdownModal } from "./TokenUsageBreakdownModal";
 
 type Props = {
@@ -29,13 +30,19 @@ export function TokenUsageChip({ taskId }: Props) {
         }
         onClick={() => setOpen(true)}
       >
+        <CoinsGlyph className="task-token-usage-chip-icon" />
         {known && formatted ? (
           <>
             <span className="task-token-usage-chip-label">Tokens</span>
-            <span aria-hidden="true">{formatted.label}</span>
+            <span
+              className="task-token-usage-chip-value"
+              aria-hidden="true"
+            >
+              {formatted.label}
+            </span>
           </>
         ) : (
-          <span className="muted">Tokens —</span>
+          <span className="task-token-usage-chip-unknown muted">Tokens —</span>
         )}
       </button>
       {open && usageQuery.data ? (
