@@ -3,21 +3,23 @@ import { FieldLabel } from "@/shared/FieldLabel";
 import { Modal } from "@/shared/Modal";
 import { RichPromptEditor } from "@/components/rich-prompt";
 import { promptHasVisibleContent } from "@/lib/promptFormat";
-import { type ProjectContextItem, type ProjectContextKind } from "@/types";
+import { type ProjectContextItem } from "@/types";
 import {
   MAX_PROJECT_CONTEXT_DESCRIPTION_CHARS,
   validateProjectContextDescription,
+  validateProjectContextTag,
 } from "./projectContextLimits";
-import { ProjectContextKindPicker } from "./ProjectContextKindPicker";
+import { ProjectContextTagPicker } from "./ProjectContextTagPicker";
 
 type Props = {
   item: ProjectContextItem;
+  existingTags: string[];
   saving: boolean;
   deleting: boolean;
   onSave: (
     id: string,
     patch: {
-      kind: ProjectContextKind;
+      tag: string;
       title: string;
       description: string;
       body: string;
@@ -29,6 +31,7 @@ type Props = {
 
 export function ProjectContextItemEditor({
   item,
+  existingTags,
   saving,
   deleting,
   onSave,
@@ -36,6 +39,7 @@ export function ProjectContextItemEditor({
 }: Props) {
   const [body, setBody] = useState(item.body);
   const [description, setDescription] = useState(item.description);
+  const [tag, setTag] = useState(item.tag);
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
@@ -46,6 +50,10 @@ export function ProjectContextItemEditor({
     setDescription(item.description);
   }, [item.description]);
 
+  useEffect(() => {
+    setTag(item.tag);
+  }, [item.tag]);
+
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
@@ -53,8 +61,10 @@ export function ProjectContextItemEditor({
     if (!promptHasVisibleContent(nextBody)) return;
     const nextDescription = description.trim();
     if (validateProjectContextDescription(nextDescription)) return;
+    const nextTag = tag.trim();
+    if (validateProjectContextTag(nextTag)) return;
     onSave(item.id, {
-      kind: String(form.get("kind") ?? "note") as ProjectContextKind,
+      tag: nextTag,
       title: String(form.get("title") ?? "").trim(),
       description: nextDescription,
       body: nextBody,
@@ -63,6 +73,7 @@ export function ProjectContextItemEditor({
   }
 
   const descriptionError = validateProjectContextDescription(description);
+  const tagError = validateProjectContextTag(tag);
 
   return (
     <>
@@ -95,9 +106,11 @@ export function ProjectContextItemEditor({
                 </p>
               </div>
             </div>
-            <ProjectContextKindPicker
-              idPrefix={`context-kind-${item.id}`}
-              defaultValue={item.kind}
+            <ProjectContextTagPicker
+              id={`context-tag-${item.id}`}
+              value={tag}
+              onChange={setTag}
+              existingTags={existingTags}
               disabled={saving || deleting}
             />
             <div className="field grow">
@@ -155,7 +168,12 @@ export function ProjectContextItemEditor({
               </div>
             </div>
             <div className="row stack-row-actions">
-              <button type="submit" disabled={saving || Boolean(descriptionError)}>
+              <button
+                type="submit"
+                disabled={
+                  saving || Boolean(descriptionError) || Boolean(tagError)
+                }
+              >
                 Save item
               </button>
               <button

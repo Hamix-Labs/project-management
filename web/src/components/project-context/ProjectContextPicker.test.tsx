@@ -81,7 +81,7 @@ describe("ProjectContextPicker", () => {
 
     await user.type(
       within(dialog).getByPlaceholderText(
-        /search by title, body, or kind/i,
+        /search by title, body, or tag/i,
       ),
       "risk",
     );

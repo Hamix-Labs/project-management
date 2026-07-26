@@ -21,7 +21,7 @@ function makeItem(overrides: Partial<ProjectContextItem> = {}): ProjectContextIt
 }
 
 describe("ProjectContextSuggestionList", () => {
-  it("renders title, kind, and short id for each item", () => {
+  it("renders title, tag, and short id for each item", () => {
     const items = [
       { item: makeItem({ id: "ctx-decision", title: "Use HTTP" }) },
       { item: makeItem({ id: "ctx-constraint-2026", title: "Latency", tag: "constraint" }) },

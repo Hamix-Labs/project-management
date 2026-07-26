@@ -1,6 +1,5 @@
-import type { ProjectContextItem, ProjectContextKind } from "@/types";
+import type { ProjectContextItem } from "@/types";
 import { ProjectContextItemEditor } from "./ProjectContextItemEditor";
-import { projectContextKindTone } from "./projectContextKindTone";
 
 const NODE_HUES = [
   "248, 63%",
@@ -16,6 +15,7 @@ const NODE_HUES = [
 type Props = {
   item: ProjectContextItem;
   index: number;
+  existingTags: string[];
   saving: boolean;
   deleting: boolean;
   selected?: boolean;
@@ -23,7 +23,7 @@ type Props = {
   onSave: (
     id: string,
     patch: {
-      kind: ProjectContextKind;
+      tag: string;
       title: string;
       description: string;
       body: string;
@@ -37,6 +37,7 @@ type Props = {
 export function ProjectContextNodeCard({
   item,
   index,
+  existingTags,
   saving,
   deleting,
   selected = false,
@@ -46,11 +47,15 @@ export function ProjectContextNodeCard({
   onToggleSelected,
 }: Props) {
   const hue = NODE_HUES[index % NODE_HUES.length];
-  const nodeClass = onToggleSelected ? "pc__node pc__node--selectable" : "pc__node";
+  const nodeClass = onToggleSelected
+    ? "pc__node pc__node--selectable"
+    : "pc__node";
   return (
     <article
       className={nodeClass}
-      style={{ "--pc-hue": hue, animationDelay: `${index * 30}ms` } as React.CSSProperties}
+      style={
+        { "--pc-hue": hue, animationDelay: `${index * 30}ms` } as React.CSSProperties
+      }
     >
       <div className="pc__node-marker" aria-hidden="true" />
       {onToggleSelected ? (
@@ -74,16 +79,11 @@ export function ProjectContextNodeCard({
           {item.pinned ? " · Pinned" : ""}
         </span>
       </div>
-      <span
-        className="pc__node-kind"
-        data-kind-tone={projectContextKindTone(item.kind)}
-      >
-        {item.kind}
-      </span>
       {!onToggleSelected ? (
         <div className="pc__node-actions">
           <ProjectContextItemEditor
             item={item}
+            existingTags={existingTags}
             saving={saving}
             deleting={deleting}
             onSave={onSave}

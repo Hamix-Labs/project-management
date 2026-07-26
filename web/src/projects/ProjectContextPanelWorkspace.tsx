@@ -50,27 +50,16 @@ export function ProjectContextPanelWorkspace({
   }
 
   return (
-    <>
-      <div className="pc__action-bar">
-        <div className="pc__actions-left">
-          <button
-            type="button"
-            className="pc__btn-primary"
-            onClick={onImportMemory}
-          >
-            Import memory file
-          </button>
-        </div>
-      </div>
-      <ProjectContextListView
-        items={items}
-        nodeSaving={mutations.patchContextMutation.isPending}
-        nodeDeleting={mutations.deleteContextMutation.isPending}
-        onSaveNode={(id, patch) =>
-          mutations.patchContextMutation.mutate({ id, ...patch })
-        }
-        onDeleteNode={(id) => mutations.deleteContextMutation.mutate(id)}
-      />
-    </>
+    <ProjectContextListView
+      items={items}
+      showImportAction
+      onImportMemory={onImportMemory}
+      nodeSaving={mutations.patchContextMutation.isPending}
+      nodeDeleting={mutations.deleteContextMutation.isPending}
+      onSaveNode={(id, patch) =>
+        mutations.patchContextMutation.mutate({ id, ...patch })
+      }
+      onDeleteNode={(id) => mutations.deleteContextMutation.mutate(id)}
+    />
   );
 }

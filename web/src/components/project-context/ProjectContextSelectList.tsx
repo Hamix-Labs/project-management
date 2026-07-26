@@ -36,7 +36,7 @@ export function ProjectContextSelectList({
     const query = nodeQuery.trim().toLowerCase();
     if (!query) return items;
     return items.filter((item) =>
-      [item.title, item.body, item.kind]
+      [item.title, item.body, item.tag]
         .join(" ")
         .toLowerCase()
         .includes(query),
@@ -71,7 +71,7 @@ export function ProjectContextSelectList({
           <input
             value={nodeQuery}
             onChange={(event) => setNodeQuery(event.target.value)}
-            placeholder="Search by title, body, or kind..."
+            placeholder="Search by title, body, or tag..."
           />
         </label>
         <span className="pc__count">{resultLabel}</span>
@@ -118,7 +118,7 @@ export function ProjectContextSelectList({
                     {shortId ? ` · ${shortId}` : ""}
                   </span>
                 </div>
-                <span className="pc__node-kind">{item.kind}</span>
+                <span className="pc__node-kind">{item.tag}</span>
               </article>
             );
           })}
