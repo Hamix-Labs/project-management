@@ -135,8 +135,33 @@ export function PhasesSettingsSection({
         <PhasePanel
           id={SECTION_IDS.verification}
           phase="verify"
-          description="Verifies done criteria after execute using the same runner and Cursor chat."
+          description="Verifies done criteria after execute using the same runner. Chat continuity is configurable below."
         >
+          <PhaseFieldGroup title="Chat">
+            <label className="settings-field">
+              <span className="settings-field-label">Verify chat mode</span>
+              <select
+                data-testid="settings-verify-chat-mode"
+                value={form.verifyChatMode}
+                onChange={(e) =>
+                  onField(
+                    "verifyChatMode",
+                    e.target.value === "different_chat"
+                      ? "different_chat"
+                      : "same_chat",
+                  )
+                }
+              >
+                <option value="same_chat">Same chat as execute</option>
+                <option value="different_chat">Different chat</option>
+              </select>
+            </label>
+            <p className="settings-field-help">
+              Same chat resumes the execute Cursor session. Different chat opens
+              a fresh verify conversation after each execute (tasks can override).
+            </p>
+          </PhaseFieldGroup>
+
           <PhaseFieldGroup title="Runner">
             <PhaseModelField
               testId="settings-verify-model-select"
@@ -147,7 +172,7 @@ export function PhasesSettingsSection({
             />
             <p className="settings-field-help">
               Auto inherits the execute model. Pick a model to pin for verify
-              only — Hamix still resumes the same Cursor chat.
+              only.
             </p>
           </PhaseFieldGroup>
 

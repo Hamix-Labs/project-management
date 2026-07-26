@@ -116,8 +116,10 @@ function TaskCreateModalsLayerBody() {
               onRemoveChecklistRow: app.removeNewChecklistRow,
               taskRunner: isEditing ? app.editingTaskRunner : app.newTaskRunner,
               taskCursorModel: app.newTaskCursorModel,
+              taskVerifyChatMode: app.newTaskVerifyChatMode,
               onTaskRunnerChange: app.setNewTaskRunner,
               onTaskCursorModelChange: app.setNewTaskCursorModel,
+              onTaskVerifyChatModeChange: app.setNewTaskVerifyChatMode,
               projectAssignment: projectsUiEnabled ? (
                 <section
                   className="task-create-project"

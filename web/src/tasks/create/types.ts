@@ -20,6 +20,7 @@ export type CreateTaskMutationInput = {
   draft_id: string;
   runner: string;
   cursor_model: string;
+  verify_chat_mode?: string;
   pickup_not_before: string | null;
   project_id: string;
   project_context_item_ids: string[];
@@ -44,6 +45,8 @@ export type TaskCreateFormFields = {
   newPriority: PriorityChoice;
   newTaskRunner: string;
   newTaskCursorModel: string;
+  /** Empty inherits settings; otherwise same_chat | different_chat. */
+  newTaskVerifyChatMode: string;
   newProjectID: string;
   newRepositoryID: string;
   newProjectContextItemIDs: string[];

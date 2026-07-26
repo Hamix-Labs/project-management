@@ -21,10 +21,15 @@ export type AppSettings = {
   /** Empty string = Cursor default model (`cursor-agent` omits `--model`). */
   cursor_model: string;
   /**
-   * Optional Cursor `--model` for PhaseVerify on the same chat as execute.
+   * Optional Cursor `--model` for PhaseVerify.
    * Empty inherits the execute effective model (task pin, else cursor_model).
    */
   verify_model: string;
+  /**
+   * Global default for PhaseVerify chat policy.
+   * Tasks may override via `task.verify_chat_mode`.
+   */
+  verify_chat_mode: "same_chat" | "different_chat";
   max_run_duration_seconds: number;
   /** Minimum seconds before the worker runs a new ready task. Default 5; 0 = no wait. */
   agent_pickup_delay_seconds: number;
@@ -66,6 +71,7 @@ export type AppSettingsPatch = Partial<{
   cursor_bin: string;
   cursor_model: string;
   verify_model: string;
+  verify_chat_mode: "same_chat" | "different_chat";
   max_run_duration_seconds: number;
   agent_pickup_delay_seconds: number;
   /**
@@ -126,6 +132,10 @@ export function parseAppSettings(raw: unknown): AppSettings {
   const cursorModel = o.cursor_model;
   const verifyModel =
     typeof o.verify_model === "string" ? o.verify_model : "";
+  const verifyChatModeRaw =
+    typeof o.verify_chat_mode === "string" ? o.verify_chat_mode.trim() : "";
+  const verifyChatMode =
+    verifyChatModeRaw === "different_chat" ? "different_chat" : "same_chat";
   const maxDur = o.max_run_duration_seconds;
   const pickupDelay = o.agent_pickup_delay_seconds;
   // display_timezone is preserved verbatim when the server sends a
@@ -163,6 +173,7 @@ export function parseAppSettings(raw: unknown): AppSettings {
     cursor_bin: cursorBin,
     cursor_model: cursorModel,
     verify_model: verifyModel,
+    verify_chat_mode: verifyChatMode,
     max_run_duration_seconds: maxDur,
     agent_pickup_delay_seconds: pickupDelay,
     display_timezone: tz,

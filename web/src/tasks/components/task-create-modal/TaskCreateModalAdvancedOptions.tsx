@@ -15,8 +15,10 @@ type Props = {
   editingTaskRunner: string;
   taskRunner: string;
   taskCursorModel: string;
+  taskVerifyChatMode: string;
   onTaskRunnerChange: (runner: string) => void;
   onTaskCursorModelChange: (v: string) => void;
+  onTaskVerifyChatModeChange: (v: string) => void;
   onComposeStatusChange?: (status: Status) => void;
   schedule: string | null;
   onScheduleChange: (next: string | null) => void;
@@ -35,8 +37,10 @@ export function TaskCreateModalAdvancedOptions({
   editingTaskRunner,
   taskRunner,
   taskCursorModel,
+  taskVerifyChatMode,
   onTaskRunnerChange,
   onTaskCursorModelChange,
+  onTaskVerifyChatModeChange,
   onComposeStatusChange,
   schedule,
   onScheduleChange,
@@ -90,9 +94,11 @@ export function TaskCreateModalAdvancedOptions({
           lockRunner={presentation.isTaskEdit}
           runner={agentRunner}
           cursorModel={taskCursorModel}
+          verifyChatMode={taskVerifyChatMode}
           {...agentOptions}
           onRunnerChange={presentation.isTaskEdit ? () => {} : onTaskRunnerChange}
           onCursorModelChange={onTaskCursorModelChange}
+          onVerifyChatModeChange={onTaskVerifyChatModeChange}
         />
 
         {presentation.scheduleUiEnabled ? (

@@ -12,6 +12,7 @@ const baseFields: TaskCreateFormFields = {
   newPriority: "medium",
   newTaskRunner: "cursor",
   newTaskCursorModel: "gpt-4",
+  newTaskVerifyChatMode: "",
   newProjectID: "proj-1",
   newRepositoryID: "repo-1",
   newProjectContextItemIDs: ["ctx-1"],

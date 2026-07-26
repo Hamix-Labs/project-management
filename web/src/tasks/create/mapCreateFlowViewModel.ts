@@ -88,6 +88,8 @@ export function mapCreateFlowViewModel(input: {
     setNewTaskRunner: input.form.setNewTaskRunner,
     newTaskCursorModel: input.form.newTaskCursorModel,
     setNewTaskCursorModel: input.form.setNewTaskCursorModel,
+    newTaskVerifyChatMode: input.form.newTaskVerifyChatMode,
+    setNewTaskVerifyChatMode: input.form.setNewTaskVerifyChatMode,
     newProjectID: input.form.newProjectID,
     setNewProjectID: input.form.setNewProjectID,
     newRepositoryID: input.form.newRepositoryID,

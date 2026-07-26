@@ -11,6 +11,7 @@ export const APP_SETTINGS_DEFAULTS: AppSettings = {
   cursor_bin: "",
   cursor_model: "",
   verify_model: "",
+  verify_chat_mode: "same_chat",
   max_run_duration_seconds: 0,
   agent_pickup_delay_seconds: 5,
   display_timezone: "UTC",

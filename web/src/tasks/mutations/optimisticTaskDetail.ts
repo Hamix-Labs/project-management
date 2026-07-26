@@ -10,6 +10,7 @@ export type TaskDetailPatchFields = {
   tags?: string[];
   milestone?: string | null;
   cursor_model: string;
+  verify_chat_mode?: string;
   pickup_not_before?: string | null;
 };
 
@@ -29,6 +30,10 @@ export function mergePatchIntoTask(task: Task, patch: TaskDetailPatchFields): Ta
     tags: patch.tags === undefined ? task.tags : patch.tags,
     milestone: patch.milestone === undefined ? task.milestone : patch.milestone ?? undefined,
     cursor_model: patch.cursor_model,
+    verify_chat_mode:
+      patch.verify_chat_mode === undefined
+        ? task.verify_chat_mode
+        : patch.verify_chat_mode,
     pickup_not_before:
       patch.pickup_not_before === undefined
         ? task.pickup_not_before
