@@ -1,4 +1,5 @@
 import { useMemo, useState, type ReactNode } from "react";
+import { TaskListFilters } from "../task-list/filters/TaskListFilters";
 import { TaskListSectionHeading } from "../task-list/section/TaskListSectionHeading";
 import { groupTimelineEvents } from "./groupTimelineEvents";
 import { TimelineEventItem } from "./TimelineEventItem";
@@ -9,6 +10,7 @@ import {
 } from "./timelineRange";
 import { mapActivityEventsToTimeline } from "./activityMapper";
 import { useTasksActivity } from "../../hooks/useTasksActivity";
+import { useTaskTimelineFilters } from "./useTaskTimelineFilters";
 import type { TimelineEvent, TimelineRangeId } from "./timelineTypes";
 import type { TaskHomeView } from "../../pages/taskHomeView";
 
@@ -20,9 +22,18 @@ type Props = {
   events?: TimelineEvent[];
   /** Fixed "now" for stable grouping in tests. */
   now?: Date;
+  projectFilterOptions?: Array<{ id: string; name: string }>;
+  showProjectColumn?: boolean;
+  smoothTransitions?: boolean;
 };
 
-function emptyCopy(rangeId: TimelineRangeId): string {
+function emptyCopy(
+  rangeId: TimelineRangeId,
+  hasClientFilters: boolean,
+): string {
+  if (hasClientFilters) {
+    return "No matching activity.";
+  }
   const range = timelineRangeLabel(rangeId).toLowerCase();
   if (rangeId === "all") {
     return "No activity to show.";
@@ -59,6 +70,9 @@ export function TaskTimelineSection({
   dataEnabled,
   events: eventsOverride,
   now,
+  projectFilterOptions = [],
+  showProjectColumn = true,
+  smoothTransitions = true,
 }: Props) {
   const [range, setRange] = useState<TimelineRangeId>(DEFAULT_TIMELINE_RANGE);
   const clock = now ?? new Date();
@@ -74,11 +88,18 @@ export function TaskTimelineSection({
     [activity.events],
   );
 
-  const events = eventsOverride ?? mappedEvents;
+  const sourceEvents = eventsOverride ?? mappedEvents;
+
+  const filters = useTaskTimelineFilters({
+    events: sourceEvents,
+    projectFilterOptions,
+    showProjectColumn,
+    smoothTransitions,
+  });
 
   const groups = useMemo(
-    () => groupTimelineEvents(events, clock),
-    [events, clock],
+    () => groupTimelineEvents(filters.filteredEvents, clock),
+    [filters.filteredEvents, clock],
   );
   const total = groups.reduce((n, g) => n + g.events.length, 0);
 
@@ -99,7 +120,33 @@ export function TaskTimelineSection({
       </div>
 
       <div className="task-home-timeline__toolbar">
-        <TimelineRangeDropdown value={range} onChange={setRange} />
+        {!activity.loading ? (
+          <div className="task-home-timeline__toolbar-filters">
+            <TaskListFilters
+              showStatusFilter={false}
+              priorityFilter={filters.priorityFilter}
+              onPriorityFilterChange={filters.onPriorityChange}
+              projectFilter={filters.projectFilter}
+              projectOptions={
+                showProjectColumn ? projectFilterOptions : []
+              }
+              onProjectFilterChange={
+                showProjectColumn ? filters.setProjectFilter : undefined
+              }
+              tagFilter={filters.tagFilter}
+              tagOptions={filters.tagFilterOptions}
+              onTagFilterChange={
+                filters.tagsUiEnabled ? filters.setTagFilter : undefined
+              }
+              titleSearch={filters.titleSearch}
+              onTitleSearchChange={filters.setTitleSearch}
+              searchInputRef={filters.searchInputRef}
+            />
+          </div>
+        ) : null}
+        <div className="task-home-timeline__toolbar-range">
+          <TimelineRangeDropdown value={range} onChange={setRange} />
+        </div>
       </div>
 
       <div className="task-home-timeline__feed">
@@ -120,7 +167,7 @@ export function TaskTimelineSection({
           </div>
         ) : total === 0 ? (
           <p className="task-home-timeline__empty" role="status">
-            {emptyCopy(range)}
+            {emptyCopy(range, filters.hasClientFilters)}
           </p>
         ) : (
           <>

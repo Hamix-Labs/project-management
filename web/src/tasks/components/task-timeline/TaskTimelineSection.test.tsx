@@ -28,12 +28,14 @@ const FIXTURE_EVENTS: TimelineEvent[] = [
     category: "tasks",
     at: new Date(NOW.getTime() - 60 * 60 * 1000).toISOString(),
     title: "Status changed",
-    highlight: "My task",
+    highlight: "",
     detail: "Ready → Running",
     taskId: "f0000131-0000-4000-8000-000000000131",
     taskRef: "f0000131",
     seq: 3,
-    meta: ["Ready → Running"],
+    taskTitle: "My task",
+    taskPriority: "high",
+    taskTags: ["api"],
   },
   {
     id: "ev-2",
@@ -41,11 +43,13 @@ const FIXTURE_EVENTS: TimelineEvent[] = [
     category: "tasks",
     at: new Date(NOW.getTime() - 2 * 60 * 60 * 1000).toISOString(),
     title: "Review approved",
-    highlight: "Another task",
+    highlight: "",
     detail: "Approval granted.",
     taskId: "f0000142-0000-4000-8000-000000000142",
     taskRef: "f0000142",
     seq: 5,
+    taskTitle: "Another task",
+    taskPriority: "low",
   },
 ];
 
@@ -61,6 +65,8 @@ function renderSection(events?: TimelineEvent[]) {
           view="timeline"
           events={events}
           now={NOW}
+          projectFilterOptions={[{ id: "proj-1", name: "Alpha" }]}
+          showProjectColumn
         />
       </MemoryRouter>
     </QueryClientProvider>,
@@ -94,10 +100,33 @@ describe("TaskTimelineSection", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("renders board-parity filters", () => {
+    renderSection(FIXTURE_EVENTS);
+    expect(screen.getByLabelText("Priority")).toBeInTheDocument();
+    expect(screen.getByLabelText("Search titles")).toBeInTheDocument();
+  });
+
   it("renders events from the override prop", () => {
     renderSection(FIXTURE_EVENTS);
     expect(screen.getByText("Status changed")).toBeInTheDocument();
     expect(screen.getByText("Review approved")).toBeInTheDocument();
+  });
+
+  it("filters events by title search", async () => {
+    const user = userEvent.setup();
+    renderSection(FIXTURE_EVENTS);
+    await user.type(screen.getByLabelText("Search titles"), "Another");
+    expect(screen.queryByText("Status changed")).not.toBeInTheDocument();
+    expect(screen.getByText("Review approved")).toBeInTheDocument();
+  });
+
+  it("shows filter-empty copy when filters exclude everything", async () => {
+    const user = userEvent.setup();
+    renderSection(FIXTURE_EVENTS);
+    await user.type(screen.getByLabelText("Search titles"), "zzzz-no-match");
+    expect(
+      screen.getByRole("status"),
+    ).toHaveTextContent("No matching activity.");
   });
 
   it("shows empty state when no events", () => {

@@ -214,6 +214,8 @@ export function TaskHome() {
             actions={listActions}
             view={view}
             dataEnabled={list.homeDataReady}
+            projectFilterOptions={projectFilterOptions}
+            showProjectColumn={projectsUiEnabled}
           />
         ) : (
           <TaskListSection
