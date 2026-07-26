@@ -27,7 +27,6 @@ export function useTaskCreateTemplateEntryActions(input: {
       input.form.setNewTaskRunner(hydrated.runner);
       input.form.setNewTaskCursorModel(hydrated.cursorModel);
       input.form.setNewProjectID(hydrated.projectID);
-      input.form.setNewProjectContextItemIDs(hydrated.projectContextItemIDs);
       input.form.setNewRepositoryID(hydrated.repositoryID);
       input.form.setNewWorktreeID(hydrated.worktreeID);
       input.form.setNewSchedule(hydrated.schedule);

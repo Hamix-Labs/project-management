@@ -57,8 +57,6 @@ export type Task = {
   created_at?: string;
   /** Present when this task belongs to a long-lived project context. */
   project_id?: string;
-  /** User-selected project context items passed to agent runs for this task. */
-  project_context_item_ids?: string[];
   /** Git worktree binding (ADR-0039). */
   worktree_id?: string;
   tags?: string[];
@@ -304,6 +302,7 @@ export const SSE_PROJECT_HINT_TYPES = [
   SSE_CHANGE_TYPE.projectCreated,
   SSE_CHANGE_TYPE.projectUpdated,
   SSE_CHANGE_TYPE.projectDeleted,
+  SSE_CHANGE_TYPE.projectContextChanged,
 ] as const;
 
 export const STATUSES: Status[] = [
@@ -505,7 +504,6 @@ export type TaskComposePayload = {
   verify_chat_mode?: string;
   project_id?: string;
   repository_id?: string;
-  project_context_item_ids?: string[];
   worktree_id?: string;
   pickup_not_before?: string;
   tags?: string[];

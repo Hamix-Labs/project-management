@@ -135,7 +135,7 @@ describe("useTaskCreateFlow", () => {
     expect(result.current.createFormError).toMatch(/done criterion/i);
   });
 
-  it("forwards the operator's project_context_item_ids on create", async () => {
+  it("forwards the operator's project_id on create", async () => {
     const { Wrapper } = makeWrapper();
     const { result } = renderHook(() => useTaskCreateFlow(), {
       wrapper: Wrapper,
@@ -147,11 +147,10 @@ describe("useTaskCreateFlow", () => {
 
     act(() => {
       result.current.openCreateModal();
-      result.current.setNewTitle("With context");
+      result.current.setNewTitle("With project");
       result.current.setNewPriority("medium");
       result.current.setNewProjectID("project-7");
-      result.current.setNewProjectContextItemIDs(["ctx-a", "ctx-b"]);
-      result.current.appendNewChecklistCriterion("Attach context docs");
+      result.current.appendNewChecklistCriterion("Attach project docs");
     });
 
     act(() => {
@@ -166,12 +165,11 @@ describe("useTaskCreateFlow", () => {
     expect(mockedCreateTask).toHaveBeenCalledWith(
       expect.objectContaining({
         project_id: "project-7",
-        project_context_item_ids: ["ctx-a", "ctx-b"],
       }),
     );
   });
 
-  it("persists project + context selections in the autosaved draft payload", async () => {
+  it("persists project selection in the autosaved draft payload", async () => {
     mockedSaveDraft.mockResolvedValue({ id: "draft-saved", name: "Untitled" });
     const { Wrapper } = makeWrapper();
     const { result } = renderHook(() => useTaskCreateFlow(), {
@@ -187,7 +185,6 @@ describe("useTaskCreateFlow", () => {
       result.current.setNewTitle("Persisted");
       result.current.setNewPriority("medium");
       result.current.setNewProjectID("project-9");
-      result.current.setNewProjectContextItemIDs(["ctx-3"]);
     });
 
     await act(async () => {
@@ -197,7 +194,6 @@ describe("useTaskCreateFlow", () => {
     expect(mockedSaveDraft).toHaveBeenCalled();
     const last = mockedSaveDraft.mock.calls.at(-1)?.[0];
     expect(last?.payload.project_id).toBe("project-9");
-    expect(last?.payload.project_context_item_ids).toEqual(["ctx-3"]);
   });
 
   it("applyTestScenario fills title / prompt / priority / criteria with zero typing", async () => {
@@ -239,7 +235,7 @@ describe("useTaskCreateFlow", () => {
     expect(result.current.newPrompt).toContain(firstLine);
   });
 
-  it("restores project + context selections when resuming a draft", async () => {
+  it("restores project selection when resuming a draft", async () => {
     const draft: TaskDraftDetail = {
       id: "draft-resume",
       name: "Untitled",
@@ -252,7 +248,6 @@ describe("useTaskCreateFlow", () => {
         runner: "cursor",
         cursor_model: "",
         project_id: "project-resume",
-        project_context_item_ids: ["ctx-r1", "ctx-r2"],
         checklist_items: [],
       },
     };
@@ -272,10 +267,6 @@ describe("useTaskCreateFlow", () => {
     });
 
     expect(result.current.newProjectID).toBe("project-resume");
-    expect(result.current.newProjectContextItemIDs).toEqual([
-      "ctx-r1",
-      "ctx-r2",
-    ]);
   });
 
   it("restores verify commands when resuming a draft", async () => {

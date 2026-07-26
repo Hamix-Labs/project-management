@@ -11,7 +11,6 @@ const baseFields: TaskCreateFormFields = {
   newTaskVerifyChatMode: "",
   newProjectID: "",
   newRepositoryID: "",
-  newProjectContextItemIDs: [],
   newSchedule: "",
   newAutonomyEnabled: true,
   newTagsCsv: "",

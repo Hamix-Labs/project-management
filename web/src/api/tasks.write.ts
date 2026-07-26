@@ -68,7 +68,6 @@ export async function createTask(input: {
   id?: string;
   draft_id?: string;
   project_id?: string;
-  project_context_item_ids?: string[];
   runner?: string;
   cursor_model?: string;
   verify_chat_mode?: string;
@@ -114,9 +113,6 @@ export async function createTask(input: {
   const projectId = assertOptionalTaskPathId(input.project_id, "project_id");
   if (projectId !== undefined) {
     body.project_id = projectId;
-  }
-  if (input.project_context_item_ids !== undefined) {
-    body.project_context_item_ids = input.project_context_item_ids;
   }
   if (input.pickup_not_before !== undefined) {
     body.pickup_not_before = input.pickup_not_before;
@@ -188,7 +184,6 @@ export async function patchTask(
     status?: Status;
     priority?: Priority;
     project_id?: string | null;
-    project_context_item_ids?: string[];
     /**
      * Schedule wire encoding (see docs/data-model.md):
      *  - omit/undefined: do not touch the column on PATCH.
@@ -220,9 +215,6 @@ export async function patchTask(
       patch.project_id === null
         ? null
         : assertTaskPathId(patch.project_id, "project_id");
-  }
-  if (patch.project_context_item_ids !== undefined) {
-    body.project_context_item_ids = patch.project_context_item_ids;
   }
   if (patch.pickup_not_before !== undefined) {
     body.pickup_not_before = patch.pickup_not_before;

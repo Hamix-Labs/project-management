@@ -41,7 +41,6 @@ function renderFields(
   props: Partial<ComponentProps<typeof TaskCreateAssignmentFields>> = {},
 ) {
   const onAssignmentChange = vi.fn();
-  const onProjectContextClear = vi.fn();
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 } },
   });
@@ -55,14 +54,13 @@ function renderFields(
           projectId={FACTORY_REPO_DEFAULT_PROJECT_ID}
           worktreeId=""
           onAssignmentChange={onAssignmentChange}
-          onProjectContextClear={onProjectContextClear}
           {...props}
         />
       </MemoryRouter>
     </QueryClientProvider>,
   );
 
-  return { onAssignmentChange, onProjectContextClear };
+  return { onAssignmentChange };
 }
 
 describe("TaskCreateAssignmentFields", () => {
@@ -127,7 +125,6 @@ describe("TaskCreateAssignmentFields", () => {
                 setProjectId(next.projectId);
                 setWorktreeId(next.worktreeId);
               }}
-              onProjectContextClear={() => {}}
             />
           </MemoryRouter>
         </QueryClientProvider>

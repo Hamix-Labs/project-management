@@ -13,7 +13,6 @@ export type UseTaskEditFlowOptions = {
   newPrompt: string;
   newPriority: string;
   newProjectID: string;
-  newProjectContextItemIDs: string[];
   newTagsCsv: string;
   newMilestone: string;
   newTaskCursorModel: string;
@@ -115,7 +114,6 @@ export function useTaskEditFlow(opts: UseTaskEditFlowOptions) {
         status: t.status,
         priority: t.priority,
         project_id: t.project_id ?? null,
-        project_context_item_ids: t.project_context_item_ids ?? [],
         tags: t.tags ?? [],
         milestone: t.milestone ?? null,
         cursor_model: changeModelDraft.trim(),
@@ -146,7 +144,6 @@ export function useTaskEditFlow(opts: UseTaskEditFlowOptions) {
           status: opts.composeStatus,
           priority: opts.newPriority as Priority,
           project_id: opts.newProjectID.trim() || null,
-          project_context_item_ids: opts.newProjectContextItemIDs,
           tagsCsv: opts.newTagsCsv,
           milestone: opts.newMilestone,
           cursor_model: opts.newTaskCursorModel,
@@ -162,7 +159,6 @@ export function useTaskEditFlow(opts: UseTaskEditFlowOptions) {
       opts.newPrompt,
       opts.composeStatus,
       opts.newProjectID,
-      opts.newProjectContextItemIDs,
       opts.newTagsCsv,
       opts.newMilestone,
       opts.newTaskCursorModel,

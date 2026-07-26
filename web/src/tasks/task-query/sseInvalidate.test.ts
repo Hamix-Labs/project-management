@@ -79,15 +79,10 @@ describe("parseTaskChangeFrame", () => {
     expect([...s].sort()).toEqual(["d-1", "g-1"]);
   });
 
-  it("returns project frames for project and context changes", () => {
+  it("returns project frames for project changes", () => {
     expect(
       parseTaskChangeFrame('{"type":"project_updated","id":"project-1"}'),
     ).toEqual({ kind: "project", projectId: "project-1" });
-    expect(
-      parseTaskChangeFrame(
-        '{"type":"project_context_changed","id":"project-1"}',
-      ),
-    ).toEqual({ kind: "project_context", projectId: "project-1" });
   });
 
   it("returns a task_event frame when event_seq is present", () => {

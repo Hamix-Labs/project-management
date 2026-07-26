@@ -79,7 +79,6 @@ describe("useTaskCreateMutations", () => {
         runner: "cursor",
         cursor_model: "",
         project_id: "",
-        project_context_item_ids: [],
         pickup_not_before: null,
         tags: [],
         depends_on: [],

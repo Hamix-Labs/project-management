@@ -1,4 +1,3 @@
-import type { RichPromptEditorProjectContextProps } from "@/components/rich-prompt";
 import { TaskComposePromptField } from "../../task-compose/fields/TaskComposePromptField";
 
 type Props = {
@@ -7,7 +6,6 @@ type Props = {
   prompt: string;
   disabled: boolean;
   onPromptChange: (v: string) => void;
-  projectContext?: RichPromptEditorProjectContextProps;
   worktreeId?: string;
 };
 
@@ -17,7 +15,6 @@ export function TaskCreateModalPromptFields({
   prompt,
   disabled,
   onPromptChange,
-  projectContext,
   worktreeId,
 }: Props) {
   return (
@@ -27,7 +24,6 @@ export function TaskCreateModalPromptFields({
       prompt={prompt}
       disabled={disabled}
       onPromptChange={onPromptChange}
-      projectContext={projectContext}
       worktreeId={worktreeId}
       hideLabel
     />

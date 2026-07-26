@@ -1,23 +1,16 @@
 import "tippy.js/dist/tippy.css";
 import { EditorContent } from "@tiptap/react";
-import { ProjectReferencesBlock } from "./ProjectReferencesBlock";
 import { RichPromptFileReferenceModal } from "./RichPromptFileReferenceModal";
 import { RichPromptMenuBar } from "./RichPromptMenuBar";
 import { RichPromptRepoHints } from "./RichPromptRepoHints";
 import type { RichPromptEditorProps } from "./richPromptEditorTypes";
 import { useRichPromptEditorController } from "./useRichPromptEditorController";
 
-export type { RichPromptEditorProjectContextProps } from "./richPromptEditorTypes";
-
-/** Rich initial prompt (TipTap) with @ file suggestions scoped to the task worktree, plus optional `#` project-context mentions. */
+/** Rich initial prompt (TipTap) with @ file suggestions scoped to the task worktree. */
 export function RichPromptEditor(props: RichPromptEditorProps) {
   const { id, disabled, worktreeId } = props;
   const {
     editor,
-    projectContextEnabled,
-    referencesItems,
-    onProjectIdsChange,
-    removeSelectedProjectId,
     pendingInsert,
     rangeWarning,
     dismissPendingInsert,
@@ -29,13 +22,6 @@ export function RichPromptEditor(props: RichPromptEditorProps) {
   return (
     <div className="rich-prompt-wrap">
       <RichPromptMenuBar editor={editor} disabled={disabled} />
-      {projectContextEnabled ? (
-        <ProjectReferencesBlock
-          items={referencesItems}
-          disabled={disabled}
-          onRemove={onProjectIdsChange ? removeSelectedProjectId : undefined}
-        />
-      ) : null}
       <EditorContent editor={editor} />
       {pendingInsert ? (
         <RichPromptFileReferenceModal

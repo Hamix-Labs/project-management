@@ -35,7 +35,6 @@ export function buildTaskCreateModalProps(
     prompt: {
       prompt: input.prompt,
       onPromptChange: input.onPromptChange,
-      promptProjectContext: input.promptProjectContext,
     },
     criteria: {
       checklistItems: input.checklistItems,
@@ -52,7 +51,6 @@ export function buildTaskCreateModalProps(
       onRepositoryChange: input.onRepositoryChange,
       onProjectChange: input.onProjectChange,
       onWorktreeChange: input.onWorktreeChange,
-      onProjectContextClear: input.onProjectContextClear,
     },
     execution: {
       taskRunner: input.taskRunner,
@@ -77,7 +75,6 @@ export function buildTaskCreateModalProps(
       onSubmit: input.onSubmit,
       onApplyTestScenario: input.onApplyTestScenario,
     },
-    projectAssignment: input.projectAssignment,
     appTimezone: input.appTimezone,
   };
 }

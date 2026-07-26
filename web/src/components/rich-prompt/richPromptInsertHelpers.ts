@@ -1,6 +1,5 @@
 import type { Editor } from "@tiptap/react";
 import type { RepoWorkspaceProbe } from "@/api";
-import type { ProjectContextItem } from "@/types";
 
 export type PendingFileInsert = {
   insertAt: number;
@@ -35,26 +34,6 @@ export function insertRepoFileMentionAt(
       { type: "text", text: " " },
     ])
     .run();
-}
-
-export function insertProjectContextChipAt(
-  editor: Editor,
-  item: ProjectContextItem,
-  insertAt: number | null,
-) {
-  const chip = {
-    type: "projectContextMention",
-    attrs: { id: item.id, title: item.title || "" },
-  } as const;
-  const text = { type: "text", text: " " } as const;
-  if (insertAt == null) {
-    // Came from the "Choose context" chooser, not the `#` plugin —
-    // append the chip to the current cursor instead of jumping to a
-    // stale document position from a different surface.
-    editor.chain().focus().insertContent([chip, text]).run();
-    return;
-  }
-  editor.chain().focus().insertContentAt(insertAt, [chip, text]).run();
 }
 
 export function computeRepoHintFlags(

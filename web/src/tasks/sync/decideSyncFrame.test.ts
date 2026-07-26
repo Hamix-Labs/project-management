@@ -55,19 +55,6 @@ describe("decideSyncFrame", () => {
     );
   });
 
-  it("invalidates project context queries immediately", () => {
-    const decision = decideSyncFrame({
-      frame: { kind: "project_context", projectId: "p1" },
-      shouldSuppressTaskEcho: noSuppress,
-    });
-    expect(decision.schedule).toBe("immediate");
-    expect(decision.effects).toEqual(
-      invalidationEffects(
-        decideProjectInvalidationKeys({ scope: "context", projectId: "p1" }),
-      ),
-    );
-  });
-
   it("resync clears pending and invalidates broadly", () => {
     const decision = decideSyncFrame({
       frame: { kind: "resync" },

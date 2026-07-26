@@ -1,6 +1,5 @@
-import type { FormEvent, ReactNode } from "react";
+import type { FormEvent } from "react";
 import type { ChecklistItemDraft, PriorityChoice, Status } from "@/types";
-import type { RichPromptEditorProjectContextProps } from "@/components/rich-prompt";
 import type { TestScenario } from "@/tasks/test-scenarios";
 
 /** Modal open mode, busy flags, and mutation/validation errors. */
@@ -36,7 +35,6 @@ export type TaskCreateModalEssentials = {
 export type TaskCreateModalPromptFields = {
   prompt: string;
   onPromptChange: (v: string) => void;
-  promptProjectContext?: RichPromptEditorProjectContextProps;
 };
 
 export type TaskCreateModalCriteria = {
@@ -55,7 +53,6 @@ export type TaskCreateModalGitBinding = {
   onRepositoryChange: (repositoryId: string) => void;
   onProjectChange: (projectId: string) => void;
   onWorktreeChange: (worktreeId: string) => void;
-  onProjectContextClear: () => void;
 };
 
 export type TaskCreateModalExecution = {
@@ -95,7 +92,6 @@ export type TaskCreateModalProps = {
   git: TaskCreateModalGitBinding;
   execution: TaskCreateModalExecution;
   actions: TaskCreateModalActions;
-  projectAssignment?: ReactNode;
   appTimezone: string;
 };
 
@@ -107,6 +103,5 @@ export type TaskCreateModalFlatInput = TaskCreateModalSession &
   TaskCreateModalGitBinding &
   TaskCreateModalExecution &
   TaskCreateModalActions & {
-    projectAssignment?: ReactNode;
     appTimezone: string;
   };

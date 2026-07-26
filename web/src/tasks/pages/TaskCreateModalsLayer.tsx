@@ -1,9 +1,6 @@
 import { Suspense, lazy, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { RegisterRepositoryFirstPrompt } from "@/components/RegisterRepositoryFirstPrompt";
-import { ProjectContextPicker } from "@/components/project-context/ProjectContextPicker";
-import { useProjectContextPromptBinding } from "@/hooks/useProjectContextPromptBinding";
-import { isUiFeatureOmitted } from "@/launch/omittedFeatures";
 import { AppErrorBoundary } from "@/shared/AppErrorBoundary";
 import { useAppTimezone } from "@/shared/time/appTimezone";
 import { DraftResumeModal } from "../components/draft-resume";
@@ -47,13 +44,6 @@ function TaskCreateModalsLayerBody() {
   const app = useTasksAppContext();
   const navigate = useNavigate();
   const appTimezone = useAppTimezone();
-  const projectsUiEnabled = !isUiFeatureOmitted("projects");
-  const promptProjectContext = useProjectContextPromptBinding({
-    projectId:
-      projectsUiEnabled && app.createModalOpen ? app.newProjectID : "",
-    selectedIds: app.newProjectContextItemIDs,
-    onSelectedIdsChange: app.setNewProjectContextItemIDs,
-  });
 
   const isEditing = app.editingTaskId != null;
   const isTemplateMode = app.composeTarget === "template";
@@ -120,23 +110,6 @@ function TaskCreateModalsLayerBody() {
               onTaskRunnerChange: app.setNewTaskRunner,
               onTaskCursorModelChange: app.setNewTaskCursorModel,
               onTaskVerifyChatModeChange: app.setNewTaskVerifyChatMode,
-              projectAssignment: projectsUiEnabled ? (
-                <section
-                  className="task-create-project"
-                  aria-label="Project context"
-                >
-                  <ProjectContextPicker
-                    projectId={app.newProjectID}
-                    selectedIds={app.newProjectContextItemIDs}
-                    disabled={app.saving}
-                    compact={!isEditing}
-                    onChange={app.setNewProjectContextItemIDs}
-                  />
-                </section>
-              ) : undefined,
-              promptProjectContext: projectsUiEnabled
-                ? (promptProjectContext ?? undefined)
-                : undefined,
               schedule: app.newSchedule,
               onScheduleChange: app.setNewSchedule,
               autonomyEnabled: isEditing
@@ -153,14 +126,11 @@ function TaskCreateModalsLayerBody() {
                 app.setNewRepositoryID(repositoryId);
                 app.setNewProjectID("");
                 app.setNewWorktreeID("");
-                app.setNewProjectContextItemIDs([]);
               },
               onProjectChange: (projectId) => {
                 app.setNewProjectID(projectId);
-                app.setNewProjectContextItemIDs([]);
               },
               onWorktreeChange: app.setNewWorktreeID,
-              onProjectContextClear: () => app.setNewProjectContextItemIDs([]),
               dependsOn: app.newDependsOn,
               onTagsCsvChange: app.setNewTagsCsv,
               onMilestoneChange: app.setNewMilestone,

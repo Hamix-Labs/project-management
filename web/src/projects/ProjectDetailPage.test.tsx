@@ -1,22 +1,12 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { ROUTER_FUTURE_FLAGS } from "@/lib/routerFutureFlags";
-import { requestUrl } from "@/test/requestUrl";
 import { type Project } from "@/types";
 import { ProjectDetailPage } from "./ProjectDetailPage";
 import { projectQueryKeys } from "./queryKeys";
-
-type FetchInput = RequestInfo | URL;
-
-function jsonResponse(body: unknown, init: ResponseInit = { status: 200 }): Response {
-  return new Response(JSON.stringify(body), {
-    ...init,
-    headers: { "content-type": "application/json", ...(init.headers ?? {}) },
-  });
-}
 
 const testProject: Project = {
   id: "project-1",
@@ -53,21 +43,7 @@ function renderPage(
 }
 
 describe("ProjectDetailPage", () => {
-  beforeEach(() => {
-    vi.spyOn(globalThis, "fetch").mockImplementation(async (input: FetchInput) => {
-      const u = requestUrl(input);
-      if (/\/projects\/[^/]+\/context\?/.test(u) || /\/projects\/[^/]+\/context$/.test(u)) {
-        return jsonResponse({ items: [], edges: [], limit: 100 });
-      }
-      return new Response(`unexpected fetch ${u}`, { status: 500 });
-    });
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  it("presents settings and context as distinct sections", async () => {
+  it("presents project settings without a memory context section", () => {
     renderPage();
 
     expect(screen.getByRole("heading", { name: "Default project" })).toBeInTheDocument();
@@ -76,17 +52,9 @@ describe("ProjectDetailPage", () => {
     expect(screen.getByText("Manage the core details for this project.")).toBeInTheDocument();
     expect(screen.queryByLabelText(/^Status$/)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
-    expect(screen.getByText(/Memory nodes/)).toBeInTheDocument();
-    await waitFor(() => {
-      expect(screen.getByText("0 nodes")).toBeInTheDocument();
-    });
-    expect(screen.getByRole("link", { name: /Project context/ })).toHaveAttribute(
-      "href",
-      "/projects/project-1/context",
-    );
+    expect(screen.queryByRole("link", { name: /Project context/ })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Memory nodes/)).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: /Linked tasks/ })).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Goals" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Steps" })).not.toBeInTheDocument();
   });
 
   it("resets settings fields when Cancel is pressed", async () => {

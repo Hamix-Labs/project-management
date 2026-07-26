@@ -1,9 +1,7 @@
-import type { ReactNode } from "react";
 import type { Status } from "@/types";
 import { TaskCreateModalCriteriaSection } from "./TaskCreateModalCriteriaSection";
 import { TaskCreateModalEssentialsSection } from "./TaskCreateModalEssentialsSection";
 import { TaskCreateModalExecutionSection } from "./TaskCreateModalExecutionSection";
-import { TaskCreateModalProjectSection } from "./TaskCreateModalProjectSection";
 import { TaskCreateModalPromptSection } from "./TaskCreateModalPromptSection";
 import type {
   TaskCreateModalCriteria,
@@ -24,7 +22,6 @@ type Props = {
   criteria: TaskCreateModalCriteria;
   git: TaskCreateModalGitBinding;
   execution: TaskCreateModalExecution & { autonomyDisabled: boolean };
-  projectAssignment?: ReactNode;
   appTimezone: string;
 };
 
@@ -38,7 +35,6 @@ export function TaskCreateModalFormBody({
   criteria,
   git,
   execution,
-  projectAssignment,
   appTimezone,
 }: Props) {
   const editorKey = presentation.isTaskEdit
@@ -62,7 +58,6 @@ export function TaskCreateModalFormBody({
         onRepositoryChange={git.onRepositoryChange}
         onProjectChange={git.onProjectChange}
         onWorktreeChange={git.onWorktreeChange}
-        onProjectContextClear={git.onProjectContextClear}
       />
 
       <TaskCreateModalPromptSection
@@ -71,7 +66,6 @@ export function TaskCreateModalFormBody({
         prompt={prompt.prompt}
         worktreeId={git.worktreeId}
         onPromptChange={prompt.onPromptChange}
-        promptProjectContext={prompt.promptProjectContext}
       />
 
       <TaskCreateModalCriteriaSection
@@ -84,10 +78,6 @@ export function TaskCreateModalFormBody({
         onRemoveChecklistRow={criteria.onRemoveChecklistRow}
         onTagsCsvChange={criteria.onTagsCsvChange}
       />
-
-      {projectAssignment ? (
-        <TaskCreateModalProjectSection projectAssignment={projectAssignment} />
-      ) : null}
 
       <TaskCreateModalExecutionSection
         presentation={presentation}
