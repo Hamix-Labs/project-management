@@ -88,7 +88,7 @@ Features that **exist in the codebase** but are **hidden or fixed for a specific
 | Surface | File |
 | --- | --- |
 | Modal fieldset + summary hint | `web/src/tasks/components/task-create-modal/` |
-| List filter + row chips | `web/src/tasks/components/task-list/` |
+| List filter + Tags column | `web/src/tasks/components/task-list/` |
 
 ---
 

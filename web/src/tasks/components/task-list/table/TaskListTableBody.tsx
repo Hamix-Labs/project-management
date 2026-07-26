@@ -16,6 +16,7 @@ export function TaskListTableBody({
   emptyListAction,
   showSelectionCol,
   showProjectColumn,
+  showTagsColumn,
   selection,
   projectNameById,
   saving,
@@ -30,6 +31,7 @@ export function TaskListTableBody({
   emptyListAction?: EmptyStateAction;
   showSelectionCol: boolean;
   showProjectColumn: boolean;
+  showTagsColumn: boolean;
   selection: BulkSelectionProps | undefined;
   projectNameById: Record<string, string>;
   saving: boolean;
@@ -71,6 +73,7 @@ export function TaskListTableBody({
             row={row}
             showSelectionCol={showSelectionCol}
             showProjectColumn={showProjectColumn}
+            showTagsColumn={showTagsColumn}
             selection={selection}
             projectNameById={projectNameById}
             saving={saving}

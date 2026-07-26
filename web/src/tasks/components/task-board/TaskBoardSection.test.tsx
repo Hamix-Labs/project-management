@@ -41,6 +41,7 @@ describe("TaskBoardCard", () => {
     expect(screen.getByText("abcdef12")).toBeInTheDocument();
     expect(screen.getByText("Migrate sessions")).toBeInTheDocument();
     expect(screen.getByText(/Move auth to Redis/)).toBeInTheDocument();
+    expect(screen.getByText("hamix/task-abcdef12")).toBeInTheDocument();
     expect(screen.getByText("core-api")).toBeInTheDocument();
     expect(screen.getByText("backend")).toBeInTheDocument();
     expect(screen.getByText("+1")).toBeInTheDocument();

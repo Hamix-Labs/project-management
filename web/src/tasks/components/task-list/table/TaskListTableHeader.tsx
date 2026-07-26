@@ -9,6 +9,7 @@ import { TaskListTableSortHeader } from "./TaskListTableSortHeader";
 export function TaskListTableHeader({
   showSelectionCol,
   showProjectColumn,
+  showTagsColumn,
   selection,
   headerCheckboxRef,
   filteredTasksLength,
@@ -18,6 +19,7 @@ export function TaskListTableHeader({
 }: {
   showSelectionCol: boolean;
   showProjectColumn: boolean;
+  showTagsColumn: boolean;
   selection: BulkSelectionProps | undefined;
   headerCheckboxRef: RefObject<HTMLInputElement | null>;
   filteredTasksLength: number;
@@ -67,6 +69,7 @@ export function TaskListTableHeader({
           sortDir={sortDir}
           onSortChange={onSortChange}
         />
+        {showTagsColumn ? <th scope="col">Tags</th> : null}
         <TaskListTableSortHeader
           label="Created"
           sortKey="created_at"

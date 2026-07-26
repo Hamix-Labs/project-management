@@ -71,7 +71,7 @@ type Props = {
 const LOADING_STATUS_DELAY_MS = 220;
 
 const TASK_LIST_TABLE_CAPTION =
-  "All tasks: title, status, priority, created time, project, and row actions.";
+  "All tasks: title, status, priority, tags, created time, project, and row actions.";
 
 export const TaskListSection = memo(function TaskListSection({
   tasks,
@@ -178,6 +178,7 @@ export const TaskListSection = memo(function TaskListSection({
         hasPrevPage={hasPrevPage}
         showTaskPager={showTaskPager}
         showProjectColumn={showProjectColumn}
+        showTagsColumn={tagsUiEnabled}
         emptyListAction={emptyListAction}
         onEdit={onEdit}
         onRequestClose={onRequestClose}

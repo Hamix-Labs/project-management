@@ -87,6 +87,10 @@
   width: 6.25rem;
 }
 
+.task-list-col-tags {
+  width: 9rem;
+}
+
 .task-list-col-created {
   width: 7rem;
 }
@@ -157,6 +161,15 @@
   gap: 0.35rem;
   max-width: 100%;
   min-width: 0;
+}
+
+.task-list-row__id {
+  flex-shrink: 0;
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--text-tertiary, var(--text-secondary));
 }
 
 .task-list-table .cell-title-link.cell-title-link--tree {
@@ -414,8 +427,11 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 0.25rem;
-  max-width: min(52ch, 100%);
-  margin-top: 0.1rem;
+  max-width: 100%;
+}
+
+.task-list-tags-empty {
+  color: var(--text-tertiary);
 }
 
 .task-list-tag-chip {
@@ -486,6 +502,7 @@
 .cell-created,
 .cell-project,
 .cell-status,
+.cell-tags,
 .cell-actions {
   vertical-align: middle;
 }
