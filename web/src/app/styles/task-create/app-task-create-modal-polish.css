@@ -790,29 +790,6 @@
   box-shadow: var(--shadow-chrome-xs-soft);
 }
 
-.task-create-modal-sheet .task-create-advanced__lede {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  margin: 0;
-  padding: 0 0 var(--space-1);
-}
-
-.task-create-modal-sheet .task-create-advanced__lede-title {
-  margin: 0;
-  font-size: var(--text-md);
-  font-weight: 600;
-  letter-spacing: -0.015em;
-  color: var(--text-primary);
-}
-
-.task-create-modal-sheet .task-create-advanced__lede-sub {
-  margin: 0;
-  font-size: var(--text-sm);
-  line-height: 1.45;
-  color: var(--text-secondary);
-}
-
 .task-create-modal-sheet .task-create-advanced__divider {
   height: 1px;
   margin: 0;
@@ -823,6 +800,13 @@
 .task-create-modal-sheet .task-create-agent {
   margin-top: 0;
   padding-top: 0;
+}
+
+.task-create-modal-sheet .task-create-agent--create-modal {
+  display: flex;
+  flex-direction: column;
+  /* Extra air between Agent section title and Runner/Model row. */
+  gap: var(--space-5);
 }
 
 .task-create-modal-sheet .task-create-agent-panel {

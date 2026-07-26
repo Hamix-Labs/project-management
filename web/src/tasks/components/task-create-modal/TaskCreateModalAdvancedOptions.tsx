@@ -92,15 +92,6 @@ export function TaskCreateModalAdvancedOptions({
         </span>
       </summary>
       <div className="task-create-advanced__body">
-        <header className="task-create-advanced__lede">
-          <h2 className="task-create-advanced__lede-title">
-            Agent configuration
-          </h2>
-          <p className="task-create-advanced__lede-sub">
-            Choose how this agent runs and how its work is verified.
-          </p>
-        </header>
-
         <TaskCreateModalAgentSection
           disabled={presentation.disabled}
           variant="createModal"
