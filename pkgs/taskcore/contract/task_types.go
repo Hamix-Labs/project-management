@@ -15,24 +15,23 @@ type VerifyCommandInput = checklistcontract.VerifyCommandInput
 
 // CreateTaskInput is the task creation payload.
 type CreateTaskInput struct {
-	ID                    string
-	DraftID               string
-	Title                 string
-	InitialPrompt         string
-	Status                domain.Status
-	Priority              domain.Priority
-	ProjectID             *string
-	ProjectContextItemIDs []string
-	Runner                string
-	CursorModel           string
-	VerifyChatMode        string
-	PickupNotBefore       *time.Time
-	Tags                  []string
-	Milestone             *string
-	Gate                  *domain.TaskGate
-	DependsOn             []domain.DependencyEdge
-	ChecklistItems        []CreateChecklistItemInput
-	WorktreeID            *string
+	ID              string
+	DraftID         string
+	Title           string
+	InitialPrompt   string
+	Status          domain.Status
+	Priority        domain.Priority
+	ProjectID       *string
+	Runner          string
+	CursorModel     string
+	VerifyChatMode  string
+	PickupNotBefore *time.Time
+	Tags            []string
+	Milestone       *string
+	Gate            *domain.TaskGate
+	DependsOn       []domain.DependencyEdge
+	ChecklistItems  []CreateChecklistItemInput
+	WorktreeID      *string
 }
 
 // PickupNotBeforePatch updates pickup_not_before when non-nil.
@@ -60,17 +59,16 @@ const (
 
 // UpdateTaskInput is the task patch payload.
 type UpdateTaskInput struct {
-	Title                 *string
-	InitialPrompt         *string
-	Status                *domain.Status
-	Priority              *domain.Priority
-	Project               *ProjectFieldPatch
-	ProjectContextItemIDs *[]string
-	PickupNotBefore       *PickupNotBeforePatch
-	CursorModel           *string
-	VerifyChatMode        *string
-	Tags                  *[]string
-	Milestone             *string
+	Title           *string
+	InitialPrompt   *string
+	Status          *domain.Status
+	Priority        *domain.Priority
+	Project         *ProjectFieldPatch
+	PickupNotBefore *PickupNotBeforePatch
+	CursorModel     *string
+	VerifyChatMode  *string
+	Tags            *[]string
+	Milestone       *string
 	// Gate uses **TaskGate: nil = leave unchanged; non-nil pointer to nil = clear;
 	// non-nil pointer to non-nil = set. Prefer GateFieldPatch for new call sites;
 	// store Update still consumes the double-pointer encoding today.

@@ -53,13 +53,6 @@ export async function interceptUiTestModeFetch(
     return null;
   }
 
-  const ctx = path.match(/^\/projects\/([^/]+)\/context$/);
-  if (ctx) {
-    const id = decodeURIComponent(ctx[1] ?? "");
-    if (!wire.isDemoProjectId(id)) return null;
-    return jsonResponse(wire.demoContextWire(id));
-  }
-
   if (path === "/tasks/stats") {
     return jsonResponse(wire.demoTaskStatsWire());
   }

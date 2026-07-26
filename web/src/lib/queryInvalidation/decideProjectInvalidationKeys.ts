@@ -11,11 +11,6 @@ export function decideProjectInvalidationKeys(
       return [projectQueryKeys.all, taskQueryKeys.listRoot()];
     case "detail":
       return [projectQueryKeys.all, projectQueryKeys.detail(input.projectId)];
-    case "context":
-      return [
-        projectQueryKeys.context(input.projectId),
-        projectQueryKeys.detail(input.projectId),
-      ];
     case "repositoryLink":
       return [
         projectQueryKeys.all,

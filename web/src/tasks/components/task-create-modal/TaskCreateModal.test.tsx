@@ -72,7 +72,6 @@ function renderModal(overrides?: Partial<TaskCreateModalFlatInput>) {
     onRepositoryChange: vi.fn(),
     onProjectChange: vi.fn(),
     onWorktreeChange: vi.fn(),
-    onProjectContextClear: vi.fn(),
     dependsOn: [],
     onTagsCsvChange: vi.fn(),
     onMilestoneChange: vi.fn(),

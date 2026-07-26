@@ -251,6 +251,9 @@
   --badge-tone-warning-bg: var(--warning-soft);
   --badge-tone-warning-fg: var(--warning-ink);
   --badge-tone-warning-ring: var(--warning-chip-border);
+  --badge-tone-review-bg: var(--pill-review-bg);
+  --badge-tone-review-fg: var(--pill-review-text);
+  --badge-tone-review-ring: var(--pill-review-border);
   --badge-tone-danger-bg: var(--danger-soft);
   --badge-tone-danger-fg: var(--danger-on-subtle-text);
   --badge-tone-danger-ring: var(--danger-border);

@@ -23,7 +23,6 @@ export type CreateTaskMutationInput = {
   verify_chat_mode?: string;
   pickup_not_before: string | null;
   project_id: string;
-  project_context_item_ids: string[];
   repository_id: string;
   worktree_id: string;
   tags: string[];
@@ -49,7 +48,6 @@ export type TaskCreateFormFields = {
   newTaskVerifyChatMode: string;
   newProjectID: string;
   newRepositoryID: string;
-  newProjectContextItemIDs: string[];
   newWorktreeID: string;
   newSchedule: string | null;
   newAutonomyEnabled: boolean;
@@ -70,7 +68,6 @@ export type DraftSavePayload = {
     runner: string;
     cursor_model: string;
     project_id: string;
-    project_context_item_ids: string[];
     checklist_items: TaskDraftChecklistItem[];
   };
 };

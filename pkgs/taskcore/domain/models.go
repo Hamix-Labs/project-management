@@ -14,12 +14,10 @@ type Task struct {
 	ProjectID     *string  `json:"project_id,omitempty"`
 	// Number is the per-project human-facing task ref (#N). Assigned when
 	// project_id is set; immutable thereafter. Null when the task has no project.
-	Number *int `json:"number,omitempty"`
-	// ProjectContextItemIDs is the user-selected subset of project context to pass to agent runs.
-	ProjectContextItemIDs []string  `json:"project_context_item_ids,omitempty"`
-	Tags                  []string  `json:"tags,omitempty"`
-	Milestone             *string   `json:"milestone,omitempty"`
-	Gate                  *TaskGate `json:"gate,omitempty"`
+	Number    *int      `json:"number,omitempty"`
+	Tags      []string  `json:"tags,omitempty"`
+	Milestone *string   `json:"milestone,omitempty"`
+	Gate      *TaskGate `json:"gate,omitempty"`
 	// DependsOn is hydrated from task_dependencies on read; not a database column.
 	DependsOn []DependencyEdge `json:"depends_on,omitempty"`
 	// Runner is the agent runner id for this task (e.g. "cursor"). Set at
@@ -51,19 +49,6 @@ type Task struct {
 	CreatedAt *time.Time `json:"created_at,omitempty"`
 	// WorktreeID binds the task to a registered git worktree row.
 	WorktreeID *string `json:"worktree_id,omitempty"`
-}
-
-// TaskContextSnapshot records the exact project context bundle handed to one
-// task execution attempt. It is immutable audit data, not canonical project memory.
-type TaskContextSnapshot struct {
-	ID              string          `json:"id"`
-	TaskID          string          `json:"task_id"`
-	CycleID         string          `json:"cycle_id"`
-	ProjectID       string          `json:"project_id"`
-	ContextJSON     json.RawMessage `json:"context_json"`
-	RenderedContext string          `json:"rendered_context"`
-	TokenEstimate   int             `json:"token_estimate"`
-	CreatedAt       time.Time       `json:"created_at"`
 }
 
 // TaskDependency is a directed edge: task_id depends on depends_on_task_id completing first.

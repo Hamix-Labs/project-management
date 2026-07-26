@@ -576,7 +576,7 @@
   margin: 0.5rem 0.65rem;
 }
 
-/* Project assignment section: wraps the ProjectSelect + ProjectContextPicker
+/* Project assignment section: wraps the ProjectSelect
    so the pair reads as one cohesive unit alongside Agent + Schedule. The
    top hairline matches the same separator pattern those sections use so
    the whole modal forms a steady visual rhythm. */

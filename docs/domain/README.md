@@ -72,7 +72,7 @@ Use Microsoft-style callouts where they add clarity:
 | [persistence.md](./persistence.md) | Store facade, dual-write, verdict tables vs report files |
 | [task-events.md](./task-events.md) | Audit log: `task_events`, paging, response threads, cycle mirrors |
 | [runner-adapters.md](./runner-adapters.md) | Runner plug-in model: registry, capabilities, adding CLI adapters |
-| [project-context.md](./project-context.md) | Project context: snapshots, harness injection, resume reuse |
+| [project-context.md](./project-context.md) | Project memory removed (ADR-0087) |
 | [harness.md](./harness.md) | Agent harness: cycle loop, worker boundary, resume, recovery, observability |
 | [cursor-session-resume.md](./cursor-session-resume.md) | Cursor CLI `--resume` policy, recovery deltas, dual session chains (ADR-0031) |
 | [done-criteria.md](./done-criteria.md) | Done criteria lifecycle: definition, execute/verify loop, completion ledger |

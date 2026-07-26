@@ -245,8 +245,7 @@ GORM + Postgres. Schema migration is explicit (`scripts/migrate.*` / `dbcheck -m
 | `task_checklist_items` / `task_checklist_completions` | Per-task done criteria. See [domain/done-criteria.md](./domain/done-criteria.md). |
 | `task_dependencies` | Directed acyclic graph between tasks. |
 | `task_drafts` | Persisted create-form state (autosave + named drafts). |
-| `projects` / `project_context_items` / `project_context_edges` | Long-lived projects and curated shared context. |
-| `task_context_snapshots` | Immutable cycle-scoped copies of the context bundle handed to a runner. |
+| `projects` | Long-lived projects (repo-bound containers for tasks). |
 | `app_settings` | Singleton (`id=1`) UI-driven configuration (see [configuration.md](./configuration.md)). |
 
 Concurrency: `Update` runs in a transaction with `SELECT … FOR UPDATE`; concurrent patches serialize. There is no ETag — last successful transaction wins. JSON task responses carry no `created_at` / `updated_at` fields; timestamps live on `task_events`.
@@ -333,7 +332,7 @@ Before starting a new cycle, the worker reloads the latest task from the store a
 *In the diagram:* `Worker → Store` (Update status=running).
 
 **Step 3. The harness opens a cycle and runs the execute phase.**
-The worker calls `Harness.Run`. The harness records cycle metadata, starts an execute phase in the store, builds the prompt (including project context and criteria), and invokes the configured runner against the workspace checkout.
+The worker calls `Harness.Run`. The harness records cycle metadata, starts an execute phase in the store, builds the prompt (including criteria), and invokes the configured runner against the workspace checkout.
 *In the diagram:* `Worker → Harness` (Run), then `Harness → Store` (StartCycle, StartPhase execute), then `Harness → Runner` (Run).
 
 **Step 4. Optional verify phase and cycle termination.**

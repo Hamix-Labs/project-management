@@ -29,7 +29,6 @@ describe("buildCreateTaskMutationInput", () => {
       newTaskVerifyChatMode: "",
       newProjectID: FACTORY_REPO_DEFAULT_PROJECT_ID,
       newRepositoryID: "",
-      newProjectContextItemIDs: [],
       newWorktreeID: "wt-1",
       newSchedule: null,
       newAutonomyEnabled: true,

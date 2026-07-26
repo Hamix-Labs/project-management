@@ -1,6 +1,7 @@
 import { useId, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { CustomSelect, type CustomSelectOption } from "@/components/custom-select";
+import { verifyChatModeLabel } from "../../../task-display/verifyChatModeDisplay";
 import { AgentBotIcon, AgentShieldCheckIcon } from "./TaskCreateAgentIcons";
 import { TaskCreateConfigSectionHeader } from "./TaskCreateConfigSectionHeader";
 import {
@@ -10,19 +11,12 @@ import {
 import { TaskCreateModalModelField } from "./TaskCreateModalModelField";
 import { TaskCreateModalRunnerField } from "./TaskCreateModalRunnerField";
 
-const VERIFY_MODE_LABELS = {
-  same_chat: "Continue execute chat",
-  different_chat: "Start new chat",
-} as const;
-
 function buildVerifyModeOptions(
   workspaceDefault: "same_chat" | "different_chat",
 ): CustomSelectOption[] {
-  return (
-    ["same_chat", "different_chat"] as const
-  ).map((value) => ({
+  return (["same_chat", "different_chat"] as const).map((value) => ({
     value,
-    label: VERIFY_MODE_LABELS[value],
+    label: verifyChatModeLabel(value),
     ...(value === workspaceDefault ? { rowTag: "Default" } : {}),
   }));
 }
@@ -159,8 +153,8 @@ export function TaskCreateModalAgentSection({
               leadingIcon={<AgentShieldCheckIcon />}
             />
             <p className="task-create-agent-help">
-              Controls whether PhaseVerify continues the execute chat or starts
-              a new one. The workspace default is marked in the list.
+              Controls whether PhaseVerify continues in the same chat or starts
+              a different one. The workspace default is marked in the list.
             </p>
           </div>
         ) : null}

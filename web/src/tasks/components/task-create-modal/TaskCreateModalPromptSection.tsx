@@ -1,4 +1,3 @@
-import type { RichPromptEditorProjectContextProps } from "@/components/rich-prompt";
 import { TaskCreateModalPromptFields } from "./fields/TaskCreateModalPromptFields";
 import { TaskCreateModalSection } from "./fields/TaskCreateModalSection";
 import type { TaskCreateModalPresentation } from "./taskCreateModalPresentation";
@@ -9,7 +8,6 @@ type Props = {
   prompt: string;
   worktreeId: string;
   onPromptChange: (v: string) => void;
-  promptProjectContext?: RichPromptEditorProjectContextProps;
 };
 
 export function TaskCreateModalPromptSection({
@@ -18,7 +16,6 @@ export function TaskCreateModalPromptSection({
   prompt,
   worktreeId,
   onPromptChange,
-  promptProjectContext,
 }: Props) {
   return (
     <TaskCreateModalSection
@@ -32,7 +29,6 @@ export function TaskCreateModalPromptSection({
         prompt={prompt}
         disabled={presentation.disabled}
         onPromptChange={onPromptChange}
-        projectContext={promptProjectContext}
         worktreeId={worktreeId.trim() || undefined}
       />
     </TaskCreateModalSection>

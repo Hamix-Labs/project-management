@@ -200,6 +200,10 @@
   background: var(--badge-tone-warning-fg);
 }
 
+.task-board-column--tone-review .task-board-column__dot {
+  background: var(--badge-tone-review-fg);
+}
+
 .task-board-column--tone-danger .task-board-column__dot {
   background: var(--badge-tone-danger-fg);
 }

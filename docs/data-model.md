@@ -25,7 +25,6 @@ Work hierarchy is **Project → Task**. Tasks may have:
 | `priority` | enum | `low` / `medium` / `high` / `critical`. Required at create. |
 | `project_id` | string \| null | Project membership. Required on create when `worktree_id` is set; must belong to the same repo as the worktree. |
 | `number` | int \| null | Per-project sequential display ref (`#N`). Assigned when `project_id` is set; immutable. Clearing or changing `project_id` on a numbered task is rejected. Null when the task has no project. |
-| `project_context_item_ids` | string[] | Explicit allowlist of project context items for runner snapshots. Cleared on `project_id` change. |
 | `tags` | string[] | Free-form, stored lowercase `^[a-z0-9][a-z0-9._-]{0,31}$`. Create/PATCH lowercases before validate. |
 | `milestone` | string \| null | Single anchor per task, `^[a-zA-Z0-9][a-zA-Z0-9 ._-]{0,63}$` when set. |
 | `depends_on` | object[] | Hydrated from `task_dependencies`: `{ task_id, satisfies }` where `satisfies` is `done` (default and only value). |
@@ -200,7 +199,7 @@ Keys are additive only; consumers must ignore unknown keys. Values are always st
 
 ## Checklist (done criteria)
 
-Behavioral deep-dives: [domain/harness.md](./domain/harness.md) (orchestration), [domain/done-criteria.md](./domain/done-criteria.md) (full lifecycle), [domain/execute-agent.md](./domain/execute-agent.md) (execute phase), [domain/verify-agent.md](./domain/verify-agent.md) (verify phase), [domain/project-context.md](./domain/project-context.md) (context snapshots), [domain/persistence.md](./domain/persistence.md) (dual-write), [domain/task-events.md](./domain/task-events.md) (audit log).
+Behavioral deep-dives: [domain/harness.md](./domain/harness.md) (orchestration), [domain/done-criteria.md](./domain/done-criteria.md) (full lifecycle), [domain/execute-agent.md](./domain/execute-agent.md) (execute phase), [domain/verify-agent.md](./domain/verify-agent.md) (verify phase), [domain/persistence.md](./domain/persistence.md) (dual-write), [domain/task-events.md](./domain/task-events.md) (audit log).
 
 Per-task acceptance requirements. Stored in `task_checklist_items` (definitions: `id`, `task_id`, `sort_order`, `text`) and optional `task_checklist_item_commands` (per-criterion shell checks: `item_id`, `sort_order`, `command`, `expected_outcome`, optional `timeout_seconds`, `ON DELETE CASCADE`) and `task_checklist_completions` (per-subject ledger: `task_id`, `item_id`, `at`, `done_by`, `evidence`, `verified_by`, `verifier_reasoning`, `cycle_id`). Operators attach zero or more verification commands per criterion; during verify the worker runs them in the task worktree, writes stdout/stderr/meta under the worker-managed report dir, and feeds those artifacts to the execute agent in the verify phase. Optional `timeout_seconds` (> 0) caps that command; omit/null means no wall-clock timeout. The LLM remains the sole authority for marking criteria done — exit code 0 does not auto-pass.
 
@@ -335,13 +334,9 @@ Named, durable compose blueprints — same field set as task create JSON (withou
 
 Instantiate (`POST /task-templates/instantiate`) maps payload → `POST /tasks` via the shared compose pipeline: `depends_on` stripped (stale UUIDs); past `pickup_not_before` omitted; no draft row linkage.
 
-## Project context
+## Projects
 
-Curated context nodes (`project_context_items`: `tag`, `title`, optional `description`, `body`, provenance, `pinned`) and user-curated relationships (`project_context_edges`, typed `relation` + `1..5 strength`) owned by a project. A task's run captures the user-selected bundle in `task_context_snapshots` — immutable, cycle-scoped.
-
-Mental model: project = process, task = thread. Project = shared memory; task = reader; run = immutable snapshot of what the runner actually saw.
-
-Out of scope today: embeddings / vector search, autonomous memory pruning, summarization daemons, tenancy / sharing / billing, automatic migration of legacy tasks into synthetic projects.
+Projects are repo-bound containers for tasks (`project_id`, per-project `#N`, system default per repository). Project memory tables (`project_context_items`, `project_context_edges`, `task_context_snapshots`) and `projects.context_summary` were removed — see [ADR-0087](./adr/ADR-0087-remove-project-context.md).
 
 ## Git workflow (`git_repositories`, `git_worktrees`, `git_branches`)
 

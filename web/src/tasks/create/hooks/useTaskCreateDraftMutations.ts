@@ -16,7 +16,6 @@ type DraftSavePayload = {
   runner: string;
   cursor_model: string;
   project_id: string;
-  project_context_item_ids: string[];
   checklist_items: import("@/types").TaskDraftChecklistItem[];
 };
 

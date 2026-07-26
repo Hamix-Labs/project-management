@@ -1,8 +1,6 @@
 import { isUiFeatureOmitted } from "@/launch/omittedFeatures";
-import { StatusBadge } from "@/components/task-status";
 import type { Status, Task } from "@/types";
 import { useAppTimezone, formatInAppTimezone } from "@/shared/time/appTimezone";
-import { statusNeedsUserInput } from "../../../task-display";
 import { ScheduleGlyph } from "./TaskDetailScheduleGlyphs";
 
 type Props = {
@@ -12,19 +10,27 @@ type Props = {
 const TERMINAL_STATUSES: ReadonlySet<Status> = new Set(["done", "failed"]);
 
 /**
- * Toolbar strip: task status plus optional read-only pickup schedule.
- * Schedule mutations live in the edit-task modal (`SchedulePicker`).
+ * Read-only pickup schedule strip for the task-detail toolbar.
+ * Status lives in the execution bar; schedule mutations live in the
+ * edit-task modal (`SchedulePicker`).
  */
 export function TaskDetailSchedule({ task }: Props) {
   const tz = useAppTimezone();
   const scheduleUiEnabled = !isUiFeatureOmitted("schedule");
   const isTerminal = TERMINAL_STATUSES.has(task.status);
   const hasSchedule = Boolean(task.pickup_not_before);
-  const needsUser = statusNeedsUserInput(task.status);
 
   const formatted = task.pickup_not_before
     ? formatInAppTimezone(task.pickup_not_before, tz)
     : null;
+
+  if (!scheduleUiEnabled) {
+    return null;
+  }
+
+  if (!hasSchedule && isTerminal) {
+    return null;
+  }
 
   return (
     <div
@@ -32,17 +38,7 @@ export function TaskDetailSchedule({ task }: Props) {
       data-testid="task-detail-schedule"
       data-state={hasSchedule ? "scheduled" : "unscheduled"}
     >
-      <div
-        className="task-detail-schedule-row task-detail-schedule-row--status"
-        data-testid="task-detail-status"
-      >
-        <StatusBadge
-          status={task.status}
-          className="task-detail-status-badge"
-          data-needs-user={needsUser ? "true" : undefined}
-        />
-      </div>
-      {scheduleUiEnabled && hasSchedule ? (
+      {hasSchedule ? (
         <div
           className="task-detail-schedule-row task-detail-schedule-row--scheduled"
           data-testid="task-detail-schedule-badge"
@@ -59,11 +55,11 @@ export function TaskDetailSchedule({ task }: Props) {
             <time dateTime={task.pickup_not_before}>{formatted}</time>
           </div>
         </div>
-      ) : scheduleUiEnabled && !isTerminal ? (
+      ) : (
         <span className="task-detail-schedule-empty muted">
           No pickup scheduled.
         </span>
-      ) : null}
+      )}
     </div>
   );
 }

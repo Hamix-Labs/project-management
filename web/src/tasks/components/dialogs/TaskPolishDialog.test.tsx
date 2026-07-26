@@ -28,10 +28,6 @@ vi.mock("@/components/rich-prompt", () => ({
   ),
 }));
 
-vi.mock("@/hooks/useProjectContextPromptBinding", () => ({
-  useProjectContextPromptBinding: () => null,
-}));
-
 describe("TaskPolishDialog", () => {
   it("requires non-empty instructions before confirm", async () => {
     const user = userEvent.setup();

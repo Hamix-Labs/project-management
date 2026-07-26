@@ -15,10 +15,7 @@ import { bootstrapUnavailable } from "@/test/handlers/bootstrap";
 import { stubEventSource } from "@/test/browserMocks";
 import { draftsListEmpty } from "@/test/handlers/drafts";
 import { globalGitApiHandlers } from "@/test/handlers/gitMsw";
-import {
-  projectContextEmpty,
-  projectsListEmpty,
-} from "@/test/handlers/projects";
+import { projectsListEmpty } from "@/test/handlers/projects";
 import { repoNotConfigured } from "@/test/handlers/repo";
 import { appSettingsOk, listCursorModelsOk } from "@/test/handlers/settings";
 import { taskStatsEmpty, tasksListEmpty } from "@/test/handlers/tasks";
@@ -32,7 +29,6 @@ export function appDefaultHandlers() {
     repoNotConfigured(),
     draftsListEmpty(),
     projectsListEmpty(),
-    projectContextEmpty(),
     ...globalGitApiHandlers(),
     listCursorModelsOk(),
   ];

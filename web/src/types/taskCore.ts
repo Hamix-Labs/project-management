@@ -57,8 +57,6 @@ export type Task = {
   created_at?: string;
   /** Present when this task belongs to a long-lived project context. */
   project_id?: string;
-  /** User-selected project context items passed to agent runs for this task. */
-  project_context_item_ids?: string[];
   /** Git worktree binding (ADR-0039). */
   worktree_id?: string;
   tags?: string[];
@@ -247,7 +245,7 @@ export type TaskChangeType =
   | "project_created"
   | "project_updated"
   | "project_deleted"
-  | "project_context_changed";
+;
 
 /**
  * Wire shape of a single SSE frame on `GET /events` (legacy narrow subset).
@@ -280,7 +278,6 @@ export const SSE_CHANGE_TYPE = {
   projectCreated: "project_created",
   projectUpdated: "project_updated",
   projectDeleted: "project_deleted",
-  projectContextChanged: "project_context_changed",
   settingsChanged: "settings_changed",
   agentRunCancelled: "agent_run_cancelled",
   resync: "resync",
@@ -505,7 +502,6 @@ export type TaskComposePayload = {
   verify_chat_mode?: string;
   project_id?: string;
   repository_id?: string;
-  project_context_item_ids?: string[];
   worktree_id?: string;
   pickup_not_before?: string;
   tags?: string[];

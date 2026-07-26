@@ -31,19 +31,8 @@ func migrateOrphanRepoProjects(ctx context.Context, db *gorm.DB) error {
 	for _, p := range orphans {
 		ids = append(ids, p.ID)
 	}
-	if err := db.WithContext(ctx).
-		Where("project_id IN ?", ids).
-		Delete(&projectmodel.ProjectContextEdge{}).Error; err != nil {
-		return fmt.Errorf("delete orphan project context edges: %w", err)
-	}
-	if err := db.WithContext(ctx).
-		Where("project_id IN ?", ids).
-		Delete(&projectmodel.ProjectContextItem{}).Error; err != nil {
-		return fmt.Errorf("delete orphan project context items: %w", err)
-	}
-	if err := db.WithContext(ctx).
-		Exec("DELETE FROM task_context_snapshots WHERE project_id IN ?", ids).Error; err != nil {
-		return fmt.Errorf("delete orphan task context snapshots: %w", err)
+	if err := deleteProjectContextRowsIfPresent(ctx, db, ids); err != nil {
+		return fmt.Errorf("delete orphan project context rows: %w", err)
 	}
 	if err := db.WithContext(ctx).
 		Where("id IN ?", ids).

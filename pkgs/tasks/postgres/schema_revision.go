@@ -70,7 +70,10 @@ import (
 //
 // Rev 21: project_context_items.tag replaces kind for UI grouping; migrate
 // legacy role kinds (note/decision/constraint/handoff) to tag=General.
-const SchemaRevision = 21
+//
+// Rev 22: remove project memory — drop project_context_items/edges,
+// task_context_snapshots, tasks.project_context_item_ids, projects.context_summary.
+const SchemaRevision = 22
 
 const schemaMetaRowID = 1
 

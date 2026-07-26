@@ -43,7 +43,7 @@ Root `harness` owns `Harness`, cycle entrypoints, effect application (`cycle_eff
 | `git_alias.go` | Thin delegators to `internal/git` |
 | `resume_alias.go` | Thin delegators to `internal/resume` |
 | `reports_alias.go` | Re-exports report sentinel errors |
-| `project_context_load.go` | Loads store data for prompt assembly via `internal/prompt` |
+| `prompt_helpers.go` | Checklist/continuation helpers for prompt assembly |
 | `execute_criteria_mirror.go` | Best-effort criteria mirror after execute |
 | `meta.go` | Cycle `MetaJSON` and phase `details_json` normalization |
 | `metrics.go` | `RunMetrics` seam and observation helpers |
@@ -95,7 +95,6 @@ No dedicated checkpoint table. `internal/resume` reconstructs checkpoint from:
 - Phase ledger tail → execute vs verify resume branch
 - `task_cycle_verify_reports` → locked passes, verify attempt, retry feedback
 - Task row → base prompt
-- `task_context_snapshots` for `cycle_id` → project context block
 - `task_cycle_commits` → worker-indexed SHAs for resume/verify prompts (see [cycle-commits.md](../../docs/domain/cycle-commits.md))
 
 The composed prompt is what the runner sees; `WorkingDir` remains `app_settings.repo_root`.

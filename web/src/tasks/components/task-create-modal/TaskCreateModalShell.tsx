@@ -28,7 +28,6 @@ export function TaskCreateModalShell({
   git,
   execution,
   actions,
-  projectAssignment,
   appTimezone,
   busyLabel,
   scenariosOpen,
@@ -83,7 +82,6 @@ export function TaskCreateModalShell({
               criteria={criteria}
               git={git}
               execution={{ ...execution, autonomyDisabled }}
-              projectAssignment={projectAssignment}
               appTimezone={appTimezone}
             />
 

@@ -53,7 +53,6 @@ export function useTaskPatchFlow(opts: {
         status: input.status,
         priority: input.priority,
         project_id: input.project_id,
-        project_context_item_ids: input.project_context_item_ids,
         tags: input.tags,
         milestone: input.milestone,
         cursor_model: input.cursor_model,

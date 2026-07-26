@@ -79,15 +79,10 @@ describe("parseTaskChangeFrame", () => {
     expect([...s].sort()).toEqual(["d-1", "g-1"]);
   });
 
-  it("returns project frames for project and context changes", () => {
+  it("returns project frames for project changes", () => {
     expect(
       parseTaskChangeFrame('{"type":"project_updated","id":"project-1"}'),
     ).toEqual({ kind: "project", projectId: "project-1" });
-    expect(
-      parseTaskChangeFrame(
-        '{"type":"project_context_changed","id":"project-1"}',
-      ),
-    ).toEqual({ kind: "project_context", projectId: "project-1" });
   });
 
   it("returns a task_event frame when event_seq is present", () => {
@@ -242,8 +237,6 @@ describe("parseTaskChangeFrame", () => {
       [SSE_CHANGE_TYPE.projectCreated]: '{"type":"project_created","id":"p-1"}',
       [SSE_CHANGE_TYPE.projectUpdated]: '{"type":"project_updated","id":"p-1"}',
       [SSE_CHANGE_TYPE.projectDeleted]: '{"type":"project_deleted","id":"p-1"}',
-      [SSE_CHANGE_TYPE.projectContextChanged]:
-        '{"type":"project_context_changed","id":"p-1"}',
       [SSE_CHANGE_TYPE.settingsChanged]: '{"type":"settings_changed"}',
       [SSE_CHANGE_TYPE.agentRunCancelled]: '{"type":"agent_run_cancelled"}',
       [SSE_CHANGE_TYPE.resync]: '{"type":"resync"}',

@@ -5,16 +5,10 @@ import {
   RepoFileSuggestion,
   type RepoFileSuggestionOptions,
 } from "./extensions/repoFileSuggestion";
-import { ProjectContextMention } from "./extensions/projectContextMention";
-import {
-  ProjectContextSuggestion,
-  type ProjectContextSuggestionOptions,
-} from "./extensions/projectContextSuggestion";
 
 export function buildRichPromptExtensions(
   placeholder: string | undefined,
   repoOpts: RepoFileSuggestionOptions,
-  projectSuggestionOpts: ProjectContextSuggestionOptions,
 ) {
   return [
     StarterKit.configure({
@@ -25,7 +19,5 @@ export function buildRichPromptExtensions(
     }),
     RepoFileMention,
     RepoFileSuggestion.configure(repoOpts),
-    ProjectContextMention,
-    ProjectContextSuggestion.configure(projectSuggestionOpts),
   ];
 }

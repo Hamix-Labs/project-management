@@ -38,7 +38,6 @@ func TestIsHintOnly(t *testing.T) {
 		realtime.ProjectCreated:        true,
 		realtime.ProjectUpdated:        true,
 		realtime.ProjectDeleted:        true,
-		realtime.ProjectContextChanged: true,
 		realtime.SettingsChanged:       true,
 	}
 
@@ -54,7 +53,6 @@ func TestIsHintOnly(t *testing.T) {
 		realtime.ProjectCreated,
 		realtime.ProjectUpdated,
 		realtime.ProjectDeleted,
-		realtime.ProjectContextChanged,
 		realtime.SettingsChanged,
 		realtime.AgentRunCancelled,
 		realtime.Resync,

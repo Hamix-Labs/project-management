@@ -6,8 +6,6 @@ type Store interface {
 	TaskStore
 	CycleStore
 	ChecklistStore
-	SnapshotStore
 	SettingsStore
 	EventStore
-	ProjectStore
 }

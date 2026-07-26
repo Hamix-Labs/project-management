@@ -19,6 +19,14 @@ describe("StatusBadge", () => {
     expect(container.firstChild).not.toHaveClass("task-status-badge--pulse");
   });
 
+  it("maps review to the review tone (matches status filter pills)", () => {
+    const { container } = render(<StatusBadge status="review" />);
+    expect(container.firstChild).toHaveClass("task-status-badge--tone-review");
+    expect(container.firstChild).not.toHaveClass(
+      "task-status-badge--tone-warning",
+    );
+  });
+
   it("maps every status to a tone class", () => {
     for (const status of STATUSES) {
       const { container } = render(<StatusBadge status={status} />);

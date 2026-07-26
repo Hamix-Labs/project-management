@@ -31,12 +31,9 @@ export type DraftAutosaveSignatureInput = {
   /**
    * Project the operator is composing against. Empty string means "no
    * project bound". Folded into the autosave signature so changing the
-   * project (or its selected context items) flips the dirty bit and
-   * triggers an autosave.
+   * project flips the dirty bit and triggers an autosave.
    */
   projectId: string;
-  /** User-selected project context item ids. Order matters and is preserved. */
-  projectContextItemIds: string[];
   checklistItems: Array<{
     text: string;
     verify_commands?: ChecklistVerifyCommandInput[];
@@ -64,7 +61,6 @@ export function draftAutosaveSignature(
       runner: input.runner,
       cursor_model: input.cursorModel,
       project_id: input.projectId,
-      project_context_item_ids: input.projectContextItemIds,
       checklist_items: input.checklistItems,
     },
   });

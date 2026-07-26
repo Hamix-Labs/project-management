@@ -22,14 +22,6 @@ describe("decideProjectInvalidationKeys", () => {
       expected: [projectQueryKeys.all, projectQueryKeys.detail("proj-1")],
     },
     {
-      name: "context",
-      input: { scope: "context", projectId: "proj-1" },
-      expected: [
-        projectQueryKeys.context("proj-1"),
-        projectQueryKeys.detail("proj-1"),
-      ],
-    },
-    {
       name: "repositoryLink",
       input: {
         scope: "repositoryLink",

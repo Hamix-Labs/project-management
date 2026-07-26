@@ -6,26 +6,15 @@ import {
   looksLikeStoredHtml,
   plainTextToInitialHtml,
 } from "@/lib/promptFormat";
-import {
-  mergeProjectContextSelection,
-  selectedProjectContextItems,
-} from "@/lib/projectContextRefs";
-import type { ProjectContextItem } from "@/types";
-import type { ProjectContextPickedPayload } from "./extensions/projectContextSuggestion";
 import type { RepoFileSuggestionOptions } from "./extensions/repoFileSuggestion";
-import type { ProjectContextSuggestionOptions } from "./extensions/projectContextSuggestion";
 import { buildRichPromptExtensions } from "./richPromptExtensions";
 import {
   computeRepoHintFlags,
-  insertProjectContextChipAt,
   insertRepoFileMentionAt,
   type PendingFileInsert,
 } from "./richPromptInsertHelpers";
 import { useRepoWorkspaceProbe } from "./useRepoWorkspaceProbe";
 import type { RichPromptEditorProps } from "./richPromptEditorTypes";
-
-const EMPTY_CONTEXT_ITEMS: ProjectContextItem[] = [];
-const EMPTY_SELECTED_IDS: string[] = [];
 
 export function useRichPromptEditorController({
   id,
@@ -33,7 +22,6 @@ export function useRichPromptEditorController({
   onChange,
   disabled,
   placeholder,
-  projectContext,
   worktreeId,
 }: RichPromptEditorProps) {
   const workspaceProbe = useRepoWorkspaceProbe(worktreeId);
@@ -44,17 +32,6 @@ export function useRichPromptEditorController({
   );
   const [rangeWarning, setRangeWarning] = useState<string | null>(null);
   const lastEmittedHtml = useRef<string | null>(null);
-
-  const projectItems = projectContext?.items ?? EMPTY_CONTEXT_ITEMS;
-  const selectedProjectIds = projectContext?.selectedIds ?? EMPTY_SELECTED_IDS;
-  const onProjectIdsChange = projectContext?.onSelectedIdsChange;
-
-  const projectItemsRef = useRef<ProjectContextItem[] | null>(
-    projectContext != null ? projectItems : null,
-  );
-  useEffect(() => {
-    projectItemsRef.current = projectContext != null ? projectItems : null;
-  }, [projectContext, projectItems]);
 
   const onFilePicked = useCallback(
     (payload: { insertAt: number; path: string }) => {
@@ -84,45 +61,9 @@ export function useRichPromptEditorController({
     [onFilePicked],
   );
 
-  const projectContextEnabled = projectContext != null;
-
-  const editorRef = useRef<ReturnType<typeof useEditor> | null>(null);
-  const selectedProjectIdsRef = useRef(selectedProjectIds);
-  const onProjectIdsChangeRef = useRef(onProjectIdsChange);
-  useEffect(() => {
-    selectedProjectIdsRef.current = selectedProjectIds;
-  }, [selectedProjectIds]);
-  useEffect(() => {
-    onProjectIdsChangeRef.current = onProjectIdsChange;
-  }, [onProjectIdsChange]);
-
-  const onProjectContextPicked = useCallback(
-    (payload: ProjectContextPickedPayload) => {
-      const merged = mergeProjectContextSelection(
-        selectedProjectIdsRef.current,
-        [payload.item.id],
-      );
-      onProjectIdsChangeRef.current?.(merged);
-      const ed = editorRef.current;
-      if (ed && !ed.isDestroyed) {
-        insertProjectContextChipAt(ed, payload.item, payload.insertAt);
-      }
-    },
-    [],
-  );
-
-  const projectSuggestionOpts = useMemo<ProjectContextSuggestionOptions>(
-    () => ({
-      getItems: () => projectItemsRef.current,
-      onContextPicked: onProjectContextPicked,
-    }),
-    [onProjectContextPicked],
-  );
-
   const extensions = useMemo(
-    () =>
-      buildRichPromptExtensions(placeholder, repoOpts, projectSuggestionOpts),
-    [placeholder, repoOpts, projectSuggestionOpts],
+    () => buildRichPromptExtensions(placeholder, repoOpts),
+    [placeholder, repoOpts],
   );
 
   // TipTap 3 + React StrictMode: sync create during render leaves a destroyed
@@ -145,10 +86,6 @@ export function useRichPromptEditorController({
       onChange(html);
     },
   });
-
-  useEffect(() => {
-    editorRef.current = editor;
-  }, [editor]);
 
   useEffect(() => {
     if (!editor || editor.isDestroyed) return;
@@ -220,23 +157,6 @@ export function useRichPromptEditorController({
     [editor, pendingInsert],
   );
 
-  const removeSelectedProjectId = useCallback(
-    (contextId: string) => {
-      if (!onProjectIdsChange) return;
-      const next = selectedProjectIds.filter(
-        (existing) => existing !== contextId,
-      );
-      if (next.length === selectedProjectIds.length) return;
-      onProjectIdsChange(next);
-    },
-    [onProjectIdsChange, selectedProjectIds],
-  );
-
-  const referencesItems = useMemo(
-    () => selectedProjectContextItems(projectItems, selectedProjectIds),
-    [projectItems, selectedProjectIds],
-  );
-
   const dismissPendingInsert = useCallback(() => {
     setPendingInsert(null);
     setRangeWarning(null);
@@ -244,10 +164,6 @@ export function useRichPromptEditorController({
 
   return {
     editor,
-    projectContextEnabled,
-    referencesItems,
-    onProjectIdsChange,
-    removeSelectedProjectId,
     pendingInsert,
     rangeWarning,
     dismissPendingInsert,

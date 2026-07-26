@@ -92,7 +92,7 @@ func Update(ctx context.Context, db *gorm.DB, id string, in UpdateInput, by doma
 	if id == "" {
 		return nil, "", fmt.Errorf("%w: id", domain.ErrInvalidInput)
 	}
-	if in.Title == nil && in.InitialPrompt == nil && in.Status == nil && in.Priority == nil && in.Project == nil && in.ProjectContextItemIDs == nil && in.PickupNotBefore == nil && in.CursorModel == nil && in.VerifyChatMode == nil && in.Tags == nil && in.Milestone == nil && in.Gate == nil && in.DependsOn == nil && in.PendingRetry == nil && !in.ClearPendingRetry && in.WorktreeID == nil {
+	if in.Title == nil && in.InitialPrompt == nil && in.Status == nil && in.Priority == nil && in.Project == nil && in.PickupNotBefore == nil && in.CursorModel == nil && in.VerifyChatMode == nil && in.Tags == nil && in.Milestone == nil && in.Gate == nil && in.DependsOn == nil && in.PendingRetry == nil && !in.ClearPendingRetry && in.WorktreeID == nil {
 		return nil, "", fmt.Errorf("%w: no fields to update", domain.ErrInvalidInput)
 	}
 	var updated *domain.Task
@@ -199,18 +199,17 @@ func buildCreateTaskFromInput(in CreateInput, by domain.Actor) (t *domain.Task, 
 		runner = settingsdomain.DefaultRunner
 	}
 	t = &domain.Task{
-		ID:                    id,
-		Title:                 title,
-		InitialPrompt:         in.InitialPrompt,
-		Status:                st,
-		Priority:              pr,
-		ProjectID:             projectID,
-		ProjectContextItemIDs: nil,
-		Runner:                runner,
-		CursorModel:           in.CursorModel,
-		VerifyChatMode:        in.VerifyChatMode,
-		PickupNotBefore:       in.PickupNotBefore,
-		WorktreeID:            normalizeOptionalID(in.WorktreeID),
+		ID:              id,
+		Title:           title,
+		InitialPrompt:   in.InitialPrompt,
+		Status:          st,
+		Priority:        pr,
+		ProjectID:       projectID,
+		Runner:          runner,
+		CursorModel:     in.CursorModel,
+		VerifyChatMode:  in.VerifyChatMode,
+		PickupNotBefore: in.PickupNotBefore,
+		WorktreeID:      normalizeOptionalID(in.WorktreeID),
 	}
 	if err := normalizeCreateTaskModelFields(t, in); err != nil {
 		return nil, "", "", err
@@ -246,19 +245,6 @@ func createTaskInTx(tx *gorm.DB, t *domain.Task, in CreateInput, by domain.Actor
 		}
 		t.Number = &num
 	}
-	contextIDs, err := normalizeProjectContextItemIDs(in.ProjectContextItemIDs)
-	if err != nil {
-		return err
-	}
-	if len(contextIDs) > 0 {
-		if t.ProjectID == nil || strings.TrimSpace(*t.ProjectID) == "" {
-			return fmt.Errorf("%w: project_id required for project context selection", domain.ErrInvalidInput)
-		}
-		if err := validateProjectContextSelection(tx, *t.ProjectID, contextIDs); err != nil {
-			return err
-		}
-	}
-	t.ProjectContextItemIDs = contextIDs
 	if err := tx.Create(model.FromDomainTaskPtr(t)).Error; err != nil {
 		if storekernel.IsDuplicatePrimaryKey(err, "tasks") {
 			return fmt.Errorf("%w: task id already exists", domain.ErrConflict)

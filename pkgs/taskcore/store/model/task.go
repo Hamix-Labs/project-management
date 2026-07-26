@@ -19,18 +19,17 @@ type Task struct {
 	Number *int `gorm:"index:idx_tasks_project_number,unique,priority:2"`
 	// JSONSlice (not serializer:json): empty slices must persist as "[]". GORM's
 	// serializer:json writes "" for empty []string, which Postgres rejects on jsonb.
-	ProjectContextItemIDs datatypes.JSONSlice[string] `gorm:"column:project_context_item_ids;type:jsonb;not null;default:'[]'"`
-	Tags                  datatypes.JSONSlice[string] `gorm:"column:tags;type:jsonb;not null;default:'[]'"`
-	Milestone             *string                     `gorm:"index"`
-	Gate                  *domain.TaskGate            `gorm:"column:gate;serializer:json;type:jsonb"`
-	Runner                string                      `gorm:"not null;default:'cursor'"`
-	CursorModel           string                      `gorm:"not null;default:''"`
-	VerifyChatMode        string                      `gorm:"not null;default:''"`
-	RunnerConfig          datatypes.JSON              `gorm:"column:runner_config;type:jsonb;not null;default:'{}'"`
-	PickupNotBefore       *time.Time                  `gorm:"index"`
-	CriteriaSatisfiedAt   *time.Time                  `gorm:"index"`
-	PendingRetry          *domain.PendingRetry        `gorm:"column:pending_retry;serializer:json;type:jsonb"`
-	WorktreeID            *string                     `gorm:"index"`
+	Tags                datatypes.JSONSlice[string] `gorm:"column:tags;type:jsonb;not null;default:'[]'"`
+	Milestone           *string                     `gorm:"index"`
+	Gate                *domain.TaskGate            `gorm:"column:gate;serializer:json;type:jsonb"`
+	Runner              string                      `gorm:"not null;default:'cursor'"`
+	CursorModel         string                      `gorm:"not null;default:''"`
+	VerifyChatMode      string                      `gorm:"not null;default:''"`
+	RunnerConfig        datatypes.JSON              `gorm:"column:runner_config;type:jsonb;not null;default:'{}'"`
+	PickupNotBefore     *time.Time                  `gorm:"index"`
+	CriteriaSatisfiedAt *time.Time                  `gorm:"index"`
+	PendingRetry        *domain.PendingRetry        `gorm:"column:pending_retry;serializer:json;type:jsonb"`
+	WorktreeID          *string                     `gorm:"index"`
 }
 
 // TableName pins the tasks table name.

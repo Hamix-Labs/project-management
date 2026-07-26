@@ -31,18 +31,13 @@ Data model semantics: [data-model.md](./data-model.md). Configuration: [configur
 
 | Method | Path | Notes |
 |---|---|---|
-| POST | `/projects` | Create. Body `{ id?, name, description?, context_summary? }`. Publishes `project_created`. |
+| POST | `/projects` | Create. Body `{ id?, name, description?, repository_id }`. Publishes `project_created`. |
 | GET | `/projects` | List. `?limit` (0–100, default 50), `?include_archived=true`. |
 | GET | `/projects/{id}` | Single project. |
-| PATCH | `/projects/{id}` | Partial. At least one of `name`, `description`, `status`, `context_summary`. Default project (`00000000-0000-4000-8000-000000000001`) cannot be renamed / archived (409). Publishes `project_updated`. |
+| PATCH | `/projects/{id}` | Partial. At least one of `name`, `description`, `status`. Default project (`00000000-0000-4000-8000-000000000001`) cannot be renamed / archived (409). Publishes `project_updated`. |
 | DELETE | `/projects/{id}` | `204`. Blocked while tasks reference it (409). Default project cannot be deleted. Publishes `project_deleted`. |
-| GET | `/projects/{id}/context` | List context items + edges (`{ items, edges, limit }`; empty lists are `[]`, never `null`). `?limit`, `?pinned_only=true`. |
-| POST | `/projects/{id}/context` | Create context item. `tag` required (1–40 Unicode chars); `title` required (1–200 Unicode chars); `description` optional (0–400 Unicode chars); `body` required (non-empty, ≤512 KiB UTF-8 bytes). Oversized fields → **400** (not truncated). Publishes `project_context_changed`. |
-| PATCH | `/projects/{id}/context/{contextId}` | Partial. Same tag/title/description/body size rules when those fields are present. Publishes `project_context_changed`. |
-| DELETE | `/projects/{id}/context/{contextId}` | `204`. Publishes `project_context_changed`. |
-| POST | `/projects/{id}/context/edges` | Create edge between two items. `relation ∈ supports | blocks | refines | depends_on | related`, `strength 1..5`. Publishes `project_context_changed`. |
-| PATCH | `/projects/{id}/context/edges/{edgeId}` | Partial. Publishes `project_context_changed`. |
-| DELETE | `/projects/{id}/context/edges/{edgeId}` | `204`. Publishes `project_context_changed`. |
+
+Project memory (`/projects/{id}/context*`, `context_summary`, task `project_context_item_ids`) was removed — see [ADR-0087](./adr/ADR-0087-remove-project-context.md).
 
 ### Git repositories, worktrees, and branches
 
@@ -82,7 +77,7 @@ Model semantics (tags, milestone, `depends_on`, gate, worker readiness): [data-m
 | GET | `/tasks/cycle-failures` | Paginated terminal cycle failures. `?limit`, `?offset`, `?sort ∈ at_desc | at_asc | reason_asc | reason_desc`. |
 | GET | `/tasks/activity` | Paginated cross-task activity feed. Fixed type filter: `status_changed`, `phase_failed`, `approval_granted`. Query params: `limit` (1–200, default 50), `offset` (≥ 0), `since` (optional RFC3339 lower bound on `at`). Ordered newest-first (`at DESC, seq DESC`). Envelope: `{ total, limit, offset, events: [{ task_id, seq, at, type, by, data, task_title?, task_number?, task_priority?, task_project_id?, task_tags? }] }`. Joined task fields (when the owning task still exists) power client-side Timeline filters. `Cache-Control: no-store`. |
 | GET | `/tasks/{id}` | Single flat `domain.Task`. |
-| PATCH | `/tasks/{id}` | At least one of: `title`, `initial_prompt`, `status`, `priority`, `project_id`, `worktree_id`, `project_context_item_ids`, `pickup_not_before`, `cursor_model`, `verify_chat_mode`, `tags`, `milestone`, `gate`, `depends_on`. Publishes `task_updated` (+ `task_gate_changed` / `task_dependency_changed` when those fields change). Writable `status` values for `X-Actor: user`: `ready`, `running`, `blocked`, `review`, `failed`, `on_hold` (`done` via approve only; `closed` via close only). See [data-model.md](./data-model.md). |
+| PATCH | `/tasks/{id}` | At least one of: `title`, `initial_prompt`, `status`, `priority`, `project_id`, `worktree_id`, `pickup_not_before`, `cursor_model`, `verify_chat_mode`, `tags`, `milestone`, `gate`, `depends_on`. Publishes `task_updated` (+ `task_gate_changed` / `task_dependency_changed` when those fields change). Writable `status` values for `X-Actor: user`: `ready`, `running`, `blocked`, `review`, `failed`, `on_hold` (`done` via approve only; `closed` via close only). See [data-model.md](./data-model.md). |
 | POST | `/tasks/{id}/close` | Marks the task `closed` (idempotent). Cancels an in-flight agent run for this task only, drops it from the ready queue, cancels pickup wake. Does **not** delete the row or remove the worktree. Publishes `task_updated`. |
 | POST | `/tasks/{id}/reopen` | `closed` → `ready`. `409` if not closed. Publishes `task_updated`. |
 | GET | `/tasks/{id}/events` | Audit log. Default: ascending all rows. With `limit` / `before_seq` / `after_seq`: keyset-paged newest-first slice with `range_*`, `has_more_*`, `approval_pending`. Deep dive: [domain/task-events.md](./domain/task-events.md). |
@@ -210,7 +205,6 @@ Lossless reconnects via `Last-Event-ID`: a ring buffer (default 1024 entries) re
 | `task_cycle_changed` | Cycle/phase mutation. | `{ type, id, cycle_id, data?: <cycle detail> }` |
 | `agent_run_progress` | Live Cursor activity hint while a phase runs. Not persisted in `task_events`; durable history via `GET /tasks/{id}/cycles/{cycleId}/stream`. Throttled to one frame per 750ms per running phase. | `{ type, id, cycle_id, phase_seq, progress: { kind, subtype, message, tool } }` |
 | `project_created` / `project_updated` / `project_deleted` | Project CRUD. | `{ type, id }` |
-| `project_context_changed` | Context item / edge mutation. | `{ type, id }` (project id) |
 | `settings_changed` | `PATCH /settings` after supervisor reload. | `{ type }` (no id) |
 | `agent_run_cancelled` | `POST /settings/cancel-current-run` actually cancelled something. | `{ type }` (no id) |
 | `resync` | Hub-emitted. Out-of-window reconnect or slow-consumer eviction. No `id:` line on wire (preserves `Last-Event-ID` cursor). | `{ type }` |

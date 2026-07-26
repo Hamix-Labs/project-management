@@ -10,22 +10,21 @@ import (
 )
 
 type taskComposePayloadJSON struct {
-	Title                 string                                      `json:"title"`
-	InitialPrompt         string                                      `json:"initial_prompt"`
-	Status                domain.Status                               `json:"status"`
-	Priority              domain.Priority                             `json:"priority"`
-	ProjectID             *string                                     `json:"project_id"`
-	RepositoryID          *string                                     `json:"repository_id,omitempty"`
-	ProjectContextItemIDs []string                                    `json:"project_context_item_ids"`
-	Runner                *string                                     `json:"runner"`
-	CursorModel           *string                                     `json:"cursor_model"`
-	VerifyChatMode        *string                                     `json:"verify_chat_mode"`
-	PickupNotBefore       *string                                     `json:"pickup_not_before,omitempty"`
-	Tags                  []string                                    `json:"tags,omitempty"`
-	Milestone             *string                                     `json:"milestone,omitempty"`
-	DependsOn             dependsOnWire                               `json:"depends_on,omitempty"`
-	ChecklistItems        []taskcorecontract.CreateChecklistItemInput `json:"checklist_items"`
-	WorktreeID            *string                                     `json:"worktree_id,omitempty"`
+	Title           string                                      `json:"title"`
+	InitialPrompt   string                                      `json:"initial_prompt"`
+	Status          domain.Status                               `json:"status"`
+	Priority        domain.Priority                             `json:"priority"`
+	ProjectID       *string                                     `json:"project_id"`
+	RepositoryID    *string                                     `json:"repository_id,omitempty"`
+	Runner          *string                                     `json:"runner"`
+	CursorModel     *string                                     `json:"cursor_model"`
+	VerifyChatMode  *string                                     `json:"verify_chat_mode"`
+	PickupNotBefore *string                                     `json:"pickup_not_before,omitempty"`
+	Tags            []string                                    `json:"tags,omitempty"`
+	Milestone       *string                                     `json:"milestone,omitempty"`
+	DependsOn       dependsOnWire                               `json:"depends_on,omitempty"`
+	ChecklistItems  []taskcorecontract.CreateChecklistItemInput `json:"checklist_items"`
+	WorktreeID      *string                                     `json:"worktree_id,omitempty"`
 }
 
 // DecodeComposePayload parses a compose/template JSON payload.

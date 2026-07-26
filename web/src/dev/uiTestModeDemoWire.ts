@@ -64,12 +64,6 @@ const M_DISC = "Discovery";
 const M_TEST = "Load testing";
 const M_REL = "Release";
 
-const C1 = "c1111111-1111-4111-8111-111111111111";
-const C2 = "c2222222-2222-4222-8222-222222222222";
-const C3 = "c3333333-3333-4333-8333-333333333333";
-const C4 = "c4444444-4444-4444-8444-444444444444";
-const C5 = "c5555555-5555-4555-8555-555555555555";
-const C6 = "c6666666-6666-4666-8666-666666666666";
 
 const ALL_TASK_IDS: string[] = [];
 
@@ -363,7 +357,6 @@ export function demoProjectsListWire(): unknown {
         name: "AuthV2",
         description: "JWT + session hardening across services.",
         status: "active",
-        context_summary: "Primary operator sandbox project.",
         is_default: false,
         created_at: ISO,
         updated_at: ISO,
@@ -373,7 +366,6 @@ export function demoProjectsListWire(): unknown {
         name: "Billing insights",
         description: "Usage metering, exports, and anomaly detection.",
         status: "active",
-        context_summary: "Cross-team billing context.",
         is_default: false,
         created_at: ISO,
         updated_at: ISO,
@@ -383,7 +375,6 @@ export function demoProjectsListWire(): unknown {
         name: "Archived pilot",
         description: "Superseded experiment — kept for layout regression.",
         status: "archived",
-        context_summary: "",
         is_default: false,
         created_at: ISO,
         updated_at: ISO,
@@ -397,90 +388,6 @@ export function demoProjectWire(id: string): unknown | null {
   if (!isDemoProjectId(id)) return null;
   const row = (demoProjectsListWire() as { projects: { id: string }[] }).projects.find((p) => p.id === id);
   return row ?? null;
-}
-
-export function demoContextWire(projectId: string): unknown {
-  if (projectId !== DEMO_PRIMARY_PROJECT_ID) {
-    return { items: [], edges: [], limit: 100 };
-  }
-  return {
-    items: [
-      {
-        id: C1,
-        project_id: DEMO_PRIMARY_PROJECT_ID,
-        tag: "Auth decisions",
-        title: "JWT-first for partner APIs",
-        description: "Partner auth choice",
-        body: "Partners accept bearer tokens only; cookies reserved for first-party.",
-        created_by: "user",
-        pinned: true,
-        created_at: ISO,
-        updated_at: ISO,
-      },
-      {
-        id: C2,
-        project_id: DEMO_PRIMARY_PROJECT_ID,
-        tag: "Security rules",
-        title: "No PII in logs",
-        description: "Logging redaction rule",
-        body: "Structured logs must redact email and phone by default.",
-        created_by: "user",
-        pinned: false,
-        created_at: ISO,
-        updated_at: ISO,
-      },
-      {
-        id: C3,
-        project_id: DEMO_PRIMARY_PROJECT_ID,
-        tag: "General",
-        title: "Rotation cadence",
-        description: "Key rotation schedule",
-        body: "Signing keys rotate every 30 days; overlap window 72h.",
-        created_by: "agent",
-        pinned: false,
-        created_at: ISO,
-        updated_at: ISO,
-      },
-      {
-        id: C4,
-        project_id: DEMO_PRIMARY_PROJECT_ID,
-        tag: "Auth decisions",
-        title: "Session fixation mitigation",
-        description: "Session hardening",
-        body: "Regenerate session id post-auth; SameSite=Lax default.",
-        created_by: "user",
-        pinned: false,
-        created_at: ISO,
-        updated_at: ISO,
-      },
-      {
-        id: C5,
-        project_id: DEMO_PRIMARY_PROJECT_ID,
-        tag: "Security rules",
-        title: "EU residency",
-        description: "Data residency constraint",
-        body: "Auth metadata stores primary region EU.",
-        created_by: "user",
-        pinned: false,
-        created_at: ISO,
-        updated_at: ISO,
-      },
-      {
-        id: C6,
-        project_id: DEMO_PRIMARY_PROJECT_ID,
-        tag: "General",
-        title: "Load test window",
-        description: "Allowed load-test hours",
-        body: "Saturdays 02:00–06:00 UTC only.",
-        created_by: "user",
-        pinned: false,
-        created_at: ISO,
-        updated_at: ISO,
-      },
-    ],
-    edges: [],
-    limit: 100,
-  };
 }
 
 const cyclesPhasesEmpty = {

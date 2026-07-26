@@ -37,19 +37,6 @@ export function decideSyncFrame(input: DecideSyncFrameInput): SyncFrameDecision 
       })),
     };
   }
-  if (frame.kind === "project_context") {
-    return {
-      schedule: "immediate",
-      pendingDelta: {},
-      effects: decideProjectInvalidationKeys({
-        scope: "context",
-        projectId: frame.projectId,
-      }).map((queryKey) => ({
-        kind: "invalidate",
-        queryKey,
-      })),
-    };
-  }
   if (frame.kind === "task_event") {
     const effects: SyncFrameDecision["effects"] = [
       { kind: "invalidate", queryKey: taskQueryKeys.eventsRoot(frame.taskId) },

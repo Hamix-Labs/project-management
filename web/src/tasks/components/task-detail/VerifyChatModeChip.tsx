@@ -5,6 +5,10 @@ import {
   verifyChatModeLabel,
   verifyChatModeSource,
 } from "../../task-display/verifyChatModeDisplay";
+import {
+  GitBranchGlyph,
+  MessagesSquareGlyph,
+} from "./ExecutionBarGlyphs";
 
 type Props = {
   task: Pick<Task, "verify_chat_mode">;
@@ -24,6 +28,8 @@ export function VerifyChatModeChip({ task }: Props) {
   const source = verifyChatModeSource(task.verify_chat_mode);
   const sourceLabel =
     source === "task" ? "Task override" : "Workspace default";
+  const ModeGlyph =
+    mode === "different_chat" ? GitBranchGlyph : MessagesSquareGlyph;
 
   return (
     <span
@@ -32,9 +38,15 @@ export function VerifyChatModeChip({ task }: Props) {
       data-mode={mode}
       data-source={source}
       title={`${sourceLabel}: ${label}`}
-      aria-label={`Verify chat: ${label} (${sourceLabel.toLowerCase()})`}
+      aria-label={`Verification mode: ${label} (${sourceLabel.toLowerCase()})`}
     >
-      <span className="task-verify-chat-mode-chip-label">Verify chat</span>
+      <ModeGlyph className="task-verify-chat-mode-chip-icon" />
+      <span className="task-verify-chat-mode-chip-label">
+        Verification mode
+      </span>
+      <span className="task-verify-chat-mode-chip-sep" aria-hidden="true">
+        ·
+      </span>
       <span className="task-verify-chat-mode-chip-value">{label}</span>
     </span>
   );

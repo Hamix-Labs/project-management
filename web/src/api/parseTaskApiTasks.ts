@@ -163,11 +163,6 @@ export function parseTask(value: unknown): Task {
       base.project_id = projectID;
     }
   }
-  if (Array.isArray(value.project_context_item_ids)) {
-    base.project_context_item_ids = value.project_context_item_ids.map((raw, i) =>
-      parseNonEmptyString(raw, `project_context_item_ids[${i}]`),
-    );
-  }
   if (value.worktree_id !== undefined && value.worktree_id !== null) {
     const wtID = parseString(value.worktree_id, "worktree_id").trim();
     if (wtID !== "") {

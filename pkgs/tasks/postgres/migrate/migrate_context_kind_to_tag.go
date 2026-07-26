@@ -5,14 +5,22 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	"gorm.io/gorm"
 )
 
+// legacyDefaultProjectContextTag was the default freeform tag before project
+// memory was removed (schema rev 22). Kept as a literal so this historical
+// migration does not depend on deleted domain constants.
+const legacyDefaultProjectContextTag = "General"
+
 // migrateContextKindToTag replaces project_context_items.kind with tag.
-// Idempotent: safe when kind is already gone and on fresh installs.
+// Idempotent: safe when the table is already gone, when kind is already gone,
+// and on fresh installs.
 func migrateContextKindToTag(ctx context.Context, db *gorm.DB) error {
 	slog.Debug("trace", "operation", "postgres.migrateContextKindToTag")
+	if !db.Migrator().HasTable("project_context_items") {
+		return nil
+	}
 	hasKind, err := tableHasColumn(ctx, db, "project_context_items", "kind")
 	if err != nil {
 		return fmt.Errorf("probe kind column: %w", err)
@@ -27,7 +35,7 @@ func migrateContextKindToTag(ctx context.Context, db *gorm.DB) error {
 	if !hasTag {
 		if err := db.WithContext(ctx).Exec(
 			`ALTER TABLE project_context_items ADD COLUMN tag TEXT NOT NULL DEFAULT ?`,
-			domain.DefaultProjectContextTag,
+			legacyDefaultProjectContextTag,
 		).Error; err != nil {
 			return fmt.Errorf("add tag column: %w", err)
 		}
@@ -40,7 +48,7 @@ SET tag = CASE
   WHEN trim(kind) = '' THEN ?
   ELSE trim(kind)
 END
-`, domain.DefaultProjectContextTag, domain.DefaultProjectContextTag).Error; err != nil {
+`, legacyDefaultProjectContextTag, legacyDefaultProjectContextTag).Error; err != nil {
 		return fmt.Errorf("backfill tag from kind: %w", err)
 	}
 	if db.Dialector != nil && db.Dialector.Name() == "postgres" {

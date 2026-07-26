@@ -1,4 +1,3 @@
-// Package handler registers /projects* REST routes for taskapi.
 package handler
 
 import (
@@ -33,10 +32,6 @@ func Register(m *http.ServeMux, deps Deps) {
 	m.Handle("GET /projects/{id}", http.HandlerFunc(h.getProject))
 	m.Handle("PATCH /projects/{id}", http.HandlerFunc(h.patchProject))
 	m.Handle("DELETE /projects/{id}", http.HandlerFunc(h.deleteProject))
-	m.Handle("GET /projects/{id}/context", http.HandlerFunc(h.listProjectContext))
-	m.Handle("POST /projects/{id}/context", http.HandlerFunc(h.createProjectContext))
-	m.Handle("PATCH /projects/{id}/context/{contextId}", http.HandlerFunc(h.patchProjectContext))
-	m.Handle("DELETE /projects/{id}/context/{contextId}", http.HandlerFunc(h.deleteProjectContext))
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."

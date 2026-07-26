@@ -204,7 +204,6 @@ Constants: [`TaskChangeType`](../../pkgs/tasks/handler/sse.go). Authoritative li
 | `task_gate_changed` | HTTP | Yes | No |
 | `task_dependency_changed` | HTTP | Yes | No |
 | `project_created` / `updated` / `deleted` | HTTP | Yes | No |
-| `project_context_changed` | HTTP | Yes | No |
 | `settings_changed` | Settings PATCH / supervisor reload | Yes (no id key) | No |
 | `agent_run_cancelled` | Cancel-current-run | Yes | No |
 | `resync` | Hub on gap or eviction | N/A | No |
