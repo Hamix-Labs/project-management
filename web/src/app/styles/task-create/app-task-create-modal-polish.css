@@ -395,8 +395,8 @@
   font-size: var(--text-base);
 }
 
-.task-create-modal-sheet input[type="text"],
-.task-create-modal-sheet input:not([type]) {
+.task-create-modal-sheet input[type="text"]:not(.task-create-tags-pills__input),
+.task-create-modal-sheet input:not([type]):not(.task-create-tags-pills__input) {
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
   background: var(--bg-elevated);
@@ -406,13 +406,17 @@
     box-shadow var(--duration-normal) var(--ease-default);
 }
 
-.task-create-modal-sheet input[type="text"]:hover,
-.task-create-modal-sheet input:not([type]):hover {
+.task-create-modal-sheet
+  input[type="text"]:not(.task-create-tags-pills__input):hover,
+.task-create-modal-sheet
+  input:not([type]):not(.task-create-tags-pills__input):hover {
   border-color: var(--border-interactive-hover);
 }
 
-.task-create-modal-sheet input[type="text"]:focus,
-.task-create-modal-sheet input:not([type]):focus {
+.task-create-modal-sheet
+  input[type="text"]:not(.task-create-tags-pills__input):focus,
+.task-create-modal-sheet
+  input:not([type]):not(.task-create-tags-pills__input):focus {
   border-color: var(--brand);
   box-shadow: var(--shadow-focus);
 }
