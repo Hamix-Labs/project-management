@@ -201,6 +201,16 @@ func (h *Handler) ValidateCompose(ctx context.Context, payload TaskComposePayloa
 	if _, err := parseCreateChecklistItems(payload.ChecklistItems); err != nil {
 		return err
 	}
+	switch opts.GitMode {
+	case ComposeTaskRepoBinding:
+		if len(payload.FunctionInputs) > 0 {
+			return fmt.Errorf("%w: function_inputs is only allowed on templates", domain.ErrInvalidInput)
+		}
+	case ComposeGitBinding:
+		if err := ValidateFunctionInputsSchema(payload.FunctionInputs); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
