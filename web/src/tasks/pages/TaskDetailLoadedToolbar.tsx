@@ -1,3 +1,4 @@
+import { StatusBadge } from "@/components/task-status";
 import {
   TaskDetailSchedule,
   TaskDetailToolbarActions,
@@ -5,6 +6,7 @@ import {
 import { TokenUsageChip } from "../components/task-detail/TokenUsageChip";
 import { VerifyChatModeChip } from "../components/task-detail/VerifyChatModeChip";
 import { canEditTask } from "../task-display/canEditTask";
+import { statusNeedsUserInput } from "../task-display";
 import type { TaskDetailLoadedViewProps } from "./TaskDetailLoadedView";
 
 type TaskDetailLoadedToolbarProps = Pick<
@@ -41,12 +43,28 @@ export function TaskDetailLoadedToolbar({
 }: TaskDetailLoadedToolbarProps) {
   const inReview = task.status === "review";
   const isClosed = task.status === "closed";
+  const needsUser = statusNeedsUserInput(task.status);
 
   return (
     <div className="task-detail-toolbar">
       <div className="task-detail-toolbar-left">
-        <TokenUsageChip taskId={task.id} />
-        <VerifyChatModeChip task={task} />
+        <div
+          className="task-detail-execution-bar"
+          data-testid="task-detail-execution-bar"
+        >
+          <TokenUsageChip taskId={task.id} />
+          <VerifyChatModeChip task={task} />
+          <div
+            className="task-detail-execution-bar__status"
+            data-testid="task-detail-status"
+          >
+            <StatusBadge
+              status={task.status}
+              className="task-detail-status-badge"
+              data-needs-user={needsUser ? "true" : undefined}
+            />
+          </div>
+        </div>
         <TaskDetailSchedule task={task} />
       </div>
       <TaskDetailToolbarActions

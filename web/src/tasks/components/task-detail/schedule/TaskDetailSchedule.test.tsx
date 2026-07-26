@@ -55,18 +55,11 @@ describe("TaskDetailSchedule (read-only)", () => {
     isUiFeatureOmitted.mockImplementation(() => false);
   });
 
-  it("always renders the status badge in the toolbar strip", () => {
-    renderPanel({ status: "done", pickup: null });
-    expect(screen.getByTestId("task-detail-schedule")).toBeInTheDocument();
-    expect(screen.getByTestId("task-detail-status")).toHaveTextContent(/done/i);
+  it("hides empty copy for terminal tasks without a pickup", () => {
+    const { container } = renderPanel({ status: "done", pickup: null });
+    expect(container).toBeEmptyDOMElement();
+    expect(screen.queryByTestId("task-detail-status")).toBeNull();
     expect(screen.queryByText(/no pickup scheduled/i)).toBeNull();
-  });
-
-  it("highlights the status badge when status needs user input", () => {
-    renderPanel({ status: "review", pickup: null });
-    expect(
-      screen.getByText("Awaiting review", { selector: ".task-status-badge" }),
-    ).toHaveAttribute("data-needs-user", "true");
   });
 
   it("renders a schedule row formatted in the app timezone", () => {
@@ -97,7 +90,7 @@ describe("TaskDetailSchedule (read-only)", () => {
       status: "running",
       pickup: "2026-04-22T13:00:00Z",
     });
-    expect(screen.getByTestId("task-detail-status")).toHaveTextContent(/running/i);
+    expect(screen.queryByTestId("task-detail-status")).toBeNull();
     expect(screen.getByTestId("task-detail-schedule-badge")).toBeInTheDocument();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
@@ -109,26 +102,22 @@ describe("TaskDetailSchedule (read-only)", () => {
     expect(screen.queryByTestId("task-detail-phase-duration")).toBeNull();
   });
 
-  it("hides pickup schedule UI when launch omits schedule but still shows status", () => {
+  it("returns null when launch omits schedule", () => {
     isUiFeatureOmitted.mockImplementation((feature) => feature === "schedule");
-    renderPanel({
+    const { container } = renderPanel({
       status: "ready",
       pickup: "2026-04-22T13:00:00Z",
     });
-    expect(screen.getByTestId("task-detail-schedule")).toBeInTheDocument();
-    expect(screen.getByTestId("task-detail-status")).toHaveTextContent(/ready/i);
-    expect(screen.queryByTestId("task-detail-schedule-badge")).toBeNull();
-    expect(screen.queryByText(/no pickup scheduled/i)).toBeNull();
+    expect(container).toBeEmptyDOMElement();
   });
 
-  it("stacks status and schedule rows when a pickup time is set", () => {
+  it("renders a single schedule row when a pickup time is set", () => {
     const { container } = renderPanel({
       status: "ready",
       pickup: "2026-04-22T13:00:00Z",
     });
     const rows = container.querySelectorAll(".task-detail-schedule-row");
-    expect(rows).toHaveLength(2);
-    expect(screen.getByTestId("task-detail-status")).toBeInTheDocument();
+    expect(rows).toHaveLength(1);
     expect(screen.getByTestId("task-detail-schedule-badge")).toBeInTheDocument();
   });
 });

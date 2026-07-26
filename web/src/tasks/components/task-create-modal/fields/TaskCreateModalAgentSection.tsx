@@ -1,6 +1,7 @@
 import { useId } from "react";
 import { Link } from "react-router-dom";
 import { CustomSelect, type CustomSelectOption } from "@/components/custom-select";
+import { verifyChatModeLabel } from "../../../task-display/verifyChatModeDisplay";
 import { AgentBotIcon, AgentShieldCheckIcon } from "./TaskCreateAgentIcons";
 import { TaskCreateConfigSectionHeader } from "./TaskCreateConfigSectionHeader";
 import {
@@ -12,8 +13,8 @@ import { TaskCreateModalRunnerField } from "./TaskCreateModalRunnerField";
 
 const VERIFY_CHAT_OPTIONS: CustomSelectOption[] = [
   { value: "", label: "Use workspace default" },
-  { value: "same_chat", label: "Continue execute chat" },
-  { value: "different_chat", label: "Start new chat" },
+  { value: "same_chat", label: verifyChatModeLabel("same_chat") },
+  { value: "different_chat", label: verifyChatModeLabel("different_chat") },
 ];
 
 /**

@@ -14,8 +14,8 @@ import {
 import type { HandleField } from "./settingsSectionTypes";
 
 const VERIFY_CHAT_MODE_OPTIONS: SettingsSelectOption[] = [
-  { value: "same_chat", label: "Continue execute chat" },
-  { value: "different_chat", label: "Start new chat" },
+  { value: "same_chat", label: "Same chat" },
+  { value: "different_chat", label: "Different chat" },
 ];
 
 /**
