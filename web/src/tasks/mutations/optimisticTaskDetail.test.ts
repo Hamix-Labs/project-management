@@ -55,14 +55,12 @@ describe("mergePatchIntoTask", () => {
       project_id: "proj-1",
       tags: ["a"],
       milestone: "M1",
-      project_context_item_ids: ["c1"],
       pickup_not_before: "2026-07-01T00:00:00Z",
     });
     const merged = mergePatchIntoTask(task, basePatch);
     expect(merged.project_id).toBe("proj-1");
     expect(merged.tags).toEqual(["a"]);
     expect(merged.milestone).toBe("M1");
-    expect(merged.project_context_item_ids).toEqual(["c1"]);
     expect(merged.pickup_not_before).toBe("2026-07-01T00:00:00Z");
   });
 });

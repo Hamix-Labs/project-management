@@ -18,7 +18,6 @@ type Input = {
   projectId: string;
   worktreeId: string;
   onAssignmentChange: (next: ComposeGitAssignment) => void;
-  onProjectContextClear: () => void;
 };
 
 export function useComposeGitAssignment(input: Input) {
@@ -122,12 +121,10 @@ export function useComposeGitAssignment(input: Input) {
     worktreeOptions,
     selectRepository: (repositoryId: string) => {
       projectChosenByUserRef.current = false;
-      input.onProjectContextClear();
       input.onAssignmentChange(selectRepositoryState(assignment, repositoryId));
     },
     selectProject: (projectId: string) => {
       projectChosenByUserRef.current = true;
-      input.onProjectContextClear();
       input.onAssignmentChange(selectProjectState(assignment, projectId));
     },
     selectWorktree: (worktreeId: string) => {

@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import type { PriorityChoice, ChecklistItemDraft } from "@/types";
-import type { RichPromptEditorProjectContextProps } from "@/components/rich-prompt";
 import { ChecklistCriterionModal } from "../modals/ChecklistCriterionModal";
 import { TaskComposeChecklistFields } from "./TaskComposeChecklistFields";
 import { TaskComposePromptField } from "./TaskComposePromptField";
@@ -29,13 +28,6 @@ export type TaskComposeFieldsProps = {
   onRemoveChecklistRow: (index: number) => void;
   /** Passed to `RichPromptEditor` as `key` so the editor resets when needed. */
   editorKey: string;
-  /**
-   * When provided, the prompt editor wires the `#` project context
-   * suggestion plugin and renders the read-only REFERENCES block above the
-   * editable area. Pass `undefined` for surfaces where project context
-   * isn't applicable (e.g. nested subtask drafts that inherit from parent).
-   */
-  projectContext?: RichPromptEditorProjectContextProps;
   /** Rendered between the title row and the prompt editor (e.g. git binding). */
   betweenTitleAndPrompt?: ReactNode;
   /** When set, @-mentions resolve against this worktree. */
@@ -59,7 +51,6 @@ export function TaskComposeFields({
   onUpdateChecklistRow,
   onRemoveChecklistRow,
   editorKey,
-  projectContext,
   betweenTitleAndPrompt,
   worktreeId,
 }: TaskComposeFieldsProps) {
@@ -100,7 +91,6 @@ export function TaskComposeFields({
         prompt={prompt}
         disabled={disabled}
         onPromptChange={onPromptChange}
-        projectContext={projectContext}
         worktreeId={worktreeId}
       />
 

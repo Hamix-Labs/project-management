@@ -12,7 +12,6 @@ type Props = {
   projectId: string;
   worktreeId: string;
   onAssignmentChange: (next: ComposeGitAssignment) => void;
-  onProjectContextClear: () => void;
   disabled?: boolean;
 };
 
@@ -22,18 +21,15 @@ export function TaskCreateAssignmentFields({
   projectId,
   worktreeId,
   onAssignmentChange,
-  onProjectContextClear,
   disabled = false,
 }: Props) {
   const onAssignmentChangeStable = useCallback(onAssignmentChange, [onAssignmentChange]);
-  const onProjectContextClearStable = useCallback(onProjectContextClear, [onProjectContextClear]);
 
   const git = useComposeGitAssignment({
     repositoryId,
     projectId,
     worktreeId,
     onAssignmentChange: onAssignmentChangeStable,
-    onProjectContextClear: onProjectContextClearStable,
   });
 
   if (git.noRepositories) {

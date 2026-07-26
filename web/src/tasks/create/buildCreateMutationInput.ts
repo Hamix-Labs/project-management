@@ -17,7 +17,6 @@ export function buildCreateTaskMutationInput(
     verify_chat_mode: compose.verify_chat_mode,
     pickup_not_before: fields.newSchedule,
     project_id: fields.newProjectID,
-    project_context_item_ids: compose.project_context_item_ids ?? [],
     repository_id: fields.newRepositoryID,
     worktree_id: fields.newWorktreeID,
     tags: compose.tags ?? [],

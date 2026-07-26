@@ -5,7 +5,6 @@ import { useDocumentTitle } from "@/shared/useDocumentTitle";
 import { useProject } from "./hooks";
 import { ProjectDeleteConfirmDialog } from "./ProjectDeleteConfirmDialog";
 import { ProjectSettingsPanel } from "./ProjectSettingsPanel";
-import { ProjectContextEntryCard } from "./ProjectContextEntryCard";
 import { useDeleteProjectMutation } from "./mutations";
 
 export function ProjectDetailPage() {
@@ -36,7 +35,7 @@ export function ProjectDetailPage() {
   return (
     <section className="panel task-detail-panel pd">
       <header className="pd__header">
-        <Link to="/projects" className="pd__back project-context-back-link">
+        <Link to="/projects" className="pd__back">
           <span aria-hidden="true">&#8249;</span>
           All projects
         </Link>
@@ -120,8 +119,6 @@ export function ProjectDetailPage() {
       {project.data ? (
         <div className="pd__grid">
           <ProjectSettingsPanel project={project.data} />
-
-          <ProjectContextEntryCard projectId={projectId} />
         </div>
       ) : null}
     </section>

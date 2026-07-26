@@ -1,7 +1,5 @@
 import { useId, useState } from "react";
 import { RichPromptEditor } from "@/components/rich-prompt";
-import { useProjectContextPromptBinding } from "@/hooks/useProjectContextPromptBinding";
-import { isUiFeatureOmitted } from "@/launch/omittedFeatures";
 import { promptHasVisibleContent } from "@/lib/promptFormat";
 import { Modal } from "@/shared/Modal";
 import { MutationErrorBanner } from "@/shared/MutationErrorBanner";
@@ -24,8 +22,6 @@ export type PolishConfirmPayload = {
 
 type Props = {
   worktreeId?: string;
-  projectId?: string;
-  projectContextItemIds?: string[];
   criteria?: PolishCriterionOption[];
   saving: boolean;
   pending: boolean;
@@ -36,8 +32,6 @@ type Props = {
 
 export function TaskPolishDialog({
   worktreeId,
-  projectId = "",
-  projectContextItemIds = [],
   criteria = [],
   saving,
   pending,
@@ -54,15 +48,6 @@ export function TaskPolishDialog({
   const [instructions, setInstructions] = useState("");
   const [flaggedIds, setFlaggedIds] = useState<Set<string>>(() => new Set());
   const drafts = usePolishCriterionDrafts();
-  const [selectedContextIds, setSelectedContextIds] = useState(
-    projectContextItemIds,
-  );
-  const projectsUiEnabled = !isUiFeatureOmitted("projects");
-  const promptProjectContext = useProjectContextPromptBinding({
-    projectId: projectsUiEnabled ? projectId : "",
-    selectedIds: selectedContextIds,
-    onSelectedIdsChange: setSelectedContextIds,
-  });
   const canSubmit =
     promptHasVisibleContent(instructions) && !saving && !pending;
   const controlsDisabled = saving || pending;
@@ -157,7 +142,6 @@ export function TaskPolishDialog({
                 disabled={controlsDisabled}
                 placeholder="Describe what should change in this polish pass…"
                 worktreeId={worktreeId?.trim() || undefined}
-                projectContext={promptProjectContext ?? undefined}
               />
             </div>
           </div>

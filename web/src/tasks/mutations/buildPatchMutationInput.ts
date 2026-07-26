@@ -9,7 +9,6 @@ export type BuildPatchMutationInputArgs = {
   status: Status;
   priority: Priority;
   project_id: string | null;
-  project_context_item_ids: string[];
   tagsCsv: string;
   milestone: string;
   cursor_model: string;
@@ -27,7 +26,6 @@ export type PatchMutationInput = {
   status: Status;
   priority: Priority;
   project_id: string | null;
-  project_context_item_ids: string[];
   tags: string[];
   milestone: string | null;
   cursor_model: string;
@@ -51,7 +49,6 @@ export function buildPatchMutationInput(
     status: args.status,
     priority: args.priority,
     project_id: args.project_id,
-    project_context_item_ids: args.project_context_item_ids,
     tags: parseTagsFromCsv(args.tagsCsv ?? ""),
     milestone: (args.milestone ?? "").trim() || null,
     cursor_model: (args.cursor_model ?? "").trim(),

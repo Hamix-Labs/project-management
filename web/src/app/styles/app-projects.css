@@ -1,5 +1,4 @@
 /* Project styles split by page surface; keep import order aligned with the former monolithic cascade. */
 @import "./projects/app-project-list.css";
 @import "./projects/app-project-detail.css";
-@import "./projects/app-project-context.css";
 @import "./projects/app-project-sections.css";

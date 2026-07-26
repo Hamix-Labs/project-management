@@ -4,7 +4,6 @@ export type QueryInvalidationKey = readonly unknown[];
 export type ProjectInvalidationScope =
   | { scope: "list" }
   | { scope: "detail"; projectId: string }
-  | { scope: "context"; projectId: string }
   | {
       scope: "repositoryLink";
       projectId: string;

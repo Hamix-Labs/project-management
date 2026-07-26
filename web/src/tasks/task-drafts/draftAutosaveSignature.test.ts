@@ -16,7 +16,6 @@ function baseInput(): DraftAutosaveSignatureInput {
     runner: TASK_TEST_DEFAULTS.runner,
     cursorModel: TASK_TEST_DEFAULTS.cursor_model,
     projectId: "",
-    projectContextItemIds: [],
     checklistItems: [],
   };
 }
@@ -103,24 +102,9 @@ describe("draftAutosaveSignature", () => {
         runner: TASK_TEST_DEFAULTS.runner,
         cursor_model: TASK_TEST_DEFAULTS.cursor_model,
         project_id: "",
-        project_context_item_ids: [],
         checklist_items: [],
       },
     });
-  });
-
-  it("changes when project context selection flips", () => {
-    const a = draftAutosaveSignature({
-      ...baseInput(),
-      projectId: "project-1",
-      projectContextItemIds: ["ctx-1"],
-    });
-    const b = draftAutosaveSignature({
-      ...baseInput(),
-      projectId: "project-1",
-      projectContextItemIds: ["ctx-1", "ctx-2"],
-    });
-    expect(a).not.toBe(b);
   });
 
   it("changes when the bound project changes", () => {

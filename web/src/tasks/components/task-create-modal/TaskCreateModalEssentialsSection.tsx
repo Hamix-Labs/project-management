@@ -15,7 +15,6 @@ type Props = {
   onRepositoryChange: (repositoryId: string) => void;
   onProjectChange: (projectId: string) => void;
   onWorktreeChange: (worktreeId: string) => void;
-  onProjectContextClear: () => void;
 };
 
 export function TaskCreateModalEssentialsSection({
@@ -30,7 +29,6 @@ export function TaskCreateModalEssentialsSection({
   onRepositoryChange,
   onProjectChange,
   onWorktreeChange,
-  onProjectContextClear,
 }: Props) {
   return (
     <TaskCreateModalSection
@@ -52,7 +50,6 @@ export function TaskCreateModalEssentialsSection({
         onRepositoryChange={onRepositoryChange}
         onProjectChange={onProjectChange}
         onWorktreeChange={onWorktreeChange}
-        onProjectContextClear={onProjectContextClear}
       />
     </TaskCreateModalSection>
   );

@@ -19,12 +19,6 @@ export type TaskDraftPayload = {
    */
   project_id?: string;
   /**
-   * Optional in older drafts. Mirrors the task's `project_context_item_ids`
-   * so the REFERENCES block in the prompt editor reappears with the same
-   * memory nodes the operator selected before closing the modal.
-   */
-  project_context_item_ids?: string[];
-  /**
    * Optional git binding fields persisted with newer drafts. Omitted in
    * older drafts; when present, resume restores repo/worktree selection.
    */

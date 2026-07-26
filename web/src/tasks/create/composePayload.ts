@@ -31,7 +31,6 @@ export function buildComposePayloadFromForm(
     verify_chat_mode: fields.newTaskVerifyChatMode.trim() || undefined,
     project_id: fields.newProjectID.trim(),
     repository_id: fields.newRepositoryID.trim(),
-    project_context_item_ids: fields.newProjectContextItemIDs,
     pickup_not_before: fields.newSchedule ?? undefined,
     tags: parseTagsFromCsv(fields.newTagsCsv),
     milestone: fields.newMilestone.trim() || undefined,
@@ -52,7 +51,6 @@ export function hydrateFormFromComposePayload(
   projectID: string;
   repositoryID: string;
   worktreeID: string;
-  projectContextItemIDs: string[];
   schedule: string | null;
   autonomyEnabled: boolean;
   tagsCsv: string;
@@ -73,9 +71,6 @@ export function hydrateFormFromComposePayload(
   const repositoryID =
     typeof payload.repository_id === "string" ? payload.repository_id : "";
   const worktreeID = "";
-  const projectContextItemIDs = Array.isArray(payload.project_context_item_ids)
-    ? payload.project_context_item_ids
-    : [];
   const status: Status = payload.status ?? "ready";
   return {
     title: payload.title ?? "",
@@ -86,7 +81,6 @@ export function hydrateFormFromComposePayload(
     projectID,
     repositoryID,
     worktreeID,
-    projectContextItemIDs,
     schedule: payload.pickup_not_before ?? null,
     autonomyEnabled: status === "ready",
     tagsCsv: (payload.tags ?? []).join(", "),

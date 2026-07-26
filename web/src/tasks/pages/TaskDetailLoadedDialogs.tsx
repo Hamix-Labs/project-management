@@ -134,8 +134,6 @@ export function TaskDetailLoadedDialogs({
       {polishDialogOpen ? (
         <TaskPolishDialog
           worktreeId={task.worktree_id}
-          projectId={task.project_id}
-          projectContextItemIds={task.project_context_item_ids}
           criteria={polishCriteria}
           saving={saving}
           pending={polishMutation.isPending}

@@ -39,9 +39,6 @@ export function useTaskCreateTaskMutations(input: {
           ? { verify_chat_mode: mutationInput.verify_chat_mode }
           : {}),
         ...(mutationInput.project_id ? { project_id: mutationInput.project_id } : {}),
-        ...(mutationInput.project_context_item_ids.length > 0
-          ? { project_context_item_ids: mutationInput.project_context_item_ids }
-          : {}),
         ...(mutationInput.pickup_not_before !== null
           ? { pickup_not_before: mutationInput.pickup_not_before }
           : {}),

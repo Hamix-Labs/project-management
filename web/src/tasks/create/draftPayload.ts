@@ -48,7 +48,6 @@ export function buildResumedDraftAutosaveBaseline(input: {
   runner: string;
   cursorModel: string;
   projectID: string;
-  projectContextItemIDs: string[];
   checklistItems: TaskDraftChecklistItem[];
 }): string {
   return draftAutosaveSignature({
@@ -60,7 +59,6 @@ export function buildResumedDraftAutosaveBaseline(input: {
     runner: input.runner,
     cursorModel: input.cursorModel,
     projectId: input.projectID,
-    projectContextItemIds: input.projectContextItemIDs,
     checklistItems: input.checklistItems,
   });
 }
@@ -73,7 +71,6 @@ export function computeDraftAutosaveSignature(fields: TaskCreateFormFields): str
     prompt: fields.newPrompt,
     priority: fields.newPriority,
     projectId: fields.newProjectID,
-    projectContextItemIds: fields.newProjectContextItemIDs,
     checklistItems: normalizeChecklistItems(fields.newChecklistItems),
     runner: fields.newTaskRunner,
     cursorModel: fields.newTaskCursorModel,
@@ -91,7 +88,6 @@ export function buildDraftSavePayload(fields: TaskCreateFormFields): DraftSavePa
       runner: fields.newTaskRunner,
       cursor_model: fields.newTaskCursorModel,
       project_id: fields.newProjectID,
-      project_context_item_ids: fields.newProjectContextItemIDs,
       checklist_items: normalizeChecklistItems(fields.newChecklistItems),
     },
   };
@@ -110,7 +106,6 @@ export function applyResumedDraftToForm(input: {
   setNewPriority: (priority: PriorityChoice) => void;
   setNewChecklistItems: (items: ChecklistItemDraft[]) => void;
   setNewProjectID: (id: string) => void;
-  setNewProjectContextItemIDs: (ids: string[]) => void;
   setDraftAutosaveBaseline: (baseline: string) => void;
   setDraftAutosaveBaselineID: (id: string) => void;
 }) {
@@ -132,11 +127,7 @@ export function applyResumedDraftToForm(input: {
     typeof input.draft.payload.project_id === "string"
       ? input.draft.payload.project_id
       : "";
-  const resumedProjectContextIds = Array.isArray(input.draft.payload.project_context_item_ids)
-    ? input.draft.payload.project_context_item_ids
-    : [];
   input.setNewProjectID(resumedProjectID);
-  input.setNewProjectContextItemIDs(resumedProjectContextIds);
   const resumedTitle = input.draft.payload.title ?? "";
   input.setDraftAutosaveBaseline(
     buildResumedDraftAutosaveBaseline({
@@ -147,7 +138,6 @@ export function applyResumedDraftToForm(input: {
       runner: resumedRunner,
       cursorModel: resumedModel,
       projectID: resumedProjectID,
-      projectContextItemIDs: resumedProjectContextIds,
       checklistItems: input.draft.payload.checklist_items ?? [],
     }),
   );

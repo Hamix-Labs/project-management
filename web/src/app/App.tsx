@@ -55,11 +55,6 @@ const ProjectDetailPage = lazy(() =>
     default: m.ProjectDetailPage,
   })),
 );
-const ProjectContextPage = lazy(() =>
-  import("@/projects/ProjectContextPage").then((m) => ({
-    default: m.ProjectContextPage,
-  })),
-);
 const RepositoriesListPage = lazy(() =>
   import("@/worktrees").then((m) => ({
     default: m.RepositoriesListPage,
@@ -283,10 +278,6 @@ export default function App() {
           {projectsUiEnabled ? (
             <>
               <Route path="projects" element={<ProjectListPage />} />
-              <Route
-                path="projects/:projectId/context"
-                element={<ProjectContextPage />}
-              />
               <Route path="projects/:projectId" element={<ProjectDetailPage />} />
             </>
           ) : (

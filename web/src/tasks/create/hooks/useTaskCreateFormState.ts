@@ -26,7 +26,6 @@ export function useTaskCreateFormState(queryClient: QueryClient) {
   const [newTaskVerifyChatMode, setNewTaskVerifyChatMode] = useState("");
   const [newRepositoryID, setNewRepositoryID] = useState("");
   const [newProjectID, setNewProjectID] = useState("");
-  const [newProjectContextItemIDs, setNewProjectContextItemIDs] = useState<string[]>([]);
   const [newWorktreeID, setNewWorktreeID] = useState("");
   const [newSchedule, setNewSchedule] = useState<string | null>(null);
   const [newAutonomyEnabled, setNewAutonomyEnabled] = useState(true);
@@ -69,7 +68,6 @@ export function useTaskCreateFormState(queryClient: QueryClient) {
     setNewTaskVerifyChatMode("");
     setNewRepositoryID("");
     setNewProjectID("");
-    setNewProjectContextItemIDs([]);
     setNewWorktreeID("");
     setNewSchedule(null);
     setNewAutonomyEnabled(true);
@@ -93,7 +91,6 @@ export function useTaskCreateFormState(queryClient: QueryClient) {
     setNewTaskCursorModel(t.cursor_model ?? "");
     setNewTaskVerifyChatMode(t.verify_chat_mode ?? "");
     setNewProjectID(t.project_id ?? "");
-    setNewProjectContextItemIDs(t.project_context_item_ids ?? []);
     setNewWorktreeID(t.worktree_id ?? "");
     setNewSchedule(t.pickup_not_before ?? null);
     setNewAutonomyEnabled(t.status === "ready");
@@ -113,7 +110,6 @@ export function useTaskCreateFormState(queryClient: QueryClient) {
       newTaskVerifyChatMode,
       newProjectID,
       newRepositoryID,
-      newProjectContextItemIDs,
       newWorktreeID,
       newSchedule,
       newAutonomyEnabled,
@@ -130,7 +126,6 @@ export function useTaskCreateFormState(queryClient: QueryClient) {
       newDraftID,
       newMilestone,
       newPriority,
-      newProjectContextItemIDs,
       newRepositoryID,
       newWorktreeID,
       newProjectID,
@@ -167,7 +162,6 @@ export function useTaskCreateFormState(queryClient: QueryClient) {
     setNewTaskVerifyChatMode,
     setNewRepositoryID,
     setNewProjectID,
-    setNewProjectContextItemIDs,
     setNewWorktreeID,
     setNewSchedule,
     setNewAutonomyEnabled,
@@ -184,7 +178,6 @@ export function useTaskCreateFormState(queryClient: QueryClient) {
     newTaskVerifyChatMode,
     newProjectID,
     newRepositoryID,
-    newProjectContextItemIDs,
     newWorktreeID,
     newSchedule,
     newAutonomyEnabled,

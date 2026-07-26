@@ -1,40 +1,9 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, within } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { render, screen } from "@testing-library/react";
 import { StrictMode, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ProjectContextItem } from "@/types";
 import { ModalStackProvider } from "@/shared/ModalStackContext";
 import { RichPromptEditor } from "./RichPromptEditor";
-
-const projectId = "project-1";
-
-const items: ProjectContextItem[] = [
-  {
-    id: "ctx-decision",
-    project_id: projectId,
-    tag: "decision",
-    title: "API plan",
-    description: "",
-    body: "Use HTTP",
-    created_by: "user",
-    pinned: false,
-    created_at: "2026-04-29T00:00:00Z",
-    updated_at: "2026-04-29T00:00:00Z",
-  },
-  {
-    id: "ctx-constraint",
-    project_id: projectId,
-    tag: "constraint",
-    title: "Request budget",
-    description: "",
-    body: "Stay under 200ms",
-    created_by: "user",
-    pinned: false,
-    created_at: "2026-04-29T00:00:00Z",
-    updated_at: "2026-04-29T00:00:00Z",
-  },
-];
 
 function makeWrapper() {
   const queryClient = new QueryClient({
@@ -53,7 +22,7 @@ function makeWrapper() {
   return { Wrapper };
 }
 
-describe("RichPromptEditor — project context wiring", () => {
+describe("RichPromptEditor", () => {
   beforeEach(() => {
     vi.stubGlobal(
       "fetch",
@@ -70,90 +39,15 @@ describe("RichPromptEditor — project context wiring", () => {
     vi.unstubAllGlobals();
   });
 
-  it("does not render the REFERENCES block when no items are selected", () => {
+  it("renders the formatting toolbar", () => {
     const { Wrapper } = makeWrapper();
     render(
-      <RichPromptEditor
-        id="rich-1"
-        value="<p></p>"
-        onChange={vi.fn()}
-        projectContext={{
-          items,
-          selectedIds: [],
-          onSelectedIdsChange: vi.fn(),
-        }}
-      />,
+      <RichPromptEditor id="rich-1" value="<p></p>" onChange={vi.fn()} />,
       { wrapper: Wrapper },
     );
     expect(
-      screen.queryByLabelText(/selected project context/i),
-    ).not.toBeInTheDocument();
-  });
-
-  it("renders the read-only REFERENCES block above the editor with title + short id", () => {
-    const { Wrapper } = makeWrapper();
-    render(
-      <RichPromptEditor
-        id="rich-2"
-        value="<p></p>"
-        onChange={vi.fn()}
-        projectContext={{
-          items,
-          selectedIds: ["ctx-decision", "ctx-constraint"],
-          onSelectedIdsChange: vi.fn(),
-        }}
-      />,
-      { wrapper: Wrapper },
-    );
-    const block = screen.getByLabelText(/selected project context/i);
-    expect(block).toHaveAttribute("data-project-references", "true");
-    const apiPlanRow = within(block)
-      .getByText("API plan")
-      .closest("[data-project-context-id]");
-    expect(apiPlanRow).not.toBeNull();
-    expect(apiPlanRow).toHaveAttribute("data-project-context-id", "ctx-decision");
-    // Short-id label includes ` · ctxdec` (lowercased, dashes stripped, 6 chars).
-    expect(apiPlanRow?.textContent).toContain("ctxdec");
-    // 2 nodes total -> "2 nodes" header label.
-    expect(within(block).getByText(/2 nodes/i)).toBeInTheDocument();
-  });
-
-  it("calls onSelectedIdsChange when an item is removed via the REFERENCES block", async () => {
-    const user = userEvent.setup();
-    const { Wrapper } = makeWrapper();
-    const onSelectedIdsChange = vi.fn();
-    render(
-      <RichPromptEditor
-        id="rich-3"
-        value="<p></p>"
-        onChange={vi.fn()}
-        projectContext={{
-          items,
-          selectedIds: ["ctx-decision", "ctx-constraint"],
-          onSelectedIdsChange,
-        }}
-      />,
-      { wrapper: Wrapper },
-    );
-    await user.click(
-      screen.getByRole("button", { name: /remove reference to api plan/i }),
-    );
-    expect(onSelectedIdsChange).toHaveBeenCalledWith(["ctx-constraint"]);
-  });
-
-  it("never renders the REFERENCES block when projectContext is omitted", () => {
-    const { Wrapper } = makeWrapper();
-    render(
-      <RichPromptEditor
-        id="rich-4"
-        value="<p></p>"
-        onChange={vi.fn()}
-      />,
-      { wrapper: Wrapper },
-    );
-    expect(
-      screen.queryByLabelText(/selected project context/i),
-    ).not.toBeInTheDocument();
+      screen.getByRole("toolbar", { name: /text formatting/i }),
+    ).toBeInTheDocument();
   });
 
   it("mounts under StrictMode without throwing (TipTap immediatelyRender)", async () => {

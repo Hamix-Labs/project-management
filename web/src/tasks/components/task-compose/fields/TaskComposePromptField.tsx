@@ -1,8 +1,5 @@
 import { FieldLabel } from "@/shared/FieldLabel";
-import {
-  RichPromptEditor,
-  type RichPromptEditorProjectContextProps,
-} from "@/components/rich-prompt";
+import { RichPromptEditor } from "@/components/rich-prompt";
 
 type Props = {
   idsPrefix: string;
@@ -10,7 +7,6 @@ type Props = {
   prompt: string;
   disabled: boolean;
   onPromptChange: (v: string) => void;
-  projectContext?: RichPromptEditorProjectContextProps;
   worktreeId?: string;
   /** When true, the section header owns the label — omit the field label. */
   hideLabel?: boolean;
@@ -22,7 +18,6 @@ export function TaskComposePromptField({
   prompt,
   disabled,
   onPromptChange,
-  projectContext,
   worktreeId,
   hideLabel = false,
 }: Props) {
@@ -46,12 +41,7 @@ export function TaskComposePromptField({
           value={prompt}
           onChange={onPromptChange}
           disabled={disabled}
-          placeholder={
-            projectContext
-              ? "Describe the task in detail. Type # to reference project context…"
-              : "Describe the task in detail. Type @ to mention a repo file…"
-          }
-          projectContext={projectContext}
+          placeholder="Describe the task in detail. Type @ to mention a repo file…"
           worktreeId={worktreeId}
         />
       </div>

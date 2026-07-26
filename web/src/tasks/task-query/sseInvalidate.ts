@@ -37,7 +37,6 @@ export type TaskChangeFrame =
       data?: unknown;
     }
   | { kind: "project"; projectId: string }
-  | { kind: "project_context"; projectId: string }
   | {
       kind: "cycle";
       taskId: string;
@@ -200,9 +199,6 @@ export function parseTaskChangeFrame(data: string): TaskChangeFrame | null {
   }
   if (isProjectHintType(o.type)) {
     return { kind: "project", projectId: id };
-  }
-  if (o.type === SSE_CHANGE_TYPE.projectContextChanged) {
-    return { kind: "project_context", projectId: id };
   }
   if (isTaskHintType(o.type)) {
     const frame: TaskChangeFrame = { kind: "task", taskId: id };
