@@ -286,7 +286,6 @@
 @media (hover: hover) {
   .app-nav__link:hover {
     color: var(--text-primary);
-    background: var(--neutral-fill-faint);
   }
 }
 
