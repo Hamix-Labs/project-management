@@ -29,6 +29,7 @@ export type SettingsFormState = {
   cursorBin: string;
   cursorModel: string;
   verifyModel: string;
+  verifyChatMode: "same_chat" | "different_chat";
   maxRunDurationSeconds: string;
   agentPickupDelaySeconds: string;
   displayTimezone: string;
@@ -49,6 +50,7 @@ export function toFormState(s: AppSettings): SettingsFormState {
     cursorBin: s.cursor_bin,
     cursorModel: s.cursor_model,
     verifyModel: s.verify_model,
+    verifyChatMode: s.verify_chat_mode,
     maxRunDurationSeconds: String(s.max_run_duration_seconds),
     agentPickupDelaySeconds: String(s.agent_pickup_delay_seconds),
     displayTimezone: s.display_timezone,
@@ -72,6 +74,9 @@ export function diffPatch(
   }
   if (initial.verify_model !== form.verifyModel.trim()) {
     out.verify_model = form.verifyModel.trim();
+  }
+  if (initial.verify_chat_mode !== form.verifyChatMode) {
+    out.verify_chat_mode = form.verifyChatMode;
   }
   const parsedMax = Number.parseInt(form.maxRunDurationSeconds.trim() || "0", 10);
   if (Number.isFinite(parsedMax) && parsedMax !== initial.max_run_duration_seconds) {

@@ -23,6 +23,7 @@ export function useTaskCreateFormState(queryClient: QueryClient) {
   const [newPriority, setNewPriority] = useState<PriorityChoice>("");
   const [newTaskRunner, setNewTaskRunner] = useState("cursor");
   const [newTaskCursorModel, setNewTaskCursorModel] = useState("");
+  const [newTaskVerifyChatMode, setNewTaskVerifyChatMode] = useState("");
   const [newRepositoryID, setNewRepositoryID] = useState("");
   const [newProjectID, setNewProjectID] = useState("");
   const [newProjectContextItemIDs, setNewProjectContextItemIDs] = useState<string[]>([]);
@@ -65,6 +66,7 @@ export function useTaskCreateFormState(queryClient: QueryClient) {
     setNewPriority("");
     setNewTaskRunner(defaultRunnerFromSettings(settings));
     setNewTaskCursorModel(defaultCursorModelFromSettings(settings));
+    setNewTaskVerifyChatMode("");
     setNewRepositoryID("");
     setNewProjectID("");
     setNewProjectContextItemIDs([]);
@@ -89,6 +91,7 @@ export function useTaskCreateFormState(queryClient: QueryClient) {
     setNewPriority(t.priority);
     setNewTaskRunner(t.runner);
     setNewTaskCursorModel(t.cursor_model ?? "");
+    setNewTaskVerifyChatMode(t.verify_chat_mode ?? "");
     setNewProjectID(t.project_id ?? "");
     setNewProjectContextItemIDs(t.project_context_item_ids ?? []);
     setNewWorktreeID(t.worktree_id ?? "");
@@ -107,6 +110,7 @@ export function useTaskCreateFormState(queryClient: QueryClient) {
       newPriority,
       newTaskRunner,
       newTaskCursorModel,
+      newTaskVerifyChatMode,
       newProjectID,
       newRepositoryID,
       newProjectContextItemIDs,
@@ -134,6 +138,7 @@ export function useTaskCreateFormState(queryClient: QueryClient) {
       newSchedule,
       newTagsCsv,
       newTaskCursorModel,
+      newTaskVerifyChatMode,
       newTaskRunner,
       newTitle,
     ],
@@ -159,6 +164,7 @@ export function useTaskCreateFormState(queryClient: QueryClient) {
     setNewPriority,
     setNewTaskRunner,
     setNewTaskCursorModel,
+    setNewTaskVerifyChatMode,
     setNewRepositoryID,
     setNewProjectID,
     setNewProjectContextItemIDs,
@@ -175,6 +181,7 @@ export function useTaskCreateFormState(queryClient: QueryClient) {
     newPriority,
     newTaskRunner,
     newTaskCursorModel,
+    newTaskVerifyChatMode,
     newProjectID,
     newRepositoryID,
     newProjectContextItemIDs,

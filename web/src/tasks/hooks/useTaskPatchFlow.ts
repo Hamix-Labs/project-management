@@ -57,6 +57,9 @@ export function useTaskPatchFlow(opts: {
         tags: input.tags,
         milestone: input.milestone,
         cursor_model: input.cursor_model,
+        ...(input.verify_chat_mode !== undefined
+          ? { verify_chat_mode: input.verify_chat_mode }
+          : {}),
         ...(input.pickup_not_before !== undefined
           ? { pickup_not_before: input.pickup_not_before }
           : {}),

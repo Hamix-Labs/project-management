@@ -12,8 +12,10 @@ type Props = {
   onAutonomyChange: (enabled: boolean) => void;
   taskRunner: string;
   taskCursorModel: string;
+  taskVerifyChatMode: string;
   onTaskRunnerChange: (runner: string) => void;
   onTaskCursorModelChange: (v: string) => void;
+  onTaskVerifyChatModeChange: (v: string) => void;
   onComposeStatusChange?: (status: Status) => void;
   schedule: string | null;
   onScheduleChange: (next: string | null) => void;
@@ -35,8 +37,10 @@ export function TaskCreateModalExecutionSection({
   onAutonomyChange,
   taskRunner,
   taskCursorModel,
+  taskVerifyChatMode,
   onTaskRunnerChange,
   onTaskCursorModelChange,
+  onTaskVerifyChatModeChange,
   onComposeStatusChange,
   schedule,
   onScheduleChange,
@@ -66,8 +70,10 @@ export function TaskCreateModalExecutionSection({
         editingTaskRunner={editingTaskRunner}
         taskRunner={taskRunner}
         taskCursorModel={taskCursorModel}
+        taskVerifyChatMode={taskVerifyChatMode}
         onTaskRunnerChange={onTaskRunnerChange}
         onTaskCursorModelChange={onTaskCursorModelChange}
+        onTaskVerifyChatModeChange={onTaskVerifyChatModeChange}
         onComposeStatusChange={onComposeStatusChange}
         schedule={schedule}
         onScheduleChange={onScheduleChange}

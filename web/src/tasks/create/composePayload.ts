@@ -28,6 +28,7 @@ export function buildComposePayloadFromForm(
     priority: fields.newPriority as Priority,
     runner: fields.newTaskRunner.trim() || "cursor",
     cursor_model: fields.newTaskCursorModel.trim(),
+    verify_chat_mode: fields.newTaskVerifyChatMode.trim() || undefined,
     project_id: fields.newProjectID.trim(),
     repository_id: fields.newRepositoryID.trim(),
     project_context_item_ids: fields.newProjectContextItemIDs,

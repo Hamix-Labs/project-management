@@ -44,6 +44,11 @@ export type Task = {
    */
   cursor_model: string;
   /**
+   * Optional verify chat policy override (`same_chat` | `different_chat`).
+   * Empty / omitted inherits `app_settings.verify_chat_mode`.
+   */
+  verify_chat_mode?: string;
+  /**
    * When set (RFC3339), the agent worker will not dequeue this ready task
    * until this instant. Omitted when eligible immediately.
    */
@@ -497,6 +502,7 @@ export type TaskComposePayload = {
   priority: Priority;
   runner?: string;
   cursor_model?: string;
+  verify_chat_mode?: string;
   project_id?: string;
   repository_id?: string;
   project_context_item_ids?: string[];

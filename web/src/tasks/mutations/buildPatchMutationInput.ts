@@ -13,6 +13,7 @@ export type BuildPatchMutationInputArgs = {
   tagsCsv: string;
   milestone: string;
   cursor_model: string;
+  verify_chat_mode?: string;
   /** When null/undefined and schedule not editable, pickup is omitted. */
   pickup_not_before?: string | null;
   gate?: TaskGate | null;
@@ -30,6 +31,7 @@ export type PatchMutationInput = {
   tags: string[];
   milestone: string | null;
   cursor_model: string;
+  verify_chat_mode?: string;
   pickup_not_before?: string | null;
   gate?: TaskGate | null;
   depends_on?: TaskDependencyEdge[];
@@ -54,6 +56,9 @@ export function buildPatchMutationInput(
     milestone: (args.milestone ?? "").trim() || null,
     cursor_model: (args.cursor_model ?? "").trim(),
   };
+  if (args.verify_chat_mode !== undefined) {
+    input.verify_chat_mode = (args.verify_chat_mode ?? "").trim();
+  }
   if (canEditTaskPickupSchedule(args.status)) {
     input.pickup_not_before = args.pickup_not_before ?? null;
   }

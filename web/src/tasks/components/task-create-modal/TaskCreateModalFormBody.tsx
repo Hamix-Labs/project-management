@@ -97,8 +97,10 @@ export function TaskCreateModalFormBody({
         onAutonomyChange={execution.onAutonomyChange}
         taskRunner={execution.taskRunner}
         taskCursorModel={execution.taskCursorModel}
+        taskVerifyChatMode={execution.taskVerifyChatMode}
         onTaskRunnerChange={execution.onTaskRunnerChange}
         onTaskCursorModelChange={execution.onTaskCursorModelChange}
+        onTaskVerifyChatModeChange={execution.onTaskVerifyChatModeChange}
         onComposeStatusChange={onComposeStatusChange}
         schedule={execution.schedule}
         onScheduleChange={execution.onScheduleChange}

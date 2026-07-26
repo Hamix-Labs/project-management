@@ -22,6 +22,7 @@ export function TaskCreateModalAgentSection({
   variant = "default",
   runner,
   cursorModel,
+  verifyChatMode = "",
   modelIds,
   modelsForSelect,
   modelSelectBusy,
@@ -29,10 +30,12 @@ export function TaskCreateModalAgentSection({
   modelServerError,
   onRunnerChange,
   onCursorModelChange,
+  onVerifyChatModeChange,
 }: TaskCreateModalAgentSectionProps) {
   const baseId = useId();
   const runnerId = `${baseId}-runner`;
   const modelId = `${baseId}-model`;
+  const verifyChatId = `${baseId}-verify-chat`;
 
   const isModelDialog = variant === "modelDialog";
   const isCreateModal = variant === "createModal";
@@ -92,6 +95,22 @@ export function TaskCreateModalAgentSection({
             onCursorModelChange={onCursorModelChange}
           />
         </div>
+        {!isModelDialog && onVerifyChatModeChange ? (
+          <label className="task-create-agent-verify-chat" htmlFor={verifyChatId}>
+            <span className="task-create-field-label">Verify chat</span>
+            <select
+              id={verifyChatId}
+              data-testid="task-verify-chat-mode"
+              disabled={disabled}
+              value={verifyChatMode}
+              onChange={(e) => onVerifyChatModeChange(e.target.value)}
+            >
+              <option value="">Use workspace default</option>
+              <option value="same_chat">Same chat as execute</option>
+              <option value="different_chat">Different chat</option>
+            </select>
+          </label>
+        ) : null}
       </div>
     </section>
   );
