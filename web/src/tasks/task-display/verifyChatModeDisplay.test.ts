@@ -33,8 +33,8 @@ describe("effectiveVerifyChatMode", () => {
 
 describe("verifyChatModeLabel", () => {
   it("matches create/settings copy", () => {
-    expect(verifyChatModeLabel("same_chat")).toBe("Continue execute chat");
-    expect(verifyChatModeLabel("different_chat")).toBe("Start new chat");
+    expect(verifyChatModeLabel("same_chat")).toBe("Same chat");
+    expect(verifyChatModeLabel("different_chat")).toBe("Different chat");
   });
 });
 

@@ -1,8 +1,8 @@
 export type VerifyChatMode = "same_chat" | "different_chat";
 
 const LABELS: Record<VerifyChatMode, string> = {
-  same_chat: "Continue execute chat",
-  different_chat: "Start new chat",
+  same_chat: "Same chat",
+  different_chat: "Different chat",
 };
 
 /**
