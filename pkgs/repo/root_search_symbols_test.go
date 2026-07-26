@@ -9,8 +9,8 @@ import (
 func TestParseSearchKinds(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
-		raw     string
-		wantOK  bool
+		raw      string
+		wantOK   bool
 		wantFile bool
 		wantDir  bool
 	}{
