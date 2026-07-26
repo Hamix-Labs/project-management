@@ -17,7 +17,12 @@ import (
 )
 
 type repoSearchResponse struct {
-	Paths []string `json:"paths"`
+	Paths   []string           `json:"paths"`
+	Entries []repo.SearchEntry `json:"entries,omitempty"`
+}
+
+type repoSymbolsResponse struct {
+	Symbols []repo.SymbolHit `json:"symbols"`
 }
 
 type repoValidateRangeResponse struct {
@@ -122,16 +127,64 @@ func (h *Handler) repoSearch(w http.ResponseWriter, r *http.Request) {
 		handlerhttp.WriteJSONError(w, r, op, http.StatusBadRequest, "search query too long")
 		return
 	}
+	kindsRaw := r.URL.Query().Get("kinds")
+	kinds, kindsOK := repo.ParseSearchKinds(kindsRaw)
+	if !kindsOK {
+		handlerhttp.WriteJSONError(w, r, op, http.StatusBadRequest, "invalid kinds (use file, dir)")
+		return
+	}
 	t0 := time.Now()
-	paths, err := root.Search(q)
+	entries, err := root.SearchEntries(q, kinds)
 	dur := time.Since(t0)
 	if err != nil {
 		slog.Log(r.Context(), slog.LevelError, "repo operation failed", "cmd", calltrace.LogCmd, "operation", op, "duration_ms", dur.Milliseconds(), "err", err)
 		handlerhttp.WriteJSONError(w, r, op, http.StatusInternalServerError, "search failed")
 		return
 	}
-	slog.Info("repo search completed", "cmd", calltrace.LogCmd, "operation", op, "path_count", len(paths), "duration_ms", dur.Milliseconds(), "q_empty", strings.TrimSpace(q) == "")
-	handlerhttp.WriteJSON(w, r, op, http.StatusOK, repoSearchResponse{Paths: paths})
+	paths := make([]string, 0, len(entries))
+	for _, e := range entries {
+		if e.Kind == repo.EntryKindFile {
+			paths = append(paths, e.Path)
+		}
+	}
+	resp := repoSearchResponse{Paths: paths}
+	if strings.TrimSpace(kindsRaw) != "" {
+		resp.Entries = entries
+	}
+	slog.Info("repo search completed", "cmd", calltrace.LogCmd, "operation", op, "path_count", len(paths), "entry_count", len(entries), "duration_ms", dur.Milliseconds(), "q_empty", strings.TrimSpace(q) == "")
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, resp)
+}
+
+func (h *Handler) repoSymbols(w http.ResponseWriter, r *http.Request) {
+	const op = "repo.symbols"
+	r = calltrace.WithRequestRoot(r, op)
+	handlerhttp.DebugHTTPRequest(r, op, "symbols_q", handlerhttp.TruncateRunes(r.URL.Query().Get("q"), handlerhttp.MaxHTTPLogTitleRunes))
+	if r.Method != http.MethodGet {
+		handlerhttp.WriteError(w, r, op, methodNotAllowed(), http.StatusMethodNotAllowed)
+		return
+	}
+	root, ok := h.requireWorktreeRepo(w, r, op)
+	if !ok {
+		return
+	}
+	q := r.URL.Query().Get("q")
+	if len(q) > MaxSearchQueryBytes {
+		handlerhttp.WriteJSONError(w, r, op, http.StatusBadRequest, "search query too long")
+		return
+	}
+	t0 := time.Now()
+	symbols, err := root.SearchSymbols(q)
+	dur := time.Since(t0)
+	if err != nil {
+		slog.Log(r.Context(), slog.LevelError, "repo operation failed", "cmd", calltrace.LogCmd, "operation", op, "duration_ms", dur.Milliseconds(), "err", err)
+		handlerhttp.WriteJSONError(w, r, op, http.StatusInternalServerError, "symbol search failed")
+		return
+	}
+	if symbols == nil {
+		symbols = []repo.SymbolHit{}
+	}
+	slog.Info("repo symbols completed", "cmd", calltrace.LogCmd, "operation", op, "symbol_count", len(symbols), "duration_ms", dur.Milliseconds(), "q_empty", strings.TrimSpace(q) == "")
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, repoSymbolsResponse{Symbols: symbols})
 }
 
 func (h *Handler) repoValidateRange(w http.ResponseWriter, r *http.Request) {

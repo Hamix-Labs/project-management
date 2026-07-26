@@ -7,6 +7,8 @@ export type TaskTemplateSummary = {
   updated_at: string;
   primary_tag?: string;
   instantiate_count: number;
+  is_function?: boolean;
+  input_kinds?: Array<"dir" | "file" | "function">;
 };
 
 export type TaskTemplateListParams = {

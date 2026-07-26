@@ -2,6 +2,7 @@
 export { ApiError } from "./shared";
 export * from "./parseTaskApi";
 export * from "./repo";
+export * from "./repoScope";
 export * from "./tasks";
 export * from "./cycles";
 export * from "./projects";

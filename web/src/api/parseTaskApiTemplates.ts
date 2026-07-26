@@ -48,7 +48,53 @@ function parseTaskTemplateSummaryFields(
   if (primaryTag !== undefined) {
     summary.primary_tag = primaryTag;
   }
+  if (item.is_function === true) {
+    summary.is_function = true;
+  }
+  if (Array.isArray(item.input_kinds)) {
+    const kinds = item.input_kinds
+      .map((k) => (typeof k === "string" ? k.trim() : ""))
+      .filter((k): k is "dir" | "file" | "function" =>
+        k === "dir" || k === "file" || k === "function",
+      );
+    if (kinds.length > 0) {
+      summary.input_kinds = kinds;
+    }
+  }
   return summary;
+}
+
+function parseFunctionInputs(
+  value: unknown,
+): import("@/types").TemplateFunctionInputDef[] | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (!Array.isArray(value)) {
+    throw new Error("Invalid API response: payload.function_inputs must be array");
+  }
+  if (value.length === 0) return undefined;
+  return value.map((row, i) => {
+    if (!isRecord(row)) {
+      throw new Error(`Invalid API response: payload.function_inputs[${i}] must be object`);
+    }
+    const kind = parseString(row.kind, `payload.function_inputs[${i}].kind`);
+    if (kind !== "dir" && kind !== "file" && kind !== "function") {
+      throw new Error(
+        `Invalid API response: payload.function_inputs[${i}].kind must be dir, file, or function`,
+      );
+    }
+    const def: import("@/types").TemplateFunctionInputDef = {
+      id: parseNonEmptyString(row.id, `payload.function_inputs[${i}].id`),
+      kind,
+      label: parseNonEmptyString(row.label, `payload.function_inputs[${i}].label`),
+    };
+    if (typeof row.required === "boolean") {
+      def.required = row.required;
+    }
+    if (row.multiple === true) {
+      def.multiple = true;
+    }
+    return def;
+  });
 }
 
 function parseDependsOnWire(value: unknown): TaskComposePayload["depends_on"] {
@@ -59,6 +105,7 @@ function parseDependsOnWire(value: unknown): TaskComposePayload["depends_on"] {
 export function parseTaskComposePayload(value: unknown): TaskComposePayload {
   if (!isRecord(value)) throw new Error("Invalid API response: payload must be object");
   const core = parseComposePayloadCore(value);
+  const functionInputs = parseFunctionInputs(value.function_inputs);
   return {
     ...core,
     status: parseStatus(value.status),
@@ -80,6 +127,7 @@ export function parseTaskComposePayload(value: unknown): TaskComposePayload {
       ? { milestone: parseString(value.milestone, "payload.milestone") }
       : {}),
     depends_on: parseDependsOnWire(value.depends_on),
+    ...(functionInputs ? { function_inputs: functionInputs } : {}),
   };
 }
 

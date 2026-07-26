@@ -35,6 +35,7 @@ export function useTaskCreateTemplateEntryActions(input: {
       input.form.setNewMilestone(hydrated.milestone);
       input.form.setNewDependsOn(hydrated.dependsOn);
       input.form.setNewChecklistItems(hydrated.checklistItems);
+      input.form.setNewFunctionInputs(hydrated.functionInputs);
       input.modal.openComposePhase({
         target: "template",
         operation: "edit",

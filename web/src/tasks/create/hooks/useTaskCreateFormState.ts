@@ -33,6 +33,9 @@ export function useTaskCreateFormState(queryClient: QueryClient) {
   const [newMilestone, setNewMilestone] = useState("");
   const [newDependsOn, setNewDependsOn] = useState<string[]>([]);
   const [newChecklistItems, setNewChecklistItems] = useState<ChecklistItemDraft[]>([]);
+  const [newFunctionInputs, setNewFunctionInputs] = useState<
+    import("@/types").TemplateFunctionInputDef[]
+  >([]);
   const [createFormError, setCreateFormError] = useState<string | null>(null);
   const prevProjectIdRef = useRef<string | null>(null);
   useEffect(() => {
@@ -75,6 +78,7 @@ export function useTaskCreateFormState(queryClient: QueryClient) {
     setNewMilestone("");
     setNewDependsOn([]);
     setNewChecklistItems([]);
+    setNewFunctionInputs([]);
     setCreateFormError(null);
     setNewDraftID(generatedID);
     setLastDraftSavedAt(null);
@@ -118,12 +122,14 @@ export function useTaskCreateFormState(queryClient: QueryClient) {
       newDependsOn,
       newChecklistItems,
       newDraftID,
+      newFunctionInputs,
     }),
     [
       newAutonomyEnabled,
       newChecklistItems,
       newDependsOn,
       newDraftID,
+      newFunctionInputs,
       newMilestone,
       newPriority,
       newRepositoryID,
@@ -169,6 +175,7 @@ export function useTaskCreateFormState(queryClient: QueryClient) {
     setNewMilestone,
     setNewDependsOn,
     setNewChecklistItems,
+    setNewFunctionInputs,
     setNewDraftID,
     newTitle,
     newPrompt,
@@ -185,6 +192,7 @@ export function useTaskCreateFormState(queryClient: QueryClient) {
     newMilestone,
     newDependsOn,
     newChecklistItems,
+    newFunctionInputs,
     newDraftID,
   };
 }

@@ -121,6 +121,8 @@ func saveTemplateRow(
 		CreatedAt:        row.CreatedAt,
 		PrimaryTag:       primaryTagFromPayload(datatypes.JSON(payload)),
 		InstantiateCount: row.InstantiateCount,
+		IsFunction:       isFunctionFromPayload(datatypes.JSON(payload)),
+		InputKinds:       inputKindsFromPayload(datatypes.JSON(payload)),
 	}, nil
 }
 
@@ -293,6 +295,8 @@ func templateSummaryFromRow(r model.TaskTemplate) TemplateSummary {
 	if tag := primaryTagFromPayload(r.PayloadJSON); tag != "" {
 		s.PrimaryTag = tag
 	}
+	s.IsFunction = isFunctionFromPayload(r.PayloadJSON)
+	s.InputKinds = inputKindsFromPayload(r.PayloadJSON)
 	return s
 }
 
@@ -305,6 +309,39 @@ func primaryTagFromPayload(payload datatypes.JSON) string {
 		return ""
 	}
 	return strings.TrimSpace(p.Tags[0])
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by ListTemplates."
+func isFunctionFromPayload(payload datatypes.JSON) bool {
+	return len(inputKindsFromPayload(payload)) > 0
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by ListTemplates."
+func inputKindsFromPayload(payload datatypes.JSON) []string {
+	var p struct {
+		FunctionInputs []struct {
+			Kind string `json:"kind"`
+		} `json:"function_inputs"`
+	}
+	if err := json.Unmarshal(payload, &p); err != nil || len(p.FunctionInputs) == 0 {
+		return nil
+	}
+	seen := make(map[string]struct{}, len(p.FunctionInputs))
+	out := make([]string, 0, len(p.FunctionInputs))
+	for _, in := range p.FunctionInputs {
+		kind := strings.TrimSpace(in.Kind)
+		switch kind {
+		case "dir", "file", "function":
+		default:
+			continue
+		}
+		if _, ok := seen[kind]; ok {
+			continue
+		}
+		seen[kind] = struct{}{}
+		out = append(out, kind)
+	}
+	return out
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by ListTemplates."

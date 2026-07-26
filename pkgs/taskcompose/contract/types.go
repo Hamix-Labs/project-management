@@ -30,6 +30,8 @@ type TemplateSummary struct {
 	CreatedAt        time.Time `json:"created_at"`
 	PrimaryTag       string    `json:"primary_tag,omitempty"`
 	InstantiateCount int       `json:"instantiate_count"`
+	IsFunction       bool      `json:"is_function,omitempty"`
+	InputKinds       []string  `json:"input_kinds,omitempty"`
 }
 
 // TemplateDetail is the GET-by-id body shape for task templates.

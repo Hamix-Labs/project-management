@@ -26,8 +26,9 @@ type taskTemplatePatchJSON struct {
 }
 
 type taskTemplateInstantiateItemJSON struct {
-	TemplateID string `json:"template_id"`
-	Count      *int   `json:"count,omitempty"`
+	TemplateID       string                `json:"template_id"`
+	Count            *int                  `json:"count,omitempty"`
+	FunctionBindings []functionBindingJSON `json:"function_bindings,omitempty"`
 }
 
 type taskTemplateInstantiateJSON struct {
@@ -37,8 +38,9 @@ type taskTemplateInstantiateJSON struct {
 }
 
 type taskTemplateInstantiateItem struct {
-	TemplateID string
-	Count      int
+	TemplateID       string
+	Count            int
+	FunctionBindings []functionBindingJSON
 }
 
 type taskTemplateInstantiateErrorJSON struct {
@@ -112,8 +114,9 @@ func normalizeInstantiateItems(body taskTemplateInstantiateJSON) ([]taskTemplate
 				return nil, fmt.Errorf("%w: total creates must not exceed %d", taskcoredomain.ErrInvalidInput, maxTemplateInstantiateTotalCreates)
 			}
 			items = append(items, taskTemplateInstantiateItem{
-				TemplateID: templateID,
-				Count:      count,
+				TemplateID:       templateID,
+				Count:            count,
+				FunctionBindings: row.FunctionBindings,
 			})
 		}
 		if len(items) == 0 {

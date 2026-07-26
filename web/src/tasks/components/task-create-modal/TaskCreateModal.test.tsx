@@ -65,6 +65,8 @@ function renderModal(overrides?: Partial<TaskCreateModalFlatInput>) {
     autonomyEnabled: true,
     onAutonomyChange: vi.fn(),
     tagsCsv: "",
+    functionInputs: [],
+    onFunctionInputsChange: vi.fn(),
     milestone: "",
     repositoryId: "",
     projectId: "",

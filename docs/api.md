@@ -111,16 +111,16 @@ Model semantics (tags, milestone, `depends_on`, gate, worker readiness): [data-m
 
 ### Task templates
 
-Named, durable task compose blueprints. Payload shape matches task create fields (title, prompt, status, priority, checklist, runner, project, schedule, tags, milestone, `depends_on`). Never publishes on SSE for CRUD; instantiate publishes `task_created` per success (same as `POST /tasks`).
+Named, durable task compose blueprints. Payload shape matches task create fields (title, prompt, status, priority, checklist, runner, project, schedule, tags, milestone, `depends_on`) plus optional template-only `function_inputs` (see [ADR-0088](./adr/ADR-0088-template-functions.md)). Never publishes on SSE for CRUD; instantiate publishes `task_created` per success (same as `POST /tasks`).
 
 | Method | Path | Notes |
 |---|---|---|
-| POST | `/task-templates` | Upsert. Body `{ id?, name?, payload }`. `name` defaults to trimmed `payload.title`. Validates like `POST /tasks` (title, priority, checklist, runner/model, prompt @-mentions when repo enabled). **201** summary `{ id, name, created_at, updated_at, primary_tag?, instantiate_count }`. `primary_tag` is the first entry in `payload.tags` when present; omitted when `payload.tags` is empty. `instantiate_count` is always present (default **0**). |
-| GET | `/task-templates` | List summaries (without `payload`). `?limit` (0–100, default 50). `?q=` ILIKE search on `name`. `?sort=` one of `updated_at` (default), `name`, `instantiate_count`. `?order=` `asc` or `desc` (default `desc`). Invalid `sort` or `order` → **400**. `?tag=` case-insensitive match on the first `payload.tags` entry. Summary fields match POST **201** (`primary_tag?`, `instantiate_count`). |
-| GET | `/task-templates/{id}` | Full template with `payload`. |
+| POST | `/task-templates` | Upsert. Body `{ id?, name?, payload }`. `name` defaults to trimmed `payload.title`. Validates like compose drafts (title, priority, checklist, runner/model, git binding). Optional `payload.function_inputs`: `[{ id, kind: dir\|file\|function, label, required?, multiple? }]` (`id` matches `[a-z][a-z0-9_]*`, unique). **201** summary `{ id, name, created_at, updated_at, primary_tag?, instantiate_count, is_function?, input_kinds? }`. `primary_tag` is the first entry in `payload.tags` when present. `is_function` / `input_kinds` are derived when `function_inputs` is non-empty. `instantiate_count` defaults **0**. |
+| GET | `/task-templates` | List summaries (without `payload`). `?limit` (0–100, default 50). `?q=` ILIKE search on `name`. `?sort=` one of `updated_at` (default), `name`, `instantiate_count`. `?order=` `asc` or `desc` (default `desc`). Invalid `sort` or `order` → **400**. `?tag=` case-insensitive match on the first `payload.tags` entry. Summary fields match POST **201**. |
+| GET | `/task-templates/{id}` | Full template with `payload` (may include `function_inputs`). |
 | PATCH | `/task-templates/{id}` | Partial `{ name?, payload? }`. **200** full detail. |
 | DELETE | `/task-templates/{id}` | `204`. |
-| POST | `/task-templates/instantiate` | Body `{ template_ids: string[], count?: number }` **or** `{ items: { template_id, count? }[] }`. When `items` is non-empty it takes precedence over `template_ids` / top-level `count`. Omitted `count` defaults to **1** per template. Per-item and top-level `count` must be **1..25**; total creates (`sum(counts)`) must not exceed **100**. Duplicate `template_id` in `items` is **400**. Processes each item in order, creating `count` tasks per item. On each successful create, increments that template's `instantiate_count` by **1**. **200** `{ tasks: Task[], errors: { template_id, error }[] }`. Strips `depends_on`; omits past `pickup_not_before`. **400** when neither `template_ids` nor `items` is provided. |
+| POST | `/task-templates/instantiate` | Body `{ template_ids: string[], count?: number }` **or** `{ items: { template_id, count?, function_bindings? }[] }`. When `items` is non-empty it takes precedence. `function_bindings`: `[{ input_id, paths?, functions?: [{ path, name, line }] }]`. Required for templates with `function_inputs`; omitted/empty for ordinary templates. On success, appends a soft-scope block to `initial_prompt` and strips `function_inputs` before create. Omitted `count` defaults to **1**. Per-item/top-level `count` **1..25**; total creates ≤ **100**. Duplicate `template_id` in `items` → **400**. Partial success: **200** `{ tasks, errors: [{ template_id, error }] }`. Strips `depends_on`; omits past `pickup_not_before`. |
 
 ### Execution cycles
 
@@ -174,7 +174,8 @@ Deep dive: [domain/workspace-repo.md](./domain/workspace-repo.md). Wired only wh
 
 | Method | Path | Notes |
 |---|---|---|
-| GET | `/repo/search?q=` | Capped list of repo-relative paths; `q` ≤ 512 bytes. |
+| GET | `/repo/search?q=&worktree_id=` | `{ paths: string[], entries?: [{ path, kind }] }`. `paths` is always the file hits (compat for `@`-mentions). Optional `kinds=file,dir` (comma-separated); when set, `entries` includes matching files and/or directories. Default kinds = files only. Caps: empty `q` ≤ 250 browse hits; filtered ≤ 100. `q` ≤ 512 bytes. **400** on invalid `kinds`. Requires `worktree_id`. |
+| GET | `/repo/symbols?q=&worktree_id=` | `{ symbols: [{ path, name, line, kind }] }`. Best-effort declaration search (Go/TS/JS/Python/Rust regex). Empty `q` → empty `symbols`. Cap 50. `q` ≤ 512 bytes. Requires `worktree_id`. |
 | GET | `/repo/file?path=` | `{ path, content, binary, truncated, size_bytes, line_count, warning? }`. Binary or invalid UTF-8 returns `binary: true` with empty `content`. Files over 32 MiB are truncated. |
 | GET | `/repo/validate-range?path=&start=&end=` | `{ ok, line_count?, warning? }`. Used by the SPA to warn about invalid `@`-mentions inline. |
 | GET | `/repo/diff?worktree_id=&sha=` | `{ sha, patch, truncated, size_bytes, author?, author_email?, parent_sha?, files_changed?, insertions?, deletions? }`. Unified diff for one commit via `git show` in the worktree opened by `worktree_id` (required); `sha` is 7–40 hex chars (≤ 64 bytes query). Patch capped at 512 KiB (`truncated: true` when clipped). Author and shortstat come from `git show --format` / `--shortstat`. **400** when `worktree_id` is missing; **404** when the worktree or SHA is absent. |

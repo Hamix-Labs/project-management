@@ -25,6 +25,7 @@ type taskComposePayloadJSON struct {
 	DependsOn       dependsOnWire                               `json:"depends_on,omitempty"`
 	ChecklistItems  []taskcorecontract.CreateChecklistItemInput `json:"checklist_items"`
 	WorktreeID      *string                                     `json:"worktree_id,omitempty"`
+	FunctionInputs  []FunctionInputDef                          `json:"function_inputs,omitempty"`
 }
 
 // DecodeComposePayload parses a compose/template JSON payload.

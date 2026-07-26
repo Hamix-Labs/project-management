@@ -508,4 +508,28 @@ export type TaskComposePayload = {
   milestone?: string;
   depends_on?: TaskDependencyEdge[];
   checklist_items: TaskDraftChecklistItem[];
+  /** Template-only create-time input slots (ADR-0088). */
+  function_inputs?: TemplateFunctionInputDef[];
+};
+
+export type TemplateFunctionInputKind = "dir" | "file" | "function";
+
+export type TemplateFunctionInputDef = {
+  id: string;
+  kind: TemplateFunctionInputKind;
+  label: string;
+  required?: boolean;
+  multiple?: boolean;
+};
+
+export type TemplateFunctionRef = {
+  path: string;
+  name: string;
+  line: number;
+};
+
+export type TemplateFunctionBinding = {
+  input_id: string;
+  paths?: string[];
+  functions?: TemplateFunctionRef[];
 };

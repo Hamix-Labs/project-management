@@ -73,10 +73,12 @@ export function TaskCreateModalFormBody({
         checklistItems={criteria.checklistItems}
         checklistRequirement={checklistRequirement}
         tagsCsv={criteria.tagsCsv}
+        functionInputs={criteria.functionInputs}
         onAppendChecklistCriterion={criteria.onAppendChecklistCriterion}
         onUpdateChecklistRow={criteria.onUpdateChecklistRow}
         onRemoveChecklistRow={criteria.onRemoveChecklistRow}
         onTagsCsvChange={criteria.onTagsCsvChange}
+        onFunctionInputsChange={criteria.onFunctionInputsChange}
       />
 
       <TaskCreateModalExecutionSection

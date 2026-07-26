@@ -37,6 +37,7 @@ describe("buildCreateTaskMutationInput", () => {
       newDependsOn: [],
       newChecklistItems: [{ text: "Criterion" }],
       newDraftID: "draft-1",
+      newFunctionInputs: [],
     });
     expect(input.project_id).toBe(FACTORY_REPO_DEFAULT_PROJECT_ID);
   });

@@ -328,7 +328,7 @@ Named, durable compose blueprints — same field set as task create JSON (withou
 |---|---|---|
 | `id` | string pk (UUID) | Server-assigned when omitted on save. |
 | `name` | string | Display + search key; defaults to trimmed `payload.title` at save. |
-| `payload_json` | jsonb | `TaskComposePayload` — title, prompt, status, priority, checklist, runner, project, schedule, tags, milestone, `depends_on`. |
+| `payload_json` | jsonb | `TaskComposePayload` — title, prompt, status, priority, checklist, runner, project, schedule, tags, milestone, `depends_on`, optional template-only `function_inputs` ([ADR-0088](./adr/ADR-0088-template-functions.md)). |
 | `created_at` | timestamptz | indexed. |
 | `updated_at` | timestamptz | indexed; list order DESC. |
 

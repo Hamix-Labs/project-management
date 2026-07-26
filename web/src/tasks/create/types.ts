@@ -56,6 +56,8 @@ export type TaskCreateFormFields = {
   newDependsOn: string[];
   newChecklistItems: ChecklistItemDraft[];
   newDraftID: string;
+  /** Template-only function input schema (empty for ordinary templates/tasks). */
+  newFunctionInputs: import("@/types").TemplateFunctionInputDef[];
 };
 
 export type DraftSavePayload = {

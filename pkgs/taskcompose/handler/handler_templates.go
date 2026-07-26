@@ -147,16 +147,25 @@ func (h *Handler) instantiateTaskTemplates(w http.ResponseWriter, r *http.Reques
 	}
 	successCounts := make(map[string]int)
 	for _, item := range items {
+		detail, err := h.compose.GetTemplate(r.Context(), item.TemplateID)
+		if err != nil {
+			resp.Errors = append(resp.Errors, taskTemplateInstantiateErrorJSON{
+				TemplateID: item.TemplateID,
+				Error:      err.Error(),
+			})
+			continue
+		}
+		applied, applyErr := applyFunctionBindingsToPayload(detail.Payload, item.FunctionBindings)
+		if applyErr != nil {
+			resp.Errors = append(resp.Errors, taskTemplateInstantiateErrorJSON{
+				TemplateID: item.TemplateID,
+				Error:      applyErr.Error(),
+			})
+			continue
+		}
+		payloadRaw := applied
 		for range item.Count {
-			detail, err := h.compose.GetTemplate(r.Context(), item.TemplateID)
-			if err != nil {
-				resp.Errors = append(resp.Errors, taskTemplateInstantiateErrorJSON{
-					TemplateID: item.TemplateID,
-					Error:      err.Error(),
-				})
-				continue
-			}
-			task, err := h.instantiateFromTemplate(r.Context(), r, op, detail.Payload, by)
+			task, err := h.instantiateFromTemplate(r.Context(), r, op, payloadRaw, by)
 			if err != nil {
 				resp.Errors = append(resp.Errors, taskTemplateInstantiateErrorJSON{
 					TemplateID: item.TemplateID,

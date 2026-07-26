@@ -43,6 +43,8 @@ export function buildTaskCreateModalProps(
       onRemoveChecklistRow: input.onRemoveChecklistRow,
       tagsCsv: input.tagsCsv,
       onTagsCsvChange: input.onTagsCsvChange,
+      functionInputs: input.functionInputs,
+      onFunctionInputsChange: input.onFunctionInputsChange,
     },
     git: {
       repositoryId: input.repositoryId,

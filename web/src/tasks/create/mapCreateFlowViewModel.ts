@@ -107,6 +107,8 @@ export function mapCreateFlowViewModel(input: {
     newDependsOn: input.form.newDependsOn,
     setNewDependsOn: input.form.setNewDependsOn,
     newChecklistItems: input.form.newChecklistItems,
+    newFunctionInputs: input.form.newFunctionInputs,
+    setNewFunctionInputs: input.form.setNewFunctionInputs,
     appendNewChecklistCriterion: input.actions.appendNewChecklistCriterion,
     updateNewChecklistRow: input.actions.updateNewChecklistRow,
     removeNewChecklistRow: input.actions.removeNewChecklistRow,
