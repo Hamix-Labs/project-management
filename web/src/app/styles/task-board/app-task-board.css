@@ -318,6 +318,7 @@
   margin-top: var(--space-3);
 }
 
+.task-board-card__branch-chip,
 .task-board-card__project-chip {
   display: inline-flex;
   align-items: center;

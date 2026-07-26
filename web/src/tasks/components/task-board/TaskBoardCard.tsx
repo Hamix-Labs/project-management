@@ -5,6 +5,7 @@ import { previewTextFromPrompt } from "@/lib/promptFormat";
 import { taskListRowSubtitle } from "../task-list/table/taskListRowSubtitle";
 import { formatRelativeTime } from "@/shared/time/relativeTime";
 import { TASK_LIST_TAG_CHIP_LIMIT } from "../task-list/filters/taskListClientFilter";
+import { taskBranchName } from "@/tasks/task-git/taskWorktreeNames";
 import type { TaskWithDepth } from "../../task-tree";
 
 type Props = {
@@ -52,7 +53,10 @@ export function TaskBoardCard({
   const visibleTags = tags.slice(0, TASK_LIST_TAG_CHIP_LIMIT);
   const overflow = tags.length - visibleTags.length;
   const created = formatRelativeTime(task.created_at);
-  const showChips = (showProject && projectName) || visibleTags.length > 0;
+  const branch = taskBranchName(task.id);
+  const showProjectChip = Boolean(showProject && projectName);
+  const showChips =
+    Boolean(branch) || showProjectChip || visibleTags.length > 0;
 
   return (
     <Link
@@ -72,11 +76,12 @@ export function TaskBoardCard({
 
       {showChips ? (
         <div className="task-board-card__chips">
-          {showProject && projectName ? (
-            <span className="task-board-card__project-chip">
-              <BranchGlyph />
-              {projectName}
-            </span>
+          <span className="task-board-card__branch-chip">
+            <BranchGlyph />
+            {branch}
+          </span>
+          {showProjectChip ? (
+            <span className="task-board-card__project-chip">{projectName}</span>
           ) : null}
           {visibleTags.map((tag) => (
             <span key={tag} className="task-board-card__tag-chip">
