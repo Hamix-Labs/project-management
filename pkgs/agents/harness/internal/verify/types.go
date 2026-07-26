@@ -1,6 +1,7 @@
 package verify
 
 import (
+	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	checklistcontract "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/contract"
 	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 )
@@ -18,6 +19,8 @@ type Snapshot struct {
 	// VerifyModel is the optional settings pin for PhaseVerify (--model).
 	// Empty means inherit task.CursorModel / execute runner default.
 	VerifyModel string
+	// VerifyChatMode is the effective chat policy for this run (ADR-0086).
+	VerifyChatMode settingsdomain.VerifyChatMode
 }
 
 // Verdict is the harness-internal outcome for one criterion after verify work.

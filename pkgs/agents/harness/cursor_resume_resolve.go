@@ -9,6 +9,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/cursorresume"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/prompt"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/reports"
+	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
@@ -25,6 +26,11 @@ func (h *Harness) resolveCursorResume(
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.resolveCursorResume",
 		"cycle_id", cycle.ID, "phase", string(phase), "force_fresh", forceFresh)
 
+	chatMode := state.verify.verifySnap.VerifyChatMode
+	if chatMode == "" {
+		chatMode = settingsdomain.DefaultVerifyChatMode
+	}
+
 	facts := CursorResumeFacts{
 		ForceFresh:         forceFresh,
 		RetryMode:          retryModeFromCycleMeta(cycle),
@@ -35,6 +41,12 @@ func (h *Harness) resolveCursorResume(
 		HasPostExecuteHead: state.git.postExecuteHeadSHA != "",
 		HeadMatchesAnchor:  true,
 		WorkingDir:         h.opts.WorkingDir,
+	}
+	if phase == cyclesdomain.PhaseVerify && chatMode == settingsdomain.VerifyChatModeDifferentChat {
+		facts.FirstVerifyAfterExecute = cursorresume.FirstVerifyAfterNewExecute(
+			state.phase.lastVerifyAfterExecuteSeq,
+			state.phase.lastCompletedExecutePhaseSeq,
+		)
 	}
 	if !forceFresh {
 		settings, err := h.store.GetSettings(ctx)
@@ -61,8 +73,8 @@ func (h *Harness) resolveCursorResume(
 	}
 
 	if !forceFresh {
-		lookupCycleID := h.sessionLookupCycleID(ctx, cycle, phase, facts.RetryMode, opts)
-		sessionPhase := cursorresume.SessionPhaseForResume(phase)
+		lookupCycleID := h.sessionLookupCycleID(ctx, cycle, phase, facts.RetryMode, opts, chatMode)
+		sessionPhase := cursorresume.SessionPhaseForResume(phase, chatMode)
 		sessionID, err := h.store.LastSessionID(ctx, lookupCycleID, sessionPhase)
 		if err != nil {
 			return CursorResumeDecision{}, err
@@ -95,11 +107,12 @@ func (h *Harness) sessionLookupCycleID(
 	phase cyclesdomain.Phase,
 	retryMode taskcoredomain.RetryMode,
 	opts cycleLoopOpts,
+	chatMode settingsdomain.VerifyChatMode,
 ) string {
 	if retryMode == taskcoredomain.RetryResume && cycle.ParentCycleID != nil {
 		parentID := strings.TrimSpace(*cycle.ParentCycleID)
 		if parentID != "" {
-			sessionPhase := cursorresume.SessionPhaseForResume(phase)
+			sessionPhase := cursorresume.SessionPhaseForResume(phase, chatMode)
 			childID, err := h.store.LastSessionID(ctx, cycle.ID, sessionPhase)
 			if err == nil && strings.TrimSpace(childID) == "" {
 				switch {
