@@ -45,6 +45,11 @@ func (h *Handler) getTaskCommits(w http.ResponseWriter, r *http.Request) {
 		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
+	// Store returns chronological ASC (for verify/resume prompts). The
+	// task commits list is newest-first for operators scanning the UI.
+	for i, j := 0, len(rows)-1; i < j; i, j = i+1, j-1 {
+		rows[i], rows[j] = rows[j], rows[i]
+	}
 	cycles, err := h.cycles.ListCyclesForTaskBefore(r.Context(), taskID, 0, 500)
 	if err != nil {
 		handlerhttp.WriteStoreError(w, r, op, err)

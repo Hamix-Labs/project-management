@@ -1,40 +1,31 @@
-import { useMemo, useState } from "react";
-import { errorMessage } from "@/lib/errorMessage";
+import { useMemo } from "react";
 import { useAppTimezone } from "@/shared/time/appTimezone";
-import { useNow } from "@/shared/useNow";
-import {
-  cycleStatusLabel,
-  cycleStatusFillClass,
-  phaseLabel,
-  phaseStatusFillClass,
-  phaseStatusLabel,
-} from "@/tasks/cycleDisplay/cyclesViewModel";
+import { cycleStatusLabel, cycleStatusFillClass } from "@/tasks/cycleDisplay/cyclesViewModel";
 import type { TaskCycle, TaskTokenUsageAttempt } from "@/types/cycle";
-import { useTaskCycle } from "../../../hooks/useTaskCycles";
 import { useTaskTokenUsage } from "../../../hooks/useTaskTokenUsage";
-import { formatCycleLineageLabel } from "../../../cycleDisplay/cycleLineage";
 import {
   formatShareOfTaskPct,
   formatTokenCount,
 } from "../../../task-display/formatTokenCount";
-import { CycleRowVerdicts } from "./CycleRowVerdicts";
 import {
-  formatAttemptTiming,
-  formatPhaseDuration,
-} from "./cyclePanelUtils";
+  ChevronRightGlyph,
+  ClockGlyph,
+  CoinsGlyph,
+  TimerGlyph,
+  UserGlyph,
+} from "../ExecutionBarGlyphs";
+import { formatAttemptTiming } from "./cyclePanelUtils";
 
 type CycleHistoryListProps = {
   taskId: string;
   cycles: TaskCycle[];
   runningCycleId: string | null;
-  cyclesById: ReadonlyMap<string, TaskCycle>;
 };
 
 export function CycleHistoryList({
   taskId,
   cycles,
   runningCycleId,
-  cyclesById,
 }: CycleHistoryListProps) {
   const usageQuery = useTaskTokenUsage(taskId);
   const attemptsByCycleId = useMemo(
@@ -53,7 +44,6 @@ export function CycleHistoryList({
           taskId={taskId}
           cycle={cycle}
           isLiveAbove={cycle.id === runningCycleId}
-          cyclesById={cyclesById}
           attemptUsage={attemptsByCycleId.get(cycle.id)}
         />
       ))}
@@ -75,82 +65,98 @@ function CycleRow({
   taskId,
   cycle,
   isLiveAbove,
-  cyclesById,
   attemptUsage,
 }: {
   taskId: string;
   cycle: TaskCycle;
   isLiveAbove: boolean;
-  cyclesById: ReadonlyMap<string, TaskCycle>;
   attemptUsage?: TaskTokenUsageAttempt;
 }) {
-  const [open, setOpen] = useState(false);
   const tz = useAppTimezone();
-  const lineage = formatCycleLineageLabel(cycle, cyclesById);
   const timing = formatAttemptTiming(cycle, tz);
   const tokenSummary = formatCycleTokenSummary(cycle, attemptUsage);
+  const detailsHref = `/tasks/${encodeURIComponent(taskId)}/cycles/${encodeURIComponent(cycle.id)}`;
 
   return (
     <li className="task-cycle-row" data-cycle-status={cycle.status}>
-      <details
-        open={open}
-        onToggle={(e) => setOpen((e.currentTarget as HTMLDetailsElement).open)}
-      >
-        <summary className="task-cycle-row-summary">
-          <span
-            className={`cell-pill ${cycleStatusFillClass(cycle.status)}`}
-            data-testid="task-cycle-row-status"
-          >
-            {cycleStatusLabel(cycle.status)}
-          </span>
-          <span className="task-cycle-row-attempt">
-            Attempt #{cycle.attempt_seq}
-            {lineage ? (
-              <span className="task-cycle-lineage muted"> · {lineage}</span>
+      <div className="task-cycle-row-summary">
+        <div className="task-cycle-row-main">
+          <div className="task-cycle-row-identity">
+            <span className="task-cycle-row-attempt">
+              Attempt #{cycle.attempt_seq}
+            </span>
+            <span
+              className={`cell-pill task-cycle-row-status ${cycleStatusFillClass(cycle.status)}`}
+              data-testid="task-cycle-row-status"
+            >
+              {cycleStatusLabel(cycle.status)}
+            </span>
+            {isLiveAbove ? (
+              <span
+                className="task-cycle-row-livehint"
+                aria-label="This cycle is shown in the live ticker above"
+              >
+                Live
+              </span>
             ) : null}
+          </div>
+
+          <div className="task-cycle-row-aside">
+            <span
+              className="task-cycle-row-duration"
+              data-in-progress={timing.inProgress ? "true" : undefined}
+            >
+              <TimerGlyph className="task-cycle-row-fact-icon" />
+              <span>
+                {timing.inProgress
+                  ? "In progress"
+                  : (timing.duration ?? "—")}
+              </span>
+            </span>
+            <a className="task-cycle-row-attempt-link" href={detailsHref}>
+              Details
+              <ChevronRightGlyph className="task-cycle-row-attempt-link-icon" />
+            </a>
+          </div>
+        </div>
+
+        <div
+          className="task-cycle-row-meta"
+          aria-label={timing.ariaLabel}
+          data-testid="task-cycle-row-when"
+        >
+          <span className="task-cycle-row-fact">
+            <ClockGlyph className="task-cycle-row-fact-icon" />
+            <span className="task-cycle-row-fact-text">
+              {timing.inProgress || !timing.endedAt ? (
+                timing.startedAt
+              ) : (
+                <>
+                  <span>{timing.startedAt}</span>
+                  <span className="task-cycle-row-fact-arrow" aria-hidden="true">
+                    →
+                  </span>
+                  <span>{timing.endedAt}</span>
+                </>
+              )}
+            </span>
           </span>
-          <span
-            className="task-cycle-row-when muted"
-            aria-label={timing.ariaLabel}
-            data-testid="task-cycle-row-when"
-          >
-            {timing.label}
-          </span>
-          <span className="task-cycle-row-trigger muted">
-            by {cycle.triggered_by}
+          <span className="task-cycle-row-fact">
+            <UserGlyph className="task-cycle-row-fact-icon" />
+            <span className="task-cycle-row-fact-text">{cycle.triggered_by}</span>
           </span>
           {tokenSummary ? (
             <span
-              className="task-cycle-row-tokens muted"
+              className="task-cycle-row-fact"
               data-testid="task-cycle-row-tokens"
               aria-label={tokenSummary.ariaLabel}
             >
-              {tokenSummary.label}
+              <CoinsGlyph className="task-cycle-row-fact-icon" />
+              <span className="task-cycle-row-fact-text">{tokenSummary.label}</span>
             </span>
           ) : null}
-          {isLiveAbove ? (
-            <span
-              className="task-cycle-row-livehint"
-              aria-label="This cycle is shown in the live ticker above"
-            >
-              ↑ live
-            </span>
-          ) : null}
-          <a
-            className="task-cycle-row-attempt-link"
-            href={`/tasks/${encodeURIComponent(taskId)}/cycles/${encodeURIComponent(cycle.id)}`}
-            onClick={(e) => e.stopPropagation()}
-          >
-            View run details
-          </a>
-        </summary>
-        {open ? (
-          <>
-            <CycleRowPhases taskId={taskId} cycleId={cycle.id} />
-            <CycleRowVerdicts taskId={taskId} cycleId={cycle.id} />
-          </>
-        ) : null}
-      </details>
+        </div>
+      </div>
     </li>
   );
 }
@@ -175,61 +181,4 @@ function formatCycleTokenSummary(
     label: `${tokens.label} · ${shareLabel} of task`,
     ariaLabel: `${tokens.ariaLabel}, ${shareLabel} of task`,
   };
-}
-
-function CycleRowPhases({
-  taskId,
-  cycleId,
-}: {
-  taskId: string;
-  cycleId: string;
-}) {
-  const detailQuery = useTaskCycle(taskId, cycleId);
-  const phases = detailQuery.data?.phases ?? [];
-  const hasRunningPhase = phases.some((phase) => phase.status === "running");
-  const now = useNow({ enabled: hasRunningPhase });
-
-  if (detailQuery.isPending) {
-    return (
-      <p className="task-cycle-row-phases muted" aria-busy="true">
-        Loading phases…
-      </p>
-    );
-  }
-  if (detailQuery.isError) {
-    return (
-      <p className="task-cycle-row-phases err" role="alert">
-        {errorMessage(detailQuery.error, "Could not load phases.")}
-      </p>
-    );
-  }
-  if (phases.length === 0) {
-    return (
-      <p className="task-cycle-row-phases muted">
-        No phases recorded for this cycle.
-      </p>
-    );
-  }
-  return (
-    <ol className="task-cycle-phase-list" aria-label="Phases for this cycle">
-      {phases.map((phase) => (
-        <li
-          key={phase.id}
-          className="task-cycle-phase-item"
-          data-phase-status={phase.status}
-        >
-          <span className="task-cycle-phase-name">{phaseLabel(phase.phase)}</span>
-          <span className={`cell-pill ${phaseStatusFillClass(phase.status)}`}>
-            {phaseStatusLabel(phase.status)}
-          </span>
-          <span className="task-cycle-phase-duration muted">
-            {formatPhaseDuration(phase, now)}
-          </span>
-          {phase.summary ? (
-            <span className="task-cycle-phase-summary">{phase.summary}</span>
-          ) : null}
-        </li>
-      ))}
-    </ol>
-  );
 }

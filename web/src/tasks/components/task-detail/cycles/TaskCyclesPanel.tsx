@@ -49,7 +49,7 @@ export function TaskCyclesPanel({ taskId, enabled = true }: Props) {
   return (
     <TaskDetailCollapsibleSection
       className="task-cycles-panel"
-      title="Execution cycles"
+      title="Attempts"
       headingId="task-detail-cycles-heading"
       count={count}
       defaultOpen
@@ -61,7 +61,7 @@ export function TaskCyclesPanel({ taskId, enabled = true }: Props) {
           <p>
             {errorMessage(
               cyclesQuery.error,
-              "Could not load execution cycles.",
+              "Could not load attempts.",
             )}
           </p>
           <div className="task-detail-error-actions">
@@ -79,8 +79,8 @@ export function TaskCyclesPanel({ taskId, enabled = true }: Props) {
       ) : historyCycles.length === 0 && !runningCycle ? (
         <EmptyState
           icon={<EmptyStateTimelineGlyph />}
-          title="No execution cycles yet"
-          description="Each agent run records phases here as execute → verify."
+          title="No attempts yet"
+          description="Each agent run is recorded here as execute → verify."
         />
       ) : (
         <>
@@ -94,7 +94,6 @@ export function TaskCyclesPanel({ taskId, enabled = true }: Props) {
           <CycleHistoryList
             taskId={taskId}
             cycles={historyCycles}
-            cyclesById={cyclesById}
             runningCycleId={runningCycle?.id ?? null}
           />
         </>

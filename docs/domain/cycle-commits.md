@@ -51,7 +51,7 @@ Verify reads **all commits indexed for the task** via `ListCommitsForTask(task_i
 
 ### HTTP
 
-- `GET /tasks/{id}/commits` — task-wide deduped by SHA (earliest `committed_at` wins).
+- `GET /tasks/{id}/commits` — task-wide deduped by SHA (earliest `committed_at` wins); response ordered newest-first.
 - `GET /tasks/{id}/cycles/{cycleId}/verdicts` — per-cycle commit rows (no `status` / `gate_reason`).
 
 ## See also

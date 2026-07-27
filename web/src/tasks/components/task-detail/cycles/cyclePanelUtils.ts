@@ -3,7 +3,6 @@ import type {
   TaskCyclePhase,
   TaskCyclesListResponse,
 } from "@/types/cycle";
-import { formatDurationSeconds } from "@/observability";
 import { formatInAppTimezone } from "@/shared/time/appTimezone";
 import { formatTaskCompletionDuration } from "../schedule/taskCompletionDuration";
 
@@ -57,34 +56,43 @@ export function elapsedSeconds(isoStart: string, now: number): number {
 }
 
 export type AttemptTiming = {
-  /** Visible summary: `Picked up · … · Completed · … · duration`. */
-  label: string;
-  /** Accessible description for the timing span. */
+  /** Formatted pickup timestamp in the operator timezone. */
+  startedAt: string;
+  /** Formatted completion timestamp, or null while the attempt is running. */
+  endedAt: string | null;
+  /** Wall-clock duration label (e.g. `1 min`), or null while in progress. */
+  duration: string | null;
+  /** True when the cycle has no ended_at / is still running. */
+  inProgress: boolean;
+  /** Accessible full description for the timing region. */
   ariaLabel: string;
 };
 
 /**
- * Per-attempt pickup / complete / duration copy for cycle history rows.
+ * Per-attempt pickup / complete / duration fields for cycle history rows.
  * Uses the operator app timezone so timings match the schedule strip.
  */
 export function formatAttemptTiming(cycle: TaskCycle, tz: string): AttemptTiming {
-  const start = formatInAppTimezone(cycle.started_at, tz);
+  const startedAt = formatInAppTimezone(cycle.started_at, tz);
   if (cycle.status === "running" || !cycle.ended_at) {
-    const label = `Picked up · ${start} · Completed · in progress`;
-    return { label, ariaLabel: label };
+    return {
+      startedAt,
+      endedAt: null,
+      duration: null,
+      inProgress: true,
+      ariaLabel: `Picked up ${startedAt}, still in progress`,
+    };
   }
-  const end = formatInAppTimezone(cycle.ended_at, tz);
+  const endedAt = formatInAppTimezone(cycle.ended_at, tz);
   const duration = formatTaskCompletionDuration(cycle.started_at, cycle.ended_at);
-  const label = duration
-    ? `Picked up · ${start} · Completed · ${end} · ${duration}`
-    : `Picked up · ${start} · Completed · ${end}`;
-  return { label, ariaLabel: label };
-}
-
-export function formatPhaseDuration(phase: TaskCyclePhase, now: number): string {
-  const start = Date.parse(phase.started_at);
-  if (!Number.isFinite(start)) return "—";
-  const end = phase.ended_at ? Date.parse(phase.ended_at) : now;
-  if (!Number.isFinite(end) || end < start) return "—";
-  return formatDurationSeconds((end - start) / 1000);
+  const ariaLabel = duration
+    ? `Picked up ${startedAt}, completed ${endedAt}, ran ${duration}`
+    : `Picked up ${startedAt}, completed ${endedAt}`;
+  return {
+    startedAt,
+    endedAt,
+    duration,
+    inProgress: false,
+    ariaLabel,
+  };
 }

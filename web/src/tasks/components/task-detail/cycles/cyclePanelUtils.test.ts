@@ -103,8 +103,11 @@ describe("pickLatestPhase", () => {
 describe("formatAttemptTiming", () => {
   it("labels in-progress attempts without a duration", () => {
     const timing = formatAttemptTiming(cycle("c-run", "running"), "UTC");
-    expect(timing.label).toMatch(/^Picked up · .+ · Completed · in progress$/);
-    expect(timing.label).not.toMatch(/min/);
+    expect(timing.inProgress).toBe(true);
+    expect(timing.endedAt).toBeNull();
+    expect(timing.duration).toBeNull();
+    expect(timing.startedAt.length).toBeGreaterThan(0);
+    expect(timing.ariaLabel).toMatch(/still in progress/i);
   });
 
   it("labels terminal attempts with completed time and duration", () => {
@@ -116,7 +119,9 @@ describe("formatAttemptTiming", () => {
       },
       "UTC",
     );
-    expect(timing.label).toMatch(/^Picked up · .+ · Completed · .+ · 12 min$/);
-    expect(timing.ariaLabel).toBe(timing.label);
+    expect(timing.inProgress).toBe(false);
+    expect(timing.duration).toBe("12 min");
+    expect(timing.endedAt).toEqual(expect.any(String));
+    expect(timing.ariaLabel).toMatch(/ran 12 min/);
   });
 });

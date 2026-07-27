@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
@@ -95,13 +95,24 @@ describe("TaskCommitsPanel", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders populated commits list", async () => {
+  it("renders populated commits list newest-first", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
       const url = reqUrl(input);
       if (url.endsWith("/tasks/task-1/commits")) {
         return okJSON({
           task_id: "task-1",
           commits: [
+            {
+              seq: 2,
+              cycle_id: "cycle-2",
+              attempt_seq: 2,
+              repo: "/repo",
+              worktree: "/repo/.worktrees/task-1",
+              branch: "feature/newer",
+              sha: "def123def4567890abcdef1234567890abcdef12",
+              message: "Newer commit",
+              committed_at: "2026-04-18T12:00:00.000Z",
+            },
             {
               seq: 1,
               cycle_id: "cycle-1",
@@ -110,7 +121,7 @@ describe("TaskCommitsPanel", () => {
               worktree: "/repo/.worktrees/task-1",
               branch: "main",
               sha: "abc123def4567890abcdef1234567890abcdef12",
-              message: "Initial commit",
+              message: "Older commit",
               committed_at: "2026-04-18T11:00:00.000Z",
             },
           ],
@@ -121,10 +132,13 @@ describe("TaskCommitsPanel", () => {
 
     renderPanel();
 
-    expect(await screen.findByText(/Initial commit/i)).toBeInTheDocument();
+    const list = await screen.findByTestId("task-commits-list");
+    const items = within(list).getAllByRole("listitem");
+    expect(items[0]).toHaveTextContent(/Newer commit/i);
+    expect(items[1]).toHaveTextContent(/Older commit/i);
     expect(screen.queryByTestId("task-commits-empty-well")).not.toBeInTheDocument();
     expect(screen.getByTestId("task-commits-branch-line")).toHaveTextContent(
-      "main",
+      "feature/newer",
     );
     expect(screen.queryByTestId("task-commits-context")).not.toBeInTheDocument();
 
