@@ -41,12 +41,6 @@ export function VerifyChatModeChip({ task }: Props) {
       aria-label={`Verification mode: ${label} (${sourceLabel.toLowerCase()})`}
     >
       <ModeGlyph className="task-verify-chat-mode-chip-icon" />
-      <span className="task-verify-chat-mode-chip-label">
-        Verification mode
-      </span>
-      <span className="task-verify-chat-mode-chip-sep" aria-hidden="true">
-        ·
-      </span>
       <span className="task-verify-chat-mode-chip-value">{label}</span>
     </span>
   );

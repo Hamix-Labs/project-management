@@ -26,7 +26,9 @@ describe("VerifyChatModeChip", () => {
     const chip = screen.getByTestId("task-verify-chat-mode-chip");
     expect(chip).toHaveAttribute("data-mode", "different_chat");
     expect(chip).toHaveAttribute("data-source", "task");
-    expect(chip).toHaveTextContent("Verification mode");
+    expect(chip).toHaveAccessibleName(
+      "Verification mode: Different chat (task override)",
+    );
     expect(chip).toHaveTextContent("Different chat");
   });
 
@@ -35,7 +37,9 @@ describe("VerifyChatModeChip", () => {
     const chip = screen.getByTestId("task-verify-chat-mode-chip");
     expect(chip).toHaveAttribute("data-mode", "different_chat");
     expect(chip).toHaveAttribute("data-source", "workspace");
-    expect(chip).toHaveTextContent("Verification mode");
+    expect(chip).toHaveAccessibleName(
+      "Verification mode: Different chat (workspace default)",
+    );
     expect(chip).toHaveTextContent("Different chat");
   });
 
