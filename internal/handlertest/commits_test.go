@@ -60,8 +60,12 @@ func TestHandler_GetTaskCommits_returnsRows(t *testing.T) {
 	if len(resp.Commits) != 2 {
 		t.Fatalf("len(commits)=%d want 2", len(resp.Commits))
 	}
-	if resp.Commits[0].SHA != "abc1234567890abcdef1234567890abcdef1234" || resp.Commits[0].AttemptSeq != cycle.AttemptSeq {
-		t.Fatalf("first commit=%+v", resp.Commits[0])
+	// Newest committed_at first (fix is one minute after feat).
+	if resp.Commits[0].SHA != "def1234567890abcdef1234567890abcdef12345" || resp.Commits[0].AttemptSeq != cycle.AttemptSeq {
+		t.Fatalf("newest commit=%+v", resp.Commits[0])
+	}
+	if resp.Commits[1].SHA != "abc1234567890abcdef1234567890abcdef1234" {
+		t.Fatalf("oldest commit=%+v", resp.Commits[1])
 	}
 }
 

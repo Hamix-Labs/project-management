@@ -90,7 +90,6 @@ describe("CycleHistoryList token usage", () => {
           },
         ]}
         runningCycleId={null}
-        cyclesById={new Map([["cyc-1", baseCycle]])}
       />,
       { wrapper: createWrapper() },
     );
@@ -124,7 +123,6 @@ describe("CycleHistoryList token usage", () => {
         taskId="task-1"
         cycles={[baseCycle]}
         runningCycleId={null}
-        cyclesById={new Map([["cyc-1", baseCycle]])}
       />,
       { wrapper: createWrapper() },
     );

@@ -20,6 +20,11 @@
   color: var(--text-tertiary);
 }
 
+.task-verify-chat-mode-chip-label {
+  color: var(--text-tertiary);
+  font-weight: 500;
+}
+
 .task-verify-chat-mode-chip-value {
   min-width: 0;
   overflow: hidden;

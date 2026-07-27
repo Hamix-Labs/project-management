@@ -23,9 +23,10 @@ export function TaskCommitsPanel({ taskId, enabled = true }: Props) {
 
   const branch = useMemo(() => {
     if (commits.length === 0) return "";
-    const first = commits[0];
-    const last = commits[commits.length - 1];
-    return (last.branch || first.branch || "").trim();
+    // API returns newest-first; prefer the newest row's branch.
+    const newest = commits[0];
+    const oldest = commits[commits.length - 1];
+    return (newest.branch || oldest.branch || "").trim();
   }, [commits]);
 
   const count =

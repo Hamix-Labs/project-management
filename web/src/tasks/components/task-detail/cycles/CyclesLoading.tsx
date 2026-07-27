@@ -4,7 +4,7 @@ export function CyclesLoading() {
     <ul
       className="task-cycles-list task-cycles-list--loading"
       aria-busy="true"
-      aria-label="Loading execution cycles"
+      aria-label="Loading attempts"
     >
       <li className="task-cycle-row task-cycle-row--skeleton" />
       <li className="task-cycle-row task-cycle-row--skeleton" />
