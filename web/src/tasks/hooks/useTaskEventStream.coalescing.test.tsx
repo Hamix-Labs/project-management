@@ -65,9 +65,8 @@ describe("useTaskEventStream coalescing", () => {
   });
 
   it("still invalidates cycles and checklist when task_updated shares a flush with cycle hints", () => {
-    // Enrichment coverage (E1/E2): a pending task id must not suppress
-    // sibling cycles/checklist invalidation — that stall left the live
-    // ticker and done criteria stale after verify success.
+    // Task pending owns checklist; cycle pending owns cycles. Both must
+    // survive enrichment skipping detailRoot after verify success.
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const inv = vi.spyOn(qc, "invalidateQueries");
 
@@ -106,9 +105,8 @@ describe("useTaskEventStream coalescing", () => {
     // frames per task run, ~1s apart. A short trailing debounce never
     // batched them and each frame fired its own refetch storm. With the
     // new ~900ms window plus maxWait, frames arriving every ~700ms should
-    // collapse into ONE flush (one detail invalidation per task) instead
-    // of six. We assert that the per-task detail key is invalidated at
-    // most once across the whole burst.
+    // collapse into ONE flush (one cycles invalidation per task) instead
+    // of six.
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const inv = vi.spyOn(qc, "invalidateQueries");
 
@@ -137,17 +135,24 @@ describe("useTaskEventStream coalescing", () => {
       vi.advanceTimersByTime(950);
     });
 
+    const cycleCalls = inv.mock.calls
+      .map((c) => (c[0] as { queryKey: readonly unknown[] }).queryKey)
+      .filter(
+        (k) =>
+          JSON.stringify(k) === JSON.stringify(taskQueryKeys.cycles("task-burst")),
+      );
+    expect(cycleCalls).toHaveLength(1);
     const detailCalls = inv.mock.calls
       .map((c) => (c[0] as { queryKey: readonly unknown[] }).queryKey)
       .filter((k) => JSON.stringify(k) === JSON.stringify(["tasks", "detail"]));
-    expect(detailCalls).toHaveLength(1);
+    expect(detailCalls).toHaveLength(0);
   });
 
   it("forces a flush at maxWait so a continuous SSE stream cannot starve the UI", () => {
     // The trailing debounce alone could be reset forever by frames
     // arriving inside the coalesce window (e.g. multiple concurrent
     // tasks). The maxWait safety valve must force a flush so the open
-    // task page still receives status updates under sustained load.
+    // task page still receives cycle updates under sustained load.
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const inv = vi.spyOn(qc, "invalidateQueries");
 
@@ -172,10 +177,14 @@ describe("useTaskEventStream coalescing", () => {
       });
     }
 
-    const detailCalls = inv.mock.calls
+    const cycleCalls = inv.mock.calls
       .map((c) => (c[0] as { queryKey: readonly unknown[] }).queryKey)
-      .filter((k) => JSON.stringify(k) === JSON.stringify(["tasks", "detail"]));
-    expect(detailCalls.length).toBeGreaterThanOrEqual(1);
+      .filter(
+        (k) =>
+          JSON.stringify(k) ===
+          JSON.stringify(taskQueryKeys.cycles("task-stream")),
+      );
+    expect(cycleCalls.length).toBeGreaterThanOrEqual(1);
   });
 
 });
