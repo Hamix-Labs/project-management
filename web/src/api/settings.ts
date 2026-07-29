@@ -27,7 +27,7 @@ export type AppSettings = {
   max_run_duration_seconds: number;
   /**
    * Max tasks that may run at once across different worktrees.
-   * Same worktree stays sequential. Default 8; must be >= 1.
+   * Same worktree stays sequential. Default 150; must be >= 1.
    */
   agent_task_parallelism: number;
   /** Minimum seconds before the worker runs a new ready task. Default 5; 0 = no wait. */
@@ -128,7 +128,7 @@ export function parseAppSettings(raw: unknown): AppSettings {
   const parallelism =
     typeof o.agent_task_parallelism === "number" && o.agent_task_parallelism >= 1
       ? o.agent_task_parallelism
-      : 8;
+      : 150;
   const pickupDelay = o.agent_pickup_delay_seconds;
   const tz = typeof o.display_timezone === "string" ? o.display_timezone : "";
   const optimistic = typeof o.optimistic_mutations_enabled === "boolean"

@@ -32,7 +32,7 @@ import (
 //     "no limit" — the worker does not wrap runner.Run with a timeout.
 //   - AgentTaskParallelism: max number of tasks that may run at once across
 //     different worktrees (worker.Pool slot count). Same worktree stays
-//     sequential via WorktreeGate. Default 8; must be >= 1.
+//     sequential via WorktreeGate. Default 150; must be >= 1.
 //   - AgentPickupDelaySeconds: new ready tasks get pickup_not_before (see tasks
 //     model) deferred by this many seconds so the worker does not dequeue them
 //     immediately (smoother UX right after create). Default 5. Set to 0 to
@@ -96,7 +96,7 @@ const DefaultAgentPickupDelaySeconds = 5
 
 // DefaultAgentTaskParallelism is the seed value for AgentTaskParallelism
 // (max parallel tasks across different worktrees).
-const DefaultAgentTaskParallelism = 8
+const DefaultAgentTaskParallelism = 150
 
 // DefaultDisplayTimezone is the seed value for DisplayTimezone on first
 // boot. Empty string is the "auto-detect" sentinel: the SPA reads it as
