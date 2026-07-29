@@ -88,6 +88,7 @@ func TestInstanceMatchesSettings(t *testing.T) {
 		CursorBin:             "/bin/cursor",
 		CursorModel:           "gpt",
 		MaxRunDurationSeconds: 600,
+		AgentTaskParallelism:  4,
 	}
 	inst := &policy.InstanceSnapshot{
 		Settings:      base,
@@ -100,6 +101,11 @@ func TestInstanceMatchesSettings(t *testing.T) {
 	changed.CursorModel = "other"
 	if policy.InstanceMatchesSettings(inst, changed, "1.0") {
 		t.Fatal("expected mismatch on cursor model")
+	}
+	changedParallel := base
+	changedParallel.AgentTaskParallelism = 8
+	if policy.InstanceMatchesSettings(inst, changedParallel, "1.0") {
+		t.Fatal("expected mismatch on agent task parallelism")
 	}
 	if policy.InstanceMatchesSettings(inst, base, "2.0") {
 		t.Fatal("expected mismatch on runner version")

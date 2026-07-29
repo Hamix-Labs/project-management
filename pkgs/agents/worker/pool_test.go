@@ -9,7 +9,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/worker"
 )
 
-func TestPool_NewPoolRespectsConcurrency(t *testing.T) {
+func TestPool_NewPoolRespectsParallelism(t *testing.T) {
 	t.Parallel()
 	h := newHarness(t)
 	q := agents.NewMemoryQueue(1)
@@ -17,12 +17,12 @@ func TestPool_NewPoolRespectsConcurrency(t *testing.T) {
 
 	low := worker.NewPool(h.store, q, r, worker.Options{}, 0)
 	if got := len(low.Slots()); got != 1 {
-		t.Fatalf("concurrency 0 slots = %d, want 1", got)
+		t.Fatalf("parallelism 0 slots = %d, want 1", got)
 	}
 
 	high := worker.NewPool(h.store, q, r, worker.Options{}, 64)
 	if got := len(high.Slots()); got != 64 {
-		t.Fatalf("concurrency 64 slots = %d, want 64", got)
+		t.Fatalf("parallelism 64 slots = %d, want 64", got)
 	}
 }
 

@@ -83,7 +83,7 @@ func (s *Supervisor) spawnWorkerInstance(ctx context.Context, cfg settingsdomain
 		TaskUpdatedNotifier: taskUpdatedNotifier,
 		ProgressNotifier:    progressNotifier,
 		Metrics:             s.metrics,
-	}, taskapiconfig.AgentWorkerConcurrency())
+	}, cfg.AgentTaskParallelism)
 
 	workerCtx, cancelWorker := context.WithCancel(s.parentCtx)
 	done := make(chan struct{})

@@ -236,7 +236,7 @@ V1 policy: **restart the worker goroutine** on material change instead of mutati
 | Field / signal | Compared |
 | --- | --- |
 | `runner`, `cursor_bin`, `cursor_model` | string equality |
-| `repo_root`, `max_run_duration_seconds` | equality |
+| `runner`, `cursor_bin`, `cursor_model`, `max_run_duration_seconds`, `agent_task_parallelism` | equality |
 | `agent_paused` | must match (pause flip forces reload into idle branch) |
 | Probed version | `inst.runner.Version()` vs fresh probe result |
 

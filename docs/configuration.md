@@ -38,8 +38,7 @@ The two surfaces do not overlap. Anything in `app_settings` is **not** driven by
 | `HAMIX_IDEMPOTENCY_MAX_BYTES` | No | `8388608` (8 MiB) | Max idempotency cache memory. `0` disables byte bounding. |
 | `HAMIX_MAX_REQUEST_BODY_BYTES` | No | `1048576` (1 MiB) | Reject larger bodies with `413 request body too large`. `0` disables. |
 | `HAMIX_USER_TASK_AGENT_QUEUE_CAP` | No | `256` | Bounded depth of `pkgs/agents.MemoryQueue`. Not durable, not shared. See [domain/agent-queue.md](domain/agent-queue.md). |
-| `HAMIX_AGENT_WORKER_CONCURRENCY` | No | `4` | In-process worker pool size (`pkgs/agents/worker.Pool`). Any positive integer when set; invalid or unset values use default. Slots share one queue and one `WorktreeGate` — sequential within a worktree, parallel across worktrees. See [ADR-0039](adr/ADR-0039-fixed-worktree-branch.md) and [domain/agent-queue.md](domain/agent-queue.md). |
-| `HAMIX_WORKER_REPORT_DIR` | No | `<os.TempDir()>/hamix-worker` | Worker-managed scratch root for the agent ↔ worker side-channel report files (`criteria-report.json`, `verify-report.json`). Lives outside `app_settings.repo_root` so customer working trees stay clean. The supervisor probes writability at startup; failure logs a `report_dir_not_writable` warn and the worker still starts (verify will fail loudly on the first run instead of silently). The per-cycle `<dir>/<cycle_id>/` subdirectory is GC'd at cycle terminate so disk use stays bounded. |
+| `HAMIX_WORKER_REPORT_DIR` | No | `<os.TempDir()>/hamix-worker` | Worker-managed scratch root for the agent ↔ worker side-channel report files (`criteria-report.json`, `verify-report.json`). Lives outside task worktrees so customer working trees stay clean. The supervisor probes writability at startup; failure logs a `report_dir_not_writable` warn and the worker still starts (verify will fail loudly on the first run instead of silently). The per-cycle `<dir>/<cycle_id>/` subdirectory is GC'd at cycle terminate so disk use stays bounded. |
 | `HAMIX_MANAGED_WORKTREE_ROOT` | No | `{UserConfigDir}/hamix` | Root for Hamix-allocated task worktrees (`{root}/worktrees/{repoID}/{branchSlug}`). Default is the OS user config directory (`%AppData%\hamix` on Windows, `~/Library/Application Support/hamix` on macOS, `~/.config/hamix` on Linux). Set in tests or restricted deployments to keep checkouts out of Documents / beside the registered repo. See [ADR-0081](adr/ADR-0081-hamix-managed-worktrees.md). |
 | `HAMIX_SSE_TEST` | No | — | Dev: enable synthetic SSE ticker. See [api.md](./api.md). |
 | `HAMIX_SSE_TEST_*` | No | — | Dev tuning (interval, events per tick, lifecycle simulation). See [api.md](./api.md) and [domain/sse-hub.md](domain/sse-hub.md). |
@@ -119,6 +118,7 @@ Singleton row in Postgres (CHECK enforces `id=1`). AutoMigrate creates the table
 | `cursor_model` | string | `""` | Optional Cursor model forwarded to the execute runner. Empty = omit the model flag (Cursor uses account default). |
 | `verify_model` | string | `""` | Optional Cursor `--model` for PhaseVerify. Empty inherits execute effective model (task pin, else `cursor_model`). |
 | `max_run_duration_seconds` | int (≥0) | `0` | Per-run wall-clock cap on `runner.Request.Timeout`. `0` = no limit. |
+| `agent_task_parallelism` | int (≥1) | `150` | Max tasks that may run at once across **different** worktrees (`pkgs/agents/worker.Pool` slot count). Same worktree stays sequential via `WorktreeGate`. Settings → Phases → **Max parallel tasks**. See [domain/agent-queue.md](domain/agent-queue.md) and [ADR-0039](adr/ADR-0039-fixed-worktree-branch.md). |
 | `agent_pickup_delay_seconds` | int (≥0) | `5` | Delay applied to new ready tasks before the worker can dequeue them. `0` disables. |
 | `display_timezone` | string | `""` | IANA timezone for SPA timestamps. Empty = browser auto-detect. Validated via `time.LoadLocation`. |
 | `optimistic_mutations_enabled` | bool | `true` | Always-on compatibility field. |
@@ -135,6 +135,7 @@ Singleton row in Postgres (CHECK enforces `id=1`). AutoMigrate creates the table
 
 - `runner` is non-empty and not in `pkgs/agents/runner/registry`.
 - `max_run_duration_seconds` is negative.
+- `agent_task_parallelism` is less than 1.
 - `repo_root` contains a NUL byte.
 
 `repo_root` is **not** validated for "directory exists" on `PATCH` — the supervisor reports `repo_root_open_failed` on the next reload, surfaced via `/health/ready` (`workspace_repo: fail`).
@@ -176,6 +177,7 @@ The variables below are silently ignored if still present in `.env`. Move the va
 | `HAMIX_AGENT_WORKER_ENABLED` | Deprecated. The agent worker always starts; use the header pause toggle (`agent_paused`) for a runtime stop. |
 | `HAMIX_AGENT_WORKER_CURSOR_BIN` | `app_settings.cursor_bin`. |
 | `HAMIX_AGENT_WORKER_RUN_TIMEOUT` | `app_settings.max_run_duration_seconds` (default `0` = no limit, not 5m). |
+| `HAMIX_AGENT_WORKER_CONCURRENCY` | `app_settings.agent_task_parallelism` (default `150`). Settings → **Max parallel tasks**. |
 | `HAMIX_AGENT_WORKER_WORKING_DIR` | Removed — register git repositories on `/repositories`; tasks bind `worktree_id` (branch via `git_worktrees.branch_id`). |
 | `REPO_ROOT` | Removed — same as above ([ADR-0033](./adr/ADR-0033-git-worktrees-and-branches.md)). |
 

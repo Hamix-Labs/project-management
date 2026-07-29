@@ -25,6 +25,11 @@ export type AppSettings = {
    */
   verify_model: string;
   max_run_duration_seconds: number;
+  /**
+   * Max tasks that may run at once across different worktrees.
+   * Same worktree stays sequential. Default 150; must be >= 1.
+   */
+  agent_task_parallelism: number;
   /** Minimum seconds before the worker runs a new ready task. Default 5; 0 = no wait. */
   agent_pickup_delay_seconds: number;
   /**
@@ -65,6 +70,7 @@ export type AppSettingsPatch = Partial<{
   cursor_model: string;
   verify_model: string;
   max_run_duration_seconds: number;
+  agent_task_parallelism: number;
   agent_pickup_delay_seconds: number;
   /**
    * IANA timezone identifier (e.g. "America/New_York"). Empty string
@@ -119,6 +125,10 @@ export function parseAppSettings(raw: unknown): AppSettings {
   const verifyModel =
     typeof o.verify_model === "string" ? o.verify_model : "";
   const maxDur = o.max_run_duration_seconds;
+  const parallelism =
+    typeof o.agent_task_parallelism === "number" && o.agent_task_parallelism >= 1
+      ? o.agent_task_parallelism
+      : 150;
   const pickupDelay = o.agent_pickup_delay_seconds;
   const tz = typeof o.display_timezone === "string" ? o.display_timezone : "";
   const optimistic = typeof o.optimistic_mutations_enabled === "boolean"
@@ -143,6 +153,7 @@ export function parseAppSettings(raw: unknown): AppSettings {
     cursor_model: cursorModel,
     verify_model: verifyModel,
     max_run_duration_seconds: maxDur,
+    agent_task_parallelism: parallelism,
     agent_pickup_delay_seconds: pickupDelay,
     display_timezone: tz,
     optimistic_mutations_enabled: optimistic,

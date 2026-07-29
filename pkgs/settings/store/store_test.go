@@ -165,6 +165,18 @@ func TestStore_UpdateSettings_trimsAndClamps(t *testing.T) {
 		}
 	})
 
+	t.Run("rejects_invalid_agent_task_parallelism", func(t *testing.T) {
+		s, ctx := newSettingsStore(t)
+		_, err := s.UpdateSettings(ctx, SettingsPatch{AgentTaskParallelism: ptrInt(0)})
+		if !errors.Is(err, domain.ErrInvalidInput) {
+			t.Fatalf("err = %v, want ErrInvalidInput", err)
+		}
+		_, err = s.UpdateSettings(ctx, SettingsPatch{AgentTaskParallelism: ptrInt(-1)})
+		if !errors.Is(err, domain.ErrInvalidInput) {
+			t.Fatalf("err = %v, want ErrInvalidInput", err)
+		}
+	})
+
 	t.Run("rejects_invalid_agent_pickup_delay", func(t *testing.T) {
 		s, ctx := newSettingsStore(t)
 		_, err := s.UpdateSettings(ctx, SettingsPatch{AgentPickupDelaySeconds: ptrInt(-1)})

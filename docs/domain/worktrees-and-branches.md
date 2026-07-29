@@ -37,7 +37,7 @@ Happy path:
 
 **Unregister vs delete from disk (API):** **Unregister** drops only the Hamix row. **Delete from disk** runs `git worktree remove` and deletes the row. The main worktree cannot be deleted from disk via the API.
 
-**Runtime:** tasks on the same worktree run sequentially (per-worktree gate). Tasks on different worktrees may run in parallel when `HAMIX_AGENT_WORKER_CONCURRENCY` > 1. The worker refuses main/default-branch bindings and verifies HEAD matches the bound branch (no `git checkout` at pickup).
+**Runtime:** tasks on the same worktree run sequentially (per-worktree gate). Tasks on different worktrees may run in parallel up to `app_settings.agent_task_parallelism` (Settings → **Max parallel tasks**). The worker refuses main/default-branch bindings and verifies HEAD matches the bound branch (no `git checkout` at pickup).
 
 ## Sync and path repair
 
@@ -69,5 +69,17 @@ See [ADR-0081](../adr/ADR-0081-hamix-managed-worktrees.md), [ADR-0040](../adr/AD
 
 - Idle reasons: `no_repository_registered`, `all_worktrees_invalid`, `paused_by_operator`.
 - Pre-run: per-worktree gate (`WorktreeGate`); refuse `is_main` / default branch; optional HEAD verify — no checkout at pickup.
-- Pool: N queue consumers share one `MemoryQueue` (`HAMIX_AGENT_WORKER_CONCURRENCY`, default 4). Busy worktrees defer pickup via `TryLock` (~5s).
+- Pool: N queue consumers share one `MemoryQueue` (`app_settings.agent_task_parallelism`, default 150). Busy worktrees defer pickup via `TryLock` (~5s).
+
+### Known limits (not full process isolation)
+
+Worktree binding isolates the **file workspace** (execute/verify cwd, MCP merge path, `/repo/*`). Concurrent tasks still share:
+
+| Limit | Effect |
+| --- | --- |
+| Shared Cursor home | Parallel Cursor CLIs inherit one OS user profile (`HOME` / `APPDATA`) — account/cache cross-talk, not repo files |
+| Process-wide cancel / reload | `POST /settings/cancel-current-run` and worker respawn on material settings change abort **all** in-flight slots |
+| Shared `.git` object store | Linked worktrees of the same repository share objects and locks |
+
+See also [agent-queue.md](./agent-queue.md).
 - Delete guard: **409** `has_running_task` when a **running** task targets the worktree or branch.

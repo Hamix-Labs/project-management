@@ -19,6 +19,7 @@ import type { HandleField } from "./settingsSectionTypes";
 export function PhasesSettingsSection({
   form,
   pickupInvalid,
+  parallelismInvalid,
   maxInvalid,
   cursorModelsQuery,
   modelIdsFromList,
@@ -26,6 +27,7 @@ export function PhasesSettingsSection({
 }: {
   form: SettingsFormState;
   pickupInvalid: boolean;
+  parallelismInvalid: boolean;
   maxInvalid: boolean;
   cursorModelsQuery: UseQueryResult<ListCursorModelsResult, Error>;
   modelIdsFromList: Set<string>;
@@ -71,6 +73,40 @@ export function PhasesSettingsSection({
             {pickupInvalid ? (
               <p role="alert" className="settings-field-error">
                 Must be between 0 and 604800 (7 days).
+              </p>
+            ) : null}
+
+            <label className="settings-field">
+              <span className="settings-field-label">Max parallel tasks</span>
+              <span className="settings-field-input-suffix">
+                <input
+                  type="number"
+                  min={1}
+                  step={1}
+                  placeholder="150"
+                  value={form.agentTaskParallelism}
+                  onChange={(e) =>
+                    onField("agentTaskParallelism", e.target.value)
+                  }
+                  aria-invalid={parallelismInvalid}
+                />
+                <span className="settings-field-suffix" aria-hidden="true">
+                  tasks
+                </span>
+              </span>
+            </label>
+            <div className="settings-field-help-block">
+              <p className="settings-field-help">
+                How many tasks can run at once across different worktrees.
+                Tasks on the same worktree still run one at a time.
+              </p>
+              <p className="settings-field-help settings-field-help-meta">
+                Default <code>150</code>
+              </p>
+            </div>
+            {parallelismInvalid ? (
+              <p role="alert" className="settings-field-error">
+                Must be an integer of at least 1.
               </p>
             ) : null}
           </PhaseFieldGroup>

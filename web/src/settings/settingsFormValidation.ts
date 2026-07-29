@@ -7,6 +7,7 @@ import type { SettingsFormState } from "./settingsForm";
 
 export type SettingsNumericValidation = {
   maxInvalid: boolean;
+  parallelismInvalid: boolean;
   pickupInvalid: boolean;
 };
 
@@ -28,14 +29,18 @@ export function parseSettingsNumericValidation(
   if (!form) {
     return {
       maxInvalid: false,
+      parallelismInvalid: false,
       pickupInvalid: false,
     };
   }
+  const parallelismParsed = Number.parseInt(form.agentTaskParallelism.trim() || "0", 10);
+  const parallelismInvalid = !Number.isFinite(parallelismParsed) || parallelismParsed < 1;
   const pickupParsed = Number.parseInt(form.agentPickupDelaySeconds.trim() || "0", 10);
   const pickupInvalid =
     !Number.isFinite(pickupParsed) || pickupParsed < 0 || pickupParsed > 604800;
   return {
     maxInvalid: parseNonNegativeIntField(form.maxRunDurationSeconds),
+    parallelismInvalid,
     pickupInvalid,
   };
 }

@@ -21,6 +21,7 @@ func TestAppSettings_roundTrip(t *testing.T) {
 		CursorModel:                "opus",
 		VerifyModel:                "composer-2.5-fast",
 		MaxRunDurationSeconds:      120,
+		AgentTaskParallelism:       4,
 		AgentPickupDelaySeconds:    3,
 		DisplayTimezone:            "America/Los_Angeles",
 		OptimisticMutationsEnabled: true,

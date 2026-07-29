@@ -30,6 +30,9 @@ import (
 //     CursorModel / adapter default).
 //   - MaxRunDurationSeconds: per-run wall-clock cap in seconds. 0 means
 //     "no limit" — the worker does not wrap runner.Run with a timeout.
+//   - AgentTaskParallelism: max number of tasks that may run at once across
+//     different worktrees (worker.Pool slot count). Same worktree stays
+//     sequential via WorktreeGate. Default 150; must be >= 1.
 //   - AgentPickupDelaySeconds: new ready tasks get pickup_not_before (see tasks
 //     model) deferred by this many seconds so the worker does not dequeue them
 //     immediately (smoother UX right after create). Default 5. Set to 0 to
@@ -59,6 +62,7 @@ type AppSettings struct {
 	CursorModel                string `json:"cursor_model"`
 	VerifyModel                string `json:"verify_model"`
 	MaxRunDurationSeconds      int    `json:"max_run_duration_seconds"`
+	AgentTaskParallelism       int    `json:"agent_task_parallelism"`
 	AgentPickupDelaySeconds    int    `json:"agent_pickup_delay_seconds"`
 	DisplayTimezone            string `json:"display_timezone"`
 	OptimisticMutationsEnabled bool   `json:"optimistic_mutations_enabled"`
@@ -90,6 +94,10 @@ const DefaultRunner = "cursor"
 // on first boot (seconds before the worker may dequeue a newly created ready task).
 const DefaultAgentPickupDelaySeconds = 5
 
+// DefaultAgentTaskParallelism is the seed value for AgentTaskParallelism
+// (max parallel tasks across different worktrees).
+const DefaultAgentTaskParallelism = 150
+
 // DefaultDisplayTimezone is the seed value for DisplayTimezone on first
 // boot. Empty string is the "auto-detect" sentinel: the SPA reads it as
 // "no explicit operator choice yet" and falls back to the browser's own
@@ -115,6 +123,7 @@ func DefaultAppSettings() AppSettings {
 		Runner:                     DefaultRunner,
 		CursorBin:                  "",
 		MaxRunDurationSeconds:      0,
+		AgentTaskParallelism:       DefaultAgentTaskParallelism,
 		AgentPickupDelaySeconds:    DefaultAgentPickupDelaySeconds,
 		DisplayTimezone:            DefaultDisplayTimezone,
 		OptimisticMutationsEnabled: true,

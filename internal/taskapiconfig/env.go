@@ -35,8 +35,6 @@ const (
 	// path is writable at startup; failure logs a warn and falls back
 	// to the default rather than blocking the worker.
 	EnvWorkerReportDir = "HAMIX_WORKER_REPORT_DIR"
-	// EnvAgentWorkerConcurrency is HAMIX_AGENT_WORKER_CONCURRENCY (in-process worker pool size).
-	EnvAgentWorkerConcurrency = "HAMIX_AGENT_WORKER_CONCURRENCY"
 	// EnvGitReconcileOnStartup is HAMIX_GIT_RECONCILE_ON_STARTUP (conservative git reconcile at boot).
 	EnvGitReconcileOnStartup     = "HAMIX_GIT_RECONCILE_ON_STARTUP"
 	defaultUserTaskAgentQueueCap = 256
@@ -48,11 +46,6 @@ const (
 	// WorkerReportDir() rather than recomputing.
 	defaultWorkerReportDirSubdir = "hamix-worker"
 )
-
-// DefaultAgentWorkerConcurrency is used when HAMIX_AGENT_WORKER_CONCURRENCY is unset, invalid, or out of range.
-const DefaultAgentWorkerConcurrency = defaultAgentWorkerConcurrency
-
-const defaultAgentWorkerConcurrency = 4
 
 // DefaultSSETestTickerInterval is used when HAMIX_SSE_TEST_INTERVAL is unset or below 1s (dev only).
 const DefaultSSETestTickerInterval = defaultSSETestInterval
@@ -181,24 +174,6 @@ func UserTaskAgentQueueCap() int {
 		slog.Warn("invalid env, using default ready-task queue cap", "cmd", calltrace.LogCmd, "operation", "taskapiconfig.agent_queue_env",
 			"var", EnvUserTaskAgentQueueCap, "value", s, "default", defaultUserTaskAgentQueueCap)
 		return defaultUserTaskAgentQueueCap
-	}
-	return n
-}
-
-// AgentWorkerConcurrency returns the in-process agent worker pool size.
-// Default is 4 when unset or invalid; valid values are any positive integer.
-func AgentWorkerConcurrency() int {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskapiconfig.AgentWorkerConcurrency")
-	s := strings.TrimSpace(os.Getenv(EnvAgentWorkerConcurrency))
-	if s == "" {
-		return defaultAgentWorkerConcurrency
-	}
-	n, err := strconv.Atoi(s)
-	if err != nil || n < 1 {
-		slog.Warn("invalid env, using default agent worker concurrency", "cmd", calltrace.LogCmd,
-			"operation", "taskapiconfig.agent_worker_concurrency_env",
-			"var", EnvAgentWorkerConcurrency, "value", s, "default", defaultAgentWorkerConcurrency)
-		return defaultAgentWorkerConcurrency
 	}
 	return n
 }

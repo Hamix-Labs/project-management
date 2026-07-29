@@ -102,7 +102,7 @@ A task created in `status=ready` still needs to be picked up and executed, which
 *In the diagram:* `store facade → MemoryQueue` (notifyReadyTask), with the dotted `Reconcile loop → MemoryQueue` arrow acting as the backstop.
 
 **Step 5. The worker pool consumes the queue and the harness drives each run.**
-N worker goroutines (default 4, `HAMIX_AGENT_WORKER_CONCURRENCY`) share one `MemoryQueue`. When a slot receives a task, it reloads the latest row from the store, acquires the per-worktree gate, transitions the task to `running`, and hands control to the harness. Tasks on the same worktree serialize; tasks on different worktrees may run concurrently. From this point on, the worker is the active driver of writes. It records cycle and phase progress back through the store, publishes `task_cycle_changed` and `agent_run_progress` events to `SSEHub` as the run progresses, and invokes the cursor CLI inside the bound worktree checkout.
+N worker goroutines (default 150, `app_settings.agent_task_parallelism`) share one `MemoryQueue`. When a slot receives a task, it reloads the latest row from the store, acquires the per-worktree gate, transitions the task to `running`, and hands control to the harness. Tasks on the same worktree serialize; tasks on different worktrees may run concurrently. From this point on, the worker is the active driver of writes. It records cycle and phase progress back through the store, publishes `task_cycle_changed` and `agent_run_progress` events to `SSEHub` as the run progresses, and invokes the cursor CLI inside the bound worktree checkout.
 *In the diagram:* `MemoryQueue → Agent worker + harness` (Receive task snapshot), then `Agent worker + harness → store facade` (Run / Resume), `Agent worker + harness → SSEHub` (task_cycle_changed, agent_run_progress), and `Agent worker + harness → Workspace checkout` (cursor runner).
 
 **Why the two paths stay separate.**
@@ -277,7 +277,7 @@ The queue is single-process: multiple `taskapi` replicas with the worker enabled
 
 ## Agent worker and harness
 
-`pkgs/agents/worker` runs an in-process **pool** of N queue consumers on one shared `MemoryQueue` (default N=4 via `HAMIX_AGENT_WORKER_CONCURRENCY`). Each slot handles queue admission (reload, readiness, ready→running, ack ordering) and delegates cycle choreography to `pkgs/agents/harness`. The worker runs when `app_settings.repo_root` is set and can be toggled from the Settings page. Supervisor boot, reload, and hot-swap: [domain/agent-supervisor.md](domain/agent-supervisor.md).
+`pkgs/agents/worker` runs an in-process **pool** of N queue consumers on one shared `MemoryQueue` (default N=150 via `app_settings.agent_task_parallelism`). Each slot handles queue admission (reload, readiness, ready→running, ack ordering) and delegates cycle choreography to `pkgs/agents/harness`. The worker runs when a git repository is registered and can be paused from the SPA header. Supervisor boot, reload, and hot-swap: [domain/agent-supervisor.md](domain/agent-supervisor.md).
 
 The harness (`pkgs/agents/harness`) wraps `runner.Run`: execute/verify phase loop, criteria injection, report-file contracts, executor-owned verify, git integrity checks, and crash/shutdown recovery of in-flight cycle state. See [domain/harness.md](./domain/harness.md), [ADR-0005](./adr/ADR-0005-extract-agent-harness.md), [domain/done-criteria.md](./domain/done-criteria.md), [domain/execute-agent.md](./domain/execute-agent.md), and [domain/verify-agent.md](./domain/verify-agent.md).
 
@@ -287,7 +287,7 @@ Per [ADR-0039](./adr/ADR-0039-fixed-worktree-branch.md), tasks bind `worktree_id
 
 - **`WorktreeGate`** — one mutex per worktree id. Ready admission uses `TryLock`: if the worktree is busy, the slot defers pickup (~5s) without blocking other slots.
 - **No checkout at pickup** — `prepareGitRun` verifies HEAD matches the bound branch and sets `WorkingDir`; the worker does not run `git checkout`.
-- **Pool sizing** — `HAMIX_AGENT_WORKER_CONCURRENCY` (any positive integer, default 4) sets concurrent harness run slots. Effective parallelism is bounded by distinct worktrees with ready tasks, not by queue depth alone.
+- **Pool sizing** — `app_settings.agent_task_parallelism` (any integer ≥ 1, default 150) sets concurrent harness run slots. Effective parallelism is bounded by distinct worktrees with ready tasks, not by queue depth alone.
 
 See [domain/worktrees-and-branches.md](domain/worktrees-and-branches.md) and [domain/agent-queue.md](domain/agent-queue.md).
 
@@ -404,7 +404,7 @@ Idempotent: no-op on a clean DB. Skipped when the worker is disabled.
 7. Schema evolution uses GORM AutoMigrate via explicit migrate step; integer `SchemaRevision` tracks applied schema — see [ADR-0034](adr/ADR-0034-opt-in-schema-migration.md).
 8. List ordering is fixed (`id ASC`); no sort or filter query parameters beyond `after_id` keyset paging.
 9. **Cycles vs audit log:** typed `task_cycles` / `task_cycle_phases` are authoritative for live execution state. Every mutation mirrors into `task_events` in the same SQL transaction. Do not merge those concerns back into a single store.
-10. **Agent worker is single-process.** Pool size is env-configurable (`HAMIX_AGENT_WORKER_CONCURRENCY`, default 4). No retry/backoff; one attempt per task. Runs on the same worktree share one directory and serialize via `WorktreeGate`.
+10. **Agent worker is single-process.** Pool size is Settings-configurable (`agent_task_parallelism`, default 150). No retry/backoff; one attempt per task. Runs on the same worktree share one directory and serialize via `WorktreeGate`.
 11. `dbcheck` does not serve HTTP. `GET /health` and `/health/live` are liveness-only (no DB probe); `/health/ready` does a DB ping + `SELECT 1` plus a workspace directory stat when `app_settings.repo_root` is set.
 12. `taskapi` serves plain HTTP. TLS belongs at a reverse proxy or load balancer.
 13. No CORS (assume same origin or a gateway in front).

@@ -30,6 +30,7 @@ export type SettingsFormState = {
   cursorModel: string;
   verifyModel: string;
   maxRunDurationSeconds: string;
+  agentTaskParallelism: string;
   agentPickupDelaySeconds: string;
   displayTimezone: string;
 };
@@ -49,6 +50,7 @@ export function toFormState(s: AppSettings): SettingsFormState {
     cursorModel: s.cursor_model,
     verifyModel: s.verify_model,
     maxRunDurationSeconds: String(s.max_run_duration_seconds),
+    agentTaskParallelism: String(s.agent_task_parallelism),
     agentPickupDelaySeconds: String(s.agent_pickup_delay_seconds),
     displayTimezone: s.display_timezone,
   };
@@ -74,6 +76,16 @@ export function diffPatch(
   const parsedMax = Number.parseInt(form.maxRunDurationSeconds.trim() || "0", 10);
   if (Number.isFinite(parsedMax) && parsedMax !== initial.max_run_duration_seconds) {
     out.max_run_duration_seconds = parsedMax;
+  }
+  const parsedParallelism = Number.parseInt(
+    form.agentTaskParallelism.trim() || "0",
+    10,
+  );
+  if (
+    Number.isFinite(parsedParallelism) &&
+    parsedParallelism !== initial.agent_task_parallelism
+  ) {
+    out.agent_task_parallelism = parsedParallelism;
   }
   const parsedPickup = Number.parseInt(
     form.agentPickupDelaySeconds.trim() || "0",
