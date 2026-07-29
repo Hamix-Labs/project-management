@@ -102,13 +102,14 @@ describe("decideSyncFrame", () => {
     });
   });
 
-  it("queues cycle frames with optional patch", () => {
+  it("queues cycle frames with optional patch without task-row pending", () => {
     const data = { cycle: {}, phases: [] };
     const decision = decideSyncFrame({
       frame: { kind: "cycle", taskId: "t1", cycleId: "c1", data },
       shouldSuppressTaskEcho: noSuppress,
     });
     expect(decision.schedule).toBe("debounce");
+    expect(decision.pendingDelta.addTaskId).toBeUndefined();
     expect(decision.pendingDelta.addCycle).toEqual({ taskId: "t1", cycleId: "c1" });
     expect(decision.effects).toContainEqual({
       kind: "patch_cycle_detail",
