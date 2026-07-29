@@ -87,14 +87,6 @@
   }
 }
 
-.task-cycle-ticker-eyebrow {
-  font-size: var(--text-sm);
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  text-transform: none;
-  color: var(--text-primary);
-}
-
 .task-cycle-ticker-phase-badge {
   display: inline-flex;
   align-items: center;

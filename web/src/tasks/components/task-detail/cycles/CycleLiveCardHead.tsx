@@ -10,7 +10,7 @@ type CycleLiveCardHeadProps = {
 };
 
 /**
- * Live card header: ping + Live + status badge on the left;
+ * Live card header: ping + status badge on the left;
  * optional phase badge + elapsed on the right.
  */
 export function CycleLiveCardHead({
@@ -27,7 +27,6 @@ export function CycleLiveCardHead({
           <span className="cycle-live-dot-ping" />
           <span className="cycle-live-dot" />
         </span>
-        <span className="task-cycle-ticker-eyebrow">Live</span>
         <CycleStatusBadge
           status={cycleStatus}
           data-testid="task-cycle-ticker-status"
