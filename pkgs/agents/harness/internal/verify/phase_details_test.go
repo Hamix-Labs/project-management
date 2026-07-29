@@ -60,7 +60,7 @@ func TestEncodePhaseDetails_includesStructuredSnapshot(t *testing.T) {
 			Reasoning: "Missing coverage",
 		},
 	}
-	raw := EncodePhaseDetails(2, criteria, verdicts, PhaseDetailsOpts{VerifyRetryCount: 1})
+	raw := EncodePhaseDetails(2, criteria, verdicts, PhaseDetailsOpts{})
 	var got verifyPhaseDetailsPayload
 	if err := json.Unmarshal(raw, &got); err != nil {
 		t.Fatalf("unmarshal: %v", err)
@@ -89,7 +89,6 @@ func TestEncodePhaseDetails_includesStructuredSnapshot(t *testing.T) {
 func TestEncodePhaseDetails_includesUsage(t *testing.T) {
 	t.Parallel()
 	raw := EncodePhaseDetails(1, nil, nil, PhaseDetailsOpts{
-		VerifyRetryCount: 0,
 		Usage: cyclesdomain.TokenUsage{
 			InputTokens:  12,
 			OutputTokens: 8,

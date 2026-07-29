@@ -297,8 +297,7 @@ func TestVerifyOnlyCrossCycleResume_runCycleLoopSkipsRunnerExecute(t *testing.T)
 	state := processState{
 		cycle: cycleLifecycleState{startedAt: h.opts.Clock()},
 		verify: verifyLifecycleState{
-			previouslyPassed: cloneVerdictMap(cp.PreviouslyPassed),
-			verifyFeedback:   cp.VerifyFeedback,
+			lockedPasses: cloneVerdictMap(cp.LockedPasses),
 		},
 	}
 	parentID := parent.ID
@@ -336,7 +335,7 @@ func TestVerifyOnlyCrossCycleResume_runCycleLoopSkipsRunnerExecute(t *testing.T)
 	}
 }
 
-func TestSeedPolishPreviouslyPassed_locksUnflaggedDone(t *testing.T) {
+func TestSeedPolishLockedPasses_locksUnflaggedDone(t *testing.T) {
 	ctx := context.Background()
 	st := storefake.New(t).API
 	tsk, err := st.Create(ctx, taskcorestore.CreateTaskInput{
@@ -363,7 +362,7 @@ func TestSeedPolishPreviouslyPassed_locksUnflaggedDone(t *testing.T) {
 		}
 	}
 	h := New(st, runnerfake.New(), Options{})
-	got, err := h.seedPolishPreviouslyPassed(ctx, tsk.ID, []string{a.ID}, []string{c.ID})
+	got, err := h.seedPolishLockedPasses(ctx, tsk.ID, []string{a.ID}, []string{c.ID})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -378,7 +377,7 @@ func TestSeedPolishPreviouslyPassed_locksUnflaggedDone(t *testing.T) {
 	}
 }
 
-func TestSeedPolishPreviouslyPassed_instructionsOnlyLocksAllDone(t *testing.T) {
+func TestSeedPolishLockedPasses_instructionsOnlyLocksAllDone(t *testing.T) {
 	ctx := context.Background()
 	st := storefake.New(t).API
 	tsk, err := st.Create(ctx, taskcorestore.CreateTaskInput{
@@ -401,7 +400,7 @@ func TestSeedPolishPreviouslyPassed_instructionsOnlyLocksAllDone(t *testing.T) {
 		}
 	}
 	h := New(st, runnerfake.New(), Options{})
-	got, err := h.seedPolishPreviouslyPassed(ctx, tsk.ID, nil, nil)
+	got, err := h.seedPolishLockedPasses(ctx, tsk.ID, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

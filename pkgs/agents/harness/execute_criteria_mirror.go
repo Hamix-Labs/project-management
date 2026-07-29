@@ -30,7 +30,7 @@ func (h *Harness) bestEffortMirrorExecuteCriteria(
 		return
 	}
 	if uerr := h.persistCriteriaReports(ctx, cycleID, cyclesdomain.ExecuteCriteriaReportAttemptSeq,
-		state.verify.verifySnap.Criteria, state.verify.previouslyPassed, selfReport); uerr != nil {
+		state.verify.verifySnap.Criteria, state.verify.lockedPasses, selfReport); uerr != nil {
 		state.verify.mirrorDegraded = true
 		slog.Warn("agent harness execute criteria mirror upsert failed",
 			"cmd", calltrace.LogCmd, "operation", "agent.harness.bestEffortMirrorExecuteCriteria.upsert_err",

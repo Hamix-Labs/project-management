@@ -77,11 +77,11 @@ func sortedIDList(ids map[string]struct{}) []string {
 }
 
 func lockedCriterionIDSet(state *processState) map[string]struct{} {
-	if state == nil || len(state.verify.previouslyPassed) == 0 {
+	if state == nil || len(state.verify.lockedPasses) == 0 {
 		return nil
 	}
-	out := make(map[string]struct{}, len(state.verify.previouslyPassed))
-	for id := range state.verify.previouslyPassed {
+	out := make(map[string]struct{}, len(state.verify.lockedPasses))
+	for id := range state.verify.lockedPasses {
 		out[id] = struct{}{}
 	}
 	return out

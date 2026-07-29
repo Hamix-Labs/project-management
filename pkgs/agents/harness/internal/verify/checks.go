@@ -8,7 +8,6 @@ import (
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	"log/slog"
-	"strings"
 )
 
 func (s *Service) runVerifyChecks(
@@ -19,18 +18,17 @@ func (s *Service) runVerifyChecks(
 	runCorrelationID string,
 	attemptSeq int64,
 	snap Snapshot,
-	previouslyPassed map[string]Verdict,
-	feedback string,
+	lockedPasses map[string]Verdict,
 	mirrorDegradedIn bool,
-) ([]Verdict, string, bool, cyclesdomain.TokenUsage, bool, error) {
+) ([]Verdict, bool, cyclesdomain.TokenUsage, bool, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.verify.runVerifyChecks",
 		"task_id", task.ID, "cycle_id", cycle.ID,
 		"run_correlation_id", runCorrelationID,
-		"criteria_count", len(snap.Criteria), "previously_passed", len(previouslyPassed))
+		"criteria_count", len(snap.Criteria), "locked_passes", len(lockedPasses))
 	mirrorDegraded := mirrorDegradedIn
 	expected := make(map[string]struct{}, len(snap.Criteria))
 	for _, it := range snap.Criteria {
-		if _, locked := previouslyPassed[it.ID]; locked {
+		if _, locked := lockedPasses[it.ID]; locked {
 			continue
 		}
 		expected[it.ID] = struct{}{}
@@ -38,10 +36,10 @@ func (s *Service) runVerifyChecks(
 
 	selfReport, err := s.loadCriteriaSelfReport(parentCtx, cycle.ID, attemptSeq, expected)
 	if err != nil {
-		return nil, "", mirrorDegraded, cyclesdomain.TokenUsage{}, false, err
+		return nil, mirrorDegraded, cyclesdomain.TokenUsage{}, false, err
 	}
 
-	if uerr := s.PersistCriteriaReports(parentCtx, cycle.ID, attemptSeq, snap.Criteria, previouslyPassed, selfReport); uerr != nil {
+	if uerr := s.PersistCriteriaReports(parentCtx, cycle.ID, attemptSeq, snap.Criteria, lockedPasses, selfReport); uerr != nil {
 		mirrorDegraded = true
 		slog.Warn("agent harness UpsertCriteriaReports failed",
 			"cmd", calltrace.LogCmd, "operation", "agent.harness.verify.runVerifyChecks.upsert_criteria_err",
@@ -55,7 +53,7 @@ func (s *Service) runVerifyChecks(
 	var usagePresent bool
 
 	for _, it := range snap.Criteria {
-		if locked, ok := previouslyPassed[it.ID]; ok {
+		if locked, ok := lockedPasses[it.ID]; ok {
 			verdicts = append(verdicts, locked)
 			continue
 		}
@@ -73,7 +71,6 @@ func (s *Service) runVerifyChecks(
 			continue
 		}
 		if len(it.VerifyCommands) == 0 {
-			// ADR-0090: claim-only criteria accept from execute submit.
 			v.Passed = true
 			v.Verifier = checklistdomain.VerifierExecuteClaim
 			v.Reasoning = "accepted execute claim (no verify commands)"
@@ -89,35 +86,31 @@ func (s *Service) runVerifyChecks(
 	if needLLMVerify {
 		cmdEvidence, cmdErr := s.RunCriterionCommands(parentCtx, task.ID, cycle.ID, phaseSeq, attemptSeq, snap, selfReport, nil)
 		if cmdErr != nil {
-			return nil, "", mirrorDegraded, cyclesdomain.TokenUsage{}, false, cmdErr
+			return nil, mirrorDegraded, cyclesdomain.TokenUsage{}, false, cmdErr
 		}
-		runUsage, runUsagePresent, runErr := s.runLLMVerify(parentCtx, task, cycle, phaseSeq, runCorrelationID, snap, previouslyPassed, selfReport, feedback, cmdEvidence, int(attemptSeq)-1)
+		runUsage, runUsagePresent, runErr := s.runLLMVerify(parentCtx, task, cycle, phaseSeq, runCorrelationID, snap, lockedPasses, selfReport, cmdEvidence)
 		if runUsagePresent {
 			usage = cyclesdomain.AddTokenUsage(usage, runUsage)
 			usagePresent = true
 		}
-		nextVerdicts, parseErr := s.assembleVerdictsFromVerifyReport(cycle.ID, llmExpected, verdicts, selfReport, previouslyPassed)
+		nextVerdicts, parseErr := s.assembleVerdictsFromVerifyReport(cycle.ID, llmExpected, verdicts, selfReport, lockedPasses)
 		if err := verifyLLMRunError(runErr, parseErr); err != nil {
-			return nil, "", mirrorDegraded, usage, usagePresent, err
+			return nil, mirrorDegraded, usage, usagePresent, err
 		}
 		verdicts = nextVerdicts
 	}
 
-	if uerr := s.persistVerifyReports(parentCtx, cycle.ID, attemptSeq, verdicts, previouslyPassed); uerr != nil {
+	if uerr := s.persistVerifyReports(parentCtx, cycle.ID, attemptSeq, verdicts, lockedPasses); uerr != nil {
 		mirrorDegraded = true
 		slog.Warn("agent harness UpsertVerifyReports failed",
 			"cmd", calltrace.LogCmd, "operation", "agent.harness.verify.runVerifyChecks.upsert_verify_err",
 			"cycle_id", cycle.ID, "attempt_seq", attemptSeq, "err", uerr)
 	}
 
-	var failures []string
 	for _, v := range verdicts {
 		if !v.Passed {
-			failures = append(failures, fmt.Sprintf("%s: %s", v.ID, v.Reasoning))
+			return verdicts, mirrorDegraded, usage, usagePresent, fmt.Errorf("verification failed")
 		}
 	}
-	if len(failures) > 0 {
-		return verdicts, strings.Join(failures, "; "), mirrorDegraded, usage, usagePresent, fmt.Errorf("verification failed")
-	}
-	return verdicts, "", mirrorDegraded, usage, usagePresent, nil
+	return verdicts, mirrorDegraded, usage, usagePresent, nil
 }

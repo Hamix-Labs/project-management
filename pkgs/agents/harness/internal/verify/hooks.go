@@ -37,14 +37,12 @@ type Hooks struct {
 
 // PlanVerifyRunInput carries verify context into harness resume policy.
 type PlanVerifyRunInput struct {
-	Task             *taskcoredomain.Task
-	Cycle            *cyclesdomain.TaskCycle
-	Snap             Snapshot
-	VerifyAttempt    int
-	Feedback         string
-	CmdEvidence      []CommandEvidence
-	SelfReport       map[string]reports.CriteriaEntry
-	PreviouslyPassed map[string]Verdict
+	Task         *taskcoredomain.Task
+	Cycle        *cyclesdomain.TaskCycle
+	Snap         Snapshot
+	CmdEvidence  []CommandEvidence
+	SelfReport   map[string]reports.CriteriaEntry
+	LockedPasses map[string]Verdict
 }
 
 // VerifyRunPlan is the cursor resume plan for one verify runner.Run.

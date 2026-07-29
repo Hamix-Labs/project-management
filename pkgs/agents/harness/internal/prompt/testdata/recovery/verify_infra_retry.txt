@@ -4,7 +4,7 @@ You are continuing the same Cursor session after execute. Now verify. Do not mod
 
 ### What changed
 
-Infrastructure or command checks produced new evidence since the last verify attempt.
+Execute finished for this cycle. For each command-backed criterion, judge whether expected_outcome matches the captured shell output below.
 
 ### New command evidence
 

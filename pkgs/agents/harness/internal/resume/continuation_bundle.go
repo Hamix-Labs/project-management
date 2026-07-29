@@ -17,7 +17,7 @@ func (s *Service) LoadContinuationBundle(ctx context.Context, parentCycleID stri
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.resume.LoadContinuationBundle",
 		"parent_cycle_id", parentCycleID)
 	var bundle ContinuationBundle
-	bundle.PreviouslyPassed = map[string]CriterionVerdict{}
+	bundle.LockedPasses = map[string]CriterionVerdict{}
 	parentCycleID = strings.TrimSpace(parentCycleID)
 	if parentCycleID == "" {
 		return bundle, fmt.Errorf("continuation: empty parent cycle id")
@@ -65,12 +65,11 @@ func (s *Service) LoadContinuationBundle(ctx context.Context, parentCycleID stri
 		bundle.Entry = routeResumeEntry(phases, lastExecute, lastPhase, cycle, len(bundle.Commits) > 0)
 	}
 
-	previouslyPassed, _, verifyFeedback, _, err := s.loadVerifyCheckpointData(ctx, parentCycleID, phases)
+	lockedPasses, err := s.loadLockedPasses(ctx, parentCycleID)
 	if err != nil {
 		return bundle, err
 	}
-	bundle.PreviouslyPassed = previouslyPassed
-	bundle.VerifyFeedback = verifyFeedback
+	bundle.LockedPasses = lockedPasses
 
 	criteriaRows, err := s.store.ListCriteriaReportsForCycle(ctx, parentCycleID)
 	if err != nil {
@@ -154,7 +153,7 @@ func continuationSufficient(bundle ContinuationBundle, cycle *cyclesdomain.TaskC
 	if cycle == nil || cycle.ID == "" {
 		return false
 	}
-	if len(bundle.PreviouslyPassed) > 0 || len(bundle.Commits) > 0 || len(bundle.CriteriaEvidence) > 0 {
+	if len(bundle.LockedPasses) > 0 || len(bundle.Commits) > 0 || len(bundle.CriteriaEvidence) > 0 {
 		return true
 	}
 	if bundle.FailureReason != "" || bundle.FailurePhase != "" {

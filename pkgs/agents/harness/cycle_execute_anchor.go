@@ -7,8 +7,6 @@ import (
 	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/git"
-	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/orchestration"
-	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
 func (h *Harness) anchorPostExecuteState(
@@ -75,37 +73,4 @@ func (h *Harness) resolveCurrentHeadSHA(ctx context.Context, snap git.PhaseSnaps
 		return "", false, err
 	}
 	return strings.TrimSpace(out), true, nil
-}
-
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func (h *Harness) gatherRetryClassifyInput(
-	ctx context.Context,
-	cycle *cyclesdomain.TaskCycle,
-	state *processState,
-	verdicts []criterionVerdict,
-	verifyErr error,
-) orchestration.ClassifyInput {
-	reportValid := true
-	h.probeCriteriaReport(state, cycle.ID)
-	if state.verify.reportParseErr != "" {
-		reportValid = false
-	}
-	headMatches := true
-	if state.git.postExecuteHeadSHA != "" {
-		current, ok, err := h.resolveCurrentHeadSHA(ctx, state.git.gitSnap)
-		if err != nil {
-			headMatches = false
-		} else if ok {
-			headMatches = strings.EqualFold(strings.TrimSpace(current), strings.TrimSpace(state.git.postExecuteHeadSHA))
-		}
-	}
-	pipelineFailed := verifyErr != nil
-	failureClass := orchestration.ClassifyFailureClass(verdicts, pipelineFailed)
-	return orchestration.ClassifyInput{
-		FailureClass:         failureClass,
-		CriteriaReportValid:  reportValid,
-		GitHeadMatchesAnchor: headMatches,
-		CommitIngestOK:       state.git.lastCommitIngestOK,
-		ExecuteReachedVerify: state.phase.executeReachedVerify,
-	}
 }

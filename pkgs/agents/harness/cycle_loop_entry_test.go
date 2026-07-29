@@ -55,21 +55,15 @@ func TestCycleLoopOptsFromCheckpoint_operatorRetry(t *testing.T) {
 	}
 }
 
-func TestVerifyLifecycleFromCheckpoint_resetAttempt(t *testing.T) {
+func TestVerifyLifecycleFromCheckpoint_lockedPasses(t *testing.T) {
 	t.Parallel()
 	cp := resumeCheckpoint{
-		VerifyAttempt:  3,
-		VerifyFeedback: "fix",
-		PreviouslyPassed: map[string]criterionVerdict{
+		LockedPasses: map[string]criterionVerdict{
 			"c1": {ID: "c1", Passed: true},
 		},
 	}
-	got := verifyLifecycleFromCheckpoint(cp, true)
-	if got.verifyAttempt != 0 || got.verifyFeedback != "fix" || !got.previouslyPassed["c1"].Passed {
-		t.Fatalf("reset attempt: %+v", got)
-	}
-	got = verifyLifecycleFromCheckpoint(cp, false)
-	if got.verifyAttempt != 3 {
-		t.Fatalf("preserve attempt: %+v", got)
+	got := verifyLifecycleFromCheckpoint(cp)
+	if !got.lockedPasses["c1"].Passed {
+		t.Fatalf("expected locked pass: %+v", got)
 	}
 }

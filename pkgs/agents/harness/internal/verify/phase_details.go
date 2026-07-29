@@ -27,18 +27,16 @@ type verifySnapshotPayload struct {
 }
 
 type verifyPhaseDetailsPayload struct {
-	Verification     verifySnapshotPayload    `json:"verification"`
-	MirrorDegraded   *bool                    `json:"mirror_degraded,omitempty"`
-	VerifyRetryCount *int                     `json:"verify_retry_count,omitempty"`
-	Usage            *cyclesdomain.TokenUsage `json:"usage,omitempty"`
+	Verification   verifySnapshotPayload    `json:"verification"`
+	MirrorDegraded *bool                    `json:"mirror_degraded,omitempty"`
+	Usage          *cyclesdomain.TokenUsage `json:"usage,omitempty"`
 }
 
 // PhaseDetailsOpts carries optional verify phase metadata persisted in details_json.
 type PhaseDetailsOpts struct {
-	MirrorDegraded   bool
-	VerifyRetryCount int
-	Usage            cyclesdomain.TokenUsage
-	UsagePresent     bool
+	MirrorDegraded bool
+	Usage          cyclesdomain.TokenUsage
+	UsagePresent   bool
 }
 
 func criterionTextIndex(items []checklistcontract.ChecklistVerifyItem) map[string]string {
@@ -111,7 +109,7 @@ func EncodePhaseDetails(
 ) []byte {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.verify.EncodePhaseDetails",
 		"attempt_seq", attemptSeq, "criteria", len(criteria), "verdicts", len(verdicts),
-		"mirror_degraded", opts.MirrorDegraded, "verify_retry_count", opts.VerifyRetryCount)
+		"mirror_degraded", opts.MirrorDegraded)
 	textByID := criterionTextIndex(criteria)
 	passed, failed := countVerdictOutcome(verdicts)
 	rows := make([]verifyCriterionPayload, 0, len(verdicts))
@@ -144,8 +142,6 @@ func EncodePhaseDetails(
 		v := true
 		payload.MirrorDegraded = &v
 	}
-	retry := opts.VerifyRetryCount
-	payload.VerifyRetryCount = &retry
 	if opts.UsagePresent || opts.Usage.Known() {
 		u := opts.Usage
 		payload.Usage = &u
@@ -155,25 +151,6 @@ func EncodePhaseDetails(
 		return []byte("{}")
 	}
 	return b
-}
-
-// ParseVerifyRetryCount reads verify_retry_count from a verify phase details_json
-// payload. The second return is false when the field is absent (callers fall back
-// to attempt_seq from verify report rows).
-//
-//funclogmeasure:skip category=hot-path reason="Pure JSON parser; verify phase persistence traces at store chokepoints."
-func ParseVerifyRetryCount(detailsJSON []byte) (int, bool) {
-	if len(detailsJSON) == 0 {
-		return 0, false
-	}
-	var payload verifyPhaseDetailsPayload
-	if err := json.Unmarshal(detailsJSON, &payload); err != nil {
-		return 0, false
-	}
-	if payload.VerifyRetryCount == nil {
-		return 0, false
-	}
-	return *payload.VerifyRetryCount, true
 }
 
 // ParseMirrorDegraded reports whether mirror_degraded was set in verify phase details.

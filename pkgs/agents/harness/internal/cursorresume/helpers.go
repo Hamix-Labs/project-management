@@ -20,7 +20,6 @@ func FirstVerifyAfterNewExecute(lastVerifyAfterExecuteSeq, lastCompletedExecuteP
 // RecoveryKindInput is the pure input to SelectRecoveryKind.
 type RecoveryKindInput struct {
 	Phase             cyclesdomain.Phase
-	VerifyAttempt     int
 	ReportParseErr    string
 	RetryMode         taskcoredomain.RetryMode
 	RunKind           taskcoredomain.PendingRunKind
@@ -34,8 +33,8 @@ type RecoveryKindInput struct {
 //funclogmeasure:skip category=hot-path reason="Pure kind selection from pre-resolved facts."
 func SelectRecoveryKind(in RecoveryKindInput) prompt.RecoveryKind {
 	if in.Phase == cyclesdomain.PhaseVerify {
-		if in.VerifyAttempt > 0 {
-			return prompt.RecoveryVerifyFeedback
+		if in.HasFailedVerdicts {
+			return prompt.RecoveryVerifyImplementation
 		}
 		return prompt.RecoveryVerifyInfra
 	}
@@ -48,7 +47,6 @@ func SelectRecoveryKind(in RecoveryKindInput) prompt.RecoveryKind {
 	if in.RetryMode == taskcoredomain.RetryResume && in.HasContinuation {
 		return prompt.RecoveryOperatorRetryResume
 	}
-	// Polish must never fall through to process_restart recovery framing.
 	if in.RunKind == taskcoredomain.PendingKindPolish {
 		return prompt.RecoveryHumanPolish
 	}
@@ -105,10 +103,10 @@ func LockedCriterionIDs(locked map[string]struct{}) []string {
 // ActiveCriterionIDs returns sorted checklist IDs not yet locked as passed.
 //
 //funclogmeasure:skip category=hot-path reason="Pure active checklist id list from facts."
-func ActiveCriterionIDs(allIDs []string, previouslyPassed map[string]struct{}) []string {
+func ActiveCriterionIDs(allIDs []string, lockedPasses map[string]struct{}) []string {
 	expected := make([]string, 0)
 	for _, id := range allIDs {
-		if _, ok := previouslyPassed[id]; ok {
+		if _, ok := lockedPasses[id]; ok {
 			continue
 		}
 		expected = append(expected, id)

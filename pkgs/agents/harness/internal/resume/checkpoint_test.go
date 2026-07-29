@@ -16,7 +16,7 @@ import (
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
-func TestReconstructCheckpoint_lockedCriteriaAndVerifyAttempt(t *testing.T) {
+func TestReconstructCheckpoint_lockedCriteria(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	st := storefake.New(t).API
@@ -63,11 +63,8 @@ func TestReconstructCheckpoint_lockedCriteriaAndVerifyAttempt(t *testing.T) {
 	if cp.Entry != EntryExecute {
 		t.Fatalf("entry = %v, want execute resume", cp.Entry)
 	}
-	if _, ok := cp.PreviouslyPassed[item.ID]; !ok {
+	if _, ok := cp.LockedPasses[item.ID]; !ok {
 		t.Fatalf("expected locked criterion %s", item.ID)
-	}
-	if cp.VerifyAttempt != 1 {
-		t.Fatalf("verifyAttempt = %d, want 1", cp.VerifyAttempt)
 	}
 }
 

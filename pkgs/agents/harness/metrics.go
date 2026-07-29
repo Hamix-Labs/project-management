@@ -105,19 +105,3 @@ func (h *Harness) observeVerifyDuration(d time.Duration) {
 	}
 	h.opts.Metrics.ObserveVerifyDuration(d)
 }
-
-// observeVerifyRetries records the per-cycle retry count. Called once
-// from terminateCycle — same single funnel pattern as recordRun so
-// adding a new TerminateCycle call site cannot accidentally skip
-// metrics.
-func (h *Harness) observeVerifyRetries(n int) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.observeVerifyRetries",
-		"retries", n)
-	if h == nil || h.opts.Metrics == nil {
-		return
-	}
-	if n < 0 {
-		n = 0
-	}
-	h.opts.Metrics.ObserveVerifyRetries(n)
-}

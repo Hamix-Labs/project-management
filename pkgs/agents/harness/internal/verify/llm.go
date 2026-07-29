@@ -25,28 +25,24 @@ func (s *Service) runLLMVerify(
 	phaseSeq int64,
 	runCorrelationID string,
 	snap Snapshot,
-	previouslyPassed map[string]Verdict,
+	lockedPasses map[string]Verdict,
 	selfReport map[string]reports.CriteriaEntry,
-	feedback string,
 	cmdEvidence []CommandEvidence,
-	verifyAttempt int,
 ) (cyclesdomain.TokenUsage, bool, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.verify.runLLMVerify",
-		"task_id", task.ID, "cycle_id", cycle.ID, "locked_passes", len(previouslyPassed))
+		"task_id", task.ID, "cycle_id", cycle.ID, "locked_passes", len(lockedPasses))
 	s.emitSetupProgress(ctx, task.ID, cycle.ID, phaseSeq,
-		runner.SetupProgressEvent(runner.ProgressRunStateSetupPrompt, "Preparing verifyΓÇª"))
-	promptText := buildVerifyPrompt(ctx, s, task.ID, snap, cycle.ID, previouslyPassed, selfReport, feedback, cmdEvidence)
+		runner.SetupProgressEvent(runner.ProgressRunStateSetupPrompt, "Preparing verify…"))
+	promptText := buildVerifyPrompt(ctx, s, task.ID, snap, cycle.ID, lockedPasses, selfReport, cmdEvidence)
 	resumeSessionID := ""
 	if s.hooks.PlanVerifyRun != nil {
 		plan, err := s.hooks.PlanVerifyRun(ctx, PlanVerifyRunInput{
-			Task:             task,
-			Cycle:            cycle,
-			Snap:             snap,
-			VerifyAttempt:    verifyAttempt,
-			Feedback:         feedback,
-			CmdEvidence:      cmdEvidence,
-			SelfReport:       selfReport,
-			PreviouslyPassed: previouslyPassed,
+			Task:         task,
+			Cycle:        cycle,
+			Snap:         snap,
+			CmdEvidence:  cmdEvidence,
+			SelfReport:   selfReport,
+			LockedPasses: lockedPasses,
 		})
 		if err != nil {
 			return cyclesdomain.TokenUsage{}, false, err
@@ -62,8 +58,6 @@ func (s *Service) runLLMVerify(
 		usagePresent = true
 	}
 	if errors.Is(err, runner.ErrResumeSession) {
-		// same_chat: hard-fail (ADR-0085). different_chat: also hard-fail on
-		// mid-chain resume miss ΓÇö first verify is already forced fresh.
 		err = cursorresume.ResumeSessionFailed(err)
 	}
 	return total, usagePresent, err
@@ -75,12 +69,11 @@ func (s *Service) BuildVerifyPrompt(
 	taskID string,
 	snap Snapshot,
 	cycleID string,
-	previouslyPassed map[string]Verdict,
+	lockedPasses map[string]Verdict,
 	selfReport map[string]reports.CriteriaEntry,
-	feedback string,
 	cmdEvidence []CommandEvidence,
 ) string {
-	return buildVerifyPrompt(ctx, s, taskID, snap, cycleID, previouslyPassed, selfReport, feedback, cmdEvidence)
+	return buildVerifyPrompt(ctx, s, taskID, snap, cycleID, lockedPasses, selfReport, cmdEvidence)
 }
 
 func buildVerifyPrompt(
@@ -89,19 +82,18 @@ func buildVerifyPrompt(
 	taskID string,
 	snap Snapshot,
 	cycleID string,
-	previouslyPassed map[string]Verdict,
+	lockedPasses map[string]Verdict,
 	selfReport map[string]reports.CriteriaEntry,
-	feedback string,
 	cmdEvidence []CommandEvidence,
 ) string {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.verify.buildVerifyPrompt",
-		"task_id", taskID, "cycle_id", cycleID, "locked_passes", len(previouslyPassed))
+		"task_id", taskID, "cycle_id", cycleID, "locked_passes", len(lockedPasses))
 	var b strings.Builder
 	b.WriteString("Your only job is to judge whether each verify command's expected_outcome is satisfied by the captured shell output.\n")
 	b.WriteString("Do not re-judge criterion text or execute evidence. Do not modify source files.\n")
 	b.WriteString("Your interpretation becomes part of the criterion's durable evidence.\n")
 	b.WriteString(prompt.FormatVerifyReportContract(
-		s.BuildVerifyReportContract(ctx, taskID, snap, cycleID, previouslyPassed, selfReport, feedback, cmdEvidence),
+		s.BuildVerifyReportContract(ctx, taskID, snap, cycleID, lockedPasses, selfReport, cmdEvidence),
 	))
 	return b.String()
 }
@@ -113,22 +105,21 @@ func (s *Service) BuildVerifyReportContract(
 	taskID string,
 	snap Snapshot,
 	cycleID string,
-	previouslyPassed map[string]Verdict,
+	lockedPasses map[string]Verdict,
 	selfReport map[string]reports.CriteriaEntry,
-	feedback string,
 	cmdEvidence []CommandEvidence,
 ) prompt.VerifyReportContract {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.verify.BuildVerifyReportContract",
-		"task_id", taskID, "cycle_id", cycleID, "locked_passes", len(previouslyPassed))
+		"task_id", taskID, "cycle_id", cycleID, "locked_passes", len(lockedPasses))
 	commits := s.loadTaskCommits(ctx, taskID)
-	locked := make([]string, 0, len(previouslyPassed))
-	for id := range previouslyPassed {
+	locked := make([]string, 0, len(lockedPasses))
+	for id := range lockedPasses {
 		locked = append(locked, id)
 	}
 	sort.Strings(locked)
 	criteria := make([]prompt.VerifyCriterionLine, 0, len(snap.Criteria))
 	for _, it := range snap.Criteria {
-		if _, ok := previouslyPassed[it.ID]; ok {
+		if _, ok := lockedPasses[it.ID]; ok {
 			continue
 		}
 		if len(it.VerifyCommands) == 0 {
@@ -151,7 +142,6 @@ func (s *Service) BuildVerifyReportContract(
 		CommandEvidenceSection: FormatCommandEvidenceSection(cmdEvidence),
 		GitContext:             git.FormatGitContextForPrompt(commits),
 		DiffSection:            DiffSection(s.workingDir),
-		Feedback:               feedback,
 		ToolOnly:               s.toolOnlyReports,
 	}
 }
@@ -185,9 +175,9 @@ func (s *Service) runVerifyCursor(
 			s.hooks.PersistSessionID(ctx, cycle.ID, phaseSeq, sessionID)
 		}
 	}
-	invokeMsg := "Starting Cursor CLIΓÇª"
+	invokeMsg := "Starting Cursor CLI…"
 	if strings.TrimSpace(resumeSessionID) != "" {
-		invokeMsg = "Resuming Cursor sessionΓÇª"
+		invokeMsg = "Resuming Cursor session…"
 	}
 	onProgress(runner.SetupProgressEvent(runner.ProgressRunStateSetupInvoke, invokeMsg))
 	req := runner.Request{
@@ -215,7 +205,7 @@ func (s *Service) assembleVerdictsFromVerifyReport(
 	expected map[string]struct{},
 	verdicts []Verdict,
 	selfReport map[string]reports.CriteriaEntry,
-	previouslyPassed map[string]Verdict,
+	lockedPasses map[string]Verdict,
 ) ([]Verdict, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.verify.assembleVerdictsFromVerifyReport",
 		"cycle_id", cycleID, "expected", len(expected))
@@ -230,7 +220,7 @@ func (s *Service) assembleVerdictsFromVerifyReport(
 	}
 	next := make([]Verdict, 0, len(verdicts))
 	for _, v := range verdicts {
-		if _, locked := previouslyPassed[v.ID]; locked {
+		if _, locked := lockedPasses[v.ID]; locked {
 			next = append(next, v)
 			continue
 		}

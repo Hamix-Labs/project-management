@@ -19,7 +19,6 @@ const (
 	RecoveryProcessRestart        RecoveryKind = "process_restart"
 	RecoveryOperatorRetryResume   RecoveryKind = "operator_retry_resume"
 	RecoveryVerifyInfra           RecoveryKind = "verify_infra_retry"
-	RecoveryVerifyFeedback        RecoveryKind = "verify_feedback_carry"
 	// RecoveryHumanPolish is Cursor --resume stdin for operator polish (not failure recovery).
 	RecoveryHumanPolish RecoveryKind = "human_polish"
 )
@@ -45,7 +44,6 @@ type RecoveryContext struct {
 	Phase         cyclesdomain.Phase
 	CycleID       string
 	AttemptSeq    int64
-	VerifyAttempt int
 	ReportPath    string
 
 	FailedCriteria       []CriterionFailure
@@ -58,7 +56,6 @@ type RecoveryContext struct {
 	FailureReason        string
 	InterruptedPhase     cyclesdomain.Phase
 	GitPorcelain         string
-	PriorVerifyFeedback  string
 	// VerifyContract is the shared verify-report artifact body for PhaseVerify
 	// resume (same path/schema/criteria as fresh BuildVerifyPrompt).
 	VerifyContract VerifyReportContract
@@ -202,19 +199,7 @@ func composeVerifyRecoveryDelta(b *strings.Builder, ctx RecoveryContext) {
 	b.WriteString("### What changed\n\n")
 	switch ctx.Kind {
 	case RecoveryVerifyInfra:
-		if ctx.VerifyAttempt <= 0 {
-			b.WriteString("Execute finished for this cycle. For each command-backed criterion, judge whether expected_outcome matches the captured shell output below.\n\n")
-		} else {
-			b.WriteString("Infrastructure or command checks produced new evidence since the last verify attempt.\n\n")
-		}
-		formatCommandEvidenceDelta(b, ctx.CommandEvidenceDelta)
-	case RecoveryVerifyFeedback:
-		b.WriteString("Prior verification feedback still applies. Re-run judgment with any new evidence.\n\n")
-		if ctx.PriorVerifyFeedback != "" {
-			b.WriteString("### Prior verify feedback\n\n")
-			b.WriteString(ctx.PriorVerifyFeedback)
-			b.WriteString("\n\n")
-		}
+		b.WriteString("Execute finished for this cycle. For each command-backed criterion, judge whether expected_outcome matches the captured shell output below.\n\n")
 		formatCommandEvidenceDelta(b, ctx.CommandEvidenceDelta)
 	default:
 		b.WriteString("Continue verification for this cycle.\n\n")

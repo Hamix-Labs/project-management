@@ -55,14 +55,14 @@ func (s *Service) PersistCriteriaReports(
 	cycleID string,
 	attemptSeq int64,
 	criteria []checklistcontract.ChecklistVerifyItem,
-	previouslyPassed map[string]Verdict,
+	lockedPasses map[string]Verdict,
 	selfReport map[string]reports.CriteriaEntry,
 ) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.verify.persistCriteriaReports",
 		"cycle_id", cycleID, "attempt_seq", attemptSeq)
 	entries := make([]cyclesstore.CriteriaReportEntry, 0, len(criteria))
 	for _, it := range criteria {
-		if _, locked := previouslyPassed[it.ID]; locked {
+		if _, locked := lockedPasses[it.ID]; locked {
 			continue
 		}
 		e, ok := selfReport[it.ID]
@@ -83,13 +83,13 @@ func (s *Service) persistVerifyReports(
 	cycleID string,
 	attemptSeq int64,
 	verdicts []Verdict,
-	previouslyPassed map[string]Verdict,
+	lockedPasses map[string]Verdict,
 ) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.verify.persistVerifyReports",
 		"cycle_id", cycleID, "attempt_seq", attemptSeq, "verdict_count", len(verdicts))
 	entries := make([]cyclesstore.VerifyReportEntry, 0, len(verdicts))
 	for _, v := range verdicts {
-		if _, locked := previouslyPassed[v.ID]; locked {
+		if _, locked := lockedPasses[v.ID]; locked {
 			continue
 		}
 		entries = append(entries, cyclesstore.VerifyReportEntry{

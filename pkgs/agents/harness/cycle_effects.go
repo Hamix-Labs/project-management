@@ -93,10 +93,6 @@ func (h *Harness) applyVerifyEffects(
 		}
 		return false, true
 	}
-	if effects.RetryLoop {
-		state.verify.verifyAttempt++
-		return true, false
-	}
 	if effects.TerminalFailure {
 		if !h.terminateCycle(parentCtx, state, cycle.TaskID, cyclesdomain.CycleStatusFailed, terminalReason) {
 			return false, true
