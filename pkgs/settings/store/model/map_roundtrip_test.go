@@ -29,6 +29,7 @@ func TestAppSettings_roundTrip(t *testing.T) {
 		RunnerConfigs:              cfg,
 		VerifyMaxRetries:           1,
 		CursorSessionResumeEnabled: false,
+		AgentMCPEnabled:            true,
 		UpdatedAt:                  now,
 	}
 	m := FromDomainAppSettings(orig)

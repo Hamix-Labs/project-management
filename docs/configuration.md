@@ -126,6 +126,7 @@ Singleton row in Postgres (CHECK enforces `id=1`). AutoMigrate creates the table
 | `sse_replay_enabled` | bool | `true` | Always-on compatibility field. |
 | `verify_max_retries` | int (≥0) | `2` | Max execute↔verify retry loops per cycle. |
 | `cursor_session_resume_enabled` | bool | `true` | When `false`, every `runner.Run` uses a fresh Cursor chat and full prompt compose (pre-ADR-0031 behavior). See [cursor-session-resume.md](domain/cursor-session-resume.md). |
+| `agent_mcp_enabled` | bool | `true` | When `true` (default), execute/verify report submit goes through Hamix agent MCP tools with receipt enforcement. Set `false` only as an emergency kill-switch to restore legacy freeform report Write. See [agent-mcp.md](domain/agent-mcp.md). |
 | `updated_at` | RFC3339 (response only) | server clock | Last successful upsert. SPA shows "last changed N ago". |
 
 > **Note** — Execute-phase git commits are **always required** when `repo_root` is a git worktree (clean tree + indexed ancestry before verify). The former `agent_commit_execute_work` toggle and legacy cycle markers message markers were removed in [ADR-0014](adr/ADR-0014-cycle-commit-tracking.md). See [domain/cycle-commits.md](domain/cycle-commits.md).

@@ -36,6 +36,7 @@ func (h *Harness) composeExecutePrompt(ctx context.Context, task *taskcoredomain
 		checklistItemsForPrompt(state.verify.verifySnap.Criteria),
 		reports.CriteriaReportPath(h.opts.ReportDir, cycle.ID),
 		verifiedCriterionIDs(state.verify.previouslyPassed),
+		h.agentMCPActive(ctx),
 	)
 	promptText = prompt.AppendVerifyFeedback(promptText, state.verify.verifyFeedback)
 	retryMode := retryModeFromCycleMeta(cycle)

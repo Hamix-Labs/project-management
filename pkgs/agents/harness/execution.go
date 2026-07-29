@@ -39,7 +39,7 @@ func (h *Harness) executePhasePorts(state *processState, opts cycleLoopOpts) exe
 			return executeRunPlanFromDecision(h.planExecuteResumeFallback(ctx, task, cycle, state, opts))
 		},
 		Invoke: func(ctx context.Context, task *taskcoredomain.Task, cycle *cyclesdomain.TaskCycle, exec *cyclesdomain.TaskCyclePhase, plan execute.RunPlan) (runner.Result, error) {
-			return h.invokeRunnerWithTask(ctx, task, cycle, exec, decisionFromExecuteRunPlan(plan))
+			return h.invokeRunnerWithTask(ctx, task, cycle, exec, decisionFromExecuteRunPlan(plan), state)
 		},
 		EmitProgress: func(ctx context.Context, taskID, cycleID string, phase *cyclesdomain.TaskCyclePhase, ev runner.ProgressEvent) {
 			if phase == nil {

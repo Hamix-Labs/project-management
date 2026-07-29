@@ -113,11 +113,24 @@ func (a *Adapter) argvFor(req runner.Request) []string {
 		out = append(out, cursorFlagModel, m)
 	}
 	out = append(out, cursorFlagForce)
+	if req.ApproveMCPs {
+		out = append(out, cursorFlagApproveMCPs)
+	}
+	if req.TrustWorkspace {
+		out = append(out, cursorFlagTrust)
+	}
 	if id := strings.TrimSpace(req.ResumeSessionID); id != "" {
 		out = append(out, cursorFlagResume, id)
 	}
 	if wd := strings.TrimSpace(req.WorkingDir); wd != "" {
 		out = append(out, cursorFlagWorkspace, wd)
+	}
+	for _, dir := range req.AddDirs {
+		dir = strings.TrimSpace(dir)
+		if dir == "" {
+			continue
+		}
+		out = append(out, cursorFlagAddDir, dir)
 	}
 	return out
 }

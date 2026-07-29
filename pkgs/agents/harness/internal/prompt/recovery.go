@@ -62,6 +62,8 @@ type RecoveryContext struct {
 	// VerifyContract is the shared verify-report artifact body for PhaseVerify
 	// resume (same path/schema/criteria as fresh BuildVerifyPrompt).
 	VerifyContract VerifyReportContract
+	// ToolOnly selects MCP submit instructions (default) vs legacy Write.
+	ToolOnly bool
 	// Polish drives RecoveryHumanPolish deltas (ComposePolishDirective).
 	Polish PolishNoticeInput
 }
@@ -108,11 +110,16 @@ func composeExecuteRecoveryDelta(b *strings.Builder, ctx RecoveryContext) {
 		b.WriteString("Verification rejected the implementation. Address the failures below.\n\n")
 		b.WriteString(FormatVerifyFailuresStructured(ctx.FailedCriteria))
 	case RecoveryCriteriaReportInvalid:
-		b.WriteString(ComposeCriteriaReportRecoveryDelta(ctx.ReportPath, ctx.ReportParseErr, ctx.ExpectedIDs, ctx.LockedCriteria))
+		b.WriteString(ComposeCriteriaReportRecoveryDelta(ctx.ReportPath, ctx.ReportParseErr, ctx.ExpectedIDs, ctx.LockedCriteria, ctx.ToolOnly))
 	case RecoveryCriteriaReportMissing:
-		b.WriteString("The criteria self-report file is missing.\n\n")
-		if ctx.ReportPath != "" {
-			fmt.Fprintf(b, "Write it at: `%s`\n\n", ctx.ReportPath)
+		if ctx.ToolOnly {
+			b.WriteString("The criteria self-report was not submitted via MCP.\n\n")
+			b.WriteString("Call `hamix.submit_criteria_report` with every expected criterion ID. Do not freeform-Write the report file.\n\n")
+		} else {
+			b.WriteString("The criteria self-report file is missing.\n\n")
+			if ctx.ReportPath != "" {
+				fmt.Fprintf(b, "Write it at: `%s`\n\n", ctx.ReportPath)
+			}
 		}
 		if len(ctx.ExpectedIDs) > 0 {
 			b.WriteString("Expected criterion IDs: ")
@@ -274,13 +281,15 @@ func FormatVerifyFailuresStructured(failures []CriterionFailure) string {
 // ComposeCriteriaReportRecoveryDelta builds the invalid-report recovery section.
 //
 //funclogmeasure:skip category=hot-path reason="Pure string format without I/O."
-func ComposeCriteriaReportRecoveryDelta(reportPath, parseErr string, expected, locked []string) string {
+func ComposeCriteriaReportRecoveryDelta(reportPath, parseErr string, expected, locked []string, toolOnly bool) string {
 	var b strings.Builder
 	b.WriteString("The criteria self-report JSON is invalid or incomplete.\n\n")
 	if parseErr != "" {
 		fmt.Fprintf(&b, "Parse error: %s\n\n", parseErr)
 	}
-	if reportPath != "" {
+	if toolOnly {
+		b.WriteString("Re-submit via MCP tool `hamix.submit_criteria_report`. Do not freeform-Write the report file.\n\n")
+	} else if reportPath != "" {
 		fmt.Fprintf(&b, "Fix the file at: `%s`\n\n", reportPath)
 	}
 	if len(expected) > 0 {
@@ -289,7 +298,9 @@ func ComposeCriteriaReportRecoveryDelta(reportPath, parseErr string, expected, l
 		b.WriteString(strings.Join(expected, ", "))
 		b.WriteString("\n\n")
 	}
-	b.WriteString("Schema:\n```json\n{\"criteria\":[{\"id\":\"<id>\",\"claimed_done\":true,\"evidence\":\"...\"}]}\n```\n\n")
+	if !toolOnly {
+		b.WriteString("Schema:\n```json\n{\"criteria\":[{\"id\":\"<id>\",\"claimed_done\":true,\"evidence\":\"...\"}]}\n```\n\n")
+	}
 	if len(locked) > 0 {
 		b.WriteString("Locked criteria are already satisfied; omit them from the report.\n\n")
 	}

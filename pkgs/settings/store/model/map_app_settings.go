@@ -25,6 +25,7 @@ func FromDomainAppSettings(d domain.AppSettings) AppSettings {
 		RunnerConfigs:              jsonmap.DatatypesFromRaw(d.RunnerConfigs),
 		VerifyMaxRetries:           d.VerifyMaxRetries,
 		CursorSessionResumeEnabled: d.CursorSessionResumeEnabled,
+		AgentMCPEnabled:            d.AgentMCPEnabled,
 		UpdatedAt:                  d.UpdatedAt,
 	}
 }
@@ -49,6 +50,7 @@ func ToDomainAppSettings(m AppSettings) domain.AppSettings {
 		RunnerConfigs:              jsonmap.RawFromDatatypes(m.RunnerConfigs),
 		VerifyMaxRetries:           m.VerifyMaxRetries,
 		CursorSessionResumeEnabled: m.CursorSessionResumeEnabled,
+		AgentMCPEnabled:            m.AgentMCPEnabled,
 		UpdatedAt:                  m.UpdatedAt,
 	}
 }

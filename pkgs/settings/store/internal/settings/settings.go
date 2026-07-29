@@ -209,6 +209,9 @@ func applyPatch(row *domain.AppSettings, patch Patch) {
 	if patch.CursorSessionResumeEnabled != nil {
 		row.CursorSessionResumeEnabled = *patch.CursorSessionResumeEnabled
 	}
+	if patch.AgentMCPEnabled != nil {
+		row.AgentMCPEnabled = *patch.AgentMCPEnabled
+	}
 
 	dualWriteCursorToRunnerConfigs(row)
 }

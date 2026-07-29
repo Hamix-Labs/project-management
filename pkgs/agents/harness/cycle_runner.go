@@ -47,8 +47,9 @@ func (h *Harness) invokeRunnerWithTask(
 	cycle *cyclesdomain.TaskCycle,
 	exec *cyclesdomain.TaskCyclePhase,
 	decision CursorResumeDecision,
+	state *processState,
 ) (runner.Result, error) {
-	return h.invokeRunnerWithDecision(parentCtx, task, cycle, exec, cyclesdomain.PhaseExecute, task.CursorModel, decision)
+	return h.invokeRunnerWithDecision(parentCtx, task, cycle, exec, cyclesdomain.PhaseExecute, task.CursorModel, decision, state)
 }
 
 // invokeRunnerWithDecision runs the runner with a pre-built resume decision.
@@ -60,6 +61,7 @@ func (h *Harness) invokeRunnerWithDecision(
 	phase cyclesdomain.Phase,
 	cursorModel string,
 	decision CursorResumeDecision,
+	state *processState,
 ) (runner.Result, error) {
 	runCorrelationID := cyclesdomain.RunCorrelationIDFromDetailsJSON(phaseRow.DetailsJSON)
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.invokeRunnerWithDecision",
@@ -87,7 +89,7 @@ func (h *Harness) invokeRunnerWithDecision(
 		h.persistSessionID(runCtx, cycle.ID, phaseRow.PhaseSeq, sessionID)
 	}
 	onProgress(setupInvokeProgress(decision))
-	return h.runner.Run(runCtx, runner.Request{
+	req := runner.Request{
 		TaskID:           task.ID,
 		AttemptSeq:       cycle.AttemptSeq,
 		Phase:            phase,
@@ -99,7 +101,28 @@ func (h *Harness) invokeRunnerWithDecision(
 		ResumeSessionID:  decision.ResumeSessionID,
 		OnProgress:       onProgress,
 		OnSessionID:      onSessionID,
-	})
+	}
+	if state != nil {
+		// Preserve workspace mcp.json backup across execute/verify invokes.
+		prev := state.agentMCP
+		state.agentMCP = agentMCPLifecycleState{
+			mcpConfigTracked: prev.mcpConfigTracked,
+			mcpConfigHadFile: prev.mcpConfigHadFile,
+			mcpConfigBackup:  prev.mcpConfigBackup,
+		}
+	}
+	if h.agentMCPActive(parentCtx) {
+		prep, err := h.prepareAgentMCP(parentCtx, task, cycle, phase, state)
+		if err != nil {
+			return mcpPrepareFailedResult(err)
+		}
+		applyAgentMCPToRequest(&req, prep)
+		if state != nil {
+			state.agentMCP.enabled = true
+			state.agentMCP.nonce = prep.Nonce
+		}
+	}
+	return h.runner.Run(runCtx, req)
 }
 
 // invokeRunner builds the Request, applies the per-run timeout (if any),
@@ -114,7 +137,7 @@ func (h *Harness) invokeRunnerWithDecision(
 //funclogmeasure:skip category=hot-path reason="Test shim; invokeRunnerWithDecision emits trace logs."
 func (h *Harness) invokeRunner(parentCtx context.Context, task *taskcoredomain.Task, cycle *cyclesdomain.TaskCycle, exec *cyclesdomain.TaskCyclePhase) (runner.Result, error) {
 	decision := CursorResumeDecision{Mode: CursorResumeFresh, Prompt: task.InitialPrompt}
-	return h.invokeRunnerWithDecision(parentCtx, task, cycle, exec, cyclesdomain.PhaseExecute, task.CursorModel, decision)
+	return h.invokeRunnerWithDecision(parentCtx, task, cycle, exec, cyclesdomain.PhaseExecute, task.CursorModel, decision, nil)
 }
 
 // progressPersistTimeout bounds AppendCycleStreamEvent after detaching the

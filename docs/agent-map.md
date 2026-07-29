@@ -47,6 +47,8 @@ Repository paths grouped by subsystem. Read only the rows relevant to your task.
 | Workspace search | `pkgs/repo/` | Path resolution, `@`-mentions; HTTP in `pkgs/repo/handler/` | [domain/workspace-repo.md](./domain/workspace-repo.md), [ADR-0049](./adr/ADR-0049-repo-http-handler.md) |
 | Agent queue | `pkgs/agents/` (notifier hook) | Ready-task enqueue, reconcile tick, queue cap | [domain/agent-queue.md](./domain/agent-queue.md) |
 | Agent harness | `pkgs/agents/harness/` | Execute/verify loop (same runner), criteria, git integrity, retry modes | [domain/harness.md](./domain/harness.md), [domain/verify-agent.md](./domain/verify-agent.md), [cursor-session-resume.md](./domain/cursor-session-resume.md) |
+| Agent sidecar reports | `pkgs/agents/sidecar/` | Shared criteria/verify report paths, parse/validate, submit receipts | [domain/harness.md](./domain/harness.md), [domain/agent-mcp.md](./domain/agent-mcp.md) |
+| Agent MCP host | `pkgs/agents/agentmcp/`, `cmd/hamix-agent-mcp` | Stdio MCP tools (`submit_*`), bind file, tool registry | [domain/agent-mcp.md](./domain/agent-mcp.md), [ADR-0089](./adr/ADR-0089-agent-mcp-platform.md) |
 | Cycle commits | `harness/internal/git/commits.go`, `store/internal/commits/` | Agent-claimed commit ledger for verify | [cycle-commits.md](./domain/cycle-commits.md), ADR-0032 |
 | Agent worker | `pkgs/agents/worker/` | Single-goroutine queue consumer; calls harness | [configuration.md](./configuration.md) |
 | Worker supervisor | `internal/taskapi/agentworker/` | Boot, reload, probe, hot-swap worker from settings | [domain/agent-supervisor.md](./domain/agent-supervisor.md) |

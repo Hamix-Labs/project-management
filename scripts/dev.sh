@@ -59,7 +59,8 @@ done
 GOOS="$(go env GOOS)"
 PORT="${DEV_TASKAPI_PORT:-8080}"
 EXE="$ROOT/taskapi-dev"
-[ "$GOOS" = "windows" ] && EXE="$ROOT/taskapi-dev.exe"
+MCP_EXE="$ROOT/hamix-agent-mcp"
+[ "$GOOS" = "windows" ] && EXE="$ROOT/taskapi-dev.exe" && MCP_EXE="$ROOT/hamix-agent-mcp.exe"
 
 readiness_timeout_sec() {
   local sec
@@ -92,6 +93,9 @@ fi
 go mod download
 ( cd "$ROOT/web" && npm install )
 go build -o "$EXE" ./cmd/taskapi
+# Agent MCP host for Cursor execute/verify (LookPath from the taskapi process).
+go build -o "$MCP_EXE" ./cmd/hamix-agent-mcp
+export PATH="$ROOT${PATH:+:$PATH}"
 
 API_PID=""
 cleanup() {

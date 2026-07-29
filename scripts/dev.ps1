@@ -58,7 +58,9 @@ function Wait-TaskAPIPort([int]$Port, [int]$TimeoutSec, [System.Diagnostics.Proc
 }
 
 $port = if ($env:DEV_TASKAPI_PORT) { [int]$env:DEV_TASKAPI_PORT } else { 8080 }
-$exe = Join-Path $repo $(if ($env:OS -match 'Windows') { 'taskapi-dev.exe' } else { 'taskapi-dev' })
+$exeSuffix = if ($IsWindows) { '.exe' } else { '' }
+$exe = Join-Path $repo ("taskapi-dev" + $exeSuffix)
+$mcpExe = Join-Path $repo ("hamix-agent-mcp" + $exeSuffix)
 $readinessSec = if ($Migrate) { Get-DevReadinessTimeoutSec } else { 30 }
 
 $envFile = Join-Path $repo ".env"
@@ -87,6 +89,9 @@ try {
     & npm install
     Set-Location $repo
     & go build -o $exe "./cmd/taskapi"
+    # Agent MCP host for Cursor execute/verify (LookPath from the taskapi process).
+    & go build -o $mcpExe "./cmd/hamix-agent-mcp"
+    $env:PATH = "$repo" + [IO.Path]::PathSeparator + $env:PATH
 
     Stop-ListenerOnPort $port
     $api = Start-Process -FilePath $exe -ArgumentList "-port", "$port" -WorkingDirectory $repo -PassThru -NoNewWindow

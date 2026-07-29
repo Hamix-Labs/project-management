@@ -78,12 +78,23 @@ type resumeMirrorState struct {
 	lastCursorResumeMode CursorResumeMode
 }
 
+// agentMCPLifecycleState tracks tool-only submit receipts for the current phase
+// and whether WorkingDir/.cursor/mcp.json was harness-managed this cycle.
+type agentMCPLifecycleState struct {
+	enabled          bool
+	nonce            string
+	mcpConfigTracked bool
+	mcpConfigHadFile bool
+	mcpConfigBackup  []byte
+}
+
 type processState struct {
-	cycle  cycleLifecycleState
-	phase  phaseLifecycleState
-	verify verifyLifecycleState
-	git    gitLifecycleState
-	resume resumeMirrorState
+	cycle    cycleLifecycleState
+	phase    phaseLifecycleState
+	verify   verifyLifecycleState
+	git      gitLifecycleState
+	resume   resumeMirrorState
+	agentMCP agentMCPLifecycleState
 }
 
 // Run drives the harness cycle body for one task already in StatusRunning.
@@ -204,6 +215,7 @@ func (h *Harness) terminateCycle(ctx context.Context, state *processState, taskI
 	h.publish(taskID, state.cycle.cycleID)
 	h.recordRun(string(status), h.runner.Name(), state.cycle.effectiveModel, state.cycle.startedAt)
 	h.observeVerifyRetries(state.verify.verifyAttempt)
+	h.restoreWorkspaceMCPConfig(state)
 	// GC the worker-managed scratch dir for this cycle. Idempotent
 	// against a missing dir; logged at Debug because operators rarely
 	// care unless cleanup itself errors. Closes the unbounded-disk-

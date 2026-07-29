@@ -23,6 +23,7 @@ type AppSettings struct {
 	RunnerConfigs              datatypes.JSON `gorm:"column:runner_configs;type:jsonb;not null;default:'{}'"`
 	VerifyMaxRetries           int            `gorm:"not null;default:2;check:chk_app_settings_verify_max_retries,verify_max_retries >= 0"`
 	CursorSessionResumeEnabled bool           `gorm:"not null;default:true"`
+	AgentMCPEnabled            bool           `gorm:"not null;default:true"`
 	UpdatedAt                  time.Time      `gorm:"not null"`
 }
 

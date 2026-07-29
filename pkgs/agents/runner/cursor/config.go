@@ -60,6 +60,9 @@ const (
 	cursorFlagForce        = "--force"
 	cursorFlagResume       = "--resume"
 	cursorFlagWorkspace    = "--workspace"
+	cursorFlagApproveMCPs  = "--approve-mcps"
+	cursorFlagTrust        = "--trust"
+	cursorFlagAddDir       = "--add-dir"
 	cursorFlagVersion      = "--version"
 	cursorFlagListModels   = "--list-models"
 

@@ -22,6 +22,7 @@ type settingsResponse struct {
 	SSEReplayEnabled           bool   `json:"sse_replay_enabled"`
 	VerifyMaxRetries           int    `json:"verify_max_retries"`
 	CursorSessionResumeEnabled bool   `json:"cursor_session_resume_enabled"`
+	AgentMCPEnabled            bool   `json:"agent_mcp_enabled"`
 	UpdatedAt                  string `json:"updated_at,omitempty"`
 }
 
@@ -39,6 +40,7 @@ type settingsPatchBody struct {
 	SSEReplayEnabled           *bool   `json:"sse_replay_enabled,omitempty"`
 	VerifyMaxRetries           *int    `json:"verify_max_retries,omitempty"`
 	CursorSessionResumeEnabled *bool   `json:"cursor_session_resume_enabled,omitempty"`
+	AgentMCPEnabled            *bool   `json:"agent_mcp_enabled,omitempty"`
 }
 
 type probeRequest struct {

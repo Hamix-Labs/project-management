@@ -25,5 +25,12 @@ func (h *Harness) probeCriteriaReport(state *processState, cycleID string) {
 	if !state.verify.verifySnap.Enabled || len(state.verify.verifySnap.Criteria) == 0 {
 		return
 	}
-	state.verify.reportParseErr = execute.ProbeCriteriaReport(h.opts.ReportDir, cycleID, expectedActiveCriterionIDs(state))
+	requireReceipt := state.agentMCP.enabled
+	state.verify.reportParseErr = execute.ProbeCriteriaReportWithReceipt(
+		h.opts.ReportDir,
+		cycleID,
+		expectedActiveCriterionIDs(state),
+		requireReceipt,
+		state.agentMCP.nonce,
+	)
 }

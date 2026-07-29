@@ -73,7 +73,10 @@ import (
 //
 // Rev 22: remove project memory — drop project_context_items/edges,
 // task_context_snapshots, tasks.project_context_item_ids, projects.context_summary.
-const SchemaRevision = 22
+//
+// Rev 23: app_settings.agent_mcp_enabled — Hamix agent MCP tool-only report
+// submit (default true; false is emergency kill-switch to legacy freeform Write).
+const SchemaRevision = 23
 
 const schemaMetaRowID = 1
 

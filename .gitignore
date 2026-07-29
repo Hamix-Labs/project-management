@@ -10,6 +10,8 @@ node_modules/
 web/dist/
 taskapi-dev
 taskapi-dev.exe
+/hamix-agent-mcp
+/hamix-agent-mcp.exe
 /worker
 /cover-agents
 cover-agents.out

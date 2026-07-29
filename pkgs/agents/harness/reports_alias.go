@@ -7,4 +7,6 @@ var (
 	ErrCriteriaReportInvalid = reports.ErrCriteriaReportInvalid
 	ErrVerifyReportMissing   = reports.ErrVerifyReportMissing
 	ErrVerifyReportInvalid   = reports.ErrVerifyReportInvalid
+	ErrSubmitReceiptMissing  = reports.ErrSubmitReceiptMissing
+	ErrSubmitReceiptInvalid  = reports.ErrSubmitReceiptInvalid
 )

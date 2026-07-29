@@ -92,6 +92,15 @@ type Request struct {
 	// ResumeSessionID selects a prior Cursor CLI session (--resume). Empty
 	// starts a fresh chat. Non-cursor adapters ignore this field.
 	ResumeSessionID string `json:"resume_session_id,omitempty"`
+	// ApproveMCPs asks the Cursor adapter to pass --approve-mcps so headless
+	// runs can load MCP servers without interactive approval.
+	ApproveMCPs bool `json:"approve_mcps,omitempty"`
+	// TrustWorkspace asks the Cursor adapter to pass --trust (required for
+	// headless MCP discovery in untrusted worktrees).
+	TrustWorkspace bool `json:"trust_workspace,omitempty"`
+	// AddDirs are extra Cursor --add-dir roots. Note: Cursor does not load
+	// MCP config from add-dir roots; project MCP must live under WorkingDir.
+	AddDirs []string `json:"add_dirs,omitempty"`
 	// OnProgress is an optional live-update callback. It is excluded from
 	// JSON so the persisted/tested request wire shape stays stable.
 	OnProgress func(ProgressEvent) `json:"-"`

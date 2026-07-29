@@ -25,6 +25,9 @@ type VerifyReportContract struct {
 	GitContext             string
 	DiffSection            string
 	Feedback               string
+	// ToolOnly requires hamix.submit_verify_report (default product path).
+	// When false, legacy freeform Write instructions are used (kill-switch).
+	ToolOnly bool
 }
 
 const verifyReportSchema = `Schema: {"criteria":[{"id":"...","verified":true|false,"reasoning":"..."}]}`
@@ -34,13 +37,19 @@ const verifyReportSchema = `Schema: {"criteria":[{"id":"...","verified":true|fal
 //funclogmeasure:skip category=hot-path reason="Pure prompt compose without I/O."
 func FormatVerifyReportContract(c VerifyReportContract) string {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "prompt.FormatVerifyReportContract",
-		"criteria", len(c.Criteria), "locked", len(c.LockedIDs))
+		"criteria", len(c.Criteria), "locked", len(c.LockedIDs), "tool_only", c.ToolOnly)
 	var b strings.Builder
-	if strings.TrimSpace(c.ReportPath) != "" {
+	if c.ToolOnly {
+		b.WriteString("Call the MCP tool `hamix.submit_verify_report` with one entry per active criterion below.\n")
+		b.WriteString("Do **not** freeform-Write `verify-report.json` — only the submit tool is accepted.\n\n")
+	} else if strings.TrimSpace(c.ReportPath) != "" {
 		fmt.Fprintf(&b, "Write `%s` only.\n\n", c.ReportPath)
+		b.WriteString(verifyReportSchema)
+		b.WriteString("\n\n")
+	} else {
+		b.WriteString(verifyReportSchema)
+		b.WriteString("\n\n")
 	}
-	b.WriteString(verifyReportSchema)
-	b.WriteString("\n\n")
 	if len(c.LockedIDs) > 0 {
 		b.WriteString("## Locked passes (do not re-evaluate)\n\n")
 		b.WriteString("These criteria were verified in earlier attempts. Do NOT include them in your report.\n\n")
