@@ -194,7 +194,7 @@ func isCursorSessionRunner(r runner.Runner) bool {
 }
 
 // runCycleLoopVerify runs verification for one loop iteration. retryLoop is
-// true when the outer loop should continue for another execute↔verify attempt.
+// true when the outer loop should continue for another executeΓåöverify attempt.
 // skipNextExecute is true when the next iteration should skip execute (ADR-0028).
 // terminalFailure is true when verification failed terminally (caller should return).
 func (h *Harness) runCycleLoopVerify(
@@ -249,17 +249,22 @@ func (h *Harness) runCycleLoopVerify(
 	classifyIn := h.gatherRetryClassifyInput(parentCtx, cycle, state, verdicts, verifyErr)
 	retryMode, reasonCode := orchestration.ClassifyVerifyRetryMode(classifyIn)
 	executeStillValid := retryMode == orchestration.RetryModeVerifyOnly
-	effects := orchestration.DecideVerifyRetryWithValidity(state.verify.verifyAttempt, state.verify.verifySnap.MaxRetries, result, executeStillValid)
-	if effects.RetryLoop {
-		slog.Info("agent harness verify retry classified", "cmd", calltrace.LogCmd,
-			"operation", "agent.harness.Harness.runCycleLoopVerify.retry_mode",
+	_ = orchestration.DecideVerifyRetryWithValidity(state.verify.verifyAttempt, state.verify.verifySnap.MaxRetries, result, executeStillValid)
+	// ADR-0090: one-shot verify ΓÇö never in-cycle retry (DecideVerifyRetry left unreachable until deleted).
+	effects := orchestration.VerifyEffects{TerminalFailure: true, Tampered: result == orchestration.VerifyResultFailTampered}
+	if result == orchestration.VerifyResultFailTampered {
+		slog.Info("agent harness verify terminal (tampered)", "cmd", calltrace.LogCmd,
+			"operation", "agent.harness.Harness.runCycleLoopVerify.one_shot",
+			"task_id", task.ID, "cycle_id", cycle.ID, "reason_code", string(reasonCode))
+	} else {
+		slog.Info("agent harness verify terminal (one-shot)", "cmd", calltrace.LogCmd,
+			"operation", "agent.harness.Harness.runCycleLoopVerify.one_shot",
 			"task_id", task.ID, "cycle_id", cycle.ID,
-			"retry_mode", string(retryMode), "reason_code", string(reasonCode),
-			"skip_next_execute", effects.SkipNextExecute)
+			"classified_retry_mode", string(retryMode), "reason_code", string(reasonCode))
 	}
 	terminalReason := formatVerificationFailedReason(verdicts, state.verify.previouslyPassed)
 	retry, term := h.applyVerifyEffects(parentCtx, task, cycle, state, effects, terminalReason)
-	return retry, term, effects.SkipNextExecute
+	return retry, term, false
 }
 
 //funclogmeasure:skip category=delegate-already-logs reason="Thin wrapper; runCycleLoopFinalizeSuccessOpts emits finalize traces."
@@ -300,7 +305,7 @@ func (h *Harness) runCycleLoopFinalizeSuccessOpts(
 			h.bestEffortTerminate(parentCtx, state, task.ID, cyclesdomain.CycleStatusFailed, "finalize_effects_failed")
 		} else {
 			// Cycle already terminal: retry the intended task status (done/failed).
-			// Do not force StatusFailed after a succeeded cycle — that orphans a
+			// Do not force StatusFailed after a succeeded cycle ΓÇö that orphans a
 			// successful run as "failed" when only the status write failed.
 			_ = h.transitionTask(parentCtx, task.ID, effects.TaskStatus, "finalize_effects_retry")
 		}
@@ -327,14 +332,14 @@ func (h *Harness) runCycleLoop(parentCtx context.Context, task *taskcoredomain.T
 
 		if opts.skipVerify {
 			// Prior done criteria are already completed in the DB; polish seed locks
-			// are for prompt injection only — do not re-write evidence on finalize.
+			// are for prompt injection only ΓÇö do not re-write evidence on finalize.
 			h.runCycleLoopFinalizeSuccessOpts(parentCtx, task, cycle, state, false)
 			return
 		}
 
 		retryLoop, terminalFailure, skipNextExecute := h.runCycleLoopVerify(parentCtx, task, cycle, state)
 		if retryLoop {
-			// ADR-0028: skipNextExecute ⇒ must not call runCycleLoopExecute (no scrub, no runner).
+			// ADR-0028: skipNextExecute ΓçÆ must not call runCycleLoopExecute (no scrub, no runner).
 			skipExecute = skipNextExecute
 			continue
 		}
