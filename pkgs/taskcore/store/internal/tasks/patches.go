@@ -8,7 +8,6 @@ import (
 
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
-	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/storekernel"
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
@@ -38,9 +37,6 @@ func applyTaskPatches(tx *gorm.DB, taskID string, cur *domain.Task, in UpdateInp
 		return err
 	}
 	if err := applyCursorModelPatch(cur, in.CursorModel); err != nil {
-		return err
-	}
-	if err := applyVerifyChatModePatch(cur, in.VerifyChatMode); err != nil {
 		return err
 	}
 	if err := applyTagsPatch(cur, in.Tags); err != nil {
@@ -143,19 +139,6 @@ func applyCursorModelPatch(cur *domain.Task, p *string) error {
 		return fmt.Errorf("%w: cursor_model too long (max 256)", domain.ErrInvalidInput)
 	}
 	cur.CursorModel = v
-	return nil
-}
-
-func applyVerifyChatModePatch(cur *domain.Task, p *string) error {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.tasks.applyVerifyChatModePatch")
-	if p == nil {
-		return nil
-	}
-	normalized, ok := settingsdomain.NormalizeVerifyChatMode(*p)
-	if !ok {
-		return fmt.Errorf("%w: verify_chat_mode must be same_chat, different_chat, or empty", domain.ErrInvalidInput)
-	}
-	cur.VerifyChatMode = normalized
 	return nil
 }
 

@@ -9,7 +9,6 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/prompt"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/reports"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/verify"
-	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
@@ -92,8 +91,7 @@ func (h *Harness) planVerifyRun(
 	if err != nil {
 		return verify.VerifyRunPlan{}, err
 	}
-	sameChat := state.verify.verifySnap.VerifyChatMode != settingsdomain.VerifyChatModeDifferentChat
-	if sameChat && decision.DenyReason == "no_session_id" {
+	if decision.DenyReason == "no_session_id" {
 		return verify.VerifyRunPlan{}, cursorresume.MissingSessionForVerify()
 	}
 	if decision.Mode == CursorResumeFresh || decision.Mode == CursorResumeFallback {

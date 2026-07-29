@@ -88,9 +88,6 @@ func taskPatchInputFields(body *taskPatchJSON) []any {
 	if body.CursorModel != nil {
 		out = append(out, "patch_cursor_model", true, "patch_cursor_model_len", len(strings.TrimSpace(*body.CursorModel)))
 	}
-	if body.VerifyChatMode != nil {
-		out = append(out, "patch_verify_chat_mode", strings.TrimSpace(*body.VerifyChatMode))
-	}
 	return out
 }
 

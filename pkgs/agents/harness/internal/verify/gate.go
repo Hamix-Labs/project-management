@@ -1,22 +1,20 @@
 package verify
 
-import "github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 import (
 	"context"
 	"errors"
 	"log/slog"
 	"strings"
 
-	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	checklistcontract "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/contract"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 )
 
 // LoadSnapshot reads app settings and checklist criteria for verify gating.
-func (s *Service) LoadSnapshot(ctx context.Context, taskID, taskVerifyChatMode string) (Snapshot, error) {
+func (s *Service) LoadSnapshot(ctx context.Context, taskID string) (Snapshot, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.verify.LoadSnapshot",
 		"task_id", taskID)
-	_ = taskVerifyChatMode // ADR-0090: ignored; command-verify is always same_chat.
 	settings, err := s.store.GetSettings(ctx)
 	if err != nil {
 		return Snapshot{}, err
@@ -29,8 +27,6 @@ func (s *Service) LoadSnapshot(ctx context.Context, taskID, taskVerifyChatMode s
 		Enabled:     len(items) > 0,
 		Criteria:    items,
 		VerifyModel: strings.TrimSpace(settings.VerifyModel),
-		// ADR-0090: command-verify always resumes the execute session.
-		VerifyChatMode: settingsdomain.VerifyChatModeSameChat,
 	}, nil
 }
 

@@ -28,8 +28,6 @@ import (
 //   - VerifyModel: optional `--model` for PhaseVerify on the same Cursor chat.
 //     Empty inherits the execute effective model (task.cursor_model, else
 //     CursorModel / adapter default).
-//   - VerifyChatMode: global default for PhaseVerify chat policy
-//     (same_chat | different_chat). Tasks may override via task.verify_chat_mode.
 //   - MaxRunDurationSeconds: per-run wall-clock cap in seconds. 0 means
 //     "no limit" — the worker does not wrap runner.Run with a timeout.
 //   - AgentPickupDelaySeconds: new ready tasks get pickup_not_before (see tasks
@@ -60,7 +58,6 @@ type AppSettings struct {
 	CursorBin                  string `json:"cursor_bin"`
 	CursorModel                string `json:"cursor_model"`
 	VerifyModel                string `json:"verify_model"`
-	VerifyChatMode             string `json:"verify_chat_mode"`
 	MaxRunDurationSeconds      int    `json:"max_run_duration_seconds"`
 	AgentPickupDelaySeconds    int    `json:"agent_pickup_delay_seconds"`
 	DisplayTimezone            string `json:"display_timezone"`
@@ -71,8 +68,6 @@ type AppSettings struct {
 	// Dual-written alongside the legacy CursorBin/CursorModel columns
 	// during the migration to pluggable runners.
 	RunnerConfigs json.RawMessage `json:"runner_configs"`
-	// VerifyMaxRetries is the corrective execute retries after verify failure.
-	VerifyMaxRetries int `json:"verify_max_retries"`
 	// CursorSessionResumeEnabled enables ADR-0031 --resume-by-default for Cursor CLI.
 	CursorSessionResumeEnabled bool `json:"cursor_session_resume_enabled"`
 	// AgentMCPEnabled enables the Hamix agent MCP host for criteria/verify
@@ -94,9 +89,6 @@ const DefaultRunner = "cursor"
 // DefaultAgentPickupDelaySeconds is the seed value for AgentPickupDelaySeconds
 // on first boot (seconds before the worker may dequeue a newly created ready task).
 const DefaultAgentPickupDelaySeconds = 5
-
-// DefaultVerifyMaxRetries is the seed value for VerifyMaxRetries on first boot.
-const DefaultVerifyMaxRetries = 2
 
 // DefaultDisplayTimezone is the seed value for DisplayTimezone on first
 // boot. Empty string is the "auto-detect" sentinel: the SPA reads it as
@@ -127,8 +119,6 @@ func DefaultAppSettings() AppSettings {
 		DisplayTimezone:            DefaultDisplayTimezone,
 		OptimisticMutationsEnabled: true,
 		SSEReplayEnabled:           true,
-		VerifyMaxRetries:           DefaultVerifyMaxRetries,
-		VerifyChatMode:             string(DefaultVerifyChatMode),
 		CursorSessionResumeEnabled: true,
 		AgentMCPEnabled:            true,
 	}

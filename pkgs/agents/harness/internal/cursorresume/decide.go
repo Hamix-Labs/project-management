@@ -3,7 +3,6 @@ package cursorresume
 import (
 	"strings"
 
-	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
@@ -40,7 +39,7 @@ type Policy struct {
 	AllowResume bool
 }
 
-// Decide implements the ADR-0031 / ADR-0085 / ADR-0086 session-resume decision table.
+// Decide implements the ADR-0031 / ADR-0085 / ADR-0090 session-resume decision table.
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func Decide(in Facts) Policy {
@@ -76,12 +75,12 @@ func Decide(in Facts) Policy {
 }
 
 // SessionPhaseForResume returns the phase whose terminal session_id should
-// be loaded for --resume. Under same_chat, PhaseVerify continues the execute
-// chat (ADR-0085). Under different_chat, verify uses its own chain (ADR-0031).
+// be loaded for --resume. Command-verify always resumes the execute chat
+// (ADR-0090).
 //
 //funclogmeasure:skip category=hot-path reason="Pure phase mapping without I/O."
-func SessionPhaseForResume(phase cyclesdomain.Phase, mode settingsdomain.VerifyChatMode) cyclesdomain.Phase {
-	if phase == cyclesdomain.PhaseVerify && mode != settingsdomain.VerifyChatModeDifferentChat {
+func SessionPhaseForResume(phase cyclesdomain.Phase) cyclesdomain.Phase {
+	if phase == cyclesdomain.PhaseVerify {
 		return cyclesdomain.PhaseExecute
 	}
 	return phase

@@ -28,7 +28,6 @@ func TestTask_roundTrip(t *testing.T) {
 		Number:          intPtr(7),
 		WorktreeID:      &wb,
 		CursorModel:     cm,
-		VerifyChatMode:  "different_chat",
 		PickupNotBefore: &now,
 		PendingRetry:    retry,
 		Gate:            gate,
