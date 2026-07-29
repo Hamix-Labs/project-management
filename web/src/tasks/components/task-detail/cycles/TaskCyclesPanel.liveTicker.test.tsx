@@ -93,10 +93,13 @@ describe("TaskCyclesPanel live ticker", () => {
     ).toHaveTextContent(/Started 35\.0 s ago/);
     expect(phaseLine).toHaveTextContent(/24\.0 s/);
 
-    // The running cycle ALSO appears in the history list, with a
-    // small "↑ live" hint pointing the user up to the ticker.
+    // The running cycle ALSO appears in the history list with "In progress"
+    // (the redundant Live chip was removed).
     const list = screen.getByTestId("task-cycles-list");
-    expect(within(list).getByLabelText(/shown in the live ticker above/i)).toBeInTheDocument();
+    expect(within(list).getByText("In progress")).toBeInTheDocument();
+    expect(within(list).getByTestId("task-cycle-row-status")).toHaveClass(
+      "task-status-badge--tone-info",
+    );
   });
 
   it("renders a runner/model chip on the live ticker only", async () => {

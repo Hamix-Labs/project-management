@@ -1,6 +1,6 @@
 import { useMemo } from "react";
+import { CycleStatusBadge } from "@/components/task-status";
 import { useAppTimezone } from "@/shared/time/appTimezone";
-import { cycleStatusLabel, cycleStatusFillClass } from "@/tasks/cycleDisplay/cyclesViewModel";
 import type { TaskCycle, TaskTokenUsageAttempt } from "@/types/cycle";
 import { useTaskTokenUsage } from "../../../hooks/useTaskTokenUsage";
 import {
@@ -19,14 +19,9 @@ import { formatAttemptTiming } from "./cyclePanelUtils";
 type CycleHistoryListProps = {
   taskId: string;
   cycles: TaskCycle[];
-  runningCycleId: string | null;
 };
 
-export function CycleHistoryList({
-  taskId,
-  cycles,
-  runningCycleId,
-}: CycleHistoryListProps) {
+export function CycleHistoryList({ taskId, cycles }: CycleHistoryListProps) {
   const usageQuery = useTaskTokenUsage(taskId);
   const attemptsByCycleId = useMemo(
     () => indexAttemptsByCycleId(usageQuery.data?.attempts ?? []),
@@ -43,7 +38,6 @@ export function CycleHistoryList({
           key={cycle.id}
           taskId={taskId}
           cycle={cycle}
-          isLiveAbove={cycle.id === runningCycleId}
           attemptUsage={attemptsByCycleId.get(cycle.id)}
         />
       ))}
@@ -64,12 +58,10 @@ function indexAttemptsByCycleId(
 function CycleRow({
   taskId,
   cycle,
-  isLiveAbove,
   attemptUsage,
 }: {
   taskId: string;
   cycle: TaskCycle;
-  isLiveAbove: boolean;
   attemptUsage?: TaskTokenUsageAttempt;
 }) {
   const tz = useAppTimezone();
@@ -85,20 +77,11 @@ function CycleRow({
             <span className="task-cycle-row-attempt">
               Attempt #{cycle.attempt_seq}
             </span>
-            <span
-              className={`cell-pill task-cycle-row-status ${cycleStatusFillClass(cycle.status)}`}
+            <CycleStatusBadge
+              status={cycle.status}
+              className="task-cycle-row-status"
               data-testid="task-cycle-row-status"
-            >
-              {cycleStatusLabel(cycle.status)}
-            </span>
-            {isLiveAbove ? (
-              <span
-                className="task-cycle-row-livehint"
-                aria-label="This cycle is shown in the live ticker above"
-              >
-                Live
-              </span>
-            ) : null}
+            />
           </div>
 
           <div className="task-cycle-row-aside">

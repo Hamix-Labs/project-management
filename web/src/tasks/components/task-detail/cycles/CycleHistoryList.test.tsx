@@ -89,7 +89,6 @@ describe("CycleHistoryList token usage", () => {
             },
           },
         ]}
-        runningCycleId={null}
       />,
       { wrapper: createWrapper() },
     );
@@ -122,7 +121,6 @@ describe("CycleHistoryList token usage", () => {
       <CycleHistoryList
         taskId="task-1"
         cycles={[baseCycle]}
-        runningCycleId={null}
       />,
       { wrapper: createWrapper() },
     );

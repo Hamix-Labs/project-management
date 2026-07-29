@@ -1,8 +1,5 @@
-import {
-  cycleStatusFillClass,
-  cycleStatusLabel,
-  formatRunnerModel,
-} from "@/tasks/cycleDisplay/cyclesViewModel";
+import { CycleStatusBadge } from "@/components/task-status";
+import { formatRunnerModel } from "@/tasks/cycleDisplay/cyclesViewModel";
 import type { TaskCycleDetail } from "@/types";
 import type { AttemptTimelineDisplay } from "./attemptTimelineDisplay";
 
@@ -17,9 +14,7 @@ export function AttemptDetailHeader({ cycle, timelineDisplay }: Props) {
       <div className="task-attempt-title-group">
         <div className="task-attempt-title-row">
           <h2 className="task-detail-title">Attempt #{cycle.attempt_seq}</h2>
-          <span className={`cell-pill ${cycleStatusFillClass(cycle.status)}`}>
-            {cycleStatusLabel(cycle.status)}
-          </span>
+          <CycleStatusBadge status={cycle.status} />
         </div>
         <p className="task-attempt-meta-inline">
           <span className="task-attempt-meta-inline-item">

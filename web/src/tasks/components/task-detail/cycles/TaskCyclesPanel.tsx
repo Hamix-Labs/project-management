@@ -94,7 +94,6 @@ export function TaskCyclesPanel({ taskId, enabled = true }: Props) {
           <CycleHistoryList
             taskId={taskId}
             cycles={historyCycles}
-            runningCycleId={runningCycle?.id ?? null}
           />
         </>
       )}

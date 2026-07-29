@@ -106,7 +106,7 @@
 
 /* Compact status badge — supports the attempt title instead of competing
    with it. Matches the execution-bar status density. */
-.task-cycle-row-status.cell-pill {
+.task-cycle-row-status.task-status-badge {
   min-height: 1.25rem;
   padding: 0.1rem 0.45rem;
   font-size: var(--text-xs);
@@ -182,18 +182,6 @@
 
 .task-cycle-row-fact-arrow {
   color: var(--text-tertiary);
-}
-
-.task-cycle-row-livehint {
-  font-size: var(--text-xs);
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  color: var(--brand-deep);
-  background: var(--brand-muted);
-  border: 1px solid var(--brand-border-soft);
-  border-radius: var(--radius-full);
-  padding: 0.1rem 0.45rem;
 }
 
 .task-cycle-row-attempt-link {
