@@ -21,6 +21,8 @@ criterion-a: still failing
 Write `/tmp/hamix/cycle-1/verify-report.json` only.
 
 Schema: {"criteria":[{"id":"...","verified":true|false,"reasoning":"..."}]}
+For each criterion, set `verified` iff every attached command's `expected_outcome` is satisfied by that command's captured output.
+Put the outcomeΓåöoutput interpretation in `reasoning`. Do not re-judge criterion text or execute evidence.
 
 ## Locked passes (do not re-evaluate)
 
@@ -28,6 +30,7 @@ These criteria were verified in earlier attempts. Do NOT include them in your re
 
 - [criterion-b]
 
+## Command-backed criteria (report these ids)
+
 - [criterion-a] still open
-  execute claimed_done: true (assertion only)
-  execute evidence: prior claim
+

@@ -32,7 +32,7 @@ func AppendOperatorRetryResumeNotice(prompt string, cycle *cyclesdomain.TaskCycl
 		return prompt
 	}
 	var b strings.Builder
-	b.WriteString("## Operator retry — resume from failure\n\n")
+	b.WriteString("## Operator retry ΓÇö resume from failure\n\n")
 	b.WriteString("This is a **new execution attempt** continuing work from a failed prior attempt ")
 	b.WriteString(fmt.Sprintf("(new cycle_id=%s).\n\n", cycle.ID))
 	b.WriteString("Before changing anything:\n")
@@ -41,10 +41,10 @@ func AppendOperatorRetryResumeNotice(prompt string, cycle *cyclesdomain.TaskCycl
 	if block := FormatKnownCommitsForResume(parentCommits); block != "" {
 		b.WriteString("3. ")
 		b.WriteString(strings.TrimSpace(block))
-		b.WriteString("Those commits are already indexed for this task — list only **new** commits you create in `commits[]` on your criteria report.\n")
-		b.WriteString("4. A clean tree does **not** mean the task succeeded — complete remaining criteria and write the criteria report.\n")
+		b.WriteString("Those commits are already indexed for this task ΓÇö list only **new** commits you create in `commits[]` on your criteria report.\n")
+		b.WriteString("4. A clean tree does **not** mean the task succeeded ΓÇö complete remaining criteria and write the criteria report.\n")
 	} else {
-		b.WriteString("3. A clean tree does **not** mean the task succeeded — complete remaining criteria and write the criteria report.\n")
+		b.WriteString("3. A clean tree does **not** mean the task succeeded ΓÇö complete remaining criteria and write the criteria report.\n")
 	}
 	b.WriteString("\n")
 	return b.String() + prompt
@@ -52,7 +52,7 @@ func AppendOperatorRetryResumeNotice(prompt string, cycle *cyclesdomain.TaskCycl
 
 // ComposePolishDirective builds the human-polish execute directive (shared by full
 // prompts and Cursor --resume deltas). Optional Flagged / New / SkipVerify sections
-// appear only when relevant — one composer for all polish combos.
+// appear only when relevant ΓÇö one composer for all polish combos.
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func ComposePolishDirective(cycle *cyclesdomain.TaskCycle, in PolishNoticeInput) string {
@@ -60,14 +60,14 @@ func ComposePolishDirective(cycle *cyclesdomain.TaskCycle, in PolishNoticeInput)
 		return ""
 	}
 	var b strings.Builder
-	b.WriteString("## Human polish — refine completed work\n\n")
+	b.WriteString("## Human polish ΓÇö refine completed work\n\n")
 	b.WriteString("This is a **new execution attempt** after the prior attempt succeeded and entered human review ")
 	b.WriteString(fmt.Sprintf("(new cycle_id=%s).\n\n", cycle.ID))
 	b.WriteString("The prior attempt's checklist was accepted into review (independent verification had approved ")
 	b.WriteString("those criteria where applicable). The human is now requesting **polishments**. ")
 	b.WriteString("This is not failure recovery and not a worker restart.\n\n")
 	b.WriteString("You are continuing the same Cursor conversation. Do not rediscover or re-audit the original task. ")
-	b.WriteString("Change only what the polish instructions and any flagged/new criteria below require — ")
+	b.WriteString("Change only what the polish instructions and any flagged/new criteria below require ΓÇö ")
 	b.WriteString("not a full rewrite unless the instructions say so.\n\n")
 
 	instructions := strings.TrimSpace(in.Instructions)
@@ -76,7 +76,7 @@ func ComposePolishDirective(cycle *cyclesdomain.TaskCycle, in PolishNoticeInput)
 		b.WriteString(instructions)
 		b.WriteString("\n\n")
 	} else {
-		b.WriteString("(No freeform instructions were provided — follow the criterion sections below.)\n\n")
+		b.WriteString("(No freeform instructions were provided ΓÇö follow the criterion sections below.)\n\n")
 	}
 
 	if len(in.Flagged) > 0 {
@@ -101,14 +101,14 @@ func ComposePolishDirective(cycle *cyclesdomain.TaskCycle, in PolishNoticeInput)
 	if in.SkipVerify {
 		b.WriteString("### Verification mode for this polish\n\n")
 		b.WriteString("This polish has **no flagged or newly added criteria**. After execute finishes, the harness will **skip the verify phase**.\n")
-		b.WriteString("Prior criteria remain accepted — do not re-claim or re-hunt them.\n")
+		b.WriteString("Prior criteria remain accepted ΓÇö do not re-claim or re-hunt them.\n")
 		b.WriteString("Your execute-phase claim that the polish instructions are satisfied is sufficient for this attempt to return to human review.\n")
 		b.WriteString("Still inspect the tree, change only what the instructions require, commit new work normally, and do not undo prior good work.\n\n")
 	} else {
 		b.WriteString("### Verification mode for this polish\n\n")
-		b.WriteString("Criteria listed as already verified must remain satisfied — do not undo them.\n")
+		b.WriteString("Criteria listed as already verified must remain satisfied ΓÇö do not undo them.\n")
 		b.WriteString("Apply the polish instructions; fix flagged criteria; implement newly added criteria.\n")
-		b.WriteString("Only active / flagged / new criteria will be re-verified by you (same agent) after execute, using worker command evidence.\n")
+		b.WriteString("Only criteria with verify commands will be re-checked by matching expected_outcome to worker-captured output after execute.\n")
 		b.WriteString("Write a complete criteria report for active criteria only.\n\n")
 	}
 
@@ -118,7 +118,7 @@ func ComposePolishDirective(cycle *cyclesdomain.TaskCycle, in PolishNoticeInput)
 	if block := FormatKnownCommitsForResume(in.KnownCommits); block != "" {
 		b.WriteString("3. ")
 		b.WriteString(strings.TrimSpace(block))
-		b.WriteString("Those commits are already indexed — list only **new** commits you create in `commits[]` on your criteria report.\n")
+		b.WriteString("Those commits are already indexed ΓÇö list only **new** commits you create in `commits[]` on your criteria report.\n")
 		if in.SkipVerify {
 			b.WriteString("4. Apply the polish instructions; your execute claim ends this attempt (no verify phase).\n")
 		} else {
@@ -163,9 +163,9 @@ func AppendResumeNotice(prompt string, cycle *cyclesdomain.TaskCycle, interrupte
 	if block := FormatKnownCommitsForResume(knownCommits); block != "" {
 		b.WriteString("3. ")
 		b.WriteString(strings.TrimSpace(block))
-		b.WriteString("4. A clean tree does **not** mean the task succeeded — complete remaining criteria and write the criteria report.\n")
+		b.WriteString("4. A clean tree does **not** mean the task succeeded ΓÇö complete remaining criteria and write the criteria report.\n")
 	} else {
-		b.WriteString("3. A clean tree does **not** mean the task succeeded — complete remaining criteria and write the criteria report.\n")
+		b.WriteString("3. A clean tree does **not** mean the task succeeded ΓÇö complete remaining criteria and write the criteria report.\n")
 	}
 	b.WriteString("\n")
 	return b.String() + prompt
@@ -181,8 +181,8 @@ func AppendGitCommitPolicy(prompt string, operatorResume bool) string {
 	if operatorResume {
 		b.WriteString("Create **new** commits only in this attempt; prior attempt SHAs are already indexed.\n\n")
 	}
-	b.WriteString("Use normal descriptive commit messages only — do **not** embed task IDs, cycle IDs, or ID markers.\n")
-	b.WriteString("Create **new commits only** — fix mistakes with a follow-up commit; never amend, rebase, squash, or delete history.\n")
+	b.WriteString("Use normal descriptive commit messages only ΓÇö do **not** embed task IDs, cycle IDs, or ID markers.\n")
+	b.WriteString("Create **new commits only** ΓÇö fix mistakes with a follow-up commit; never amend, rebase, squash, or delete history.\n")
 	b.WriteString("You may commit incrementally during the run. Uncommitted local changes are allowed if you already committed the work you are claiming.\n")
 	b.WriteString("Do not push.\n\n")
 	return b.String() + prompt
@@ -202,7 +202,7 @@ func FormatKnownCommitsForResume(commits []cyclesdomain.TaskCycleCommit) string 
 		if len(short) > 12 {
 			short = short[:12]
 		}
-		b.WriteString(fmt.Sprintf("- %s — %s\n", short, c.Message))
+		b.WriteString(fmt.Sprintf("- %s ΓÇö %s\n", short, c.Message))
 	}
 	b.WriteByte('\n')
 	return b.String()

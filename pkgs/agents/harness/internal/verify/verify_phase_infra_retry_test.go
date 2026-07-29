@@ -2,7 +2,6 @@ package verify_test
 
 import (
 	"context"
-	"sync/atomic"
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness"
@@ -15,13 +14,9 @@ import (
 
 // EC-09 (docs/domain/harness.md): locked passes survive infra verify retries.
 // Integration: TestEdgeCase_EC09_partialPass_infraVerifyOnly in cycle_verify_only_test.go.
-// TestWorker_VerifyPhase_carriesPassesAcrossRetries pins PR2's
-// retry-efficiency contract WITHOUT breaking the docs-promised atomic
-// decision: when attempt 1 passes c1 and fails c2, and attempt 2
-// passes c2, the cycle terminates `succeeded` and BOTH completion
-// rows land. Per-attempt state is held in memory (processState.previouslyPassed)
-// so nothing is committed to task_checklist_completions before
-// terminal-success.
+// TestWorker_VerifyPhase_carriesPassesAcrossRetries pins one-shot terminate:
+// when attempt 1 passes c1 and fails c2, the cycle ends failed with no
+// in-cycle retry and no completion rows committed.
 func TestWorker_VerifyPhase_carriesPassesAcrossRetries(t *testing.T) {
 	t.Parallel()
 	h := newHarness(t)
@@ -29,11 +24,11 @@ func TestWorker_VerifyPhase_carriesPassesAcrossRetries(t *testing.T) {
 	defer cancel()
 
 	tsk := h.CreateReadyTask(ctx, "verify-carry")
-	c1, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", nil, taskcoredomain.ActorUser)
+	c1, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", testVerifyCmds(), taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("add c1: %v", err)
 	}
-	c2, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion two", nil, taskcoredomain.ActorUser)
+	c2, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion two", testVerifyCmds(), taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("add c2: %v", err)
 	}
@@ -45,8 +40,6 @@ func TestWorker_VerifyPhase_carriesPassesAcrossRetries(t *testing.T) {
 
 	workDir := t.TempDir()
 	reportDir := t.TempDir()
-	var execAttempt atomic.Int32
-	var verifyAttempt atomic.Int32
 	r := runnerfake.New()
 	hook := &hookRunner{Runner: r, preRun: func(req runner.Request) {
 		cycles, _ := h.Store.ListCyclesForTask(context.Background(), req.TaskID, 1)
@@ -55,30 +48,11 @@ func TestWorker_VerifyPhase_carriesPassesAcrossRetries(t *testing.T) {
 		}
 		switch req.Phase {
 		case cyclesdomain.PhaseExecute:
-			n := execAttempt.Add(1)
-			// Attempt 1 reports both criteria as claimed done. Attempt 2
-			// only reports c2 — c1 was passed on attempt 1 so the prompt
-			// excludes it from the expected-IDs set, and including a
-			// stale c1 entry is no longer required.
-			ids := []string{c1.ID, c2.ID}
-			if n >= 2 {
-				ids = []string{c2.ID}
-			}
-			writeCriteriaReportFor(t, reportDir, cycles[0].ID, ids)
+			writeCriteriaReportFor(t, reportDir, cycles[0].ID, []string{c1.ID, c2.ID})
 		case cyclesdomain.PhaseVerify:
-			n := verifyAttempt.Add(1)
-			// Attempt 1: c1 verified, c2 fails. Attempt 2: c2 verified.
-			// (c1 is locked from attempt 1 and not in the expected set.)
-			switch n {
-			case 1:
-				writePartialVerifyReport(t, reportDir, cycles[0].ID, map[string]bool{
-					c1.ID: true, c2.ID: false,
-				})
-			default:
-				writePartialVerifyReport(t, reportDir, cycles[0].ID, map[string]bool{
-					c2.ID: true,
-				})
-			}
+			writePartialVerifyReport(t, reportDir, cycles[0].ID, map[string]bool{
+				c1.ID: true, c2.ID: false,
+			})
 		}
 	}}
 	r.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(
@@ -90,29 +64,37 @@ func TestWorker_VerifyPhase_carriesPassesAcrossRetries(t *testing.T) {
 		WorkingDir: workDir,
 		ReportDir:  reportDir,
 	})
-	h.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusReview)
+	h.WaitTaskStatus(ctx, tsk.ID, taskcoredomain.StatusFailed)
 	<-done
 	cancel()
+
 	bg := context.Background()
 	items, err := h.Store.ListChecklistForSubject(bg, tsk.ID)
 	if err != nil {
 		t.Fatalf("list checklist: %v", err)
 	}
-	doneCount := 0
 	for _, it := range items {
 		if it.Done {
-			doneCount++
+			t.Errorf("expected NO completed items on one-shot failure; %s is done", it.ID)
 		}
 	}
-	if doneCount != 2 {
-		t.Fatalf("expected both criteria done, got %d (items=%+v)", doneCount, items)
+
+	executeCalls, verifyCalls := 0, 0
+	for _, c := range r.Calls() {
+		switch c.Phase {
+		case cyclesdomain.PhaseExecute:
+			executeCalls++
+		case cyclesdomain.PhaseVerify:
+			verifyCalls++
+		}
+	}
+	if executeCalls != 1 {
+		t.Fatalf("execute calls = %d, want 1 (one-shot)", executeCalls)
+	}
+	if verifyCalls != 1 {
+		t.Fatalf("verify calls = %d, want 1 (one-shot)", verifyCalls)
 	}
 
-	// Per-attempt verdict rows must survive in
-	// task_cycle_verify_reports / task_cycle_criteria_reports so the
-	// SPA's verdict block can render the retry timeline. The
-	// carry-passes lock must NOT erase prior-attempt evidence: c1's
-	// attempt 1 row should still be there alongside c2's attempt 2 row.
 	cycles, err := h.Store.ListCyclesForTask(bg, tsk.ID, 5)
 	if err != nil {
 		t.Fatalf("list cycles: %v", err)
@@ -120,19 +102,7 @@ func TestWorker_VerifyPhase_carriesPassesAcrossRetries(t *testing.T) {
 	if len(cycles) == 0 {
 		t.Fatalf("no cycles recorded")
 	}
-	cycleID := cycles[0].ID
-	verifyRows, err := h.Store.ListVerifyReportsForCycle(bg, cycleID)
-	if err != nil {
-		t.Fatalf("list verify reports: %v", err)
-	}
-	if len(verifyRows) < 2 {
-		t.Fatalf("expected ≥2 verify rows (one per attempted criterion), got %d", len(verifyRows))
-	}
-	criteriaRows, err := h.Store.ListCriteriaReportsForCycle(bg, cycleID)
-	if err != nil {
-		t.Fatalf("list criteria reports: %v", err)
-	}
-	if len(criteriaRows) < 2 {
-		t.Fatalf("expected ≥2 criteria rows, got %d", len(criteriaRows))
+	if cycles[0].Status != cyclesdomain.CycleStatusFailed {
+		t.Fatalf("cycle status = %q, want failed", cycles[0].Status)
 	}
 }

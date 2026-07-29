@@ -114,7 +114,7 @@ type submitVerifyTool struct{}
 func (submitVerifyTool) Name() string  { return ToolSubmitVerify }
 func (submitVerifyTool) Group() string { return GroupReports }
 func (submitVerifyTool) Description() string {
-	return "Validate and write verify-report.json for this verify phase. Required before verify finishes."
+	return "Judge whether each verify command's expected_outcome matches captured shell output; write verify-report.json. Required before command-backed verify finishes. Do not re-judge criterion text."
 }
 
 type submitVerifyInput struct {

@@ -26,7 +26,7 @@ func TestWorker_VerifyPhase_persistsAndPublishesProgressEventsUnderVerifyPhaseSe
 	defer cancel()
 
 	tsk := h.CreateReadyTask(ctx, "verify-progress")
-	item, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", nil, taskcoredomain.ActorUser)
+	item, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", testVerifyCmds(), taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("add checklist item: %v", err)
 	}

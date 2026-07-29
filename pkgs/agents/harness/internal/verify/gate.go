@@ -16,6 +16,7 @@ import (
 func (s *Service) LoadSnapshot(ctx context.Context, taskID, taskVerifyChatMode string) (Snapshot, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.verify.LoadSnapshot",
 		"task_id", taskID)
+	_ = taskVerifyChatMode // ADR-0090: ignored; command-verify is always same_chat.
 	settings, err := s.store.GetSettings(ctx)
 	if err != nil {
 		return Snapshot{}, err
@@ -25,11 +26,12 @@ func (s *Service) LoadSnapshot(ctx context.Context, taskID, taskVerifyChatMode s
 		return Snapshot{}, err
 	}
 	return Snapshot{
-		Enabled:        len(items) > 0,
-		MaxRetries:     settings.VerifyMaxRetries,
-		Criteria:       items,
-		VerifyModel:    strings.TrimSpace(settings.VerifyModel),
-		VerifyChatMode: settingsdomain.EffectiveVerifyChatMode(taskVerifyChatMode, settings.VerifyChatMode),
+		Enabled:     len(items) > 0,
+		MaxRetries:  settings.VerifyMaxRetries,
+		Criteria:    items,
+		VerifyModel: strings.TrimSpace(settings.VerifyModel),
+		// ADR-0090: command-verify always resumes the execute session.
+		VerifyChatMode: settingsdomain.VerifyChatModeSameChat,
 	}, nil
 }
 

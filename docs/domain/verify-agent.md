@@ -1,6 +1,8 @@
 # Verify phase
 
-How the verify phase judges done criteria after execute: same execute agent, worker-owned shell evidence, git integrity, and retry behavior.
+How the verify phase judges done criteria after execute: same execute agent, worker-owned shell evidence, git integrity, and one-shot failure (see [ADR-0090](../adr/ADR-0090-command-only-verify.md)).
+
+> **Product default (ADR-0090)** — Criteria **without** `verify_commands` are accepted from the execute criteria report (`verified_by=execute_claim`) with no Cursor verify run. Criteria **with** commands run worker checks then a verify LLM that only matches `expected_outcome` to captured output. In-cycle execute↔verify retries are disabled (one-shot terminate). Domain docs below still describe older retry/chat-mode details pending the cleanup PR.
 
 | | |
 | --- | --- |

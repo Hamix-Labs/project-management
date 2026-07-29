@@ -54,17 +54,17 @@ func InjectCriteria(prompt string, items []ChecklistItem, reportPath string, alr
 	criteria.WriteString("\n\n## Done criteria (required)\n\n")
 	if toolOnly {
 		criteria.WriteString("You must satisfy every criterion below. When finished, call the MCP tool `hamix.submit_criteria_report` with one entry per active criterion (and optional `commits` for commits created in this execute visit).\n")
-		criteria.WriteString("Do **not** freeform-Write `criteria-report.json` — only the submit tool is accepted.\n")
-		criteria.WriteString("Git discipline: create **new commits only** — never amend, rebase, squash, or delete history; fix mistakes with a follow-up commit.\n")
-		criteria.WriteString("claimed_done is your assertion that you completed the work; after execute, you will verify each criterion against worker command evidence (do not treat the claim as final acceptance).\n")
+		criteria.WriteString("Do **not** freeform-Write `criteria-report.json` ΓÇö only the submit tool is accepted.\n")
+		criteria.WriteString("Git discipline: create **new commits only** ΓÇö never amend, rebase, squash, or delete history; fix mistakes with a follow-up commit.\n")
+		criteria.WriteString("claimed_done is your assertion that you completed the work. Criteria without verify commands are accepted from this report. Criteria with verify commands are checked later by matching each command's expected_outcome to worker-captured output (do not treat the claim as final for those).\n")
 	} else {
 		criteria.WriteString("You must satisfy every criterion below. When finished, write a JSON report at:\n")
 		criteria.WriteString(fmt.Sprintf("`%s`\n\n", reportPath))
 		criteria.WriteString("Schema:\n```json\n{\"schema_version\":1,\"criteria\":[{\"id\":\"<id>\",\"claimed_done\":true,\"evidence\":\"...\"}],\"commits\":[{\"sha\":\"<full-or-abbrev>\",\"branch\":\"optional\"}]}\n```\n")
-		criteria.WriteString("Use only `schema_version`, `criteria`, and `commits` top-level fields — no extra keys; put metadata in `evidence`.\n")
-		criteria.WriteString("List commits **created in this execute visit** under `commits` (incremental is fine — the worker accumulates them).\n")
-		criteria.WriteString("Git discipline: create **new commits only** — never amend, rebase, squash, or delete history; fix mistakes with a follow-up commit.\n")
-		criteria.WriteString("claimed_done is your assertion that you completed the work; after execute, you will verify each criterion against worker command evidence (do not treat the claim as final acceptance).\n")
+		criteria.WriteString("Use only `schema_version`, `criteria`, and `commits` top-level fields ΓÇö no extra keys; put metadata in `evidence`.\n")
+		criteria.WriteString("List commits **created in this execute visit** under `commits` (incremental is fine ΓÇö the worker accumulates them).\n")
+		criteria.WriteString("Git discipline: create **new commits only** ΓÇö never amend, rebase, squash, or delete history; fix mistakes with a follow-up commit.\n")
+		criteria.WriteString("claimed_done is your assertion that you completed the work. Criteria without verify commands are accepted from this report. Criteria with verify commands are checked later by matching each command's expected_outcome to worker-captured output (do not treat the claim as final for those).\n")
 	}
 	if len(locked) > 0 {
 		criteria.WriteString("(Report only the criteria below; do NOT include already-verified IDs.)\n")

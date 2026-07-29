@@ -14,7 +14,15 @@ import (
 	"github.com/AlexsanderHamir/Hamix/internal/gittest"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/runnerfake"
+	checklistcontract "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/contract"
 )
+
+func testVerifyCmds() []checklistcontract.VerifyCommandInput {
+	return []checklistcontract.VerifyCommandInput{{
+		Command:         "echo ok",
+		ExpectedOutcome: "prints ok",
+	}}
+}
 
 // hookRunner wraps a runnerfake so integration tests can script report files.
 type hookRunner struct {
@@ -36,7 +44,7 @@ func (h *hookRunner) Run(ctx context.Context, req runner.Request) (runner.Result
 // criteria-report.json under the worker-managed scratch dir so the
 // next parseCriteriaReport call succeeds. reportDir is the value the
 // worker was given via Options.ReportDir; helpers do NOT prepend any
-// `.legacy-scratch/` segment after PR1 — files live outside the operator's
+// `.legacy-scratch/` segment after PR1 ΓÇö files live outside the operator's
 // RepoRoot, so the path is just <reportDir>/<cycleID>/...
 func writeCriteriaReport(t *testing.T, reportDir, cycleID string, ids []string) {
 	writeCriteriaReportWithCommits(t, reportDir, cycleID, ids, nil)

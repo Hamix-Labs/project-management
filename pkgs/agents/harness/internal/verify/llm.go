@@ -34,7 +34,7 @@ func (s *Service) runLLMVerify(
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.verify.runLLMVerify",
 		"task_id", task.ID, "cycle_id", cycle.ID, "locked_passes", len(previouslyPassed))
 	s.emitSetupProgress(ctx, task.ID, cycle.ID, phaseSeq,
-		runner.SetupProgressEvent(runner.ProgressRunStateSetupPrompt, "Preparing verify…"))
+		runner.SetupProgressEvent(runner.ProgressRunStateSetupPrompt, "Preparing verifyΓÇª"))
 	promptText := buildVerifyPrompt(ctx, s, task.ID, snap, cycle.ID, previouslyPassed, selfReport, feedback, cmdEvidence)
 	resumeSessionID := ""
 	if s.hooks.PlanVerifyRun != nil {
@@ -63,7 +63,7 @@ func (s *Service) runLLMVerify(
 	}
 	if errors.Is(err, runner.ErrResumeSession) {
 		// same_chat: hard-fail (ADR-0085). different_chat: also hard-fail on
-		// mid-chain resume miss — first verify is already forced fresh.
+		// mid-chain resume miss ΓÇö first verify is already forced fresh.
 		err = cursorresume.ResumeSessionFailed(err)
 	}
 	return total, usagePresent, err
@@ -97,8 +97,9 @@ func buildVerifyPrompt(
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.verify.buildVerifyPrompt",
 		"task_id", taskID, "cycle_id", cycleID, "locked_passes", len(previouslyPassed))
 	var b strings.Builder
-	b.WriteString("You implemented this task. Now verify each criterion below.\n")
-	b.WriteString("Do not modify source files.\n")
+	b.WriteString("Your only job is to judge whether each verify command's expected_outcome is satisfied by the captured shell output.\n")
+	b.WriteString("Do not re-judge criterion text or execute evidence. Do not modify source files.\n")
+	b.WriteString("Your interpretation becomes part of the criterion's durable evidence.\n")
 	b.WriteString(prompt.FormatVerifyReportContract(
 		s.BuildVerifyReportContract(ctx, taskID, snap, cycleID, previouslyPassed, selfReport, feedback, cmdEvidence),
 	))
@@ -128,6 +129,9 @@ func (s *Service) BuildVerifyReportContract(
 	criteria := make([]prompt.VerifyCriterionLine, 0, len(snap.Criteria))
 	for _, it := range snap.Criteria {
 		if _, ok := previouslyPassed[it.ID]; ok {
+			continue
+		}
+		if len(it.VerifyCommands) == 0 {
 			continue
 		}
 		e, ok := selfReport[it.ID]
@@ -181,9 +185,9 @@ func (s *Service) runVerifyCursor(
 			s.hooks.PersistSessionID(ctx, cycle.ID, phaseSeq, sessionID)
 		}
 	}
-	invokeMsg := "Starting Cursor CLI…"
+	invokeMsg := "Starting Cursor CLIΓÇª"
 	if strings.TrimSpace(resumeSessionID) != "" {
-		invokeMsg = "Resuming Cursor session…"
+		invokeMsg = "Resuming Cursor sessionΓÇª"
 	}
 	onProgress(runner.SetupProgressEvent(runner.ProgressRunStateSetupInvoke, invokeMsg))
 	req := runner.Request{
@@ -230,7 +234,7 @@ func (s *Service) assembleVerdictsFromVerifyReport(
 			next = append(next, v)
 			continue
 		}
-		if v.Verifier == checklistdomain.VerifierAgentSelf {
+		if v.Verifier == checklistdomain.VerifierAgentSelf || v.Verifier == checklistdomain.VerifierExecuteClaim {
 			next = append(next, v)
 			continue
 		}
@@ -241,6 +245,7 @@ func (s *Service) assembleVerdictsFromVerifyReport(
 			nv.Passed = true
 			nv.Verifier = checklistdomain.VerifierExecuteAgent
 			nv.Reasoning = vr.Reasoning
+			nv.Evidence = ComposeCommandVerifyEvidence(entry.Evidence, vr.Reasoning)
 		} else {
 			nv.Passed = false
 			nv.Verifier = checklistdomain.VerifierExecuteAgent

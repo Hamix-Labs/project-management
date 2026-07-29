@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { parseVerificationSnapshot } from "./parseVerificationSnapshot";
+import {
+  parseVerificationSnapshot,
+  verifierKindLabel,
+} from "./parseVerificationSnapshot";
 
 describe("parseVerificationSnapshot", () => {
   it("parses structured verification details from phase payload", () => {
@@ -24,6 +27,10 @@ describe("parseVerificationSnapshot", () => {
     expect(m?.failedCount).toBe(1);
     expect(m?.criteria[0]?.text).toBe("Each branch has a test");
     expect(m?.criteria[0]?.reasoning).toBe("Missing limit=201 test");
+  });
+
+  it("labels execute_claim for claim-only acceptance", () => {
+    expect(verifierKindLabel("execute_claim")).toBe("Execute claim");
   });
 
   it("returns null when verification block is absent", () => {
