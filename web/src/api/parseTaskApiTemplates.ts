@@ -21,6 +21,16 @@ function parseOptionalPrimaryTag(value: unknown): string | undefined {
   return trimmed === "" ? undefined : trimmed;
 }
 
+function parseOptionalIDField(
+  value: unknown,
+  field: string,
+): string | undefined {
+  if (value === undefined || value === null) return undefined;
+  const id = parseString(value, field);
+  const trimmed = id.trim();
+  return trimmed === "" ? undefined : trimmed;
+}
+
 function parseInstantiateCount(value: unknown, field: string): number {
   if (value === undefined || value === null) return 0;
   const n = parseFiniteNumber(value, field);
@@ -47,6 +57,20 @@ function parseTaskTemplateSummaryFields(
   const primaryTag = parseOptionalPrimaryTag(item.primary_tag);
   if (primaryTag !== undefined) {
     summary.primary_tag = primaryTag;
+  }
+  const projectID = parseOptionalIDField(
+    item.project_id,
+    `${pathPrefix}.project_id`,
+  );
+  if (projectID !== undefined) {
+    summary.project_id = projectID;
+  }
+  const repositoryID = parseOptionalIDField(
+    item.repository_id,
+    `${pathPrefix}.repository_id`,
+  );
+  if (repositoryID !== undefined) {
+    summary.repository_id = repositoryID;
   }
   if (item.is_function === true) {
     summary.is_function = true;
