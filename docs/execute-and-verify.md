@@ -101,36 +101,17 @@ When you create a task, you supply:
    → any fail → cycle fails; use Retry / Start over for a new attempt
 ```
 
-## Dedicated worktree (recommended)
+## Managed worktrees (isolation boundary)
 
-Hamix runs execute and verify in one shared directory: **`app_settings.repo_root`** (Settings → Workspace repository). That path is also where `@`-mentions and verify shell commands resolve.
+Each task binds a Hamix-managed git worktree (`worktree_id`). Execute, verify shell commands, and Cursor `--workspace` all use that worktree path — not a global `repo_root`. Creating a task with `repository_id` allocates a linked worktree under `{ManagedWorktreeRoot}/worktrees/...` (see [domain/worktrees-and-branches.md](./domain/worktrees-and-branches.md)).
 
-**Recommended:** create a **separate git worktree** for Hamix and set `repo_root` to that directory. Keep your usual checkout for day-to-day edits; let the agent work in the worktree. When a cycle finishes, merge or cherry-pick from the worktree branch as you would for any other feature branch.
+Tasks on **different** worktrees may run in parallel up to `app_settings.agent_task_parallelism` (Settings → **Max parallel tasks**). Tasks on the **same** worktree stay sequential (`WorktreeGate`).
 
-From your main repository (replace branch and path as needed):
+Register a repository on `/repositories`, then create tasks against it. Do not point the agent at your day-to-day main checkout unless you intend to share that directory.
 
-```bash
-# New branch + worktree (example: sibling directory myproject-hamix)
-git worktree add ../myproject-hamix -b hamix-agent main
+## Do not edit the task worktree during verify
 
-# Or attach a worktree to an existing branch
-git worktree add ../myproject-hamix my-feature-branch
-```
-
-Then in Hamix Settings, set **Workspace repository** to the absolute path of that worktree (e.g. `/home/you/src/myproject-hamix` or `C:\src\myproject-hamix`).
-
-| Approach | Benefit |
-| --- | --- |
-| Dedicated worktree as `repo_root` | You can edit your main checkout while Hamix runs; agent commits stay on the worktree branch |
-| Main checkout as `repo_root` | Simplest setup, but your saves/commits during verify can fail the cycle (see below) |
-
-Hamix treats a worktree like any other git root — execute commit ingest and verify integrity checks work the same. Per-cycle automatic worktrees are not built in yet; one operator-chosen worktree is the V1 pattern.
-
-Remove a worktree when done: `git worktree remove ../myproject-hamix` (from the main repo).
-
-## Do not edit the workspace during verify
-
-Execute and verify both run in the same directory: **`app_settings.repo_root`** (Settings → Workspace repository). There is no per-task sandbox in V1.
+Execute and verify both run in the **task’s bound worktree**. There is no extra sandbox beyond that checkout.
 
 While the **verify** phase is running, the worker snapshots git state before and after judgment. If you save files, commit, checkout, or otherwise change the working tree or `HEAD` during that window, the cycle terminates as **`verify_tampered`** — a hard failure with **no retry**, not a normal verify miss.
 
@@ -140,7 +121,7 @@ While the **verify** phase is running, the worker snapshots git state before and
 | Before verify starts (execute finished, verify not yet running) | Verify may still run, but judges the combined repo state (your edits + the agent's work) |
 | During **execute** | No integrity check; verify later sees whatever the tree contains |
 
-**Practical rule:** treat the workspace as read-only from the moment verify starts until the cycle succeeds or fails. If you use a dedicated Hamix worktree (above), edit your **other** checkout freely — only avoid changes inside `repo_root` during verify.
+**Practical rule:** treat the task worktree as read-only from the moment verify starts until the cycle succeeds or fails. Edit other checkouts freely.
 
 Mechanism and rationale: [domain/verify-agent.md](./domain/verify-agent.md#integrity-enforcement), [ADR-0003](./adr/ADR-0003-verify-component-upgrade.md).
 

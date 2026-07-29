@@ -71,6 +71,9 @@ func InstanceMatchesSettings(inst *InstanceSnapshot, cfg settingsdomain.AppSetti
 	if inst.Settings.MaxRunDurationSeconds != cfg.MaxRunDurationSeconds {
 		return false
 	}
+	if inst.Settings.AgentTaskParallelism != cfg.AgentTaskParallelism {
+		return false
+	}
 	if inst.Settings.AgentPaused != cfg.AgentPaused {
 		return false
 	}

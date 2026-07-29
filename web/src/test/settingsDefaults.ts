@@ -11,6 +11,7 @@ export const APP_SETTINGS_DEFAULTS: AppSettings = {
   cursor_model: "",
   verify_model: "",
   max_run_duration_seconds: 0,
+  agent_task_parallelism: 4,
   agent_pickup_delay_seconds: 5,
   display_timezone: "UTC",
   optimistic_mutations_enabled: true,

@@ -38,12 +38,17 @@ func Get(ctx context.Context, db *gorm.DB) (domain.AppSettings, error) {
 	var row model.AppSettings
 	err := db.WithContext(ctx).First(&row, "id = ?", domain.AppSettingsRowID).Error
 	if err == nil {
-		if !row.OptimisticMutationsEnabled || !row.SSEReplayEnabled {
+		if !row.OptimisticMutationsEnabled || !row.SSEReplayEnabled || row.AgentTaskParallelism < 1 {
 			t := true
-			return Update(ctx, db, Patch{
+			parallelism := domain.DefaultAgentTaskParallelism
+			patch := Patch{
 				OptimisticMutationsEnabled: &t,
 				SSEReplayEnabled:           &t,
-			})
+			}
+			if row.AgentTaskParallelism < 1 {
+				patch.AgentTaskParallelism = &parallelism
+			}
+			return Update(ctx, db, patch)
 		}
 		d := model.ToDomainAppSettings(row)
 		return d, nil
@@ -125,6 +130,9 @@ func validatePatch(patch Patch) error {
 	if patch.MaxRunDurationSeconds != nil && *patch.MaxRunDurationSeconds < 0 {
 		return fmt.Errorf("%w: max_run_duration_seconds must be >= 0", domain.ErrInvalidInput)
 	}
+	if patch.AgentTaskParallelism != nil && *patch.AgentTaskParallelism < 1 {
+		return fmt.Errorf("%w: agent_task_parallelism must be >= 1", domain.ErrInvalidInput)
+	}
 	if patch.AgentPickupDelaySeconds != nil {
 		v := *patch.AgentPickupDelaySeconds
 		if v < 0 || v > 604800 {
@@ -167,6 +175,9 @@ func applyPatch(row *domain.AppSettings, patch Patch) {
 	}
 	if patch.MaxRunDurationSeconds != nil {
 		row.MaxRunDurationSeconds = *patch.MaxRunDurationSeconds
+	}
+	if patch.AgentTaskParallelism != nil {
+		row.AgentTaskParallelism = *patch.AgentTaskParallelism
 	}
 	if patch.AgentPickupDelaySeconds != nil {
 		row.AgentPickupDelaySeconds = *patch.AgentPickupDelaySeconds

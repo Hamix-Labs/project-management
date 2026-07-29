@@ -419,4 +419,16 @@ describe("SettingsPage", () => {
     );
     expect(screen.getByRole("button", { name: /Save changes/ })).toBeDisabled();
   });
+
+  it("rejects agent_task_parallelism below 1", async () => {
+    usePageHandlers();
+    renderPage();
+    const parallelismInput = await screen.findByLabelText(/Max parallel tasks/);
+    await userEvent.clear(parallelismInput);
+    await userEvent.type(parallelismInput, "0");
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      /at least 1/i,
+    );
+    expect(screen.getByRole("button", { name: /Save changes/ })).toBeDisabled();
+  });
 });

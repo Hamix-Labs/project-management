@@ -10,6 +10,7 @@ type SettingsPatch struct {
 	CursorModel                *string
 	VerifyModel                *string
 	MaxRunDurationSeconds      *int
+	AgentTaskParallelism       *int
 	AgentPickupDelaySeconds    *int
 	DisplayTimezone            *string
 	OptimisticMutationsEnabled *bool
@@ -29,6 +30,7 @@ func (p SettingsPatch) IsEmpty() bool {
 		p.CursorModel == nil &&
 		p.VerifyModel == nil &&
 		p.MaxRunDurationSeconds == nil &&
+		p.AgentTaskParallelism == nil &&
 		p.AgentPickupDelaySeconds == nil &&
 		p.DisplayTimezone == nil &&
 		p.OptimisticMutationsEnabled == nil &&

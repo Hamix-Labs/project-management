@@ -34,6 +34,9 @@ func TestHTTP_GetSettings_returnsSeededDefaults(t *testing.T) {
 	if resp.MaxRunDurationSeconds != 0 {
 		t.Errorf("MaxRunDurationSeconds=%d, want 0 (no limit)", resp.MaxRunDurationSeconds)
 	}
+	if resp.AgentTaskParallelism != settingsdomain.DefaultAgentTaskParallelism {
+		t.Errorf("AgentTaskParallelism=%d, want %d", resp.AgentTaskParallelism, settingsdomain.DefaultAgentTaskParallelism)
+	}
 	if resp.AgentPickupDelaySeconds != settingsdomain.DefaultAgentPickupDelaySeconds {
 		t.Errorf("AgentPickupDelaySeconds=%d, want %d (default pickup delay)", resp.AgentPickupDelaySeconds, settingsdomain.DefaultAgentPickupDelaySeconds)
 	}
@@ -142,6 +145,10 @@ func TestHTTP_PatchSettings_validationError(t *testing.T) {
 	resp := mustSettingsHTTP(t, http.MethodPatch, srv.URL+"/settings",
 		`{"max_run_duration_seconds":-1}`, http.StatusBadRequest)
 	assertSettingsBareError(t, resp, "max_run_duration_seconds must be >= 0")
+
+	resp = mustSettingsHTTP(t, http.MethodPatch, srv.URL+"/settings",
+		`{"agent_task_parallelism":0}`, http.StatusBadRequest)
+	assertSettingsBareError(t, resp, "agent_task_parallelism must be >= 1")
 }
 
 // TestHTTP_PatchSettings_503WithoutAgent confirms the documented

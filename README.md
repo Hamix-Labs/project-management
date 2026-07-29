@@ -48,7 +48,7 @@ API at `http://127.0.0.1:8080` · Web at `http://localhost:5173`
 The current implementation has a few important limitations:
 
 * Every task is executed by one AI agent and independently verified by another.
-* Tasks run sequentially. You can queue multiple tasks, but only one runs at a time.
+* Tasks on different worktrees may run in parallel (Settings → **Max parallel tasks**). Tasks on the same worktree run one at a time.
 * Use a dedicated Git worktree as the workspace so you can continue working in your main checkout.
 * Do not edit the workspace while verification is running. Any Git changes will invalidate the verification attempt.
 

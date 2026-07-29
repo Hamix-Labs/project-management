@@ -12,6 +12,7 @@ import (
 )
 
 // Pool runs N queue consumers sharing one MemoryQueue and WorktreeGate.
+// N is max parallel tasks across different worktrees (same worktree stays serial).
 type Pool struct {
 	store Store
 	queue ReadyTaskQueue
@@ -20,14 +21,16 @@ type Pool struct {
 }
 
 // NewPool constructs a worker pool with one harness per slot.
+// parallelism is the max number of tasks that may run at once across different
+// worktrees; values below 1 are clamped to 1.
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func NewPool(st Store, q ReadyTaskQueue, r runner.Runner, opts Options, concurrency int) *Pool {
-	if concurrency < 1 {
-		concurrency = 1
+func NewPool(st Store, q ReadyTaskQueue, r runner.Runner, opts Options, parallelism int) *Pool {
+	if parallelism < 1 {
+		parallelism = 1
 	}
 	gate := &WorktreeGate{}
-	slots := make([]*Worker, concurrency)
+	slots := make([]*Worker, parallelism)
 	for i := range slots {
 		slots[i] = NewWorkerWithGate(st, q, r, opts, gate)
 	}

@@ -28,7 +28,7 @@ Bounded in-memory FIFO of task snapshots for the in-process worker: notify wirin
 
 ## Overview
 
-When a task row is committed in **`status=ready`**, the store may push a **full `domain.Task` snapshot** into an optional in-process queue. A **worker pool** (default 4 slots, `HAMIX_AGENT_WORKER_CONCURRENCY`) shares one queue and runs [harness.md](./harness.md) admission (`Run` or `Resume`) per dequeued task.
+When a task row is committed in **`status=ready`**, the store may push a **full `domain.Task` snapshot** into an optional in-process queue. A **worker pool** (default 4 slots, `app_settings.agent_task_parallelism`) shares one queue and runs [harness.md](./harness.md) admission (`Run` or `Resume`) per dequeued task.
 
 The queue is:
 
@@ -252,7 +252,7 @@ Full scheduling fields: [data-model.md](../data-model.md) (`pickup_not_before`).
 | Knob | Default | Reference |
 | --- | --- | --- |
 | `HAMIX_USER_TASK_AGENT_QUEUE_CAP` | 256 | [configuration.md](../configuration.md) |
-| `HAMIX_AGENT_WORKER_CONCURRENCY` | 4 | In-process pool size (any positive integer); [configuration.md](../configuration.md) |
+| `agent_task_parallelism` | app_settings | Max parallel tasks across different worktrees (default 4); [configuration.md](../configuration.md) |
 | `agent_pickup_delay_seconds` | app_settings | Default deferral on create when client omits pickup |
 | `pickup_not_before` | per task | Operator or worker-set deferral |
 | Reconcile tick | 2m | `ReconcileTickInterval` in code |
