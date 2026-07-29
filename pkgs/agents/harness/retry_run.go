@@ -31,7 +31,7 @@ func (h *Harness) RunWithRetry(parentCtx context.Context, task *taskcoredomain.T
 		slog.Warn("agent harness retry intent invalid", "cmd", calltrace.LogCmd,
 			"operation", "agent.harness.Harness.RunWithRetry.invalid_intent",
 			"task_id", task.ID, "err", err)
-		h.resumeSvc().FailTaskAfterRetryPrep(parentCtx, task.ID, "retry_invalid_intent")
+		h.failTaskAfterRetryPrep(parentCtx, task.ID, "retry_invalid_intent")
 		return
 	}
 	if intent.NormalizeKind() == taskcoredomain.PendingKindPolish {
@@ -44,7 +44,7 @@ func (h *Harness) RunWithRetry(parentCtx context.Context, task *taskcoredomain.T
 	case taskcoredomain.RetryResume:
 		h.runResumeRetry(parentCtx, task, intent)
 	default:
-		h.resumeSvc().FailTaskAfterRetryPrep(parentCtx, task.ID, "retry_invalid_intent")
+		h.failTaskAfterRetryPrep(parentCtx, task.ID, "retry_invalid_intent")
 	}
 }
 
@@ -57,7 +57,7 @@ func (h *Harness) runFreshRetry(parentCtx context.Context, task *taskcoredomain.
 		slog.Warn("agent harness fresh retry git reset failed", "cmd", calltrace.LogCmd,
 			"operation", "agent.harness.Harness.runFreshRetry.reset_err",
 			"task_id", task.ID, "parent_cycle_id", intent.ParentCycleID, "err", err)
-		h.resumeSvc().FailTaskAfterRetryPrep(parentCtx, task.ID, reason)
+		h.failTaskAfterRetryPrep(parentCtx, task.ID, reason)
 		return
 	}
 	parentID := intent.ParentCycleID
@@ -73,7 +73,7 @@ func (h *Harness) runResumeRetry(parentCtx context.Context, task *taskcoredomain
 		slog.Warn("agent harness resume retry checkpoint failed", "cmd", calltrace.LogCmd,
 			"operation", "agent.harness.Harness.runResumeRetry.checkpoint_err",
 			"task_id", task.ID, "parent_cycle_id", intent.ParentCycleID, "err", err)
-		h.resumeSvc().FailTaskAfterRetryPrep(parentCtx, task.ID, "retry_checkpoint_failed")
+		h.failTaskAfterRetryPrep(parentCtx, task.ID, "retry_checkpoint_failed")
 		return
 	}
 	startedAt := h.opts.Clock()
@@ -97,14 +97,14 @@ func (h *Harness) runResumeRetry(parentCtx context.Context, task *taskcoredomain
 			slog.Warn("agent harness verify-only resume seed execute failed", "cmd", calltrace.LogCmd,
 				"operation", "agent.harness.Harness.runResumeRetry.seed_execute_err",
 				"task_id", task.ID, "parent_cycle_id", intent.ParentCycleID, "err", err)
-			h.resumeSvc().FailTaskAfterRetryPrep(parentCtx, task.ID, "retry_verify_only_seed_failed")
+			h.failTaskAfterRetryPrep(parentCtx, task.ID, "retry_verify_only_seed_failed")
 			return
 		}
 		if err := h.resumeSvc().MirrorParentCriteriaForVerifyOnly(parentCtx, cycle.ID, intent.ParentCycleID); err != nil {
 			slog.Warn("agent harness verify-only resume mirror criteria failed", "cmd", calltrace.LogCmd,
 				"operation", "agent.harness.Harness.runResumeRetry.mirror_criteria_err",
 				"task_id", task.ID, "parent_cycle_id", intent.ParentCycleID, "err", err)
-			h.resumeSvc().FailTaskAfterRetryPrep(parentCtx, task.ID, "retry_verify_only_mirror_failed")
+			h.failTaskAfterRetryPrep(parentCtx, task.ID, "retry_verify_only_mirror_failed")
 			return
 		}
 	}
@@ -122,7 +122,7 @@ func (h *Harness) runPolish(parentCtx context.Context, task *taskcoredomain.Task
 		slog.Warn("agent harness polish checkpoint failed", "cmd", calltrace.LogCmd,
 			"operation", "agent.harness.Harness.runPolish.checkpoint_err",
 			"task_id", task.ID, "parent_cycle_id", intent.ParentCycleID, "err", err)
-		h.resumeSvc().FailTaskAfterRetryPrep(parentCtx, task.ID, "retry_checkpoint_failed")
+		h.failTaskAfterRetryPrep(parentCtx, task.ID, "retry_checkpoint_failed")
 		return
 	}
 	startedAt := h.opts.Clock()
@@ -131,7 +131,7 @@ func (h *Harness) runPolish(parentCtx context.Context, task *taskcoredomain.Task
 		slog.Warn("agent harness polish seed lockedPasses failed", "cmd", calltrace.LogCmd,
 			"operation", "agent.harness.Harness.runPolish.seed_err",
 			"task_id", task.ID, "err", err)
-		h.resumeSvc().FailTaskAfterRetryPrep(parentCtx, task.ID, "retry_checkpoint_failed")
+		h.failTaskAfterRetryPrep(parentCtx, task.ID, "retry_checkpoint_failed")
 		return
 	}
 	state := processState{
@@ -254,5 +254,8 @@ func (h *Harness) mirrorParentCriteriaForVerifyOnly(ctx context.Context, childCy
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (h *Harness) failTaskAfterRetryPrep(ctx context.Context, taskID, reason string) {
-	h.resumeSvc().FailTaskAfterRetryPrep(ctx, taskID, reason)
+	if err := h.resumeSvc().FailTaskAfterRetryPrep(ctx, taskID, reason); err != nil {
+		return
+	}
+	h.publishTaskUpdated(taskID)
 }

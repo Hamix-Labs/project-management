@@ -80,7 +80,8 @@ func (s *Service) MirrorParentCriteriaForVerifyOnly(ctx context.Context, childCy
 }
 
 // FailTaskAfterRetryPrep marks the task failed when operator retry preparation fails.
-func (s *Service) FailTaskAfterRetryPrep(ctx context.Context, taskID, reason string) {
+// Returns nil when the status write succeeds.
+func (s *Service) FailTaskAfterRetryPrep(ctx context.Context, taskID, reason string) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.resume.FailTaskAfterRetryPrep",
 		"task_id", taskID, "reason", reason)
 	failed := taskcoredomain.StatusFailed
@@ -92,5 +93,7 @@ func (s *Service) FailTaskAfterRetryPrep(ctx context.Context, taskID, reason str
 		slog.Log(ctx, level, "agent harness retry prep task transition failed",
 			"cmd", calltrace.LogCmd, "operation", "agent.harness.resume.FailTaskAfterRetryPrep.err",
 			"task_id", taskID, "reason", reason, "err", err)
+		return err
 	}
+	return nil
 }

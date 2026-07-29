@@ -48,6 +48,17 @@ func (w *Worker) deferTaskPickup(ctx context.Context, taskID string, delay time.
 	}
 }
 
+// publishTaskUpdated enqueues enriched task_updated for SPA cache coherence.
+// Same contract as harness.publishTaskUpdated: non-blocking, no-op when unset.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func (w *Worker) publishTaskUpdated(taskID string) {
+	if w.opts.TaskUpdatedNotifier == nil || taskID == "" {
+		return
+	}
+	w.opts.TaskUpdatedNotifier.PublishTaskUpdated(taskID)
+}
+
 // transitionTaskToRunning flips the task to running before the harness runs.
 // Returns the post-pickup task row and any consumed retry intent.
 func (w *Worker) transitionTaskToRunning(ctx context.Context, taskID string) (*taskcoredomain.Task, *taskcoredomain.PendingRetry, error) {
@@ -64,6 +75,7 @@ func (w *Worker) transitionTaskToRunning(ctx context.Context, taskID string) (*t
 			"task_id", taskID, "err", err)
 		return nil, nil, err
 	}
+	w.publishTaskUpdated(taskID)
 	return res.Task, res.ConsumedRetry, nil
 }
 
@@ -144,6 +156,7 @@ func (w *Worker) healRunningAfterTerminalCycle(ctx context.Context, taskID strin
 			"task_id", taskID, "cycle_id", latest.ID, "err", err)
 		return false
 	}
+	w.publishTaskUpdated(taskID)
 	slog.Info("agent worker healed running task after succeeded cycle", "cmd", calltrace.LogCmd,
 		"operation", "agent.worker.Worker.healRunningAfterTerminalCycle",
 		"task_id", taskID, "cycle_id", latest.ID)
@@ -205,7 +218,9 @@ func (w *Worker) failStuckRunning(ctx context.Context, taskID, reason string, ca
 				"operation", "agent.worker.Worker.failStuckRunning.err",
 				"task_id", taskID, "err", err)
 		}
+		return
 	}
+	w.publishTaskUpdated(taskID)
 }
 
 // processOne runs queue admission then delegates the cycle body to the harness.
@@ -351,7 +366,9 @@ func (w *Worker) recoverAdmissionPanic(taskID string) {
 				"operation", "agent.worker.Worker.recoverAdmissionPanic.err",
 				"task_id", taskID, "err", err)
 		}
+		return
 	}
+	w.publishTaskUpdated(taskID)
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."

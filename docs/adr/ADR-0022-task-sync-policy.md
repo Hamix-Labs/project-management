@@ -59,7 +59,7 @@ Timing constants unchanged: **900ms / 2500ms** task flush; **5000ms / 10000ms** 
 
 - Temporary shims during migration (`optimisticVersion` re-exports)
 - Coordinator still owns timer wiring (transport concern adjacent to policy)
-- Task-row status during an agent run relies on harness `task_updated` publishes (not cycle frames alone)
+- Task-row status during an agent run relies on worker/harness `task_updated` publishes (including pickup `ready→running`, not cycle frames alone)
 
 ## Alternatives Considered
 
