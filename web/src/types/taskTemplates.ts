@@ -6,6 +6,8 @@ export type TaskTemplateSummary = {
   created_at: string;
   updated_at: string;
   primary_tag?: string;
+  project_id?: string;
+  repository_id?: string;
   instantiate_count: number;
   is_function?: boolean;
   input_kinds?: Array<"dir" | "file" | "function">;

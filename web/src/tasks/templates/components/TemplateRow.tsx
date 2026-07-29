@@ -32,6 +32,8 @@ type TemplateRowProps = {
   isExiting: boolean;
   rowDisabled: boolean;
   renderNow: Date;
+  projectLabel: string | null;
+  repositoryLabel: string | null;
   onToggleSelected: (id: string) => void;
   onInstanceCountChange: (id: string, count: number) => void;
   onEdit: (id: string) => void;
@@ -46,6 +48,8 @@ export function TemplateRow({
   isExiting,
   rowDisabled,
   renderNow,
+  projectLabel,
+  repositoryLabel,
   onToggleSelected,
   onInstanceCountChange,
   onEdit,
@@ -55,6 +59,8 @@ export function TemplateRow({
   const lastEdited = template.updated_at || template.created_at;
   const relative = formatTemplateRelativeTime(lastEdited, renderNow);
   const runsLabel = `${template.instantiate_count} run${template.instantiate_count === 1 ? "" : "s"}`;
+  const bindingParts = [projectLabel, repositoryLabel].filter(Boolean) as string[];
+  const hasSubline = Boolean(lastEdited && relative) || bindingParts.length > 0;
 
   return (
     <li
@@ -102,18 +108,32 @@ export function TemplateRow({
             <span className="template-row__tag-pill">{template.primary_tag}</span>
           ) : null}
         </div>
-        {lastEdited && relative ? (
+        {hasSubline ? (
           <div className="template-row__subline">
-            <time dateTime={lastEdited} title={lastEdited}>
-              Updated {relative}
-            </time>
-            <span className="template-row__subline-sep" aria-hidden="true">
-              •
-            </span>
-            <span className="template-row__runs">
-              <ZapIcon />
-              {runsLabel}
-            </span>
+            {bindingParts.length > 0 ? (
+              <span className="template-row__binding" title={bindingParts.join(" · ")}>
+                {bindingParts.join(" · ")}
+              </span>
+            ) : null}
+            {bindingParts.length > 0 && lastEdited && relative ? (
+              <span className="template-row__subline-sep" aria-hidden="true">
+                •
+              </span>
+            ) : null}
+            {lastEdited && relative ? (
+              <>
+                <time dateTime={lastEdited} title={lastEdited}>
+                  Updated {relative}
+                </time>
+                <span className="template-row__subline-sep" aria-hidden="true">
+                  •
+                </span>
+                <span className="template-row__runs">
+                  <ZapIcon />
+                  {runsLabel}
+                </span>
+              </>
+            ) : null}
           </div>
         ) : null}
       </div>

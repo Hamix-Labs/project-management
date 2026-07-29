@@ -120,6 +120,8 @@ func saveTemplateRow(
 		UpdatedAt:        now,
 		CreatedAt:        row.CreatedAt,
 		PrimaryTag:       primaryTagFromPayload(datatypes.JSON(payload)),
+		ProjectID:        projectIDFromPayload(datatypes.JSON(payload)),
+		RepositoryID:     repositoryIDFromPayload(datatypes.JSON(payload)),
 		InstantiateCount: row.InstantiateCount,
 		IsFunction:       isFunctionFromPayload(datatypes.JSON(payload)),
 		InputKinds:       inputKindsFromPayload(datatypes.JSON(payload)),
@@ -295,6 +297,12 @@ func templateSummaryFromRow(r model.TaskTemplate) TemplateSummary {
 	if tag := primaryTagFromPayload(r.PayloadJSON); tag != "" {
 		s.PrimaryTag = tag
 	}
+	if projectID := projectIDFromPayload(r.PayloadJSON); projectID != "" {
+		s.ProjectID = projectID
+	}
+	if repositoryID := repositoryIDFromPayload(r.PayloadJSON); repositoryID != "" {
+		s.RepositoryID = repositoryID
+	}
 	s.IsFunction = isFunctionFromPayload(r.PayloadJSON)
 	s.InputKinds = inputKindsFromPayload(r.PayloadJSON)
 	return s
@@ -309,6 +317,28 @@ func primaryTagFromPayload(payload datatypes.JSON) string {
 		return ""
 	}
 	return strings.TrimSpace(p.Tags[0])
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by ListTemplates."
+func projectIDFromPayload(payload datatypes.JSON) string {
+	var p struct {
+		ProjectID string `json:"project_id"`
+	}
+	if err := json.Unmarshal(payload, &p); err != nil {
+		return ""
+	}
+	return strings.TrimSpace(p.ProjectID)
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by ListTemplates."
+func repositoryIDFromPayload(payload datatypes.JSON) string {
+	var p struct {
+		RepositoryID string `json:"repository_id"`
+	}
+	if err := json.Unmarshal(payload, &p); err != nil {
+		return ""
+	}
+	return strings.TrimSpace(p.RepositoryID)
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by ListTemplates."

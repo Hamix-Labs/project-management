@@ -9,7 +9,6 @@ import type { TaskTemplateSummary, TemplateFunctionBinding } from "@/types";
 import { useDeleteWithExitAnimation } from "../hooks/useDeleteWithExitAnimation";
 import { taskQueryKeys } from "../task-query";
 import type { useTasksAppContext } from "../app/TasksAppProvider";
-import { TEMPLATE_CATEGORY_LABELS } from "./templateCategories";
 import type { TemplateSortKey } from "./components/TemplateToolbar";
 import {
   bindingsFromDrafts,
@@ -54,7 +53,6 @@ export function useTaskTemplatesPageModel(app: TaskTemplatesApp, navigate: Retur
   const [searchInput, setSearchInput] = useState("");
   const debouncedQ = useDebouncedTrimmedValue(searchInput, 300);
   const [sort, setSort] = useState<TemplateSortKey>("recent");
-  const [activeTag, setActiveTag] = useState("all");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [batchDefaultCount, setBatchDefaultCount] = useState(1);
   const [instanceCounts, setInstanceCounts] = useState<Record<string, number>>({});
@@ -68,12 +66,10 @@ export function useTaskTemplatesPageModel(app: TaskTemplatesApp, navigate: Retur
       q?: string;
       sort: "updated_at" | "name" | "instantiate_count";
       order: "asc" | "desc";
-      tag?: string;
     } = { ...apiSort };
     if (debouncedQ) params.q = debouncedQ;
-    if (activeTag !== "all") params.tag = activeTag;
     return params;
-  }, [debouncedQ, activeTag, apiSort]);
+  }, [debouncedQ, apiSort]);
 
   const templatesQuery = useQuery({
     queryKey: taskQueryKeys.templates(queryParams),
@@ -89,17 +85,6 @@ export function useTaskTemplatesPageModel(app: TaskTemplatesApp, navigate: Retur
     : null;
   const showSkeleton = useDelayedTrue(loading, TASK_TIMINGS.draftResumeMinLoadingMs);
   const renderNow = new Date();
-
-  const dynamicTags = useMemo(() => {
-    const presets = new Set<string>(TEMPLATE_CATEGORY_LABELS);
-    const tags = new Set<string>();
-    for (const template of templates) {
-      if (template.primary_tag && !presets.has(template.primary_tag)) {
-        tags.add(template.primary_tag);
-      }
-    }
-    return [...tags].sort((a, b) => a.localeCompare(b));
-  }, [templates]);
 
   const { deletingId: deletingTemplateId, exitingIds: exitingTemplateIds, deleteWithExit } =
     useDeleteWithExitAnimation({
@@ -126,12 +111,19 @@ export function useTaskTemplatesPageModel(app: TaskTemplatesApp, navigate: Retur
   const someSelected = selectedIds.length > 0 && !allSelected;
   const selectedCount = selectedIds.length;
   const totalTaskCount = sumSelectedInstanceCounts(selectedIds, instanceCounts);
-  const hasFilters = debouncedQ !== "" || activeTag !== "all";
+  const hasFilters = debouncedQ !== "";
 
   const toggleSelected = (id: string) => {
-    setSelectedIds((current) =>
-      current.includes(id) ? current.filter((value) => value !== id) : [...current, id],
-    );
+    setSelectedIds((current) => {
+      if (current.includes(id)) {
+        return current.filter((value) => value !== id);
+      }
+      setInstanceCounts((counts) => ({
+        ...counts,
+        [id]: batchDefaultCount,
+      }));
+      return [...current, id];
+    });
   };
 
   const toggleSelectAll = () => {
@@ -139,7 +131,15 @@ export function useTaskTemplatesPageModel(app: TaskTemplatesApp, navigate: Retur
       setSelectedIds([]);
       return;
     }
-    setSelectedIds(templates.map((t) => t.id));
+    const ids = templates.map((t) => t.id);
+    setSelectedIds(ids);
+    setInstanceCounts((current) => {
+      const next = { ...current };
+      for (const id of ids) {
+        next[id] = batchDefaultCount;
+      }
+      return next;
+    });
   };
 
   const setInstanceCountForTemplate = (id: string, count: number) => {
@@ -149,11 +149,13 @@ export function useTaskTemplatesPageModel(app: TaskTemplatesApp, navigate: Retur
     }));
   };
 
-  const applyBatchDefaultToSelected = () => {
+  const setBatchDefaultCountAndApply = (count: number) => {
+    const clamped = clampInstanceCount(count);
+    setBatchDefaultCount(clamped);
     setInstanceCounts((current) => {
       const next = { ...current };
       for (const id of selectedIds) {
-        next[id] = batchDefaultCount;
+        next[id] = clamped;
       }
       return next;
     });
@@ -163,7 +165,6 @@ export function useTaskTemplatesPageModel(app: TaskTemplatesApp, navigate: Retur
 
   const clearFilters = () => {
     setSearchInput("");
-    setActiveTag("all");
   };
 
   const executeInstantiate = async (
@@ -245,12 +246,9 @@ export function useTaskTemplatesPageModel(app: TaskTemplatesApp, navigate: Retur
     debouncedQ,
     sort,
     setSort,
-    activeTag,
-    setActiveTag,
-    dynamicTags,
     selectedIds,
     batchDefaultCount,
-    setBatchDefaultCount,
+    setBatchDefaultCountAndApply,
     instanceCounts,
     deletingTemplateId,
     exitingTemplateIds,
@@ -269,7 +267,6 @@ export function useTaskTemplatesPageModel(app: TaskTemplatesApp, navigate: Retur
     toggleSelected,
     toggleSelectAll,
     setInstanceCountForTemplate,
-    applyBatchDefaultToSelected,
     clearSelection,
     clearFilters,
     deleteTemplate: deleteWithExit,

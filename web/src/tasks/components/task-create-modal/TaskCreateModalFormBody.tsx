@@ -15,6 +15,7 @@ import type { TaskCreateModalPresentation } from "./taskCreateModalPresentation"
 type Props = {
   presentation: TaskCreateModalPresentation;
   editingTaskId: string | null;
+  editingTemplateId: string | null;
   editingTaskRunner: string;
   onComposeStatusChange?: (status: Status) => void;
   essentials: TaskCreateModalEssentials;
@@ -28,6 +29,7 @@ type Props = {
 export function TaskCreateModalFormBody({
   presentation,
   editingTaskId,
+  editingTemplateId,
   editingTaskRunner,
   onComposeStatusChange,
   essentials,
@@ -39,9 +41,11 @@ export function TaskCreateModalFormBody({
 }: Props) {
   const editorKey = presentation.isTaskEdit
     ? editingTaskId ?? "edit-prompt-modal"
-    : presentation.isTemplateMode
-      ? "template-prompt-modal"
-      : "create-prompt-modal";
+    : presentation.isTemplateMode && presentation.isEdit
+      ? editingTemplateId ?? "template-edit-prompt-modal"
+      : presentation.isTemplateMode
+        ? "template-prompt-modal"
+        : "create-prompt-modal";
   const checklistRequirement = presentation.isTaskEdit ? "optional" : "required";
 
   return (
@@ -72,12 +76,10 @@ export function TaskCreateModalFormBody({
         presentation={presentation}
         checklistItems={criteria.checklistItems}
         checklistRequirement={checklistRequirement}
-        tagsCsv={criteria.tagsCsv}
         functionInputs={criteria.functionInputs}
         onAppendChecklistCriterion={criteria.onAppendChecklistCriterion}
         onUpdateChecklistRow={criteria.onUpdateChecklistRow}
         onRemoveChecklistRow={criteria.onRemoveChecklistRow}
-        onTagsCsvChange={criteria.onTagsCsvChange}
         onFunctionInputsChange={criteria.onFunctionInputsChange}
       />
 

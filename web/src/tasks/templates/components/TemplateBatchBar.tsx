@@ -7,7 +7,6 @@ type TemplateBatchBarProps = {
   instantiatePending: boolean;
   onClear: () => void;
   onBatchDefaultCountChange: (count: number) => void;
-  onApplyToAll: () => void;
   onCreate: () => void;
 };
 
@@ -18,7 +17,6 @@ export function TemplateBatchBar({
   instantiatePending,
   onClear,
   onBatchDefaultCountChange,
-  onApplyToAll,
   onCreate,
 }: TemplateBatchBarProps) {
   if (selectedCount === 0) return null;
@@ -43,14 +41,6 @@ export function TemplateBatchBar({
           disabled={instantiatePending}
           onChange={onBatchDefaultCountChange}
         />
-        <button
-          type="button"
-          className="secondary template-batch-bar__apply"
-          disabled={instantiatePending}
-          onClick={onApplyToAll}
-        >
-          Apply to all
-        </button>
         <span className="template-batch-bar__divider" aria-hidden="true" />
         <button
           type="button"

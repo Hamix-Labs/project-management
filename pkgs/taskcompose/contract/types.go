@@ -29,6 +29,8 @@ type TemplateSummary struct {
 	UpdatedAt        time.Time `json:"updated_at"`
 	CreatedAt        time.Time `json:"created_at"`
 	PrimaryTag       string    `json:"primary_tag,omitempty"`
+	ProjectID        string    `json:"project_id,omitempty"`
+	RepositoryID     string    `json:"repository_id,omitempty"`
 	InstantiateCount int       `json:"instantiate_count"`
 	IsFunction       bool      `json:"is_function,omitempty"`
 	InputKinds       []string  `json:"input_kinds,omitempty"`

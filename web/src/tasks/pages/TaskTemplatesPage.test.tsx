@@ -16,6 +16,14 @@ vi.mock("@tanstack/react-query", async (importOriginal) => {
   };
 });
 
+vi.mock("@/hooks/useProjects", () => ({
+  useProjects: () => ({ data: { projects: [] }, isPending: false, isError: false }),
+}));
+
+vi.mock("@/hooks/useGlobalRepositories", () => ({
+  useGlobalRepositories: () => ({ data: [], isPending: false, isError: false }),
+}));
+
 const mockedUseQuery = vi.mocked(useQuery);
 
 type App = ReturnType<typeof useTasksApp>;
@@ -112,7 +120,7 @@ describe("TaskTemplatesPage", () => {
     });
   });
 
-  it("uses batch default count and apply-to-all for selected templates", async () => {
+  it("applies batch default count to selected templates immediately", async () => {
     const user = userEvent.setup();
     const instantiateTemplates = vi.fn().mockResolvedValue({ tasks: [{}], errors: [] });
     renderPage(makeApp({ instantiateTemplates }));
@@ -125,7 +133,6 @@ describe("TaskTemplatesPage", () => {
     await waitFor(() => {
       expect(batchDefault).toHaveValue("5");
     });
-    await user.click(screen.getByRole("button", { name: /apply to all/i }));
 
     await waitFor(() => {
       expect(createTasksTotalBadge(10)).toBeInTheDocument();
