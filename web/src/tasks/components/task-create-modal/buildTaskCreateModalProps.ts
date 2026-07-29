@@ -10,6 +10,7 @@ export function buildTaskCreateModalProps(
   return {
     session: {
       editingTaskId: input.editingTaskId,
+      editingTemplateId: input.editingTemplateId,
       composeTarget: input.composeTarget,
       composeOperation: input.composeOperation,
       editingTaskRunner: input.editingTaskRunner,

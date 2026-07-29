@@ -16,6 +16,13 @@ import {
 import { useRepoWorkspaceProbe } from "./useRepoWorkspaceProbe";
 import type { RichPromptEditorProps } from "./richPromptEditorTypes";
 
+function initialPromptHtml(value: string): string {
+  if (looksLikeStoredHtml(value)) {
+    return value.trim() === "" ? "<p></p>" : value;
+  }
+  return plainTextToInitialHtml(value);
+}
+
 export function useRichPromptEditorController({
   id,
   value,
@@ -31,7 +38,8 @@ export function useRichPromptEditorController({
     null,
   );
   const [rangeWarning, setRangeWarning] = useState<string | null>(null);
-  const lastEmittedHtml = useRef<string | null>(null);
+  const initialContentRef = useRef(initialPromptHtml(value));
+  const lastEmittedHtml = useRef<string | null>(initialContentRef.current);
 
   const onFilePicked = useCallback(
     (payload: { insertAt: number; path: string }) => {
@@ -68,10 +76,12 @@ export function useRichPromptEditorController({
 
   // TipTap 3 + React StrictMode: sync create during render leaves a destroyed
   // editor whose `.commands` getter throws on the remount effect pass.
+  // Seed content from the controlled value so an empty first paint cannot
+  // onChange-wipe a hydrated prompt (template/task edit).
   const editor = useEditor({
     immediatelyRender: false,
     extensions,
-    content: "<p></p>",
+    content: initialContentRef.current,
     editable: !disabled,
     editorProps: {
       attributes: {

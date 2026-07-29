@@ -80,6 +80,7 @@ function TaskCreateModalsLayerBody() {
           <TaskCreateModal
             {...buildTaskCreateModalProps({
               editingTaskId: app.editingTaskId,
+              editingTemplateId: app.editingTemplateId,
               composeTarget: app.composeTarget,
               composeOperation: app.composeOperation,
               editingTaskRunner: app.editingTaskRunner,

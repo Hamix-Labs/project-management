@@ -6,6 +6,8 @@ import type { TestScenario } from "@/tasks/test-scenarios";
 export type TaskCreateModalSession = {
   /** When set, the modal edits an existing task using the same layout as create. */
   editingTaskId?: string | null;
+  /** When set with composeTarget template + edit, keys the prompt editor for remount. */
+  editingTemplateId?: string | null;
   composeTarget?: "task" | "template";
   composeOperation?: "create" | "edit";
   editingTaskRunner?: string;
