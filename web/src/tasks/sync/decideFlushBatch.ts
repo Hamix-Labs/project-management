@@ -16,10 +16,13 @@ export function syncListStatsInvalidationKeys() {
  *
  * Enrichment coverage (E1): marking a task enriched means only the task *row*
  * cache is current. It must never suppress invalidation of sibling detail keys
- * (cycles, checklist) that were not patched in the same apply step.
+ * that were not patched in the same apply step. Checklist is owned by
+ * `pending.tasks` (task_updated), not by cycle hints — skip `detailRoot` still
+ * requires an explicit `checklist(taskId)` invalidate for each pending task.
  *
  * Cycle hints (E2): cycle invalidation is independent of whether the task row
  * was enriched — do not skip cycles merely because the task id is also pending.
+ * Cycle pending does not invalidate checklist (phase ledger ≠ checklist).
  */
 export function decideFlushBatch(pending: PendingInvalidations): SyncFlushDecision {
   const taskIds = [...pending.tasks];
@@ -43,6 +46,12 @@ export function decideFlushBatch(pending: PendingInvalidations): SyncFlushDecisi
     if (!allTasksEnriched) {
       keys.push(taskQueryKeys.detailRoot());
     }
+    // Checklist completions publish task_updated (ADR-0022 / ADR-0026).
+    // Always invalidate checklist for pending task ids — including when
+    // enrichment skipped detailRoot.
+    for (const taskId of taskIds) {
+      keys.push(taskQueryKeys.checklist(taskId));
+    }
   }
 
   for (const [taskId, cycleSet] of cycleEntries) {
@@ -53,9 +62,6 @@ export function decideFlushBatch(pending: PendingInvalidations): SyncFlushDecisi
       keys.push(taskQueryKeys.cycles(taskId));
       keys.push(taskQueryKeys.tokenUsage(taskId));
     }
-    // Agent runs write checklist completions without embedding them in cycle
-    // enrichment; invalidate checklist whenever cycle hints arrive.
-    keys.push(taskQueryKeys.checklist(taskId));
   }
 
   const commitsTaskIds = new Set(taskIds);
