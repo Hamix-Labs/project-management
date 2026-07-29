@@ -60,10 +60,8 @@ export type TaskCreateModalGitBinding = {
 export type TaskCreateModalExecution = {
   taskRunner: string;
   taskCursorModel: string;
-  taskVerifyChatMode: string;
   onTaskRunnerChange: (runner: string) => void;
   onTaskCursorModelChange: (v: string) => void;
-  onTaskVerifyChatModeChange: (v: string) => void;
   schedule: string | null;
   onScheduleChange: (next: string | null) => void;
   autonomyEnabled: boolean;

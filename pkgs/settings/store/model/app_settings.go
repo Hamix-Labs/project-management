@@ -14,14 +14,12 @@ type AppSettings struct {
 	CursorBin                  string         `gorm:"not null;default:''"`
 	CursorModel                string         `gorm:"not null;default:''"`
 	VerifyModel                string         `gorm:"not null;default:''"`
-	VerifyChatMode             string         `gorm:"not null;default:'same_chat';check:chk_app_settings_verify_chat_mode,verify_chat_mode IN ('same_chat','different_chat')"`
 	MaxRunDurationSeconds      int            `gorm:"not null;default:0;check:chk_app_settings_max_run_duration_seconds,max_run_duration_seconds >= 0"`
 	AgentPickupDelaySeconds    int            `gorm:"not null;default:5;check:chk_app_settings_agent_pickup_delay_seconds,agent_pickup_delay_seconds >= 0"`
 	DisplayTimezone            string         `gorm:"not null;default:''"`
 	OptimisticMutationsEnabled bool           `gorm:"not null;default:true"`
 	SSEReplayEnabled           bool           `gorm:"not null;default:true"`
 	RunnerConfigs              datatypes.JSON `gorm:"column:runner_configs;type:jsonb;not null;default:'{}'"`
-	VerifyMaxRetries           int            `gorm:"not null;default:2;check:chk_app_settings_verify_max_retries,verify_max_retries >= 0"`
 	CursorSessionResumeEnabled bool           `gorm:"not null;default:true"`
 	AgentMCPEnabled            bool           `gorm:"not null;default:true"`
 	UpdatedAt                  time.Time      `gorm:"not null"`

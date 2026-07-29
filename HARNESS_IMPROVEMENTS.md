@@ -119,7 +119,7 @@ Passes run against [HARNESS_LANDSCAPE.md](HARNESS_LANDSCAPE.md), [docs/domain/ha
 | --- | --- |
 | **Status** | Shipped — [ADR-0076](docs/adr/ADR-0076-verify-retry-count-resume.md), handoff harness P0 PR3 |
 | **ROI_score** | ~3.6 |
-| **Problem** | `verifyAttempt` is derived from DB `attempt_seq` on resume ([`checkpoint.go`](pkgs/agents/harness/internal/resume/checkpoint.go)); cross-cycle resume resets to 0 by design. Edge mismatches could over- or under-count retries vs `verify_max_retries`. |
+| **Problem** | `verifyAttempt` was derived from DB `attempt_seq` on resume ([`checkpoint.go`](pkgs/agents/harness/internal/resume/checkpoint.go)); cross-cycle resume resets to 0 by design. Edge mismatches could over- or under-count retries vs the former `verify_max_retries` setting (removed under [ADR-0090](docs/adr/ADR-0090-command-only-verify.md)). |
 | **Proposed change** | Explicit `verify_retry_count` in phase `details_json` or cycle meta at each verify boundary; resume reads that field; table-driven tests for interrupt mid-retry. |
 | **Effort** | S–M |
 | **ETCSLV** | S |

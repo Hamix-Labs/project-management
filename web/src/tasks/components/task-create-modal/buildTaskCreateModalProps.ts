@@ -57,10 +57,8 @@ export function buildTaskCreateModalProps(
     execution: {
       taskRunner: input.taskRunner,
       taskCursorModel: input.taskCursorModel,
-      taskVerifyChatMode: input.taskVerifyChatMode,
       onTaskRunnerChange: input.onTaskRunnerChange,
       onTaskCursorModelChange: input.onTaskCursorModelChange,
-      onTaskVerifyChatModeChange: input.onTaskVerifyChatModeChange,
       schedule: input.schedule,
       onScheduleChange: input.onScheduleChange,
       autonomyEnabled: input.autonomyEnabled,

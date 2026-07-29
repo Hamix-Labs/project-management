@@ -1,8 +1,6 @@
 import { useId } from "react";
 import { Link } from "react-router-dom";
-import { CustomSelect, type CustomSelectOption } from "@/components/custom-select";
-import { verifyChatModeLabel } from "../../../task-display/verifyChatModeDisplay";
-import { AgentBotIcon, AgentShieldCheckIcon } from "./TaskCreateAgentIcons";
+import { AgentBotIcon } from "./TaskCreateAgentIcons";
 import { TaskCreateConfigSectionHeader } from "./TaskCreateConfigSectionHeader";
 import {
   AGENT_HEADING_ID,
@@ -11,19 +9,10 @@ import {
 import { TaskCreateModalModelField } from "./TaskCreateModalModelField";
 import { TaskCreateModalRunnerField } from "./TaskCreateModalRunnerField";
 
-const VERIFY_MODE_OPTIONS: CustomSelectOption[] = [
-  { value: "same_chat", label: verifyChatModeLabel("same_chat") },
-  { value: "different_chat", label: verifyChatModeLabel("different_chat") },
-];
-
 /**
  * TaskCreateModalAgentSection - runtime configuration panel for the
  * new task. Picks the runner (where the task executes) and the model
  * (which underlying LLM the runner drives).
- *
- * Uses the shared CustomSelect portal dropdown so option lists match
- * Priority and other polished controls (native <select> menus
- * cannot be styled consistently across browsers).
  */
 export function TaskCreateModalAgentSection({
   disabled,
@@ -31,8 +20,6 @@ export function TaskCreateModalAgentSection({
   variant = "default",
   runner,
   cursorModel,
-  verifyChatMode = "",
-  workspaceVerifyChatMode = "same_chat",
   modelIds,
   modelsForSelect,
   modelSelectBusy,
@@ -40,31 +27,13 @@ export function TaskCreateModalAgentSection({
   modelServerError,
   onRunnerChange,
   onCursorModelChange,
-  onVerifyChatModeChange,
 }: TaskCreateModalAgentSectionProps) {
   const baseId = useId();
   const runnerId = `${baseId}-runner`;
   const modelId = `${baseId}-model`;
-  const verifyChatId = `${baseId}-verify-chat`;
 
   const isModelDialog = variant === "modelDialog";
   const isCreateModal = variant === "createModal";
-
-  // Empty task value inherits workspace settings — show that concrete
-  // mode in the select rather than a third "Use workspace default" row.
-  const verifySelectValue =
-    verifyChatMode === "same_chat" || verifyChatMode === "different_chat"
-      ? verifyChatMode
-      : workspaceVerifyChatMode;
-
-  function handleVerifyModeChange(next: string) {
-    if (!onVerifyChatModeChange) return;
-    // Selecting the workspace default keeps inherit (empty) so later
-    // settings changes still apply; picking the other mode pins override.
-    onVerifyChatModeChange(
-      next === workspaceVerifyChatMode ? "" : next,
-    );
-  }
 
   return (
     <section
@@ -129,25 +98,6 @@ export function TaskCreateModalAgentSection({
             onCursorModelChange={onCursorModelChange}
           />
         </div>
-        {!isModelDialog && onVerifyChatModeChange ? (
-          <div className="task-create-agent-verify-chat">
-            <CustomSelect
-              id={verifyChatId}
-              label="Verification mode"
-              value={verifySelectValue}
-              options={VERIFY_MODE_OPTIONS}
-              disabled={disabled}
-              onChange={handleVerifyModeChange}
-              className="task-create-agent-custom-select"
-              triggerTestId="task-verify-chat-mode"
-              leadingIcon={<AgentShieldCheckIcon />}
-            />
-            <p className="task-create-agent-help">
-              Controls whether PhaseVerify continues in the same chat or starts
-              a different one.
-            </p>
-          </div>
-        ) : null}
       </div>
     </section>
   );

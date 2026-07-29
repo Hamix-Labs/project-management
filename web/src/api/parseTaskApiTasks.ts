@@ -131,15 +131,6 @@ export function parseTask(value: unknown): Task {
         : "",
   };
   if (
-    value.verify_chat_mode !== undefined &&
-    value.verify_chat_mode !== null
-  ) {
-    base.verify_chat_mode = parseString(
-      value.verify_chat_mode,
-      "verify_chat_mode",
-    );
-  }
-  if (
     value.pickup_not_before !== undefined &&
     value.pickup_not_before !== null
   ) {

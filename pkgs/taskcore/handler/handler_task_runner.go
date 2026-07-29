@@ -38,17 +38,3 @@ func resolveRunnerModelFields(runnerPtr, cursorModelPtr *string, settings settin
 	}
 	return runner, cursorModel, nil
 }
-
-// resolveVerifyChatModeField returns the task override (may be empty = inherit).
-//
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O."
-func resolveVerifyChatModeField(ptr *string) string {
-	if ptr == nil {
-		return ""
-	}
-	normalized, ok := settingsdomain.NormalizeVerifyChatMode(*ptr)
-	if !ok {
-		return strings.TrimSpace(*ptr)
-	}
-	return normalized
-}

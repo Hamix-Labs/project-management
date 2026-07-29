@@ -13,7 +13,6 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/reports"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/verify"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
-	settingsdomain "github.com/AlexsanderHamir/Hamix/pkgs/settings/domain"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
@@ -158,13 +157,6 @@ func (h *Harness) enforceExecuteSessionID(
 	}
 	settings, err := h.store.GetSettings(ctx)
 	if err != nil || !settings.CursorSessionResumeEnabled {
-		return result, effects
-	}
-	chatMode := settingsdomain.EffectiveVerifyChatMode("", settings.VerifyChatMode)
-	if state != nil && state.verify.verifySnap.VerifyChatMode != "" {
-		chatMode = state.verify.verifySnap.VerifyChatMode
-	}
-	if chatMode == settingsdomain.VerifyChatModeDifferentChat {
 		return result, effects
 	}
 	if cyclesdomain.SessionIDFromDetailsJSON(detailsBytes(result)) != "" {

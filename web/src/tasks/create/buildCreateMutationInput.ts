@@ -14,7 +14,6 @@ export function buildCreateTaskMutationInput(
     checklistItems: fields.newChecklistItems,
     runner: compose.runner ?? "cursor",
     cursor_model: compose.cursor_model ?? "",
-    verify_chat_mode: compose.verify_chat_mode,
     pickup_not_before: fields.newSchedule,
     project_id: fields.newProjectID,
     repository_id: fields.newRepositoryID,

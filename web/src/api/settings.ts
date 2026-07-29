@@ -1,5 +1,4 @@
 import { fetchWithTimeout, jsonHeaders, apiErrorFromResponse } from "./shared";
-import { DEFAULT_VERIFY_MAX_RETRIES } from "@/types/task";
 
 /**
  * On-the-wire shape returned by GET /settings and PATCH /settings.
@@ -25,11 +24,6 @@ export type AppSettings = {
    * Empty inherits the execute effective model (task pin, else cursor_model).
    */
   verify_model: string;
-  /**
-   * Global default for PhaseVerify chat policy.
-   * Tasks may override via `task.verify_chat_mode`.
-   */
-  verify_chat_mode: "same_chat" | "different_chat";
   max_run_duration_seconds: number;
   /** Minimum seconds before the worker runs a new ready task. Default 5; 0 = no wait. */
   agent_pickup_delay_seconds: number;
@@ -55,7 +49,6 @@ export type AppSettings = {
    * Stored for API compatibility; lossless SSE replay is always on server-side.
    */
   sse_replay_enabled: boolean;
-  verify_max_retries: number;
   updated_at?: string;
 };
 
@@ -71,7 +64,6 @@ export type AppSettingsPatch = Partial<{
   cursor_bin: string;
   cursor_model: string;
   verify_model: string;
-  verify_chat_mode: "same_chat" | "different_chat";
   max_run_duration_seconds: number;
   agent_pickup_delay_seconds: number;
   /**
@@ -84,7 +76,6 @@ export type AppSettingsPatch = Partial<{
   display_timezone: string;
   optimistic_mutations_enabled: boolean;
   sse_replay_enabled: boolean;
-  verify_max_retries: number;
 }>;
 
 export type ProbeCursorResult = {
@@ -121,43 +112,21 @@ export function parseAppSettings(raw: unknown): AppSettings {
     throw new Error("unexpected settings response shape");
   }
   const o = raw as Record<string, unknown>;
-  // Default agent_paused to false when the server omits the field so
-  // older builds (pre-4a) stay decodable by a freshly-deployed SPA.
-  // We could throw instead, but a boolean default that matches the DB
-  // default is safer than blocking the whole settings page on a
-  // missing key.
   const paused = typeof o.agent_paused === "boolean" ? o.agent_paused : false;
   const runner = o.runner;
   const cursorBin = o.cursor_bin;
   const cursorModel = o.cursor_model;
   const verifyModel =
     typeof o.verify_model === "string" ? o.verify_model : "";
-  const verifyChatModeRaw =
-    typeof o.verify_chat_mode === "string" ? o.verify_chat_mode.trim() : "";
-  const verifyChatMode =
-    verifyChatModeRaw === "different_chat" ? "different_chat" : "same_chat";
   const maxDur = o.max_run_duration_seconds;
   const pickupDelay = o.agent_pickup_delay_seconds;
-  // display_timezone is preserved verbatim when the server sends a
-  // string. Empty string ("") is the documented auto-detect sentinel
-  // (the SPA reads it as "no operator override, use the browser zone"),
-  // so we MUST NOT coerce "" to "UTC" here — that would silently
-  // override the auto-detect path. When the server omits the field
-  // entirely (stale pre-Stage-1 binary still serving GETs) we fall
-  // back to "" too, which routes through the same auto-detect path —
-  // safer than hard-coding UTC for every operator on a new SPA build.
   const tz = typeof o.display_timezone === "string" ? o.display_timezone : "";
-  // Rollout flags default to true when omitted (legacy responses).
   const optimistic = typeof o.optimistic_mutations_enabled === "boolean"
     ? o.optimistic_mutations_enabled
     : true;
   const sseReplay = typeof o.sse_replay_enabled === "boolean"
     ? o.sse_replay_enabled
     : true;
-  const verifyMaxRetries =
-    typeof o.verify_max_retries === "number"
-      ? o.verify_max_retries
-      : DEFAULT_VERIFY_MAX_RETRIES;
   if (
     typeof runner !== "string" ||
     typeof cursorBin !== "string" ||
@@ -173,13 +142,11 @@ export function parseAppSettings(raw: unknown): AppSettings {
     cursor_bin: cursorBin,
     cursor_model: cursorModel,
     verify_model: verifyModel,
-    verify_chat_mode: verifyChatMode,
     max_run_duration_seconds: maxDur,
     agent_pickup_delay_seconds: pickupDelay,
     display_timezone: tz,
     optimistic_mutations_enabled: optimistic,
     sse_replay_enabled: sseReplay,
-    verify_max_retries: verifyMaxRetries,
   };
   if (typeof o.updated_at === "string") {
     out.updated_at = o.updated_at;

@@ -35,9 +35,8 @@ var verifyPhaseDurationBuckets = []float64{
 	0.1, 0.25, 0.5, 1, 2.5, 5, 10, 30, 60, 120, 300, 600,
 }
 
-// verifyRetriesBuckets bound the per-cycle retry count histogram.
-// Most cycles are 0 (first attempt verified) or capped near
-// VerifyMaxRetries (default 2).
+// verifyRetriesBuckets bound the per-cycle retry count histogram (legacy
+// metric; in-cycle verify retries were removed in ADR-0090).
 // Buckets are integer-aligned so quantile readouts map directly to
 // retry counts without rounding ambiguity.
 var verifyRetriesBuckets = []float64{0, 1, 2, 3, 5, 10}

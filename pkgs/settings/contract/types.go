@@ -9,14 +9,12 @@ type SettingsPatch struct {
 	CursorBin                  *string
 	CursorModel                *string
 	VerifyModel                *string
-	VerifyChatMode             *string
 	MaxRunDurationSeconds      *int
 	AgentPickupDelaySeconds    *int
 	DisplayTimezone            *string
 	OptimisticMutationsEnabled *bool
 	SSEReplayEnabled           *bool
 	RunnerConfigs              *json.RawMessage
-	VerifyMaxRetries           *int
 	CursorSessionResumeEnabled *bool
 	AgentMCPEnabled            *bool
 }
@@ -30,14 +28,12 @@ func (p SettingsPatch) IsEmpty() bool {
 		p.CursorBin == nil &&
 		p.CursorModel == nil &&
 		p.VerifyModel == nil &&
-		p.VerifyChatMode == nil &&
 		p.MaxRunDurationSeconds == nil &&
 		p.AgentPickupDelaySeconds == nil &&
 		p.DisplayTimezone == nil &&
 		p.OptimisticMutationsEnabled == nil &&
 		p.SSEReplayEnabled == nil &&
 		p.RunnerConfigs == nil &&
-		p.VerifyMaxRetries == nil &&
 		p.CursorSessionResumeEnabled == nil &&
 		p.AgentMCPEnabled == nil
 }

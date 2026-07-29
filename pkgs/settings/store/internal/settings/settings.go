@@ -46,10 +46,6 @@ func Get(ctx context.Context, db *gorm.DB) (domain.AppSettings, error) {
 			})
 		}
 		d := model.ToDomainAppSettings(row)
-		if strings.TrimSpace(d.VerifyChatMode) == "" {
-			mode := string(domain.DefaultVerifyChatMode)
-			return Update(ctx, db, Patch{VerifyChatMode: &mode})
-		}
 		return d, nil
 	}
 	if !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -141,24 +137,12 @@ func validatePatch(patch Patch) error {
 	if patch.VerifyModel != nil && len(strings.TrimSpace(*patch.VerifyModel)) > 256 {
 		return fmt.Errorf("%w: verify_model too long (max 256)", domain.ErrInvalidInput)
 	}
-	if patch.VerifyChatMode != nil {
-		normalized, ok := domain.NormalizeVerifyChatMode(*patch.VerifyChatMode)
-		if !ok || normalized == "" {
-			return fmt.Errorf("%w: verify_chat_mode must be same_chat or different_chat", domain.ErrInvalidInput)
-		}
-	}
 	if patch.DisplayTimezone != nil {
 		trimmed := strings.TrimSpace(*patch.DisplayTimezone)
 		if trimmed != "" {
 			if _, err := time.LoadLocation(trimmed); err != nil {
 				return fmt.Errorf("%w: display_timezone %q is not a valid IANA timezone: %v", domain.ErrInvalidInput, trimmed, err)
 			}
-		}
-	}
-	if patch.VerifyMaxRetries != nil {
-		v := *patch.VerifyMaxRetries
-		if v < 0 {
-			return fmt.Errorf("%w: verify_max_retries must be >= 0", domain.ErrInvalidInput)
 		}
 	}
 	return nil
@@ -181,10 +165,6 @@ func applyPatch(row *domain.AppSettings, patch Patch) {
 	if patch.VerifyModel != nil {
 		row.VerifyModel = strings.TrimSpace(*patch.VerifyModel)
 	}
-	if patch.VerifyChatMode != nil {
-		normalized, _ := domain.NormalizeVerifyChatMode(*patch.VerifyChatMode)
-		row.VerifyChatMode = normalized
-	}
 	if patch.MaxRunDurationSeconds != nil {
 		row.MaxRunDurationSeconds = *patch.MaxRunDurationSeconds
 	}
@@ -202,9 +182,6 @@ func applyPatch(row *domain.AppSettings, patch Patch) {
 	}
 	if patch.RunnerConfigs != nil {
 		row.RunnerConfigs = json.RawMessage(*patch.RunnerConfigs)
-	}
-	if patch.VerifyMaxRetries != nil {
-		row.VerifyMaxRetries = *patch.VerifyMaxRetries
 	}
 	if patch.CursorSessionResumeEnabled != nil {
 		row.CursorSessionResumeEnabled = *patch.CursorSessionResumeEnabled

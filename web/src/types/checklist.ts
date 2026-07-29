@@ -35,9 +35,6 @@ export type TaskChecklistResponse = {
 /** UI display cap for evidence text (backend store cap is 16 KB). See docs/data-model.md. */
 export const CHECKLIST_EVIDENCE_DISPLAY_CAP = 12 * 1024;
 
-/** Defaults aligned with pkgs/tasks/domain/app_settings.go. */
-export const DEFAULT_VERIFY_MAX_RETRIES = 2;
-
 /** Checklist row in compose payloads (drafts, templates, create). */
 export type TaskDraftChecklistItem = {
   text: string;

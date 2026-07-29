@@ -70,7 +70,6 @@ export async function createTask(input: {
   project_id?: string;
   runner?: string;
   cursor_model?: string;
-  verify_chat_mode?: string;
   /**
    * Optional RFC3339 UTC instant for the agent worker's earliest pickup.
    * Omit (or pass `undefined`) to keep the existing global-delay
@@ -98,9 +97,6 @@ export async function createTask(input: {
   }
   if (input.cursor_model !== undefined) {
     body.cursor_model = input.cursor_model;
-  }
-  if (input.verify_chat_mode !== undefined) {
-    body.verify_chat_mode = input.verify_chat_mode;
   }
   const cid = assertOptionalTaskPathId(input.id, "id");
   if (cid !== undefined) {
@@ -196,8 +192,6 @@ export async function patchTask(
     pickup_not_before?: string | null;
     /** Per-task Cursor CLI model; empty string clears stored override. */
     cursor_model?: string;
-    /** Per-task verify chat mode; empty string inherits workspace default. */
-    verify_chat_mode?: string;
     tags?: string[];
     milestone?: string | null;
     gate?: TaskGate | null;
@@ -221,9 +215,6 @@ export async function patchTask(
   }
   if (patch.cursor_model !== undefined) {
     body.cursor_model = patch.cursor_model;
-  }
-  if (patch.verify_chat_mode !== undefined) {
-    body.verify_chat_mode = patch.verify_chat_mode;
   }
   if (patch.tags !== undefined) {
     body.tags = patch.tags;

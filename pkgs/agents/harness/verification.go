@@ -50,12 +50,10 @@ func (h *Harness) verifySvc() *verify.Service {
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (h *Harness) loadVerificationSnapshot(ctx context.Context, task *taskcoredomain.Task) (verificationSnapshot, error) {
-	mode := ""
 	if task != nil {
-		mode = task.VerifyChatMode
-		return h.verifySvc().LoadSnapshot(ctx, task.ID, mode)
+		return h.verifySvc().LoadSnapshot(ctx, task.ID)
 	}
-	return h.verifySvc().LoadSnapshot(ctx, "", mode)
+	return h.verifySvc().LoadSnapshot(ctx, "")
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."

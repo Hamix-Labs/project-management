@@ -26,7 +26,6 @@ describe("buildCreateTaskMutationInput", () => {
       newPriority: "medium",
       newTaskRunner: "cursor",
       newTaskCursorModel: "",
-      newTaskVerifyChatMode: "",
       newProjectID: FACTORY_REPO_DEFAULT_PROJECT_ID,
       newRepositoryID: "",
       newWorktreeID: "wt-1",

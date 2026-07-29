@@ -103,5 +103,8 @@ func Run(ctx context.Context, db *gorm.DB, deps Deps) error {
 	if err := migrateRemoveProjectContext(ctx, db); err != nil {
 		return fmt.Errorf("migrate remove project context: %w", err)
 	}
+	if err := migrateDropVerifySettingsColumns(ctx, db); err != nil {
+		return fmt.Errorf("drop verify settings columns: %w", err)
+	}
 	return nil
 }

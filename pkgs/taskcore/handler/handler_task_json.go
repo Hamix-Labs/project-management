@@ -21,7 +21,6 @@ type taskCreateJSON struct {
 	ProjectID      *string         `json:"project_id"`
 	Runner         *string         `json:"runner"`
 	CursorModel    *string         `json:"cursor_model"`
-	VerifyChatMode *string         `json:"verify_chat_mode"`
 	// PickupNotBefore is an optional RFC3339 instant. When provided,
 	// the worker will not pick up the task until this time has passed
 	// (see docs/data-model.md). Omitted/null = no schedule = pick up
@@ -49,9 +48,6 @@ type taskPatchJSON struct {
 	// the empty string, which clears per-task override). JSON null is decoded
 	// as nil and means "no change", same as omitting the key.
 	CursorModel *string `json:"cursor_model"`
-	// VerifyChatMode sets tasks.verify_chat_mode when present (including empty
-	// to inherit app_settings). JSON null / omit = no change.
-	VerifyChatMode *string             `json:"verify_chat_mode"`
 	Tags           *[]string           `json:"tags,omitempty"`
 	Milestone      *string             `json:"milestone,omitempty"`
 	Gate           patchGateField      `json:"gate"`

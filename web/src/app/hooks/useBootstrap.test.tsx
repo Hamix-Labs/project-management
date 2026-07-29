@@ -47,7 +47,6 @@ const SAMPLE_BOOTSTRAP = {
     display_timezone: "UTC",
     optimistic_mutations_enabled: true,
     sse_replay_enabled: true,
-    verify_max_retries: 1,
   },
   tasks: {
     tasks: [],

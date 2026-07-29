@@ -6,7 +6,7 @@ Per-task acceptance requirements: how operators define them, how the agent worke
 | --- | --- |
 | **Applies to** | Checklist API, task create flow, agent worker harness, checklist UI |
 | **Audience** | Contributors touching store, harness, handlers, or SPA checklist surfaces |
-| **Companion article** | [verify-agent.md](./verify-agent.md) — verify-phase self-grade with worker evidence; [execute-agent.md](./execute-agent.md) — execute-phase prompt composition; [harness.md](./harness.md) — cycle loop and retry orchestration |
+| **Companion article** | [verify-agent.md](./verify-agent.md) — verify-phase self-grade with worker evidence; [execute-agent.md](./execute-agent.md) — execute-phase prompt composition; [harness.md](./harness.md) — cycle loop and one-shot orchestration |
 
 ## In this article
 
@@ -53,9 +53,10 @@ Schema tables and HTTP contracts remain authoritative in [data-model.md](../data
 | **Done criterion** | A row in `task_checklist_items` with stable `id` and `text`. |
 | **Verify command** | Optional shell check in `task_checklist_item_commands`, run by the worker before LLM verify. |
 | **Self-claim** | Execute agent assertion (`claimed_done`) in `criteria-report.json`. Not final acceptance. |
-| **Verify verdict** | Execute agent judgment (`verified`) in `verify-report.json` during `PhaseVerify`. Sole authority for `verified_by=execute_agent`. |
+| **Verify verdict** | Execute agent judgment (`verified`) in `verify-report.json` during `PhaseVerify` for command-backed criteria. Sole authority for `verified_by=execute_agent`. |
+| **Execute claim** | Harness acceptance of `claimed_done: true` for criteria without `verify_commands`; `verified_by=execute_claim` ([ADR-0090](../adr/ADR-0090-command-only-verify.md)). |
 | **Completion ledger** | `task_checklist_completions` rows written only when the execution cycle terminates successfully. |
-| **Locked pass** | Criterion verified on an earlier attempt in the same cycle; carried in `previouslyPassed` and omitted from re-verify. |
+| **Cross-cycle locked pass** | Criterion verified on a parent cycle; carried via operator **Resume from failure** and omitted from re-verify on the child attempt. |
 
 ### Actors and trust
 
@@ -106,7 +107,7 @@ Three persistence layers cooperate:
 | **Ephemeral reports** | `<HAMIX_WORKER_REPORT_DIR>/<cycle_id>/` | GC at cycle terminate | Agent ↔ worker wire format |
 | **Durable ledger** | `task_checklist_completions`, `task_cycle_*_reports`, `task_cycle_command_runs` | Until task/cycle deleted | UI, audit, support |
 
-The worker runs verify inside [`runCycleLoop`](../../pkgs/agents/harness/cycle_loop.go) after a successful execute phase, **only when the task has ≥1 criterion** (`verificationSnapshot.enabled`). Harness orchestration (retry loop, `previouslyPassed`, termination): [harness.md](./harness.md). Zero-criteria legacy tasks skip verify; a successful execute alone completes the task via [`completeChecklistLegacy`](../../pkgs/agents/harness/verification.go).
+The worker runs verify inside [`runCycleLoop`](../../pkgs/agents/harness/cycle_loop.go) after a successful execute phase when the task has command-backed criteria. Claim-only criteria are accepted from the execute report without PhaseVerify. Harness orchestration (one-shot terminate): [harness.md](./harness.md). Zero-criteria legacy tasks skip verify; a successful execute alone completes the task via [`completeChecklistLegacy`](../../pkgs/agents/harness/verification.go).
 
 ## Operator workflow
 
@@ -145,20 +146,18 @@ sequenceDiagram
   alt all criteria pass
     Pipe->>Loop: success
     Loop->>DB: SetDoneWithEvidence + completions
-  else any fail and retries remain
-    Pipe->>Loop: verifyErr + feedback
-    Loop->>Loop: verifyAttempt++, retry execute
-  else retries exhausted
+  else any fail
     Loop->>DB: terminate verification_failed ids
   end
 ```
 
-1. **Execute** — [`injectCriteria`](../../pkgs/agents/harness/criteria_prompt.go) prepends active criteria and the absolute path to `criteria-report.json`. Criteria already passed in earlier attempts appear under "Already verified (do not re-do)" and are omitted from the report's expected ID set. Full prompt contract: [execute-agent.md](./execute-agent.md).
-2. **Self-claim gate** — For each non-locked criterion, `claimed_done: false` fails immediately with `verified_by=agent_self`. No LLM verify runs for those IDs.
-3. **Shell checks** (optional) — For criteria with `verify_commands`, the worker runs commands sequentially in `repo_root`, writing artifacts under `<report_dir>/<cycle_id>/checks/<criterion_id>/`. Failures do not skip LLM verify ([ADR-0012](../adr/ADR-0012-structured-verify-commands.md)).
-4. **Verify phase** — LLM pass (same execute runner) for every criterion that passed the self-claim gate. See [verify-agent.md](./verify-agent.md).
-5. **Integrity check** — Pre/post `git status --porcelain` + `git rev-parse HEAD` on the working dir. Any working-tree change or HEAD movement → `verify_tampered` (terminal, no retries, no completions). Non-git repos: check bypassed (logged once at startup).
-6. **Decision** — All pass → [`applyVerifiedCompletions`](../../pkgs/agents/harness/verification.go) + task `done`. Any fail → retry execute up to `verify_max_retries`, carrying passed verdicts in `previouslyPassed`. Exhausted retries → cycle fails with `verification_failed:<id>,…` (prefix-stable; truncated at 256 chars).
+1. **Execute** — [`injectCriteria`](../../pkgs/agents/harness/criteria_prompt.go) prepends active criteria and the absolute path to `criteria-report.json`. On operator **Resume from failure**, criteria already verified on the parent may appear under "Already verified (do not re-do)". Full prompt contract: [execute-agent.md](./execute-agent.md).
+2. **Self-claim gate** — For each criterion, `claimed_done: false` fails immediately with `verified_by=agent_self`. No LLM verify runs for those IDs.
+3. **Claim-only acceptance** — Criteria with `claimed_done: true` and no `verify_commands` are accepted from the execute report (`verified_by=execute_claim`).
+4. **Shell checks** (optional) — For criteria with `verify_commands`, the worker runs commands sequentially in `repo_root`, writing artifacts under `<report_dir>/<cycle_id>/checks/<criterion_id>/`. Failures do not skip LLM verify ([ADR-0012](../adr/ADR-0012-structured-verify-commands.md)).
+5. **Verify phase** — LLM pass (same execute runner) for command-backed criteria that passed the self-claim gate. See [verify-agent.md](./verify-agent.md).
+6. **Integrity check** — Pre/post `git status --porcelain` + `git rev-parse HEAD` on the working dir. Any working-tree change or HEAD movement → `verify_tampered` (terminal, no completions). Non-git repos: check bypassed (logged once at startup).
+7. **Decision** — All pass → [`applyVerifiedCompletions`](../../pkgs/agents/harness/verification.go) + task `done`. Any fail → cycle fails with `verification_failed:<id>,…` (prefix-stable; truncated at 256 chars). One-shot per cycle ([ADR-0090](../adr/ADR-0090-command-only-verify.md)); operators recover via Retry / Start over.
 
 ## Wire contracts
 
@@ -208,14 +207,15 @@ Written only on **cycle success**, one row per passed criterion:
 
 | Field | Meaning |
 | --- | --- |
-| `verified_by` | `execute_agent` on success; `agent_self` never written on success (failure-only) |
+| `verified_by` | `execute_agent` on command-backed success; `execute_claim` on claim-only success; `agent_self` never written on success (failure-only) |
 | `evidence` | From execute report |
 | `verifier_reasoning` | From verify report |
 | `cycle_id` | Producing cycle |
 
 | `verified_by` | Meaning |
 | --- | --- |
-| `execute_agent` | Verify phase accepted (current worker) |
+| `execute_agent` | Verify phase accepted command-backed criterion (current worker) |
+| `execute_claim` | Harness accepted execute self-claim for claim-only criterion ([ADR-0090](../adr/ADR-0090-command-only-verify.md)) |
 | `verify_agent` | Legacy wire value; superseded by `execute_agent` ([ADR-0084](../adr/ADR-0084-executor-owned-verify.md)) |
 | `agent_self` | Failure-only: execute did not claim done |
 | `deterministic_check` | Legacy rows only; never written by current worker |
@@ -245,7 +245,6 @@ Exposed on `GET /tasks/{id}/cycles/{cycleId}/verdicts`. Pre-verdict cycles retur
 
 | Setting | Source | Default | Effect on criteria |
 | --- | --- | --- | --- |
-| `verify_max_retries` | `app_settings` | `2` | Max execute↔verify retry loops per cycle |
 | `timeout_seconds` | per `verify_commands[]` row | omit (unlimited) | Optional wall-clock cap for that shell check |
 | `HAMIX_WORKER_REPORT_DIR` | env | `<tmp>/hamix-worker` | Scratch root for report files (outside `repo_root`) |
 | `repo_root` / task worktree | settings / git binding | — | Working dir for execute + shell checks + verify integrity snapshot |
@@ -257,8 +256,8 @@ See [configuration.md](../configuration.md) for validation rules and supervisor 
 - **Explicit acceptance contract** — Stable criterion IDs survive retries; operators and agents share the same checklist.
 - **Separation of claim vs proof** — Execute asserts `claimed_done`; verify phase independently judges with worker evidence.
 - **Executor-owned verify** — Same runner for both phases; worker shell evidence mitigates self-grading ([ADR-0084](../adr/ADR-0084-executor-owned-verify.md)).
+- **One-shot honesty** — No in-cycle retry; any verify failure terminates the cycle ([ADR-0090](../adr/ADR-0090-command-only-verify.md)).
 - **Atomic completion honesty** — No partial completion rows on failed cycles.
-- **Retry efficiency** — Passed criteria carried in `previouslyPassed`; execute prompts and verify short-circuit settled items.
 - **Deterministic evidence channel** — Optional shell commands produce inspectable artifacts without bypassing LLM judgment ([ADR-0012](../adr/ADR-0012-structured-verify-commands.md)).
 - **Rich audit trail** — Per-attempt verdict tables + `details.verification` on verify phase events for SPA timeline.
 - **Tamper detection** — Post-verify git snapshot catches tree mutation during `PhaseVerify` (when working dir is a git repo).
@@ -292,8 +291,9 @@ See [configuration.md](../configuration.md) for validation rules and supervisor 
 | [api.md](../api.md) | Checklist routes, create validation, verdicts endpoint |
 | [architecture.md](../architecture.md) | Worker + harness placement in `taskapi` |
 | [configuration.md](../configuration.md) | Verify settings and report dir |
+| [ADR-0090](../adr/ADR-0090-command-only-verify.md) | Command-only verify, execute_claim, one-shot cycle |
 | [ADR-0084](../adr/ADR-0084-executor-owned-verify.md) | Executor-owned verify, `execute_agent` wire kind |
-| [ADR-0003](../adr/ADR-0003-verify-component-upgrade.md) | Integrity check, locked passes, retry efficiency |
+| [ADR-0003](../adr/ADR-0003-verify-component-upgrade.md) | Integrity check (historical locked-pass retry semantics superseded by ADR-0090) |
 | [ADR-0012](../adr/ADR-0012-structured-verify-commands.md) | Shell checks and evidence layout |
 | [ADR-0010](../adr/ADR-0010-remove-subtasks.md) | Flat tasks; no checklist inheritance |
 
@@ -302,7 +302,7 @@ See [configuration.md](../configuration.md) for validation rules and supervisor 
 | Package / file | Responsibility |
 | --- | --- |
 | [`pkgs/tasks/store/internal/checklist/`](../../pkgs/tasks/store/internal/checklist/) | Definition CRUD, completion ledger, `ValidateCanMarkDoneInTx` |
-| [`pkgs/agents/harness/cycle_loop.go`](../../pkgs/agents/harness/cycle_loop.go) | Execute ↔ verify retry orchestration |
+| [`pkgs/agents/harness/cycle_loop.go`](../../pkgs/agents/harness/cycle_loop.go) | Execute → verify one-shot orchestration |
 | [`pkgs/agents/harness/verification.go`](../../pkgs/agents/harness/verification.go) | Verify pipeline, integrity check, completions |
 | [`pkgs/agents/harness/criteria_prompt.go`](../../pkgs/agents/harness/criteria_prompt.go) | Criteria injection into execute prompt |
 | [`pkgs/agents/harness/criteria_parse.go`](../../pkgs/agents/harness/criteria_parse.go) | Report parsing and size limits |

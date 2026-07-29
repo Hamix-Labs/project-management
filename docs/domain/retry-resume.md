@@ -43,7 +43,6 @@ Do not conflate these paths — trigger, cycle row, git, and checkpoint differ:
 | Term | Meaning |
 | --- | --- |
 | **Cross-cycle checkpoint** | Data loaded from a **terminal** parent via `loadCheckpointFromParent`, not from an open running cycle. |
-| **verifyAttempt = 0** | Each new attempt gets a fresh verify retry budget; parent `maxAttempt` is not carried forward. |
 | **previouslyPassed** | Criteria that already passed verify on the parent are locked for the new attempt. |
 | **knownCommits** | All distinct `task_cycle_commits` rows for the task (every prior attempt) feed the resume notice on execute. |
 | **Shared loader** | `loadVerifyCheckpointData` is shared with ADR-0006 same-cycle resume; eligibility rules differ. |
@@ -74,7 +73,7 @@ sequenceDiagram
    - Loads checkpoint from parent (`loadCheckpointFromParent`).
    - On load failure: task → `failed`, `retry_checkpoint_failed`; no new cycle.
    - On success: `startCycle` with `ParentCycleID` and `meta.retry_mode=resume`.
-   - `runCycleLoop` with `resumeNotice`, `knownCommits`, `previouslyPassed`, `verifyAttempt=0`, always entering execute.
+   - `runCycleLoop` with `resumeNotice`, `knownCommits`, `previouslyPassed`, always entering execute.
 
 > **Note** — Resume retry never mutates parent cycle rows or git history.
 
@@ -116,13 +115,13 @@ Execute and verify prompt wiring reuse `cycleLoopOpts` — no duplicated prompt 
 
 - Does not resume mid-CLI session (runners are stateless).
 - Does not reopen a terminal cycle row in place.
-- `verifyAttempt` resets per new attempt — operators get a full verify budget again.
 - Multi-parent merge and shared-worktree concurrent retries are deferred.
 
 ## See also
 
 - [retry-start-over.md](./retry-start-over.md) — Start over (fresh) behavior
 - [ADR-0015](../adr/ADR-0015-dual-retry-modes.md) — decision record
+- [ADR-0090](../adr/ADR-0090-command-only-verify.md) — one-shot cycle (no in-cycle retry)
 - [ADR-0006](../adr/ADR-0006-phase-boundary-resume.md) — same-cycle resume after restart
 - [harness.md](./harness.md) — `RunWithRetry`, recovery reasons
 - [cycle-commits.md](./cycle-commits.md) — commit index consumed by resume notice

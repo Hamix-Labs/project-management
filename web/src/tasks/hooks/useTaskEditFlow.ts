@@ -16,7 +16,6 @@ export type UseTaskEditFlowOptions = {
   newTagsCsv: string;
   newMilestone: string;
   newTaskCursorModel: string;
-  newTaskVerifyChatMode: string;
   newSchedule: string | null;
   composeStatus: import("@/types").Status;
   createModalOpen: boolean;
@@ -147,7 +146,6 @@ export function useTaskEditFlow(opts: UseTaskEditFlowOptions) {
           tagsCsv: opts.newTagsCsv,
           milestone: opts.newMilestone,
           cursor_model: opts.newTaskCursorModel,
-          verify_chat_mode: opts.newTaskVerifyChatMode,
           pickup_not_before: opts.newSchedule,
         }),
       );
@@ -162,7 +160,6 @@ export function useTaskEditFlow(opts: UseTaskEditFlowOptions) {
       opts.newTagsCsv,
       opts.newMilestone,
       opts.newTaskCursorModel,
-      opts.newTaskVerifyChatMode,
       opts.newSchedule,
       runPatch,
     ],

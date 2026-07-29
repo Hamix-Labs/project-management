@@ -109,10 +109,8 @@ function TaskCreateModalsLayerBody() {
               onFunctionInputsChange: app.setNewFunctionInputs,
               taskRunner: isEditing ? app.editingTaskRunner : app.newTaskRunner,
               taskCursorModel: app.newTaskCursorModel,
-              taskVerifyChatMode: app.newTaskVerifyChatMode,
               onTaskRunnerChange: app.setNewTaskRunner,
               onTaskCursorModelChange: app.setNewTaskCursorModel,
-              onTaskVerifyChatModeChange: app.setNewTaskVerifyChatMode,
               schedule: app.newSchedule,
               onScheduleChange: app.setNewSchedule,
               autonomyEnabled: isEditing
