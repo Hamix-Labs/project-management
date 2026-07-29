@@ -6,9 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"strings"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/verify"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
@@ -22,7 +20,7 @@ func (s *Service) ReconstructCheckpoint(ctx context.Context, cycle *cyclesdomain
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.resume.ReconstructCheckpoint",
 		"cycle_id", cycle.ID)
 	var cp Checkpoint
-	cp.PreviouslyPassed = map[string]CriterionVerdict{}
+	cp.LockedPasses = map[string]CriterionVerdict{}
 	if cycle == nil {
 		return cp, errors.New("resume: nil cycle")
 	}
@@ -60,17 +58,11 @@ func (s *Service) ReconstructCheckpoint(ctx context.Context, cycle *cyclesdomain
 		return cp, fmt.Errorf("resume: cannot continue from phase %q status %q", last.Phase, last.Status)
 	}
 
-	previouslyPassed, maxAttempt, verifyFeedback, verifyRetry, err := s.loadVerifyCheckpointData(ctx, cycle.ID, phases)
+	lockedPasses, err := s.loadLockedPasses(ctx, cycle.ID)
 	if err != nil {
 		return cp, err
 	}
-	cp.PreviouslyPassed = previouslyPassed
-	if verifyRetry >= 0 {
-		cp.VerifyAttempt = verifyRetry
-	} else if maxAttempt > 0 {
-		cp.VerifyAttempt = int(maxAttempt)
-	}
-	cp.VerifyFeedback = verifyFeedback
+	cp.LockedPasses = lockedPasses
 
 	commits, err := s.loadKnownCommitsForTask(ctx, cycle.TaskID)
 	if err != nil {
@@ -87,10 +79,10 @@ func (s *Service) LoadCheckpointFromParent(ctx context.Context, parentCycleID st
 		"parent_cycle_id", parentCycleID)
 	bundle, err := s.LoadContinuationBundle(ctx, parentCycleID)
 	if err != nil {
-		return Checkpoint{PreviouslyPassed: map[string]CriterionVerdict{}}, err
+		return Checkpoint{LockedPasses: map[string]CriterionVerdict{}}, err
 	}
 	if !bundle.Sufficient {
-		return Checkpoint{PreviouslyPassed: map[string]CriterionVerdict{}},
+		return Checkpoint{LockedPasses: map[string]CriterionVerdict{}},
 			fmt.Errorf("continuation: insufficient data for parent %s", parentCycleID)
 	}
 	return bundleToCheckpoint(bundle), nil
@@ -102,25 +94,20 @@ func (s *Service) loadKnownCommitsForTask(ctx context.Context, taskID string) ([
 	return s.store.ListCommitsForTask(ctx, taskID)
 }
 
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func (s *Service) loadVerifyCheckpointData(ctx context.Context, cycleID string, phases []cyclesdomain.TaskCyclePhase) (map[string]CriterionVerdict, int64, string, int, error) {
-	previouslyPassed := map[string]CriterionVerdict{}
+func (s *Service) loadLockedPasses(ctx context.Context, cycleID string) (map[string]CriterionVerdict, error) {
+	lockedPasses := map[string]CriterionVerdict{}
 	verifyRows, err := s.store.ListVerifyReportsForCycle(ctx, cycleID)
 	if err != nil {
-		return nil, 0, "", -1, err
+		return nil, err
 	}
-	var maxAttempt int64
 	for _, row := range verifyRows {
-		if row.AttemptSeq > maxAttempt {
-			maxAttempt = row.AttemptSeq
-		}
 		if !row.Verified {
 			continue
 		}
-		if _, ok := previouslyPassed[row.CriterionID]; ok {
+		if _, ok := lockedPasses[row.CriterionID]; ok {
 			continue
 		}
-		previouslyPassed[row.CriterionID] = CriterionVerdict{
+		lockedPasses[row.CriterionID] = CriterionVerdict{
 			ID:        row.CriterionID,
 			Passed:    true,
 			Evidence:  "",
@@ -128,26 +115,7 @@ func (s *Service) loadVerifyCheckpointData(ctx context.Context, cycleID string, 
 			Reasoning: row.Reasoning,
 		}
 	}
-	feedback := ""
-	if maxAttempt > 0 {
-		feedback = buildVerifyFeedbackFromRows(verifyRows, maxAttempt)
-	}
-	verifyRetry := -1
-	for i := len(phases) - 1; i >= 0; i-- {
-		p := phases[i]
-		if p.Phase != cyclesdomain.PhaseVerify {
-			continue
-		}
-		if rc, ok := verify.ParseVerifyRetryCount([]byte(p.DetailsJSON)); ok {
-			verifyRetry = rc
-			break
-		}
-		if maxAttempt > 0 {
-			verifyRetry = int(maxAttempt)
-		}
-		break
-	}
-	return previouslyPassed, maxAttempt, feedback, verifyRetry, nil
+	return lockedPasses, nil
 }
 
 func isInterruptPhase(p cyclesdomain.TaskCyclePhase) bool {
@@ -162,27 +130,12 @@ func isInterruptPhase(p cyclesdomain.TaskCyclePhase) bool {
 	return *p.Summary == cyclesdomain.PhaseInterruptReason
 }
 
-func buildVerifyFeedbackFromRows(rows []cyclesdomain.TaskCycleVerifyReport, attemptSeq int64) string {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.resume.buildVerifyFeedbackFromRows",
-		"attempt_seq", attemptSeq, "rows", len(rows))
-	var failures []string
-	for _, row := range rows {
-		if row.AttemptSeq != attemptSeq || row.Verified {
-			continue
-		}
-		failures = append(failures, fmt.Sprintf("%s: %s", row.CriterionID, row.Reasoning))
-	}
-	return strings.Join(failures, "; ")
-}
-
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func bundleToCheckpoint(bundle ContinuationBundle) Checkpoint {
 	return Checkpoint{
-		Entry:            bundle.Entry,
-		PreviouslyPassed: bundle.PreviouslyPassed,
-		VerifyAttempt:    0,
-		VerifyFeedback:   bundle.VerifyFeedback,
-		KnownCommits:     bundle.Commits,
-		Continuation:     &bundle,
+		Entry:        bundle.Entry,
+		LockedPasses: bundle.LockedPasses,
+		KnownCommits: bundle.Commits,
+		Continuation: &bundle,
 	}
 }

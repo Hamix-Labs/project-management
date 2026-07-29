@@ -78,13 +78,11 @@ func (h *Harness) planVerifyRun(
 	cycle *cyclesdomain.TaskCycle,
 	state *processState,
 	snap verificationSnapshot,
-	verifyAttempt int,
-	feedback string,
 	cmdEvidence []verify.CommandEvidence,
 	selfReport map[string]reports.CriteriaEntry,
 ) (verify.VerifyRunPlan, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.planVerifyRun",
-		"task_id", task.ID, "cycle_id", cycle.ID, "verify_attempt", verifyAttempt)
+		"task_id", task.ID, "cycle_id", cycle.ID)
 	opts := cycleLoopOpts{
 		resumeNotice:     state.resume.resumeNotice,
 		interruptedPhase: state.resume.interruptedPhase,
@@ -99,12 +97,12 @@ func (h *Harness) planVerifyRun(
 		return verify.VerifyRunPlan{}, cursorresume.MissingSessionForVerify()
 	}
 	if decision.Mode == CursorResumeFresh || decision.Mode == CursorResumeFallback {
-		decision.Prompt = h.verifySvc().BuildVerifyPrompt(ctx, task.ID, snap, cycle.ID, state.verify.previouslyPassed, selfReport, feedback, cmdEvidence)
+		decision.Prompt = h.verifySvc().BuildVerifyPrompt(ctx, task.ID, snap, cycle.ID, state.verify.lockedPasses, selfReport, cmdEvidence)
 	} else {
 		rc := h.buildRecoveryContext(cyclesdomain.PhaseVerify, task, cycle, state, opts, retryModeFromCycleMeta(cycle))
 		rc.CommandEvidenceDelta = commandEvidenceLines(cmdEvidence)
 		rc.VerifyContract = h.verifySvc().BuildVerifyReportContract(
-			ctx, task.ID, snap, cycle.ID, state.verify.previouslyPassed, selfReport, feedback, cmdEvidence,
+			ctx, task.ID, snap, cycle.ID, state.verify.lockedPasses, selfReport, cmdEvidence,
 		)
 		decision.Prompt = prompt.ComposeRecoveryDelta(rc)
 	}

@@ -22,13 +22,13 @@ import (
 // task. Nested bags are stage-scoped where possible (B-34):
 //   - cycle: cross-iteration identity (id, started, effective model)
 //   - phase: execute/verify phase seqs and correlation for the current loop
-//   - verify: verify-attempt scratch (feedback, prior passes); reset on new cycle
+//   - verify: verify scratch (locked passes from polish/resume seed); reset on new cycle
 //   - git: execute-outcome anchors handed to verify/commit ingest
 //   - resume: entry mirrors for crash/operator resume (not live mid-execute)
 //
 // Prefer passing stage values as arguments when adding new control flow;
 // only put fields here when panic/shutdown cleanup or multi-iteration
-// verify retry must consult them.
+// crash resume must consult them.
 type cycleLifecycleState struct {
 	cycleID        string
 	cycleStarted   bool
@@ -46,19 +46,12 @@ type phaseLifecycleState struct {
 }
 
 type verifyLifecycleState struct {
-	verifySnap     verificationSnapshot
-	verifyAttempt  int
-	verifyFeedback string
-	// previouslyPassed accumulates criterion verdicts that earlier
-	// retry attempts proved passed. Keyed by criterion ID; carried in
-	// memory across the retry loop so the next execute prompt can list
-	// these items as "already verified, do not re-do" and the next
-	// verify pass can short-circuit them. The atomic-decision contract
-	// (docs/data-model.md "Worker verification loop") is preserved
-	// because nothing here is committed to task_checklist_completions
-	// until the cycle succeeds and applyVerifiedCompletions is called
-	// with the union. On terminal failure the map is discarded.
-	previouslyPassed   map[string]criterionVerdict
+	verifySnap verificationSnapshot
+	// lockedPasses holds criterion verdicts seeded from polish/resume
+	// (cross-cycle locked criteria). One-shot verify does not grow this
+	// map during failure retries; on success recordLockedPassVerdicts
+	// merges the passing verdicts before finalize.
+	lockedPasses       map[string]criterionVerdict
 	lastFailedVerdicts []criterionVerdict
 	reportParseErr     string
 	reportTampered     bool
@@ -214,7 +207,6 @@ func (h *Harness) terminateCycle(ctx context.Context, state *processState, taskI
 	state.cycle.cycleStarted = false
 	h.publish(taskID, state.cycle.cycleID)
 	h.recordRun(string(status), h.runner.Name(), state.cycle.effectiveModel, state.cycle.startedAt)
-	h.observeVerifyRetries(state.verify.verifyAttempt)
 	h.restoreWorkspaceMCPConfig(state)
 	// GC the worker-managed scratch dir for this cycle. Idempotent
 	// against a missing dir; logged at Debug because operators rarely

@@ -140,24 +140,22 @@ func (h *Harness) buildRecoveryContext(
 	if phase == cyclesdomain.PhaseVerify {
 		reportPath = reports.VerifyReportPath(h.opts.ReportDir, cycle.ID)
 	}
-	locked := lockedCriterionIDs(state.verify.previouslyPassed)
+	locked := lockedCriterionIDs(state.verify.lockedPasses)
 	expected := activeCriterionIDs(state)
 	runKind := runKindFromCycleMeta(cycle)
 	kind := h.selectRecoveryKind(phase, state, opts, retryMode, runKind)
 	ctx := prompt.RecoveryContext{
-		Kind:                kind,
-		Phase:               phase,
-		CycleID:             cycle.ID,
-		AttemptSeq:          cycle.AttemptSeq,
-		VerifyAttempt:       state.verify.verifyAttempt,
-		ReportPath:          reportPath,
-		FailedCriteria:      failedCriteriaFromVerdicts(state.verify.lastFailedVerdicts),
-		LockedCriteria:      locked,
-		ReportParseErr:      state.verify.reportParseErr,
-		ExpectedIDs:         expected,
-		InterruptedPhase:    opts.interruptedPhase,
-		PriorVerifyFeedback: state.verify.verifyFeedback,
-		ToolOnly:            h.agentMCPActive(context.Background()),
+		Kind:             kind,
+		Phase:            phase,
+		CycleID:          cycle.ID,
+		AttemptSeq:       cycle.AttemptSeq,
+		ReportPath:       reportPath,
+		FailedCriteria:   failedCriteriaFromVerdicts(state.verify.lastFailedVerdicts),
+		LockedCriteria:   locked,
+		ReportParseErr:   state.verify.reportParseErr,
+		ExpectedIDs:      expected,
+		InterruptedPhase: opts.interruptedPhase,
+		ToolOnly:         h.agentMCPActive(context.Background()),
 	}
 	if runKind == taskcoredomain.PendingKindPolish {
 		ctx.Polish = polishNoticeInputFromCycle(cycle, state, opts.knownCommits)
@@ -183,7 +181,6 @@ func (h *Harness) selectRecoveryKind(
 ) prompt.RecoveryKind {
 	return cursorresume.SelectRecoveryKind(cursorresume.RecoveryKindInput{
 		Phase:             phase,
-		VerifyAttempt:     state.verify.verifyAttempt,
 		ReportParseErr:    state.verify.reportParseErr,
 		RetryMode:         retryMode,
 		RunKind:           runKind,
@@ -222,8 +219,8 @@ func activeCriterionIDs(state *processState) []string {
 	for _, it := range state.verify.verifySnap.Criteria {
 		all = append(all, it.ID)
 	}
-	passed := make(map[string]struct{}, len(state.verify.previouslyPassed))
-	for id := range state.verify.previouslyPassed {
+	passed := make(map[string]struct{}, len(state.verify.lockedPasses))
+	for id := range state.verify.lockedPasses {
 		passed[id] = struct{}{}
 	}
 	return cursorresume.ActiveCriterionIDs(all, passed)

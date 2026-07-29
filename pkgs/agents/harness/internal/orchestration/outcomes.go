@@ -21,10 +21,8 @@ const (
 	ReasonCursorResumeSession       TerminationReason = "cursor_resume_session"
 )
 
-// VerifyEffects lists side effects the harness root applies after DecideVerifyRetry.
+// VerifyEffects lists side effects the harness root applies after verify (ADR-0090 one-shot).
 type VerifyEffects struct {
-	RetryLoop       bool
-	SkipNextExecute bool
 	TerminalFailure bool
 	Tampered        bool
 }

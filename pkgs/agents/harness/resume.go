@@ -34,15 +34,14 @@ func (h *Harness) Resume(parentCtx context.Context, task *taskcoredomain.Task, c
 			startedAt:      startedAt,
 			effectiveModel: effectiveModelFromCycleMeta(h.runner, task, cycle),
 		},
-		verify: verifyLifecycleFromCheckpoint(cp, false),
+		verify: verifyLifecycleFromCheckpoint(cp),
 	}
 	defer h.recoverFromPanic(&state, *task)
 
 	slog.Info("agent harness resume branch", "cmd", calltrace.LogCmd,
 		"operation", "agent.harness.Harness.Resume.branch",
 		"task_id", task.ID, "cycle_id", cycle.ID,
-		"entry", cp.Entry, "locked_count", len(cp.PreviouslyPassed),
-		"verify_attempt", cp.VerifyAttempt)
+		"entry", cp.Entry, "locked_count", len(cp.LockedPasses))
 
 	h.enterCycleLoopFromCheckpoint(parentCtx, task, cycle, &state, cp, cycleLoopEntryInterrupt)
 }

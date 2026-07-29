@@ -20,15 +20,9 @@ const (
 )
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func verifyLifecycleFromCheckpoint(cp resumeCheckpoint, resetVerifyAttempt bool) verifyLifecycleState {
-	attempt := cp.VerifyAttempt
-	if resetVerifyAttempt {
-		attempt = 0
-	}
+func verifyLifecycleFromCheckpoint(cp resumeCheckpoint) verifyLifecycleState {
 	return verifyLifecycleState{
-		previouslyPassed: cloneVerdictMap(cp.PreviouslyPassed),
-		verifyAttempt:    attempt,
-		verifyFeedback:   cp.VerifyFeedback,
+		lockedPasses: cloneVerdictMap(cp.LockedPasses),
 	}
 }
 

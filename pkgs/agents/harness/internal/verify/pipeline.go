@@ -26,16 +26,14 @@ func (s *Service) RunPipeline(
 	task *taskcoredomain.Task,
 	cycle *cyclesdomain.TaskCycle,
 	snap Snapshot,
-	verifyAttempt int,
-	previouslyPassed map[string]Verdict,
-	feedback string,
+	lockedPasses map[string]Verdict,
 	mirrorDegradedIn bool,
 	phaseCB PhaseCallbacks,
-) ([]Verdict, string, error) {
+) ([]Verdict, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.verify.RunPipeline",
 		"task_id", task.ID, "cycle_id", cycle.ID, "enabled", snap.Enabled)
 	if !snap.Enabled {
-		return nil, "", nil
+		return nil, nil
 	}
 	if err := reports.EnsureReportCycleDir(s.reportDir, cycle.ID); err != nil {
 		slog.Warn("agent harness ensureReportCycleDir failed",
@@ -53,7 +51,7 @@ func (s *Service) RunPipeline(
 		slog.Warn("agent harness StartPhase(verify) failed",
 			"cmd", calltrace.LogCmd, "operation", "agent.harness.verify.RunPipeline.start_err",
 			"cycle_id", cycle.ID, "err", err)
-		return nil, "", fmt.Errorf("start verify phase: %w", err)
+		return nil, fmt.Errorf("start verify phase: %w", err)
 	}
 	if phaseCB.OnStarted != nil {
 		phaseCB.OnStarted(phase)
@@ -71,16 +69,15 @@ func (s *Service) RunPipeline(
 			"cycle_id", cycle.ID, "err", preErr)
 	}
 
-	attemptSeq := int64(verifyAttempt) + 1
-	verdicts, feedbackOut, mirrorDegraded, usage, usagePresent, verifyErr := s.runVerifyChecks(parentCtx, task, cycle, phase.PhaseSeq, runCorrelationID, attemptSeq, snap, previouslyPassed, feedback, mirrorDegradedIn)
+	attemptSeq := int64(1)
+	verdicts, mirrorDegraded, usage, usagePresent, verifyErr := s.runVerifyChecks(parentCtx, task, cycle, phase.PhaseSeq, runCorrelationID, attemptSeq, snap, lockedPasses, mirrorDegradedIn)
 
 	tampered, tamperReason := s.checkIntegrity(parentCtx, cycle.ID, pre, preErr)
 
 	detailsOpts := PhaseDetailsOpts{
-		MirrorDegraded:   mirrorDegraded,
-		VerifyRetryCount: verifyAttempt,
-		Usage:            usage,
-		UsagePresent:     usagePresent,
+		MirrorDegraded: mirrorDegraded,
+		Usage:          usage,
+		UsagePresent:   usagePresent,
 	}
 
 	phaseStatus := cyclesdomain.PhaseStatusSucceeded
@@ -119,5 +116,5 @@ func (s *Service) RunPipeline(
 		phaseCB.OnEnded()
 	}
 	s.publish(cycle.TaskID, cycle.ID)
-	return verdicts, feedbackOut, verifyErr
+	return verdicts, verifyErr
 }

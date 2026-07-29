@@ -68,8 +68,6 @@ func (h *Harness) applyVerifiedCompletions(ctx context.Context, taskID, cycleID 
 	if err := h.verifySvc().ApplyVerifiedCompletions(ctx, taskID, cycleID, verdicts); err != nil {
 		return err
 	}
-	// Align with HTTP checklist coherence (ADR-0026): checklist writes must
-	// publish task_updated so the SPA does not rely on cycle-frame side effects.
 	h.publishTaskUpdated(taskID)
 	return nil
 }
@@ -81,13 +79,12 @@ func (h *Harness) runVerificationPipeline(
 	cycle *cyclesdomain.TaskCycle,
 	state *processState,
 	snap verificationSnapshot,
-	feedback string,
-) ([]criterionVerdict, string, error) {
+) ([]criterionVerdict, error) {
 	svc := h.verifySvc()
 	toolOnly := h.agentMCPActive(parentCtx)
 	svc.SetToolOnlyReports(toolOnly)
 	svc.SetPlanVerifyRun(func(ctx context.Context, in verify.PlanVerifyRunInput) (verify.VerifyRunPlan, error) {
-		return h.planVerifyRun(ctx, in.Task, in.Cycle, state, in.Snap, in.VerifyAttempt, in.Feedback, in.CmdEvidence, in.SelfReport)
+		return h.planVerifyRun(ctx, in.Task, in.Cycle, state, in.Snap, in.CmdEvidence, in.SelfReport)
 	})
 	svc.SetPrepareRunnerRequest(func(ctx context.Context, req *runner.Request, task *taskcoredomain.Task, cycle *cyclesdomain.TaskCycle) error {
 		prev := state.agentMCP
@@ -114,7 +111,7 @@ func (h *Harness) runVerificationPipeline(
 		}
 		return reports.RequireVerifySubmitReceipt(h.opts.ReportDir, cycleID, state.agentMCP.nonce)
 	})
-	return svc.RunPipeline(parentCtx, task, cycle, snap, state.verify.verifyAttempt, state.verify.previouslyPassed, feedback, state.verify.mirrorDegraded, verify.PhaseCallbacks{
+	return svc.RunPipeline(parentCtx, task, cycle, snap, state.verify.lockedPasses, state.verify.mirrorDegraded, verify.PhaseCallbacks{
 		OnStarted: func(phase *cyclesdomain.TaskCyclePhase) {
 			state.phase.runningPhase = cyclesdomain.PhaseVerify
 			state.phase.runningPhaseSeq = phase.PhaseSeq
@@ -148,8 +145,8 @@ func (h *Harness) persistCriteriaReports(
 	cycleID string,
 	attemptSeq int64,
 	criteria []checklistcontract.ChecklistVerifyItem,
-	previouslyPassed map[string]criterionVerdict,
+	lockedPasses map[string]criterionVerdict,
 	selfReport map[string]reports.CriteriaEntry,
 ) error {
-	return h.verifySvc().PersistCriteriaReports(ctx, cycleID, attemptSeq, criteria, previouslyPassed, selfReport)
+	return h.verifySvc().PersistCriteriaReports(ctx, cycleID, attemptSeq, criteria, lockedPasses, selfReport)
 }

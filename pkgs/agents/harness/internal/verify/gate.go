@@ -27,7 +27,6 @@ func (s *Service) LoadSnapshot(ctx context.Context, taskID, taskVerifyChatMode s
 	}
 	return Snapshot{
 		Enabled:     len(items) > 0,
-		MaxRetries:  settings.VerifyMaxRetries,
 		Criteria:    items,
 		VerifyModel: strings.TrimSpace(settings.VerifyModel),
 		// ADR-0090: command-verify always resumes the execute session.

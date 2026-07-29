@@ -8,7 +8,7 @@ import (
 func expectedActiveCriterionIDs(state *processState) map[string]struct{} {
 	expected := make(map[string]struct{}, len(state.verify.verifySnap.Criteria))
 	for _, it := range state.verify.verifySnap.Criteria {
-		if _, locked := state.verify.previouslyPassed[it.ID]; locked {
+		if _, locked := state.verify.lockedPasses[it.ID]; locked {
 			continue
 		}
 		expected[it.ID] = struct{}{}

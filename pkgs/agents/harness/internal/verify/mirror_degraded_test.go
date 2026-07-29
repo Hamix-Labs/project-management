@@ -32,25 +32,12 @@ func TestPersistVerifyReports_failureSetsMirrorDegradedInPipelineOpts(t *testing
 	}
 }
 
-func TestEncodePhaseDetails_mirrorDegradedAndRetryCount(t *testing.T) {
+func TestEncodePhaseDetails_mirrorDegraded(t *testing.T) {
 	t.Parallel()
 	raw := EncodePhaseDetails(1, nil, nil, PhaseDetailsOpts{
-		MirrorDegraded:   true,
-		VerifyRetryCount: 2,
+		MirrorDegraded: true,
 	})
 	if !ParseMirrorDegraded(raw) {
 		t.Fatal("expected mirror_degraded true")
-	}
-	retry, ok := ParseVerifyRetryCount(raw)
-	if !ok || retry != 2 {
-		t.Fatalf("verify_retry_count = %d ok=%v, want 2 true", retry, ok)
-	}
-}
-
-func TestParseVerifyRetryCount_absent(t *testing.T) {
-	t.Parallel()
-	legacy := []byte(`{"verification":{"attempt_seq":1,"passed_count":0,"failed_count":0,"criteria":[]}}`)
-	if _, ok := ParseVerifyRetryCount(legacy); ok {
-		t.Fatal("expected absent verify_retry_count on legacy payload")
 	}
 }

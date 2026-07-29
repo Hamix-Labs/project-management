@@ -20,12 +20,12 @@ func checklistItemsForPrompt(items []checklistcontract.ChecklistVerifyItem) []pr
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func verifiedCriterionIDs(previouslyPassed map[string]criterionVerdict) map[string]struct{} {
-	if len(previouslyPassed) == 0 {
+func lockedPassIDSet(lockedPasses map[string]criterionVerdict) map[string]struct{} {
+	if len(lockedPasses) == 0 {
 		return nil
 	}
-	out := make(map[string]struct{}, len(previouslyPassed))
-	for id := range previouslyPassed {
+	out := make(map[string]struct{}, len(lockedPasses))
+	for id := range lockedPasses {
 		out[id] = struct{}{}
 	}
 	return out

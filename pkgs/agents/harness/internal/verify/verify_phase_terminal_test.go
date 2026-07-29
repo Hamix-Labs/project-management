@@ -11,7 +11,6 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/runnerfake"
-	settingscontract "github.com/AlexsanderHamir/Hamix/pkgs/settings/contract"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
@@ -21,7 +20,7 @@ import (
 // TestWorker_VerifyPhase_failsCycleWhenVerifyTampers pins the
 // integrity-check contract. A verify runner that mutates source files
 // MUST cause the cycle to terminate as verify_tampered with no
-// retries, regardless of verify_max_retries. Tampering is verifier
+// retries, regardless of settings. Tampering is verifier
 // misbehaviour; retrying execute cannot fix it.
 func TestWorker_VerifyPhase_failsCycleWhenVerifyTampers(t *testing.T) {
 	t.Parallel()
@@ -33,11 +32,6 @@ func TestWorker_VerifyPhase_failsCycleWhenVerifyTampers(t *testing.T) {
 	item, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", testVerifyCmds(), taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("add checklist item: %v", err)
-	}
-
-	maxRetries := 3
-	if _, err := h.Store.UpdateSettings(ctx, settingscontract.SettingsPatch{VerifyMaxRetries: &maxRetries}); err != nil {
-		t.Fatalf("set verify max retries: %v", err)
 	}
 
 	workDir := t.TempDir()
@@ -116,10 +110,9 @@ func TestWorker_VerifyPhase_failsCycleWhenVerifyTampers(t *testing.T) {
 }
 
 // TestWorker_VerifyPhase_finalFailureWritesNoCompletions pins the
-// atomic-decision contract: when retries are exhausted with at least
-// one criterion still failing, NO completion rows land in
-// task_checklist_completions even for criteria that passed on every
-// attempt. previouslyPassed is in-memory only.
+// atomic-decision contract: on one-shot verify failure, NO completion
+// rows land in task_checklist_completions even when some criteria
+// passed. lockedPasses are in-memory only until finalize succeeds.
 func TestWorker_VerifyPhase_finalFailureWritesNoCompletions(t *testing.T) {
 	t.Parallel()
 	h := newHarness(t)
@@ -134,11 +127,6 @@ func TestWorker_VerifyPhase_finalFailureWritesNoCompletions(t *testing.T) {
 	c2, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion two", testVerifyCmds(), taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("add c2: %v", err)
-	}
-
-	maxRetries := 1
-	if _, err := h.Store.UpdateSettings(ctx, settingscontract.SettingsPatch{VerifyMaxRetries: &maxRetries}); err != nil {
-		t.Fatalf("set max retries: %v", err)
 	}
 
 	workDir := t.TempDir()
@@ -181,7 +169,7 @@ func TestWorker_VerifyPhase_finalFailureWritesNoCompletions(t *testing.T) {
 }
 
 // TestWorker_VerifyPhase_terminateReasonIncludesFailingIDs pins the
-// SPA-renderable failure detail: when retries exhaust, the cycle's
+// SPA-renderable failure detail: on one-shot verify failure the cycle's
 // terminate_reason carries the failing criterion IDs after the
 // stable `verification_failed:` prefix.
 func TestWorker_VerifyPhase_terminateReasonIncludesFailingIDs(t *testing.T) {
@@ -198,11 +186,6 @@ func TestWorker_VerifyPhase_terminateReasonIncludesFailingIDs(t *testing.T) {
 	c2, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion two", testVerifyCmds(), taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("add c2: %v", err)
-	}
-
-	maxRetries := 0
-	if _, err := h.Store.UpdateSettings(ctx, settingscontract.SettingsPatch{VerifyMaxRetries: &maxRetries}); err != nil {
-		t.Fatalf("set max retries: %v", err)
 	}
 
 	workDir := t.TempDir()

@@ -79,7 +79,7 @@ func (h *Harness) runResumeRetry(parentCtx context.Context, task *taskcoredomain
 	startedAt := h.opts.Clock()
 	state := processState{
 		cycle:  cycleLifecycleState{startedAt: startedAt},
-		verify: verifyLifecycleFromCheckpoint(cp, true),
+		verify: verifyLifecycleFromCheckpoint(cp),
 	}
 	defer h.recoverFromPanic(&state, *task)
 
@@ -113,7 +113,7 @@ func (h *Harness) runResumeRetry(parentCtx context.Context, task *taskcoredomain
 
 // runPolish starts a new attempt from a succeeded parent: always execute (never
 // verify-only). Cursor session resume via retry_mode=resume. Always seed locked
-// previouslyPassed so InjectCriteria does not re-open accepted criteria (including
+// passes so InjectCriteria does not re-open accepted criteria (including
 // instructions-only / skip_verify). When the operator flagged or added criteria,
 // those IDs stay unlocked and verify runs; otherwise skip verify.
 func (h *Harness) runPolish(parentCtx context.Context, task *taskcoredomain.Task, intent *taskcoredomain.PendingRetry) {
@@ -126,9 +126,9 @@ func (h *Harness) runPolish(parentCtx context.Context, task *taskcoredomain.Task
 		return
 	}
 	startedAt := h.opts.Clock()
-	previouslyPassed, err := h.seedPolishPreviouslyPassed(parentCtx, task.ID, intent.FlaggedCriterionIDs, intent.NewCriterionIDs)
+	lockedPasses, err := h.seedPolishLockedPasses(parentCtx, task.ID, intent.FlaggedCriterionIDs, intent.NewCriterionIDs)
 	if err != nil {
-		slog.Warn("agent harness polish seed previouslyPassed failed", "cmd", calltrace.LogCmd,
+		slog.Warn("agent harness polish seed lockedPasses failed", "cmd", calltrace.LogCmd,
 			"operation", "agent.harness.Harness.runPolish.seed_err",
 			"task_id", task.ID, "err", err)
 		h.resumeSvc().FailTaskAfterRetryPrep(parentCtx, task.ID, "retry_checkpoint_failed")
@@ -136,7 +136,7 @@ func (h *Harness) runPolish(parentCtx context.Context, task *taskcoredomain.Task
 	}
 	state := processState{
 		cycle:  cycleLifecycleState{startedAt: startedAt},
-		verify: verifyLifecycleState{previouslyPassed: previouslyPassed},
+		verify: verifyLifecycleState{lockedPasses: lockedPasses},
 	}
 	defer h.recoverFromPanic(&state, *task)
 
@@ -170,8 +170,8 @@ func (h *Harness) runPolish(parentCtx context.Context, task *taskcoredomain.Task
 	})
 }
 
-func (h *Harness) seedPolishPreviouslyPassed(ctx context.Context, taskID string, flagged, newIDs []string) (map[string]criterionVerdict, error) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.seedPolishPreviouslyPassed", "task_id", taskID)
+func (h *Harness) seedPolishLockedPasses(ctx context.Context, taskID string, flagged, newIDs []string) (map[string]criterionVerdict, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.seedPolishLockedPasses", "task_id", taskID)
 	reopen := make(map[string]struct{}, len(flagged)+len(newIDs))
 	for _, id := range flagged {
 		reopen[id] = struct{}{}
@@ -206,7 +206,7 @@ func (h *Harness) runFreshCycle(parentCtx context.Context, task *taskcoredomain.
 	startedAt := h.opts.Clock()
 	state := processState{
 		cycle:  cycleLifecycleState{startedAt: startedAt},
-		verify: verifyLifecycleState{previouslyPassed: map[string]criterionVerdict{}},
+		verify: verifyLifecycleState{lockedPasses: map[string]criterionVerdict{}},
 	}
 	defer h.recoverFromPanic(&state, *task)
 

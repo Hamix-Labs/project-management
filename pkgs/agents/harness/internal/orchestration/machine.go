@@ -1,34 +1,4 @@
 package orchestration
 
-// DecideVerifyRetry maps verify pipeline outcome + retry budget to effects.
-// Attempt is the current verifyAttempt before any increment; the harness root
-// increments verifyAttempt when RetryLoop is true.
-//
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func DecideVerifyRetry(attempt, maxRetries int, result VerifyResult) VerifyEffects {
-	switch result {
-	case VerifyResultPass:
-		return VerifyEffects{}
-	case VerifyResultFailTampered:
-		return VerifyEffects{TerminalFailure: true, Tampered: true}
-	case VerifyResultFailRetryable:
-		if attempt < maxRetries {
-			return VerifyEffects{RetryLoop: true}
-		}
-		return VerifyEffects{TerminalFailure: true}
-	default:
-		return VerifyEffects{TerminalFailure: true}
-	}
-}
-
-// DecideVerifyRetryWithValidity extends DecideVerifyRetry with in-cycle
-// verify-only retry when execute artifacts remain valid (ADR-0028).
-//
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func DecideVerifyRetryWithValidity(attempt, maxRetries int, result VerifyResult, executeStillValid bool) VerifyEffects {
-	effects := DecideVerifyRetry(attempt, maxRetries, result)
-	if effects.RetryLoop && executeStillValid {
-		effects.SkipNextExecute = true
-	}
-	return effects
-}
+// machine.go holds execute/finalize decide helpers.
+// Verify retry orchestration was removed in ADR-0090 (one-shot verify).
