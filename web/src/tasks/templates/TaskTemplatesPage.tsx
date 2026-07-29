@@ -7,7 +7,6 @@ import { TemplatePageBody } from "./components/TemplatePageBody";
 import { TemplatePageHeader } from "./components/TemplatePageHeader";
 import { TemplateTagFilters } from "./components/TemplateTagFilters";
 import { TemplateToolbar } from "./components/TemplateToolbar";
-import { clampInstanceCount } from "./templateUtils";
 import { useTaskTemplatesPageModel } from "./useTaskTemplatesPageModel";
 
 export function TaskTemplatesPage() {
@@ -70,8 +69,7 @@ export function TaskTemplatesPage() {
         batchDefaultCount={model.batchDefaultCount}
         instantiatePending={app.instantiateTemplatesPending}
         onClear={model.clearSelection}
-        onBatchDefaultCountChange={(count) => model.setBatchDefaultCount(clampInstanceCount(count))}
-        onApplyToAll={model.applyBatchDefaultToSelected}
+        onBatchDefaultCountChange={model.setBatchDefaultCountAndApply}
         onCreate={() => void model.runBatchCreate()}
       />
       {model.bindDrafts ? (

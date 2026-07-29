@@ -129,9 +129,16 @@ export function useTaskTemplatesPageModel(app: TaskTemplatesApp, navigate: Retur
   const hasFilters = debouncedQ !== "" || activeTag !== "all";
 
   const toggleSelected = (id: string) => {
-    setSelectedIds((current) =>
-      current.includes(id) ? current.filter((value) => value !== id) : [...current, id],
-    );
+    setSelectedIds((current) => {
+      if (current.includes(id)) {
+        return current.filter((value) => value !== id);
+      }
+      setInstanceCounts((counts) => ({
+        ...counts,
+        [id]: batchDefaultCount,
+      }));
+      return [...current, id];
+    });
   };
 
   const toggleSelectAll = () => {
@@ -139,7 +146,15 @@ export function useTaskTemplatesPageModel(app: TaskTemplatesApp, navigate: Retur
       setSelectedIds([]);
       return;
     }
-    setSelectedIds(templates.map((t) => t.id));
+    const ids = templates.map((t) => t.id);
+    setSelectedIds(ids);
+    setInstanceCounts((current) => {
+      const next = { ...current };
+      for (const id of ids) {
+        next[id] = batchDefaultCount;
+      }
+      return next;
+    });
   };
 
   const setInstanceCountForTemplate = (id: string, count: number) => {
@@ -149,11 +164,13 @@ export function useTaskTemplatesPageModel(app: TaskTemplatesApp, navigate: Retur
     }));
   };
 
-  const applyBatchDefaultToSelected = () => {
+  const setBatchDefaultCountAndApply = (count: number) => {
+    const clamped = clampInstanceCount(count);
+    setBatchDefaultCount(clamped);
     setInstanceCounts((current) => {
       const next = { ...current };
       for (const id of selectedIds) {
-        next[id] = batchDefaultCount;
+        next[id] = clamped;
       }
       return next;
     });
@@ -250,7 +267,7 @@ export function useTaskTemplatesPageModel(app: TaskTemplatesApp, navigate: Retur
     dynamicTags,
     selectedIds,
     batchDefaultCount,
-    setBatchDefaultCount,
+    setBatchDefaultCountAndApply,
     instanceCounts,
     deletingTemplateId,
     exitingTemplateIds,
@@ -269,7 +286,6 @@ export function useTaskTemplatesPageModel(app: TaskTemplatesApp, navigate: Retur
     toggleSelected,
     toggleSelectAll,
     setInstanceCountForTemplate,
-    applyBatchDefaultToSelected,
     clearSelection,
     clearFilters,
     deleteTemplate: deleteWithExit,
