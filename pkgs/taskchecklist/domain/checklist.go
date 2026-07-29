@@ -5,8 +5,9 @@ import (
 )
 
 // TaskChecklistItem is a definition row owned by a task.
-// Completion is recorded only by the agent worker after verify (verified_by=execute_agent)
-// or when execute did not claim done (verified_by=agent_self, failure-only).
+// Completion is recorded by the agent worker as execute_claim (no verify
+// commands), execute_agent (command-backed verify), or agent_self (execute
+// did not claim done ΓÇö failure-only).
 type TaskChecklistItem struct {
 	ID        string `json:"id"`
 	TaskID    string `json:"task_id"`
