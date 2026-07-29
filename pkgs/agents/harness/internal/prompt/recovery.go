@@ -203,7 +203,7 @@ func composeVerifyRecoveryDelta(b *strings.Builder, ctx RecoveryContext) {
 	switch ctx.Kind {
 	case RecoveryVerifyInfra:
 		if ctx.VerifyAttempt <= 0 {
-			b.WriteString("Execute finished for this cycle. Judge each active criterion using your work and any worker command evidence below.\n\n")
+			b.WriteString("Execute finished for this cycle. For each command-backed criterion, judge whether expected_outcome matches the captured shell output below.\n\n")
 		} else {
 			b.WriteString("Infrastructure or command checks produced new evidence since the last verify attempt.\n\n")
 		}
@@ -316,7 +316,7 @@ func truncateRecoveryRunes(s string, max int) string {
 	if len(runes) <= max {
 		return s
 	}
-	return string(runes[:max]) + "…"
+	return string(runes[:max]) + "ΓÇª"
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure truncation helper without I/O."
@@ -324,5 +324,5 @@ func truncateRecoveryBytes(s string, max int) string {
 	if len(s) <= max {
 		return s
 	}
-	return s[:max] + "…"
+	return s[:max] + "ΓÇª"
 }

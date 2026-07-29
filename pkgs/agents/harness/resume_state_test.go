@@ -94,7 +94,7 @@ func TestAppendResumeNotice_andCommitPolicy(t *testing.T) {
 	for _, frag := range []string{
 		"Human-flagged incorrect criteria", "[c1] Auth works",
 		"Newly added criteria", "[c3] Docs updated",
-		"re-verified by you (same agent)", "fix auth", "polishments",
+		"Only criteria with verify commands will be re-checked", "fix auth", "polishments",
 	} {
 		if !containsSubstr(selective, frag) {
 			t.Fatalf("selective polish notice missing %q in %q", frag, selective)

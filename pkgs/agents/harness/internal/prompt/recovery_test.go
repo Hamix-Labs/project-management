@@ -164,7 +164,7 @@ func TestComposeRecoveryDelta_humanPolishMixed(t *testing.T) {
 		"Write REFACTOR.md",
 		"Human-flagged incorrect criteria", "[c1] Named in report",
 		"Newly added criteria", "[c2] Docs updated",
-		"re-verified by you (same agent)",
+		"Only criteria with verify commands will be re-checked",
 	} {
 		if !strings.Contains(delta, frag) {
 			t.Fatalf("missing %q in %q", frag, delta)
