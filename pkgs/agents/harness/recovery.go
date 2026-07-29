@@ -74,6 +74,8 @@ func (h *Harness) handleShutdownAfterRun(state *processState, taskID string) {
 				"operation", "agent.harness.Harness.handleShutdownAfterRun.task_err",
 				"task_id", taskID, "err", err)
 		}
+	} else {
+		h.publishTaskUpdated(taskID)
 	}
 	h.cleanupCycleReports(state.cycle.cycleID, "shutdown")
 }
@@ -148,6 +150,8 @@ func (h *Harness) recoverFromPanic(state *processState, task taskcoredomain.Task
 				"operation", "agent.harness.Harness.recoverFromPanic.task_err",
 				"task_id", task.ID, "err", err)
 		}
+	} else {
+		h.publishTaskUpdated(task.ID)
 	}
 	h.cleanupCycleReports(state.cycle.cycleID, "panic")
 }
@@ -184,7 +188,9 @@ func (h *Harness) bestEffortFailTask(ctx context.Context, taskID string) {
 				"operation", "agent.harness.Harness.bestEffortFailTask.err",
 				"task_id", taskID, "err", err)
 		}
+		return
 	}
+	h.publishTaskUpdated(taskID)
 }
 
 // bestEffortTerminate closes a cycle that was opened but whose phase
