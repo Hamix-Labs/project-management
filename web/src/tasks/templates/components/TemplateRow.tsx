@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import type { TaskTemplateSummary } from "@/types";
+import { FolderGitIcon } from "@/components/icons/FolderGitIcon";
+import { ProjectsStackIcon } from "@/components/project/ProjectsStackIcon";
 import { TaskListDeleteGlyph, TaskListEditGlyph } from "../../components/task-list/table/TaskListRowActionIcons";
 import { QuantityStepper } from "../QuantityStepper";
 import { formatTemplateRelativeTime, isTemplateRowActionExcluded } from "../templateUtils";
@@ -21,6 +23,15 @@ function ZapIcon() {
         strokeLinejoin="round"
       />
     </svg>
+  );
+}
+
+function TemplateBindingChip({ icon, label }: { icon: ReactNode; label: string }) {
+  return (
+    <span className="template-row__binding-chip">
+      {icon}
+      <span className="template-row__binding-label">{label}</span>
+    </span>
   );
 }
 
@@ -112,7 +123,18 @@ export function TemplateRow({
           <div className="template-row__subline">
             {bindingParts.length > 0 ? (
               <span className="template-row__binding" title={bindingParts.join(" · ")}>
-                {bindingParts.join(" · ")}
+                {projectLabel ? (
+                  <TemplateBindingChip
+                    icon={<ProjectsStackIcon className="template-row__binding-icon" />}
+                    label={projectLabel}
+                  />
+                ) : null}
+                {repositoryLabel ? (
+                  <TemplateBindingChip
+                    icon={<FolderGitIcon className="template-row__binding-icon" />}
+                    label={repositoryLabel}
+                  />
+                ) : null}
               </span>
             ) : null}
             {bindingParts.length > 0 && lastEdited && relative ? (
