@@ -76,17 +76,6 @@ func InjectCriteria(prompt string, items []ChecklistItem, reportPath string, alr
 	return strings.TrimPrefix(criteria.String(), "\n\n") + "\n\n" + prompt
 }
 
-// AppendVerifyFeedback appends prior verification feedback when non-empty.
-//
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func AppendVerifyFeedback(prompt string, feedback string) string {
-	feedback = strings.TrimSpace(feedback)
-	if feedback == "" {
-		return prompt
-	}
-	return prompt + "\n\n## Previous verification feedback\n\n" + feedback + "\n"
-}
-
 // AppendExecuteHarnessFeedback appends execute-phase harness feedback when non-empty.
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."

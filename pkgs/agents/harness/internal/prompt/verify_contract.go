@@ -24,7 +24,6 @@ type VerifyReportContract struct {
 	CommandEvidenceSection string
 	GitContext             string
 	DiffSection            string
-	Feedback               string
 	// ToolOnly requires hamix.submit_verify_report (default product path).
 	// When false, legacy freeform Write instructions are used (kill-switch).
 	ToolOnly bool
@@ -81,9 +80,5 @@ func FormatVerifyReportContract(c VerifyReportContract) string {
 		b.WriteString("\nDiff:\n")
 		b.WriteString(diff)
 	}
-	out := b.String()
-	if fb := strings.TrimSpace(c.Feedback); fb != "" {
-		out = AppendVerifyFeedback(out, fb)
-	}
-	return out
+	return b.String()
 }
