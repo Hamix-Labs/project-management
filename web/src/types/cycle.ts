@@ -197,6 +197,7 @@ export type TaskCycleStreamResponse = {
 export const VERIFIER_KINDS = [
   "agent_self",
   "execute_agent",
+  "execute_claim",
   "deterministic_check",
   "human_override",
   "legacy",
