@@ -38,7 +38,7 @@ Primary nav links: Tasks, Templates, Drafts, Projects, Repositories (Settings is
 
 ## Board view
 
-Task Home supports a read-only Kanban **Board** alongside the table **List** (`/?view=board`). Columns are workflow buckets — Backlog (`ready`, `on_hold`), In Progress (`running`), Verification (`review`), Needs Attention (`blocked`, `failed`). **Done tasks are never shown** (volume accumulates; the board is for active execution).
+Task Home supports a read-only Kanban **Board** alongside the table **List** (`/?view=board`). Columns are workflow buckets — Backlog (`ready`, `on_hold`), In Progress (`running`), Needs Review (`review`), Needs Attention (`blocked`, `failed`). **Done tasks are never shown** (volume accumulates; the board is for active execution).
 
 Data loads through `fetchActiveTasksForBoard` (keyset walk of `GET /tasks`, max page size 200) into `taskQueryKeys.board()` under `listRoot()`, so existing SSE / optimistic list invalidation refreshes the board. Caps: 500 active tasks or 10 pages scanned — then a truncation banner. There is no drag-and-drop; status changes come from the execution engine. A future `exclude_status=done` (or allowlist) on `GET /tasks` would avoid scanning Done rows.
 

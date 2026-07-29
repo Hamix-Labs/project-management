@@ -37,7 +37,7 @@ export const BOARD_COLUMNS: readonly BoardColumnDef[] = [
   },
   {
     id: "verification",
-    label: "Verification",
+    label: "Needs Review",
     statuses: ["review"],
     tone: "review",
   },
