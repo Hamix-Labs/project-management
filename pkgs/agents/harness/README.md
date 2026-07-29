@@ -17,7 +17,7 @@ Domain logic lives under `internal/` (importable only from `harness` and sibling
 | [`internal/resume/`](internal/resume/) | Checkpoint load, retry routing, continuation bundles |
 | [`internal/cursorresume/`](internal/cursorresume/) | Pure ADR-0031 Cursor CLI `--resume` Decide + recovery-kind helpers |
 | [`internal/execute/`](internal/execute/) | Execute-phase I/O pipeline (git snap, runner ports, commit ingest, post-run facts) |
-| `internal/orchestration/` | Pure cycle Decide functions (`DecideVerifyRetry`, `DecideVerifyRetryWithValidity`, `ClassifyVerifyRetryMode`, `DecideExecutePostRun`, loop-level finalize/legacy) |
+| `internal/orchestration/` | Pure cycle Decide functions (`DecideExecutePostRun`, loop-level finalize/legacy). Verify is one-shot per [ADR-0090](../../docs/adr/ADR-0090-command-only-verify.md). |
 
 Root `harness` owns `Harness`, cycle entrypoints, effect application (`cycle_effects.go`), recovery, and metrics.
 
@@ -34,9 +34,7 @@ Root `harness` owns `Harness`, cycle entrypoints, effect application (`cycle_eff
 | `cursor_resume_resolve.go` | Session lookup + recovery context assembly; pure Decide in [`internal/cursorresume`](internal/cursorresume/) |
 | `cursor_resume_decide.go` | Root aliases for `internal/cursorresume` Decide types |
 | `cycle_effects.go` | Applies orchestration effects (store writes, publish, metrics) |
-| `cycle_execute_adapter.go` | Thin re-exports of execute adapter helpers used by effect apply |
-| `verify_retry_eligibility.go` | Post-execute anchors + `gatherRetryClassifyInput` (ADR-0028) |
-| `cycle_verify_only_test.go` | Integration tests for in-cycle verify-only retry (EC-xx) |
+| `cycle_execute_anchor.go` | Post-execute git head anchor for cursor resume |
 | `resume.go` | `Resume` — continue an open cycle after `process_restart` finalization |
 | `retry_run.go` | `RunWithRetry` — operator fresh/resume retry modes |
 | `verification.go` | Thin delegators to `internal/verify` |
@@ -93,7 +91,7 @@ Do not add new call sites to these helpers. Prefer the modern verify loop and ty
 No dedicated checkpoint table. `internal/resume` reconstructs checkpoint from:
 
 - Phase ledger tail → execute vs verify resume branch
-- `task_cycle_verify_reports` → locked passes, verify attempt, retry feedback
+- `task_cycle_verify_reports` → locked passes from verified rows
 - Task row → base prompt
 - `task_cycle_commits` → worker-indexed SHAs for resume/verify prompts (see [cycle-commits.md](../../docs/domain/cycle-commits.md))
 
