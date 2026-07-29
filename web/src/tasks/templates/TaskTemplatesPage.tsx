@@ -8,7 +8,6 @@ import { TemplateBatchBar } from "./components/TemplateBatchBar";
 import { TemplateFunctionBindModal } from "./components/TemplateFunctionBindModal";
 import { TemplatePageBody } from "./components/TemplatePageBody";
 import { TemplatePageHeader } from "./components/TemplatePageHeader";
-import { TemplateTagFilters } from "./components/TemplateTagFilters";
 import { TemplateToolbar } from "./components/TemplateToolbar";
 import { repositoryBasename } from "./templateUtils";
 import { useTaskTemplatesPageModel } from "./useTaskTemplatesPageModel";
@@ -49,11 +48,6 @@ export function TaskTemplatesPage() {
           sort={model.sort}
           onSearchChange={model.setSearchInput}
           onSortChange={model.setSort}
-        />
-        <TemplateTagFilters
-          activeTag={model.activeTag}
-          dynamicTags={model.dynamicTags}
-          onTagChange={model.setActiveTag}
         />
       </div>
       {model.batchError ? (
