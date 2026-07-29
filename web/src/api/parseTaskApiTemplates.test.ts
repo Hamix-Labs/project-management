@@ -19,6 +19,8 @@ describe("parseTaskTemplateSummaryList", () => {
           {
             ...baseSummary,
             primary_tag: "Refactor",
+            project_id: "proj-1",
+            repository_id: "repo-1",
             instantiate_count: 3,
           },
         ],
@@ -27,6 +29,8 @@ describe("parseTaskTemplateSummaryList", () => {
       {
         ...baseSummary,
         primary_tag: "Refactor",
+        project_id: "proj-1",
+        repository_id: "repo-1",
         instantiate_count: 3,
       },
     ]);

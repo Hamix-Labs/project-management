@@ -16,6 +16,14 @@ vi.mock("@tanstack/react-query", async (importOriginal) => {
   };
 });
 
+vi.mock("@/hooks/useProjects", () => ({
+  useProjects: () => ({ data: { projects: [] }, isPending: false, isError: false }),
+}));
+
+vi.mock("@/hooks/useGlobalRepositories", () => ({
+  useGlobalRepositories: () => ({ data: [], isPending: false, isError: false }),
+}));
+
 const mockedUseQuery = vi.mocked(useQuery);
 
 type App = ReturnType<typeof useTasksApp>;

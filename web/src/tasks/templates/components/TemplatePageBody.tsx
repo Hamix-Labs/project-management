@@ -3,6 +3,7 @@ import type { TaskTemplateSummary } from "@/types";
 import { TemplateEmptyState } from "./TemplateEmptyState";
 import { TemplateListHeader } from "./TemplateListHeader";
 import { TemplateRow } from "./TemplateRow";
+import { templateBindingLabel } from "../templateUtils";
 
 type TemplatePageBodyProps = {
   loading: boolean;
@@ -22,6 +23,8 @@ type TemplatePageBodyProps = {
   rowDisabled: boolean;
   renderNow: Date;
   selectedCount: number;
+  projectNameById: Map<string, string>;
+  repositoryNameById: Map<string, string>;
   onToggleSelectAll: () => void;
   onToggleSelected: (id: string) => void;
   onInstanceCountChange: (id: string, count: number) => void;
@@ -74,6 +77,14 @@ export function TemplatePageBody(props: TemplatePageBodyProps) {
                 props.rowDisabled || props.exitingTemplateIds.includes(template.id)
               }
               renderNow={props.renderNow}
+              projectLabel={templateBindingLabel(
+                template.project_id,
+                props.projectNameById,
+              )}
+              repositoryLabel={templateBindingLabel(
+                template.repository_id,
+                props.repositoryNameById,
+              )}
               onToggleSelected={props.onToggleSelected}
               onInstanceCountChange={props.onInstanceCountChange}
               onEdit={props.onEdit}

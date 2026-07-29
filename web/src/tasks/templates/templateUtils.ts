@@ -52,3 +52,26 @@ export function isTemplateRowActionExcluded(target: EventTarget | null): boolean
   if (!(target instanceof Element)) return true;
   return isRowActionExcluded(target);
 }
+
+/** Last path segment for repo labels (e.g. `C:/proj/hamix` → `hamix`). */
+export function repositoryBasename(path: string): string {
+  const normalized = path.trim().replace(/\\/g, "/").replace(/\/+$/, "");
+  if (normalized === "") return path;
+  const slash = normalized.lastIndexOf("/");
+  return slash >= 0 ? normalized.slice(slash + 1) : normalized;
+}
+
+export function shortIdLabel(id: string): string {
+  const trimmed = id.trim();
+  if (trimmed.length <= 8) return trimmed;
+  return trimmed.slice(0, 8);
+}
+
+/** Resolve a display label from a name map, falling back to a short id. */
+export function templateBindingLabel(
+  id: string | undefined,
+  nameById: Map<string, string>,
+): string | null {
+  if (!id?.trim()) return null;
+  return nameById.get(id) ?? shortIdLabel(id);
+}

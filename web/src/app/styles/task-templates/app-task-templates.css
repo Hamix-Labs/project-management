@@ -432,6 +432,14 @@
   gap: 0.25rem;
 }
 
+.template-row__binding {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+  color: var(--text-secondary);
+}
+
 .template-row__runs-icon {
   flex-shrink: 0;
 }
@@ -688,10 +696,6 @@
   .template-batch-bar__instances-label {
     display: inline;
   }
-}
-
-.template-batch-bar__apply {
-  white-space: nowrap;
 }
 
 .template-batch-bar__divider {
