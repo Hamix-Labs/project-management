@@ -25,6 +25,12 @@ type Hooks struct {
 	SetRunCancel func(cancel context.CancelFunc, taskID string)
 	// PlanVerifyRun selects prompt + cursor resume fields before verify runner.Run.
 	PlanVerifyRun func(ctx context.Context, in PlanVerifyRunInput) (VerifyRunPlan, error)
+	// PrepareRunnerRequest mutates the verify runner.Request (e.g. MCP argv).
+	// Called immediately before runner.Run. Nil means no mutation.
+	PrepareRunnerRequest func(ctx context.Context, req *runner.Request, task *taskcoredomain.Task, cycle *cyclesdomain.TaskCycle) error
+	// RequireVerifySubmitReceipt, when non-nil, gates verify-report parse on a
+	// matching MCP submit receipt (tool-only path).
+	RequireVerifySubmitReceipt func(cycleID string) error
 	// OnVerifyPhaseEnded is called after verify phase row closes (success or failure).
 	OnVerifyPhaseEnded func(executePhaseSeq int64)
 }

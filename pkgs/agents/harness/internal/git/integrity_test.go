@@ -60,6 +60,21 @@ func TestIntegrityDiff_AnyRepoRootChange_Tampered(t *testing.T) {
 	}
 }
 
+func TestIntegrityDiff_MCPConfigExempt(t *testing.T) {
+	t.Parallel()
+	pre := IntegritySnapshot{Head: "deadbeef", Changed: map[string]struct{}{}}
+	post := IntegritySnapshot{
+		Head: "deadbeef",
+		Changed: map[string]struct{}{
+			".cursor/mcp.json": {},
+		},
+	}
+	tampered, summary := ClassifyIntegrityDiff(DiffIntegritySnapshots(pre, post), "cycle-1")
+	if tampered {
+		t.Fatalf("workspace MCP config must be exempt; summary=%q", summary)
+	}
+}
+
 func TestIntegrityDiff_OtherPathChanged_Tampered(t *testing.T) {
 	cycleID := "abc123"
 	pre := IntegritySnapshot{Head: "deadbeef", Changed: map[string]struct{}{}}

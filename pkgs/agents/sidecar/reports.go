@@ -1,4 +1,4 @@
-package reports
+package sidecar
 
 import (
 	"encoding/json"
@@ -15,6 +15,8 @@ var (
 	ErrCriteriaReportInvalid = errors.New("criteria report invalid")
 	ErrVerifyReportMissing   = errors.New("verify report missing")
 	ErrVerifyReportInvalid   = errors.New("verify report invalid")
+	ErrSubmitReceiptMissing  = errors.New("submit receipt missing")
+	ErrSubmitReceiptInvalid  = errors.New("submit receipt invalid")
 )
 
 const maxReportFileBytes = 256 * 1024
@@ -25,6 +27,13 @@ const minVerifyReasoning = 40
 // expected from agent side-channel files. Major version bumps require parser
 // updates; minor fields may be added without a bump.
 const CurrentSchemaVersion = 1
+
+const (
+	criteriaReportFileName        = "criteria-report.json"
+	verifyReportFileName          = "verify-report.json"
+	criteriaSubmitReceiptFileName = "criteria-report.submitted"
+	verifySubmitReceiptFileName   = "verify-report.submitted"
+)
 
 type criteriaReport struct {
 	SchemaVersion int             `json:"schema_version"`
@@ -56,14 +65,19 @@ type VerifyEntry struct {
 	Reasoning string `json:"reasoning"`
 }
 
+// SubmitReceipt is written next to a report after a successful MCP submit.
+type SubmitReceipt struct {
+	Nonce     string `json:"nonce"`
+	Phase     string `json:"phase"`
+	CycleID   string `json:"cycle_id"`
+	Tool      string `json:"tool"`
+	WrittenAt string `json:"written_at,omitempty"`
+}
+
 // ReportCycleDir is the worker-managed scratch directory for one
 // cycle's report files. Lives under Options.ReportDir (defaulted by
 // NewWorker to <os.TempDir()>/hamix-worker) so the operator's RepoRoot
-// is never touched. Cleaned up at terminateCycle time via
-// CleanupReportDir; cycle subdirectories from a previous worker run
-// are scrubbed at startExecutePhase via ScrubCycleArtifacts so a
-// stale file from an aborted-without-cleanup cycle never poisons
-// ParseCriteriaReport.
+// is never touched.
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func ReportCycleDir(reportDir, cycleID string) string {
@@ -72,19 +86,26 @@ func ReportCycleDir(reportDir, cycleID string) string {
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func CriteriaReportPath(reportDir, cycleID string) string {
-	return filepath.Join(ReportCycleDir(reportDir, cycleID), "criteria-report.json")
+	return filepath.Join(ReportCycleDir(reportDir, cycleID), criteriaReportFileName)
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func VerifyReportPath(reportDir, cycleID string) string {
-	return filepath.Join(ReportCycleDir(reportDir, cycleID), "verify-report.json")
+	return filepath.Join(ReportCycleDir(reportDir, cycleID), verifyReportFileName)
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func CriteriaSubmitReceiptPath(reportDir, cycleID string) string {
+	return filepath.Join(ReportCycleDir(reportDir, cycleID), criteriaSubmitReceiptFileName)
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func VerifySubmitReceiptPath(reportDir, cycleID string) string {
+	return filepath.Join(ReportCycleDir(reportDir, cycleID), verifySubmitReceiptFileName)
 }
 
 // EnsureReportCycleDir creates <reportDir>/<cycleID>/ with a permissive
 // directory mode so the agent CLI can write its report into it.
-// Idempotent — repeated calls within a cycle are no-ops. The directory
-// lives outside any git repo, so unlike the prior .legacy-scratch/ helper there
-// is no .gitignore to write here; a stray entry would be a bug.
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func EnsureReportCycleDir(reportDir, cycleID string) error {
@@ -92,22 +113,14 @@ func EnsureReportCycleDir(reportDir, cycleID string) error {
 }
 
 // ScrubCycleArtifacts removes the per-cycle report subdirectory before
-// the next execute attempt writes into it. Used at the top of every
-// execute phase so a stale criteria-report.json from a previous
-// attempt cannot satisfy ParseCriteriaReport against this attempt's
-// expected-IDs set.
+// the next execute attempt writes into it.
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func ScrubCycleArtifacts(reportDir, cycleID string) error {
 	return os.RemoveAll(ReportCycleDir(reportDir, cycleID))
 }
 
-// CleanupReportDir removes <reportDir>/<cycleID>/ at cycle terminate
-// time. Closes the unbounded-disk-growth gap that existed when files
-// were written under .legacy-scratch/ — there was no per-cycle GC. Called from
-// terminateCycle and the cleanup paths (handleShutdownAfterRun,
-// recoverFromPanic, bestEffortTerminate) so every exit point clears
-// its scratch.
+// CleanupReportDir removes <reportDir>/<cycleID>/ at cycle terminate time.
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func CleanupReportDir(reportDir, cycleID string) error {
@@ -300,3 +313,99 @@ func ParseVerifyReport(reportDir, cycleID string, expectedIDs map[string]struct{
 	}
 	return out, nil
 }
+
+// WriteCriteriaReport atomically writes criteria-report.json for the cycle.
+func WriteCriteriaReport(reportDir, cycleID string, criteria []CriteriaEntry, commits []CriteriaCommitClaim) error {
+	if err := EnsureReportCycleDir(reportDir, cycleID); err != nil {
+		return err
+	}
+	rep := criteriaReport{
+		SchemaVersion: CurrentSchemaVersion,
+		Criteria:      criteria,
+	}
+	if len(commits) > 0 {
+		rep.Commits = make([]struct {
+			SHA    string `json:"sha"`
+			Branch string `json:"branch"`
+		}, len(commits))
+		for i, c := range commits {
+			rep.Commits[i].SHA = c.SHA
+			rep.Commits[i].Branch = c.Branch
+		}
+	}
+	return writeJSONAtomic(CriteriaReportPath(reportDir, cycleID), rep)
+}
+
+// WriteVerifyReport atomically writes verify-report.json for the cycle.
+func WriteVerifyReport(reportDir, cycleID string, criteria []VerifyEntry) error {
+	if err := EnsureReportCycleDir(reportDir, cycleID); err != nil {
+		return err
+	}
+	rep := verifyReport{
+		SchemaVersion: CurrentSchemaVersion,
+		Criteria:      criteria,
+	}
+	return writeJSONAtomic(VerifyReportPath(reportDir, cycleID), rep)
+}
+
+// WriteSubmitReceipt writes the MCP submit receipt next to the report.
+func WriteSubmitReceipt(path string, receipt SubmitReceipt) error {
+	return writeJSONAtomic(path, receipt)
+}
+
+// RequireCriteriaSubmitReceipt ensures the criteria receipt exists and matches nonce.
+func RequireCriteriaSubmitReceipt(reportDir, cycleID, nonce string) error {
+	return requireSubmitReceipt(CriteriaSubmitReceiptPath(reportDir, cycleID), nonce)
+}
+
+// RequireVerifySubmitReceipt ensures the verify receipt exists and matches nonce.
+func RequireVerifySubmitReceipt(reportDir, cycleID, nonce string) error {
+	return requireSubmitReceipt(VerifySubmitReceiptPath(reportDir, cycleID), nonce)
+}
+
+func requireSubmitReceipt(path, nonce string) error {
+	var rec SubmitReceipt
+	if err := readJSONFile(path, &rec); err != nil {
+		if errors.Is(err, ErrCriteriaReportMissing) {
+			return ErrSubmitReceiptMissing
+		}
+		if errors.Is(err, ErrCriteriaReportInvalid) {
+			return fmt.Errorf("%w: %v", ErrSubmitReceiptInvalid, err)
+		}
+		return err
+	}
+	if strings.TrimSpace(rec.Nonce) == "" || rec.Nonce != nonce {
+		return fmt.Errorf("%w: nonce mismatch", ErrSubmitReceiptInvalid)
+	}
+	return nil
+}
+
+func writeJSONAtomic(path string, v any) error {
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return err
+	}
+	tmp, err := os.CreateTemp(dir, ".hamix-sidecar-*.tmp")
+	if err != nil {
+		return err
+	}
+	tmpName := tmp.Name()
+	enc := json.NewEncoder(tmp)
+	enc.SetEscapeHTML(false)
+	if err := enc.Encode(v); err != nil {
+		_ = tmp.Close()
+		_ = os.Remove(tmpName)
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		_ = os.Remove(tmpName)
+		return err
+	}
+	return os.Rename(tmpName, path)
+}
+
+// MinVerifyReasoningChars is the minimum reasoning length when verified=true.
+func MinVerifyReasoningChars() int { return minVerifyReasoning }
+
+// MaxFieldBytes is the max evidence/reasoning field size.
+func MaxFieldBytes() int { return maxFieldBytes }

@@ -1,4 +1,4 @@
-package reports
+package sidecar
 
 import (
 	"encoding/json"

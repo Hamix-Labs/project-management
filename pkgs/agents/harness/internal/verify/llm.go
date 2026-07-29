@@ -148,6 +148,7 @@ func (s *Service) BuildVerifyReportContract(
 		GitContext:             git.FormatGitContextForPrompt(commits),
 		DiffSection:            DiffSection(s.workingDir),
 		Feedback:               feedback,
+		ToolOnly:               s.toolOnlyReports,
 	}
 }
 
@@ -185,7 +186,7 @@ func (s *Service) runVerifyCursor(
 		invokeMsg = "Resuming Cursor session…"
 	}
 	onProgress(runner.SetupProgressEvent(runner.ProgressRunStateSetupInvoke, invokeMsg))
-	return s.runner.Run(runCtx, runner.Request{
+	req := runner.Request{
 		TaskID:           task.ID,
 		AttemptSeq:       cycle.AttemptSeq,
 		Phase:            cyclesdomain.PhaseVerify,
@@ -196,7 +197,13 @@ func (s *Service) runVerifyCursor(
 		ResumeSessionID:  resumeSessionID,
 		OnProgress:       onProgress,
 		OnSessionID:      onSessionID,
-	})
+	}
+	if s.hooks.PrepareRunnerRequest != nil {
+		if err := s.hooks.PrepareRunnerRequest(ctx, &req, task, cycle); err != nil {
+			return runner.NewResult(cyclesdomain.PhaseStatusFailed, "agent MCP prepare failed: "+err.Error(), nil, ""), err
+		}
+	}
+	return s.runner.Run(runCtx, req)
 }
 
 func (s *Service) assembleVerdictsFromVerifyReport(
@@ -208,6 +215,11 @@ func (s *Service) assembleVerdictsFromVerifyReport(
 ) ([]Verdict, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.verify.assembleVerdictsFromVerifyReport",
 		"cycle_id", cycleID, "expected", len(expected))
+	if s.hooks.RequireVerifySubmitReceipt != nil {
+		if err := s.hooks.RequireVerifySubmitReceipt(cycleID); err != nil {
+			return nil, err
+		}
+	}
 	vrep, err := reports.ParseVerifyReport(s.reportDir, cycleID, expected)
 	if err != nil {
 		return nil, err

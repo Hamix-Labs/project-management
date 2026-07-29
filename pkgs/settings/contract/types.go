@@ -18,6 +18,7 @@ type SettingsPatch struct {
 	RunnerConfigs              *json.RawMessage
 	VerifyMaxRetries           *int
 	CursorSessionResumeEnabled *bool
+	AgentMCPEnabled            *bool
 }
 
 // IsEmpty reports whether the patch has nothing to apply.
@@ -37,5 +38,6 @@ func (p SettingsPatch) IsEmpty() bool {
 		p.SSEReplayEnabled == nil &&
 		p.RunnerConfigs == nil &&
 		p.VerifyMaxRetries == nil &&
-		p.CursorSessionResumeEnabled == nil
+		p.CursorSessionResumeEnabled == nil &&
+		p.AgentMCPEnabled == nil
 }

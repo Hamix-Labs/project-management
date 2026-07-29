@@ -8,17 +8,20 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/git"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
+	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
 // Service runs the verify pipeline stages against explicit dependencies.
 type Service struct {
-	store      contract.Store
-	runner     runner.Runner
-	reportDir  string
-	workingDir string
-	git        *git.Service
-	clock      func() time.Time
-	hooks      Hooks
+	store           contract.Store
+	runner          runner.Runner
+	reportDir       string
+	workingDir      string
+	git             *git.Service
+	clock           func() time.Time
+	hooks           Hooks
+	toolOnlyReports bool
 }
 
 // Deps bundles Service construction inputs from harness root.
@@ -67,6 +70,27 @@ func (s *Service) SetWorkingDir(dir string) {
 //funclogmeasure:skip category=hot-path reason="Setter only; verify pipeline logs at RunPipeline."
 func (s *Service) SetPlanVerifyRun(fn func(context.Context, PlanVerifyRunInput) (VerifyRunPlan, error)) {
 	s.hooks.PlanVerifyRun = fn
+}
+
+// SetPrepareRunnerRequest sets the pre-Run request mutator (agent MCP argv).
+//
+//funclogmeasure:skip category=hot-path reason="Setter only; verify pipeline logs at RunPipeline."
+func (s *Service) SetPrepareRunnerRequest(fn func(context.Context, *runner.Request, *taskcoredomain.Task, *cyclesdomain.TaskCycle) error) {
+	s.hooks.PrepareRunnerRequest = fn
+}
+
+// SetRequireVerifySubmitReceipt sets the tool-only verify receipt gate.
+//
+//funclogmeasure:skip category=hot-path reason="Setter only; verify pipeline logs at RunPipeline."
+func (s *Service) SetRequireVerifySubmitReceipt(fn func(cycleID string) error) {
+	s.hooks.RequireVerifySubmitReceipt = fn
+}
+
+// SetToolOnlyReports selects MCP submit prompt language vs legacy Write.
+//
+//funclogmeasure:skip category=hot-path reason="Setter only; verify pipeline logs at RunPipeline."
+func (s *Service) SetToolOnlyReports(toolOnly bool) {
+	s.toolOnlyReports = toolOnly
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."

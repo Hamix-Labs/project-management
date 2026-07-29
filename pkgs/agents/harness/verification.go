@@ -84,8 +84,35 @@ func (h *Harness) runVerificationPipeline(
 	feedback string,
 ) ([]criterionVerdict, string, error) {
 	svc := h.verifySvc()
+	toolOnly := h.agentMCPActive(parentCtx)
+	svc.SetToolOnlyReports(toolOnly)
 	svc.SetPlanVerifyRun(func(ctx context.Context, in verify.PlanVerifyRunInput) (verify.VerifyRunPlan, error) {
 		return h.planVerifyRun(ctx, in.Task, in.Cycle, state, in.Snap, in.VerifyAttempt, in.Feedback, in.CmdEvidence, in.SelfReport)
+	})
+	svc.SetPrepareRunnerRequest(func(ctx context.Context, req *runner.Request, task *taskcoredomain.Task, cycle *cyclesdomain.TaskCycle) error {
+		prev := state.agentMCP
+		state.agentMCP = agentMCPLifecycleState{
+			mcpConfigTracked: prev.mcpConfigTracked,
+			mcpConfigHadFile: prev.mcpConfigHadFile,
+			mcpConfigBackup:  prev.mcpConfigBackup,
+		}
+		if !h.agentMCPActive(ctx) {
+			return nil
+		}
+		prep, err := h.prepareAgentMCP(ctx, task, cycle, cyclesdomain.PhaseVerify, state)
+		if err != nil {
+			return err
+		}
+		applyAgentMCPToRequest(req, prep)
+		state.agentMCP.enabled = true
+		state.agentMCP.nonce = prep.Nonce
+		return nil
+	})
+	svc.SetRequireVerifySubmitReceipt(func(cycleID string) error {
+		if !state.agentMCP.enabled {
+			return nil
+		}
+		return reports.RequireVerifySubmitReceipt(h.opts.ReportDir, cycleID, state.agentMCP.nonce)
 	})
 	return svc.RunPipeline(parentCtx, task, cycle, snap, state.verify.verifyAttempt, state.verify.previouslyPassed, feedback, state.verify.mirrorDegraded, verify.PhaseCallbacks{
 		OnStarted: func(phase *cyclesdomain.TaskCyclePhase) {

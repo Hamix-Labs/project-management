@@ -285,6 +285,7 @@ Full reference: [configuration.md](../configuration.md).
 | [runner-adapters.md](./runner-adapters.md) | Execute runner registry and supervisor wiring |
 | [harness.md](./harness.md) | Cycle loop, resume, recovery (orchestration) |
 | [execute-agent.md](./execute-agent.md) | Execute pass deep-dive (companion article) |
+| [agent-tools-audit.md](./agent-tools-audit.md) | Candidate Hamix tools to cut prompt cost and freeform report mistakes |
 | [done-criteria.md](./done-criteria.md) | Full criteria lifecycle (companion article) |
 | [data-model.md](../data-model.md) (Checklist) | Schema, worker loop summary, report contracts |
 | [api.md](../api.md) | Checklist CRUD, `GET .../verdicts` |

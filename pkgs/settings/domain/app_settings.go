@@ -74,8 +74,12 @@ type AppSettings struct {
 	// VerifyMaxRetries is the corrective execute retries after verify failure.
 	VerifyMaxRetries int `json:"verify_max_retries"`
 	// CursorSessionResumeEnabled enables ADR-0031 --resume-by-default for Cursor CLI.
-	CursorSessionResumeEnabled bool      `json:"cursor_session_resume_enabled"`
-	UpdatedAt                  time.Time `json:"updated_at"`
+	CursorSessionResumeEnabled bool `json:"cursor_session_resume_enabled"`
+	// AgentMCPEnabled enables the Hamix agent MCP host for criteria/verify
+	// report submit tools (tool-only receipts). Default true; set false only
+	// as an emergency kill-switch to restore legacy freeform report Write.
+	AgentMCPEnabled bool      `json:"agent_mcp_enabled"`
+	UpdatedAt       time.Time `json:"updated_at"`
 }
 
 // AppSettingsRowID is the singleton primary key. Every read/write of
@@ -126,5 +130,6 @@ func DefaultAppSettings() AppSettings {
 		VerifyMaxRetries:           DefaultVerifyMaxRetries,
 		VerifyChatMode:             string(DefaultVerifyChatMode),
 		CursorSessionResumeEnabled: true,
+		AgentMCPEnabled:            true,
 	}
 }

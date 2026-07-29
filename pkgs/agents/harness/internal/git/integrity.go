@@ -83,10 +83,32 @@ func ClassifyIntegrityDiff(diff IntegrityDiff, cycleID string) (bool, string) {
 	if diff.HeadChanged {
 		return true, "HEAD ref moved during verify pass"
 	}
-	if len(diff.AddedPaths) == 0 {
+	added := filterIntegrityExemptPaths(diff.AddedPaths)
+	if len(added) == 0 {
 		return false, ""
 	}
-	return true, summariseTamperedPaths(diff.AddedPaths)
+	return true, summariseTamperedPaths(added)
+}
+
+// filterIntegrityExemptPaths drops harness-owned MCP launch config that may
+// appear as untracked between pre/post verify snapshots.
+//
+//funclogmeasure:skip category=hot-path reason="Pure path filter without I/O."
+func filterIntegrityExemptPaths(paths []string) []string {
+	out := make([]string, 0, len(paths))
+	for _, p := range paths {
+		if isIntegrityExemptPath(p) {
+			continue
+		}
+		out = append(out, p)
+	}
+	return out
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure path check without I/O."
+func isIntegrityExemptPath(path string) bool {
+	p := filepath.ToSlash(strings.TrimSpace(path))
+	return p == ".cursor/mcp.json"
 }
 
 // CheckVerifyIntegrity performs the post-verify integrity check.

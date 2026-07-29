@@ -89,6 +89,10 @@ type Options struct {
 	TaskUpdatedNotifier  TaskUpdatedNotifier
 	Metrics              RunMetrics
 	Clock                func() time.Time
+	// AgentMCPEnabled overrides app_settings.agent_mcp_enabled when non-nil.
+	// Production leaves this nil. Tests may force false for legacy freeform
+	// report fixtures; Cursor production path defaults to tool-only via settings.
+	AgentMCPEnabled *bool
 }
 
 // Harness drives one task end-to-end through the execute/verify substrate.

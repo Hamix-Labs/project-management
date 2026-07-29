@@ -295,6 +295,7 @@ See [configuration.md](../configuration.md) for validation rules and supervisor 
 | [runner-adapters.md](./runner-adapters.md) | Runner registry, capabilities, supervisor wiring |
 | [harness.md](./harness.md) | Cycle loop, resume, recovery (orchestration) |
 | [verify-agent.md](./verify-agent.md) | Verify pass after execute (companion article) |
+| [agent-tools-audit.md](./agent-tools-audit.md) | Candidate Hamix tools to cut prompt cost and freeform report mistakes |
 | [data-model.md](../data-model.md) (Checklist) | Schema, report contracts, edit locks |
 | [architecture.md](../architecture.md) | Runner abstraction, Cursor adapter, worker lifecycle |
 | [configuration.md](../configuration.md) | Execute and runner settings |

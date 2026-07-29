@@ -17,12 +17,12 @@ type ChecklistItem struct {
 // under a separate "Already verified" header and are omitted from the
 // active checklist.
 //
-// reportPath is the absolute path the worker has chosen for this
-// cycle's criteria-report.json (under Options.ReportDir, not under
-// the operator's RepoRoot).
+// reportPath is the absolute path for this cycle's criteria-report.json
+// (under Options.ReportDir). When toolOnly is true (default product path),
+// the agent must call hamix.submit_criteria_report instead of freeform Write.
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func InjectCriteria(prompt string, items []ChecklistItem, reportPath string, alreadyVerified map[string]struct{}) string {
+func InjectCriteria(prompt string, items []ChecklistItem, reportPath string, alreadyVerified map[string]struct{}, toolOnly bool) string {
 	if len(items) == 0 {
 		return prompt
 	}
@@ -52,13 +52,20 @@ func InjectCriteria(prompt string, items []ChecklistItem, reportPath string, alr
 	}
 
 	criteria.WriteString("\n\n## Done criteria (required)\n\n")
-	criteria.WriteString("You must satisfy every criterion below. When finished, write a JSON report at:\n")
-	criteria.WriteString(fmt.Sprintf("`%s`\n\n", reportPath))
-	criteria.WriteString("Schema:\n```json\n{\"schema_version\":1,\"criteria\":[{\"id\":\"<id>\",\"claimed_done\":true,\"evidence\":\"...\"}],\"commits\":[{\"sha\":\"<full-or-abbrev>\",\"branch\":\"optional\"}]}\n```\n")
-	criteria.WriteString("Use only `schema_version`, `criteria`, and `commits` top-level fields — no extra keys; put metadata in `evidence`.\n")
-	criteria.WriteString("List commits **created in this execute visit** under `commits` (incremental is fine — the worker accumulates them).\n")
-	criteria.WriteString("Git discipline: create **new commits only** — never amend, rebase, squash, or delete history; fix mistakes with a follow-up commit.\n")
-	criteria.WriteString("claimed_done is your assertion that you completed the work; after execute, you will verify each criterion against worker command evidence (do not treat the claim as final acceptance).\n")
+	if toolOnly {
+		criteria.WriteString("You must satisfy every criterion below. When finished, call the MCP tool `hamix.submit_criteria_report` with one entry per active criterion (and optional `commits` for commits created in this execute visit).\n")
+		criteria.WriteString("Do **not** freeform-Write `criteria-report.json` — only the submit tool is accepted.\n")
+		criteria.WriteString("Git discipline: create **new commits only** — never amend, rebase, squash, or delete history; fix mistakes with a follow-up commit.\n")
+		criteria.WriteString("claimed_done is your assertion that you completed the work; after execute, you will verify each criterion against worker command evidence (do not treat the claim as final acceptance).\n")
+	} else {
+		criteria.WriteString("You must satisfy every criterion below. When finished, write a JSON report at:\n")
+		criteria.WriteString(fmt.Sprintf("`%s`\n\n", reportPath))
+		criteria.WriteString("Schema:\n```json\n{\"schema_version\":1,\"criteria\":[{\"id\":\"<id>\",\"claimed_done\":true,\"evidence\":\"...\"}],\"commits\":[{\"sha\":\"<full-or-abbrev>\",\"branch\":\"optional\"}]}\n```\n")
+		criteria.WriteString("Use only `schema_version`, `criteria`, and `commits` top-level fields — no extra keys; put metadata in `evidence`.\n")
+		criteria.WriteString("List commits **created in this execute visit** under `commits` (incremental is fine — the worker accumulates them).\n")
+		criteria.WriteString("Git discipline: create **new commits only** — never amend, rebase, squash, or delete history; fix mistakes with a follow-up commit.\n")
+		criteria.WriteString("claimed_done is your assertion that you completed the work; after execute, you will verify each criterion against worker command evidence (do not treat the claim as final acceptance).\n")
+	}
 	if len(locked) > 0 {
 		criteria.WriteString("(Report only the criteria below; do NOT include already-verified IDs.)\n")
 	}

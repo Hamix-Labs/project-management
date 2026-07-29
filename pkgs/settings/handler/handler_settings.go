@@ -57,6 +57,7 @@ func (h *Handler) patchSettings(w http.ResponseWriter, r *http.Request) {
 		DisplayTimezone:            body.DisplayTimezone,
 		VerifyMaxRetries:           body.VerifyMaxRetries,
 		CursorSessionResumeEnabled: body.CursorSessionResumeEnabled,
+		AgentMCPEnabled:            body.AgentMCPEnabled,
 	}
 	if patch.IsEmpty() {
 		handlerhttp.WriteJSONError(w, r, op, http.StatusBadRequest, "patch body must include at least one field")
@@ -228,6 +229,7 @@ func settingsResponseFrom(cfg settingsdomain.AppSettings) settingsResponse {
 		SSEReplayEnabled:           cfg.SSEReplayEnabled,
 		VerifyMaxRetries:           cfg.VerifyMaxRetries,
 		CursorSessionResumeEnabled: cfg.CursorSessionResumeEnabled,
+		AgentMCPEnabled:            cfg.AgentMCPEnabled,
 	}
 	if !cfg.UpdatedAt.IsZero() {
 		resp.UpdatedAt = cfg.UpdatedAt.UTC().Format(time.RFC3339)

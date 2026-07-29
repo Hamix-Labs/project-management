@@ -157,6 +157,7 @@ func (h *Harness) buildRecoveryContext(
 		ExpectedIDs:         expected,
 		InterruptedPhase:    opts.interruptedPhase,
 		PriorVerifyFeedback: state.verify.verifyFeedback,
+		ToolOnly:            h.agentMCPActive(context.Background()),
 	}
 	if runKind == taskcoredomain.PendingKindPolish {
 		ctx.Polish = polishNoticeInputFromCycle(cycle, state, opts.knownCommits)
