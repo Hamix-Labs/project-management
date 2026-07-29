@@ -118,14 +118,12 @@ Singleton row in Postgres (CHECK enforces `id=1`). AutoMigrate creates the table
 | `cursor_bin` | string | `""` | Cursor CLI binary path. Empty = `PATH` lookup of `cursor`. Absolute paths pin a build. |
 | `cursor_model` | string | `""` | Optional Cursor model forwarded to the execute runner. Empty = omit the model flag (Cursor uses account default). |
 | `verify_model` | string | `""` | Optional Cursor `--model` for PhaseVerify. Empty inherits execute effective model (task pin, else `cursor_model`). |
-| `verify_chat_mode` | string | `"same_chat"` | Global default for PhaseVerify chat policy: `same_chat` (resume execute session) or `different_chat` (separate verify chain). Tasks may override via `tasks.verify_chat_mode`. See [ADR-0086](adr/ADR-0086-verify-chat-modes.md). |
 | `max_run_duration_seconds` | int (≥0) | `0` | Per-run wall-clock cap on `runner.Request.Timeout`. `0` = no limit. |
 | `agent_pickup_delay_seconds` | int (≥0) | `5` | Delay applied to new ready tasks before the worker can dequeue them. `0` disables. |
 | `display_timezone` | string | `""` | IANA timezone for SPA timestamps. Empty = browser auto-detect. Validated via `time.LoadLocation`. |
 | `optimistic_mutations_enabled` | bool | `true` | Always-on compatibility field. |
 | `sse_replay_enabled` | bool | `true` | Always-on compatibility field. |
-| `verify_max_retries` | int (≥0) | `2` | Max execute↔verify retry loops per cycle. |
-| `cursor_session_resume_enabled` | bool | `true` | When `false`, every `runner.Run` uses a fresh Cursor chat and full prompt compose (pre-ADR-0031 behavior). See [cursor-session-resume.md](domain/cursor-session-resume.md). |
+| `cursor_session_resume_enabled` | bool | `true` | When `false`, every `runner.Run` uses a fresh Cursor chat and full prompt compose (pre-ADR-0031 behavior). See [cursor-session-resume.md](domain/cursor-session-resume.md). PhaseVerify always resumes the execute session when enabled ([ADR-0090](adr/ADR-0090-command-only-verify.md)). |
 | `agent_mcp_enabled` | bool | `true` | When `true` (default), execute/verify report submit goes through Hamix agent MCP tools with receipt enforcement. Set `false` only as an emergency kill-switch to restore legacy freeform report Write. See [agent-mcp.md](domain/agent-mcp.md). |
 | `updated_at` | RFC3339 (response only) | server clock | Last successful upsert. SPA shows "last changed N ago". |
 
@@ -137,7 +135,6 @@ Singleton row in Postgres (CHECK enforces `id=1`). AutoMigrate creates the table
 
 - `runner` is non-empty and not in `pkgs/agents/runner/registry`.
 - `max_run_duration_seconds` is negative.
-- `verify_max_retries` is negative.
 - `repo_root` contains a NUL byte.
 
 `repo_root` is **not** validated for "directory exists" on `PATCH` — the supervisor reports `repo_root_open_failed` on the next reload, surfaced via `/health/ready` (`workspace_repo: fail`).

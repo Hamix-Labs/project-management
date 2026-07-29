@@ -1,6 +1,6 @@
 # Agent harness
 
-Cycle choreography around `runner.Run`: phase ledger, execute/verify loop, in-memory retry state, resume, recovery, and observability seams.
+Cycle choreography around `runner.Run`: phase ledger, one-shot execute/verify, resume, recovery, and observability seams.
 
 | | |
 | --- | --- |
@@ -34,7 +34,7 @@ Package comment: [`doc.go`](../../pkgs/agents/harness/doc.go). Extraction ration
 ### In scope
 
 - `Harness.Run` and `Harness.Resume` entry points
-- `runCycleLoop` execute↔verify retry semantics and `processState`
+- `runCycleLoop` one-shot execute → verify semantics and `processState`
 - Store writes: `StartCycle`, `StartPhase`, `CompletePhase`, `TerminateCycle`, completion ledger
 - Report-dir side channel (scrub, GC)
 - Recovery paths (panic, shutdown, operator cancel) and stable termination reasons
@@ -56,7 +56,7 @@ Package comment: [`doc.go`](../../pkgs/agents/harness/doc.go). Extraction ration
 | **Harness** | Concrete `harness.Harness` type; no interface or strategy registry ([ADR-0005](../adr/ADR-0005-extract-agent-harness.md)). |
 | **Cycle** | One `task_cycles` row from `StartCycle` through `TerminateCycle`. |
 | **Phase** | Execute or verify row in `task_cycle_phases`; each execute `runner.Run` maps to one execute phase. |
-| **processState** | In-memory scratch for one task run: cycle id, running phase seq, verify retry counters, `previouslyPassed`, `verifyFeedback`. Tier **T0** — lost on process restart. Owned by harness root (`cycle.go`); `internal/orchestration` receives scalar/DTO projections only (no `LoopState` bag — see ADR-0018). |
+| **processState** | In-memory scratch for one task run: cycle id, running phase seq, cross-cycle resume carry (`previouslyPassed`, `verifyFeedback`). Tier **T0** — lost on process restart. Owned by harness root (`cycle.go`); `internal/orchestration` receives scalar/DTO projections only (no `LoopState` bag — see ADR-0018). |
 | **Report dir** | `Options.ReportDir/<cycle_id>/` — ephemeral agent↔worker files outside `repo_root`. Tier **T1**. |
 | **Phase ledger** | `task_cycle_phases` rows + verify report mirrors. Tier **T2** — survives restart ([ADR-0006](../adr/ADR-0006-phase-boundary-resume.md)). |
 | **Commit index** | `task_cycle_commits` + git tree when `repo_root` configured. Tier **T3**. |
@@ -110,7 +110,7 @@ From [`admission.go`](../../pkgs/agents/worker/admission.go):
 
 ### Cursor session resume (ADR-0031)
 
-By default, execute and verify `runner.Run` calls use the **same execute runner**. Cursor session resume may continue the execute chat into `PhaseVerify` when policy allows ([ADR-0084](../adr/ADR-0084-executor-owned-verify.md)). Policy lives in [`cursor_resume.go`](../../pkgs/agents/harness/cursor_resume.go); recovery deltas in [`internal/prompt/recovery.go`](../../pkgs/agents/harness/internal/prompt/recovery.go).
+By default, execute and verify `runner.Run` calls use the **same execute runner**. PhaseVerify always resumes the execute Cursor session (`same_chat`, [ADR-0090](../adr/ADR-0090-command-only-verify.md)). Policy lives in [`cursor_resume.go`](../../pkgs/agents/harness/cursor_resume.go); recovery deltas in [`internal/prompt/recovery.go`](../../pkgs/agents/harness/internal/prompt/recovery.go).
 
 - **Fresh chat** on deny-list paths (Start over, first in chain, HEAD drift, tamper, missing id, `--resume` failure).
 - **Scrub** `criteria-report.json` only on fresh execute — resume keeps partial/invalid reports for inspection.
@@ -169,44 +169,43 @@ Numbered path in [`cycle.go`](../../pkgs/agents/harness/cycle.go):
 
 1. Initialize `processState` with empty `previouslyPassed`; defer `recoverFromPanic`.
 2. **`startCycle`** — `StartCycle` with `meta_json`: `runner`, `runner_version`, `prompt_hash` (SHA-256 of **InitialPrompt only** — see [`meta.go`](../../pkgs/agents/harness/meta.go)).
-3. **`loadVerificationSnapshot`** — criteria list and `verify_max_retries`.
+3. **`loadVerificationSnapshot`** — criteria list and claim-only vs command-backed routing.
 4. **`runCycleLoop`** — shared with `Resume` (below).
 5. On terminal success: `applyVerifiedCompletions` (when criteria enabled), `TerminateCycle(succeeded)`, task `done`, report-dir GC, metrics.
 
-### runCycleLoop retry semantics
+### runCycleLoop (one-shot)
 
 Core loop in [`cycle_loop.go`](../../pkgs/agents/harness/cycle_loop.go). **Decide vs Apply** (ADR-0018, ADR-0021): harness root runs I/O (runner, verify pipeline, store writes); `internal/orchestration` returns effects; [`cycle_effects.go`](../../pkgs/agents/harness/cycle_effects.go) applies them.
 
+Each cycle iteration is **one-shot** ([ADR-0090](../adr/ADR-0090-command-only-verify.md)): one execute, at most one verify pass. Any verify or gate failure terminates the cycle — no in-cycle execute↔verify retry.
+
 ```mermaid
 flowchart TD
+  decideVer[DecideVerifyRetry or DecideVerifyDisabledLegacy]
+  applyVer[applyVerifyEffects]
+  decideFin[DecideFinalizeSuccess]
+  applyFin[applyFinalizeEffects]
   loopStart[runCycleLoop iteration]
   execIO[Execute I/O: runner + ingest]
   decideExec[DecideExecutePostRun]
   applyExec[applyExecuteEffects]
   verifyIO[Verify I/O: pipeline or legacy checklist]
-  decideVer[DecideVerifyRetry or DecideVerifyDisabledLegacy]
-  applyVer[applyVerifyEffects]
-  decideFin[DecideFinalizeSuccess]
-  applyFin[applyFinalizeEffects]
-  retry[verifyAttempt++ continue loop]
+  fail[TerminateCycle failed]
   loopStart --> execIO
   execIO --> decideExec --> applyExec
   applyExec -->|continue| verifyIO
-  applyExec -->|terminal| fail[TerminateCycle failed]
+  applyExec -->|terminal| fail
   verifyIO --> decideVer --> applyVer
   applyVer -->|pass| decideFin --> applyFin
-  applyVer -->|retry| retry
-  applyVer -->|terminal| fail
-  retry --> loopStart
+  applyVer -->|fail| fail
 ```
 
-**In-memory retry state** (`processState`):
+**In-memory state** (`processState`) — used for cross-cycle operator resume carry, not in-cycle retries:
 
 | Field | Role |
 | --- | --- |
-| `previouslyPassed` | Criterion verdicts that passed on earlier attempts; merged into final completions on success only |
-| `verifyFeedback` | Appended to next execute prompt after verify failure |
-| `verifyAttempt` | Compared to `verificationSnapshot.maxRetries` |
+| `previouslyPassed` | Criteria verified on parent cycle (Resume from failure); merged into final completions on success only |
+| `verifyFeedback` | Appended to execute prompt after parent verify failure (cross-cycle resume) |
 
 **Resume loop options** (`cycleLoopOpts`):
 
@@ -230,7 +229,7 @@ Phase-specific behavior:
 | Input | Used for |
 | --- | --- |
 | Phase ledger tail | Execute vs verify resume branch |
-| `task_cycle_verify_reports` | Locked passes, verify attempt, retry feedback |
+| `task_cycle_verify_reports` | Cross-cycle locked passes, verify feedback (operator resume) |
 | Task row | Base prompt |
 | `task_cycle_commits` | Worker-indexed SHAs from agent `commits[]` claims; verify reads task-wide ledger per [cycle-commits.md](./cycle-commits.md) |
 
@@ -272,7 +271,7 @@ Stable reason strings land on cycle rows and phase summaries. Recovery paths use
 | `shutdown` | Parent ctx cancelled mid-run | aborted | failed |
 | `panic` | Deferred `recoverFromPanic` | failed | failed |
 | `verify_tampered` | Post-verify git integrity failure | failed | failed |
-| `verification_failed:<ids>` | Verify retries exhausted | failed | failed |
+| `verification_failed:<ids>` | Verify or gate failure (one-shot) | failed | failed |
 | `retry_reset_anchor_missing` | Fresh retry: no git reset anchor on parent | — | failed (no new cycle) |
 | `retry_git_reset_failed` | Fresh retry: git reset/clean command failed | — | failed (no new cycle) |
 | `retry_checkpoint_failed` | Resume retry: parent checkpoint load failed | — | failed (no new cycle) |
@@ -320,9 +319,9 @@ Resume and retry code must declare which tier it reads. Do not assume T1 report 
 
 | Tier | Storage | Survives restart? | Used by |
 | --- | --- | --- | --- |
-| **T0** | `processState` in memory | No | Verify retry counters within one worker process |
+| **T0** | `processState` in memory | No | Cross-cycle resume carry within one worker process |
 | **T1** | Report dir `<cycle_id>/` | Maybe (ephemeral FS) | Agent self-report parse during active cycle |
-| **T2** | Phase ledger + verify report rows | Yes | ADR-0006 resume, verify-only retry |
+| **T2** | Phase ledger + verify report rows | Yes | ADR-0006 resume |
 | **T3** | `task_cycle_commits` + git tree | Yes (when repo configured) | Cross-cycle resume, verify diff |
 | **T4** | `task_checklist_completions` | Yes | Terminal success only |
 
@@ -340,7 +339,7 @@ From [`harness.go`](../../pkgs/agents/harness/harness.go) and [`metrics.go`](../
 | `RunMetrics.RecordRun` | Counter + duration histogram per terminal cycle |
 | `RunMetrics.RecordVerifyVerdict` | Per-criterion verify outcome |
 | `RunMetrics.ObserveVerifyDuration` | Wall clock per verify phase |
-| `RunMetrics.ObserveVerifyRetries` | Retry count on terminal cycles |
+| `RunMetrics.ObserveVerifyRetries` | Legacy metric; always 0 under one-shot cycles |
 
 > **Warning** — Notifier and metrics implementations must not block. The harness invokes them synchronously from the run loop and runner progress callbacks.
 
@@ -374,43 +373,11 @@ Read at runtime from store inside harness methods:
 
 | Setting | Effect |
 | --- | --- |
-| `verify_max_retries` | Max execute↔verify loops per cycle |
 | Per-command `timeout_seconds` | Optional wall-clock on each checklist verify command (omit = unlimited) |
 
 Task-level fields consumed in the loop: `cursor_model`, `project_id`.
 
-### In-cycle verify-only retry
-
-When verify fails retryably **inside one cycle**, the harness may skip the next execute phase if execute artifacts and git anchors are still valid and the failure is **infra-only** (parse/command errors — not verify-phase rejection or missing self-claim). Cross-cycle operator resume already used the same loop flag via `skipFirstExecute`; this extends it to in-cycle retries ([ADR-0028](../adr/ADR-0028-in-cycle-verify-only-retry.md)).
-
-```mermaid
-flowchart LR
-  VF[Verify fails retryable]
-  C{Execute still valid?}
-  VO[Skip execute retry verify]
-  FE[Full execute then verify]
-  VF --> C
-  C -->|infra + gates pass| VO
-  C -->|implementation or gate fail| FE
-```
-
-The phase ledger allows `verify → verify` when the previous verify row is terminal failed (`ValidVerifyOnlyRetryTransition` in `pkgs/taskcycles/domain/cycle_state.go`).
-
-| EC ID | Behavior | Test |
-| --- | --- | --- |
-| EC-01 | Infra verify fail → verify-only retry | `TestEdgeCase_EC01_verifyInfra_skipsExecute`; classify: `TestClassify_EC01_verifyInfra_verifyOnly` |
-| EC-02 | Verify-phase reject → full re-execute | `TestEdgeCase_EC02_verifyAgentReject_fullReexecute` |
-| EC-03 | `ClaimedDone=false` → full re-execute | `TestEdgeCase_EC03_claimedNotDone_fullReexecute` |
-| EC-04 | Missing/invalid criteria-report → full re-execute | `TestEdgeCase_EC04_reportMissing_fullReexecute`; classify: `TestClassify_EC04_reportInvalid_fullReexecute` |
-| EC-05 | Git HEAD drift → full re-execute | `TestClassify_EC05_headChanged_fullReexecute` |
-| EC-06 | Commit ingest failed → full re-execute | `TestClassify_EC06_ingestFailed_fullReexecute` |
-| EC-07 | Tamper → terminal | `TestWorker_VerifyPhase_failsCycleWhenVerifyTampers` (`internal/verify`) |
-| EC-08 | Retry budget exhausted → terminal | `TestClassify_EC08_budgetExhausted_terminal` |
-| EC-09 | Locked pass + infra fail on other criterion | `TestEdgeCase_EC09_partialPass_infraVerifyOnly`; verify phase: `TestWorker_VerifyPhase_carriesPassesAcrossRetries` |
-| EC-10 | Cross-cycle verify-only resume unchanged | `TestVerifyOnlyCrossCycleResume_runCycleLoopSkipsRunnerExecute` |
-| EC-11 | Process restart mid-cycle | out of scope (#5) |
-
-Structured logs on retry: `retry_mode`, `reason_code`, `skip_next_execute`.
+> **Note** — In-cycle verify retry settings (`verify_max_retries`) and operator verify chat mode were removed under [ADR-0090](../adr/ADR-0090-command-only-verify.md). Superseded decision records: [ADR-0028](../adr/ADR-0028-in-cycle-verify-only-retry.md), [ADR-0086](../adr/ADR-0086-verify-chat-modes.md).
 
 ## Best practices
 
@@ -419,14 +386,14 @@ Structured logs on retry: `retry_mode`, `reason_code`, `skip_next_execute`.
 - Preserve **atomic completion** — never write `task_checklist_completions` on failed or aborted cycles.
 - Phase-specific prompt changes belong in existing `*_prompt.go` files; update [execute-agent.md](./execute-agent.md) or [verify-agent.md](./verify-agent.md) when wire contracts change.
 - Prefer harness unit tests without queue plumbing (`pkgs/agents/harness/*_test.go`).
-- When adding verify behavior, consider metrics (`RecordVerifyVerdict`, `ObserveVerifyRetries`) and phase `details_json` normalization in [`verification_phase_details.go`](../../pkgs/agents/harness/verification_phase_details.go).
+- When adding verify behavior, consider metrics (`RecordVerifyVerdict`, `ObserveVerifyDuration`) and phase `details_json` normalization in [`verification_phase_details.go`](../../pkgs/agents/harness/verification_phase_details.go).
 
 ## Limitations
 
 | Limitation | Detail |
 | --- | --- |
 | No Harness interface | Single concrete type; no strategy registry yet ([ADR-0005](../adr/ADR-0005-extract-agent-harness.md)) |
-| Single-process worker | `previouslyPassed` and retry counters are in-memory only |
+| Single-process worker | Cross-cycle resume carry (`previouslyPassed`) is in-memory only |
 | Runner stateless | Each phase is a fresh `runner.Run`; no mid-CLI session resume ([ADR-0006](../adr/ADR-0006-phase-boundary-resume.md)) |
 | Composed prompt not in meta | Only `InitialPrompt` hashed in `meta_json` |
 | Verdict mirror upsert non-gating | DB mirror failures logged; verify continues |
@@ -458,8 +425,8 @@ Structured logs on retry: `retry_mode`, `reason_code`, `skip_next_execute`.
 | [ADR-0084](../adr/ADR-0084-executor-owned-verify.md) | Executor-owned verify |
 | [ADR-0012](../adr/ADR-0012-structured-verify-commands.md) | Shell verify commands |
 | [ADR-0017](../adr/ADR-0017-harness-internal-domains.md) | Internal domain packages |
-| [ADR-0018](../adr/ADR-0018-harness-orchestration-fsm.md) | Verify retry state machine |
-| [ADR-0028](../adr/ADR-0028-in-cycle-verify-only-retry.md) | In-cycle verify-only retry |
+| [ADR-0090](../adr/ADR-0090-command-only-verify.md) | Command-only verify, execute_claim, one-shot cycle |
+| [ADR-0018](../adr/ADR-0018-harness-orchestration-fsm.md) | Verify decision state machine |
 
 ### Code map
 

@@ -6,7 +6,7 @@ How Hamix runs a task in two phases with one agent. Execute implements work; the
 | --- | --- |
 | **Applies to** | Creating tasks, writing done criteria (checklist items), reviewing failed cycles |
 | **Audience** | Operators and anyone defining work for the agent worker |
-| **Related articles** | [domain/done-criteria.md](./domain/done-criteria.md), [domain/execute-agent.md](./domain/execute-agent.md), [domain/verify-agent.md](./domain/verify-agent.md) |
+| **Related articles** | [domain/done-criteria.md](./domain/done-criteria.md), [domain/execute-agent.md](./domain/execute-agent.md), [domain/verify-agent.md](./domain/verify-agent.md), [ADR-0090](./adr/ADR-0090-command-only-verify.md) |
 
 ## In this article
 
@@ -19,18 +19,18 @@ How Hamix runs a task in two phases with one agent. Execute implements work; the
 - [Dedicated worktree (recommended)](#dedicated-worktree-recommended)
 - [Do not edit the workspace during verify](#do-not-edit-the-workspace-during-verify)
 - [Writing good criteria](#writing-good-criteria)
-- [Retries and locked passes](#retries-and-locked-passes)
+- [Failures and operator retry](#failures-and-operator-retry)
 - [What you see in the UI](#what-you-see-in-the-ui)
 - [See also](#see-also)
 
 ## Overview
 
-Every task with done criteria goes through a **two step review** with the **same agent**:
+Every task with done criteria goes through execute, then verification:
 
 1. **Execute phase.** Implements the task and states what it believes it finished.
-2. **Verify phase.** Reviews worker-collected evidence and judges whether each criterion is actually satisfied.
+2. **Verify phase.** For criteria **with** shell verify commands, the same agent reviews worker-collected evidence and judges whether each command's `expected_outcome` matches captured output. Criteria **without** verify commands are accepted from the execute self-claim when `claimed_done: true` (`verified_by=execute_claim`) — no second Cursor pass.
 
-A task reaches **done** only when the verify phase accepts every active criterion (`verified_by=execute_agent`), not when execute merely claims success.
+A task reaches **done** only when every active criterion is accepted (`verified_by=execute_agent` or `execute_claim`), not when execute merely claims success.
 
 You define the contract when you create the task: the task description and checklist items. The system handles the rest.
 
@@ -51,7 +51,7 @@ Tasks that are blocked (for example, waiting on dependencies or a deferred picku
 | Phase | Role | Trusted for final acceptance? |
 | --- | --- | --- |
 | **Execute** | Reads your task prompt and criteria, changes the repo, commits when required, and reports what it claims to have done. | **No.** Self claim only. |
-| **Verify** | The same agent reviews the repo (plus optional shell checks the worker ran for you) and judges each criterion pass or fail. | **Yes.** Sole authority for marking criteria done on success. |
+| **Verify** | Claim-only items: harness accepts execute self-claim. Command-backed items: same agent judges command output vs `expected_outcome` after worker shell checks. | **Yes.** Sole authority for marking criteria done on success. |
 
 The worker runs shell verify commands **before** the verify LLM pass and feeds that output into the prompt. That is independent evidence — not a separate AI judge.
 
@@ -92,16 +92,14 @@ When you create a task, you supply:
 2. Gate
    → any claimed_done: false → fail (no verify for that item)
 
-3. Verify phase runs (same agent)
-   → worker runs optional shell verify commands first
-   → agent writes verify-report.json (pass/fail per criterion)
+3. Verify
+   → claim-only (no verify_commands): accept execute claim (execute_claim)
+   → command-backed: worker runs shell checks, then verify LLM judges output
 
-4. Decision
+4. Decision (one-shot)
    → all pass → task marked done; checklist completions recorded
-   → any fail → retry (up to configured limit) or cycle fails
+   → any fail → cycle fails; use Retry / Start over for a new attempt
 ```
-
-Criteria that already passed on an earlier attempt in the same cycle can be **locked**. Execute is told not to redo them, and verify short circuits them on retry.
 
 ## Dedicated worktree (recommended)
 
@@ -170,18 +168,15 @@ Write criteria the agent can evaluate in both phases without guesswork.
 
 > **Warning:** A verify command exiting 0 does **not** automatically mark a criterion done. The verify phase still makes the final call.
 
-## Retries and locked passes
+## Failures and operator retry
 
-When verify fails, the cycle retries execute and verify up to `verify_max_retries` (Settings).
+Each cycle is **one-shot** ([ADR-0090](./adr/ADR-0090-command-only-verify.md)): one execute, at most one command-verify pass. Any gate or verify failure **terminates the cycle** — there is no in-cycle execute↔verify retry budget.
 
-On each retry:
+When a cycle fails, use **Start over** or **Resume from failure** on the task detail page to queue a **new** attempt. **Resume from failure** can carry forward criteria that already passed verify on the parent cycle so the agent does not redo settled work.
 
-- The execute agent gets feedback on what failed.
-- Criteria that **already passed** are skipped. Execute does not redo them, and verify does not judge them again.
+**When does the checklist update?** Only when the full run succeeds and the task reaches **done**. Until then, partial progress inside a failed cycle does not create permanent checklist completions.
 
-**When does the checklist update?** Only when the full run succeeds and the task reaches **done**. Until then, a passing criterion is progress inside that run, not a permanent checkmark on the task.
-
-If the run ends in failure (including after all retries), those passes do not stick. On the task detail page, checklist items stay unsatisfied and the task does not move to **done**, even if some criteria passed on every attempt.
+If the run ends in failure, checklist items stay unsatisfied and the task does not move to **done**, even if some criteria would have passed on that attempt.
 
 ## What you see in the UI
 
@@ -202,5 +197,5 @@ You do not need access to `criteria-report.json` or `verify-report.json` for nor
 | [domain/done-criteria.md](./domain/done-criteria.md) | Full verification loop and wire contracts |
 | [domain/execute-agent.md](./domain/execute-agent.md) | Execute prompt and report format |
 | [domain/verify-agent.md](./domain/verify-agent.md) | Verify prompt, shell checks, integrity rules |
-| [configuration.md](./configuration.md) | Verify retries, execute runner, `HAMIX_WORKER_REPORT_DIR` |
+| [configuration.md](./configuration.md) | Execute runner, `HAMIX_WORKER_REPORT_DIR` |
 | [api.md](./api.md) | Create task body (`checklist_items`), checklist routes |

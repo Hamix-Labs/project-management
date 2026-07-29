@@ -32,7 +32,7 @@ The **execute agent** is the LLM pass during `PhaseExecute`. The harness invokes
 - Prompt composition (criteria, resume, git policy)
 - Runner invocation, progress streaming, and phase persistence
 - Criteria self-report wire format and parser expectations
-- Retry inputs (locked criteria, verify feedback) and resume branches
+- Cross-cycle resume inputs (locked criteria, verify feedback) and resume branches
 - Failure classification (timeout, non-zero exit, cancel, shutdown)
 
 ### Out of scope
@@ -57,7 +57,7 @@ Schema and table definitions: [data-model.md](../data-model.md) (Checklist). HTT
 | **Composed prompt** | String built by `composeExecutePrompt` and passed to the runner. |
 | **Report dir** | `HAMIX_WORKER_REPORT_DIR/<cycle_id>/` — outside the git repo; holds `criteria-report.json`. |
 | **Self-claim** | `claimed_done` + `evidence` in the criteria report; assertion only, not final acceptance. |
-| **Locked criterion** | Passed on a prior verify attempt in the same cycle; listed as "Already verified (do not re-do)". |
+| **Locked criterion** | Passed verify on a parent cycle (operator Resume from failure); listed as "Already verified (do not re-do)". |
 | **prompt_hash** | SHA-256 of **InitialPrompt only** (not the composed prompt), stored in `task_cycles.meta_json`. |
 
 ### Actors and trust
@@ -132,7 +132,7 @@ Each execute attempt follows this sequence in [`cycle_loop.go`](../../pkgs/agent
 | 2 | Worker resume notice | `appendResumeNotice` | Resume after `process_restart` during execute |
 | 3 | Done criteria + Already verified | [`criteria_prompt.go`](../../pkgs/agents/harness/criteria_prompt.go) | Task has checklist items |
 | 4 | Operator `initial_prompt` | Task row | Always |
-| 5 | Previous verification feedback | `appendVerifyFeedback` | Retry after verify failure |
+| 5 | Previous verification feedback | `appendVerifyFeedback` | Cross-cycle resume after parent verify failure |
 
 The composed prompt is passed to the runner as-is (no `<project_context>` wrap — see [ADR-0087](../adr/ADR-0087-remove-project-context.md)).
 
@@ -157,10 +157,10 @@ See [cycle-commits.md](./cycle-commits.md) for worker ingest and schema.
 
 When the task has checklist items, [`injectCriteria`](../../pkgs/agents/harness/criteria_prompt.go) prepends:
 
-- **Already verified (do not re-do)** — Locked criteria from `previouslyPassed` (retry only). Omitted from the report's expected ID set.
+- **Already verified (do not re-do)** — Locked criteria from parent cycle (`previouslyPassed`, operator Resume from failure). Omitted from the report's expected ID set.
 - **Done criteria (required)** — Active criteria with stable `[id]` prefixes, absolute path to `criteria-report.json`, JSON schema, and instruction that `claimed_done` is an assertion only.
 
-On retry, only **active** (non-locked) criterion ids must appear in the report.
+On operator **Resume from failure**, only **active** (non-locked) criterion ids must appear in the report.
 
 ### Example prompt (illustrative)
 
@@ -269,7 +269,7 @@ See [configuration.md](../configuration.md) for validation rules and supervisor 
 ## Best practices
 
 - Write `criteria-report.json` to the **absolute path** in the prompt — never under `repo_root`.
-- On retry, report **only active** criterion ids; omit locked passes already listed under "Already verified".
+- On cross-cycle resume, report **only active** criterion ids; omit locked passes already listed under "Already verified".
 - Prefer commit policy **on** when benign process restarts are possible — tagged commits aid resume when the working tree is clean.
 - Do not treat verify commands as optional — the worker runs them independently; execute evidence should describe what changed, not replace shell checks ([ADR-0012](../adr/ADR-0012-structured-verify-commands.md)).
 - Use stable criterion ids exactly as shown in the prompt; do not invent or paraphrase ids in the report.

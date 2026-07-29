@@ -1,7 +1,9 @@
 # ADR-0086: Configurable verify chat modes
 
+> **Superseded** — Operator `verify_chat_mode` settings and task overrides were removed; PhaseVerify always resumes the execute session under [ADR-0090](./ADR-0090-command-only-verify.md). Historical body retained below.
+
 **Date:** 2026-07-26
-**Status:** Accepted
+**Status:** Superseded
 **Deciders:** Backend / agents-worker maintainers
 
 ## Context
