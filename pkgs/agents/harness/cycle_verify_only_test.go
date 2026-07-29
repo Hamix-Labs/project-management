@@ -14,10 +14,18 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/runnerfake"
 	settingscontract "github.com/AlexsanderHamir/Hamix/pkgs/settings/contract"
+	checklistcontract "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/contract"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
+
+func testVerifyCmds() []checklistcontract.VerifyCommandInput {
+	return []checklistcontract.VerifyCommandInput{{
+		Command:         "echo ok",
+		ExpectedOutcome: "prints ok",
+	}}
+}
 
 type cycleVerifyHookRunner struct {
 	runner.Runner
@@ -108,13 +116,13 @@ func startVerifyOnlyTask(t *testing.T, maxRetries int, extraItems ...string) (*c
 		t.Fatal(err)
 	}
 	var ids []string
-	item, err := st.AddChecklistItem(ctx, tsk.ID, "criterion", nil, taskcoredomain.ActorUser)
+	item, err := st.AddChecklistItem(ctx, tsk.ID, "criterion", testVerifyCmds(), taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}
 	ids = append(ids, item.ID)
 	for i, title := range extraItems {
-		it, err := st.AddChecklistItem(ctx, tsk.ID, title, nil, taskcoredomain.ActorUser)
+		it, err := st.AddChecklistItem(ctx, tsk.ID, title, testVerifyCmds(), taskcoredomain.ActorUser)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -131,7 +139,7 @@ func startVerifyOnlyTask(t *testing.T, maxRetries int, extraItems ...string) (*c
 	return st, tsk, ids
 }
 
-func TestEdgeCase_EC01_verifyInfra_skipsExecute(t *testing.T) {
+func TestEdgeCase_EC01_verifyInfra_oneShotTerminate(t *testing.T) {
 	st, tsk, ids := startVerifyOnlyTask(t, 1)
 	itemID := ids[0]
 	ctx, cancel := context.WithCancel(context.Background())
@@ -146,15 +154,8 @@ func TestEdgeCase_EC01_verifyInfra_skipsExecute(t *testing.T) {
 		if len(cycles) == 0 {
 			return
 		}
-		switch req.Phase {
-		case cyclesdomain.PhaseExecute:
+		if req.Phase == cyclesdomain.PhaseExecute {
 			writeCriteriaReportCycleTest(t, reportDir, cycles[0].ID, []string{itemID})
-		case cyclesdomain.PhaseVerify:
-			// attempt is 1 after the first infra failure; preRun runs before the second Run.
-			if execRunner.attempt.Load() != 1 {
-				return
-			}
-			writePartialVerifyReportCycleTest(t, reportDir, cycles[0].ID, map[string]bool{itemID: true})
 		}
 	}}
 	execBase.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(cyclesdomain.PhaseStatusSucceeded, "ok", nil, ""))
@@ -173,11 +174,11 @@ func TestEdgeCase_EC01_verifyInfra_skipsExecute(t *testing.T) {
 	for {
 		select {
 		case <-deadline:
-			t.Fatal("timeout waiting for task done")
+			t.Fatal("timeout waiting for task failed")
 		default:
 		}
 		got, err := st.Get(ctx, tsk.ID)
-		if err == nil && got.Status == taskcoredomain.StatusReview {
+		if err == nil && got.Status == taskcoredomain.StatusFailed {
 			break
 		}
 		time.Sleep(10 * time.Millisecond)
@@ -185,21 +186,15 @@ func TestEdgeCase_EC01_verifyInfra_skipsExecute(t *testing.T) {
 	<-done
 	cancel()
 
-	execCalls := 0
-	for _, c := range execBase.Calls() {
-		if c.Phase == cyclesdomain.PhaseExecute {
-			execCalls++
-		}
+	if execCalls := countPhaseCalls(execBase, cyclesdomain.PhaseExecute); execCalls != 1 {
+		t.Fatalf("execute calls = %d, want 1 (one-shot)", execCalls)
 	}
-	if execCalls != 1 {
-		t.Fatalf("execute calls = %d, want 1 (verify-only retry)", execCalls)
-	}
-	if execRunner.attempt.Load() != 2 {
-		t.Fatalf("verify attempts = %d, want 2", execRunner.attempt.Load())
+	if execRunner.attempt.Load() != 1 {
+		t.Fatalf("verify attempts = %d, want 1 (infra failure terminates)", execRunner.attempt.Load())
 	}
 }
 
-func TestEdgeCase_EC02_verifyAgentReject_fullReexecute(t *testing.T) {
+func TestEdgeCase_EC02_verifyAgentReject_oneShotTerminate(t *testing.T) {
 	st, tsk, ids := startVerifyOnlyTask(t, 1)
 	itemID := ids[0]
 	ctx, cancel := context.WithCancel(context.Background())
@@ -208,7 +203,6 @@ func TestEdgeCase_EC02_verifyAgentReject_fullReexecute(t *testing.T) {
 	workDir := t.TempDir()
 	reportDir := t.TempDir()
 	var execAttempt atomic.Int32
-	var verifyAttempt atomic.Int32
 	r := runnerfake.New()
 	hook := &cycleVerifyHookRunner{Runner: r, preRun: func(req runner.Request) {
 		cycles, _ := st.ListCyclesForTask(context.Background(), req.TaskID, 1)
@@ -220,12 +214,7 @@ func TestEdgeCase_EC02_verifyAgentReject_fullReexecute(t *testing.T) {
 			writeCriteriaReportCycleTest(t, reportDir, cycles[0].ID, []string{itemID})
 			execAttempt.Add(1)
 		case cyclesdomain.PhaseVerify:
-			n := verifyAttempt.Add(1)
-			if n == 1 {
-				writePartialVerifyReportCycleTest(t, reportDir, cycles[0].ID, map[string]bool{itemID: false})
-			} else {
-				writePartialVerifyReportCycleTest(t, reportDir, cycles[0].ID, map[string]bool{itemID: true})
-			}
+			writePartialVerifyReportCycleTest(t, reportDir, cycles[0].ID, map[string]bool{itemID: false})
 		}
 	}}
 	r.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(cyclesdomain.PhaseStatusSucceeded, "ok", nil, ""))
@@ -248,7 +237,7 @@ func TestEdgeCase_EC02_verifyAgentReject_fullReexecute(t *testing.T) {
 		default:
 		}
 		got, err := st.Get(ctx, tsk.ID)
-		if err == nil && got.Status == taskcoredomain.StatusReview {
+		if err == nil && got.Status == taskcoredomain.StatusFailed {
 			break
 		}
 		time.Sleep(10 * time.Millisecond)
@@ -256,12 +245,12 @@ func TestEdgeCase_EC02_verifyAgentReject_fullReexecute(t *testing.T) {
 	<-done
 	cancel()
 
-	if execAttempt.Load() != 2 {
-		t.Fatalf("execute attempts = %d, want 2 (full re-execute on verify-agent reject)", execAttempt.Load())
+	if execAttempt.Load() != 1 {
+		t.Fatalf("execute attempts = %d, want 1 (one-shot on verify-agent reject)", execAttempt.Load())
 	}
 }
 
-func TestEdgeCase_EC03_claimedNotDone_fullReexecute(t *testing.T) {
+func TestEdgeCase_EC03_claimedNotDone_oneShotTerminate(t *testing.T) {
 	st, tsk, ids := startVerifyOnlyTask(t, 1)
 	itemID := ids[0]
 	ctx, cancel := context.WithCancel(context.Background())
@@ -286,7 +275,6 @@ func TestEdgeCase_EC03_claimedNotDone_fullReexecute(t *testing.T) {
 		_ = os.WriteFile(filepath.Join(cdir, "criteria-report.json"), []byte(body), 0o644)
 	}}
 	r.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(cyclesdomain.PhaseStatusSucceeded, "ok", nil, ""))
-	r.Script(tsk.ID, cyclesdomain.PhaseVerify, runner.NewResult(cyclesdomain.PhaseStatusSucceeded, "ok", nil, ""))
 
 	h := New(st, hook, Options{
 		WorkingDir: workDir, ReportDir: reportDir,
@@ -301,10 +289,11 @@ func TestEdgeCase_EC03_claimedNotDone_fullReexecute(t *testing.T) {
 	for {
 		select {
 		case <-deadline:
-			t.Fatal("timeout waiting for full re-execute after claimed_not_done")
+			t.Fatal("timeout waiting for one-shot terminate after claimed_not_done")
 		default:
 		}
-		if execAttempt.Load() >= 2 {
+		got, err := st.Get(ctx, tsk.ID)
+		if err == nil && got.Status == taskcoredomain.StatusFailed {
 			break
 		}
 		time.Sleep(10 * time.Millisecond)
@@ -312,12 +301,12 @@ func TestEdgeCase_EC03_claimedNotDone_fullReexecute(t *testing.T) {
 	<-done
 	cancel()
 
-	if execAttempt.Load() < 2 {
-		t.Fatalf("execute attempts = %d, want >=2 for claimed_not_done retry", execAttempt.Load())
+	if execAttempt.Load() != 1 {
+		t.Fatalf("execute attempts = %d, want 1 for claimed_not_done one-shot", execAttempt.Load())
 	}
 }
 
-func TestEdgeCase_EC04_reportMissing_fullReexecute(t *testing.T) {
+func TestEdgeCase_EC04_reportMissing_oneShotTerminate(t *testing.T) {
 	st, tsk, _ := startVerifyOnlyTask(t, 1)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -334,16 +323,11 @@ func TestEdgeCase_EC04_reportMissing_fullReexecute(t *testing.T) {
 	for {
 		select {
 		case <-deadline:
-			t.Fatal("timeout waiting for full re-execute")
+			t.Fatal("timeout waiting for one-shot terminate")
 		default:
 		}
-		execCalls := 0
-		for _, c := range r.Calls() {
-			if c.Phase == cyclesdomain.PhaseExecute {
-				execCalls++
-			}
-		}
-		if execCalls >= 2 {
+		got, err := st.Get(ctx, tsk.ID)
+		if err == nil && got.Status == taskcoredomain.StatusFailed {
 			break
 		}
 		time.Sleep(10 * time.Millisecond)
@@ -351,14 +335,8 @@ func TestEdgeCase_EC04_reportMissing_fullReexecute(t *testing.T) {
 	<-done
 	cancel()
 
-	execCalls := 0
-	for _, c := range r.Calls() {
-		if c.Phase == cyclesdomain.PhaseExecute {
-			execCalls++
-		}
-	}
-	if execCalls != 2 {
-		t.Fatalf("execute calls = %d, want 2 when criteria-report missing", execCalls)
+	if execCalls := countPhaseCalls(r, cyclesdomain.PhaseExecute); execCalls != 1 {
+		t.Fatalf("execute calls = %d, want 1 when criteria-report missing (one-shot)", execCalls)
 	}
 }
 
@@ -372,7 +350,7 @@ func countPhaseCalls(r *runnerfake.Runner, phase cyclesdomain.Phase) int {
 	return n
 }
 
-func TestEdgeCase_EC09_partialPass_infraVerifyOnly(t *testing.T) {
+func TestEdgeCase_EC09_partialPass_infraOneShotTerminate(t *testing.T) {
 	st, tsk, ids := startVerifyOnlyTask(t, 2, "criterion two")
 	c1ID, c2ID := ids[0], ids[1]
 	workDir := t.TempDir()
@@ -384,15 +362,8 @@ func TestEdgeCase_EC09_partialPass_infraVerifyOnly(t *testing.T) {
 		if len(cycles) == 0 {
 			return
 		}
-		switch req.Phase {
-		case cyclesdomain.PhaseExecute:
+		if req.Phase == cyclesdomain.PhaseExecute {
 			writeCriteriaReportCycleTest(t, reportDir, cycles[0].ID, []string{c1ID, c2ID})
-		case cyclesdomain.PhaseVerify:
-			n := execRunner.attempt.Load()
-			if n != 1 {
-				return
-			}
-			writePartialVerifyReportCycleTest(t, reportDir, cycles[0].ID, map[string]bool{c1ID: true, c2ID: true})
 		}
 	}}
 	execBase.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(cyclesdomain.PhaseStatusSucceeded, "ok", nil, ""))
@@ -417,7 +388,7 @@ func TestEdgeCase_EC09_partialPass_infraVerifyOnly(t *testing.T) {
 		default:
 		}
 		got, err := st.Get(runCtx, tsk.ID)
-		if err == nil && got.Status == taskcoredomain.StatusReview {
+		if err == nil && got.Status == taskcoredomain.StatusFailed {
 			break
 		}
 		time.Sleep(10 * time.Millisecond)
@@ -427,5 +398,8 @@ func TestEdgeCase_EC09_partialPass_infraVerifyOnly(t *testing.T) {
 
 	if n := countPhaseCalls(execBase, cyclesdomain.PhaseExecute); n != 1 {
 		t.Fatalf("execute calls = %d, want 1", n)
+	}
+	if execRunner.attempt.Load() != 1 {
+		t.Fatalf("verify attempts = %d, want 1 (infra failure terminates)", execRunner.attempt.Load())
 	}
 }

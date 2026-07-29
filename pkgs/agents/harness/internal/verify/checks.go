@@ -50,6 +50,7 @@ func (s *Service) runVerifyChecks(
 
 	verdicts := make([]Verdict, 0, len(snap.Criteria))
 	needLLMVerify := false
+	llmExpected := make(map[string]struct{})
 	var usage cyclesdomain.TokenUsage
 	var usagePresent bool
 
@@ -71,7 +72,17 @@ func (s *Service) runVerifyChecks(
 			s.recordVerdict(checklistdomain.VerifierAgentSelf, false)
 			continue
 		}
+		if len(it.VerifyCommands) == 0 {
+			// ADR-0090: claim-only criteria accept from execute submit.
+			v.Passed = true
+			v.Verifier = checklistdomain.VerifierExecuteClaim
+			v.Reasoning = "accepted execute claim (no verify commands)"
+			verdicts = append(verdicts, v)
+			s.recordVerdict(checklistdomain.VerifierExecuteClaim, true)
+			continue
+		}
 		needLLMVerify = true
+		llmExpected[it.ID] = struct{}{}
 		verdicts = append(verdicts, v)
 	}
 
@@ -85,7 +96,7 @@ func (s *Service) runVerifyChecks(
 			usage = cyclesdomain.AddTokenUsage(usage, runUsage)
 			usagePresent = true
 		}
-		nextVerdicts, parseErr := s.assembleVerdictsFromVerifyReport(cycle.ID, expected, verdicts, selfReport, previouslyPassed)
+		nextVerdicts, parseErr := s.assembleVerdictsFromVerifyReport(cycle.ID, llmExpected, verdicts, selfReport, previouslyPassed)
 		if err := verifyLLMRunError(runErr, parseErr); err != nil {
 			return nil, "", mirrorDegraded, usage, usagePresent, err
 		}

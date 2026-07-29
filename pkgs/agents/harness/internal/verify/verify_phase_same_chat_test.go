@@ -30,7 +30,7 @@ func TestWorker_VerifyPhase_resumesExecuteSession(t *testing.T) {
 	}
 
 	tsk := h.CreateReadyTask(ctx, "verify-same-chat")
-	item, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", nil, taskcoredomain.ActorUser)
+	item, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", testVerifyCmds(), taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("add checklist item: %v", err)
 	}
@@ -111,7 +111,7 @@ func TestWorker_VerifyPhase_passesVerifyModelWithSameSession(t *testing.T) {
 	}
 
 	tsk := h.CreateReadyTask(ctx, "verify-model-same-chat")
-	item, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", nil, taskcoredomain.ActorUser)
+	item, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", testVerifyCmds(), taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("add checklist item: %v", err)
 	}
@@ -184,7 +184,7 @@ func TestWorker_VerifyPhase_missingExecuteSessionHardFailsWithoutRun(t *testing.
 	}
 
 	tsk := h.CreateReadyTask(ctx, "verify-missing-session")
-	item, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", nil, taskcoredomain.ActorUser)
+	item, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", testVerifyCmds(), taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("add checklist item: %v", err)
 	}
@@ -192,7 +192,7 @@ func TestWorker_VerifyPhase_missingExecuteSessionHardFailsWithoutRun(t *testing.
 	workDir := t.TempDir()
 	reportDir := t.TempDir()
 
-	// Successful execute without session_id — Cursor resume on should hard-fail
+	// Successful execute without session_id ΓÇö Cursor resume on should hard-fail
 	// before verify invokes the runner.
 	r := runnerfake.New().WithName("cursor-cli").WithoutAutoSessionID()
 	hook := &hookRunner{Runner: r, preRun: func(req runner.Request) {
@@ -236,7 +236,7 @@ func TestWorker_VerifyPhase_errResumeSessionNoSecondRun(t *testing.T) {
 	}
 
 	tsk := h.CreateReadyTask(ctx, "verify-resume-fail")
-	item, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", nil, taskcoredomain.ActorUser)
+	item, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", testVerifyCmds(), taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("add checklist item: %v", err)
 	}

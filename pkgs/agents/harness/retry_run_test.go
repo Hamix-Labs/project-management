@@ -16,10 +16,18 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/storefake"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/runnerfake"
+	checklistcontract "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/contract"
 	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
+
+func harnessTestVerifyCmds() []checklistcontract.VerifyCommandInput {
+	return []checklistcontract.VerifyCommandInput{{
+		Command:         "echo ok",
+		ExpectedOutcome: "prints ok",
+	}}
+}
 
 func TestRunWithRetry_freshStartsNewCycleWithParent(t *testing.T) {
 	ctx := context.Background()
@@ -217,7 +225,7 @@ func TestVerifyOnlyCrossCycleResume_runCycleLoopSkipsRunnerExecute(t *testing.T)
 	if err != nil {
 		t.Fatal(err)
 	}
-	item, err := st.AddChecklistItem(ctx, tsk.ID, "criterion", nil, taskcoredomain.ActorUser)
+	item, err := st.AddChecklistItem(ctx, tsk.ID, "criterion", harnessTestVerifyCmds(), taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -20,7 +20,7 @@ func TestWorker_VerifyPhase_usesExecuteRunner(t *testing.T) {
 	defer cancel()
 
 	tsk := h.CreateReadyTask(ctx, "verify-single-runner")
-	item, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", nil, taskcoredomain.ActorUser)
+	item, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", testVerifyCmds(), taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("add checklist item: %v", err)
 	}

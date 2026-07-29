@@ -23,11 +23,11 @@ import (
 // phase was still in `running`, tripping the cycle's "no running phase"
 // invariant inside the transaction. The verify phase must always open
 // AFTER execute is terminal so the cycle's phase ledger reflects the
-// real sequence and the verify→execute retry transition is legal.
+// real sequence and the verifyΓåÆexecute retry transition is legal.
 //
 // Symptom this test guards against: every cycle with verification
 // enabled would terminate with `execute_phase_start_failed` on the
-// retry attempt because the state machine forbids execute→execute.
+// retry attempt because the state machine forbids executeΓåÆexecute.
 func TestWorker_VerifyPhase_opensWhileExecuteIsTerminal(t *testing.T) {
 	t.Parallel()
 	h := newHarness(t)
@@ -38,13 +38,13 @@ func TestWorker_VerifyPhase_opensWhileExecuteIsTerminal(t *testing.T) {
 
 	// One retry only, so the loop runs at most twice. The runner never
 	// writes criteria-report.json so verification fails on every attempt
-	// — the point of the test is the phase ledger, not the verdict.
+	// ΓÇö the point of the test is the phase ledger, not the verdict.
 	maxRetries := 1
 	if _, err := h.Store.UpdateSettings(ctx, settingscontract.SettingsPatch{VerifyMaxRetries: &maxRetries}); err != nil {
 		t.Fatalf("set verify max retries: %v", err)
 	}
 
-	if _, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", nil, taskcoredomain.ActorUser); err != nil {
+	if _, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", testVerifyCmds(), taskcoredomain.ActorUser); err != nil {
 		t.Fatalf("add checklist item: %v", err)
 	}
 
@@ -73,14 +73,11 @@ func TestWorker_VerifyPhase_opensWhileExecuteIsTerminal(t *testing.T) {
 		t.Fatalf("list phases: %v", err)
 	}
 
-	// Expected ledger: execute(succeeded) → verify(failed) →
-	// execute(succeeded) → verify(failed).
+	// Expected ledger: execute(succeeded) ΓåÆ verify(failed) ΓÇö one-shot, no retry.
 	wantSeq := []struct {
 		phase  cyclesdomain.Phase
 		status cyclesdomain.PhaseStatus
 	}{
-		{cyclesdomain.PhaseExecute, cyclesdomain.PhaseStatusSucceeded},
-		{cyclesdomain.PhaseVerify, cyclesdomain.PhaseStatusFailed},
 		{cyclesdomain.PhaseExecute, cyclesdomain.PhaseStatusSucceeded},
 		{cyclesdomain.PhaseVerify, cyclesdomain.PhaseStatusFailed},
 	}
@@ -118,17 +115,15 @@ func TestWorker_VerifyPhase_opensWhileExecuteIsTerminal(t *testing.T) {
 		t.Errorf("expected at least one cycle_failed event with reason=verification_failed; got events=%+v", events)
 	}
 
-	// Runner must have been invoked twice for execute (initial + 1
-	// retry). If the state machine rejected the retry, only one call
-	// would have landed.
+	// Runner must have been invoked once for execute (one-shot terminate).
 	executeCalls := 0
 	for _, c := range r.Calls() {
 		if c.Phase == cyclesdomain.PhaseExecute {
 			executeCalls++
 		}
 	}
-	if executeCalls != 2 {
-		t.Fatalf("execute runner calls = %d, want 2 (initial + retry)", executeCalls)
+	if executeCalls != 1 {
+		t.Fatalf("execute runner calls = %d, want 1 (one-shot, no in-cycle retry)", executeCalls)
 	}
 }
 

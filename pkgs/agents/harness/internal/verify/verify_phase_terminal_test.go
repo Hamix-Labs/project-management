@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync/atomic"
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness"
@@ -18,7 +17,7 @@ import (
 	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 )
 
-// EC-07 (docs/domain/harness.md): verify tamper → terminal failure, no execute retry.
+// EC-07 (docs/domain/harness.md): verify tamper ΓåÆ terminal failure, no execute retry.
 // TestWorker_VerifyPhase_failsCycleWhenVerifyTampers pins the
 // integrity-check contract. A verify runner that mutates source files
 // MUST cause the cycle to terminate as verify_tampered with no
@@ -31,7 +30,7 @@ func TestWorker_VerifyPhase_failsCycleWhenVerifyTampers(t *testing.T) {
 	defer cancel()
 
 	tsk := h.CreateReadyTask(ctx, "verify-tampers")
-	item, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", nil, taskcoredomain.ActorUser)
+	item, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", testVerifyCmds(), taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("add checklist item: %v", err)
 	}
@@ -128,11 +127,11 @@ func TestWorker_VerifyPhase_finalFailureWritesNoCompletions(t *testing.T) {
 	defer cancel()
 
 	tsk := h.CreateReadyTask(ctx, "verify-no-completion")
-	c1, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", nil, taskcoredomain.ActorUser)
+	c1, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", testVerifyCmds(), taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("add c1: %v", err)
 	}
-	c2, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion two", nil, taskcoredomain.ActorUser)
+	c2, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion two", testVerifyCmds(), taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("add c2: %v", err)
 	}
@@ -144,7 +143,6 @@ func TestWorker_VerifyPhase_finalFailureWritesNoCompletions(t *testing.T) {
 
 	workDir := t.TempDir()
 	reportDir := t.TempDir()
-	var execAttempt atomic.Int32
 	r := runnerfake.New()
 	hook := &hookRunner{Runner: r, preRun: func(req runner.Request) {
 		cycles, _ := h.Store.ListCyclesForTask(context.Background(), req.TaskID, 1)
@@ -153,16 +151,9 @@ func TestWorker_VerifyPhase_finalFailureWritesNoCompletions(t *testing.T) {
 		}
 		switch req.Phase {
 		case cyclesdomain.PhaseExecute:
-			n := execAttempt.Add(1)
-			ids := []string{c1.ID, c2.ID}
-			if n >= 2 {
-				ids = []string{c2.ID}
-			}
-			writeCriteriaReportFor(t, reportDir, cycles[0].ID, ids)
+			writeCriteriaReportFor(t, reportDir, cycles[0].ID, []string{c1.ID, c2.ID})
 		case cyclesdomain.PhaseVerify:
-			// c1 always passes; c2 always fails. Both attempts.
-			ids := map[string]bool{c1.ID: true, c2.ID: false}
-			writePartialVerifyReport(t, reportDir, cycles[0].ID, ids)
+			writePartialVerifyReport(t, reportDir, cycles[0].ID, map[string]bool{c1.ID: true, c2.ID: false})
 		}
 	}}
 	r.Script(tsk.ID, cyclesdomain.PhaseExecute, runner.NewResult(
@@ -200,11 +191,11 @@ func TestWorker_VerifyPhase_terminateReasonIncludesFailingIDs(t *testing.T) {
 	defer cancel()
 
 	tsk := h.CreateReadyTask(ctx, "verify-reason-ids")
-	c1, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", nil, taskcoredomain.ActorUser)
+	c1, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", testVerifyCmds(), taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("add c1: %v", err)
 	}
-	c2, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion two", nil, taskcoredomain.ActorUser)
+	c2, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion two", testVerifyCmds(), taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("add c2: %v", err)
 	}
@@ -280,7 +271,7 @@ func TestWorker_VerifyPhase_terminateReasonIncludesFailingIDs(t *testing.T) {
 // strengthened integrity contract: with the report-file allowlist
 // removed in PR1, ANY mutation under RepoRoot during the verify pass
 // is tampering. Even paths that mimic the legacy `.legacy-scratch/<cycleID>/...`
-// shape are no longer tolerated — the verifier has no business
+// shape are no longer tolerated ΓÇö the verifier has no business
 // touching the working tree.
 func TestWorker_VerifyPhase_repoRootMutationStillTampered(t *testing.T) {
 	t.Parallel()
@@ -289,7 +280,7 @@ func TestWorker_VerifyPhase_repoRootMutationStillTampered(t *testing.T) {
 	defer cancel()
 
 	tsk := h.CreateReadyTask(ctx, "verify-no-allowlist")
-	item, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", nil, taskcoredomain.ActorUser)
+	item, err := h.Store.AddChecklistItem(ctx, tsk.ID, "criterion one", testVerifyCmds(), taskcoredomain.ActorUser)
 	if err != nil {
 		t.Fatalf("add checklist item: %v", err)
 	}
