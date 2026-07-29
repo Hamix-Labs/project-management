@@ -40,11 +40,11 @@ type CommandEvidenceLine struct {
 
 // RecoveryContext carries harness state into delta-only stdin prompts (ADR-0031).
 type RecoveryContext struct {
-	Kind          RecoveryKind
-	Phase         cyclesdomain.Phase
-	CycleID       string
-	AttemptSeq    int64
-	ReportPath    string
+	Kind       RecoveryKind
+	Phase      cyclesdomain.Phase
+	CycleID    string
+	AttemptSeq int64
+	ReportPath string
 
 	FailedCriteria       []CriterionFailure
 	LockedCriteria       []string

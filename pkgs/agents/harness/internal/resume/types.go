@@ -30,22 +30,22 @@ type CriterionVerdict = verify.Verdict
 
 // ContinuationBundle rehydrates cross-cycle resume context from a parent attempt.
 type ContinuationBundle struct {
-	Entry            Entry
-	LineageAttempt   int64
-	ParentCycleID    string
-	FailureClass     ContinuationFailureKind
-	FailureReason    string
-	FailurePhase     cyclesdomain.Phase
-	ScopeFiles       []string
-	Commits          []cyclesdomain.TaskCycleCommit
-	CriteriaEvidence []cyclesdomain.TaskCycleCriteriaReport
-	LockedPasses     map[string]CriterionVerdict
-	ExecuteFeedback  string
+	Entry                  Entry
+	LineageAttempt         int64
+	ParentCycleID          string
+	FailureClass           ContinuationFailureKind
+	FailureReason          string
+	FailurePhase           cyclesdomain.Phase
+	ScopeFiles             []string
+	Commits                []cyclesdomain.TaskCycleCommit
+	CriteriaEvidence       []cyclesdomain.TaskCycleCriteriaReport
+	LockedPasses           map[string]CriterionVerdict
+	ExecuteFeedback        string
 	CriteriaReportProbeErr string
-	RunnerFeedback   string
-	GitDiagnostics   string
-	Warnings         []string
-	Sufficient       bool
+	RunnerFeedback         string
+	GitDiagnostics         string
+	Warnings               []string
+	Sufficient             bool
 }
 
 // Checkpoint is the in-cycle resume state reconstructed from the phase ledger.

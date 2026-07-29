@@ -55,10 +55,10 @@ func TestComposeRecoveryDelta_criteriaReportInvalid(t *testing.T) {
 func TestComposeRecoveryDelta_verifyInfra(t *testing.T) {
 	t.Parallel()
 	delta := ComposeRecoveryDelta(RecoveryContext{
-		Kind:          RecoveryVerifyInfra,
-		Phase:         cyclesdomain.PhaseVerify,
-		AttemptSeq:    1,
-		ReportPath:    "/tmp/hamix/cycle-1/verify-report.json",
+		Kind:       RecoveryVerifyInfra,
+		Phase:      cyclesdomain.PhaseVerify,
+		AttemptSeq: 1,
+		ReportPath: "/tmp/hamix/cycle-1/verify-report.json",
 		CommandEvidenceDelta: []CommandEvidenceLine{{
 			CriterionID: "lint",
 			Command:     "npm test",
@@ -241,10 +241,10 @@ func TestComposeRecoveryDelta_goldenFiles(t *testing.T) {
 			ReportPath:     "/tmp/report.json",
 		},
 		"verify_infra_retry": {
-			Kind:          RecoveryVerifyInfra,
-			Phase:         cyclesdomain.PhaseVerify,
-			AttemptSeq:    1,
-			ReportPath:    "/tmp/hamix/cycle-1/verify-report.json",
+			Kind:       RecoveryVerifyInfra,
+			Phase:      cyclesdomain.PhaseVerify,
+			AttemptSeq: 1,
+			ReportPath: "/tmp/hamix/cycle-1/verify-report.json",
 			CommandEvidenceDelta: []CommandEvidenceLine{{
 				CriterionID: "lint", Command: "npm test", ExitCode: 1, Preview: "FAIL",
 			}},
