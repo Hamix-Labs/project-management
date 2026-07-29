@@ -1,7 +1,5 @@
 import { type UseQueryResult } from "@tanstack/react-query";
 import type { ListCursorModelsResult } from "@/api/settings";
-import { DEFAULT_VERIFY_MAX_RETRIES } from "@/types/task";
-import { SettingsSelect, type SettingsSelectOption } from "../SettingsSelect";
 import type { SettingsFormState } from "../settingsForm";
 import { SECTION_IDS } from "./sectionIds";
 import {
@@ -13,19 +11,10 @@ import {
 } from "./settingsSectionLayout";
 import type { HandleField } from "./settingsSectionTypes";
 
-const VERIFY_CHAT_MODE_OPTIONS: SettingsSelectOption[] = [
-  { value: "same_chat", label: "Same chat" },
-  { value: "different_chat", label: "Different chat" },
-];
-
 /**
  * Phases — execute and verify configuration under one section card.
  * Each phase is a nested panel with grouped fields (worker vs runner
- * for execute; budget for verify).
- *
- * The runner picker is intentionally absent today: only one runner
- * (Cursor) is registered. When a second runner ships, a per-phase
- * runner select can return alongside the model field.
+ * for execute; runner model for verify).
  */
 export function PhasesSettingsSection({
   form,
@@ -141,29 +130,8 @@ export function PhasesSettingsSection({
         <PhasePanel
           id={SECTION_IDS.verification}
           phase="verify"
-          description="Verifies done criteria after execute using the same runner. Chat continuity is configurable below."
+          description="Command-only verify runs worker checks and MCP criteria claims after execute (ADR-0090)."
         >
-          <PhaseFieldGroup title="Chat">
-            <label className="settings-field">
-              <span className="settings-field-label">Verify chat mode</span>
-              <SettingsSelect
-                testId="settings-verify-chat-mode"
-                value={form.verifyChatMode}
-                onChange={(next) =>
-                  onField(
-                    "verifyChatMode",
-                    next === "different_chat" ? "different_chat" : "same_chat",
-                  )
-                }
-                options={VERIFY_CHAT_MODE_OPTIONS}
-                searchable={false}
-              />
-            </label>
-            <p className="settings-field-help">
-              Workspace default. Tasks can override.
-            </p>
-          </PhaseFieldGroup>
-
           <PhaseFieldGroup title="Runner">
             <PhaseModelField
               testId="settings-verify-model-select"
@@ -176,36 +144,6 @@ export function PhasesSettingsSection({
               Auto inherits the execute model. Pick a model to pin for verify
               only.
             </p>
-          </PhaseFieldGroup>
-
-          <PhaseFieldGroup title="Budget">
-            <label className="settings-field">
-              <span className="settings-field-label">
-                Retry attempts on failure
-              </span>
-              <span className="settings-field-input-suffix">
-                <input
-                  type="number"
-                  min={0}
-                  step={1}
-                  value={form.verifyMaxRetries}
-                  onChange={(e) =>
-                    onField("verifyMaxRetries", e.target.value)
-                  }
-                />
-                <span className="settings-field-suffix" aria-hidden="true">
-                  attempts
-                </span>
-              </span>
-            </label>
-            <div className="settings-field-help-block">
-              <p className="settings-field-help">
-                Re-runs of execute after a verify failure.
-              </p>
-              <p className="settings-field-help settings-field-help-meta">
-                Default: <code>{DEFAULT_VERIFY_MAX_RETRIES}</code>
-              </p>
-            </div>
           </PhaseFieldGroup>
         </PhasePanel>
       </div>

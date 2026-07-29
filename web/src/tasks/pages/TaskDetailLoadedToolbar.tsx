@@ -4,7 +4,6 @@ import {
   TaskDetailToolbarActions,
 } from "../components/task-detail";
 import { TokenUsageChip } from "../components/task-detail/TokenUsageChip";
-import { VerifyChatModeChip } from "../components/task-detail/VerifyChatModeChip";
 import { canEditTask } from "../task-display/canEditTask";
 import { statusNeedsUserInput } from "../task-display";
 import type { TaskDetailLoadedViewProps } from "./TaskDetailLoadedView";
@@ -53,7 +52,6 @@ export function TaskDetailLoadedToolbar({
           data-testid="task-detail-execution-bar"
         >
           <TokenUsageChip taskId={task.id} />
-          <VerifyChatModeChip task={task} />
           <div
             className="task-detail-execution-bar__status"
             data-testid="task-detail-status"

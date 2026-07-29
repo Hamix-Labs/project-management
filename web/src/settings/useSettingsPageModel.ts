@@ -56,12 +56,6 @@ function mergeFormAfterSettingsPatch(
   if (cur.verifyModel === formAtSubmit.verifyModel) {
     merged.verifyModel = next.verify_model;
   }
-  if (cur.verifyChatMode === formAtSubmit.verifyChatMode) {
-    merged.verifyChatMode = next.verify_chat_mode;
-  }
-  if (cur.verifyMaxRetries === formAtSubmit.verifyMaxRetries) {
-    merged.verifyMaxRetries = String(next.verify_max_retries);
-  }
   if (cur.maxRunDurationSeconds === formAtSubmit.maxRunDurationSeconds) {
     merged.maxRunDurationSeconds = String(next.max_run_duration_seconds);
   }

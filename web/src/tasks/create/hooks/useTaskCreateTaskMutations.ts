@@ -35,9 +35,6 @@ export function useTaskCreateTaskMutations(input: {
         draft_id: mutationInput.draft_id,
         runner: mutationInput.runner,
         cursor_model: mutationInput.cursor_model,
-        ...(mutationInput.verify_chat_mode
-          ? { verify_chat_mode: mutationInput.verify_chat_mode }
-          : {}),
         ...(mutationInput.project_id ? { project_id: mutationInput.project_id } : {}),
         ...(mutationInput.pickup_not_before !== null
           ? { pickup_not_before: mutationInput.pickup_not_before }

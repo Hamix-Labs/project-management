@@ -23,9 +23,6 @@ export type TaskCreateModalAgentSectionProps = {
   variant?: TaskCreateModalAgentSectionVariant;
   runner: string;
   cursorModel: string;
-  verifyChatMode?: string;
-  /** Workspace settings default used when task verify mode is empty. */
-  workspaceVerifyChatMode?: "same_chat" | "different_chat";
   modelIds: Set<string>;
   modelsForSelect: CursorModelOption[];
   modelSelectBusy: boolean;
@@ -33,7 +30,6 @@ export type TaskCreateModalAgentSectionProps = {
   modelServerError: string | null;
   onRunnerChange: (runner: string) => void;
   onCursorModelChange: (v: string) => void;
-  onVerifyChatModeChange?: (v: string) => void;
 };
 
 export function AlertGlyph() {

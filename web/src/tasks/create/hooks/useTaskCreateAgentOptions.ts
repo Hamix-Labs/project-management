@@ -26,18 +26,11 @@ export function useTaskCreateAgentOptions(runner: string, enabled = true) {
   const modelServerError =
     data && !data.ok ? (data.error ?? "Model list failed.") : null;
 
-  const workspaceVerifyChatMode =
-    settings?.verify_chat_mode === "different_chat"
-      ? ("different_chat" as const)
-      : ("same_chat" as const);
-
   return {
     modelIds,
     modelsForSelect,
     modelSelectBusy: modelsQuery.isFetching,
     modelFetchError,
     modelServerError,
-    /** Workspace verify-chat default; empty task value inherits this. */
-    workspaceVerifyChatMode,
   };
 }

@@ -8,11 +8,9 @@ function form(overrides: Partial<SettingsFormState> = {}): SettingsFormState {
     cursorBin: "",
     cursorModel: "",
     verifyModel: "",
-    verifyChatMode: "same_chat",
     maxRunDurationSeconds: "3600",
     agentPickupDelaySeconds: "0",
     displayTimezone: "",
-    verifyMaxRetries: "3",
     ...overrides,
   };
 }
