@@ -80,7 +80,10 @@ import (
 // Rev 24 (ADR-0090): drop app_settings.verify_max_retries,
 // app_settings.verify_chat_mode, and tasks.verify_chat_mode — command-only
 // verify is one-shot; operators no longer configure retry loops or chat mode.
-const SchemaRevision = 24
+//
+// Rev 25: app_settings.agent_task_parallelism — max parallel tasks across
+// different worktrees (replaces HAMIX_AGENT_WORKER_CONCURRENCY env).
+const SchemaRevision = 25
 
 const schemaMetaRowID = 1
 
