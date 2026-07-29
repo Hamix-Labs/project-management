@@ -77,11 +77,13 @@ function CycleRow({
             <span className="task-cycle-row-attempt">
               Attempt #{cycle.attempt_seq}
             </span>
-            <CycleStatusBadge
-              status={cycle.status}
-              className="task-cycle-row-status"
-              data-testid="task-cycle-row-status"
-            />
+            {!timing.inProgress ? (
+              <CycleStatusBadge
+                status={cycle.status}
+                className="task-cycle-row-status"
+                data-testid="task-cycle-row-status"
+              />
+            ) : null}
           </div>
 
           <div className="task-cycle-row-aside">

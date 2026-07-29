@@ -94,12 +94,10 @@ describe("TaskCyclesPanel live ticker", () => {
     expect(phaseLine).toHaveTextContent(/24\.0 s/);
 
     // The running cycle ALSO appears in the history list with "In progress"
-    // (the redundant Live chip was removed).
+    // (Running badge omitted — redundant with the duration label).
     const list = screen.getByTestId("task-cycles-list");
     expect(within(list).getByText("In progress")).toBeInTheDocument();
-    expect(within(list).getByTestId("task-cycle-row-status")).toHaveClass(
-      "task-status-badge--tone-info",
-    );
+    expect(within(list).queryByTestId("task-cycle-row-status")).toBeNull();
   });
 
   it("renders a runner/model chip on the live ticker only", async () => {
