@@ -48,8 +48,10 @@ export function decideSyncFrame(input: DecideSyncFrameInput): SyncFrameDecision 
     return { schedule: "immediate", pendingDelta: {}, effects };
   }
   if (frame.kind === "cycle") {
+    // Cycle frames own the phase/cycle ledger only. Do not queue the task
+    // id — that would invalidate detailRoot/checklist before harness
+    // completions publish task_updated (ADR-0022 checklist ownership).
     const pendingDelta: SyncFrameDecision["pendingDelta"] = {
-      addTaskId: frame.taskId,
       addCycle: { taskId: frame.taskId, cycleId: frame.cycleId },
     };
     const effects: SyncFrameDecision["effects"] = [];

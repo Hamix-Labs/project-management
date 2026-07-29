@@ -253,13 +253,13 @@ Architecture: [ADR-0022](../adr/ADR-0022-task-sync-policy.md). Entry hook: [`use
 7. **Progress** → separate debounced path to `useAgentRunProgress` (not full invalidation storm)
 8. **Flush** — trailing debounce **900ms**, max wait **2500ms** so worker burst (~4 cycle frames per run) collapses to one invalidation batch
 
-Cycle frames drive most agent UI updates — the worker emits `task_cycle_changed`, and harness checklist completions also publish `task_updated` (same coherence as HTTP checklist / ADR-0026).
+Cycle frames drive live phase/attempt UI — the worker emits `task_cycle_changed`. Harness checklist completions and task-row status publish `task_updated` (same coherence as HTTP checklist / ADR-0026).
 
-**Enrichment coverage (E1):** an enriched `task_updated` patches only the task *row* (`taskQueryKeys.detail(id)`). It must never be treated as making the whole detail subtree fresh — cycles list, checklist, and events are siblings that need their own hints or invalidation.
+**Enrichment coverage (E1):** an enriched `task_updated` patches only the task *row* (`taskQueryKeys.detail(id)`). It must never be treated as making the whole detail subtree fresh — cycles list, checklist, and events are siblings that need their own hints or invalidation. Flush always invalidates `checklist(id)` for each pending task id so enrichment skipping `detailRoot` cannot leave criteria stale.
 
-**Cycle hints (E2):** flush invalidates `cycles(taskId)` (and checklist) from pending cycle entries even when the same task id was enriched in the batch. Do not skip cycle invalidation merely because the task is also in `pending.tasks`.
+**Cycle hints (E2):** flush invalidates `cycles(taskId)` (and token usage) from pending cycle entries even when the same task id was enriched in the batch. Do not skip cycle invalidation merely because the task is also in `pending.tasks`. Cycle frames do **not** queue task-row pending and do **not** invalidate checklist.
 
-Enrichment fast path: when **every** task id in a flush batch was enriched and applied, skip the broad detail-prefix invalidation for the *task row* only. Sibling keys still invalidate from cycle (and other) hints in the same batch.
+Enrichment fast path: when **every** task id in a flush batch was enriched and applied, skip the broad detail-prefix invalidation for the *task row* only. Checklist still invalidates from task pending; cycles still invalidate from cycle hints.
 
 ## Configuration and tuning
 

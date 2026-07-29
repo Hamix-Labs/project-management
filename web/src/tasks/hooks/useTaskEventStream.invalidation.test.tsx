@@ -71,13 +71,10 @@ describe("useTaskEventStream invalidation", () => {
     expect(inv).toHaveBeenCalled();
   });
 
-  it("invalidates the task detail subtree on task_cycle_changed so worker-driven activity is live on the open task page", () => {
-    // Prior behaviour kept the detail subtree warm on cycle frames as
-    // an optimisation. Because the agent worker only emits cycle frames
-    // (never task_updated), that left the open task detail page silently
-    // stale: status flips (running → done), new audit events, and
-    // checklist toggles all needed a manual refresh. We now treat cycle
-    // frames as broad task invalidations; this test pins that contract.
+  it("invalidates cycles on task_cycle_changed without checklist or detailRoot", () => {
+    // Cycle frames own the phase ledger only. Checklist completions and
+    // task-row status publish task_updated (ADR-0022); coupling cycle
+    // hints to checklist caused premature partial criteria refetches.
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const inv = vi.spyOn(qc, "invalidateQueries");
 
@@ -101,18 +98,16 @@ describe("useTaskEventStream invalidation", () => {
 
     const calls = inv.mock.calls.map((c) => c[0]);
     expect(calls).toContainEqual({ queryKey: ["tasks", "list"] });
-    expect(calls).toContainEqual({
+    expect(calls).not.toContainEqual({
       queryKey: ["tasks", "detail"],
     });
     expect(calls).toContainEqual({
       queryKey: taskQueryKeys.commits("task-1"),
     });
-    // Cycle hints also invalidate cycles + checklist siblings so agent
-    // runs stay coherent even when enrichment later skips detailRoot.
     expect(calls).toContainEqual({
       queryKey: taskQueryKeys.cycles("task-1"),
     });
-    expect(calls).toContainEqual({
+    expect(calls).not.toContainEqual({
       queryKey: taskQueryKeys.checklist("task-1"),
     });
   });
