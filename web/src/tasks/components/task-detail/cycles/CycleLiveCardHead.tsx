@@ -1,7 +1,4 @@
-import {
-  cycleStatusFillClass,
-  cycleStatusLabel,
-} from "@/tasks/cycleDisplay/cyclesViewModel";
+import { CycleStatusBadge } from "@/components/task-status";
 import type { CycleStatus } from "@/types/cycle";
 
 type CycleLiveCardHeadProps = {
@@ -13,7 +10,7 @@ type CycleLiveCardHeadProps = {
 };
 
 /**
- * Live card header: ping + Live + status pill on the left;
+ * Live card header: ping + Live + status badge on the left;
  * optional phase badge + elapsed on the right.
  */
 export function CycleLiveCardHead({
@@ -31,12 +28,10 @@ export function CycleLiveCardHead({
           <span className="cycle-live-dot" />
         </span>
         <span className="task-cycle-ticker-eyebrow">Live</span>
-        <span
-          className={`cell-pill ${cycleStatusFillClass(cycleStatus)}`}
+        <CycleStatusBadge
+          status={cycleStatus}
           data-testid="task-cycle-ticker-status"
-        >
-          {cycleStatusLabel(cycleStatus)}
-        </span>
+        />
       </div>
       {showPhase ? (
         <div
