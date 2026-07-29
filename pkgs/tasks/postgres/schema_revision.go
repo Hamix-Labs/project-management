@@ -82,7 +82,7 @@ import (
 // verify is one-shot; operators no longer configure retry loops or chat mode.
 //
 // Rev 25: app_settings.agent_task_parallelism — max parallel tasks across
-// different worktrees (replaces HAMIX_AGENT_WORKER_CONCURRENCY env).
+// different worktrees (default 8; replaces HAMIX_AGENT_WORKER_CONCURRENCY env).
 const SchemaRevision = 25
 
 const schemaMetaRowID = 1

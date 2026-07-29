@@ -69,7 +69,7 @@ See [ADR-0081](../adr/ADR-0081-hamix-managed-worktrees.md), [ADR-0040](../adr/AD
 
 - Idle reasons: `no_repository_registered`, `all_worktrees_invalid`, `paused_by_operator`.
 - Pre-run: per-worktree gate (`WorktreeGate`); refuse `is_main` / default branch; optional HEAD verify — no checkout at pickup.
-- Pool: N queue consumers share one `MemoryQueue` (`app_settings.agent_task_parallelism`, default 4). Busy worktrees defer pickup via `TryLock` (~5s).
+- Pool: N queue consumers share one `MemoryQueue` (`app_settings.agent_task_parallelism`, default 8). Busy worktrees defer pickup via `TryLock` (~5s).
 
 ### Known limits (not full process isolation)
 

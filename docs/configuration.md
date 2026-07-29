@@ -118,7 +118,7 @@ Singleton row in Postgres (CHECK enforces `id=1`). AutoMigrate creates the table
 | `cursor_model` | string | `""` | Optional Cursor model forwarded to the execute runner. Empty = omit the model flag (Cursor uses account default). |
 | `verify_model` | string | `""` | Optional Cursor `--model` for PhaseVerify. Empty inherits execute effective model (task pin, else `cursor_model`). |
 | `max_run_duration_seconds` | int (≥0) | `0` | Per-run wall-clock cap on `runner.Request.Timeout`. `0` = no limit. |
-| `agent_task_parallelism` | int (≥1) | `4` | Max tasks that may run at once across **different** worktrees (`pkgs/agents/worker.Pool` slot count). Same worktree stays sequential via `WorktreeGate`. Settings → Phases → **Max parallel tasks**. See [domain/agent-queue.md](domain/agent-queue.md) and [ADR-0039](adr/ADR-0039-fixed-worktree-branch.md). |
+| `agent_task_parallelism` | int (≥1) | `8` | Max tasks that may run at once across **different** worktrees (`pkgs/agents/worker.Pool` slot count). Same worktree stays sequential via `WorktreeGate`. Settings → Phases → **Max parallel tasks**. See [domain/agent-queue.md](domain/agent-queue.md) and [ADR-0039](adr/ADR-0039-fixed-worktree-branch.md). |
 | `agent_pickup_delay_seconds` | int (≥0) | `5` | Delay applied to new ready tasks before the worker can dequeue them. `0` disables. |
 | `display_timezone` | string | `""` | IANA timezone for SPA timestamps. Empty = browser auto-detect. Validated via `time.LoadLocation`. |
 | `optimistic_mutations_enabled` | bool | `true` | Always-on compatibility field. |
@@ -177,7 +177,7 @@ The variables below are silently ignored if still present in `.env`. Move the va
 | `HAMIX_AGENT_WORKER_ENABLED` | Deprecated. The agent worker always starts; use the header pause toggle (`agent_paused`) for a runtime stop. |
 | `HAMIX_AGENT_WORKER_CURSOR_BIN` | `app_settings.cursor_bin`. |
 | `HAMIX_AGENT_WORKER_RUN_TIMEOUT` | `app_settings.max_run_duration_seconds` (default `0` = no limit, not 5m). |
-| `HAMIX_AGENT_WORKER_CONCURRENCY` | `app_settings.agent_task_parallelism` (default `4`). Settings → **Max parallel tasks**. |
+| `HAMIX_AGENT_WORKER_CONCURRENCY` | `app_settings.agent_task_parallelism` (default `8`). Settings → **Max parallel tasks**. |
 | `HAMIX_AGENT_WORKER_WORKING_DIR` | Removed — register git repositories on `/repositories`; tasks bind `worktree_id` (branch via `git_worktrees.branch_id`). |
 | `REPO_ROOT` | Removed — same as above ([ADR-0033](./adr/ADR-0033-git-worktrees-and-branches.md)). |
 

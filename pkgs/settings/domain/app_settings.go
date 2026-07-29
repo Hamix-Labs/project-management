@@ -96,7 +96,7 @@ const DefaultAgentPickupDelaySeconds = 5
 
 // DefaultAgentTaskParallelism is the seed value for AgentTaskParallelism
 // (max parallel tasks across different worktrees).
-const DefaultAgentTaskParallelism = 4
+const DefaultAgentTaskParallelism = 8
 
 // DefaultDisplayTimezone is the seed value for DisplayTimezone on first
 // boot. Empty string is the "auto-detect" sentinel: the SPA reads it as

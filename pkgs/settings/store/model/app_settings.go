@@ -15,7 +15,7 @@ type AppSettings struct {
 	CursorModel                string         `gorm:"not null;default:''"`
 	VerifyModel                string         `gorm:"not null;default:''"`
 	MaxRunDurationSeconds      int            `gorm:"not null;default:0;check:chk_app_settings_max_run_duration_seconds,max_run_duration_seconds >= 0"`
-	AgentTaskParallelism       int            `gorm:"not null;default:4;check:chk_app_settings_agent_task_parallelism,agent_task_parallelism >= 1"`
+	AgentTaskParallelism       int            `gorm:"not null;default:8;check:chk_app_settings_agent_task_parallelism,agent_task_parallelism >= 1"`
 	AgentPickupDelaySeconds    int            `gorm:"not null;default:5;check:chk_app_settings_agent_pickup_delay_seconds,agent_pickup_delay_seconds >= 0"`
 	DisplayTimezone            string         `gorm:"not null;default:''"`
 	OptimisticMutationsEnabled bool           `gorm:"not null;default:true"`

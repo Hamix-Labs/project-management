@@ -83,7 +83,7 @@ export function PhasesSettingsSection({
                   type="number"
                   min={1}
                   step={1}
-                  placeholder="4"
+                  placeholder="8"
                   value={form.agentTaskParallelism}
                   onChange={(e) =>
                     onField("agentTaskParallelism", e.target.value)
@@ -101,7 +101,7 @@ export function PhasesSettingsSection({
                 Tasks on the same worktree still run one at a time.
               </p>
               <p className="settings-field-help settings-field-help-meta">
-                Default <code>4</code>
+                Default <code>8</code>
               </p>
             </div>
             {parallelismInvalid ? (

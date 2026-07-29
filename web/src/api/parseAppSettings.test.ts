@@ -6,7 +6,7 @@ const requiredSettings = {
   cursor_bin: "cursor-agent",
   cursor_model: "",
   max_run_duration_seconds: 600,
-  agent_task_parallelism: 4,
+  agent_task_parallelism: 8,
   agent_pickup_delay_seconds: 5,
 };
 

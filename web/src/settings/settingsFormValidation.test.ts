@@ -9,7 +9,7 @@ function form(overrides: Partial<SettingsFormState> = {}): SettingsFormState {
     cursorModel: "",
     verifyModel: "",
     maxRunDurationSeconds: "3600",
-    agentTaskParallelism: "4",
+    agentTaskParallelism: "8",
     agentPickupDelaySeconds: "0",
     displayTimezone: "",
     ...overrides,
