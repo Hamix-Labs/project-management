@@ -47,6 +47,7 @@ export function AttemptDetailLoadedSection({ pageState, cycle }: Props) {
         cycleId={pageState.cycleId}
         cycle={cycle}
         timelineDisplay={timelineDisplay}
+        streamEvents={allStreamEvents}
         filterPhaseSeq={phaseFilter.filterPhaseSeq}
         onSelectPhase={phaseFilter.setFilterPhaseSeq}
         phaseFilterEnabled={timelineDisplay.showPhaseBadge}
