@@ -46,7 +46,6 @@ export function CurrentPhaseTicker({
   return (
     <div className="task-cycle-ticker" data-testid="task-cycle-ticker">
       <CycleLiveCardHead
-        cycleStatus={cycle.status}
         phaseName={
           runningPhase ? phaseLabel(runningPhase.phase) : null
         }
