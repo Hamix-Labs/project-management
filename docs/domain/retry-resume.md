@@ -4,8 +4,8 @@ Operator **Resume from failure** (`resume` retry) queues a **new execution cycle
 
 | | |
 | --- | --- |
-| **Applies to** | `POST /tasks/{id}/retry` with `{ "mode": "resume" }`; `RunWithRetry` → `runResumeRetry`; SPA Resume from failure |
-| **Audience** | Contributors touching retry API, continuation bundle, or task detail retry UI |
+| **Applies to** | `POST /tasks/{id}/retry` with `{ "mode": "resume" }`; `RunWithRetry` → `runResumeRetry` (API/harness; not exposed as an SPA CTA) |
+| **Audience** | Contributors touching retry API or continuation bundle |
 | **Prerequisite** | [resume-continuation.md](./resume-continuation.md) — `ContinuationBundle` assembly |
 
 ## In this article
@@ -35,8 +35,8 @@ Do not conflate these paths — trigger, cycle row, git, and checkpoint differ:
 | Path | Trigger | Cycle row | Git | Checkpoint |
 | --- | --- | --- | --- | --- |
 | **ADR-0006 resume** | Process restart; task still `running` | **Same** open cycle | Keep | Same-cycle `reconstructCheckpoint` → `Harness.Resume` |
-| **Start over** | Operator; task `failed` | **New** (`ParentCycleID`) | Reset to anchor + clean | None — [retry-start-over.md](./retry-start-over.md) |
-| **Resume from failure** | Operator; task `failed` | **New** (`ParentCycleID`) | Keep | Load from **parent** cycle DB rows |
+| **Start over** | Operator API; task `failed` | **New** (`ParentCycleID`) | Reset to anchor + clean | None — [retry-start-over.md](./retry-start-over.md) |
+| **Resume from failure** | Operator API; task `failed` | **New** (`ParentCycleID`) | Keep | Load from **parent** cycle DB rows |
 
 ## Key concepts
 
@@ -66,7 +66,7 @@ sequenceDiagram
   H->>H: runCycleLoop(resume notice, known commits, previouslyPassed)
 ```
 
-1. Operator clicks **Resume from failure**; SPA confirms new attempt with checkpoint carry-forward.
+1. Operator posts `POST /tasks/{id}/retry` with `{ "mode": "resume" }` (checkpoint carry-forward on pickup).
 2. Handler/store path identical to fresh retry except `mode=resume` (see [retry-start-over.md](./retry-start-over.md) for validation rules).
 3. Worker dispatches `RunWithRetry` with consumed intent.
 4. Harness `runResumeRetry`:

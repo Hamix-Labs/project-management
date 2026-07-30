@@ -108,28 +108,6 @@ describe("TaskDetailToolbarActions", () => {
     expect(onPolish).toHaveBeenCalledOnce();
   });
 
-  it("renders Start over and Resume from failure when retry handlers are provided", async () => {
-    const user = userEvent.setup();
-    const onRetryFresh = vi.fn();
-    const onRetryResume = vi.fn();
-    render(
-      <TaskDetailToolbarActions
-        saving={false}
-        onEdit={vi.fn()}
-        onClose={vi.fn()}
-        onRetryFresh={onRetryFresh}
-        onRetryResume={onRetryResume}
-      />,
-    );
-
-    await user.click(screen.getByRole("button", { name: /^start over$/i }));
-    await user.click(
-      screen.getByRole("button", { name: /^resume from failure$/i }),
-    );
-    expect(onRetryFresh).toHaveBeenCalledOnce();
-    expect(onRetryResume).toHaveBeenCalledOnce();
-  });
-
   it("renders Model configuration only when showModelConfig is true", async () => {
     const user = userEvent.setup();
     const onConfigureModel = vi.fn();

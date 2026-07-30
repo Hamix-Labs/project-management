@@ -2,7 +2,7 @@
 
 How the verify phase judges done criteria after execute: claim-only acceptance (`execute_claim`), command-backed LLM verify, git integrity, and one-shot failure ([ADR-0090](../adr/ADR-0090-command-only-verify.md)).
 
-> **Product default (ADR-0090)** — Criteria **without** `verify_commands` are accepted from the execute criteria report (`verified_by=execute_claim`) with no Cursor verify run. Criteria **with** commands run worker checks then a verify LLM that only matches `expected_outcome` to captured output. Each cycle is **one-shot**: one execute, at most one command-verify; any failure terminates the cycle. Operators recover via **Retry** / **Start over** (new cycle).
+> **Product default (ADR-0090)** — Criteria **without** `verify_commands` are accepted from the execute criteria report (`verified_by=execute_claim`) with no Cursor verify run. Criteria **with** commands run worker checks then a verify LLM that only matches `expected_outcome` to captured output. Each cycle is **one-shot**: one execute, at most one command-verify; any failure terminates the cycle. Operators recover via `POST /tasks/{id}/retry` (new cycle).
 
 | | |
 | --- | --- |
@@ -257,7 +257,7 @@ Full reference: [configuration.md](../configuration.md).
 - **Worker-owned evidence** — Shell checks run without relying on execute honesty; results are in the verify prompt.
 - **Execute self-report not trusted** — Gate rejects unclaimed criteria; verify LLM must affirm claimed ones.
 - **Git tamper detection** — Fail-safe: snapshot errors and any working-tree mutation during verify terminate the cycle.
-- **One-shot cycle** — Any verify or gate failure terminates the cycle; operators start a new attempt via Retry / Start over.
+- **One-shot cycle** — Any verify or gate failure terminates the cycle; operators start a new attempt via `POST /tasks/{id}/retry`.
 - **Observable** — Metrics (`hamix_verify_verdict_total`, phase duration); DB verdict mirror; `verification_failed:<ids>` terminate reason.
 - **Inspects real changes** — Same repo root as execute; diff reflects uncommitted work execute produced.
 

@@ -247,13 +247,13 @@ Startup finalization (`FinalizeInterruptedPhases`), reconcile enqueue, and store
 
 ### Operator retry after terminal failure
 
-When a task is `failed`, the SPA offers **Start over** (`fresh`) and **Resume from failure** (`resume`) via `POST /tasks/{id}/retry`. Intent is stored on `tasks.pending_retry` and consumed on worker pickup; the harness runs [`RunWithRetry`](../../pkgs/agents/harness/retry_run.go) instead of plain `Run`.
+When a task is `failed`, operators can queue a new attempt via `POST /tasks/{id}/retry` with `mode` `fresh` (Start over) or `resume` (Resume from failure). The SPA no longer exposes those CTAs; the API and harness paths remain. Intent is stored on `tasks.pending_retry` and consumed on worker pickup; the harness runs [`RunWithRetry`](../../pkgs/agents/harness/retry_run.go) instead of plain `Run`.
 
 | Path | Trigger | Cycle row | Entry |
 | --- | --- | --- | --- |
 | ADR-0006 resume | Process restart; task still `running` | Same open cycle | `Harness.Resume` |
-| Start over | Operator; task `failed` | New (`ParentCycleID`) | `RunWithRetry` fresh |
-| Resume from failure | Operator; task `failed` | New (`ParentCycleID`) | `RunWithRetry` resume |
+| Start over | Operator API; task `failed` | New (`ParentCycleID`) | `RunWithRetry` fresh |
+| Resume from failure | Operator API; task `failed` | New (`ParentCycleID`) | `RunWithRetry` resume |
 
 Deep dives: [retry-start-over.md](./retry-start-over.md), [retry-resume.md](./retry-resume.md). Decision record: [ADR-0015](../adr/ADR-0015-dual-retry-modes.md).
 

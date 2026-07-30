@@ -19,10 +19,6 @@ type Props = {
    */
   onReopen?: () => void;
   reopenPending?: boolean;
-  /** When set, shows retry actions for a failed task (POST /retry). */
-  onRetryFresh?: () => void;
-  onRetryResume?: () => void;
-  retryPending?: boolean;
   /**
    * When set, shows the "Model configuration" action which opens the
    * model-configuration modal (consolidates the failure-recovery hint
@@ -61,9 +57,6 @@ export function TaskDetailToolbarActions({
   closePending = false,
   onReopen,
   reopenPending = false,
-  onRetryFresh,
-  onRetryResume,
-  retryPending,
   onConfigureModel,
   showModelConfig,
   autonomyMode = "hidden",
@@ -101,26 +94,6 @@ export function TaskDetailToolbarActions({
           disabled={saving || approvePending || polishPending}
         >
           Polish
-        </button>
-      ) : null}
-      {onRetryFresh ? (
-        <button
-          type="button"
-          className="task-detail-btn-retry-fresh"
-          onClick={onRetryFresh}
-          disabled={saving || retryPending}
-        >
-          {retryPending ? "Queueing…" : "Start over"}
-        </button>
-      ) : null}
-      {onRetryResume ? (
-        <button
-          type="button"
-          className="task-detail-btn-retry-resume"
-          onClick={onRetryResume}
-          disabled={saving || retryPending}
-        >
-          Resume from failure
         </button>
       ) : null}
       {showAutonomy ? (

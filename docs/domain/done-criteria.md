@@ -157,7 +157,7 @@ sequenceDiagram
 4. **Shell checks** (optional) — For criteria with `verify_commands`, the worker runs commands sequentially in `repo_root`, writing artifacts under `<report_dir>/<cycle_id>/checks/<criterion_id>/`. Failures do not skip LLM verify ([ADR-0012](../adr/ADR-0012-structured-verify-commands.md)).
 5. **Verify phase** — LLM pass (same execute runner) for command-backed criteria that passed the self-claim gate. See [verify-agent.md](./verify-agent.md).
 6. **Integrity check** — Pre/post `git status --porcelain` + `git rev-parse HEAD` on the working dir. Any working-tree change or HEAD movement → `verify_tampered` (terminal, no completions). Non-git repos: check bypassed (logged once at startup).
-7. **Decision** — All pass → [`applyVerifiedCompletions`](../../pkgs/agents/harness/verification.go) + task `done`. Any fail → cycle fails with `verification_failed:<id>,…` (prefix-stable; truncated at 256 chars). One-shot per cycle ([ADR-0090](../adr/ADR-0090-command-only-verify.md)); operators recover via Retry / Start over.
+7. **Decision** — All pass → [`applyVerifiedCompletions`](../../pkgs/agents/harness/verification.go) + task `done`. Any fail → cycle fails with `verification_failed:<id>,…` (prefix-stable; truncated at 256 chars). One-shot per cycle ([ADR-0090](../adr/ADR-0090-command-only-verify.md)); operators recover via `POST /tasks/{id}/retry` (new cycle).
 
 ## Wire contracts
 

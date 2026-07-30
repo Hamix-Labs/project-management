@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { approveTask, patchTask, polishTask, retryTask } from "@/api";
+import { approveTask, patchTask, polishTask } from "@/api";
 import type { ChecklistItemDraft } from "@/types";
 import {
   rumMutationRolledBack,
@@ -15,81 +15,7 @@ import {
   recordOptimisticApplied,
 } from "@/tasks/mutations";
 import type { Task } from "@/types";
-import type { TaskRetryMode } from "../components/dialogs/TaskRetryConfirmDialog";
 import { taskQueryKeys } from "../task-query";
-
-function useTaskDetailRetryMutation(
-  taskId: string,
-  optimisticMutationsEnabled: boolean,
-  onRetryConfirmed: () => void,
-) {
-  const queryClient = useQueryClient();
-
-  return useMutation<
-    unknown,
-    unknown,
-    TaskRetryMode,
-    { prev: Task | undefined; startedAtMs: number; guarded: boolean }
-  >({
-    mutationFn: (mode) => retryTask(taskId, { mode }),
-    onMutate: async () => {
-      const guard = beginGuardedTaskWrite({
-        taskId,
-        optimisticEnabled: optimisticMutationsEnabled,
-        rumKind: "task_retry",
-      });
-      if (!guard.guarded) {
-        return { prev: undefined, startedAtMs: guard.startedAtMs, guarded: false };
-      }
-      await queryClient.cancelQueries({ queryKey: taskQueryKeys.detail(taskId) });
-      const detailKey = taskQueryKeys.detail(taskId);
-      const prev = queryClient.getQueryData<Task>(detailKey);
-      if (prev) {
-        queryClient.setQueryData<Task>(detailKey, { ...prev, status: "ready" });
-      }
-      recordOptimisticApplied("task_retry", guard.startedAtMs);
-      return { prev, startedAtMs: guard.startedAtMs, guarded: true };
-    },
-    onError: (_err, _vars, context) => {
-      if (context?.prev) {
-        queryClient.setQueryData(taskQueryKeys.detail(taskId), context.prev);
-      }
-      if (context) {
-        if (context.prev !== undefined) {
-          rumMutationRolledBack(
-            "task_retry",
-            performance.now() - context.startedAtMs,
-          );
-        }
-        rumMutationSettled(
-          "task_retry",
-          performance.now() - context.startedAtMs,
-          0,
-        );
-      }
-    },
-    onSuccess: async (_data, _vars, context) => {
-      onRetryConfirmed();
-      await invalidateTaskCacheAsync(
-        queryClient,
-        { scope: "listStats" },
-        { scope: "detail", taskId },
-      );
-      if (context) {
-        rumMutationSettled(
-          "task_retry",
-          performance.now() - context.startedAtMs,
-          200,
-        );
-      }
-    },
-    onSettled: (_data, _err, _vars, context) => {
-      if (context?.guarded) {
-        endGuardedTaskWrite(taskId);
-      }
-    },
-  });
-}
 
 function useTaskDetailApproveMutation(
   taskId: string,
@@ -330,18 +256,10 @@ function useTaskDetailAutonomyMutation(
 export function useTaskDetailMutations(taskId: string) {
   const [modelConfigOpen, setModelConfigOpen] = useState(false);
   const [autonomyConfirmOpen, setAutonomyConfirmOpen] = useState(false);
-  const [retryConfirmMode, setRetryConfirmMode] = useState<TaskRetryMode | null>(
-    null,
-  );
   const [approveConfirmOpen, setApproveConfirmOpen] = useState(false);
   const [polishDialogOpen, setPolishDialogOpen] = useState(false);
   const toast = useOptionalToast();
   const { optimisticMutationsEnabled } = useRolloutFlags();
-  const retryMutation = useTaskDetailRetryMutation(
-    taskId,
-    optimisticMutationsEnabled,
-    () => setRetryConfirmMode(null),
-  );
   const approveMutation = useTaskDetailApproveMutation(
     taskId,
     optimisticMutationsEnabled,
@@ -364,13 +282,10 @@ export function useTaskDetailMutations(taskId: string) {
     setModelConfigOpen,
     autonomyConfirmOpen,
     setAutonomyConfirmOpen,
-    retryConfirmMode,
-    setRetryConfirmMode,
     approveConfirmOpen,
     setApproveConfirmOpen,
     polishDialogOpen,
     setPolishDialogOpen,
-    retryMutation,
     approveMutation,
     polishMutation,
     autonomyMutation,

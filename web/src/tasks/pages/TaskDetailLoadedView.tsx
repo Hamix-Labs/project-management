@@ -1,7 +1,6 @@
 import { isUiFeatureOmitted } from "@/launch/omittedFeatures";
 import type { Task } from "@/types";
 import { TaskDetailHeader } from "../components/task-detail";
-import type { TaskRetryMode } from "../components/dialogs/TaskRetryConfirmDialog";
 import { sanitizePromptHtml } from "@/lib/promptFormat";
 import { useTaskDetailMutations } from "../hooks/useTaskDetailMutations";
 import { useTaskDetailScheduling } from "../hooks/useTaskDetailScheduling";
@@ -31,9 +30,6 @@ export type TaskDetailLoadedViewProps = {
   autonomyConfirmOpen: boolean;
   setAutonomyConfirmOpen: (open: boolean) => void;
   autonomyMutation: ReturnType<typeof useTaskDetailMutations>["autonomyMutation"];
-  retryConfirmMode: TaskRetryMode | null;
-  setRetryConfirmMode: (mode: TaskRetryMode | null) => void;
-  retryMutation: ReturnType<typeof useTaskDetailMutations>["retryMutation"];
   approveConfirmOpen: boolean;
   setApproveConfirmOpen: (open: boolean) => void;
   approveMutation: ReturnType<typeof useTaskDetailMutations>["approveMutation"];
@@ -56,9 +52,6 @@ export function TaskDetailLoadedView({
   autonomyConfirmOpen,
   setAutonomyConfirmOpen,
   autonomyMutation,
-  retryConfirmMode,
-  setRetryConfirmMode,
-  retryMutation,
   approveConfirmOpen,
   setApproveConfirmOpen,
   approveMutation,
@@ -82,11 +75,9 @@ export function TaskDetailLoadedView({
         modals={modals}
         autonomyMode={autonomyMode}
         setAutonomyConfirmOpen={setAutonomyConfirmOpen}
-        setRetryConfirmMode={setRetryConfirmMode}
         setApproveConfirmOpen={setApproveConfirmOpen}
         setPolishDialogOpen={setPolishDialogOpen}
         setModelConfigOpen={setModelConfigOpen}
-        retryMutation={retryMutation}
         approveMutation={approveMutation}
         polishMutation={polishMutation}
         autonomyMutation={autonomyMutation}
@@ -100,9 +91,6 @@ export function TaskDetailLoadedView({
         autonomyConfirmOpen={autonomyConfirmOpen}
         setAutonomyConfirmOpen={setAutonomyConfirmOpen}
         autonomyMutation={autonomyMutation}
-        retryConfirmMode={retryConfirmMode}
-        setRetryConfirmMode={setRetryConfirmMode}
-        retryMutation={retryMutation}
         approveConfirmOpen={approveConfirmOpen}
         setApproveConfirmOpen={setApproveConfirmOpen}
         approveMutation={approveMutation}

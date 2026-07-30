@@ -24,8 +24,7 @@
  * override per-component if a specific surface needs larger taps.
  * ==================================================================== */
 
-/* Primary: start over after failure (POST /retry fresh). */
-button.task-detail-btn-retry-fresh,
+/* Primary: approve while in review (POST /approve). */
 button.task-detail-btn-approve {
   display: inline-flex;
   align-items: center;
@@ -45,7 +44,6 @@ button.task-detail-btn-approve {
     transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-normal) var(--ease-out);
 }
 
-button.task-detail-btn-retry-fresh:not(:disabled):hover,
 button.task-detail-btn-approve:not(:disabled):hover {
   background: var(--brand-hover);
   filter: none;
@@ -53,26 +51,22 @@ button.task-detail-btn-approve:not(:disabled):hover {
   box-shadow: var(--shadow-md);
 }
 
-button.task-detail-btn-retry-fresh:not(:disabled):active,
 button.task-detail-btn-approve:not(:disabled):active {
   transform: scale(0.98);
   box-shadow: var(--shadow-sm);
 }
 
-button.task-detail-btn-retry-fresh:focus-visible,
 button.task-detail-btn-approve:focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px var(--brand-muted), var(--shadow-sm);
 }
 
-button.task-detail-btn-retry-fresh:disabled,
 button.task-detail-btn-approve:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
 
-/* Secondary: resume from parent checkpoint after failure (POST /retry resume). */
-button.task-detail-btn-retry-resume,
+/* Secondary: polish while in review (POST /polish). */
 button.task-detail-btn-polish {
   display: inline-flex;
   align-items: center;
@@ -94,25 +88,21 @@ button.task-detail-btn-polish {
     color var(--duration-normal) var(--ease-out);
 }
 
-button.task-detail-btn-retry-resume:not(:disabled):hover,
 button.task-detail-btn-polish:not(:disabled):hover {
   background: var(--bg-subtle);
   border-color: var(--border-chrome-muted);
 }
 
-button.task-detail-btn-retry-resume:not(:disabled):active,
 button.task-detail-btn-polish:not(:disabled):active {
   transform: scale(0.98);
 }
 
-button.task-detail-btn-retry-resume:focus-visible,
 button.task-detail-btn-polish:focus-visible {
   outline: none;
   border-color: var(--brand-border-focus);
   box-shadow: 0 0 0 3px var(--brand-muted);
 }
 
-button.task-detail-btn-retry-resume:disabled,
 button.task-detail-btn-polish:disabled {
   opacity: 0.45;
   cursor: not-allowed;
@@ -121,7 +111,7 @@ button.task-detail-btn-polish:disabled {
 /* Secondary actions share a single quiet chrome treatment. The redesign
    bar reserves visual weight for the primary CTA — these are flat,
    hairline-bordered, no resting shadow. Hover swaps to the subtle fill
-   so the affordance is obvious without competing with the Start over CTA. */
+   so the affordance is obvious without competing with primary CTAs. */
 button.task-detail-btn-edit {
   display: inline-flex;
   align-items: center;
