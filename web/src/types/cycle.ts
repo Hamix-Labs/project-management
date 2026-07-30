@@ -191,8 +191,11 @@ export type TaskCycleStreamResponse = {
 
 /**
  * Verifier kind for completion / verdict rows. Mirrors
- * `domain.VerifierKind` in the backend. The SPA renders a chip per
- * value so users can tell at-a-glance how a criterion was decided.
+ * `domain.VerifierKind` in the backend. New cycles typically use
+ * `execute_claim` when the harness accepts the execute agent's
+ * claimed_done; `execute_agent` is legacy LLM PhaseVerify judgement.
+ * The SPA renders a chip per value so users can tell at-a-glance how
+ * a criterion was decided.
  */
 export const VERIFIER_KINDS = [
   "agent_self",
@@ -228,10 +231,11 @@ export type CycleCriteriaReport = {
 
 /**
  * One row from `GET /tasks/{id}/cycles/{cycleId}/verdicts.verify_reports`.
- * Records the verify phase's verdict for one criterion in one retry
- * attempt. `verifier_kind` distinguishes deterministic_check (cheap),
- * execute_agent (LLM judgement), and agent_self (the agent did not
- * claim done).
+ * Records the harness verdict for one criterion in one retry attempt.
+ * New cycles accept execute-agent `claimed_done` as `execute_claim`
+ * (no separate PhaseVerify Cursor). `verifier_kind` also covers
+ * `execute_agent` (legacy LLM verify judgement), `deterministic_check`,
+ * and `agent_self` (the agent did not claim done).
  */
 export type CycleVerifyReport = {
   id: string;

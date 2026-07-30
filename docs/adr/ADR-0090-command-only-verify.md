@@ -1,7 +1,7 @@
 # ADR-0090: Command-only verify and execute_claim
 
 **Date:** 2026-07-28  
-**Status:** Accepted  
+**Status:** Superseded by [ADR-0091](./ADR-0091-execute-owns-verify-commands.md)  
 **Deciders:** Backend / agent maintainers
 
 ## Context

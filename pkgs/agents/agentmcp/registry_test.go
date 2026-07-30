@@ -8,7 +8,7 @@ import (
 func TestDefaultTools_andNewServer(t *testing.T) {
 	t.Parallel()
 	tools := DefaultTools()
-	if len(tools) != 2 {
+	if len(tools) != 1 {
 		t.Fatalf("tools=%d", len(tools))
 	}
 	names := map[string]bool{}
@@ -21,7 +21,7 @@ func TestDefaultTools_andNewServer(t *testing.T) {
 			t.Fatal("empty description")
 		}
 	}
-	if !names[ToolSubmitCriteria] || !names[ToolSubmitVerify] {
+	if !names[ToolSubmitCriteria] {
 		t.Fatalf("names=%v", names)
 	}
 	sess := &Session{
@@ -37,7 +37,7 @@ func TestDefaultTools_andNewServer(t *testing.T) {
 	}
 	reg := NewRegistry()
 	reg.Add(DefaultTools()...)
-	if len(reg.tools) != 2 {
+	if len(reg.tools) != 1 {
 		t.Fatalf("reg=%d", len(reg.tools))
 	}
 }
@@ -61,14 +61,5 @@ func TestLoadBind_rejectsBadPhase(t *testing.T) {
 	}
 	if _, err := LoadBind(path); err == nil {
 		t.Fatal("expected invalid phase")
-	}
-}
-
-func TestSubmitVerify_wrongPhase(t *testing.T) {
-	t.Parallel()
-	sess := &Session{Phase: PhaseExecute, ActiveCriterionIDs: map[string]struct{}{"a": {}}}
-	_, err := submitVerify(sess, submitVerifyInput{})
-	if err == nil {
-		t.Fatal("expected error")
 	}
 }

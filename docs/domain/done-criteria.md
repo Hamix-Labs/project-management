@@ -51,10 +51,9 @@ Schema tables and HTTP contracts remain authoritative in [data-model.md](../data
 | Term | Definition |
 | --- | --- |
 | **Done criterion** | A row in `task_checklist_items` with stable `id` and `text`. |
-| **Verify command** | Optional shell check in `task_checklist_item_commands`, run by the worker before LLM verify. |
-| **Self-claim** | Execute agent assertion (`claimed_done`) in `criteria-report.json`. Not final acceptance. |
-| **Verify verdict** | Execute agent judgment (`verified`) in `verify-report.json` during `PhaseVerify` for command-backed criteria. Sole authority for `verified_by=execute_agent`. |
-| **Execute claim** | Harness acceptance of `claimed_done: true` for criteria without `verify_commands`; `verified_by=execute_claim` ([ADR-0090](../adr/ADR-0090-command-only-verify.md)). |
+| **Verify command** | Optional shell check on a criterion; listed in the execute prompt so the agent can self-check before claiming ([ADR-0091](../adr/ADR-0091-execute-owns-verify-commands.md)). |
+| **Self-claim** | Execute agent assertion (`claimed_done`) in `criteria-report.json`. Accepted as final by the harness (`execute_claim`) when true. |
+| **Execute claim** | Harness acceptance of `claimed_done: true` for any criterion; `verified_by=execute_claim`. |
 | **Completion ledger** | `task_checklist_completions` rows written only when the execution cycle terminates successfully. |
 | **Cross-cycle locked pass** | Criterion verified on a parent cycle; carried via operator **Resume from failure** and omitted from re-verify on the child attempt. |
 

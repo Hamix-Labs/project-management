@@ -10,16 +10,13 @@ const failedReasonPrefix = "verification_failed"
 // FailedReasonPrefix is the stable terminate_reason prefix for verification failures.
 const FailedReasonPrefix = failedReasonPrefix
 
-// Snapshot captures verify settings and checklist criteria for one task run.
+// Snapshot captures checklist criteria for one task run.
 type Snapshot struct {
 	Enabled  bool
 	Criteria []checklistcontract.ChecklistVerifyItem
-	// VerifyModel is the optional settings pin for PhaseVerify (--model).
-	// Empty means inherit task.CursorModel / execute runner default.
-	VerifyModel string
 }
 
-// Verdict is the harness-internal outcome for one criterion after verify work.
+// Verdict is the harness-internal outcome for one criterion after claim acceptance.
 type Verdict struct {
 	ID        string
 	Passed    bool
@@ -28,9 +25,8 @@ type Verdict struct {
 	Reasoning string
 }
 
-// TamperedError is returned when post-verify integrity detects unauthorized
-// working-tree changes. Terminal for the cycle — callers use errors.As and
-// map to verify_tampered terminate reason.
+// TamperedError is retained for resume/error typing compatibility. Claim-only
+// acceptance no longer runs verify-phase integrity checks.
 type TamperedError struct {
 	Reason string
 }

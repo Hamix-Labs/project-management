@@ -116,15 +116,15 @@ Singleton row in Postgres (CHECK enforces `id=1`). AutoMigrate creates the table
 | `repo_root` | string | `""` | Absolute path to the workspace the worker and `/repo/*` operate against. Set from Settings → **Agent workspace** → **Choose project folder** (stored as the absolute path taskapi sees). **Empty = not configured**: supervisor stays idle, repo routes respond `409 repo_root_not_configured`, `@`-mention validation is skipped. See [domain/workspace-repo.md](domain/workspace-repo.md). |
 | `cursor_bin` | string | `""` | Cursor CLI binary path. Empty = `PATH` lookup of `cursor`. Absolute paths pin a build. |
 | `cursor_model` | string | `""` | Optional Cursor model forwarded to the execute runner. Empty = omit the model flag (Cursor uses account default). |
-| `verify_model` | string | `""` | Optional Cursor `--model` for PhaseVerify. Empty inherits execute effective model (task pin, else `cursor_model`). |
+| `verify_model` | string | `""` | **Unused for new cycles** (API compatibility). Formerly pinned Cursor `--model` for PhaseVerify ([ADR-0091](adr/ADR-0091-execute-owns-verify-commands.md)). |
 | `max_run_duration_seconds` | int (≥0) | `0` | Per-run wall-clock cap on `runner.Request.Timeout`. `0` = no limit. |
 | `agent_task_parallelism` | int (≥1) | `150` | Max tasks that may run at once across **different** worktrees (`pkgs/agents/worker.Pool` slot count). Same worktree stays sequential via `WorktreeGate`. Settings → Phases → **Max parallel tasks**. See [domain/agent-queue.md](domain/agent-queue.md) and [ADR-0039](adr/ADR-0039-fixed-worktree-branch.md). |
 | `agent_pickup_delay_seconds` | int (≥0) | `5` | Delay applied to new ready tasks before the worker can dequeue them. `0` disables. |
 | `display_timezone` | string | `""` | IANA timezone for SPA timestamps. Empty = browser auto-detect. Validated via `time.LoadLocation`. |
 | `optimistic_mutations_enabled` | bool | `true` | Always-on compatibility field. |
 | `sse_replay_enabled` | bool | `true` | Always-on compatibility field. |
-| `cursor_session_resume_enabled` | bool | `true` | When `false`, every `runner.Run` uses a fresh Cursor chat and full prompt compose (pre-ADR-0031 behavior). See [cursor-session-resume.md](domain/cursor-session-resume.md). PhaseVerify always resumes the execute session when enabled ([ADR-0090](adr/ADR-0090-command-only-verify.md)). |
-| `agent_mcp_enabled` | bool | `true` | When `true` (default), execute/verify report submit goes through Hamix agent MCP tools with receipt enforcement. Set `false` only as an emergency kill-switch to restore legacy freeform report Write. See [agent-mcp.md](domain/agent-mcp.md). |
+| `cursor_session_resume_enabled` | bool | `true` | When `false`, every `runner.Run` uses a fresh Cursor chat and full prompt compose (pre-ADR-0031 behavior). See [cursor-session-resume.md](domain/cursor-session-resume.md). |
+| `agent_mcp_enabled` | bool | `true` | When `true` (default), execute criteria report submit goes through Hamix agent MCP (`hamix.submit_criteria_report`) with receipt enforcement. Set `false` only as an emergency kill-switch to restore legacy freeform report Write. See [agent-mcp.md](domain/agent-mcp.md). |
 | `updated_at` | RFC3339 (response only) | server clock | Last successful upsert. SPA shows "last changed N ago". |
 
 > **Note** — Execute-phase git commits are **always required** when `repo_root` is a git worktree (clean tree + indexed ancestry before verify). The former `agent_commit_execute_work` toggle and legacy cycle markers message markers were removed in [ADR-0014](adr/ADR-0014-cycle-commit-tracking.md). See [domain/cycle-commits.md](domain/cycle-commits.md).

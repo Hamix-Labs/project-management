@@ -5,6 +5,31 @@ import (
 	"testing"
 )
 
+func TestInjectCriteria_RendersVerifyCommands(t *testing.T) {
+	t.Parallel()
+	items := []ChecklistItem{{
+		ID:   "c1",
+		Text: "tests pass",
+		Commands: []ChecklistCommand{{
+			Command:         "go test ./...",
+			ExpectedOutcome: "all packages pass",
+		}},
+	}}
+	out := InjectCriteria("base", items, "/tmp/report.json", nil, true)
+	if !strings.Contains(out, "go test ./...") {
+		t.Fatalf("missing command: %s", out)
+	}
+	if !strings.Contains(out, "Expected outcome: all packages pass") {
+		t.Fatalf("missing expected outcome: %s", out)
+	}
+	if !strings.Contains(out, "run those commands in the worktree") {
+		t.Fatalf("missing self-check instruction: %s", out)
+	}
+	if strings.Contains(out, "checked later") {
+		t.Fatalf("must not mention worker later-check: %s", out)
+	}
+}
+
 func TestInjectCriteria_ToolOnly_OmitsPathAndSchema(t *testing.T) {
 	t.Parallel()
 	items := []ChecklistItem{{ID: "a", Text: "do a"}}

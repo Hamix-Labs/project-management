@@ -30,14 +30,6 @@ type CriterionFailure struct {
 	Verifier  string
 }
 
-// CommandEvidenceLine is a compact command-run summary for verify recovery deltas.
-type CommandEvidenceLine struct {
-	CriterionID string
-	Command     string
-	ExitCode    int
-	Preview     string
-}
-
 // RecoveryContext carries harness state into delta-only stdin prompts (ADR-0031).
 type RecoveryContext struct {
 	Kind       RecoveryKind
@@ -46,19 +38,15 @@ type RecoveryContext struct {
 	AttemptSeq int64
 	ReportPath string
 
-	FailedCriteria       []CriterionFailure
-	LockedCriteria       []string
-	ReportParseErr       string
-	ExpectedIDs          []string
-	CommandEvidenceDelta []CommandEvidenceLine
-	ScopeFiles           []string
-	FailureClass         string
-	FailureReason        string
-	InterruptedPhase     cyclesdomain.Phase
-	GitPorcelain         string
-	// VerifyContract is the shared verify-report artifact body for PhaseVerify
-	// resume (same path/schema/criteria as fresh BuildVerifyPrompt).
-	VerifyContract VerifyReportContract
+	FailedCriteria   []CriterionFailure
+	LockedCriteria   []string
+	ReportParseErr   string
+	ExpectedIDs      []string
+	ScopeFiles       []string
+	FailureClass     string
+	FailureReason    string
+	InterruptedPhase cyclesdomain.Phase
+	GitPorcelain     string
 	// ToolOnly selects MCP submit instructions (default) vs legacy Write.
 	ToolOnly bool
 	// Polish drives RecoveryHumanPolish deltas (ComposePolishDirective).
@@ -78,14 +66,6 @@ func ComposeRecoveryDelta(ctx RecoveryContext) string {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "prompt.ComposeRecoveryDelta",
 		"kind", string(ctx.Kind), "phase", string(ctx.Phase))
 	var b strings.Builder
-	if ctx.Phase == cyclesdomain.PhaseVerify {
-		composeVerifyRecoveryDelta(&b, ctx)
-		// Do not truncate verify stdin: the verify-report contract must stay intact.
-		out := b.String()
-		slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "prompt.ComposeRecoveryDelta.done",
-			"recovery_hint_kind", string(ctx.Kind), "recovery_hint_bytes", len(out))
-		return out
-	}
 	composeExecuteRecoveryDelta(&b, ctx)
 	out := truncateRecoveryBytes(b.String(), recoveryMaxTotalBytes)
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "prompt.ComposeRecoveryDelta.done",
@@ -190,53 +170,6 @@ func composeHumanPolishRecoveryDelta(b *strings.Builder, ctx RecoveryContext) {
 		b.WriteString("### Artifacts\n\n")
 		fmt.Fprintf(b, "- criteria-report.json: `%s` (schema v1, claimed_done + evidence per active id)\n", ctx.ReportPath)
 	}
-}
-
-//funclogmeasure:skip category=hot-path reason="Pure string builder; ComposeRecoveryDelta logs byte metrics."
-func composeVerifyRecoveryDelta(b *strings.Builder, ctx RecoveryContext) {
-	fmt.Fprintf(b, recoverySectionContinuation+"\n\n", ctx.AttemptSeq)
-	b.WriteString("You are continuing the same Cursor session after execute. Now verify. Do not modify source files.\n\n")
-	b.WriteString("### What changed\n\n")
-	switch ctx.Kind {
-	case RecoveryVerifyInfra:
-		b.WriteString("Execute finished for this cycle. For each command-backed criterion, judge whether expected_outcome matches the captured shell output below.\n\n")
-		formatCommandEvidenceDelta(b, ctx.CommandEvidenceDelta)
-	default:
-		b.WriteString("Continue verification for this cycle.\n\n")
-	}
-	if len(ctx.FailedCriteria) > 0 {
-		b.WriteString(FormatVerifyFailuresStructured(ctx.FailedCriteria))
-	}
-	b.WriteString("### Do this next\n\n")
-	b.WriteString("1. Re-evaluate active criteria and write the verify report only.\n\n")
-	if len(ctx.LockedCriteria) > 0 {
-		b.WriteString("### Do not\n\n")
-		b.WriteString("- Re-evaluate locked criteria: ")
-		b.WriteString(strings.Join(ctx.LockedCriteria, ", "))
-		b.WriteString("\n\n")
-	}
-	contract := ctx.VerifyContract
-	if strings.TrimSpace(contract.ReportPath) == "" && strings.TrimSpace(ctx.ReportPath) != "" {
-		contract.ReportPath = ctx.ReportPath
-	}
-	if strings.TrimSpace(contract.ReportPath) != "" || len(contract.Criteria) > 0 {
-		b.WriteString(FormatVerifyReportContract(contract))
-	}
-}
-
-//funclogmeasure:skip category=hot-path reason="Pure string builder; ComposeRecoveryDelta logs byte metrics."
-func formatCommandEvidenceDelta(b *strings.Builder, lines []CommandEvidenceLine) {
-	if len(lines) == 0 {
-		return
-	}
-	b.WriteString("### New command evidence\n\n")
-	for _, ev := range lines {
-		fmt.Fprintf(b, "- [%s] `%s` exit=%d\n", ev.CriterionID, ev.Command, ev.ExitCode)
-		if p := strings.TrimSpace(ev.Preview); p != "" {
-			fmt.Fprintf(b, "  ```\n%s\n  ```\n", truncateRecoveryRunes(p, 512))
-		}
-	}
-	b.WriteString("\n")
 }
 
 // FormatVerifyFailuresStructured renders per-criterion failure blocks for resume deltas.

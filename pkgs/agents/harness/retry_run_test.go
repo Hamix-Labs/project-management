@@ -211,7 +211,7 @@ func TestSeedCrossCycleExecuteFromParent_recordsSucceededExecute(t *testing.T) {
 	}
 }
 
-// EC-10 (docs/domain/harness.md): cross-cycle verify-only resume skips execute.
+// Cross-cycle resume that skips execute accepts mirrored claims without a verify Cursor run.
 func TestVerifyOnlyCrossCycleResume_runCycleLoopSkipsRunnerExecute(t *testing.T) {
 	workDir := t.TempDir()
 	gittest.Init(t, workDir)
@@ -288,7 +288,6 @@ func TestVerifyOnlyCrossCycleResume_runCycleLoopSkipsRunnerExecute(t *testing.T)
 	}
 
 	r := runnerfake.New()
-	r.Script(tsk.ID, cyclesdomain.PhaseVerify, runner.NewResult(cyclesdomain.PhaseStatusSucceeded, "ok", nil, ""))
 	h := New(st, r, Options{
 		WorkingDir: workDir,
 		ReportDir:  reportDir,
@@ -311,7 +310,6 @@ func TestVerifyOnlyCrossCycleResume_runCycleLoopSkipsRunnerExecute(t *testing.T)
 	if err := h.mirrorParentCriteriaForVerifyOnly(ctx, child.ID, parent.ID); err != nil {
 		t.Fatal(err)
 	}
-	writeVerifyReportForTest(t, reportDir, child.ID, []string{item.ID})
 	snap, err := h.loadVerificationSnapshot(ctx, tsk)
 	if err != nil {
 		t.Fatal(err)
@@ -322,16 +320,15 @@ func TestVerifyOnlyCrossCycleResume_runCycleLoopSkipsRunnerExecute(t *testing.T)
 		continuation:     cp.Continuation,
 	})
 
-	for _, call := range r.Calls() {
-		if call.Phase == cyclesdomain.PhaseExecute {
-			t.Fatalf("verify-only resume must skip execute runner; got %+v", call)
-		}
+	if len(r.Calls()) != 0 {
+		t.Fatalf("claim acceptance must not invoke runner; calls=%+v", r.Calls())
 	}
-	if len(r.Calls()) == 0 {
-		t.Fatal("expected verify runner call")
+	got, err := st.Get(ctx, tsk.ID)
+	if err != nil {
+		t.Fatal(err)
 	}
-	if got := r.Calls()[0].ResumeSessionID; got != parentExecSession {
-		t.Fatalf("verify ResumeSessionID = %q, want parent execute session %q", got, parentExecSession)
+	if got.Status != taskcoredomain.StatusReview {
+		t.Fatalf("status=%s want review", got.Status)
 	}
 }
 

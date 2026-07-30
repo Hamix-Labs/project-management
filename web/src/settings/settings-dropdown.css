@@ -327,20 +327,6 @@
   );
 }
 
-.settings-phase-panel[data-phase="verify"] {
-  --settings-phase-tint: var(--success);
-  --settings-phase-tint-soft: color-mix(
-    in srgb,
-    var(--success) 12%,
-    transparent
-  );
-  --settings-phase-tint-border: color-mix(
-    in srgb,
-    var(--success) 22%,
-    var(--border-hairline)
-  );
-}
-
 @media (hover: hover) {
   .settings-phase-panel:hover:not(:has(.settings-dropdown-shell--open)) {
     border-color: var(--border-soft);
@@ -420,40 +406,5 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-tertiary);
-}
-
-/*
- * Flow connector between Execute and Verify panels — a short
- * vertical line, the word "then", and a downward chevron, all
- * centred under the Execute panel. This is what turns "two cards"
- * into "a sequence" visually. Decorative; the screen-reader
- * sequence is preserved by section order.
- */
-.settings-phase-flow {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 0;
-  color: var(--text-tertiary);
-}
-
-.settings-phase-flow-line {
-  width: 1px;
-  height: 14px;
-  background: currentColor;
-  opacity: 0.55;
-}
-
-.settings-phase-flow-label {
-  font-size: var(--text-xs);
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.settings-phase-flow-icon {
-  display: block;
-  opacity: 0.7;
 }
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  agentProgressKindDescriptor,
   agentProgressKindLabel,
   agentProgressMessage,
   formatAgentProgressElapsed,
@@ -37,6 +38,22 @@ describe("agentProgressDisplay", () => {
     "agentProgressKindLabel(%s, %s, %s) → %s",
     (kind, subtype, tool, expected) => {
       expect(agentProgressKindLabel(kind, subtype, tool)).toBe(expected);
+    },
+  );
+
+  it.each([
+    [
+      "started",
+      "Execute agent is running a checklist verify command",
+    ],
+    ["completed", "Execute agent verify command finished"],
+    ["failed", "Execute agent verify command failed"],
+  ] as const)(
+    "verify_command title for subtype %s names the execute agent",
+    (subtype, title) => {
+      expect(
+        agentProgressKindDescriptor("tool_call", subtype, "verify_command").title,
+      ).toBe(title);
     },
   );
 

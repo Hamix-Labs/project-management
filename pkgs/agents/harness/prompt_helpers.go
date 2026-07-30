@@ -14,7 +14,14 @@ func checklistItemsForPrompt(items []checklistcontract.ChecklistVerifyItem) []pr
 	}
 	out := make([]prompt.ChecklistItem, len(items))
 	for i, it := range items {
-		out[i] = prompt.ChecklistItem{ID: it.ID, Text: it.Text}
+		cmds := make([]prompt.ChecklistCommand, 0, len(it.VerifyCommands))
+		for _, c := range it.VerifyCommands {
+			cmds = append(cmds, prompt.ChecklistCommand{
+				Command:         c.Command,
+				ExpectedOutcome: c.ExpectedOutcome,
+			})
+		}
+		out[i] = prompt.ChecklistItem{ID: it.ID, Text: it.Text, Commands: cmds}
 	}
 	return out
 }

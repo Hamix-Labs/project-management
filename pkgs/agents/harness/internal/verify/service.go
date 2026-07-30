@@ -8,26 +8,22 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/git"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
-	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
-// Service runs the verify pipeline stages against explicit dependencies.
+// Service runs claim-only criteria acceptance against explicit dependencies.
 type Service struct {
-	store           contract.Store
-	runner          runner.Runner
-	reportDir       string
-	workingDir      string
-	git             *git.Service
-	clock           func() time.Time
-	hooks           Hooks
-	toolOnlyReports bool
+	store      contract.Store
+	reportDir  string
+	workingDir string
+	git        *git.Service
+	clock      func() time.Time
+	hooks      Hooks
 }
 
 // Deps bundles Service construction inputs from harness root.
 type Deps struct {
 	Store      contract.Store
-	Runner     runner.Runner
+	Runner     runner.Runner // retained for Deps compatibility; unused
 	ReportDir  string
 	WorkingDir string
 	Git        *git.Service
@@ -35,8 +31,7 @@ type Deps struct {
 	Hooks      Hooks
 }
 
-// NewService constructs a verify Service. PhaseVerify always uses the execute
-// runner (ADR-0084).
+// NewService constructs a verify Service (claim-only acceptance gate).
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func NewService(deps Deps) *Service {
@@ -46,7 +41,6 @@ func NewService(deps Deps) *Service {
 	}
 	return &Service{
 		store:      deps.Store,
-		runner:     deps.Runner,
 		reportDir:  deps.ReportDir,
 		workingDir: deps.WorkingDir,
 		git:        deps.Git,
@@ -63,34 +57,6 @@ func (s *Service) SetReportDir(dir string) {
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (s *Service) SetWorkingDir(dir string) {
 	s.workingDir = dir
-}
-
-// SetPlanVerifyRun overrides the cursor resume planner for the next verify run.
-//
-//funclogmeasure:skip category=hot-path reason="Setter only; verify pipeline logs at RunPipeline."
-func (s *Service) SetPlanVerifyRun(fn func(context.Context, PlanVerifyRunInput) (VerifyRunPlan, error)) {
-	s.hooks.PlanVerifyRun = fn
-}
-
-// SetPrepareRunnerRequest sets the pre-Run request mutator (agent MCP argv).
-//
-//funclogmeasure:skip category=hot-path reason="Setter only; verify pipeline logs at RunPipeline."
-func (s *Service) SetPrepareRunnerRequest(fn func(context.Context, *runner.Request, *taskcoredomain.Task, *cyclesdomain.TaskCycle) error) {
-	s.hooks.PrepareRunnerRequest = fn
-}
-
-// SetRequireVerifySubmitReceipt sets the tool-only verify receipt gate.
-//
-//funclogmeasure:skip category=hot-path reason="Setter only; verify pipeline logs at RunPipeline."
-func (s *Service) SetRequireVerifySubmitReceipt(fn func(cycleID string) error) {
-	s.hooks.RequireVerifySubmitReceipt = fn
-}
-
-// SetToolOnlyReports selects MCP submit prompt language vs legacy Write.
-//
-//funclogmeasure:skip category=hot-path reason="Setter only; verify pipeline logs at RunPipeline."
-func (s *Service) SetToolOnlyReports(toolOnly bool) {
-	s.toolOnlyReports = toolOnly
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."

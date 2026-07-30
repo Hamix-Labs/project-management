@@ -26,20 +26,20 @@ export function agentProgressKindDescriptor(
       if (subtype === "completed" || subtype === "success" || subtype === "done") {
         return {
           label: "Command done",
-          title: "Worker verify command finished",
+          title: "Execute agent verify command finished",
           tone: "done",
         };
       }
       if (subtype === "failed" || subtype === "error") {
         return {
           label: "Command failed",
-          title: "Worker verify command failed",
+          title: "Execute agent verify command failed",
           tone: "failed",
         };
       }
       return {
         label: "Verify command",
-        title: "Worker is running a checklist verify command",
+        title: "Execute agent is running a checklist verify command",
         tone: "tool",
       };
     }

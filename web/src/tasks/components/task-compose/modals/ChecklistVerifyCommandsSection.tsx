@@ -299,10 +299,11 @@ export function ChecklistVerifyCommandsSection({
       </summary>
       <div className="task-checklist-verify-commands__body">
         <p className="task-checklist-verify-commands__note">
-          Shell commands run in the repo during the verify phase. Default is no
-          timeout — unbounded commands run until the cycle is cancelled. Set an
-          optional per-command timeout when you want a wall-clock kill. Exit code
-          alone does not pass the criterion.
+          Checks the execute agent must run in the repo before claiming done.
+          Default is no timeout — unbounded commands run until the cycle is
+          cancelled. Set an optional per-command timeout when you want a
+          wall-clock kill. Exit code alone does not pass — the agent reports
+          claimed_done with evidence via MCP.
         </p>
         <ChecklistVerifyCommandsTable
           verifyCommands={verifyCommands}

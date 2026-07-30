@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/verify"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
@@ -221,7 +220,7 @@ func (h *Harness) persistSessionID(ctx context.Context, cycleID string, phaseSeq
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by persistProgress."
 func progressStreamSource(ev runner.ProgressEvent) string {
-	if ev.Tool == verify.ProgressToolVerifyCommand || ev.Tool == runner.ProgressToolHarnessSetup {
+	if ev.Tool == runner.ProgressToolHarnessSetup {
 		return "worker"
 	}
 	return "cursor"
