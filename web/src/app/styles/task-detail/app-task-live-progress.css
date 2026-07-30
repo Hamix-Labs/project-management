@@ -51,6 +51,10 @@
   background: var(--surface-2);
 }
 
+.task-cycle-progress-item:hover .task-cycle-progress-icon {
+  background: var(--surface-2);
+}
+
 .task-cycle-progress-icon {
   position: relative;
   z-index: 1;
@@ -61,6 +65,7 @@
   width: 1.25rem;
   height: 1.25rem;
   background: var(--surface-1);
+  transition: background-color var(--duration-normal) var(--ease-default);
 }
 
 .cycle-live-icon {
