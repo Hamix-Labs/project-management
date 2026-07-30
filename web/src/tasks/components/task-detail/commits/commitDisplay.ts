@@ -52,7 +52,7 @@ export function buildGitContextItems(ctx: GitContextFields): GitContextItem[] {
     });
     if (repoNorm !== "") {
       items.push({
-        label: "Repo root",
+        label: "Repo",
         value: pathTail(repo),
         title: repo,
       });

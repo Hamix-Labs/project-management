@@ -48,7 +48,7 @@
   text-wrap: pretty;
 }
 
-/* Git metadata card — Branch / Worktree / Repo root with Copy path + Open in. */
+/* Git metadata card — Branch / Worktree / Repo with Copy path + Open in. */
 .task-detail-git-binding {
   margin-top: 0;
   display: flex;

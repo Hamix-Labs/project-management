@@ -78,17 +78,27 @@
 
 .task-commits-context-item {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 0.35rem;
   margin: 0;
 }
 
 .task-commits-context-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
   margin: 0;
   font-size: var(--text-xs);
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.task-commits-context-icon {
+  width: 0.875rem;
+  height: 0.875rem;
+  flex: 0 0 auto;
   color: var(--text-tertiary);
 }
 
