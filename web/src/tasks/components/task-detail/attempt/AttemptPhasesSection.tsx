@@ -1,13 +1,19 @@
-import type { TaskCycleDetail, TaskCyclePhase } from "@/types";
+import type {
+  TaskCycleDetail,
+  TaskCyclePhase,
+  TaskCycleStreamEvent,
+} from "@/types";
 import { phaseLabel } from "@/tasks/cycleDisplay/cyclesViewModel";
 import type { AttemptTimelineDisplay } from "./attemptTimelineDisplay";
 import { AttemptPhaseList } from "./AttemptPhaseList";
+import { latestAgentReplyByPhase } from "./latestAgentReplyByPhase";
 
 type AttemptPhasesSectionProps = {
   taskId: string;
   cycleId: string;
   cycle: TaskCycleDetail;
   timelineDisplay: AttemptTimelineDisplay;
+  streamEvents: readonly TaskCycleStreamEvent[];
   filterPhaseSeq: number | null;
   onSelectPhase: (seq: number | null) => void;
   phaseFilterEnabled: boolean;
@@ -18,10 +24,13 @@ export function AttemptPhasesSection({
   cycleId,
   cycle,
   timelineDisplay,
+  streamEvents,
   filterPhaseSeq,
   onSelectPhase,
   phaseFilterEnabled,
 }: AttemptPhasesSectionProps) {
+  const agentReplies = latestAgentReplyByPhase(streamEvents, cycle.phases);
+
   return (
     <section
       className="task-attempt-section task-attempt-section--phases"
@@ -44,6 +53,8 @@ export function AttemptPhasesSection({
         cycleId={cycleId}
         cycle={cycle}
         timelineDisplay={timelineDisplay}
+        agentReplies={agentReplies}
+        onViewReplyInActivity={onSelectPhase}
       />
     </section>
   );
