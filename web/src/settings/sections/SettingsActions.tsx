@@ -1,6 +1,7 @@
 export function SettingsActions({
   isDirty,
   maxInvalid,
+  streamIdleInvalid,
   parallelismInvalid,
   pickupInvalid,
   patchPending,
@@ -8,12 +9,14 @@ export function SettingsActions({
 }: {
   isDirty: boolean;
   maxInvalid: boolean;
+  streamIdleInvalid: boolean;
   parallelismInvalid: boolean;
   pickupInvalid: boolean;
   patchPending: boolean;
   onDiscard: () => void;
 }) {
-  const hasInvalid = maxInvalid || parallelismInvalid || pickupInvalid;
+  const hasInvalid =
+    maxInvalid || streamIdleInvalid || parallelismInvalid || pickupInvalid;
   return (
     <div className="settings-actions" data-dirty={isDirty ? "true" : "false"}>
       <div className="settings-actions-status" aria-hidden="true">

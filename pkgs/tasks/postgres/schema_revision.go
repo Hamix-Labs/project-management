@@ -83,7 +83,11 @@ import (
 //
 // Rev 25: app_settings.agent_task_parallelism — max parallel tasks across
 // different worktrees (default 150; replaces HAMIX_AGENT_WORKER_CONCURRENCY env).
-const SchemaRevision = 25
+//
+// Rev 26 (ADR-0091): reintroduce app_settings.stream_idle_stuck_seconds —
+// stdout silence fail-clean (default 900; 0 disables). Orthogonal to
+// max_run_duration_seconds.
+const SchemaRevision = 26
 
 const schemaMetaRowID = 1
 

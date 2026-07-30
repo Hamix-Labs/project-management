@@ -30,6 +30,7 @@ export type SettingsFormState = {
   cursorModel: string;
   verifyModel: string;
   maxRunDurationSeconds: string;
+  streamIdleStuckSeconds: string;
   agentTaskParallelism: string;
   agentPickupDelaySeconds: string;
   displayTimezone: string;
@@ -50,6 +51,7 @@ export function toFormState(s: AppSettings): SettingsFormState {
     cursorModel: s.cursor_model,
     verifyModel: s.verify_model,
     maxRunDurationSeconds: String(s.max_run_duration_seconds),
+    streamIdleStuckSeconds: String(s.stream_idle_stuck_seconds),
     agentTaskParallelism: String(s.agent_task_parallelism),
     agentPickupDelaySeconds: String(s.agent_pickup_delay_seconds),
     displayTimezone: s.display_timezone,
@@ -76,6 +78,10 @@ export function diffPatch(
   const parsedMax = Number.parseInt(form.maxRunDurationSeconds.trim() || "0", 10);
   if (Number.isFinite(parsedMax) && parsedMax !== initial.max_run_duration_seconds) {
     out.max_run_duration_seconds = parsedMax;
+  }
+  const parsedIdle = Number.parseInt(form.streamIdleStuckSeconds.trim() || "0", 10);
+  if (Number.isFinite(parsedIdle) && parsedIdle !== initial.stream_idle_stuck_seconds) {
+    out.stream_idle_stuck_seconds = parsedIdle;
   }
   const parsedParallelism = Number.parseInt(
     form.agentTaskParallelism.trim() || "0",

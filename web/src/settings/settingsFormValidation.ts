@@ -7,6 +7,7 @@ import type { SettingsFormState } from "./settingsForm";
 
 export type SettingsNumericValidation = {
   maxInvalid: boolean;
+  streamIdleInvalid: boolean;
   parallelismInvalid: boolean;
   pickupInvalid: boolean;
 };
@@ -29,6 +30,7 @@ export function parseSettingsNumericValidation(
   if (!form) {
     return {
       maxInvalid: false,
+      streamIdleInvalid: false,
       parallelismInvalid: false,
       pickupInvalid: false,
     };
@@ -40,6 +42,7 @@ export function parseSettingsNumericValidation(
     !Number.isFinite(pickupParsed) || pickupParsed < 0 || pickupParsed > 604800;
   return {
     maxInvalid: parseNonNegativeIntField(form.maxRunDurationSeconds),
+    streamIdleInvalid: parseNonNegativeIntField(form.streamIdleStuckSeconds),
     parallelismInvalid,
     pickupInvalid,
   };

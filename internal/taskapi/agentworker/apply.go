@@ -20,14 +20,15 @@ type applySettingsSnapshot struct {
 }
 
 type effectiveSettingsLog struct {
-	AgentPaused           bool
-	Runner                string
-	CursorBin             string
-	CursorModel           string
-	MaxRunDurationSeconds int
-	RunnerVersion         string
-	Idle                  bool
-	IdleReason            string
+	AgentPaused            bool
+	Runner                 string
+	CursorBin              string
+	CursorModel            string
+	MaxRunDurationSeconds  int
+	StreamIdleStuckSeconds int
+	RunnerVersion          string
+	Idle                   bool
+	IdleReason             string
 }
 
 func (s *Supervisor) applySettings(ctx context.Context, phase string) error {
@@ -85,11 +86,12 @@ func (s *Supervisor) loadApplySettingsSnapshot(ctx context.Context) (*applySetti
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func baseEffectiveSettings(cfg settingsdomain.AppSettings) effectiveSettingsLog {
 	return effectiveSettingsLog{
-		AgentPaused:           cfg.AgentPaused,
-		Runner:                cfg.Runner,
-		CursorBin:             cfg.CursorBin,
-		CursorModel:           cfg.CursorModel,
-		MaxRunDurationSeconds: cfg.MaxRunDurationSeconds,
+		AgentPaused:            cfg.AgentPaused,
+		Runner:                 cfg.Runner,
+		CursorBin:              cfg.CursorBin,
+		CursorModel:            cfg.CursorModel,
+		MaxRunDurationSeconds:  cfg.MaxRunDurationSeconds,
+		StreamIdleStuckSeconds: cfg.StreamIdleStuckSeconds,
 	}
 }
 
@@ -188,7 +190,8 @@ func (s *Supervisor) logEffective(phase string, eff effectiveSettingsLog) {
 		"runner", eff.Runner, "runner_version", eff.RunnerVersion,
 		"cursor_bin", eff.CursorBin,
 		"cursor_model", eff.CursorModel,
-		"max_run_duration_sec", eff.MaxRunDurationSeconds)
+		"max_run_duration_sec", eff.MaxRunDurationSeconds,
+		"stream_idle_stuck_sec", eff.StreamIdleStuckSeconds)
 }
 
 func (s *Supervisor) publishSettingsChanged() {

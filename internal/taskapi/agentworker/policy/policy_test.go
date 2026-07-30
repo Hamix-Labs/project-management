@@ -84,11 +84,12 @@ func TestDecideSchedulingIdleHint(t *testing.T) {
 func TestInstanceMatchesSettings(t *testing.T) {
 	t.Parallel()
 	base := settingsdomain.AppSettings{
-		Runner:                "cursor",
-		CursorBin:             "/bin/cursor",
-		CursorModel:           "gpt",
-		MaxRunDurationSeconds: 600,
-		AgentTaskParallelism:  4,
+		Runner:                 "cursor",
+		CursorBin:              "/bin/cursor",
+		CursorModel:            "gpt",
+		MaxRunDurationSeconds:  600,
+		StreamIdleStuckSeconds: 900,
+		AgentTaskParallelism:   4,
 	}
 	inst := &policy.InstanceSnapshot{
 		Settings:      base,
@@ -106,6 +107,11 @@ func TestInstanceMatchesSettings(t *testing.T) {
 	changedParallel.AgentTaskParallelism = 8
 	if policy.InstanceMatchesSettings(inst, changedParallel, "1.0") {
 		t.Fatal("expected mismatch on agent task parallelism")
+	}
+	changedIdle := base
+	changedIdle.StreamIdleStuckSeconds = 60
+	if policy.InstanceMatchesSettings(inst, changedIdle, "1.0") {
+		t.Fatal("expected mismatch on stream idle stuck seconds")
 	}
 	if policy.InstanceMatchesSettings(inst, base, "2.0") {
 		t.Fatal("expected mismatch on runner version")

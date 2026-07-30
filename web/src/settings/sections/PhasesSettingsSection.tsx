@@ -21,6 +21,7 @@ export function PhasesSettingsSection({
   pickupInvalid,
   parallelismInvalid,
   maxInvalid,
+  streamIdleInvalid,
   cursorModelsQuery,
   modelIdsFromList,
   onField,
@@ -29,6 +30,7 @@ export function PhasesSettingsSection({
   pickupInvalid: boolean;
   parallelismInvalid: boolean;
   maxInvalid: boolean;
+  streamIdleInvalid: boolean;
   cursorModelsQuery: UseQueryResult<ListCursorModelsResult, Error>;
   modelIdsFromList: Set<string>;
   onField: HandleField;
@@ -152,6 +154,42 @@ export function PhasesSettingsSection({
                 </p>
               </div>
               {maxInvalid ? (
+                <p role="alert" className="settings-field-error">
+                  Must be a non-negative integer.
+                </p>
+              ) : null}
+            </div>
+
+            <div id={SECTION_IDS.streamIdle} className="settings-field-block">
+              <label className="settings-field">
+                <span className="settings-field-label">Stream idle timeout</span>
+                <span className="settings-field-input-suffix">
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    value={form.streamIdleStuckSeconds}
+                    onChange={(e) =>
+                      onField("streamIdleStuckSeconds", e.target.value)
+                    }
+                    aria-invalid={streamIdleInvalid}
+                  />
+                  <span className="settings-field-suffix" aria-hidden="true">
+                    seconds
+                  </span>
+                </span>
+              </label>
+              <div className="settings-field-help-block">
+                <p className="settings-field-help">
+                  Cancels the run if the agent emits no stdout for this long
+                  after it has started streaming. Distinct from max execute
+                  duration.
+                </p>
+                <p className="settings-field-help settings-field-help-meta">
+                  Default <code>900</code>; <code>0</code> disables
+                </p>
+              </div>
+              {streamIdleInvalid ? (
                 <p role="alert" className="settings-field-error">
                   Must be a non-negative integer.
                 </p>

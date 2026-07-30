@@ -290,7 +290,7 @@ describe("TaskCyclesPanel live ticker", () => {
 
     const ticker = await screen.findByTestId("task-cycle-ticker");
     expect(await within(ticker).findByTestId("task-cycle-progress-empty")).toHaveTextContent(
-      /Preparing execute/,
+      /Waiting for agent updates/,
     );
 
     act(() => {

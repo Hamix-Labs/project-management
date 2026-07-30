@@ -6,6 +6,7 @@ type ExecuteRunnerOutcome int
 const (
 	ExecuteRunnerOutcomeOK ExecuteRunnerOutcome = iota
 	ExecuteRunnerOutcomeTimeout
+	ExecuteRunnerOutcomeStreamIdle
 	ExecuteRunnerOutcomeNonZeroExit
 	ExecuteRunnerOutcomeInvalidOutput
 	ExecuteRunnerOutcomeError

@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { errorMessage } from "@/lib/errorMessage";
 import { useNow } from "@/shared/useNow";
 import { formatDurationSeconds } from "@/observability";
@@ -8,10 +9,11 @@ import {
 } from "@/tasks/cycleDisplay/cyclesViewModel";
 import type { TaskCycle } from "@/types/cycle";
 import {
+  hydrateAgentRunProgress,
   useAgentRunProgress,
   type AgentRunProgressItem,
 } from "../../../hooks/useAgentRunProgress";
-import { useTaskCycle } from "../../../hooks/useTaskCycles";
+import { useTaskCycle, useTaskCycleStream } from "../../../hooks/useTaskCycles";
 import { formatCycleLineageLabel } from "../../../cycleDisplay/cycleLineage";
 import { CycleLiveCardHead } from "./CycleLiveCardHead";
 import { CycleLiveCardMeta } from "./CycleLiveCardMeta";
@@ -160,6 +162,23 @@ function CurrentPhaseBody({
 }
 
 function idlePendingMessage(items: ReadonlyArray<AgentRunProgressItem>): string {
+  const last = items[items.length - 1];
+  if (last) {
+    const { kind, subtype, tool, message } = last.progress;
+    if (
+      (kind === "tool_call" || kind === "tool") &&
+      subtype !== "completed" &&
+      subtype !== "success" &&
+      subtype !== "done" &&
+      subtype !== "failed" &&
+      subtype !== "error"
+    ) {
+      const toolName = tool?.trim();
+      if (toolName) return `Running ${toolName}…`;
+      if (message?.trim()) return message;
+      return "Tool in progress…";
+    }
+  }
   for (let i = items.length - 1; i >= 0; i -= 1) {
     const entry = items[i];
     if (entry.progress.kind !== "run_state") continue;
@@ -174,7 +193,7 @@ function phaseEmptyMessage(phase: string): string {
   if (phase === "verify") {
     return "Running verify checks…";
   }
-  return "Preparing execute…";
+  return "Waiting for agent updates…";
 }
 
 function PhaseProgress({
@@ -190,6 +209,12 @@ function PhaseProgress({
   phase: string;
   now: number;
 }) {
+  const stream = useTaskCycleStream(taskId, cycleId, { enabled: true });
+  useEffect(() => {
+    if (stream.events.length === 0) return;
+    hydrateAgentRunProgress(taskId, cycleId, phaseSeq, stream.events);
+  }, [taskId, cycleId, phaseSeq, stream.events]);
+
   const items = useAgentRunProgress(taskId, cycleId, phaseSeq);
   return (
     <CycleLiveProgressList
