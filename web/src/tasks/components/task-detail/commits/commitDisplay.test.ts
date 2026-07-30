@@ -37,7 +37,7 @@ describe("commitDisplay", () => {
       openPath: "/workspace/monorepo/apps/web",
       branch: "feature/commits",
     });
-    expect(items.map((i) => i.label)).toEqual(["Branch", "Worktree", "Repo root"]);
+    expect(items.map((i) => i.label)).toEqual(["Branch", "Worktree", "Repo"]);
   });
 
   it("shortSha trims to seven characters", () => {

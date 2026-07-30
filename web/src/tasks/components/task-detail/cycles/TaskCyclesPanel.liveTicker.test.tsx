@@ -65,7 +65,7 @@ describe("TaskCyclesPanel live ticker", () => {
     const ticker = await screen.findByTestId("task-cycle-ticker");
     expect(ticker).not.toHaveAttribute("aria-live");
     expect(within(ticker).getByTestId("task-cycle-ticker-status")).toHaveTextContent(
-      /Running/,
+      /Live/,
     );
     expect(within(ticker).getByText(/Attempt #3/)).toBeInTheDocument();
     // Started 30 s ago at fake-now (11:00:30 - 11:00:00).

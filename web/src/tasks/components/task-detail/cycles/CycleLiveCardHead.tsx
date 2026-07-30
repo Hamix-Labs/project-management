@@ -1,8 +1,4 @@
-import { CycleStatusBadge } from "@/components/task-status";
-import type { CycleStatus } from "@/types/cycle";
-
 type CycleLiveCardHeadProps = {
-  cycleStatus: CycleStatus;
   /** Phase name shown as bordered mono badge when a phase is in flight. */
   phaseName?: string | null;
   /** Formatted phase elapsed (e.g. from formatDurationSeconds). */
@@ -10,11 +6,10 @@ type CycleLiveCardHeadProps = {
 };
 
 /**
- * Live card header: ping + status badge on the left;
+ * Live card header: ping + "Live" on the left;
  * optional phase badge + elapsed on the right.
  */
 export function CycleLiveCardHead({
-  cycleStatus,
   phaseName = null,
   phaseElapsed = null,
 }: CycleLiveCardHeadProps) {
@@ -27,10 +22,12 @@ export function CycleLiveCardHead({
           <span className="cycle-live-dot-ping" />
           <span className="cycle-live-dot" />
         </span>
-        <CycleStatusBadge
-          status={cycleStatus}
+        <span
+          className="task-cycle-ticker-live-label"
           data-testid="task-cycle-ticker-status"
-        />
+        >
+          Live
+        </span>
       </div>
       {showPhase ? (
         <div
