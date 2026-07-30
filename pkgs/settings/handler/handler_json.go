@@ -15,6 +15,7 @@ type settingsResponse struct {
 	CursorModel                string `json:"cursor_model"`
 	VerifyModel                string `json:"verify_model"`
 	MaxRunDurationSeconds      int    `json:"max_run_duration_seconds"`
+	StreamIdleStuckSeconds     int    `json:"stream_idle_stuck_seconds"`
 	AgentTaskParallelism       int    `json:"agent_task_parallelism"`
 	AgentPickupDelaySeconds    int    `json:"agent_pickup_delay_seconds"`
 	DisplayTimezone            string `json:"display_timezone"`
@@ -32,6 +33,7 @@ type settingsPatchBody struct {
 	CursorModel                *string `json:"cursor_model,omitempty"`
 	VerifyModel                *string `json:"verify_model,omitempty"`
 	MaxRunDurationSeconds      *int    `json:"max_run_duration_seconds,omitempty"`
+	StreamIdleStuckSeconds     *int    `json:"stream_idle_stuck_seconds,omitempty"`
 	AgentTaskParallelism       *int    `json:"agent_task_parallelism,omitempty"`
 	AgentPickupDelaySeconds    *int    `json:"agent_pickup_delay_seconds,omitempty"`
 	DisplayTimezone            *string `json:"display_timezone,omitempty"`

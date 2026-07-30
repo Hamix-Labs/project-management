@@ -16,5 +16,14 @@ describe("parseAppSettings", () => {
     expect(settings.runner).toBe("cursor");
     expect(settings.verify_model).toBe("");
     expect(settings.max_run_duration_seconds).toBe(600);
+    expect(settings.stream_idle_stuck_seconds).toBe(900);
+  });
+
+  it("parses explicit stream_idle_stuck_seconds", () => {
+    const settings = parseAppSettings({
+      ...requiredSettings,
+      stream_idle_stuck_seconds: 60,
+    });
+    expect(settings.stream_idle_stuck_seconds).toBe(60);
   });
 });

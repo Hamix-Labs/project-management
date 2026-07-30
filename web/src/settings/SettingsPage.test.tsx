@@ -420,6 +420,18 @@ describe("SettingsPage", () => {
     expect(screen.getByRole("button", { name: /Save changes/ })).toBeDisabled();
   });
 
+  it("rejects negative stream_idle_stuck_seconds", async () => {
+    usePageHandlers();
+    renderPage();
+    const idleInput = await screen.findByLabelText(/Stream idle timeout/);
+    await userEvent.clear(idleInput);
+    await userEvent.type(idleInput, "-1");
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      /non-negative integer/i,
+    );
+    expect(screen.getByRole("button", { name: /Save changes/ })).toBeDisabled();
+  });
+
   it("rejects agent_task_parallelism below 1", async () => {
     usePageHandlers();
     renderPage();

@@ -34,6 +34,9 @@ func TestHTTP_GetSettings_returnsSeededDefaults(t *testing.T) {
 	if resp.MaxRunDurationSeconds != 0 {
 		t.Errorf("MaxRunDurationSeconds=%d, want 0 (no limit)", resp.MaxRunDurationSeconds)
 	}
+	if resp.StreamIdleStuckSeconds != settingsdomain.DefaultStreamIdleStuckSeconds {
+		t.Errorf("StreamIdleStuckSeconds=%d, want %d", resp.StreamIdleStuckSeconds, settingsdomain.DefaultStreamIdleStuckSeconds)
+	}
 	if resp.AgentTaskParallelism != settingsdomain.DefaultAgentTaskParallelism {
 		t.Errorf("AgentTaskParallelism=%d, want %d", resp.AgentTaskParallelism, settingsdomain.DefaultAgentTaskParallelism)
 	}
