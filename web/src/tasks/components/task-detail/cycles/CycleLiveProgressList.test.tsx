@@ -24,11 +24,11 @@ describe("CycleLiveProgressList", () => {
       <CycleLiveProgressList
         items={[]}
         now={NOW}
-        emptyMessage="Preparing execute…"
+        emptyMessage="Waiting for agent updates…"
       />,
     );
     expect(screen.getByTestId("task-cycle-progress-empty")).toHaveTextContent(
-      /Preparing execute/,
+      /Waiting for agent updates/,
     );
   });
 

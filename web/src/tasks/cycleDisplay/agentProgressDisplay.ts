@@ -77,6 +77,13 @@ export function agentProgressKindDescriptor(
     };
   }
   if (kind === "run_state") {
+    if (subtype === "idle_suspicious" || subtype === "idle_kill_pending") {
+      return {
+        label: "Idle warning",
+        title: "Agent stdout has gone silent",
+        tone: "error",
+      };
+    }
     if (
       subtype?.startsWith("setup_") ||
       subtype === "handoff_verify" ||
