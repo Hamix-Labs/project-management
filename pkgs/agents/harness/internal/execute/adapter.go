@@ -19,6 +19,8 @@ func MapRunnerOutcome(err error) orchestration.ExecuteRunnerOutcome {
 	switch {
 	case errors.Is(err, runner.ErrTimeout):
 		return orchestration.ExecuteRunnerOutcomeTimeout
+	case errors.Is(err, runner.ErrStale):
+		return orchestration.ExecuteRunnerOutcomeStreamIdle
 	case errors.Is(err, runner.ErrNonZeroExit):
 		return orchestration.ExecuteRunnerOutcomeNonZeroExit
 	case errors.Is(err, runner.ErrInvalidOutput):

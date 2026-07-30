@@ -11,6 +11,7 @@ type TerminationReason string
 const (
 	ReasonVerifyTampered            TerminationReason = "verify_tampered"
 	ReasonRunnerTimeout             TerminationReason = "runner_timeout"
+	ReasonStreamIdle                TerminationReason = "stream_idle"
 	ReasonRunnerNonZeroExit         TerminationReason = "runner_non_zero_exit"
 	ReasonRunnerInvalidOutput       TerminationReason = "runner_invalid_output"
 	ReasonRunnerError               TerminationReason = "runner_error"

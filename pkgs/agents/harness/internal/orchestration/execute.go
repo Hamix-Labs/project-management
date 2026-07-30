@@ -59,6 +59,8 @@ func executeEffectsFromRunner(outcome ExecuteRunnerOutcome) ExecuteEffects {
 		return ExecuteEffects{ContinueToVerify: true}
 	case ExecuteRunnerOutcomeTimeout:
 		return terminalExecute(taskcoredomain.StatusFailed, ReasonRunnerTimeout)
+	case ExecuteRunnerOutcomeStreamIdle:
+		return terminalExecute(taskcoredomain.StatusFailed, ReasonStreamIdle)
 	case ExecuteRunnerOutcomeNonZeroExit:
 		return terminalExecute(taskcoredomain.StatusFailed, ReasonRunnerNonZeroExit)
 	case ExecuteRunnerOutcomeInvalidOutput:

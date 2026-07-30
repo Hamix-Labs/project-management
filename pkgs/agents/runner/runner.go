@@ -107,6 +107,12 @@ type Request struct {
 	// OnSessionID is invoked at most once when the adapter first observes a
 	// non-empty Cursor stream-json session_id. Best-effort; excluded from JSON.
 	OnSessionID func(sessionID string) `json:"-"`
+	// StreamIdleStuck is the stdout-silence threshold after the first line
+	// before the adapter kills the child with ErrStale (ADR-0091 fail-clean).
+	// Zero disables stream-idle detection.
+	StreamIdleStuck time.Duration `json:"-"`
+	// OnStreamIdle emits suspicious / kill-pending warnings before stuck kill.
+	OnStreamIdle func(StreamIdleKind) `json:"-"`
 }
 
 // Result is what Runner.Run returns. On wrapped error returns
@@ -151,6 +157,11 @@ var (
 	// Result (e.g. malformed JSON from the tool, or no script entry in
 	// the fake runner). The Result returned is the zero value.
 	ErrInvalidOutput = errors.New("runner: invalid output")
+
+	// ErrStale indicates the child was killed because stdout went silent for
+	// StreamIdleStuck after the first line (ADR-0091). Callers fail-clean;
+	// this is distinct from wall-clock ErrTimeout.
+	ErrStale = errors.New("runner: stream idle")
 
 	// ErrResumeSession indicates --resume failed (missing or expired session).
 	ErrResumeSession = errors.New("runner: resume session failed")
