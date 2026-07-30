@@ -52,13 +52,10 @@ export function TaskDetailPage() {
     setModelConfigOpen,
     autonomyConfirmOpen,
     setAutonomyConfirmOpen,
-    retryConfirmMode,
-    setRetryConfirmMode,
     approveConfirmOpen,
     setApproveConfirmOpen,
     polishDialogOpen,
     setPolishDialogOpen,
-    retryMutation,
     approveMutation,
     polishMutation,
     autonomyMutation,
@@ -92,9 +89,6 @@ export function TaskDetailPage() {
       autonomyConfirmOpen={autonomyConfirmOpen}
       setAutonomyConfirmOpen={setAutonomyConfirmOpen}
       autonomyMutation={autonomyMutation}
-      retryConfirmMode={retryConfirmMode}
-      setRetryConfirmMode={setRetryConfirmMode}
-      retryMutation={retryMutation}
       approveConfirmOpen={approveConfirmOpen}
       setApproveConfirmOpen={setApproveConfirmOpen}
       approveMutation={approveMutation}
