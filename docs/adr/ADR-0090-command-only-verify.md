@@ -12,7 +12,7 @@ Execute agents submit structured criteria claims via MCP (`hamix.submit_criteria
 
 1. **Claim-only criteria** (no `verify_commands`) with `claimed_done: true` are accepted by the harness without a Cursor verify run. Completions use `verified_by=execute_claim`.
 2. **Command-backed criteria** still run worker commands, then a PhaseVerify LLM whose **only** job is to judge whether each command’s `expected_outcome` matches captured output. On pass, completion evidence composes execute claim + verify interpretation; `verified_by=execute_agent`.
-3. **One-shot cycle:** one execute, at most one command-verify. Any verify/gate failure terminates the cycle (`verification_failed…`). No in-cycle re-execute or verify-only retry. Operators recover via Retry / Start over.
+3. **One-shot cycle:** one execute, at most one command-verify. Any verify/gate failure terminates the cycle (`verification_failed…`). No in-cycle re-execute or verify-only retry. Operators recover via `POST /tasks/{id}/retry` (new cycle).
 4. **Command-verify chat:** hardcoded `same_chat` (resume execute session). `app_settings.verify_chat_mode` and `tasks.verify_chat_mode` were removed.
 5. Exit code 0 on verify commands does **not** auto-pass ([ADR-0012](./ADR-0012-structured-verify-commands.md)).
 
@@ -26,7 +26,7 @@ Execute agents submit structured criteria claims via MCP (`hamix.submit_criteria
 
 ### Negative / trade-offs
 
-- Stricter failures (no in-cycle retry budget); recovery is operator **Retry** / **Start over** (new cycle).
+- Stricter failures (no in-cycle retry budget); recovery is operator `POST /tasks/{id}/retry` (new cycle).
 - `verify_max_retries` setting removed with in-cycle retry code.
 
 ## Supersedes
