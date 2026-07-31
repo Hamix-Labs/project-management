@@ -102,6 +102,66 @@ func TestRun_streamJSONEmitsLiveProgress(t *testing.T) {
 	}
 }
 
+func TestRun_streamJSONPersistsFullAssistantMessage(t *testing.T) {
+	t.Parallel()
+
+	// Longer than the former ProgressSummaryRunes (240) clip so View reply
+	// can show the complete agent message.
+	full := strings.Repeat("Refactor step complete. ", 20) + "Done."
+	if len([]rune(full)) <= 240 {
+		t.Fatalf("test fixture too short: %d runes", len([]rune(full)))
+	}
+	line, err := json.Marshal(map[string]any{
+		"type": "assistant",
+		"message": map[string]any{
+			"role": "assistant",
+			"content": []map[string]string{
+				{"type": "text", "text": full},
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("marshal assistant line: %v", err)
+	}
+	stdout := append(line, '\n')
+	stdout = append(stdout, []byte(
+		`{"type":"result","subtype":"success","is_error":false,"result":"done","session_id":"sess-full"}`+"\n",
+	)...)
+
+	var c captured
+	a := newAdapter(nil, func(opts *cursor.Options) {
+		opts.StreamExecFn = fakeStreamExec(&c, stdout, nil, 0, nil)
+	})
+	var progress []runner.ProgressEvent
+	req := defaultRequest()
+	req.OnProgress = func(ev runner.ProgressEvent) {
+		progress = append(progress, ev)
+	}
+
+	if _, err := a.Run(context.Background(), req); err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+
+	var assistant *runner.ProgressEvent
+	for i := range progress {
+		if progress[i].Kind == "assistant" {
+			assistant = &progress[i]
+			break
+		}
+	}
+	if assistant == nil {
+		t.Fatalf("expected assistant progress event, got %+v", progress)
+	}
+	if assistant.Message != full {
+		t.Fatalf("assistant Message clipped: got %d runes want %d (ends %q)",
+			len([]rune(assistant.Message)), len([]rune(full)),
+			assistant.Message[len(assistant.Message)-3:])
+	}
+	if strings.HasSuffix(assistant.Message, "…") {
+		t.Fatalf("assistant Message should not end with ellipsis: %q", assistant.Message)
+	}
+}
+
 func TestRun_streamJSONSummarizesToolInputsForLiveProgress(t *testing.T) {
 	t.Parallel()
 

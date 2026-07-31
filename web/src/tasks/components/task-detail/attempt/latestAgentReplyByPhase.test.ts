@@ -151,4 +151,49 @@ describe("latestAgentReplyByPhase", () => {
     expect(map.get(1)?.source).toBe("stream");
     expect(map.get(1)?.text).toBe("from stream");
   });
+
+  it("recovers full assistant text from payload when message was clipped", () => {
+    const full =
+      "Refactor is complete and committed.\n\n" +
+      "- Longest eligible function identified and refactored.\n" +
+      "- Extracted descriptive helpers for the remaining workflow steps.";
+    const clipped = full.slice(0, 80) + "…";
+    const events = [
+      stream({
+        phase_seq: 1,
+        stream_seq: 1,
+        kind: "assistant",
+        message: clipped,
+        payload: {
+          type: "assistant",
+          message: {
+            role: "assistant",
+            content: [{ type: "text", text: full }],
+          },
+        },
+      }),
+    ];
+    const map = latestAgentReplyByPhase(events, [phase({ phase_seq: 1 })]);
+    expect(map.get(1)?.text).toBe(full);
+  });
+
+  it("keeps message when payload text is not longer", () => {
+    const events = [
+      stream({
+        phase_seq: 1,
+        stream_seq: 1,
+        kind: "assistant",
+        message: "short reply",
+        payload: {
+          type: "assistant",
+          message: {
+            role: "assistant",
+            content: [{ type: "text", text: "short" }],
+          },
+        },
+      }),
+    ];
+    const map = latestAgentReplyByPhase(events, [phase({ phase_seq: 1 })]);
+    expect(map.get(1)?.text).toBe("short reply");
+  });
 });

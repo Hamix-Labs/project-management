@@ -13,6 +13,46 @@ function isAgentReplyKind(kind: string): boolean {
 }
 
 /**
+ * Extracts assistant text from a Cursor-shaped stream payload
+ * (`message.content[].text`). Returns undefined when the payload is not shaped
+ * that way or has no text parts.
+ */
+export function assistantTextFromPayload(
+  payload: Record<string, unknown> | undefined,
+): string | undefined {
+  if (!payload || typeof payload !== "object") return undefined;
+  const message = payload.message;
+  if (!message || typeof message !== "object" || Array.isArray(message)) {
+    return undefined;
+  }
+  const content = (message as { content?: unknown }).content;
+  if (!Array.isArray(content)) return undefined;
+  const parts: string[] = [];
+  for (const item of content) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) continue;
+    const rec = item as { type?: unknown; text?: unknown };
+    if (rec.type === "text" && typeof rec.text === "string" && rec.text.trim()) {
+      parts.push(rec.text);
+    }
+  }
+  const joined = parts.join("").trim();
+  return joined || undefined;
+}
+
+/**
+ * Prefers payload text when it is longer than the stored message so View reply
+ * recovers full content from rows clipped at persist time (240-rune cap).
+ */
+export function resolveAgentReplyText(ev: TaskCycleStreamEvent): string | undefined {
+  const message = ev.message?.trim();
+  const fromPayload = assistantTextFromPayload(ev.payload);
+  if (fromPayload && (!message || fromPayload.length > message.length)) {
+    return fromPayload;
+  }
+  return message || undefined;
+}
+
+/**
  * Picks the newest Agent reply (assistant/message stream event) per phase.
  * Falls back to `phase.summary` when the loaded stream has no reply for that
  * phase. Empty messages are ignored.
@@ -28,7 +68,7 @@ export function latestAgentReplyByPhase(
 
   for (const ev of events) {
     if (!isAgentReplyKind(ev.kind)) continue;
-    const text = ev.message?.trim();
+    const text = resolveAgentReplyText(ev);
     if (!text) continue;
     const prev = bestByPhase.get(ev.phase_seq);
     if (prev && prev.streamSeq >= ev.stream_seq) continue;

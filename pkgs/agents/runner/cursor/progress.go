@@ -76,7 +76,9 @@ func progressFromLine(raw []byte, homePaths []string) (runner.ProgressEvent, boo
 			}, true
 		}
 	case cursorEventAssistant:
-		msg := adapterkit.ClipRunes(redact(strings.TrimSpace(textContent(line.Message.Content)), homePaths), limits.ProgressSummaryRunes)
+		// Persist the full redacted assistant text so View reply can show the
+		// whole message. Activity UI CSS-ellipsizes compact stream rows.
+		msg := redact(strings.TrimSpace(textContent(line.Message.Content)), homePaths)
 		if msg != "" {
 			return runner.ProgressEvent{Kind: cursorEventAssistant, Message: msg, Payload: progressPayload(raw, homePaths)}, true
 		}
