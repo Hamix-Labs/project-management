@@ -30,10 +30,6 @@ type submitCriteriaInput struct {
 		ClaimedDone bool   `json:"claimed_done" jsonschema:"whether the criterion is claimed done"`
 		Evidence    string `json:"evidence" jsonschema:"evidence for the claim"`
 	} `json:"criteria" jsonschema:"active criteria claims"`
-	Commits []struct {
-		SHA    string `json:"sha" jsonschema:"commit sha"`
-		Branch string `json:"branch,omitempty" jsonschema:"optional branch"`
-	} `json:"commits,omitempty" jsonschema:"commits created in this execute visit"`
 }
 
 type submitCriteriaOutput struct {
@@ -87,18 +83,7 @@ func submitCriteria(sess *Session, in submitCriteriaInput) (submitCriteriaOutput
 			return submitCriteriaOutput{}, fmt.Errorf("missing active criterion %s", id)
 		}
 	}
-	commits := make([]sidecar.CriteriaCommitClaim, 0, len(in.Commits))
-	for _, c := range in.Commits {
-		sha := strings.TrimSpace(c.SHA)
-		if sha == "" {
-			return submitCriteriaOutput{}, fmt.Errorf("empty commit sha")
-		}
-		commits = append(commits, sidecar.CriteriaCommitClaim{
-			SHA:    sha,
-			Branch: strings.TrimSpace(c.Branch),
-		})
-	}
-	if err := sidecar.WriteCriteriaReport(sess.ReportDir, sess.CycleID, entries, commits); err != nil {
+	if err := sidecar.WriteCriteriaReport(sess.ReportDir, sess.CycleID, entries); err != nil {
 		return submitCriteriaOutput{}, err
 	}
 	if err := writeReceipt(sess, ToolSubmitCriteria, PhaseExecute, sidecar.CriteriaSubmitReceiptPath(sess.ReportDir, sess.CycleID)); err != nil {

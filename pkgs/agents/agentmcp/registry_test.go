@@ -8,20 +8,17 @@ import (
 func TestDefaultTools_andNewServer(t *testing.T) {
 	t.Parallel()
 	tools := DefaultTools()
-	if len(tools) != 1 {
+	if len(tools) != 2 {
 		t.Fatalf("tools=%d", len(tools))
 	}
 	names := map[string]bool{}
 	for _, tool := range tools {
 		names[tool.Name()] = true
-		if tool.Group() != GroupReports {
-			t.Fatalf("group=%s", tool.Group())
-		}
 		if tool.Description() == "" {
 			t.Fatal("empty description")
 		}
 	}
-	if !names[ToolSubmitCriteria] {
+	if !names[ToolSubmitCriteria] || !names[ToolCommit] {
 		t.Fatalf("names=%v", names)
 	}
 	sess := &Session{
@@ -37,7 +34,7 @@ func TestDefaultTools_andNewServer(t *testing.T) {
 	}
 	reg := NewRegistry()
 	reg.Add(DefaultTools()...)
-	if len(reg.tools) != 1 {
+	if len(reg.tools) != 2 {
 		t.Fatalf("reg=%d", len(reg.tools))
 	}
 }
