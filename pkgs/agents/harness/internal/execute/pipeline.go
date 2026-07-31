@@ -98,7 +98,7 @@ func (s *Service) RunPhase(
 	if runErr == nil && !operatorCancelled && !snap.Skipped {
 		out.IngestAttempted = true
 		ports.emitProgress(parentCtx, task.ID, cycle.ID, execPhase,
-			runner.SetupProgressEvent(runner.ProgressRunStateSetupIngest, "Indexing commits…"))
+			runner.SetupProgressEvent(runner.ProgressRunStateSetupIngest, "Validating commit register…"))
 		publish := ports.Publish
 		out.IngestOutcome, out.IngestErr = s.git.IngestExecuteCommits(parentCtx, task.ID, cycle, execPhase.PhaseSeq, snap, publish)
 		if out.IngestErr != nil {

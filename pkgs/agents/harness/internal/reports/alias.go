@@ -12,13 +12,14 @@ var (
 	ErrVerifyReportInvalid   = sidecar.ErrVerifyReportInvalid
 	ErrSubmitReceiptMissing  = sidecar.ErrSubmitReceiptMissing
 	ErrSubmitReceiptInvalid  = sidecar.ErrSubmitReceiptInvalid
+	ErrCommitRegisterInvalid = sidecar.ErrCommitRegisterInvalid
 )
 
 const CurrentSchemaVersion = sidecar.CurrentSchemaVersion
 
 type CriteriaEntry = sidecar.CriteriaEntry
 type VerifyEntry = sidecar.VerifyEntry
-type CriteriaCommitClaim = sidecar.CriteriaCommitClaim
+type CommitRegisterEntry = sidecar.CommitRegisterEntry
 type SubmitReceipt = sidecar.SubmitReceipt
 
 var (
@@ -27,12 +28,14 @@ var (
 	VerifyReportPath             = sidecar.VerifyReportPath
 	CriteriaSubmitReceiptPath    = sidecar.CriteriaSubmitReceiptPath
 	VerifySubmitReceiptPath      = sidecar.VerifySubmitReceiptPath
+	CommitRegisterPath           = sidecar.CommitRegisterPath
 	EnsureReportCycleDir         = sidecar.EnsureReportCycleDir
 	ScrubCycleArtifacts          = sidecar.ScrubCycleArtifacts
 	CleanupReportDir             = sidecar.CleanupReportDir
 	ParseCriteriaReportPartial   = sidecar.ParseCriteriaReportPartial
 	ParseCriteriaReport          = sidecar.ParseCriteriaReport
-	ParseCriteriaReportCommits   = sidecar.ParseCriteriaReportCommits
+	ParseCommitRegister          = sidecar.ParseCommitRegister
+	AppendCommitRegister         = sidecar.AppendCommitRegister
 	ParseVerifyReport            = sidecar.ParseVerifyReport
 	WriteCriteriaReport          = sidecar.WriteCriteriaReport
 	WriteVerifyReport            = sidecar.WriteVerifyReport

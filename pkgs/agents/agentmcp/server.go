@@ -36,9 +36,10 @@ func (r *Registry) RegisterAll(server *mcp.Server, sess *Session) {
 	}
 }
 
-// DefaultTools returns the v1 report submit tools.
+// DefaultTools returns the v1 report submit tools and commit register tool.
 func DefaultTools() []Tool {
 	return []Tool{
+		commitTool{},
 		submitCriteriaTool{},
 	}
 }

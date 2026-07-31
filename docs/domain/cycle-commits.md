@@ -1,13 +1,13 @@
 # Cycle commit tracking
 
-How the worker indexes git commits per task from agent claims, and feeds verify, resume, and the commits API.
+How the worker indexes git commits per task from the MCP commit register, and feeds verify, resume, and the commits API.
 
 | | |
 | --- | --- |
 | **Applies to** | Agent harness execute/verify phases, `task_cycle_commits`, commits API |
 | **Audience** | Contributors touching `pkgs/agents/harness`, cycle store, or cycle detail UI |
 | **Prerequisite** | [execute-agent.md](./execute-agent.md) — execute prompt and criteria self-report |
-| **Decision record** | [ADR-0014](../adr/ADR-0014-cycle-commit-tracking.md), [ADR-0032](../adr/ADR-0032-agent-claimed-commit-index.md) (supersedes [ADR-0016](../adr/ADR-0016-observe-vs-admit-commits.md)) |
+| **Decision record** | [ADR-0093](../adr/ADR-0093-mcp-commit-register.md) (supersedes claim ingest in [ADR-0032](../adr/ADR-0032-agent-claimed-commit-index.md)); [ADR-0014](../adr/ADR-0014-cycle-commit-tracking.md) |
 
 ## In this article
 
@@ -17,7 +17,13 @@ How the worker indexes git commits per task from agent claims, and feeds verify,
 
 ## Overview
 
-When `app_settings.repo_root` points at a git worktree, the execute agent declares commits in `criteria-report.json` under `commits[]`. After a successful runner exit, the worker validates each SHA (`git cat-file`, `git log -1`) and upserts rows into `task_cycle_commits`. **Execute never fails on commit hygiene** — only runner errors, cancel, or git/store I/O errors block the cycle.
+When `app_settings.repo_root` points at a git worktree, the execute agent stages with Shell `git add` and creates commits **only** via MCP `hamix.commit`. Each successful call appends the full HEAD SHA to `commit-register.json` under the cycle report dir. After a successful runner exit, the worker requires exact set equality between the register and `cycle_base_sha..HEAD`, then upserts register SHAs into `task_cycle_commits`.
+
+| Failure | Reason |
+| --- | --- |
+| Empty / missing register | `execute_missing_commits` |
+| HEAD advanced outside register | `execute_unregistered_commits` |
+| Register SHA missing from HEAD range / unresolvable | `execute_invalid_commit` |
 
 Verify reads **all commits indexed for the task** via `ListCommitsForTask(task_id)`.
 
@@ -25,25 +31,21 @@ Verify reads **all commits indexed for the task** via `ListCommitsForTask(task_i
 
 ## Wire contract
 
+### hamix.commit (execute)
+
+- Input: `message` (required). Commits the **current index only** (no staging, no `--amend`, no `-a`).
+- On success: appends `{ sha, message, branch?, written_at }` to `commit-register.json` and returns the full SHA.
+
 ### criteria-report.json (execute)
 
-```json
-{
-  "schema_version": 1,
-  "criteria": [{ "id": "...", "claimed_done": true, "evidence": "..." }],
-  "commits": [{ "sha": "<full-or-abbrev>", "branch": "optional" }]
-}
-```
-
-- List commits **created in this execute visit** (incremental is fine — the DB accumulates).
-- **Additive-only:** create new commits only; never amend, rebase, squash, or delete history.
+Criteria claims only — **no** `commits[]` ingest. Legacy `commits[]` fields are ignored if present.
 
 ### Ingest (worker)
 
-1. Read `commits[]` via `ParseCriteriaReportCommits`.
-2. Per SHA: `cat-file -e`, `git log -1`, optional in-range warn vs `cycle_base_sha..HEAD`.
-3. Upsert on `(cycle_id, sha)` — append-only; never delete or supersede rows.
-4. Empty `commits[]` → no new rows; execute continues to verify.
+1. Read register via `ParseCommitRegister`.
+2. Build `H = rev-list --reverse cycle_base_sha..HEAD` and `R =` normalized register SHAs.
+3. Require `set(R) == set(H)`.
+4. Upsert on `(cycle_id, sha)` — append-only; never delete or supersede rows.
 
 ### Verify prompt
 
@@ -58,4 +60,5 @@ Verify reads **all commits indexed for the task** via `ListCommitsForTask(task_i
 
 - [execute-agent.md](./execute-agent.md)
 - [verify-agent.md](./verify-agent.md)
+- [agent-mcp.md](./agent-mcp.md)
 - [data-model.md](../data-model.md) — `task_cycle_commits` schema

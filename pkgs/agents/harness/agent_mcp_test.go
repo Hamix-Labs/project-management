@@ -23,7 +23,7 @@ func TestProbeCriteriaReport_requiresReceiptWhenEnabled(t *testing.T) {
 	expected := map[string]struct{}{"c1": {}}
 	if err := sidecar.WriteCriteriaReport(reportDir, cycleID, []sidecar.CriteriaEntry{
 		{ID: "c1", ClaimedDone: true, Evidence: "done"},
-	}, nil); err != nil {
+	}); err != nil {
 		t.Fatal(err)
 	}
 	if msg := execute.ProbeCriteriaReportWithReceipt(reportDir, cycleID, expected, true, "nonce-a"); msg == "" {

@@ -9,17 +9,19 @@ import (
 type TerminationReason string
 
 const (
-	ReasonVerifyTampered            TerminationReason = "verify_tampered"
-	ReasonRunnerTimeout             TerminationReason = "runner_timeout"
-	ReasonStreamIdle                TerminationReason = "stream_idle"
-	ReasonRunnerNonZeroExit         TerminationReason = "runner_non_zero_exit"
-	ReasonRunnerInvalidOutput       TerminationReason = "runner_invalid_output"
-	ReasonRunnerError               TerminationReason = "runner_error"
-	ReasonExecuteInvalidCommit      TerminationReason = "execute_invalid_commit"
-	ReasonCancelledByOperator       TerminationReason = "cancelled_by_operator"
-	ReasonChecklistCompletionFailed TerminationReason = "checklist_completion_failed"
-	ReasonCursorMissingSessionID    TerminationReason = "cursor_missing_session_id"
-	ReasonCursorResumeSession       TerminationReason = "cursor_resume_session"
+	ReasonVerifyTampered             TerminationReason = "verify_tampered"
+	ReasonRunnerTimeout              TerminationReason = "runner_timeout"
+	ReasonStreamIdle                 TerminationReason = "stream_idle"
+	ReasonRunnerNonZeroExit          TerminationReason = "runner_non_zero_exit"
+	ReasonRunnerInvalidOutput        TerminationReason = "runner_invalid_output"
+	ReasonRunnerError                TerminationReason = "runner_error"
+	ReasonExecuteInvalidCommit       TerminationReason = "execute_invalid_commit"
+	ReasonExecuteMissingCommits      TerminationReason = "execute_missing_commits"
+	ReasonExecuteUnregisteredCommits TerminationReason = "execute_unregistered_commits"
+	ReasonCancelledByOperator        TerminationReason = "cancelled_by_operator"
+	ReasonChecklistCompletionFailed  TerminationReason = "checklist_completion_failed"
+	ReasonCursorMissingSessionID     TerminationReason = "cursor_missing_session_id"
+	ReasonCursorResumeSession        TerminationReason = "cursor_resume_session"
 )
 
 // VerifyEffects lists side effects the harness root applies after verify (ADR-0090 one-shot).

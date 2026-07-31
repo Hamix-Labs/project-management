@@ -231,7 +231,7 @@ Phase-specific behavior:
 | Phase ledger tail | Execute vs verify resume branch |
 | `task_cycle_verify_reports` | Cross-cycle locked passes, verify feedback (operator resume) |
 | Task row | Base prompt |
-| `task_cycle_commits` | Worker-indexed SHAs from agent `commits[]` claims; verify reads task-wide ledger per [cycle-commits.md](./cycle-commits.md) |
+| `task_cycle_commits` | Worker-indexed SHAs from MCP commit register; verify reads task-wide ledger per [cycle-commits.md](./cycle-commits.md) |
 
 Cross-cycle operator resume loads a **ContinuationBundle** from the parent attempt ([resume-continuation.md](./resume-continuation.md)): scope lock, known commits, verify-only routing when execute succeeded and task has indexed commits.
 

@@ -62,7 +62,8 @@ While a cycle runs, the execute agent writes a short JSON report to a **worker s
 
 | File | Written by | Purpose |
 | --- | --- | --- |
-| `criteria-report.json` | Execute agent | Per criterion **self claim**: `claimed_done` + `evidence`. Optional git `commits[]`. |
+| `criteria-report.json` | Execute agent | Per criterion **self claim**: `claimed_done` + `evidence`. Commits are recorded via `hamix.commit`, not this file. |
+| `commit-register.json` | MCP `hamix.commit` | Full SHAs for execute ingest; harness requires set equality with `cycle_base_sha..HEAD`. |
 
 The file is **temporary**. The worker parses it once, stores durable results in the database, and deletes the scratch folder when the cycle ends. For support and history, use the task UI (checklist, cycle events, verdicts), not the JSON path.
 

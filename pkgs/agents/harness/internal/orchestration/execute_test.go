@@ -97,6 +97,34 @@ func TestDecideExecutePostRun_commitIngestFailReasonOnlyIO(t *testing.T) {
 	}
 }
 
+func TestDecideExecutePostRun_commitIngestFailReasonMissing(t *testing.T) {
+	t.Parallel()
+	e := DecideExecutePostRun(ExecutePostRunInput{
+		RunnerOutcome: ExecuteRunnerOutcomeOK,
+		CommitIngest: ExecuteCommitIngestSummary{
+			IngestAttempted: true,
+			FailReason:      string(ReasonExecuteMissingCommits),
+		},
+	})
+	if !e.TerminateFailed || e.Reason != ReasonExecuteMissingCommits {
+		t.Fatalf("got %+v", e)
+	}
+}
+
+func TestDecideExecutePostRun_commitIngestFailReasonUnregistered(t *testing.T) {
+	t.Parallel()
+	e := DecideExecutePostRun(ExecutePostRunInput{
+		RunnerOutcome: ExecuteRunnerOutcomeOK,
+		CommitIngest: ExecuteCommitIngestSummary{
+			IngestAttempted: true,
+			FailReason:      string(ReasonExecuteUnregisteredCommits),
+		},
+	})
+	if !e.TerminateFailed || e.Reason != ReasonExecuteUnregisteredCommits {
+		t.Fatalf("got %+v", e)
+	}
+}
+
 func TestDecideExecutePostRun_emptyClaimsContinue(t *testing.T) {
 	t.Parallel()
 	e := DecideExecutePostRun(ExecutePostRunInput{
@@ -105,6 +133,8 @@ func TestDecideExecutePostRun_emptyClaimsContinue(t *testing.T) {
 			IngestAttempted: true,
 		},
 	})
+	// Empty FailReason with successful ingest attempt means policy passed upstream;
+	// missing-register is signaled via FailReason, not via empty summary alone.
 	if !e.ContinueToClaimAcceptance || e.TerminateFailed {
 		t.Fatalf("got %+v", e)
 	}

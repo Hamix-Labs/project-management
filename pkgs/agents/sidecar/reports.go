@@ -38,8 +38,7 @@ const (
 type criteriaReport struct {
 	SchemaVersion int             `json:"schema_version"`
 	Criteria      []CriteriaEntry `json:"criteria"`
-	// Commits is worker-ingested at execute complete; ignored here so
-	// ParseCriteriaReport stays compatible with ADR-0014 reports.
+	// Commits may appear in legacy agent reports; ignored for ingest (ADR-0093).
 	Commits []struct {
 		SHA    string `json:"sha"`
 		Branch string `json:"branch"`
@@ -232,50 +231,6 @@ func ParseCriteriaReport(reportDir, cycleID string, expectedIDs map[string]struc
 	return out, nil
 }
 
-// CriteriaCommitClaim is one agent-declared commit in criteria-report.json.
-type CriteriaCommitClaim struct {
-	SHA    string
-	Branch string
-}
-
-// ParseCriteriaReportCommits reads commits[] from criteria-report.json for execute ingest.
-// Missing report returns nil claims without error.
-//
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func ParseCriteriaReportCommits(reportDir, cycleID string) ([]CriteriaCommitClaim, error) {
-	path := CriteriaReportPath(reportDir, cycleID)
-	var rep criteriaReport
-	if err := readJSONFile(path, &rep); err != nil {
-		if errors.Is(err, ErrCriteriaReportMissing) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	if err := validateCriteriaReportSchema(&rep); err != nil {
-		return nil, err
-	}
-	if len(rep.Commits) == 0 {
-		return nil, nil
-	}
-	out := make([]CriteriaCommitClaim, 0, len(rep.Commits))
-	seen := make(map[string]struct{}, len(rep.Commits))
-	for _, c := range rep.Commits {
-		sha := strings.TrimSpace(c.SHA)
-		if sha == "" {
-			return nil, fmt.Errorf("%w: empty commit sha", ErrCriteriaReportInvalid)
-		}
-		if _, dup := seen[sha]; dup {
-			return nil, fmt.Errorf("%w: duplicate commit sha %s", ErrCriteriaReportInvalid, sha)
-		}
-		seen[sha] = struct{}{}
-		out = append(out, CriteriaCommitClaim{
-			SHA:    sha,
-			Branch: strings.TrimSpace(c.Branch),
-		})
-	}
-	return out, nil
-}
-
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func ParseVerifyReport(reportDir, cycleID string, expectedIDs map[string]struct{}) (map[string]VerifyEntry, error) {
 	path := VerifyReportPath(reportDir, cycleID)
@@ -315,23 +270,16 @@ func ParseVerifyReport(reportDir, cycleID string, expectedIDs map[string]struct{
 }
 
 // WriteCriteriaReport atomically writes criteria-report.json for the cycle.
-func WriteCriteriaReport(reportDir, cycleID string, criteria []CriteriaEntry, commits []CriteriaCommitClaim) error {
+// Commits are not written here — use hamix.commit / commit-register.json (ADR-0093).
+//
+//funclogmeasure:skip category=hot-path reason="Atomic file rewrite; operation trace is emitted by the MCP/harness caller."
+func WriteCriteriaReport(reportDir, cycleID string, criteria []CriteriaEntry) error {
 	if err := EnsureReportCycleDir(reportDir, cycleID); err != nil {
 		return err
 	}
 	rep := criteriaReport{
 		SchemaVersion: CurrentSchemaVersion,
 		Criteria:      criteria,
-	}
-	if len(commits) > 0 {
-		rep.Commits = make([]struct {
-			SHA    string `json:"sha"`
-			Branch string `json:"branch"`
-		}, len(commits))
-		for i, c := range commits {
-			rep.Commits[i].SHA = c.SHA
-			rep.Commits[i].Branch = c.Branch
-		}
 	}
 	return writeJSONAtomic(CriteriaReportPath(reportDir, cycleID), rep)
 }

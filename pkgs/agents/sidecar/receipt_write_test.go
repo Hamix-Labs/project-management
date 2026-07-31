@@ -12,12 +12,8 @@ func TestWriteAndRequireSubmitReceipt(t *testing.T) {
 	cycleID := "c-receipt"
 	if err := WriteCriteriaReport(dir, cycleID, []CriteriaEntry{
 		{ID: "a", ClaimedDone: true, Evidence: "ok"},
-	}, []CriteriaCommitClaim{{SHA: "abc1234", Branch: "main"}}); err != nil {
+	}); err != nil {
 		t.Fatal(err)
-	}
-	claims, err := ParseCriteriaReportCommits(dir, cycleID)
-	if err != nil || len(claims) != 1 || claims[0].SHA != "abc1234" {
-		t.Fatalf("commits=%v err=%v", claims, err)
 	}
 	path := CriteriaSubmitReceiptPath(dir, cycleID)
 	if err := WriteSubmitReceipt(path, SubmitReceipt{
@@ -100,7 +96,7 @@ func TestParseCriteriaReportPartial_andHelpers(t *testing.T) {
 	if err := WriteCriteriaReport(dir, cycleID, []CriteriaEntry{
 		{ID: "a", ClaimedDone: false, Evidence: "wip"},
 		{ID: "b", ClaimedDone: true, Evidence: "done"},
-	}, nil); err != nil {
+	}); err != nil {
 		t.Fatal(err)
 	}
 	partial, err := ParseCriteriaReportPartial(dir, cycleID)

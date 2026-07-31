@@ -48,8 +48,11 @@ func TestAppendResumeNotice_andCommitPolicy(t *testing.T) {
 		}
 	}
 	withCommit := prompt.AppendGitCommitPolicy("", false)
-	if !containsSubstr(withCommit, "Git commits (required)") || !containsSubstr(withCommit, "commits[]") {
+	if !containsSubstr(withCommit, "Git commits (required)") || !containsSubstr(withCommit, "hamix.commit") {
 		t.Fatalf("commit policy missing required block: %q", withCommit)
+	}
+	if containsSubstr(withCommit, "commits[]") {
+		t.Fatalf("commit policy must not mention claim commits[]: %q", withCommit)
 	}
 	if containsSubstr(withCommit, "git rev-list") {
 		t.Fatalf("commit policy must not mention rev-list discovery: %q", withCommit)
@@ -64,7 +67,7 @@ func TestAppendResumeNotice_andCommitPolicy(t *testing.T) {
 		}
 	}
 	opRetry := prompt.AppendOperatorRetryResumeNotice("base", cycle, known)
-	for _, frag := range []string{"Operator retry", "cycle-1", "abc123def456", "commits[]", "base"} {
+	for _, frag := range []string{"Operator retry", "cycle-1", "abc123def456", "hamix.commit", "base"} {
 		if !containsSubstr(opRetry, frag) {
 			t.Fatalf("operator retry notice missing %q in %q", frag, opRetry)
 		}

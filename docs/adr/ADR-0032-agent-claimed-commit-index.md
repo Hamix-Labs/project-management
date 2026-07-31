@@ -3,7 +3,7 @@
 > **Note** - Product renamed T2A to Hamix; identifiers below reflect the name at decision time unless updated inline.
 
 **Date:** 2026-06-19
-**Status:** Accepted
+**Status:** Superseded by [ADR-0093](./ADR-0093-mcp-commit-register.md) (ingest source)
 **Deciders:** Operator + harness contributors
 **Supersedes:** [ADR-0016](./ADR-0016-observe-vs-admit-commits.md)
 

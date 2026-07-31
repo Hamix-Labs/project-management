@@ -80,8 +80,12 @@ type Request struct {
 	Phase      cyclesdomain.Phase `json:"phase"`
 	Prompt     string             `json:"prompt"`
 	WorkingDir string             `json:"working_dir"`
-	Timeout    time.Duration      `json:"timeout_ns"`
-	Env        map[string]string  `json:"env,omitempty"`
+	// CycleID and ReportDir are harness-owned cycle scratch coordinates.
+	// Fake runners use them to seed the MCP commit register (ADR-0093).
+	CycleID   string            `json:"cycle_id,omitempty"`
+	ReportDir string            `json:"report_dir,omitempty"`
+	Timeout   time.Duration     `json:"timeout_ns"`
+	Env       map[string]string `json:"env,omitempty"`
 	// CursorModel is optional per-run model selection for the Cursor CLI
 	// adapter. Empty means use the adapter default (from app settings at
 	// worker construction).

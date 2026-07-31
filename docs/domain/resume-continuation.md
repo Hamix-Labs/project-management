@@ -7,7 +7,7 @@ Cross-cycle **Resume from failure** loads one `ContinuationBundle` from the pare
 | **Applies to** | `loadContinuationBundle`, resume retry prompt assembly |
 | **Audience** | Contributors touching `pkgs/agents/harness` resume paths |
 | **Prerequisite** | [retry-resume.md](./retry-resume.md) — operator Resume from failure |
-| **Decision record** | [ADR-0032](../adr/ADR-0032-agent-claimed-commit-index.md) |
+| **Decision record** | [ADR-0093](../adr/ADR-0093-mcp-commit-register.md) (commit register); historical claim index [ADR-0032](../adr/ADR-0032-agent-claimed-commit-index.md) |
 
 ## In this article
 
@@ -46,4 +46,5 @@ Insufficient data → `retry_checkpoint_failed` (no hollow resume).
 - [retry-resume.md](./retry-resume.md) — operator Resume from failure
 - [cycle-commits.md](./cycle-commits.md) — task-wide commit ledger
 - [harness.md](./harness.md) — cycle loop and worker boundary
+- [ADR-0093](../adr/ADR-0093-mcp-commit-register.md)
 - [ADR-0032](../adr/ADR-0032-agent-claimed-commit-index.md)

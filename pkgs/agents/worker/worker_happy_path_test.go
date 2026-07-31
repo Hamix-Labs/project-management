@@ -94,14 +94,10 @@ func TestWorker_HappyPath_writesOnePhaseAndFourMirrors(t *testing.T) {
 	}
 
 	calls := h.notifier.snapshot()
-	// 4 publishes from cycle/phase row writes (cycle start, execute
-	// start, execute complete, cycle terminate) + 1 trailing publish
-	// after the final transitionTask succeeds (see process.go: that
-	// trailing publish is the cure for the "task stuck in running on
-	// the open detail page until refresh" race; the SPA's debounced
-	// invalidation needs it to refetch *after* the status row flips).
-	if len(calls) != 5 {
-		t.Fatalf("notifier publish count = %d, want 5 (calls=%+v)", len(calls), calls)
+	// Cycle/phase row writes + trailing task-status publish + commit ingest publish
+	// (UpsertCycleCommits after ADR-0093 register seed from runnerfake).
+	if len(calls) != 6 {
+		t.Fatalf("notifier publish count = %d, want 6 (calls=%+v)", len(calls), calls)
 	}
 	for i, c := range calls {
 		if c.TaskID != tsk.ID || c.CycleID != cycle.ID {
