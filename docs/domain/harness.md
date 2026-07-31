@@ -110,13 +110,13 @@ From [`admission.go`](../../pkgs/agents/worker/admission.go):
 
 ### Cursor session resume (ADR-0031)
 
-By default, execute and verify `runner.Run` calls use the **same execute runner**. PhaseVerify always resumes the execute Cursor session (`same_chat`, [ADR-0090](../adr/ADR-0090-command-only-verify.md)). Policy lives in [`cursor_resume.go`](../../pkgs/agents/harness/cursor_resume.go); recovery deltas in [`internal/prompt/recovery.go`](../../pkgs/agents/harness/internal/prompt/recovery.go).
+By default, execute `runner.Run` calls use the configured execute runner. New cycles do **not** open a PhaseVerify Cursor pass ([ADR-0092](../adr/ADR-0092-execute-owns-verify-commands.md)); after execute the harness runs claim acceptance only. Cursor session resume still applies to execute (and to historical verify phases when resuming old cycles). Policy lives in [`cursor_resume.go`](../../pkgs/agents/harness/cursor_resume.go); recovery deltas in [`internal/prompt/recovery.go`](../../pkgs/agents/harness/internal/prompt/recovery.go).
 
 - **Fresh chat** on deny-list paths (Start over, first in chain, HEAD drift, tamper, missing id, `--resume` failure).
 - **Scrub** `criteria-report.json` only on fresh execute — resume keeps partial/invalid reports for inspection.
 - **Opt out:** `app_settings.cursor_session_resume_enabled=false` restores full-prompt-every-run behavior.
 
-Deep dive: [cursor-session-resume.md](./cursor-session-resume.md).
+Deep dive: [cursor-session-resume.md](./cursor-session-resume.md). Historical PhaseVerify resume behavior: [ADR-0090](../adr/ADR-0090-command-only-verify.md) (superseded for new cycles by ADR-0092).
 
 Domain article stack:
 

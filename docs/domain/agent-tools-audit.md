@@ -234,7 +234,7 @@ Do **not** open HTTP, completion ledger, or cycle FSM to the agent.
 | [cycle-commits.md](./cycle-commits.md) | Agent-claimed commit index (ADR-0032) |
 | [cursor-session-resume.md](./cursor-session-resume.md) | Cursor `--resume` and recovery deltas |
 | [done-criteria.md](./done-criteria.md) | Criteria lifecycle and completion ledger |
-| [execute-and-verify.md](../execute-and-verify.md) | End-to-end execute↔verify contract |
+| [execute-and-verify.md](../execute-and-verify.md) | End-to-end execute + claim acceptance contract |
 | [ADR-0012](../adr/ADR-0012-structured-verify-commands.md) | Worker shell verify commands |
 | [ADR-0028](../adr/ADR-0028-in-cycle-verify-only-retry.md) | In-cycle verify-only vs full re-execute |
 | [ADR-0032](../adr/ADR-0032-agent-claimed-commit-index.md) | Commit claims from criteria-report |

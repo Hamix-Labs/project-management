@@ -311,7 +311,7 @@ sequenceDiagram
   H->>R: Run(prompt, working dir, timeout)
   R-->>H: Result or typed error
   opt task has done criteria
-    H->>H: criteria-report, gate, verify phase
+    H->>H: criteria-report, claim acceptance
   end
   H->>S: CompletePhase(execute)
   H->>S: TerminateCycle
@@ -335,9 +335,9 @@ Before starting a new cycle, the worker reloads the latest task from the store a
 The worker calls `Harness.Run`. The harness records cycle metadata, starts an execute phase in the store, builds the prompt (including criteria), and invokes the configured runner against the workspace checkout.
 *In the diagram:* `Worker → Harness` (Run), then `Harness → Store` (StartCycle, StartPhase execute), then `Harness → Runner` (Run).
 
-**Step 4. Optional verify phase and cycle termination.**
-When the task has done criteria, the harness parses `criteria-report.json`, may gate on `claimed_done`, starts a verify phase, and parses `verify-report.json`. It then completes the execute phase, terminates the cycle with `succeeded`, `failed`, or `aborted`, and sets the task to `review` (human approval) or `failed`.
-*In the diagram:* `Harness → Harness` (criteria + verify, when applicable), then `Harness → Store` (CompletePhase, TerminateCycle, Update status).
+**Step 4. Claim acceptance and cycle termination.**
+When the task has done criteria, the harness parses `criteria-report.json`, gates on `claimed_done`, and on full pass writes checklist completions with `verified_by=execute_claim` ([ADR-0092](./adr/ADR-0092-execute-owns-verify-commands.md)). There is no PhaseVerify Cursor pass on new cycles. It then completes the execute phase, terminates the cycle with `succeeded`, `failed`, or `aborted`, and sets the task to `done` or `failed` as appropriate.
+*In the diagram:* `Harness → Harness` (criteria + claim acceptance, when applicable), then `Harness → Store` (CompletePhase, TerminateCycle, Update status).
 
 **Step 5. The worker acknowledges the queue entry.**
 `AckAfterRecv` runs last and clears the id from pending. It is idempotent and pairs with the manual-ack contract documented on `MemoryQueue`. While a worker owns the task (Receive → Ack), running reconcile cannot re-enqueue the same id; after process crash pending is empty and running reconcile re-offers open cycles.

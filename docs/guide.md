@@ -29,7 +29,7 @@ Hamix docs are grouped by **purpose**, not by a single reading order. Reference 
 
 | Type | Location | Use when you need to… |
 | --- | --- | --- |
-| Product | [execute-and-verify.md](./execute-and-verify.md) | Create tasks, write checklist items, understand execute vs verify |
+| Product | [execute-and-verify.md](./execute-and-verify.md) | Create tasks, write checklist items, understand execute and claim acceptance |
 | Overview | [architecture.md](./architecture.md) | See how `taskapi`, the store, the worker, and SSE connect |
 | Reference | [api.md](./api.md), [data-model.md](./data-model.md), [configuration.md](./configuration.md) | Look up routes, schemas, env vars, or `app_settings` |
 | Implementation | [web.md](./web.md), [CONTRIBUTING.md](../CONTRIBUTING.md) | Build UI features; setup and where to find edit docs |

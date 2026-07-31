@@ -1,12 +1,12 @@
 # Done criteria
 
-Per-task acceptance requirements: how operators define them, how the agent worker verifies them, and what gets persisted when a cycle succeeds.
+Per-task acceptance requirements: how operators define them, how the agent worker accepts them after execute, and what gets persisted when a cycle succeeds.
 
 | | |
 | --- | --- |
 | **Applies to** | Checklist API, task create flow, agent worker harness, checklist UI |
 | **Audience** | Contributors touching store, harness, handlers, or SPA checklist surfaces |
-| **Companion article** | [verify-agent.md](./verify-agent.md) — verify-phase self-grade with worker evidence; [execute-agent.md](./execute-agent.md) — execute-phase prompt composition; [harness.md](./harness.md) — cycle loop and one-shot orchestration |
+| **Companion article** | [verify-agent.md](./verify-agent.md) — claim acceptance after execute ([ADR-0092](../adr/ADR-0092-execute-owns-verify-commands.md)); [execute-agent.md](./execute-agent.md) — execute-phase prompt composition; [harness.md](./harness.md) — cycle loop and one-shot orchestration |
 
 ## In this article
 
@@ -23,21 +23,21 @@ Per-task acceptance requirements: how operators define them, how the agent worke
 
 ## Overview
 
-**Done criteria** (checklist items) are operator-authored acceptance requirements attached to a task. Each criterion has a stable `id`, human-readable `text`, and optional ordered **verify commands** (shell checks the worker runs during verify).
+**Done criteria** (checklist items) are operator-authored acceptance requirements attached to a task. Each criterion has a stable `id`, human-readable `text`, and optional ordered **verify commands** (shell checks the **execute agent** must run before claiming done).
 
 They answer: *what must be true before this task is allowed to reach `status=done`?*
 
 ### In scope
 
 - Definition CRUD, edit locks, and the completion ledger
-- Execute → self-claim gate → verify → decision loop
+- Execute → self-claim gate → claim acceptance → decision loop
 - Ephemeral agent report files and durable verdict tables
 
 ### Out of scope
 
 - **Gate criteria** on `task.gate.criteria[]` (operator checklist before dequeue release). See [data-model.md](../data-model.md) (Gate).
 - Draft-task eval rubric (advisory scoring at create time)
-- Full verify-agent prompt engineering — see [verify-agent.md](./verify-agent.md)
+- Full claim-acceptance internals — see [verify-agent.md](./verify-agent.md)
 - Execute prompt composition and criteria injection — see [execute-agent.md](./execute-agent.md)
 
 > **Important** — `POST /tasks` requires at least one non-empty criterion in `checklist_items`. Legacy rows with zero criteria still exist; those tasks skip the entire verify pipeline.
@@ -63,13 +63,11 @@ Schema tables and HTTP contracts remain authoritative in [data-model.md](../data
 flowchart LR
   subgraph trusted [Trusted - worker and store]
     Worker[Agent worker harness]
-    Shell[Shell verify commands]
     Store[(Postgres)]
   end
 
-  subgraph untrusted [Untrusted - must be checked]
+  subgraph untrusted [Untrusted - must be gated]
     Exec[Execute agent]
-    Ver[Agent verify same runner]
   end
 
   subgraph operator [Operator]
@@ -79,22 +77,19 @@ flowchart LR
   Op -->|defines criteria| Store
   Worker -->|prompt + report path| Exec
   Exec -->|criteria-report.json| Worker
-  Worker -->|runs commands| Shell
-  Shell -->|stdout stderr meta| Worker
-  Worker -->|verify prompt + artifacts| Ver
-  Ver -->|verify-report.json| Worker
-  Worker -->|completions on success only| Store
+  Worker -->|claim acceptance execute_claim| Store
 ```
 
 | Actor | Role | Trust |
 | --- | --- | --- |
-| **Operator** | Authors criterion text and optional verify commands via REST/SPA. Cannot directly mark criteria done (completion writes are `ActorAgent` only). | Trusted to define intent. Verify commands are a trusted-operator surface (shell injection risk bounded by timeout and output caps). |
-| **Execute agent** | Does the work; writes `criteria-report.json` with `claimed_done` and `evidence`. | **Not trusted** for final acceptance. `claimed_done` is an assertion only. |
-| **Worker shell** | Runs `task_checklist_item_commands` in `app_settings.repo_root` before LLM verify. | Trusted executor of operator-defined commands. Output is evidence input, not a pass/fail verdict. |
-| **Agent verify** (`PhaseVerify`) | Same execute runner; reads work and evidence; writes `verify-report.json`. Sole writer of `verified_by=execute_agent` on success. | Self-grade with worker evidence and git integrity — must not modify the working tree during verify. |
+| **Operator** | Authors criterion text and optional verify commands via REST/SPA. Cannot directly mark criteria done (completion writes are `ActorAgent` only). | Trusted to define intent. Verify commands are a trusted-operator surface (shell injection risk bounded by timeout and output caps when the execute agent runs them). |
+| **Execute agent** | Does the work; runs any listed verify commands; writes `criteria-report.json` with `claimed_done` and `evidence`. | **Not trusted** for final acceptance. `claimed_done` is an assertion only until the harness gate. |
+| **Worker (harness)** | Gates on `claimed_done` and writes completions with `verified_by=execute_claim` on full pass ([ADR-0092](../adr/ADR-0092-execute-owns-verify-commands.md)). Does **not** re-run commands or open PhaseVerify. | Trusted acceptance authority for new cycles. |
 | **Store** | Persists definitions, per-attempt verdict mirrors, and — only after cycle success — `task_checklist_completions`. | Source of truth for task-level "criterion is done." |
 
 > **Important** — Nothing is written to `task_checklist_completions` until the execution cycle terminates successfully. Criteria that passed on attempt 1 but failed the overall cycle on attempt 2 leave **no** completion rows.
+
+> **Historical** — Pre-ADR-0092 cycles may still show worker shell runs, PhaseVerify, `verify-report.json`, and `verified_by=execute_agent`. New cycles do not.
 
 ## How it works
 
@@ -106,7 +101,7 @@ Three persistence layers cooperate:
 | **Ephemeral reports** | `<HAMIX_WORKER_REPORT_DIR>/<cycle_id>/` | GC at cycle terminate | Agent ↔ worker wire format |
 | **Durable ledger** | `task_checklist_completions`, `task_cycle_*_reports`, `task_cycle_command_runs` | Until task/cycle deleted | UI, audit, support |
 
-The worker runs verify inside [`runCycleLoop`](../../pkgs/agents/harness/cycle_loop.go) after a successful execute phase when the task has command-backed criteria. Claim-only criteria are accepted from the execute report without PhaseVerify. Harness orchestration (one-shot terminate): [harness.md](./harness.md). Zero-criteria legacy tasks skip verify; a successful execute alone completes the task via [`completeChecklistLegacy`](../../pkgs/agents/harness/verification.go).
+The worker runs claim acceptance inside [`runCycleLoop`](../../pkgs/agents/harness/cycle_loop.go) after a successful execute phase when the task has criteria ([ADR-0092](../adr/ADR-0092-execute-owns-verify-commands.md)). All claims are accepted as `execute_claim`; there is no PhaseVerify Cursor pass. Harness orchestration (one-shot terminate): [harness.md](./harness.md). Zero-criteria legacy tasks skip claim acceptance; a successful execute alone completes the task via [`completeChecklistLegacy`](../../pkgs/agents/harness/verification.go).
 
 ## Operator workflow
 
@@ -124,6 +119,8 @@ The worker runs verify inside [`runCycleLoop`](../../pkgs/agents/harness/cycle_l
 \*Delete blocked if any completion exists for the item.
 
 ## Verification workflow
+
+> **Product default (ADR-0092)** — New cycles use claim-only acceptance after execute. The sequence diagram below retains the historical PhaseVerify / worker-shell path for reading older cycles and ADRs. For the current path, see [verify-agent.md](./verify-agent.md).
 
 ```mermaid
 sequenceDiagram
@@ -282,7 +279,7 @@ See [configuration.md](../configuration.md) for validation rules and supervisor 
 
 | Doc | Why read it |
 | --- | --- |
-| [execute-and-verify.md](../execute-and-verify.md) | Operator-facing summary: execute vs verify, criteria reports, writing checklist items |
+| [execute-and-verify.md](../execute-and-verify.md) | Operator-facing summary: execute, claim acceptance, writing checklist items |
 | [harness.md](./harness.md) | Cycle loop, resume, recovery (orchestration) |
 | [execute-agent.md](./execute-agent.md) | Execute pass deep-dive (companion article) |
 | [verify-agent.md](./verify-agent.md) | Verify pass deep-dive (companion article) |
