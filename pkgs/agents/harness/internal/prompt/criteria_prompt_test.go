@@ -41,6 +41,12 @@ func TestInjectCriteria_ToolOnly_OmitsPathAndSchema(t *testing.T) {
 	if !strings.Contains(out, "hamix.submit_criteria_report") {
 		t.Fatalf("tool-only prompt missing submit tool; got=%s", out)
 	}
+	if !strings.Contains(out, "hamix.commit") {
+		t.Fatalf("tool-only prompt missing hamix.commit; got=%s", out)
+	}
+	if strings.Contains(out, "optional `commits`") || strings.Contains(out, `"commits"`) {
+		t.Fatalf("tool-only prompt must not mention claim commits; got=%s", out)
+	}
 	if strings.Contains(out, "Schema:") {
 		t.Fatalf("tool-only prompt must not dump schema; got=%s", out)
 	}

@@ -60,18 +60,17 @@ func InjectCriteria(prompt string, items []ChecklistItem, reportPath string, alr
 
 	criteria.WriteString("\n\n## Done criteria (required)\n\n")
 	if toolOnly {
-		criteria.WriteString("You must satisfy every criterion below. When finished, call the MCP tool `hamix.submit_criteria_report` with one entry per active criterion (and optional `commits` for commits created in this execute visit).\n")
+		criteria.WriteString("You must satisfy every criterion below. When finished, call the MCP tool `hamix.submit_criteria_report` with one entry per active criterion.\n")
 		criteria.WriteString("Do **not** freeform-Write `criteria-report.json` — only the submit tool is accepted.\n")
-		criteria.WriteString("Git discipline: create **new commits only** — never amend, rebase, squash, or delete history; fix mistakes with a follow-up commit.\n")
+		criteria.WriteString("Git discipline: stage with Shell `git add`, then create **new commits only** via `hamix.commit` — never Shell `git commit`, amend, rebase, squash, or delete history; fix mistakes with a follow-up `hamix.commit`.\n")
 		criteria.WriteString("For each criterion that lists verify commands: run those commands in the worktree and confirm the output matches each expected_outcome before claiming done. Put a short summary of the work and command results in `evidence`. Do not set claimed_done true if a required command fails that check.\n")
 		criteria.WriteString("claimed_done is accepted by the harness as final (no separate verify phase). Only claim done when the criterion is actually satisfied.\n")
 	} else {
 		criteria.WriteString("You must satisfy every criterion below. When finished, write a JSON report at:\n")
 		criteria.WriteString(fmt.Sprintf("`%s`\n\n", reportPath))
-		criteria.WriteString("Schema:\n```json\n{\"schema_version\":1,\"criteria\":[{\"id\":\"<id>\",\"claimed_done\":true,\"evidence\":\"...\"}],\"commits\":[{\"sha\":\"<full-or-abbrev>\",\"branch\":\"optional\"}]}\n```\n")
-		criteria.WriteString("Use only `schema_version`, `criteria`, and `commits` top-level fields — no extra keys; put metadata in `evidence`.\n")
-		criteria.WriteString("List commits **created in this execute visit** under `commits` (incremental is fine — the worker accumulates them).\n")
-		criteria.WriteString("Git discipline: create **new commits only** — never amend, rebase, squash, or delete history; fix mistakes with a follow-up commit.\n")
+		criteria.WriteString("Schema:\n```json\n{\"schema_version\":1,\"criteria\":[{\"id\":\"<id>\",\"claimed_done\":true,\"evidence\":\"...\"}]}\n```\n")
+		criteria.WriteString("Use only `schema_version` and `criteria` top-level fields — no extra keys; put metadata in `evidence`.\n")
+		criteria.WriteString("Git discipline: stage with Shell `git add`, then create **new commits only** via `hamix.commit` — never Shell `git commit`, amend, rebase, squash, or delete history.\n")
 		criteria.WriteString("For each criterion that lists verify commands: run those commands in the worktree and confirm the output matches each expected_outcome before claiming done. Put a short summary of the work and command results in `evidence`. Do not set claimed_done true if a required command fails that check.\n")
 		criteria.WriteString("claimed_done is accepted by the harness as final (no separate verify phase). Only claim done when the criterion is actually satisfied.\n")
 	}

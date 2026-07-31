@@ -41,8 +41,8 @@ func AppendOperatorRetryResumeNotice(prompt string, cycle *cyclesdomain.TaskCycl
 	if block := FormatKnownCommitsForResume(parentCommits); block != "" {
 		b.WriteString("3. ")
 		b.WriteString(strings.TrimSpace(block))
-		b.WriteString("Those commits are already indexed for this task ΓÇö list only **new** commits you create in `commits[]` on your criteria report.\n")
-		b.WriteString("4. A clean tree does **not** mean the task succeeded ΓÇö complete remaining criteria and write the criteria report.\n")
+		b.WriteString("Those commits are already indexed for this task — create only **new** commits via `hamix.commit` (do not use Shell `git commit`).\n")
+		b.WriteString("4. A clean tree does **not** mean the task succeeded — complete remaining criteria and write the criteria report.\n")
 	} else {
 		b.WriteString("3. A clean tree does **not** mean the task succeeded ΓÇö complete remaining criteria and write the criteria report.\n")
 	}
@@ -118,7 +118,7 @@ func ComposePolishDirective(cycle *cyclesdomain.TaskCycle, in PolishNoticeInput)
 	if block := FormatKnownCommitsForResume(in.KnownCommits); block != "" {
 		b.WriteString("3. ")
 		b.WriteString(strings.TrimSpace(block))
-		b.WriteString("Those commits are already indexed ΓÇö list only **new** commits you create in `commits[]` on your criteria report.\n")
+		b.WriteString("Those commits are already indexed — create only **new** commits via `hamix.commit` (do not use Shell `git commit`).\n")
 		if in.SkipVerify {
 			b.WriteString("4. Apply the polish instructions; your execute claim ends this attempt (no verify phase).\n")
 		} else {
@@ -177,13 +177,14 @@ func AppendResumeNotice(prompt string, cycle *cyclesdomain.TaskCycle, interrupte
 func AppendGitCommitPolicy(prompt string, operatorResume bool) string {
 	var b strings.Builder
 	b.WriteString("## Git commits (required)\n\n")
-	b.WriteString("Before you finish this execute phase, commit work that satisfies criteria you are claiming, and list new commits in `commits[]` on your criteria report.\n\n")
+	b.WriteString("Before you finish this execute phase, stage work with Shell `git add`, then create commits **only** via the MCP tool `hamix.commit`.\n")
+	b.WriteString("Do **not** use Shell `git commit`. Do not put commit SHAs on the criteria report — the harness records SHAs from `hamix.commit`.\n\n")
 	if operatorResume {
 		b.WriteString("Create **new** commits only in this attempt; prior attempt SHAs are already indexed.\n\n")
 	}
-	b.WriteString("Use normal descriptive commit messages only ΓÇö do **not** embed task IDs, cycle IDs, or ID markers.\n")
-	b.WriteString("Create **new commits only** ΓÇö fix mistakes with a follow-up commit; never amend, rebase, squash, or delete history.\n")
-	b.WriteString("You may commit incrementally during the run. Uncommitted local changes are allowed if you already committed the work you are claiming.\n")
+	b.WriteString("Use normal descriptive commit messages only — do **not** embed task IDs, cycle IDs, or ID markers.\n")
+	b.WriteString("Create **new commits only** — fix mistakes with a follow-up `hamix.commit`; never amend, rebase, squash, or delete history.\n")
+	b.WriteString("You may commit incrementally during the run (multiple `hamix.commit` calls). Uncommitted local changes are allowed if you already committed the work you are claiming.\n")
 	b.WriteString("Do not push.\n\n")
 	return b.String() + prompt
 }
