@@ -54,7 +54,6 @@ export function AttemptPhasesSection({
         cycle={cycle}
         timelineDisplay={timelineDisplay}
         agentReplies={agentReplies}
-        onViewReplyInActivity={onSelectPhase}
       />
     </section>
   );

@@ -178,11 +178,10 @@ describe("TaskCyclesPanel live ticker", () => {
     expect(within(list).queryByTestId("task-cycle-row-runner")).not.toBeInTheDocument();
   });
 
-  it("falls back to a 'between phases' line when the running cycle has no in-flight phase", async () => {
+  it("shows accepting criteria after execute succeeds with no in-flight phase", async () => {
     // Cycle is running but every phase has already terminated —
-    // the worker is between StartCycle/StartPhase frames. The
-    // ticker must still resolve gracefully and show the most
-    // recent (highest phase_seq) phase rather than going blank.
+    // the worker is accepting execute claims before the cycle
+    // completes. The ticker must still resolve gracefully.
     const fakeNow = Date.parse("2026-04-18T11:01:00.000Z");
     vi.spyOn(Date, "now").mockReturnValue(fakeNow);
 
@@ -236,7 +235,7 @@ describe("TaskCyclesPanel live ticker", () => {
 
     const phaseLine = await screen.findByTestId("task-cycle-ticker-phase");
     await waitFor(() => {
-      expect(phaseLine).toHaveTextContent(/Starting verify/);
+      expect(phaseLine).toHaveTextContent(/Accepting criteria/);
     });
   });
 
