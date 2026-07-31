@@ -119,30 +119,9 @@ export function PhaseModelField({
 
 /**
  * Phase icon — outline SVG matching the icon weight used elsewhere
- * in the app (1.6px stroke, 18px viewport). Execute shows a power
- * bolt (active work); Verify shows a shield-check (judgment pass).
- * Inline rather than imported from an icon library so the settings
- * page does not pull a new dependency for two glyphs.
+ * in the app (1.6px stroke, 18px viewport). Execute shows a power bolt.
  */
-function PhaseIcon({ phase }: { phase: "execute" | "verify" }) {
-  if (phase === "execute") {
-    return (
-      <svg
-        className="settings-phase-icon"
-        viewBox="0 0 24 24"
-        width="18"
-        height="18"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <path d="M13 3 4.5 13.5h6L11 21l8.5-10.5h-6L13 3Z" />
-      </svg>
-    );
-  }
+function PhaseIcon() {
   return (
     <svg
       className="settings-phase-icon"
@@ -156,46 +135,14 @@ function PhaseIcon({ phase }: { phase: "execute" | "verify" }) {
       strokeLinejoin="round"
       aria-hidden="true"
     >
-      <path d="M12 3 4 6v6c0 4.5 3.5 8 8 9 4.5-1 8-4.5 8-9V6l-8-3Z" />
-      <path d="m9 12 2 2 4-4" />
+      <path d="M13 3 4.5 13.5h6L11 21l8.5-10.5h-6L13 3Z" />
     </svg>
   );
 }
 
 /**
- * Phase flow connector — small vertical chevron + "then" label
- * rendered between the Execute and Verify panels so the lifecycle
- * reads as a sequence, not two coequal cards. The arrow is purely
- * decorative; the screen-reader-only label is "then" so AT users
- * still hear the ordering.
- */
-export function PhaseFlowConnector() {
-  return (
-    <div className="settings-phase-flow" aria-hidden="true">
-      <span className="settings-phase-flow-line" />
-      <span className="settings-phase-flow-label">then</span>
-      <svg
-        className="settings-phase-flow-icon"
-        viewBox="0 0 12 12"
-        width="12"
-        height="12"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M6 2v8" />
-        <path d="m3 7 3 3 3-3" />
-      </svg>
-    </div>
-  );
-}
-
-/**
- * Nested phase panel — Execute and Verify each get their own inset
- * card with a phase icon and name so the operator can scan the
- * lifecycle without reading every field label.
+ * Nested execute phase panel with icon and description so the operator
+ * can scan the lifecycle without reading every field label.
  */
 export function PhasePanel({
   id,
@@ -204,11 +151,10 @@ export function PhasePanel({
   children,
 }: {
   id: string;
-  phase: "execute" | "verify";
+  phase: "execute";
   description: string;
   children: React.ReactNode;
 }) {
-  const title = phase === "execute" ? "Execute" : "Verify";
   return (
     <section
       id={id}
@@ -218,14 +164,14 @@ export function PhasePanel({
     >
       <header className="settings-phase-panel-header">
         <span className="settings-phase-panel-glyph" aria-hidden="true">
-          <PhaseIcon phase={phase} />
+          <PhaseIcon />
         </span>
         <div className="settings-phase-panel-heading">
           <h3
             id={`${id}-title`}
             className="settings-phase-panel-title"
           >
-            {title}
+            Execute
           </h3>
           <p className="settings-phase-panel-desc">{description}</p>
         </div>

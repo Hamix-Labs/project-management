@@ -25,6 +25,7 @@ func (s *Service) runVerifyChecks(
 		"task_id", task.ID, "cycle_id", cycle.ID,
 		"run_correlation_id", runCorrelationID,
 		"criteria_count", len(snap.Criteria), "locked_passes", len(lockedPasses))
+	_ = phaseSeq
 	mirrorDegraded := mirrorDegradedIn
 	expected := make(map[string]struct{}, len(snap.Criteria))
 	for _, it := range snap.Criteria {
@@ -47,11 +48,6 @@ func (s *Service) runVerifyChecks(
 	}
 
 	verdicts := make([]Verdict, 0, len(snap.Criteria))
-	needLLMVerify := false
-	llmExpected := make(map[string]struct{})
-	var usage cyclesdomain.TokenUsage
-	var usagePresent bool
-
 	for _, it := range snap.Criteria {
 		if locked, ok := lockedPasses[it.ID]; ok {
 			verdicts = append(verdicts, locked)
@@ -70,34 +66,15 @@ func (s *Service) runVerifyChecks(
 			s.recordVerdict(checklistdomain.VerifierAgentSelf, false)
 			continue
 		}
-		if len(it.VerifyCommands) == 0 {
-			v.Passed = true
-			v.Verifier = checklistdomain.VerifierExecuteClaim
+		v.Passed = true
+		v.Verifier = checklistdomain.VerifierExecuteClaim
+		if len(it.VerifyCommands) > 0 {
+			v.Reasoning = "accepted execute claim (agent self-checked verify commands)"
+		} else {
 			v.Reasoning = "accepted execute claim (no verify commands)"
-			verdicts = append(verdicts, v)
-			s.recordVerdict(checklistdomain.VerifierExecuteClaim, true)
-			continue
 		}
-		needLLMVerify = true
-		llmExpected[it.ID] = struct{}{}
 		verdicts = append(verdicts, v)
-	}
-
-	if needLLMVerify {
-		cmdEvidence, cmdErr := s.RunCriterionCommands(parentCtx, task.ID, cycle.ID, phaseSeq, attemptSeq, snap, selfReport, nil)
-		if cmdErr != nil {
-			return nil, mirrorDegraded, cyclesdomain.TokenUsage{}, false, cmdErr
-		}
-		runUsage, runUsagePresent, runErr := s.runLLMVerify(parentCtx, task, cycle, phaseSeq, runCorrelationID, snap, lockedPasses, selfReport, cmdEvidence)
-		if runUsagePresent {
-			usage = cyclesdomain.AddTokenUsage(usage, runUsage)
-			usagePresent = true
-		}
-		nextVerdicts, parseErr := s.assembleVerdictsFromVerifyReport(cycle.ID, llmExpected, verdicts, selfReport, lockedPasses)
-		if err := verifyLLMRunError(runErr, parseErr); err != nil {
-			return nil, mirrorDegraded, usage, usagePresent, err
-		}
-		verdicts = nextVerdicts
+		s.recordVerdict(checklistdomain.VerifierExecuteClaim, true)
 	}
 
 	if uerr := s.persistVerifyReports(parentCtx, cycle.ID, attemptSeq, verdicts, lockedPasses); uerr != nil {
@@ -109,8 +86,8 @@ func (s *Service) runVerifyChecks(
 
 	for _, v := range verdicts {
 		if !v.Passed {
-			return verdicts, mirrorDegraded, usage, usagePresent, fmt.Errorf("verification failed")
+			return verdicts, mirrorDegraded, cyclesdomain.TokenUsage{}, false, fmt.Errorf("verification failed")
 		}
 	}
-	return verdicts, mirrorDegraded, usage, usagePresent, nil
+	return verdicts, mirrorDegraded, cyclesdomain.TokenUsage{}, false, nil
 }

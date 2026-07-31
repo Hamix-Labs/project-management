@@ -52,43 +52,6 @@ func TestComposeRecoveryDelta_criteriaReportInvalid(t *testing.T) {
 	}
 }
 
-func TestComposeRecoveryDelta_verifyInfra(t *testing.T) {
-	t.Parallel()
-	delta := ComposeRecoveryDelta(RecoveryContext{
-		Kind:       RecoveryVerifyInfra,
-		Phase:      cyclesdomain.PhaseVerify,
-		AttemptSeq: 1,
-		ReportPath: "/tmp/hamix/cycle-1/verify-report.json",
-		CommandEvidenceDelta: []CommandEvidenceLine{{
-			CriterionID: "lint",
-			Command:     "npm test",
-			ExitCode:    1,
-			Preview:     "FAIL",
-		}},
-		VerifyContract: VerifyReportContract{
-			ReportPath: "/tmp/hamix/cycle-1/verify-report.json",
-			Criteria: []VerifyCriterionLine{{
-				ID: "lint", Text: "tests pass", Evidence: "npm test ok",
-			}},
-		},
-	})
-	if !strings.Contains(delta, "### New command evidence") {
-		t.Fatalf("missing command evidence section: %q", delta)
-	}
-	if !strings.Contains(delta, "npm test") {
-		t.Fatalf("missing command: %q", delta)
-	}
-	if !strings.Contains(delta, "verify-report.json") {
-		t.Fatalf("missing verify report path: %q", delta)
-	}
-	if !strings.Contains(delta, `Schema: {"criteria"`) {
-		t.Fatalf("missing verify schema: %q", delta)
-	}
-	if strings.Contains(delta, "criteria-report.json") {
-		t.Fatalf("must not ask for criteria-report.json: %q", delta)
-	}
-}
-
 func TestComposeRecoveryDelta_humanPolishInstructionsOnly(t *testing.T) {
 	t.Parallel()
 	delta := ComposeRecoveryDelta(RecoveryContext{
@@ -163,7 +126,7 @@ func TestComposeRecoveryDelta_humanPolishMixed(t *testing.T) {
 		"Write REFACTOR.md",
 		"Human-flagged incorrect criteria", "[c1] Named in report",
 		"Newly added criteria", "[c2] Docs updated",
-		"Only criteria with verify commands will be re-checked",
+		"run those commands and confirm expected_outcome",
 	} {
 		if !strings.Contains(delta, frag) {
 			t.Fatalf("missing %q in %q", frag, delta)
@@ -239,21 +202,6 @@ func TestComposeRecoveryDelta_goldenFiles(t *testing.T) {
 			ScopeFiles:     []string{"src/foo.go"},
 			LockedCriteria: []string{"criterion-b"},
 			ReportPath:     "/tmp/report.json",
-		},
-		"verify_infra_retry": {
-			Kind:       RecoveryVerifyInfra,
-			Phase:      cyclesdomain.PhaseVerify,
-			AttemptSeq: 1,
-			ReportPath: "/tmp/hamix/cycle-1/verify-report.json",
-			CommandEvidenceDelta: []CommandEvidenceLine{{
-				CriterionID: "lint", Command: "npm test", ExitCode: 1, Preview: "FAIL",
-			}},
-			VerifyContract: VerifyReportContract{
-				ReportPath: "/tmp/hamix/cycle-1/verify-report.json",
-				Criteria: []VerifyCriterionLine{{
-					ID: "lint", Text: "tests pass", Evidence: "npm test ok",
-				}},
-			},
 		},
 	}
 	for name, ctx := range cases {

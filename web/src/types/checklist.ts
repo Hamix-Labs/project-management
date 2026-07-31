@@ -1,4 +1,4 @@
-/** Optional shell check attached to a done criterion. */
+/** Optional shell check the execute agent must run before claiming done. */
 export type ChecklistVerifyCommandInput = {
   command: string;
   expected_outcome?: string;

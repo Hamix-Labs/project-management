@@ -94,7 +94,7 @@ func TestAppendResumeNotice_andCommitPolicy(t *testing.T) {
 	for _, frag := range []string{
 		"Human-flagged incorrect criteria", "[c1] Auth works",
 		"Newly added criteria", "[c3] Docs updated",
-		"Only criteria with verify commands will be re-checked", "fix auth", "polishments",
+		"run those commands and confirm expected_outcome", "fix auth", "polishments",
 	} {
 		if !containsSubstr(selective, frag) {
 			t.Fatalf("selective polish notice missing %q in %q", frag, selective)
@@ -102,12 +102,6 @@ func TestAppendResumeNotice_andCommitPolicy(t *testing.T) {
 	}
 	if containsSubstr(selective, "skip the verify phase") {
 		t.Fatalf("selective polish must not skip verify: %q", selective)
-	}
-	dir := t.TempDir()
-	initGitRepoForDiffTest(t, dir)
-	diff := verifyDiffSection(dir)
-	if containsSubstr(diff, "(diff unavailable") {
-		t.Fatalf("verify diff unavailable for git repo: %q", diff)
 	}
 }
 

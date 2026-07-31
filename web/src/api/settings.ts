@@ -20,8 +20,8 @@ export type AppSettings = {
   /** Empty string = Cursor default model (`cursor-agent` omits `--model`). */
   cursor_model: string;
   /**
-   * Optional Cursor `--model` for PhaseVerify.
-   * Empty inherits the execute effective model (task pin, else cursor_model).
+   * Legacy optional Cursor `--model` for PhaseVerify. Unused for new cycles
+   * (execute agent owns verify commands + claims). Kept for API compatibility.
    */
   verify_model: string;
   max_run_duration_seconds: number;

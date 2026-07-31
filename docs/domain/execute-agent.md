@@ -155,41 +155,32 @@ See [cycle-commits.md](./cycle-commits.md) for worker ingest and schema.
 
 ### Criteria block
 
-When the task has checklist items, [`injectCriteria`](../../pkgs/agents/harness/criteria_prompt.go) prepends:
+When the task has checklist items, [`InjectCriteria`](../../pkgs/agents/harness/internal/prompt/criteria_prompt.go) prepends:
 
-- **Already verified (do not re-do)** — Locked criteria from parent cycle (`previouslyPassed`, operator Resume from failure). Omitted from the report's expected ID set.
-- **Done criteria (required)** — Active criteria with stable `[id]` prefixes, absolute path to `criteria-report.json`, JSON schema, and instruction that `claimed_done` is an assertion only.
+- **Already verified (do not re-do)** — Locked criteria from parent cycle. Omitted from the report's expected ID set.
+- **Done criteria (required)** — Active criteria with stable `[id]` prefixes. Attached `verify_commands` list `command` + `expected_outcome`; the agent must run them before claiming. `claimed_done` is accepted by the harness as final (`execute_claim`, [ADR-0092](../adr/ADR-0092-execute-owns-verify-commands.md)).
 
 On operator **Resume from failure**, only **active** (non-locked) criterion ids must appear in the report.
 
 ### Example prompt (illustrative)
 
 ```text
-## Git commits (required)
-
-Before you finish this execute phase, commit all work that satisfies criteria you are claiming.
-List every commit SHA and branch in `criteria-report.json` under `commits`.
-Use normal descriptive commit messages only — do not embed task IDs or ID markers.
-Create new commits only; do not push.
-
 ## Done criteria (required)
 
-You must satisfy every criterion below. When finished, write a JSON report at:
-`/tmp/hamix-worker/cycle-abc123/criteria-report.json`
-
-Schema: {"criteria":[{"id":"<id>","claimed_done":true,"evidence":"..."}],"commits":[{"sha":"...","branch":"main"}]}
-
-claimed_done is your assertion that you completed the work; a separate verify phase (same agent) decides whether each criterion is satisfied.
+You must satisfy every criterion below. When finished, call hamix.submit_criteria_report …
+For each criterion that lists verify commands: run those commands … before claiming done.
+claimed_done is accepted by the harness as final (no separate verify phase).
 
 - [crit-001] Add a health check endpoint that returns 200 with {"status":"ok"}
 - [crit-002] All existing tests pass
+  Verify commands (run before claiming done):
+  1. `go test ./...`
+     Expected outcome: all packages pass
 
 Implement the feature described below.
 
-<operator initial_prompt HTML/text follows>
+<operator initial_prompt follows>
 ```
-
-On verify retry, a `## Previous verification feedback` block is appended at the end. On resume after restart, a `## Worker resume notice` block appears near the top (after git policy).
 
 ## Wire contracts
 
@@ -271,7 +262,7 @@ See [configuration.md](../configuration.md) for validation rules and supervisor 
 - Write `criteria-report.json` to the **absolute path** in the prompt — never under `repo_root`.
 - On cross-cycle resume, report **only active** criterion ids; omit locked passes already listed under "Already verified".
 - Prefer commit policy **on** when benign process restarts are possible — tagged commits aid resume when the working tree is clean.
-- Do not treat verify commands as optional — the worker runs them independently; execute evidence should describe what changed, not replace shell checks ([ADR-0012](../adr/ADR-0012-structured-verify-commands.md)).
+- Do not treat verify commands as optional — the execute prompt lists them; run them before claiming done ([ADR-0092](../adr/ADR-0092-execute-owns-verify-commands.md)).
 - Use stable criterion ids exactly as shown in the prompt; do not invent or paraphrase ids in the report.
 
 ## Limitations

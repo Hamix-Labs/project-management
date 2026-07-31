@@ -2,7 +2,7 @@ type Props = {
   count: number;
 };
 
-/** Compact pill for criteria that include automated verify commands. */
+/** Compact pill for criteria that include execute-agent verify checks. */
 export function ChecklistVerifyBadge({ count }: Props) {
   if (count <= 0) {
     return null;
@@ -14,7 +14,7 @@ export function ChecklistVerifyBadge({ count }: Props) {
   return (
     <span
       className="task-checklist-verify-badge"
-      aria-label={`${count} automated verify ${noun}`}
+      aria-label={`${count} verify ${noun} for the execute agent`}
     >
       <svg
         className="task-checklist-verify-badge__icon"

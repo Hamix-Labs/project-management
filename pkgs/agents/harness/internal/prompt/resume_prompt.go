@@ -106,9 +106,9 @@ func ComposePolishDirective(cycle *cyclesdomain.TaskCycle, in PolishNoticeInput)
 		b.WriteString("Still inspect the tree, change only what the instructions require, commit new work normally, and do not undo prior good work.\n\n")
 	} else {
 		b.WriteString("### Verification mode for this polish\n\n")
-		b.WriteString("Criteria listed as already verified must remain satisfied ΓÇö do not undo them.\n")
+		b.WriteString("Criteria listed as already verified must remain satisfied — do not undo them.\n")
 		b.WriteString("Apply the polish instructions; fix flagged criteria; implement newly added criteria.\n")
-		b.WriteString("Only criteria with verify commands will be re-checked by matching expected_outcome to worker-captured output after execute.\n")
+		b.WriteString("For active criteria with verify commands, run those commands and confirm expected_outcome before claiming done.\n")
 		b.WriteString("Write a complete criteria report for active criteria only.\n\n")
 	}
 

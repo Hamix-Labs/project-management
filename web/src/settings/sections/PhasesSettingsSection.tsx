@@ -4,7 +4,6 @@ import type { SettingsFormState } from "../settingsForm";
 import { SECTION_IDS } from "./sectionIds";
 import {
   PhaseFieldGroup,
-  PhaseFlowConnector,
   PhaseModelField,
   PhasePanel,
   SectionCard,
@@ -12,9 +11,7 @@ import {
 import type { HandleField } from "./settingsSectionTypes";
 
 /**
- * Phases — execute and verify configuration under one section card.
- * Each phase is a nested panel with grouped fields (worker vs runner
- * for execute; runner model for verify).
+ * Phases — execute worker and runner configuration under one section card.
  */
 export function PhasesSettingsSection({
   form,
@@ -196,28 +193,6 @@ export function PhasesSettingsSection({
               ) : null}
             </div>
 
-          </PhaseFieldGroup>
-        </PhasePanel>
-
-        <PhaseFlowConnector />
-
-        <PhasePanel
-          id={SECTION_IDS.verification}
-          phase="verify"
-          description="Command-only verify runs worker checks and MCP criteria claims after execute (ADR-0090)."
-        >
-          <PhaseFieldGroup title="Runner">
-            <PhaseModelField
-              testId="settings-verify-model-select"
-              value={form.verifyModel}
-              onChange={(v) => onField("verifyModel", v)}
-              query={cursorModelsQuery}
-              knownIds={modelIdsFromList}
-            />
-            <p className="settings-field-help">
-              Auto inherits the execute model. Pick a model to pin for verify
-              only.
-            </p>
           </PhaseFieldGroup>
         </PhasePanel>
       </div>

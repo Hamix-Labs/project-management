@@ -1,7 +1,6 @@
 package agentmcp
 
 import (
-	"errors"
 	"path/filepath"
 	"testing"
 
@@ -78,40 +77,6 @@ func TestSubmitCriteria_missingActiveID(t *testing.T) {
 	})
 	if err == nil {
 		t.Fatal("expected missing b")
-	}
-}
-
-func TestSubmitVerify_writesReportAndReceipt(t *testing.T) {
-	t.Parallel()
-	dir := t.TempDir()
-	cycleID := "cycle-v"
-	nonce := "nonce-v"
-	sess := &Session{
-		TaskID:             "task-1",
-		CycleID:            cycleID,
-		Phase:              PhaseVerify,
-		ReportDir:          dir,
-		SubmitNonce:        nonce,
-		ActiveCriterionIDs: map[string]struct{}{"a": {}},
-	}
-	reasoning := "Verified because the implementation matches the criterion text and tests pass."
-	_, err := submitVerify(sess, submitVerifyInput{
-		Criteria: []struct {
-			ID        string `json:"id" jsonschema:"criterion id"`
-			Verified  bool   `json:"verified" jsonschema:"whether the criterion passed verify"`
-			Reasoning string `json:"reasoning" jsonschema:"reasoning for the verdict"`
-		}{
-			{ID: "a", Verified: true, Reasoning: reasoning},
-		},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := sidecar.RequireVerifySubmitReceipt(dir, cycleID, nonce); err != nil {
-		t.Fatal(err)
-	}
-	if err := sidecar.RequireVerifySubmitReceipt(dir, cycleID, "wrong"); !errors.Is(err, sidecar.ErrSubmitReceiptInvalid) {
-		t.Fatalf("got %v", err)
 	}
 }
 

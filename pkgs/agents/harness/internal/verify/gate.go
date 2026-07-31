@@ -4,29 +4,23 @@ import (
 	"context"
 	"errors"
 	"log/slog"
-	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	checklistcontract "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/contract"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 )
 
-// LoadSnapshot reads app settings and checklist criteria for verify gating.
+// LoadSnapshot reads checklist criteria for claim-acceptance gating.
 func (s *Service) LoadSnapshot(ctx context.Context, taskID string) (Snapshot, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.verify.LoadSnapshot",
 		"task_id", taskID)
-	settings, err := s.store.GetSettings(ctx)
-	if err != nil {
-		return Snapshot{}, err
-	}
 	items, err := s.store.ListChecklistForVerify(ctx, taskID)
 	if err != nil {
 		return Snapshot{}, err
 	}
 	return Snapshot{
-		Enabled:     len(items) > 0,
-		Criteria:    items,
-		VerifyModel: strings.TrimSpace(settings.VerifyModel),
+		Enabled:  len(items) > 0,
+		Criteria: items,
 	}, nil
 }
 

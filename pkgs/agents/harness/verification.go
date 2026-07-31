@@ -32,14 +32,8 @@ func (h *Harness) verifySvc() *verify.Service {
 					h.persistProgress(ctx, taskID, cycleID, phaseSeq, ev)
 					h.publishProgress(taskID, cycleID, phaseSeq, h.phaseRunCorrelationID(), ev)
 				},
-				PersistSessionID: func(ctx context.Context, cycleID string, phaseSeq int64, sessionID string) {
-					h.persistSessionID(ctx, cycleID, phaseSeq, sessionID)
-				},
 				RecordVerdict:   h.recordVerifyVerdict,
 				ObserveDuration: h.observeVerifyDuration,
-				SetRunCancel: func(cancel context.CancelFunc, taskID string) {
-					h.setCurrentRunCancel(cancel, taskID)
-				},
 			},
 		})
 	}
@@ -78,63 +72,12 @@ func (h *Harness) runVerificationPipeline(
 	state *processState,
 	snap verificationSnapshot,
 ) ([]criterionVerdict, error) {
-	svc := h.verifySvc()
-	toolOnly := h.agentMCPActive(parentCtx)
-	svc.SetToolOnlyReports(toolOnly)
-	svc.SetPlanVerifyRun(func(ctx context.Context, in verify.PlanVerifyRunInput) (verify.VerifyRunPlan, error) {
-		return h.planVerifyRun(ctx, in.Task, in.Cycle, state, in.Snap, in.CmdEvidence, in.SelfReport)
-	})
-	svc.SetPrepareRunnerRequest(func(ctx context.Context, req *runner.Request, task *taskcoredomain.Task, cycle *cyclesdomain.TaskCycle) error {
-		prev := state.agentMCP
-		state.agentMCP = agentMCPLifecycleState{
-			mcpConfigTracked: prev.mcpConfigTracked,
-			mcpConfigHadFile: prev.mcpConfigHadFile,
-			mcpConfigBackup:  prev.mcpConfigBackup,
-		}
-		if !h.agentMCPActive(ctx) {
-			return nil
-		}
-		prep, err := h.prepareAgentMCP(ctx, task, cycle, cyclesdomain.PhaseVerify, state)
-		if err != nil {
-			return err
-		}
-		applyAgentMCPToRequest(req, prep)
-		state.agentMCP.enabled = true
-		state.agentMCP.nonce = prep.Nonce
-		return nil
-	})
-	svc.SetRequireVerifySubmitReceipt(func(cycleID string) error {
-		if !state.agentMCP.enabled {
-			return nil
-		}
-		return reports.RequireVerifySubmitReceipt(h.opts.ReportDir, cycleID, state.agentMCP.nonce)
-	})
-	return svc.RunPipeline(parentCtx, task, cycle, snap, state.verify.lockedPasses, state.verify.mirrorDegraded, verify.PhaseCallbacks{
-		OnStarted: func(phase *cyclesdomain.TaskCyclePhase) {
-			state.phase.runningPhase = cyclesdomain.PhaseVerify
-			state.phase.runningPhaseSeq = phase.PhaseSeq
-			id := cyclesdomain.RunCorrelationIDFromDetailsJSON(phase.DetailsJSON)
-			state.phase.runCorrelationID = id
-			h.setPhaseRunCorrelationID(id)
-		},
-		OnEnded: func() {
-			state.phase.lastVerifyAfterExecuteSeq = state.phase.lastCompletedExecutePhaseSeq
-			state.phase.runningPhase = ""
-			state.phase.runningPhaseSeq = 0
-			state.phase.runCorrelationID = ""
-			h.setPhaseRunCorrelationID("")
-		},
-	})
+	return h.verifySvc().RunPipeline(parentCtx, task, cycle, snap, state.verify.lockedPasses, state.verify.mirrorDegraded, verify.PhaseCallbacks{})
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func formatVerificationFailedReason(finalVerdicts []criterionVerdict, lockedPasses map[string]criterionVerdict) string {
 	return verify.FormatFailedReason(finalVerdicts, lockedPasses)
-}
-
-//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func verifyDiffSection(workingDir string) string {
-	return verify.DiffSection(workingDir)
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."

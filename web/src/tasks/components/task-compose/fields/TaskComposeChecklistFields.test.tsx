@@ -22,9 +22,9 @@ describe("TaskComposeChecklistFields", () => {
     );
 
     expect(screen.getByText("The full test suite still passes.")).toBeInTheDocument();
-    expect(screen.getByLabelText(/1 automated verify command/i)).toHaveTextContent(
-      "1 command",
-    );
+    expect(
+      screen.getByLabelText(/1 verify command for the execute agent/i),
+    ).toHaveTextContent("1 command");
   });
 
   it("opens edit when anywhere on the criterion row is clicked", async () => {

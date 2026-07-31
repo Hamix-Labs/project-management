@@ -273,7 +273,9 @@ describe("TaskDetailChecklistItemList", () => {
       },
     ]);
 
-    expect(screen.getByLabelText(/1 automated verify command/i)).toHaveTextContent(
+    expect(
+      screen.getByLabelText(/1 verify command for the execute agent/i),
+    ).toHaveTextContent(
       "1 command",
     );
     expect(screen.getByText("Hello World is written inside the 123.md file")).toBeInTheDocument();
