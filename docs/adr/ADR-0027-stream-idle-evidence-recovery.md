@@ -3,7 +3,7 @@
 > **Note** - Product renamed T2A to Hamix; identifiers below reflect the name at decision time unless updated inline.
 
 **Date:** 2026-06-19
-**Status:** Superseded / Obsolete (2026-07-25) — stream-idle kill was removed end-to-end. Runners now own their own timeouts; only `max_run_duration_seconds` (wall-clock cap on `runner.Request.Timeout` → `runner.ErrTimeout`) remains. The `stream_idle_stuck_seconds` setting, `adapterkit.DefaultStreamExecWithIdle`, `adapterkit.ErrStreamIdle`, `runner.ErrStale`, and evidence-recovery post-run gates are all deleted. This document is retained for historical context only.
+**Status:** Superseded by [ADR-0091](ADR-0091-stream-idle-fail-clean.md) (2026-07-30) for the kill signal only — stream-idle fail-clean returns without evidence recovery. Historical note (2026-07-25): stream-idle kill was removed end-to-end; only `max_run_duration_seconds` remained until ADR-0091.
 **Deciders:** Harness / agent-worker maintainers
 
 ## Context

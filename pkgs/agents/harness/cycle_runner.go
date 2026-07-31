@@ -69,7 +69,7 @@ func (h *Harness) invokeRunnerWithDecision(
 		"cursor_resume_mode", string(decision.Mode),
 		"recovery_hint_kind", string(decision.RecoveryKind),
 		"recovery_hint_bytes", len(decision.Prompt),
-		"run_timeout_ns", int64(h.opts.RunTimeout))
+		"run_timeout_ns", int64(h.opts.RunTimeout), "stream_idle_stuck_ns", int64(h.opts.StreamIdleStuck))
 	runCtx, cancelCause := context.WithCancelCause(parentCtx)
 	if h.opts.RunTimeout > 0 {
 		var timeoutCancel context.CancelFunc
@@ -87,6 +87,7 @@ func (h *Harness) invokeRunnerWithDecision(
 	onSessionID := func(sessionID string) {
 		h.persistSessionID(runCtx, cycle.ID, phaseRow.PhaseSeq, sessionID)
 	}
+	streamIdleStuck, onStreamIdle := h.streamIdleRunnerFields(onProgress)
 	onProgress(setupInvokeProgress(decision))
 	req := runner.Request{
 		TaskID:           task.ID,
@@ -98,6 +99,8 @@ func (h *Harness) invokeRunnerWithDecision(
 		CursorModel:      cursorModel,
 		RunCorrelationID: runCorrelationID,
 		ResumeSessionID:  decision.ResumeSessionID,
+		StreamIdleStuck:  streamIdleStuck,
+		OnStreamIdle:     onStreamIdle,
 		OnProgress:       onProgress,
 		OnSessionID:      onSessionID,
 	}

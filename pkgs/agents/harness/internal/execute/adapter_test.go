@@ -17,6 +17,7 @@ func TestMapRunnerOutcome(t *testing.T) {
 	}{
 		{nil, orchestration.ExecuteRunnerOutcomeOK},
 		{runner.ErrTimeout, orchestration.ExecuteRunnerOutcomeTimeout},
+		{runner.ErrStale, orchestration.ExecuteRunnerOutcomeStreamIdle},
 		{runner.ErrNonZeroExit, orchestration.ExecuteRunnerOutcomeNonZeroExit},
 		{runner.ErrInvalidOutput, orchestration.ExecuteRunnerOutcomeInvalidOutput},
 		{fmt.Errorf("wrap: %w", runner.ErrTimeout), orchestration.ExecuteRunnerOutcomeTimeout},
@@ -43,6 +44,7 @@ func TestMapRunnerOutcome_matchesDecideReasons(t *testing.T) {
 		reason orchestration.TerminationReason
 	}{
 		{runner.ErrTimeout, orchestration.ReasonRunnerTimeout},
+		{runner.ErrStale, orchestration.ReasonStreamIdle},
 		{runner.ErrNonZeroExit, orchestration.ReasonRunnerNonZeroExit},
 		{runner.ErrInvalidOutput, orchestration.ReasonRunnerInvalidOutput},
 		{errors.New("x"), orchestration.ReasonRunnerError},

@@ -6,7 +6,6 @@ import {
   AutonomyConfirmDialog,
   TaskApproveConfirmDialog,
   TaskPolishDialog,
-  TaskRetryConfirmDialog,
 } from "../components/dialogs";
 import { taskQueryKeys } from "../task-query";
 import type { TaskDetailLoadedViewProps } from "./TaskDetailLoadedView";
@@ -20,9 +19,6 @@ type TaskDetailLoadedDialogsProps = Pick<
   | "autonomyConfirmOpen"
   | "setAutonomyConfirmOpen"
   | "autonomyMutation"
-  | "retryConfirmMode"
-  | "setRetryConfirmMode"
-  | "retryMutation"
   | "approveConfirmOpen"
   | "setApproveConfirmOpen"
   | "approveMutation"
@@ -41,9 +37,6 @@ export function TaskDetailLoadedDialogs({
   autonomyConfirmOpen,
   setAutonomyConfirmOpen,
   autonomyMutation,
-  retryConfirmMode,
-  setRetryConfirmMode,
-  retryMutation,
   approveConfirmOpen,
   setApproveConfirmOpen,
   approveMutation,
@@ -86,30 +79,6 @@ export function TaskDetailLoadedDialogs({
           onConfirm={() =>
             autonomyMutation.mutate(autonomyEnable ? "ready" : "on_hold")
           }
-        />
-      ) : null}
-
-      {retryConfirmMode ? (
-        <TaskRetryConfirmDialog
-          mode={retryConfirmMode}
-          taskTitle={task.title}
-          saving={saving}
-          pending={retryMutation.isPending}
-          error={
-            retryMutation.isError
-              ? errorMessage(
-                  retryMutation.error,
-                  retryConfirmMode === "fresh"
-                    ? "Couldn't start over."
-                    : "Couldn't resume from failure.",
-                )
-              : null
-          }
-          onCancel={() => {
-            setRetryConfirmMode(null);
-            if (retryMutation.isError) retryMutation.reset();
-          }}
-          onConfirm={() => retryMutation.mutate(retryConfirmMode)}
         />
       ) : null}
 

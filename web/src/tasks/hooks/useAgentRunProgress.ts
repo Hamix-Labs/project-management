@@ -70,6 +70,70 @@ export function pushAgentRunProgress(frame: AgentRunProgressFrame): void {
   emitChange();
 }
 
+/**
+ * Seed the ephemeral live ticker from durable cycle stream events when the
+ * SSE map is empty (reload / missed frames). Does not overwrite existing
+ * live items. `receivedAt` uses each event's `at` when parseable.
+ */
+export function hydrateAgentRunProgress(
+  taskId: string,
+  cycleId: string,
+  phaseSeq: number,
+  events: ReadonlyArray<{
+    kind: string;
+    subtype?: string;
+    message?: string;
+    tool?: string;
+    at?: string;
+    phase_seq?: number;
+  }>,
+): void {
+  if (
+    taskId.trim() === "" ||
+    cycleId.trim() === "" ||
+    phaseSeq <= 0 ||
+    events.length === 0
+  ) {
+    return;
+  }
+  const key = keyFor(taskId, cycleId, phaseSeq);
+  if ((progressByPhase.get(key)?.length ?? 0) > 0) {
+    return;
+  }
+  const forPhase = events.filter(
+    (ev) => (ev.phase_seq ?? phaseSeq) === phaseSeq && ev.kind.trim() !== "",
+  );
+  if (forPhase.length === 0) return;
+  const items: AgentRunProgressItem[] = forPhase.slice(-MAX_ITEMS_PER_PHASE).map((ev) => {
+    const parsed = ev.at ? Date.parse(ev.at) : Number.NaN;
+    return {
+      taskId,
+      cycleId,
+      phaseSeq,
+      receivedAt: Number.isFinite(parsed) ? parsed : Date.now(),
+      progress: {
+        kind: ev.kind,
+        subtype: ev.subtype,
+        message: ev.message,
+        tool: ev.tool,
+      },
+    };
+  });
+  progressByPhase.set(key, items);
+  while (progressByPhase.size > MAX_TRACKED_PHASES) {
+    const oldest = progressByPhase.keys().next().value as string | undefined;
+    if (oldest === undefined) break;
+    progressByPhase.delete(oldest);
+  }
+  emitChange();
+}
+
+/** Test helper — clears the in-memory progress map. */
+export function resetAgentRunProgressForTests(): void {
+  progressByPhase.clear();
+  emitChange();
+}
+
 export function useAgentRunProgress(
   taskId: string,
   cycleId: string,

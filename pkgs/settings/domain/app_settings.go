@@ -30,6 +30,8 @@ import (
 //     CursorModel / adapter default).
 //   - MaxRunDurationSeconds: per-run wall-clock cap in seconds. 0 means
 //     "no limit" — the worker does not wrap runner.Run with a timeout.
+//   - StreamIdleStuckSeconds: stdout silence after the first line before
+//     fail-clean kill (ADR-0091). 0 disables. Default 900 (15 minutes).
 //   - AgentTaskParallelism: max number of tasks that may run at once across
 //     different worktrees (worker.Pool slot count). Same worktree stays
 //     sequential via WorktreeGate. Default 150; must be >= 1.
@@ -62,6 +64,7 @@ type AppSettings struct {
 	CursorModel                string `json:"cursor_model"`
 	VerifyModel                string `json:"verify_model"`
 	MaxRunDurationSeconds      int    `json:"max_run_duration_seconds"`
+	StreamIdleStuckSeconds     int    `json:"stream_idle_stuck_seconds"`
 	AgentTaskParallelism       int    `json:"agent_task_parallelism"`
 	AgentPickupDelaySeconds    int    `json:"agent_pickup_delay_seconds"`
 	DisplayTimezone            string `json:"display_timezone"`
@@ -98,6 +101,10 @@ const DefaultAgentPickupDelaySeconds = 5
 // (max parallel tasks across different worktrees).
 const DefaultAgentTaskParallelism = 150
 
+// DefaultStreamIdleStuckSeconds is the seed value for StreamIdleStuckSeconds
+// (stdout silence fail-clean; ADR-0091).
+const DefaultStreamIdleStuckSeconds = 900
+
 // DefaultDisplayTimezone is the seed value for DisplayTimezone on first
 // boot. Empty string is the "auto-detect" sentinel: the SPA reads it as
 // "no explicit operator choice yet" and falls back to the browser's own
@@ -123,6 +130,7 @@ func DefaultAppSettings() AppSettings {
 		Runner:                     DefaultRunner,
 		CursorBin:                  "",
 		MaxRunDurationSeconds:      0,
+		StreamIdleStuckSeconds:     DefaultStreamIdleStuckSeconds,
 		AgentTaskParallelism:       DefaultAgentTaskParallelism,
 		AgentPickupDelaySeconds:    DefaultAgentPickupDelaySeconds,
 		DisplayTimezone:            DefaultDisplayTimezone,

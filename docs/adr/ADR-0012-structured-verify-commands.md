@@ -3,7 +3,7 @@
 > **Note** - Product renamed T2A to Hamix; identifiers below reflect the name at decision time unless updated inline.
 
 **Date:** 2026-06-15  
-**Status:** Superseded by [ADR-0091](./ADR-0091-execute-owns-verify-commands.md) for runtime (authoring schema retained)  
+**Status:** Superseded by [ADR-0092](./ADR-0092-execute-owns-verify-commands.md) for runtime (authoring schema retained)  
 **Deciders:** T2A maintainers
 
 ## Context

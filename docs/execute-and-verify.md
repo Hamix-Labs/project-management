@@ -42,7 +42,7 @@ As of today, you can create as many tasks as you need. There is no cap on how ma
 
 The agent worker still runs **one task at a time**. If you create 100 tasks and they are all ready for the agent, only one is picked up and executed at once. The rest wait in line until the current run finishes (success or failure), then the next eligible task starts.
 
-**Start over** and **Resume from failure** follow the same rule. They only appear when a task has already **failed**, so that task is not running anymore. The action does not start work immediately: it queues the task as ready with your retry choice saved. If another task is executing when you click retry, your task waits in line like any other ready task. Hamix does not block the button because another task is in flight; the single worker prevents two runs at once.
+Operator retry via `POST /tasks/{id}/retry` (`fresh` or `resume`) follows the same rule. It only applies when a task has already **failed**, so that task is not running anymore. The request does not start work immediately: it queues the task as ready with the retry choice saved. If another task is executing, the retried task waits in line like any other ready task. The single worker prevents two runs at once.
 
 Tasks that are blocked (for example, waiting on dependencies or a deferred pickup time) stay out of the queue until they become ready.
 
@@ -98,7 +98,7 @@ When you create a task, you supply:
 
 4. Decision (one-shot)
    → all pass → task marked done; checklist completions recorded
-   → any fail → cycle fails; use Retry / Start over for a new attempt
+   → any fail → cycle fails; queue a new attempt via POST /tasks/{id}/retry
 ```
 
 ## Managed worktrees (isolation boundary)
@@ -153,7 +153,7 @@ Write criteria the agent can evaluate in both phases without guesswork.
 
 Each cycle is **one-shot** ([ADR-0090](./adr/ADR-0090-command-only-verify.md)): one execute, at most one command-verify pass. Any gate or verify failure **terminates the cycle** — there is no in-cycle execute↔verify retry budget.
 
-When a cycle fails, use **Start over** or **Resume from failure** on the task detail page to queue a **new** attempt. **Resume from failure** can carry forward criteria that already passed verify on the parent cycle so the agent does not redo settled work.
+When a cycle fails, queue a **new** attempt with `POST /tasks/{id}/retry` (`mode: fresh` or `mode: resume`). Resume mode can carry forward criteria that already passed verify on the parent cycle so the agent does not redo settled work. The task detail SPA no longer offers Start over / Resume from failure buttons.
 
 **When does the checklist update?** Only when the full run succeeds and the task reaches **done**. Until then, partial progress inside a failed cycle does not create permanent checklist completions.
 

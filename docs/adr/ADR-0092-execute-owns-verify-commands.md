@@ -1,4 +1,4 @@
-# ADR-0091: Execute owns verify commands
+# ADR-0092: Execute owns verify commands
 
 **Date:** 2026-07-30  
 **Status:** Accepted  

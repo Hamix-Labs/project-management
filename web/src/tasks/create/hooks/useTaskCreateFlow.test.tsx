@@ -49,6 +49,7 @@ function makeWrapper() {
     cursor_bin: "",
     cursor_model: "",
     max_run_duration_seconds: 0,
+    stream_idle_stuck_seconds: 900,
     agent_task_parallelism: 150,
     agent_pickup_delay_seconds: 5,
     display_timezone: "UTC",

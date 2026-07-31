@@ -78,6 +78,7 @@ func (s *Supervisor) spawnWorkerInstance(ctx context.Context, cfg settingsdomain
 	}
 	w := worker.NewPool(s.store, s.queue, r, worker.Options{
 		RunTimeout:          runTimeout,
+		StreamIdleStuck:     time.Duration(cfg.StreamIdleStuckSeconds) * time.Second,
 		ReportDir:           reportDir,
 		Notifier:            notifier,
 		TaskUpdatedNotifier: taskUpdatedNotifier,

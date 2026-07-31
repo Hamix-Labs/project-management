@@ -26,6 +26,11 @@ export type AppSettings = {
   verify_model: string;
   max_run_duration_seconds: number;
   /**
+   * Seconds of stdout silence after the first line before fail-clean kill.
+   * Default 900; 0 disables. Distinct from max_run_duration_seconds.
+   */
+  stream_idle_stuck_seconds: number;
+  /**
    * Max tasks that may run at once across different worktrees.
    * Same worktree stays sequential. Default 150; must be >= 1.
    */
@@ -70,6 +75,7 @@ export type AppSettingsPatch = Partial<{
   cursor_model: string;
   verify_model: string;
   max_run_duration_seconds: number;
+  stream_idle_stuck_seconds: number;
   agent_task_parallelism: number;
   agent_pickup_delay_seconds: number;
   /**
@@ -125,6 +131,10 @@ export function parseAppSettings(raw: unknown): AppSettings {
   const verifyModel =
     typeof o.verify_model === "string" ? o.verify_model : "";
   const maxDur = o.max_run_duration_seconds;
+  const streamIdle =
+    typeof o.stream_idle_stuck_seconds === "number" && o.stream_idle_stuck_seconds >= 0
+      ? o.stream_idle_stuck_seconds
+      : 900;
   const parallelism =
     typeof o.agent_task_parallelism === "number" && o.agent_task_parallelism >= 1
       ? o.agent_task_parallelism
@@ -153,6 +163,7 @@ export function parseAppSettings(raw: unknown): AppSettings {
     cursor_model: cursorModel,
     verify_model: verifyModel,
     max_run_duration_seconds: maxDur,
+    stream_idle_stuck_seconds: streamIdle,
     agent_task_parallelism: parallelism,
     agent_pickup_delay_seconds: pickupDelay,
     display_timezone: tz,

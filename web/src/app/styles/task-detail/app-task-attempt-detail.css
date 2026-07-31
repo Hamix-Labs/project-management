@@ -937,6 +937,86 @@ time.task-attempt-meta-inline-item {
   color: var(--text-primary);
 }
 
+.task-attempt-phase-reply {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 0.45rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--border-chrome-hairline);
+  border-left-width: 3px;
+  border-radius: var(--radius-md);
+  background: var(--surface-soft);
+}
+
+.task-attempt-phase-reply[data-status="succeeded"] {
+  border-left-color: var(--pill-success-fill-border, var(--color-success));
+}
+
+.task-attempt-phase-reply[data-status="failed"] {
+  border-left-color: var(--pill-danger-fill-border, var(--color-error));
+}
+
+.task-attempt-phase-reply[data-status="skipped"] {
+  border-left-color: var(--border-chrome-hairline);
+}
+
+.task-attempt-phase-reply-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.task-attempt-phase-reply-time {
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.task-attempt-phase-reply-body {
+  margin: 0;
+  max-width: min(100%, 72ch);
+  font-size: var(--text-sm);
+  font-weight: 450;
+  line-height: 1.5;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.task-attempt-phase-reply-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.85rem;
+}
+
+.task-attempt-phase-reply-toggle,
+.task-attempt-phase-reply-activity {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--brand-deep, var(--text-secondary));
+  font-size: var(--text-xs);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.task-attempt-phase-reply-toggle:hover,
+.task-attempt-phase-reply-activity:hover {
+  color: var(--text-primary);
+}
+
+.task-attempt-phase-reply-toggle:focus-visible,
+.task-attempt-phase-reply-activity:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+  border-radius: var(--radius-sm);
+}
+
 .task-attempt-live-tail {
   display: grid;
   gap: 0.45rem;

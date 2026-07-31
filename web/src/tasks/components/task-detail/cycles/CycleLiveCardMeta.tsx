@@ -1,3 +1,9 @@
+import {
+  ClockGlyph,
+  HashGlyph,
+  SparklesGlyph,
+  TerminalGlyph,
+} from "../ExecutionBarGlyphs";
 import { runnerLabel } from "@/tasks/cycleDisplay/cyclesViewModel";
 import type { CycleMeta } from "@/types/cycle";
 
@@ -10,7 +16,7 @@ type CycleLiveCardMetaProps = {
 
 /**
  * Muted middot footer: Attempt · runner · model · Started …
- * No runtime pill — plain text so status color stays in the head.
+ * Icon + text facts; status color stays in the head.
  */
 export function CycleLiveCardMeta({
   attemptSeq,
@@ -26,16 +32,23 @@ export function CycleLiveCardMeta({
 
   return (
     <div className="task-cycle-ticker-meta">
-      <span className="task-cycle-ticker-attempt">
-        Attempt #{attemptSeq}
-        {lineage ? (
-          <span className="task-cycle-lineage muted"> · {lineage}</span>
-        ) : null}
+      <span className="task-cycle-ticker-fact">
+        <HashGlyph className="task-cycle-ticker-fact-icon" />
+        <span className="task-cycle-ticker-attempt">
+          Attempt #{attemptSeq}
+          {lineage ? (
+            <span className="task-cycle-lineage muted"> · {lineage}</span>
+          ) : null}
+        </span>
       </span>
       <span className="task-cycle-ticker-meta-sep" aria-hidden="true">
         ·
       </span>
-      <span data-testid="task-cycle-ticker-runner">
+      <span
+        className="task-cycle-ticker-fact"
+        data-testid="task-cycle-ticker-runner"
+      >
+        <TerminalGlyph className="task-cycle-ticker-fact-icon" />
         <span className="task-cycle-ticker-runner-label">{runner}</span>
         {model ? (
           <>
@@ -43,6 +56,7 @@ export function CycleLiveCardMeta({
               {" "}
               ·{" "}
             </span>
+            <SparklesGlyph className="task-cycle-ticker-fact-icon" />
             <span className="task-cycle-ticker-model-label">{model}</span>
           </>
         ) : null}
@@ -51,10 +65,13 @@ export function CycleLiveCardMeta({
         ·
       </span>
       <span
-        className="task-cycle-ticker-elapsed"
+        className="task-cycle-ticker-fact"
         data-testid="task-cycle-ticker-elapsed"
       >
-        Started {startedLabel} ago
+        <ClockGlyph className="task-cycle-ticker-fact-icon" />
+        <span className="task-cycle-ticker-elapsed">
+          Started {startedLabel} ago
+        </span>
       </span>
     </div>
   );

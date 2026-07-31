@@ -116,8 +116,9 @@ Singleton row in Postgres (CHECK enforces `id=1`). AutoMigrate creates the table
 | `repo_root` | string | `""` | Absolute path to the workspace the worker and `/repo/*` operate against. Set from Settings → **Agent workspace** → **Choose project folder** (stored as the absolute path taskapi sees). **Empty = not configured**: supervisor stays idle, repo routes respond `409 repo_root_not_configured`, `@`-mention validation is skipped. See [domain/workspace-repo.md](domain/workspace-repo.md). |
 | `cursor_bin` | string | `""` | Cursor CLI binary path. Empty = `PATH` lookup of `cursor`. Absolute paths pin a build. |
 | `cursor_model` | string | `""` | Optional Cursor model forwarded to the execute runner. Empty = omit the model flag (Cursor uses account default). |
-| `verify_model` | string | `""` | **Unused for new cycles** (API compatibility). Formerly pinned Cursor `--model` for PhaseVerify ([ADR-0091](adr/ADR-0091-execute-owns-verify-commands.md)). |
+| `verify_model` | string | `""` | **Unused for new cycles** (API compatibility). Formerly pinned Cursor `--model` for PhaseVerify ([ADR-0092](adr/ADR-0092-execute-owns-verify-commands.md)). |
 | `max_run_duration_seconds` | int (≥0) | `0` | Per-run wall-clock cap on `runner.Request.Timeout`. `0` = no limit. |
+| `stream_idle_stuck_seconds` | int (≥0) | `900` | Stdout silence after the first line before fail-clean kill ([ADR-0091](adr/ADR-0091-stream-idle-fail-clean.md)). `0` disables. Distinct from `max_run_duration_seconds`. |
 | `agent_task_parallelism` | int (≥1) | `150` | Max tasks that may run at once across **different** worktrees (`pkgs/agents/worker.Pool` slot count). Same worktree stays sequential via `WorktreeGate`. Settings → Phases → **Max parallel tasks**. See [domain/agent-queue.md](domain/agent-queue.md) and [ADR-0039](adr/ADR-0039-fixed-worktree-branch.md). |
 | `agent_pickup_delay_seconds` | int (≥0) | `5` | Delay applied to new ready tasks before the worker can dequeue them. `0` disables. |
 | `display_timezone` | string | `""` | IANA timezone for SPA timestamps. Empty = browser auto-detect. Validated via `time.LoadLocation`. |
@@ -135,6 +136,7 @@ Singleton row in Postgres (CHECK enforces `id=1`). AutoMigrate creates the table
 
 - `runner` is non-empty and not in `pkgs/agents/runner/registry`.
 - `max_run_duration_seconds` is negative.
+- `stream_idle_stuck_seconds` is negative.
 - `agent_task_parallelism` is less than 1.
 - `repo_root` contains a NUL byte.
 

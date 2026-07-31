@@ -158,7 +158,7 @@ See [cycle-commits.md](./cycle-commits.md) for worker ingest and schema.
 When the task has checklist items, [`InjectCriteria`](../../pkgs/agents/harness/internal/prompt/criteria_prompt.go) prepends:
 
 - **Already verified (do not re-do)** — Locked criteria from parent cycle. Omitted from the report's expected ID set.
-- **Done criteria (required)** — Active criteria with stable `[id]` prefixes. Attached `verify_commands` list `command` + `expected_outcome`; the agent must run them before claiming. `claimed_done` is accepted by the harness as final (`execute_claim`, [ADR-0091](../adr/ADR-0091-execute-owns-verify-commands.md)).
+- **Done criteria (required)** — Active criteria with stable `[id]` prefixes. Attached `verify_commands` list `command` + `expected_outcome`; the agent must run them before claiming. `claimed_done` is accepted by the harness as final (`execute_claim`, [ADR-0092](../adr/ADR-0092-execute-owns-verify-commands.md)).
 
 On operator **Resume from failure**, only **active** (non-locked) criterion ids must appear in the report.
 
@@ -262,7 +262,7 @@ See [configuration.md](../configuration.md) for validation rules and supervisor 
 - Write `criteria-report.json` to the **absolute path** in the prompt — never under `repo_root`.
 - On cross-cycle resume, report **only active** criterion ids; omit locked passes already listed under "Already verified".
 - Prefer commit policy **on** when benign process restarts are possible — tagged commits aid resume when the working tree is clean.
-- Do not treat verify commands as optional — the execute prompt lists them; run them before claiming done ([ADR-0091](../adr/ADR-0091-execute-owns-verify-commands.md)).
+- Do not treat verify commands as optional — the execute prompt lists them; run them before claiming done ([ADR-0092](../adr/ADR-0092-execute-owns-verify-commands.md)).
 - Use stable criterion ids exactly as shown in the prompt; do not invent or paraphrase ids in the report.
 
 ## Limitations

@@ -236,7 +236,7 @@ V1 policy: **restart the worker goroutine** on material change instead of mutati
 | Field / signal | Compared |
 | --- | --- |
 | `runner`, `cursor_bin`, `cursor_model` | string equality |
-| `runner`, `cursor_bin`, `cursor_model`, `max_run_duration_seconds`, `agent_task_parallelism` | equality |
+| `runner`, `cursor_bin`, `cursor_model`, `max_run_duration_seconds`, `stream_idle_stuck_seconds`, `agent_task_parallelism` | equality |
 | `agent_paused` | must match (pause flip forces reload into idle branch) |
 | Probed version | `inst.runner.Version()` vs fresh probe result |
 
@@ -370,6 +370,7 @@ Worker behavior knobs live in **`app_settings`** ([configuration.md](../configur
 | `repo_root` | `WorkingDir`; hard idle if empty/invalid |
 | `runner`, `cursor_bin`, `cursor_model` | Execute probe/build; material change |
 | `max_run_duration_seconds` | `RunTimeout`; `0` = no limit |
+| `stream_idle_stuck_seconds` | `StreamIdleStuck`; `0` = disabled (ADR-0091) |
 
 Env vars the supervisor path reads directly:
 

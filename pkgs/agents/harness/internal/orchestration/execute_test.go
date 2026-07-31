@@ -31,6 +31,7 @@ func TestDecideExecutePostRun_runnerErrors(t *testing.T) {
 		reason  TerminationReason
 	}{
 		{ExecuteRunnerOutcomeTimeout, ReasonRunnerTimeout},
+		{ExecuteRunnerOutcomeStreamIdle, ReasonStreamIdle},
 		{ExecuteRunnerOutcomeNonZeroExit, ReasonRunnerNonZeroExit},
 		{ExecuteRunnerOutcomeInvalidOutput, ReasonRunnerInvalidOutput},
 		{ExecuteRunnerOutcomeError, ReasonRunnerError},

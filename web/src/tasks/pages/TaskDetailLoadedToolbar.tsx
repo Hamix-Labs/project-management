@@ -15,11 +15,9 @@ type TaskDetailLoadedToolbarProps = Pick<
   | "modals"
   | "autonomyMode"
   | "setAutonomyConfirmOpen"
-  | "setRetryConfirmMode"
   | "setApproveConfirmOpen"
   | "setPolishDialogOpen"
   | "setModelConfigOpen"
-  | "retryMutation"
   | "approveMutation"
   | "polishMutation"
   | "autonomyMutation"
@@ -31,11 +29,9 @@ export function TaskDetailLoadedToolbar({
   modals,
   autonomyMode,
   setAutonomyConfirmOpen,
-  setRetryConfirmMode,
   setApproveConfirmOpen,
   setPolishDialogOpen,
   setModelConfigOpen,
-  retryMutation,
   approveMutation,
   polishMutation,
   autonomyMutation,
@@ -86,17 +82,6 @@ export function TaskDetailLoadedToolbar({
         approvePending={approveMutation.isPending}
         onPolish={inReview ? () => setPolishDialogOpen(true) : undefined}
         polishPending={polishMutation.isPending}
-        onRetryFresh={
-          task.status === "failed"
-            ? () => setRetryConfirmMode("fresh")
-            : undefined
-        }
-        onRetryResume={
-          task.status === "failed"
-            ? () => setRetryConfirmMode("resume")
-            : undefined
-        }
-        retryPending={retryMutation.isPending}
         onConfigureModel={() => setModelConfigOpen(true)}
         showModelConfig={task.status === "failed"}
         autonomyMode={autonomyMode}

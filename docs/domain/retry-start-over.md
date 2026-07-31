@@ -4,8 +4,8 @@ Operator **Start over** (`fresh` retry) discards a failed attempt's git/worktree
 
 | | |
 | --- | --- |
-| **Applies to** | `POST /tasks/{id}/retry` with `{ "mode": "fresh" }`; `RunWithRetry` → `runFreshRetry`; SPA Start over |
-| **Audience** | Contributors touching retry API, harness git reset, or task detail retry UI |
+| **Applies to** | `POST /tasks/{id}/retry` with `{ "mode": "fresh" }`; `RunWithRetry` → `runFreshRetry` (API/harness; not exposed as an SPA CTA) |
+| **Audience** | Contributors touching retry API or harness git reset |
 | **Prerequisite** | [retry-resume.md](./retry-resume.md) — contrast with Resume from failure |
 
 ## In this article
@@ -53,7 +53,7 @@ sequenceDiagram
   H->>H: runCycleLoop (empty checkpoint)
 ```
 
-1. Operator clicks **Start over** on a `failed` task; SPA confirms destructive git impact.
+1. Operator posts `POST /tasks/{id}/retry` with `{ "mode": "fresh" }` on a `failed` task (destructive git reset on pickup).
 2. Handler validates actor `user`, task status, and parent cycle (terminal, same task).
 3. Store sets `pending_retry` and `status=ready` in one transaction; audit `task_retry_requested`.
 4. Ready queue notifies the worker (same path as ordinary ready tasks).

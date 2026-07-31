@@ -44,7 +44,8 @@ function SettingsPageLoadedView({
   onProbe,
   onDiscard,
 }: SettingsPageLoadedViewProps) {
-  const { maxInvalid, parallelismInvalid, pickupInvalid } = numericValidation;
+  const { maxInvalid, streamIdleInvalid, parallelismInvalid, pickupInvalid } =
+    numericValidation;
 
   return (
     <section className="settings-page">
@@ -72,6 +73,7 @@ function SettingsPageLoadedView({
             pickupInvalid={pickupInvalid}
             parallelismInvalid={parallelismInvalid}
             maxInvalid={maxInvalid}
+            streamIdleInvalid={streamIdleInvalid}
             cursorModelsQuery={cursorModelsQuery}
             modelIdsFromList={modelIdsFromList}
             onField={onField}
@@ -92,6 +94,7 @@ function SettingsPageLoadedView({
           <SettingsActions
             isDirty={isDirty}
             maxInvalid={maxInvalid}
+            streamIdleInvalid={streamIdleInvalid}
             parallelismInvalid={parallelismInvalid}
             pickupInvalid={pickupInvalid}
             patchPending={patchPending}
