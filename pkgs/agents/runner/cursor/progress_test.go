@@ -2,6 +2,7 @@ package cursor
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 )
 
@@ -77,5 +78,60 @@ func TestToolProgressMessage_fallbackUsesIng(t *testing.T) {
 	}
 	if got := toolProgressMessage("ReadFile", "completed", nil); got != "Finishing ReadFile" {
 		t.Fatalf("completed fallback = %q, want Finishing ReadFile", got)
+	}
+}
+
+func TestProgressFromLine_assistantPersistsFullMessage(t *testing.T) {
+	t.Parallel()
+
+	full := strings.Repeat("Refactor step complete. ", 20) + "Done."
+	raw, err := json.Marshal(map[string]any{
+		"type": "assistant",
+		"message": map[string]any{
+			"role": "assistant",
+			"content": []map[string]string{
+				{"type": "text", "text": full},
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	ev, ok := progressFromLine(raw, nil)
+	if !ok {
+		t.Fatal("expected assistant progress event")
+	}
+	if ev.Message != full {
+		t.Fatalf("Message clipped: got %d runes want %d", len([]rune(ev.Message)), len([]rune(full)))
+	}
+	if len(ev.Payload) == 0 {
+		t.Fatal("expected Cursor-shaped payload")
+	}
+	var line progressEventLine
+	if err := json.Unmarshal(ev.Payload, &line); err != nil {
+		t.Fatalf("payload: %v", err)
+	}
+	if got := textContent(line.Message.Content); got != full {
+		t.Fatalf("payload text = %q, want full message", got)
+	}
+}
+
+func TestAssistantMessagePayload_cursorShape(t *testing.T) {
+	t.Parallel()
+
+	msg := "line one\nline two"
+	payload := assistantMessagePayload(msg)
+	if payload == nil {
+		t.Fatal("expected payload")
+	}
+	var line progressEventLine
+	if err := json.Unmarshal(payload, &line); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if line.Type != cursorEventAssistant {
+		t.Fatalf("type = %q", line.Type)
+	}
+	if got := textContent(line.Message.Content); got != msg {
+		t.Fatalf("text = %q, want %q", got, msg)
 	}
 }

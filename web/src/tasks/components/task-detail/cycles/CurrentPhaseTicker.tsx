@@ -7,6 +7,10 @@ import {
   phaseStatusFillClass,
   phaseStatusLabel,
 } from "@/tasks/cycleDisplay/cyclesViewModel";
+import {
+  HANDOFF_CLAIMS_MESSAGE,
+  resolveAgentProgressMessage,
+} from "@/tasks/cycleDisplay/agentProgressDisplay";
 import type { TaskCycle } from "@/types/cycle";
 import {
   hydrateAgentRunProgress,
@@ -130,7 +134,7 @@ function CurrentPhaseBody({
           className="task-cycle-ticker-focus"
           data-testid="task-cycle-ticker-phase"
         >
-          Accepting criteria…
+          {HANDOFF_CLAIMS_MESSAGE}
         </p>
       );
     }
@@ -181,9 +185,13 @@ function idlePendingMessage(items: ReadonlyArray<AgentRunProgressItem>): string 
   for (let i = items.length - 1; i >= 0; i -= 1) {
     const entry = items[i];
     if (entry.progress.kind !== "run_state") continue;
-    if (entry.progress.message?.trim()) {
-      return entry.progress.message;
-    }
+    const remapped = resolveAgentProgressMessage(
+      entry.progress.subtype,
+      entry.progress.message,
+      entry.progress.tool,
+      "",
+    );
+    if (remapped.trim()) return remapped;
   }
   return "Agent working…";
 }

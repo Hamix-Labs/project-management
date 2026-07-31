@@ -80,7 +80,13 @@ func progressFromLine(raw []byte, homePaths []string) (runner.ProgressEvent, boo
 		// whole message. Activity UI CSS-ellipsizes compact stream rows.
 		msg := redact(strings.TrimSpace(textContent(line.Message.Content)), homePaths)
 		if msg != "" {
-			return runner.ProgressEvent{Kind: cursorEventAssistant, Message: msg, Payload: progressPayload(raw, homePaths)}, true
+			payload := progressPayload(raw, homePaths)
+			if len(payload) == 0 {
+				// Redaction can invalidate the raw Cursor JSON; still store a
+				// Cursor-shaped payload so View reply can recover full text.
+				payload = assistantMessagePayload(msg)
+			}
+			return runner.ProgressEvent{Kind: cursorEventAssistant, Message: msg, Payload: payload}, true
 		}
 	case cursorEventToolCall:
 		nestedTool, nestedInput := toolCallDetails(line.ToolCall)
@@ -106,6 +112,33 @@ func progressPayload(raw []byte, homePaths []string) json.RawMessage {
 		return nil
 	}
 	return json.RawMessage(redacted)
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func assistantMessagePayload(msg string) json.RawMessage {
+	type contentPart struct {
+		Type string `json:"type"`
+		Text string `json:"text"`
+	}
+	type messageBody struct {
+		Role    string        `json:"role"`
+		Content []contentPart `json:"content"`
+	}
+	type line struct {
+		Type    string      `json:"type"`
+		Message messageBody `json:"message"`
+	}
+	b, err := json.Marshal(line{
+		Type: cursorEventAssistant,
+		Message: messageBody{
+			Role:    "assistant",
+			Content: []contentPart{{Type: cursorContentText, Text: msg}},
+		},
+	})
+	if err != nil {
+		return nil
+	}
+	return json.RawMessage(b)
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."

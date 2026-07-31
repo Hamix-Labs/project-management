@@ -105,8 +105,8 @@ func TestRun_streamJSONEmitsLiveProgress(t *testing.T) {
 func TestRun_streamJSONPersistsFullAssistantMessage(t *testing.T) {
 	t.Parallel()
 
-	// Longer than the former ProgressSummaryRunes (240) clip so View reply
-	// can show the complete agent message.
+	// Longer than the former 240-rune progress clip so View reply can show the
+	// complete agent message.
 	full := strings.Repeat("Refactor step complete. ", 20) + "Done."
 	if len([]rune(full)) <= 240 {
 		t.Fatalf("test fixture too short: %d runes", len([]rune(full)))

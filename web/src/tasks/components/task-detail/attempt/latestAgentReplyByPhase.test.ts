@@ -136,20 +136,22 @@ describe("latestAgentReplyByPhase", () => {
     expect(map.has(2)).toBe(false);
   });
 
-  it("prefers stream reply over phase.summary", () => {
+  it("prefers stream reply over a shorter phase.summary", () => {
     const events = [
       stream({
         phase_seq: 1,
         stream_seq: 1,
         kind: "assistant",
-        message: "from stream",
+        message: "full stream reply with more detail than summary",
       }),
     ];
     const map = latestAgentReplyByPhase(events, [
-      phase({ phase_seq: 1, summary: "from summary" }),
+      phase({ phase_seq: 1, summary: "short summary" }),
     ]);
     expect(map.get(1)?.source).toBe("stream");
-    expect(map.get(1)?.text).toBe("from stream");
+    expect(map.get(1)?.text).toBe(
+      "full stream reply with more detail than summary",
+    );
   });
 
   it("recovers full assistant text from payload when message was clipped", () => {
@@ -195,5 +197,62 @@ describe("latestAgentReplyByPhase", () => {
     ];
     const map = latestAgentReplyByPhase(events, [phase({ phase_seq: 1 })]);
     expect(map.get(1)?.text).toBe("short reply");
+  });
+
+  it("prefers longer phase.summary when stream text is clipped and payload missing", () => {
+    const summary =
+      "Refactor is complete and committed.\n\n" +
+      "- Longest eligible function identified and refactored: ReconcileGitRepository.\n" +
+      "- Extracted descriptive helpers for the remaining workflow steps.";
+    const events = [
+      stream({
+        phase_seq: 1,
+        stream_seq: 1,
+        kind: "assistant",
+        message: "Refactor is complete and committed.\n\n- Extracted descriptive …",
+        payload: {},
+      }),
+    ];
+    const map = latestAgentReplyByPhase(events, [
+      phase({ phase_seq: 1, summary }),
+    ]);
+    expect(map.get(1)).toEqual({ text: summary, source: "summary" });
+  });
+
+  it("prefers longer phase.summary over a short mid-run stream reply", () => {
+    const events = [
+      stream({
+        phase_seq: 1,
+        stream_seq: 99,
+        kind: "assistant",
+        message: "Working on it.",
+      }),
+    ];
+    const map = latestAgentReplyByPhase(events, [
+      phase({
+        phase_seq: 1,
+        summary: "Finished the refactor and submitted the criteria report.",
+      }),
+    ]);
+    expect(map.get(1)?.source).toBe("summary");
+    expect(map.get(1)?.text).toContain("Finished the refactor");
+  });
+
+  it("reads harness ProgressEvent fallback payload.message string", () => {
+    const events = [
+      stream({
+        phase_seq: 1,
+        stream_seq: 1,
+        kind: "assistant",
+        message: "clipped…",
+        payload: {
+          Kind: "assistant",
+          Message: "should ignore Go casing",
+          message: "full recovered text from harness fallback",
+        },
+      }),
+    ];
+    const map = latestAgentReplyByPhase(events, [phase({ phase_seq: 1 })]);
+    expect(map.get(1)?.text).toBe("full recovered text from harness fallback");
   });
 });
