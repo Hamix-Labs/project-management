@@ -10,14 +10,18 @@ import (
 	"strings"
 	"time"
 
-	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/reports"
-	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	"github.com/AlexsanderHamir/Hamix/pkgs/agents/sidecar"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
 const (
-	// ExecuteInvalidCommitReason is recorded when claimed commits cannot be resolved in git.
+	// ExecuteInvalidCommitReason is recorded when register SHAs cannot be resolved
+	// or R\H is non-empty (ADR-0093).
 	ExecuteInvalidCommitReason = "execute_invalid_commit"
+	// ExecuteMissingCommitsReason is recorded when the commit register is empty.
+	ExecuteMissingCommitsReason = "execute_missing_commits"
+	// ExecuteUnregisteredCommitsReason is recorded when HEAD advanced outside the register.
+	ExecuteUnregisteredCommitsReason = "execute_unregistered_commits"
 
 	RetryResetAnchorMissing = "retry_reset_anchor_missing"
 	RetryGitResetFailed     = "retry_git_reset_failed"
@@ -96,74 +100,41 @@ func (s *Service) commitExists(ctx context.Context, worktree, sha string) bool {
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func (s *Service) commitInRange(ctx context.Context, worktree, cycleBaseSHA, sha string) bool {
-	cycleBaseSHA = strings.TrimSpace(cycleBaseSHA)
+func (s *Service) normalizeSHA(ctx context.Context, worktree, sha string) (string, error) {
 	sha = strings.TrimSpace(sha)
-	if cycleBaseSHA == "" || sha == "" {
-		return false
+	if sha == "" {
+		return "", fmt.Errorf("empty sha")
 	}
-	baseAncestor, err := s.repo().Run(ctx, worktree, "merge-base", "--is-ancestor", cycleBaseSHA, sha)
-	if err != nil || strings.TrimSpace(baseAncestor) != "yes" {
-		return false
+	out, err := s.repo().Run(ctx, worktree, "rev-parse", sha+"^{commit}")
+	if err != nil {
+		return "", err
 	}
-	if cycleBaseSHA == sha {
-		return false
-	}
-	headAncestor, err := s.repo().Run(ctx, worktree, "merge-base", "--is-ancestor", sha, "HEAD")
-	return err == nil && strings.TrimSpace(headAncestor) == "yes"
+	return strings.TrimSpace(out), nil
 }
 
-//funclogmeasure:skip category=hot-path reason="Git sub-step; operation trace is emitted by IngestExecuteCommits."
-func (s *Service) resolveClaimedCommits(
-	ctx context.Context,
-	g phaseContext,
-	claims []reports.CriteriaCommitClaim,
-	execPhaseSeq int64,
-) ([]cyclesstore.CycleCommitEntry, error) {
-	if len(claims) == 0 {
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func (s *Service) revListCycleRange(ctx context.Context, worktree, cycleBaseSHA string) ([]string, error) {
+	cycleBaseSHA = strings.TrimSpace(cycleBaseSHA)
+	if cycleBaseSHA == "" {
+		return nil, fmt.Errorf("empty cycle_base_sha")
+	}
+	out, err := s.repo().Run(ctx, worktree, "rev-list", "--reverse", cycleBaseSHA+"..HEAD")
+	if err != nil {
+		return nil, err
+	}
+	out = strings.TrimSpace(out)
+	if out == "" {
 		return nil, nil
 	}
-	out := make([]cyclesstore.CycleCommitEntry, 0, len(claims))
-	for i, claim := range claims {
-		sha := strings.TrimSpace(claim.SHA)
-		if !s.commitExists(ctx, g.Worktree, sha) {
-			return nil, fmt.Errorf("%w: commit %s not found in repository", taskcoredomain.ErrInvalidInput, sha)
+	lines := strings.Split(out, "\n")
+	shas := make([]string, 0, len(lines))
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line != "" {
+			shas = append(shas, line)
 		}
-		if g.CycleBaseSHA != "" && !s.commitInRange(ctx, g.Worktree, g.CycleBaseSHA, sha) {
-			slog.Warn("claimed commit outside cycle_base_sha..HEAD; indexing anyway",
-				"cmd", calltrace.LogCmd, "operation", "agent.harness.git.resolveClaimedCommits.out_of_range",
-				"sha", sha, "cycle_base_sha", g.CycleBaseSHA)
-		}
-		msg, at, err := s.commitDetails(ctx, g.Worktree, sha)
-		if err != nil {
-			return nil, err
-		}
-		branch := strings.TrimSpace(claim.Branch)
-		if branch == "" {
-			resolved, branchErr := s.branchContaining(ctx, g.Worktree, sha)
-			if branchErr != nil {
-				slog.Warn("branchContaining failed; falling back to base branch",
-					"cmd", calltrace.LogCmd, "operation", "agent.harness.git.resolveClaimedCommits.branch_err",
-					"sha", sha, "err", branchErr)
-			} else {
-				branch = resolved
-			}
-		}
-		if branch == "" {
-			branch = g.BaseBranch
-		}
-		out = append(out, cyclesstore.CycleCommitEntry{
-			Seq:         int64(i + 1),
-			Repo:        g.Repo,
-			Worktree:    g.Worktree,
-			Branch:      branch,
-			SHA:         sha,
-			CommittedAt: at,
-			Message:     msg,
-			PhaseSeq:    execPhaseSeq,
-		})
 	}
-	return out, nil
+	return shas, nil
 }
 
 func (s *Service) warnMissingIndexedCommits(ctx context.Context, taskID string, worktree string) {
@@ -200,7 +171,54 @@ func phaseContextFromSnapshot(snap PhaseSnapshot) phaseContext {
 	}
 }
 
-// IngestExecuteCommits indexes agent-declared commits from criteria-report.json.
+//funclogmeasure:skip category=hot-path reason="Git sub-step; operation trace is emitted by IngestExecuteCommits."
+func (s *Service) resolveRegisterEntries(
+	ctx context.Context,
+	g phaseContext,
+	entries []sidecar.CommitRegisterEntry,
+	execPhaseSeq int64,
+) ([]cyclesstore.CycleCommitEntry, error) {
+	out := make([]cyclesstore.CycleCommitEntry, 0, len(entries))
+	for i, entry := range entries {
+		sha := strings.TrimSpace(entry.SHA)
+		full, err := s.normalizeSHA(ctx, g.Worktree, sha)
+		if err != nil {
+			return nil, fmt.Errorf("commit %s not found in repository: %w", sha, err)
+		}
+		msg, at, err := s.commitDetails(ctx, g.Worktree, full)
+		if err != nil {
+			return nil, err
+		}
+		branch := strings.TrimSpace(entry.Branch)
+		if branch == "" {
+			resolved, branchErr := s.branchContaining(ctx, g.Worktree, full)
+			if branchErr != nil {
+				slog.Warn("branchContaining failed; falling back to base branch",
+					"cmd", calltrace.LogCmd, "operation", "agent.harness.git.resolveRegisterEntries.branch_err",
+					"sha", full, "err", branchErr)
+			} else {
+				branch = resolved
+			}
+		}
+		if branch == "" {
+			branch = g.BaseBranch
+		}
+		out = append(out, cyclesstore.CycleCommitEntry{
+			Seq:         int64(i + 1),
+			Repo:        g.Repo,
+			Worktree:    g.Worktree,
+			Branch:      branch,
+			SHA:         full,
+			CommittedAt: at,
+			Message:     msg,
+			PhaseSeq:    execPhaseSeq,
+		})
+	}
+	return out, nil
+}
+
+// IngestExecuteCommits validates the MCP commit register against cycle_base..HEAD
+// (exact set equality) and upserts register SHAs into task_cycle_commits (ADR-0093).
 func (s *Service) IngestExecuteCommits(
 	ctx context.Context,
 	taskID string,
@@ -217,19 +235,60 @@ func (s *Service) IngestExecuteCommits(
 	g := phaseContextFromSnapshot(snap)
 	s.warnMissingIndexedCommits(ctx, taskID, g.Worktree)
 
-	claims, err := reports.ParseCriteriaReportCommits(s.reportDir, cycle.ID)
+	if strings.TrimSpace(g.CycleBaseSHA) == "" {
+		return ExecuteCommitIngestOutcome{FailReason: ExecuteInvalidCommitReason}, nil
+	}
+
+	regEntries, err := sidecar.ParseCommitRegister(s.reportDir, cycle.ID)
 	if err != nil {
-		if errors.Is(err, reports.ErrCriteriaReportInvalid) {
-			return ExecuteCommitIngestOutcome{FailReason: ExecuteInvalidCommitReason}, err
+		if errors.Is(err, sidecar.ErrCommitRegisterInvalid) {
+			return ExecuteCommitIngestOutcome{FailReason: ExecuteInvalidCommitReason}, nil
 		}
 		return ExecuteCommitIngestOutcome{}, err
 	}
-	entries, err := s.resolveClaimedCommits(ctx, g, claims, execPhaseSeq)
-	if err != nil {
-		return ExecuteCommitIngestOutcome{FailReason: ExecuteInvalidCommitReason}, err
+	if len(regEntries) == 0 {
+		return ExecuteCommitIngestOutcome{FailReason: ExecuteMissingCommitsReason}, nil
 	}
-	if len(entries) == 0 {
-		return ExecuteCommitIngestOutcome{}, nil
+
+	headSHAs, err := s.revListCycleRange(ctx, g.Worktree, g.CycleBaseSHA)
+	if err != nil {
+		return ExecuteCommitIngestOutcome{FailReason: ExecuteInvalidCommitReason}, nil
+	}
+
+	resolved := make([]sidecar.CommitRegisterEntry, 0, len(regEntries))
+	rSet := make(map[string]struct{}, len(regEntries))
+	for _, e := range regEntries {
+		full, nerr := s.normalizeSHA(ctx, g.Worktree, e.SHA)
+		if nerr != nil {
+			return ExecuteCommitIngestOutcome{FailReason: ExecuteInvalidCommitReason}, nil
+		}
+		if _, dup := rSet[full]; dup {
+			return ExecuteCommitIngestOutcome{FailReason: ExecuteInvalidCommitReason}, nil
+		}
+		rSet[full] = struct{}{}
+		e.SHA = full
+		resolved = append(resolved, e)
+	}
+
+	hSet := make(map[string]struct{}, len(headSHAs))
+	for _, sha := range headSHAs {
+		hSet[sha] = struct{}{}
+	}
+
+	for sha := range hSet {
+		if _, ok := rSet[sha]; !ok {
+			return ExecuteCommitIngestOutcome{FailReason: ExecuteUnregisteredCommitsReason}, nil
+		}
+	}
+	for sha := range rSet {
+		if _, ok := hSet[sha]; !ok {
+			return ExecuteCommitIngestOutcome{FailReason: ExecuteInvalidCommitReason}, nil
+		}
+	}
+
+	entries, err := s.resolveRegisterEntries(ctx, g, resolved, execPhaseSeq)
+	if err != nil {
+		return ExecuteCommitIngestOutcome{FailReason: ExecuteInvalidCommitReason}, nil
 	}
 	if err := s.store.UpsertCycleCommits(ctx, taskID, cycle.ID, entries); err != nil {
 		return ExecuteCommitIngestOutcome{}, err

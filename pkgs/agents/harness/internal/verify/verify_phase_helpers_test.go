@@ -14,6 +14,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/internal/gittest"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/runnerfake"
+	"github.com/AlexsanderHamir/Hamix/pkgs/agents/sidecar"
 	checklistcontract "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/contract"
 )
 
@@ -110,10 +111,12 @@ func gitCommitWorkfile(t *testing.T, dir string) (sha, branch string) {
 func writeCriteriaReportWithGitWork(t *testing.T, reportDir, cycleID, workDir string, ids []string) {
 	t.Helper()
 	sha, branch := gitCommitWorkfile(t, workDir)
-	writeCriteriaReportWithCommits(t, reportDir, cycleID, ids, []struct {
-		SHA    string `json:"sha"`
-		Branch string `json:"branch"`
-	}{{SHA: sha, Branch: branch}})
+	writeCriteriaReportWithCommits(t, reportDir, cycleID, ids, nil)
+	if err := sidecar.AppendCommitRegister(reportDir, cycleID, sidecar.CommitRegisterEntry{
+		SHA: sha, Branch: branch, Message: "test work",
+	}); err != nil {
+		t.Fatalf("append commit register: %v", err)
+	}
 }
 
 func writeVerifyReport(t *testing.T, reportDir, cycleID string, ids []string) {

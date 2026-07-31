@@ -95,6 +95,8 @@ func (h *Harness) invokeRunnerWithDecision(
 		Phase:            phase,
 		Prompt:           decision.Prompt,
 		WorkingDir:       h.opts.WorkingDir,
+		CycleID:          cycle.ID,
+		ReportDir:        h.opts.ReportDir,
 		Timeout:          h.opts.RunTimeout,
 		CursorModel:      cursorModel,
 		RunCorrelationID: runCorrelationID,
