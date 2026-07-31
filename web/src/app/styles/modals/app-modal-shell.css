@@ -67,6 +67,11 @@
   max-height: min(90vh, 56rem);
 }
 
+.modal-shell--wide:has(.task-attempt-phase-reply-modal) {
+  width: min(100%, 52rem);
+  max-height: min(92vh, 56rem);
+}
+
 /* Modal scrollbars: match app chrome instead of OS-default contrast spikes. */
 .modal-shell,
 .modal-shell > .panel {

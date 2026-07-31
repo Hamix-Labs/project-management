@@ -1,6 +1,9 @@
 import { useId, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Modal } from "@/shared/Modal";
 import type { PhaseStatus } from "@/types";
+import { normalizePhaseSummaryMarkdown } from "@/tasks/task-events/parsePhaseEventOverview";
 import type { PhaseAgentReply as PhaseAgentReplyData } from "./latestAgentReplyByPhase";
 
 const DISPLAY_CAP = 800;
@@ -24,6 +27,7 @@ export function PhaseAgentReply({
     needsTruncate && !expanded
       ? `${reply.text.slice(0, DISPLAY_CAP - 1).trimEnd()}…`
       : reply.text;
+  const markdown = normalizePhaseSummaryMarkdown(reply.text);
 
   return (
     <div
@@ -95,9 +99,20 @@ export function PhaseAgentReply({
                 </time>
               ) : null}
             </header>
-            <pre className="task-attempt-phase-reply-modal-body">
-              {reply.text}
-            </pre>
+            <div className="task-attempt-phase-reply-modal-body task-event-markdown">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  table: (props) => (
+                    <div className="task-event-markdown-table-scroll">
+                      <table {...props} />
+                    </div>
+                  ),
+                }}
+              >
+                {markdown}
+              </ReactMarkdown>
+            </div>
             <div className="row stack-row-actions task-attempt-phase-reply-modal-footer">
               <button
                 type="button"
