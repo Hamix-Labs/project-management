@@ -1028,8 +1028,8 @@ time.task-attempt-meta-inline-item {
 
 .task-attempt-phase-reply-modal {
   display: grid;
-  gap: 1rem;
-  max-width: min(40rem, 100%);
+  gap: 1.15rem;
+  width: 100%;
 }
 
 .task-attempt-phase-reply-modal-head {
@@ -1061,19 +1061,60 @@ time.task-attempt-meta-inline-item {
 
 .task-attempt-phase-reply-modal-body {
   margin: 0;
-  max-height: min(60vh, 28rem);
-  overflow: auto;
-  padding: 0.85rem 1rem;
+  min-height: 12rem;
+  padding: 1rem 1.15rem;
   border: 1px solid var(--border-chrome-hairline);
   border-radius: var(--radius-md);
   background: var(--surface-soft, var(--surface-1));
-  color: var(--text-primary);
-  font: inherit;
-  font-size: var(--text-sm);
-  font-weight: 450;
-  line-height: 1.5;
-  white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
+.task-attempt-phase-reply-modal-body.task-event-markdown {
+  max-width: none;
+  font-size: var(--text-base);
+}
+
+.task-attempt-phase-reply-modal-body.task-event-markdown h1,
+.task-attempt-phase-reply-modal-body.task-event-markdown h2,
+.task-attempt-phase-reply-modal-body.task-event-markdown h3,
+.task-attempt-phase-reply-modal-body.task-event-markdown h4 {
+  margin: 1rem 0 0.5rem;
+  font-weight: 650;
+  line-height: 1.3;
+  color: var(--text-primary);
+}
+
+.task-attempt-phase-reply-modal-body.task-event-markdown h1:first-child,
+.task-attempt-phase-reply-modal-body.task-event-markdown h2:first-child,
+.task-attempt-phase-reply-modal-body.task-event-markdown h3:first-child,
+.task-attempt-phase-reply-modal-body.task-event-markdown h4:first-child {
+  margin-top: 0;
+}
+
+.task-attempt-phase-reply-modal-body.task-event-markdown h1 {
+  font-size: 1.35em;
+}
+
+.task-attempt-phase-reply-modal-body.task-event-markdown h2 {
+  font-size: 1.2em;
+}
+
+.task-attempt-phase-reply-modal-body.task-event-markdown h3,
+.task-attempt-phase-reply-modal-body.task-event-markdown h4 {
+  font-size: 1.05em;
+}
+
+.task-attempt-phase-reply-modal-body.task-event-markdown blockquote {
+  margin: 0.75rem 0;
+  padding: 0.35rem 0 0.35rem 0.85rem;
+  border-left: 3px solid var(--border-strong, var(--border-hairline));
+  color: var(--text-secondary);
+}
+
+.task-attempt-phase-reply-modal-body.task-event-markdown hr {
+  margin: 1rem 0;
+  border: 0;
+  border-top: 1px solid var(--border-chrome-hairline);
 }
 
 .task-attempt-phase-reply-modal-footer {
