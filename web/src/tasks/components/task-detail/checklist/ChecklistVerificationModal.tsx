@@ -6,28 +6,21 @@ type Props = {
   criterionText: string;
   /** Raw evidence payload captured at verification time. */
   evidence?: string;
-  /** Free-form verifier reasoning. */
-  verifierReasoning?: string;
   onClose: () => void;
 };
 
 /**
- * Popup that consolidates "Evidence" and "Verifier reasoning" for a
- * satisfied checklist criterion. Inline `<details>` disclosures made
- * each criterion row visually heavy and pushed the checklist past
- * single-glance comprehension once 4+ items completed; promoting that
- * detail into an on-demand sheet keeps the row scannable while still
- * making the verification audit trail one click away.
+ * Popup for evidence on a satisfied checklist criterion. Inline
+ * `<details>` disclosures made each criterion row visually heavy;
+ * promoting that detail into an on-demand sheet keeps the row
+ * scannable while still making the audit trail one click away.
  */
 export function ChecklistVerificationModal({
   criterionText,
   evidence,
-  verifierReasoning,
   onClose,
 }: Props) {
   const hasEvidence = typeof evidence === "string" && evidence.length > 0;
-  const hasReasoning =
-    typeof verifierReasoning === "string" && verifierReasoning.length > 0;
 
   return (
     <Modal
@@ -71,31 +64,12 @@ export function ChecklistVerificationModal({
                 </p>
               ) : null}
             </section>
-          ) : null}
-
-          {hasReasoning ? (
-            <section
-              className="checklist-verification-modal-section"
-              aria-labelledby="checklist-verification-reasoning-heading"
-            >
-              <h3
-                id="checklist-verification-reasoning-heading"
-                className="checklist-verification-modal-section-heading"
-              >
-                Verifier reasoning
-              </h3>
-              <pre className="checklist-verification-modal-pre">
-                {verifierReasoning}
-              </pre>
-            </section>
-          ) : null}
-
-          {!hasEvidence && !hasReasoning ? (
+          ) : (
             <p className="checklist-verification-modal-empty muted">
               No additional verification detail was captured for this
               criterion.
             </p>
-          ) : null}
+          )}
         </div>
 
         <div className="row stack-row-actions checklist-verification-modal-footer">

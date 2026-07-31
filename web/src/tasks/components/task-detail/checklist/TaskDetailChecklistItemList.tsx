@@ -49,9 +49,8 @@ export function TaskDetailChecklistItemList({
           const verifyCommandCount = item.verify_commands?.length ?? 0;
           const hasVerificationDetail =
             item.done &&
-            ((typeof item.evidence === "string" && item.evidence.length > 0) ||
-              (typeof item.verifier_reasoning === "string" &&
-                item.verifier_reasoning.length > 0));
+            typeof item.evidence === "string" &&
+            item.evidence.length > 0;
           const showRowMeta = hasVerificationDetail;
           const rowEditable =
             !criteriaLocked &&
@@ -197,7 +196,6 @@ export function TaskDetailChecklistItemList({
         <ChecklistVerificationModal
           criterionText={openItem.text}
           evidence={openItem.evidence}
-          verifierReasoning={openItem.verifier_reasoning}
           onClose={() => setOpenVerificationId(null)}
         />
       ) : null}
