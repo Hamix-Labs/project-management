@@ -45,7 +45,7 @@ func (h *Harness) applyExecuteEffects(
 
 	if effects.ContinueToVerify && state.verify.verifySnap.Enabled {
 		corr := cyclesdomain.RunCorrelationIDFromDetailsJSON(execPhase.DetailsJSON)
-		ev := runner.SetupProgressEvent(runner.ProgressRunStateHandoffVerify, "Handing off to verify…")
+		ev := runner.SetupProgressEvent(runner.ProgressRunStateHandoffVerify, "Accepting criteria claims…")
 		h.persistProgress(parentCtx, task.ID, cycle.ID, execPhase.PhaseSeq, ev)
 		h.publishProgress(task.ID, cycle.ID, execPhase.PhaseSeq, corr, ev)
 	}

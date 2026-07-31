@@ -71,6 +71,21 @@ describe("agentProgressDisplay", () => {
     ).toBe("Working…");
   });
 
+  it("agentProgressMessage remaps handoff_verify to claim acceptance copy", () => {
+    expect(
+      agentProgressMessage(
+        item({
+          progress: {
+            kind: "run_state",
+            subtype: "handoff_verify",
+            message: "Handing off to verify…",
+            tool: "harness_setup",
+          },
+        }),
+      ),
+    ).toBe("Accepting criteria claims…");
+  });
+
   it.each([
     [1_000_000, 1_000_000, "just now"],
     [1_000_000, 1_000_500, "just now"],
