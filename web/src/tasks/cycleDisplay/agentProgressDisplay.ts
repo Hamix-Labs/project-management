@@ -86,6 +86,7 @@ export function agentProgressKindDescriptor(
     }
     if (
       subtype?.startsWith("setup_") ||
+      subtype === "handoff_claims" ||
       subtype === "handoff_verify" ||
       subtype === "restart_resume"
     ) {
@@ -129,9 +130,14 @@ export function agentProgressKindLabel(
 /** Display copy for post-execute claim acceptance (ADR-0092). */
 export const HANDOFF_CLAIMS_MESSAGE = "Accepting criteria claims…";
 
+function isHandoffClaimsSubtype(subtype: string | undefined): boolean {
+  return subtype === "handoff_claims" || subtype === "handoff_verify";
+}
+
 /**
  * Resolves the operator-facing progress message. Remaps stored
- * `handoff_verify` rows so historical stream events match claim acceptance.
+ * `handoff_claims` / historical `handoff_verify` rows so stream events match
+ * claim acceptance.
  */
 export function resolveAgentProgressMessage(
   subtype: string | undefined,
@@ -139,7 +145,7 @@ export function resolveAgentProgressMessage(
   tool: string | undefined,
   fallback: string,
 ): string {
-  if (subtype === "handoff_verify") {
+  if (isHandoffClaimsSubtype(subtype)) {
     return HANDOFF_CLAIMS_MESSAGE;
   }
   return message || tool || fallback;

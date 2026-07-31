@@ -148,8 +148,8 @@ func (h *Harness) enforceExecuteSessionID(
 	state *processState,
 ) (runner.Result, orchestration.ExecuteEffects) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.enforceExecuteSessionID",
-		"continue_to_verify", effects.ContinueToVerify)
-	if !effects.ContinueToVerify {
+		"continue_to_claim_acceptance", effects.ContinueToClaimAcceptance)
+	if !effects.ContinueToClaimAcceptance {
 		return result, effects
 	}
 	if h.runner == nil || !isCursorSessionRunner(h.runner) {
@@ -184,9 +184,9 @@ func isCursorSessionRunner(r runner.Runner) bool {
 	return n == "cursor" || n == "cursor-cli" || strings.HasPrefix(n, "cursor")
 }
 
-// runCycleLoopVerify runs verification once per cycle (ADR-0090 one-shot).
-// terminalFailure is true when verification failed terminally (caller should return).
-func (h *Harness) runCycleLoopVerify(
+// runCycleLoopClaimAcceptance runs claim acceptance once per cycle (ADR-0092 one-shot).
+// terminalFailure is true when claim acceptance failed terminally (caller should return).
+func (h *Harness) runCycleLoopClaimAcceptance(
 	parentCtx context.Context,
 	task *taskcoredomain.Task,
 	cycle *cyclesdomain.TaskCycle,
@@ -227,11 +227,11 @@ func (h *Harness) runCycleLoopVerify(
 	effects := orchestration.VerifyEffects{TerminalFailure: true, Tampered: tamperedResult}
 	if tamperedResult {
 		slog.Info("agent harness verify terminal (tampered)", "cmd", calltrace.LogCmd,
-			"operation", "agent.harness.Harness.runCycleLoopVerify.one_shot",
+			"operation", "agent.harness.Harness.runCycleLoopClaimAcceptance.one_shot",
 			"task_id", task.ID, "cycle_id", cycle.ID)
 	} else {
 		slog.Info("agent harness verify terminal (one-shot)", "cmd", calltrace.LogCmd,
-			"operation", "agent.harness.Harness.runCycleLoopVerify.one_shot",
+			"operation", "agent.harness.Harness.runCycleLoopClaimAcceptance.one_shot",
 			"task_id", task.ID, "cycle_id", cycle.ID)
 	}
 	terminalReason := formatVerificationFailedReason(verdicts, state.verify.lockedPasses)
@@ -298,7 +298,7 @@ func (h *Harness) runCycleLoop(parentCtx context.Context, task *taskcoredomain.T
 		h.runCycleLoopFinalizeSuccessOpts(parentCtx, task, cycle, state, false)
 		return
 	}
-	if h.runCycleLoopVerify(parentCtx, task, cycle, state) {
+	if h.runCycleLoopClaimAcceptance(parentCtx, task, cycle, state) {
 		return
 	}
 	h.runCycleLoopFinalizeSuccess(parentCtx, task, cycle, state)

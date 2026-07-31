@@ -40,7 +40,7 @@ type phaseLifecycleState struct {
 	runningPhase                 cyclesdomain.Phase
 	runningPhaseSeq              int64
 	runCorrelationID             string
-	executeReachedVerify         bool
+	executeReachedClaimAcceptance         bool
 	lastCompletedExecutePhaseSeq int64
 	lastVerifyAfterExecuteSeq    int64
 }

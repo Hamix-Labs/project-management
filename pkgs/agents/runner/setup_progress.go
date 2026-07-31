@@ -15,7 +15,7 @@ const (
 	ProgressRunStateSetupSpawn    = "setup_spawn"
 	ProgressRunStateSetupIngest   = "setup_ingest"
 	ProgressRunStateSetupPrompt   = "setup_prompt"
-	ProgressRunStateHandoffVerify = "handoff_verify"
+	ProgressRunStateHandoffClaims = "handoff_claims"
 	ProgressRunStateRestartResume = "restart_resume"
 )
 

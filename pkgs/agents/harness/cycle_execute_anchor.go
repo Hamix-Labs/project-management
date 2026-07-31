@@ -18,7 +18,7 @@ func (h *Harness) anchorPostExecuteState(
 	ingestOutcome executeCommitIngestOutcome,
 	ingestErr error,
 ) {
-	state.phase.executeReachedVerify = true
+	state.phase.executeReachedClaimAcceptance = true
 	state.git.lastCommitIngestOK = commitIngestOK(snap, ingestAttempted, ingestOutcome, ingestErr)
 	head, ok, err := h.resolveCurrentHeadSHA(ctx, snap)
 	if err != nil {

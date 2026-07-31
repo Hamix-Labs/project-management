@@ -30,7 +30,7 @@ type VerifyEffects struct {
 
 // ExecuteEffects lists side effects the harness root applies after DecideExecutePostRun.
 type ExecuteEffects struct {
-	ContinueToVerify bool
+	ContinueToClaimAcceptance bool
 	StopLoop         bool
 	TerminateFailed  bool
 	TransitionTask   taskcoredomain.Status
