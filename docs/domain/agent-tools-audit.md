@@ -91,7 +91,7 @@ flowchart LR
 | Composed prompt | Harness | Agent |
 | `criteria-report.json` / `verify-report.json` | Agent | Harness parsers |
 | `checks/<criterion_id>/<seq>.*` | Harness (verify commands) | Verify prompt (preview) + agent (if it opens paths) |
-| `task_cycle_commits` | Harness from `commits[]` | Verify/resume prompts, HTTP |
+| `task_cycle_commits` | Harness from MCP commit register | Verify/resume prompts, HTTP |
 | Cursor built-ins + git | Agent | Agent |
 
 Compose entry points: [`cycle_loop.go`](../../pkgs/agents/harness/cycle_loop.go) (`composeExecutePrompt`), [`internal/verify/llm.go`](../../pkgs/agents/harness/internal/verify/llm.go), [`cursor_resume.go`](../../pkgs/agents/harness/cursor_resume.go) (same-chat verify rebuilds the full verify contract — [ADR-0085](../adr/ADR-0085-verify-resumes-execute-session.md)).
@@ -141,8 +141,9 @@ Compose entry points: [`cycle_loop.go`](../../pkgs/agents/harness/cycle_loop.go)
 | Extra JSON keys / bad `schema_version` / missing IDs | Invalid report → full re-execute class | `DisallowUnknownFields`, `retry_mode.go` `full_reexecute_report_invalid` |
 | Evidence / reasoning over **16 KiB**; verified=true with reasoning shorter than **40** chars | Parse fail | `maxFieldBytes`, `minVerifyReasoning` |
 | `claimed_done: false` | Self-claim gate fail; no LLM for that id; implementation retry class | [`checks.go`](../../pkgs/agents/harness/internal/verify/checks.go) |
-| Nonexistent / unresolvable `commits[].sha` | Terminal `execute_invalid_commit` | [`git/commits.go`](../../pkgs/agents/harness/internal/git/commits.go) |
-| Empty `commits[]` | Execute still succeeds; ledger holes for resume/verify | [ADR-0032](../adr/ADR-0032-agent-claimed-commit-index.md), [cycle-commits.md](./cycle-commits.md) |
+| Empty commit register | Terminal `execute_missing_commits` | [ADR-0093](../adr/ADR-0093-mcp-commit-register.md), [cycle-commits.md](./cycle-commits.md) |
+| HEAD commits not in register | Terminal `execute_unregistered_commits` | [`git/commits.go`](../../pkgs/agents/harness/internal/git/commits.go) |
+| Register SHA not in `cycle_base..HEAD` / unresolvable | Terminal `execute_invalid_commit` | [`git/commits.go`](../../pkgs/agents/harness/internal/git/commits.go) |
 | Amend / rebase / history rewrite | Prompt policy only; can orphan indexed SHAs | `AppendGitCommitPolicy` |
 | Mutate worktree or HEAD during verify | Terminal **`verify_tampered`** (no retry) | [`git/integrity.go`](../../pkgs/agents/harness/internal/git/integrity.go) |
 | Missing Cursor `session_id` (same-chat) | Terminal `cursor_missing_session_id` | `enforceExecuteSessionID` in `cycle_loop.go` |
@@ -168,7 +169,7 @@ Binding assumption for all candidates: worker injects **cycle_id + phase + repor
 | Tool | Purpose | Who | Tokens | Variability | Determinism | Overall | Prompt impact | Risks |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | `hamix.validate_report` (dry-run) | Parse without committing the file; return exact errors | Agent | L | **H** | **H** | M | Additive; fewer recovery loops | Extra round-trips; still need final submit |
-| `hamix.claim_commits` | Resolve SHAs via harness `cat-file` early; reject unknown | Both | L | **H** | **H** | M | Partial replace of commit-policy prose | Overlaps submit_criteria if combined; empty claims still allowed by policy |
+| `hamix.commit` | Commit current index; append SHA to cycle register | Agent (execute) | M | **H** | **H** | **H** | Removes claim SHA transcription | Agents may still Shell-commit (fail closed via I2) |
 | `hamix.get_active_criteria` | Structured checklist (id, text, locked) | Agent | M | M | M | M | Partial replace of criteria bullets | Text still needed in context somehow |
 | `hamix.get_prior_verify_feedback` | Last failure reasons / locked set | Agent (retry) | M | M | M | M | Replaces appended feedback on fresh prompts | Overlap with same-chat history |
 | `hamix.working_tree_status` | Porcelain + HEAD for “don’t mutate” awareness | Agent | L | L | M | M | Additive | Race with integrity snapshot; does not replace integrity |
@@ -202,7 +203,7 @@ Binding assumption for all candidates: worker injects **cycle_id + phase + repor
 1. **~~Validated report submitters~~ (done)** — `hamix.submit_criteria_report` / `hamix.submit_verify_report` ship with tool-only receipts by default ([agent-mcp.md](./agent-mcp.md), [ADR-0089](../adr/ADR-0089-agent-mcp-platform.md)).
 2. **On-demand verify evidence and diff** (`get_command_evidence`, `get_diff` / `get_git_context`) — largest remaining **token** win.
 3. **`get_cycle_contract`** — collapse repeated path/schema/locked boilerplate across fresh execute, recovery, and polish.
-4. **Early commit claim/validate** — reduce `execute_invalid_commit` and soft ledger holes (secondary if commits stay args on submit).
+4. **~~Early commit claim/validate~~ (done as `hamix.commit`)** — [ADR-0093](../adr/ADR-0093-mcp-commit-register.md).
 
 Do **not** open HTTP, completion ledger, or cycle FSM to the agent.
 
@@ -231,13 +232,13 @@ Do **not** open HTTP, completion ledger, or cycle FSM to the agent.
 | [execute-agent.md](./execute-agent.md) | Execute prompt composition and criteria self-report |
 | [verify-agent.md](./verify-agent.md) | Verify LLM, commands, integrity, retries |
 | [harness.md](./harness.md) | Cycle loop, side-channel reports, recovery reasons |
-| [cycle-commits.md](./cycle-commits.md) | Agent-claimed commit index (ADR-0032) |
+| [cycle-commits.md](./cycle-commits.md) | MCP commit register (ADR-0093) |
 | [cursor-session-resume.md](./cursor-session-resume.md) | Cursor `--resume` and recovery deltas |
 | [done-criteria.md](./done-criteria.md) | Criteria lifecycle and completion ledger |
 | [execute-and-verify.md](../execute-and-verify.md) | End-to-end execute + claim acceptance contract |
 | [ADR-0012](../adr/ADR-0012-structured-verify-commands.md) | Worker shell verify commands |
 | [ADR-0028](../adr/ADR-0028-in-cycle-verify-only-retry.md) | In-cycle verify-only vs full re-execute |
-| [ADR-0032](../adr/ADR-0032-agent-claimed-commit-index.md) | Commit claims from criteria-report |
+| [ADR-0093](../adr/ADR-0093-mcp-commit-register.md) | MCP commit register |
 | [ADR-0084](../adr/ADR-0084-executor-owned-verify.md) | Executor-owned verify |
 | [ADR-0085](../adr/ADR-0085-verify-resumes-execute-session.md) | Verify resumes execute session |
 

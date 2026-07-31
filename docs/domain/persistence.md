@@ -298,7 +298,7 @@ Execute-phase git commits are indexed in **`task_cycle_commits`** after successf
 | `ListCommitsForCycle` | same | Ordered by `seq`; consumed by resume prompts and verdicts API |
 | `ListCommitsForTask` | same | Task-wide deduped ledger — verify git context reads this (ADR-0032); powers `GET /tasks/{id}/commits` |
 
-Rows carry the full **repo → worktree → branch → commit** chain. Ingest is append-only from agent `commits[]` claims ([cycle-commits.md](./cycle-commits.md)).
+Rows carry the full **repo → worktree → branch → commit** chain. Ingest is append-only from the MCP commit register ([cycle-commits.md](./cycle-commits.md)).
 
 ## Facade-only side effects
 

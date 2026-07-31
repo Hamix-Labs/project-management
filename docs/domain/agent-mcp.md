@@ -1,13 +1,13 @@
 # Agent MCP platform
 
 How Hamix exposes MCP tools to Cursor execute/verify agents for tool-only
-criteria and verify report submit.
+criteria/verify report submit and authoritative git commits.
 
 | | |
 | --- | --- |
 | **Applies to** | `pkgs/agents/agentmcp`, `cmd/hamix-agent-mcp`, harness Cursor wiring, `pkgs/agents/sidecar` |
 | **Audience** | Operators enabling/debugging agent MCP; contributors adding tools |
-| **Prerequisite** | [harness.md](./harness.md), [execute-agent.md](./execute-agent.md), [verify-agent.md](./verify-agent.md), [ADR-0089](../adr/ADR-0089-agent-mcp-platform.md) |
+| **Prerequisite** | [harness.md](./harness.md), [execute-agent.md](./execute-agent.md), [verify-agent.md](./verify-agent.md), [ADR-0089](../adr/ADR-0089-agent-mcp-platform.md), [ADR-0093](../adr/ADR-0093-mcp-commit-register.md) |
 | **Status** | Product default **on** (`agent_mcp_enabled=true`) |
 
 ## In this article
@@ -24,10 +24,13 @@ criteria and verify report submit.
 ## Overview
 
 By default every execute/verify Cursor run gets a Hamix stdio MCP server bound
-to the current cycle. The agent must call `hamix.submit_criteria_report` or
-`hamix.submit_verify_report`. The MCP host validates args, writes the report
-under `ReportDir`, and writes a submit receipt with the bind nonce. The harness
-probe **requires** that receipt before accepting the JSON.
+to the current cycle. Execute agents must call `hamix.commit` for every new git
+commit (index only; stage via Shell) and `hamix.submit_criteria_report` for the
+criteria report. Verify agents call `hamix.submit_verify_report`. The MCP host
+validates args, writes artifacts under `ReportDir`, and writes submit receipts
+with the bind nonce where applicable. The harness requires the criteria/verify
+receipt before accepting those JSON reports, and validates the commit register
+against `cycle_base_sha..HEAD` after execute ([cycle-commits.md](./cycle-commits.md)).
 
 ## Key concepts
 
@@ -35,8 +38,9 @@ probe **requires** that receipt before accepting the JSON.
 | --- | --- |
 | **Bind file** | `ReportDir/<cycle_id>/agent-tool-bind.json` — session contract for tools |
 | **Receipt** | `criteria-report.submitted` / `verify-report.submitted` next to the report |
+| **Commit register** | `commit-register.json` — SHAs appended by `hamix.commit` (ADR-0093) |
 | **Sidecar** | Shared parse/write package used by harness and MCP |
-| **Tool-only** | Orphan JSON without a matching receipt is rejected |
+| **Tool-only** | Orphan criteria/verify JSON without a matching receipt is rejected |
 
 ## Workflow
 
@@ -45,7 +49,8 @@ probe **requires** that receipt before accepting the JSON.
    loads project MCP from the workspace root — `--add-dir` does **not**).
 2. Cursor is invoked with `--approve-mcps` and `--trust` (workspace remains the
    task worktree).
-3. Agent calls the submit tool; MCP writes report + receipt under ReportDir.
+3. Agent calls `hamix.commit` as needed (append register) and the submit tool;
+   MCP writes report + receipt under ReportDir.
 4. Harness requires receipt nonce match, then parses via sidecar.
 5. On cycle terminate, harness restores/removes the managed workspace mcp.json.
 

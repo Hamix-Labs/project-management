@@ -247,7 +247,8 @@ Paths live under a **worker-managed scratch directory** (`<worker-managed dir>/<
 
 | File | Writer | Schema |
 |---|---|---|
-| `<worker-managed dir>/<cycle_id>/criteria-report.json` | Execute agent | `{ "criteria": [{ "id", "claimed_done", "evidence" }], "commits": [{ "sha", "branch" }] }` — `commits` optional; worker validates SHAs against git ancestry at execute ingest ([ADR-0014](adr/ADR-0014-cycle-commit-tracking.md), [domain/cycle-commits.md](domain/cycle-commits.md)) |
+| `<worker-managed dir>/<cycle_id>/criteria-report.json` | Execute agent | `{ "criteria": [{ "id", "claimed_done", "evidence" }] }` — criteria claims only; commits are recorded via `hamix.commit` → `commit-register.json` ([ADR-0093](adr/ADR-0093-mcp-commit-register.md), [domain/cycle-commits.md](domain/cycle-commits.md)) |
+| `<worker-managed dir>/<cycle_id>/commit-register.json` | MCP `hamix.commit` | `{ "schema_version", "commits": [{ "sha", "message?", "branch?", "written_at" }] }` — authoritative ingest source; harness requires set equality with `cycle_base_sha..HEAD` |
 
 Limits: 256 KB per report file; `evidence` ≤ 16 KB. Duplicate ids in a report → invalid. Symlinks rejected.
 
@@ -284,7 +285,7 @@ The two report files above are the agent ↔ worker wire format. They are GC'd a
 
 `task_cycle_commits`
 
-Worker-indexed git commits for one cycle ([ADR-0014](adr/ADR-0014-cycle-commit-tracking.md), [ADR-0032](adr/ADR-0032-agent-claimed-commit-index.md)). Upserted after a successful execute run from agent-declared `commits[]` in `criteria-report.json`. Not dual-written to `task_events`.
+Worker-indexed git commits for one cycle ([ADR-0014](adr/ADR-0014-cycle-commit-tracking.md), [ADR-0093](adr/ADR-0093-mcp-commit-register.md)). Upserted after a successful execute run from the MCP commit register (`commit-register.json`), after exact set equality with `cycle_base_sha..HEAD`. Not dual-written to `task_events`.
 
 | Column | Type | Notes |
 |---|---|---|

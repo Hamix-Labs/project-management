@@ -144,7 +144,7 @@ Always required in git worktrees ([ADR-0014](../adr/ADR-0014-cycle-commit-tracki
 - The agent must commit all work that satisfies claimed criteria before finishing execute.
 - List every commit SHA and branch in `criteria-report.json` under `commits` — **no** ID markers in commit messages.
 - Create **new commits only**; never amend, rebase, or rewrite SHAs from this cycle.
-- **Agent-claimed ingest (ADR-0032):** after runner exit the harness ingests SHAs from `criteria-report.json` `commits[]` via `cat-file` + `git log`. Hygiene (empty claims, dirty tree, rewritten history) does **not** fail execute — additive-only policy is enforced in prompts and verify.
+- **MCP commit register (ADR-0093):** after runner exit the harness validates `commit-register.json` against `cycle_base_sha..HEAD` (exact set equality) and upserts register SHAs. Empty register or Shell-only commits fail execute (`execute_missing_commits` / `execute_unregistered_commits`). Agents stage via Shell and commit only via `hamix.commit`.
 - Do not push.
 
 When `WorkingDir` is empty or not a git repo, snapshot/ingest/gates are skipped.

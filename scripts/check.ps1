@@ -33,11 +33,12 @@ if ($GoOnly -and $WebOnly) {
 }
 
 $scriptDir = $PSScriptRoot
-$goArgs = @()
-$webArgs = @()
-if ($Verbose) { $goArgs += '-Verbose'; $webArgs += '-Verbose' }
-if ($SkipFunclog) { $goArgs += '-SkipFunclog' }
-if ($Install) { $webArgs += '-Install' }
+# Hashtable splats so switches bind by name (string-array splats bind to $Group).
+$goArgs = @{}
+$webArgs = @{}
+if ($Verbose) { $goArgs['Verbose'] = $true; $webArgs['Verbose'] = $true }
+if ($SkipFunclog) { $goArgs['SkipFunclog'] = $true }
+if ($Install) { $webArgs['Install'] = $true }
 
 if ($WebOnly) {
     & (Join-Path $scriptDir "check-web.ps1") @webArgs
