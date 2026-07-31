@@ -66,9 +66,10 @@ export function resolveAgentReplyText(ev: TaskCycleStreamEvent): string | undefi
 }
 
 /**
- * Picks the best Agent reply per phase: newest stream assistant/message text
- * (with payload recovery), then phase.summary when it is longer or the stream
- * text looks clipped. Empty messages are ignored.
+ * Picks the newest Agent reply (assistant/message stream event) per phase —
+ * that last reply is the operator-facing summary. Recovers full text from
+ * payload when the stored message was clipped. Falls back to `phase.summary`
+ * only when the loaded stream has no reply for that phase.
  */
 export function latestAgentReplyByPhase(
   events: readonly TaskCycleStreamEvent[],
@@ -95,17 +96,7 @@ export function latestAgentReplyByPhase(
   const out = new Map<number, PhaseAgentReply>();
   for (const phase of phases) {
     const fromStream = bestByPhase.get(phase.phase_seq);
-    const summary = phase.summary?.trim();
     if (fromStream) {
-      const preferSummary =
-        !!summary &&
-        (summary.length > fromStream.text.length ||
-          (looksClipped(fromStream.text) &&
-            summary.length >= fromStream.text.length - 1));
-      if (preferSummary && summary) {
-        out.set(phase.phase_seq, { text: summary, source: "summary" });
-        continue;
-      }
       out.set(phase.phase_seq, {
         text: fromStream.text,
         at: fromStream.at,
@@ -113,6 +104,7 @@ export function latestAgentReplyByPhase(
       });
       continue;
     }
+    const summary = phase.summary?.trim();
     if (summary) {
       out.set(phase.phase_seq, { text: summary, source: "summary" });
     }
