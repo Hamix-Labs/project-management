@@ -130,7 +130,7 @@ function CurrentPhaseBody({
           className="task-cycle-ticker-focus"
           data-testid="task-cycle-ticker-phase"
         >
-          Starting verify…
+          Accepting criteria…
         </p>
       );
     }
@@ -154,7 +154,6 @@ function CurrentPhaseBody({
         taskId={taskId}
         cycleId={cycleId}
         phaseSeq={runningPhase.phase_seq}
-        phase={runningPhase.phase}
         now={now}
       />
     </div>
@@ -189,24 +188,15 @@ function idlePendingMessage(items: ReadonlyArray<AgentRunProgressItem>): string 
   return "Agent working…";
 }
 
-function phaseEmptyMessage(phase: string): string {
-  if (phase === "verify") {
-    return "Running verify checks…";
-  }
-  return "Waiting for agent updates…";
-}
-
 function PhaseProgress({
   taskId,
   cycleId,
   phaseSeq,
-  phase,
   now,
 }: {
   taskId: string;
   cycleId: string;
   phaseSeq: number;
-  phase: string;
   now: number;
 }) {
   const stream = useTaskCycleStream(taskId, cycleId, { enabled: true });
@@ -221,7 +211,7 @@ function PhaseProgress({
       items={items}
       now={now}
       showPendingRow={items.length > 0}
-      emptyMessage={phaseEmptyMessage(phase)}
+      emptyMessage="Waiting for agent updates…"
       pendingMessage={idlePendingMessage(items)}
     />
   );

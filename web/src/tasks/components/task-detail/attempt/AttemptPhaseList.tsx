@@ -18,7 +18,6 @@ type AttemptPhaseListProps = {
   cycle: TaskCycleDetail;
   timelineDisplay: AttemptTimelineDisplay;
   agentReplies: ReadonlyMap<number, PhaseAgentReplyData>;
-  onViewReplyInActivity?: (phaseSeq: number | null) => void;
 };
 
 export function AttemptPhaseList({
@@ -27,7 +26,6 @@ export function AttemptPhaseList({
   cycle,
   timelineDisplay,
   agentReplies,
-  onViewReplyInActivity,
 }: AttemptPhaseListProps) {
   const {
     showPhaseBadge,
@@ -66,7 +64,6 @@ export function AttemptPhaseList({
             showPhaseBadge={showPhaseBadge}
             showEndcap={showEndcap}
             reply={agentReplies.get(phase.phase_seq)}
-            onViewReplyInActivity={onViewReplyInActivity}
           />
         ))}
       </ol>
@@ -91,7 +88,6 @@ function AttemptPhaseStep({
   showPhaseBadge,
   showEndcap,
   reply,
-  onViewReplyInActivity,
 }: {
   taskId: string;
   cycleId: string;
@@ -101,7 +97,6 @@ function AttemptPhaseStep({
   showPhaseBadge: boolean;
   showEndcap: boolean;
   reply: PhaseAgentReplyData | undefined;
-  onViewReplyInActivity?: (phaseSeq: number | null) => void;
 }) {
   const stepClass = "task-attempt-phase-step";
   const showStaticReply = phase.status !== "running" && reply != null;
@@ -132,12 +127,6 @@ function AttemptPhaseStep({
           reply={reply}
           phaseLabel={phaseLabel(phase.phase)}
           phaseStatus={phase.status}
-          phaseSeq={phase.phase_seq}
-          onViewInActivity={
-            onViewReplyInActivity
-              ? (seq) => onViewReplyInActivity(seq)
-              : undefined
-          }
         />
       ) : null}
       <LivePhaseTail taskId={taskId} cycleId={cycleId} phase={phase} />

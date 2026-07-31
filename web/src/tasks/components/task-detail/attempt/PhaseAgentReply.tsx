@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useId, useState } from "react";
+import { Modal } from "@/shared/Modal";
 import type { PhaseStatus } from "@/types";
 import type { PhaseAgentReply as PhaseAgentReplyData } from "./latestAgentReplyByPhase";
 
@@ -8,18 +9,16 @@ type PhaseAgentReplyProps = {
   reply: PhaseAgentReplyData;
   phaseLabel: string;
   phaseStatus: PhaseStatus;
-  phaseSeq: number;
-  onViewInActivity?: (phaseSeq: number) => void;
 };
 
 export function PhaseAgentReply({
   reply,
   phaseLabel,
   phaseStatus,
-  phaseSeq,
-  onViewInActivity,
 }: PhaseAgentReplyProps) {
   const [expanded, setExpanded] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const titleId = useId();
   const needsTruncate = reply.text.length > DISPLAY_CAP;
   const displayText =
     needsTruncate && !expanded
@@ -62,16 +61,55 @@ export function PhaseAgentReply({
             {expanded ? "Show less" : "Show more"}
           </button>
         ) : null}
-        {onViewInActivity ? (
-          <button
-            type="button"
-            className="task-attempt-phase-reply-activity"
-            onClick={() => onViewInActivity(phaseSeq)}
-          >
-            View in Activity
-          </button>
-        ) : null}
+        <button
+          type="button"
+          className="task-attempt-phase-reply-open"
+          onClick={() => setModalOpen(true)}
+        >
+          View reply
+        </button>
       </div>
+      {modalOpen ? (
+        <Modal
+          onClose={() => setModalOpen(false)}
+          labelledBy={titleId}
+          size="wide"
+        >
+          <section className="panel modal-sheet task-attempt-phase-reply-modal">
+            <header className="task-attempt-phase-reply-modal-head">
+              <p className="task-attempt-phase-reply-modal-eyebrow">
+                Agent reply
+              </p>
+              <h2 id={titleId} className="task-attempt-phase-reply-modal-title">
+                {phaseLabel}
+              </h2>
+              {reply.at ? (
+                <time
+                  className="task-attempt-phase-reply-modal-time"
+                  dateTime={reply.at}
+                >
+                  {new Date(reply.at).toLocaleString(undefined, {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  })}
+                </time>
+              ) : null}
+            </header>
+            <pre className="task-attempt-phase-reply-modal-body">
+              {reply.text}
+            </pre>
+            <div className="row stack-row-actions task-attempt-phase-reply-modal-footer">
+              <button
+                type="button"
+                className="secondary"
+                onClick={() => setModalOpen(false)}
+              >
+                Close
+              </button>
+            </div>
+          </section>
+        </Modal>
+      ) : null}
     </div>
   );
 }
