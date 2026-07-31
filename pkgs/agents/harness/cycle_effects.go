@@ -27,7 +27,7 @@ func (h *Harness) applyExecuteEffects(
 	operatorCancelled bool,
 ) bool {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.applyExecuteEffects",
-		"task_id", task.ID, "cycle_id", cycle.ID, "continue", effects.ContinueToVerify,
+		"task_id", task.ID, "cycle_id", cycle.ID, "continue", effects.ContinueToClaimAcceptance,
 		"terminate", effects.TerminateFailed, "stop", effects.StopLoop)
 	if effects.StopLoop {
 		h.handleShutdownAfterRun(state, task.ID)
@@ -43,9 +43,9 @@ func (h *Harness) applyExecuteEffects(
 	phaseDetails := mergeRunnerDetailsWithGit(detailsBytes(result), snap, commitCount)
 	phaseDetails = git.MergeCriteriaReportProbeErr(phaseDetails, state.verify.reportParseErr)
 
-	if effects.ContinueToVerify && state.verify.verifySnap.Enabled {
+	if effects.ContinueToClaimAcceptance && state.verify.verifySnap.Enabled {
 		corr := cyclesdomain.RunCorrelationIDFromDetailsJSON(execPhase.DetailsJSON)
-		ev := runner.SetupProgressEvent(runner.ProgressRunStateHandoffVerify, "Handing off to verify…")
+		ev := runner.SetupProgressEvent(runner.ProgressRunStateHandoffClaims, "Accepting criteria claims…")
 		h.persistProgress(parentCtx, task.ID, cycle.ID, execPhase.PhaseSeq, ev)
 		h.publishProgress(task.ID, cycle.ID, execPhase.PhaseSeq, corr, ev)
 	}
@@ -55,7 +55,7 @@ func (h *Harness) applyExecuteEffects(
 		return false
 	}
 
-	if effects.ContinueToVerify {
+	if effects.ContinueToClaimAcceptance {
 		return true
 	}
 

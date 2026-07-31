@@ -136,19 +136,114 @@ describe("latestAgentReplyByPhase", () => {
     expect(map.has(2)).toBe(false);
   });
 
-  it("prefers stream reply over phase.summary", () => {
+  it("prefers last stream agent reply over phase.summary", () => {
+    const events = [
+      stream({
+        phase_seq: 1,
+        stream_seq: 10,
+        kind: "assistant",
+        message: "I've committed the refactor and verified the commands.",
+      }),
+      stream({
+        phase_seq: 1,
+        stream_seq: 40,
+        kind: "assistant",
+        message: "Refactor is complete and committed.",
+      }),
+    ];
+    const map = latestAgentReplyByPhase(events, [
+      phase({
+        phase_seq: 1,
+        summary: "A longer terminal result.result that is not the last reply.",
+      }),
+    ]);
+    expect(map.get(1)?.source).toBe("stream");
+    expect(map.get(1)?.text).toBe("Refactor is complete and committed.");
+  });
+
+  it("recovers full assistant text from payload when message was clipped", () => {
+    const full =
+      "Refactor is complete and committed.\n\n" +
+      "- Longest eligible function identified and refactored.\n" +
+      "- Extracted descriptive helpers for the remaining workflow steps.";
+    const clipped = full.slice(0, 80) + "…";
     const events = [
       stream({
         phase_seq: 1,
         stream_seq: 1,
         kind: "assistant",
-        message: "from stream",
+        message: clipped,
+        payload: {
+          type: "assistant",
+          message: {
+            role: "assistant",
+            content: [{ type: "text", text: full }],
+          },
+        },
+      }),
+    ];
+    const map = latestAgentReplyByPhase(events, [phase({ phase_seq: 1 })]);
+    expect(map.get(1)?.text).toBe(full);
+  });
+
+  it("keeps message when payload text is not longer", () => {
+    const events = [
+      stream({
+        phase_seq: 1,
+        stream_seq: 1,
+        kind: "assistant",
+        message: "short reply",
+        payload: {
+          type: "assistant",
+          message: {
+            role: "assistant",
+            content: [{ type: "text", text: "short" }],
+          },
+        },
+      }),
+    ];
+    const map = latestAgentReplyByPhase(events, [phase({ phase_seq: 1 })]);
+    expect(map.get(1)?.text).toBe("short reply");
+  });
+
+  it("keeps last stream reply even when clipped and summary is longer", () => {
+    const events = [
+      stream({
+        phase_seq: 1,
+        stream_seq: 99,
+        kind: "assistant",
+        message: "Refactor is complete and committed.\n\n- Extracted descriptive …",
+        payload: {},
       }),
     ];
     const map = latestAgentReplyByPhase(events, [
-      phase({ phase_seq: 1, summary: "from summary" }),
+      phase({
+        phase_seq: 1,
+        summary:
+          "A much longer phase.summary from result.result that operators should not see when a stream reply exists.",
+      }),
     ]);
     expect(map.get(1)?.source).toBe("stream");
-    expect(map.get(1)?.text).toBe("from stream");
+    expect(map.get(1)?.text).toBe(
+      "Refactor is complete and committed.\n\n- Extracted descriptive …",
+    );
+  });
+
+  it("reads harness ProgressEvent fallback payload.message string", () => {
+    const events = [
+      stream({
+        phase_seq: 1,
+        stream_seq: 1,
+        kind: "assistant",
+        message: "clipped…",
+        payload: {
+          Kind: "assistant",
+          Message: "should ignore Go casing",
+          message: "full recovered text from harness fallback",
+        },
+      }),
+    ];
+    const map = latestAgentReplyByPhase(events, [phase({ phase_seq: 1 })]);
+    expect(map.get(1)?.text).toBe("full recovered text from harness fallback");
   });
 });

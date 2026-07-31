@@ -7,7 +7,7 @@ import (
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
 
-// Invariant: execute terminal effects never also continue to verify.
+// Invariant: execute terminal effects never also continue to claim acceptance.
 func TestInvariant_executeNeverContinuesAfterTerminalFailure(t *testing.T) {
 	t.Parallel()
 	terminalInputs := []orchestration.ExecutePostRunInput{
@@ -23,7 +23,7 @@ func TestInvariant_executeNeverContinuesAfterTerminalFailure(t *testing.T) {
 	}
 	for i, in := range terminalInputs {
 		e := orchestration.DecideExecutePostRun(in)
-		if e.TerminateFailed && e.ContinueToVerify {
+		if e.TerminateFailed && e.ContinueToClaimAcceptance {
 			t.Fatalf("input %d: terminal and continue both set: %+v", i, e)
 		}
 		if e.TerminateFailed && e.StopLoop {

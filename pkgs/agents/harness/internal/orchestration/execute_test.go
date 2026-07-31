@@ -11,7 +11,7 @@ func TestDecideExecutePostRun_runnerOK(t *testing.T) {
 	e := DecideExecutePostRun(ExecutePostRunInput{
 		RunnerOutcome: ExecuteRunnerOutcomeOK,
 	})
-	if !e.ContinueToVerify || e.TerminateFailed || e.StopLoop {
+	if !e.ContinueToClaimAcceptance || e.TerminateFailed || e.StopLoop {
 		t.Fatalf("unexpected effects: %+v", e)
 	}
 }
@@ -19,7 +19,7 @@ func TestDecideExecutePostRun_runnerOK(t *testing.T) {
 func TestDecideExecutePostRun_contextCancelled(t *testing.T) {
 	t.Parallel()
 	e := DecideExecutePostRun(ExecutePostRunInput{ContextCancelled: true})
-	if !e.StopLoop || e.ContinueToVerify || e.TerminateFailed {
+	if !e.StopLoop || e.ContinueToClaimAcceptance || e.TerminateFailed {
 		t.Fatalf("unexpected effects: %+v", e)
 	}
 }
@@ -105,7 +105,7 @@ func TestDecideExecutePostRun_emptyClaimsContinue(t *testing.T) {
 			IngestAttempted: true,
 		},
 	})
-	if !e.ContinueToVerify || e.TerminateFailed {
+	if !e.ContinueToClaimAcceptance || e.TerminateFailed {
 		t.Fatalf("got %+v", e)
 	}
 }
@@ -118,7 +118,7 @@ func TestDecideExecutePostRun_gitSkippedSkipsIngest(t *testing.T) {
 			GitSnapshotSkipped: true,
 		},
 	})
-	if !e.ContinueToVerify {
+	if !e.ContinueToClaimAcceptance {
 		t.Fatalf("got %+v", e)
 	}
 }

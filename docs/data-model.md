@@ -230,26 +230,28 @@ Per-task acceptance requirements. Stored in `task_checklist_items` (definitions:
 
 ### Worker verification loop
 
-Verify runs after every successful execute when the task has at least one criterion. Tasks with **zero criteria** (legacy rows created before the create-time requirement) skip verify and write no checklist completion rows — a successful execute alone marks the task `review` (awaiting human approval via `POST /tasks/{id}/approve`).
+Claim acceptance runs after every successful execute when the task has at least one criterion ([ADR-0092](adr/ADR-0092-execute-owns-verify-commands.md)). Tasks with **zero criteria** (legacy rows created before the create-time requirement) skip claim acceptance and write no checklist completion rows — a successful execute alone marks the task `done`.
 
-1. **Execute** — prompt prepends all criteria with stable ids and the **absolute** worker-managed path the agent must write its report to (`<worker-managed dir>/<cycle_id>/criteria-report.json`, see "Report file contracts" below). `claimed_done` in the report is an assertion only — not final acceptance.
-2. **Gate** — criteria with `claimed_done: false` fail immediately (`verified_by=agent_self`); no verify pass for those ids.
-3. **Claim-only** — criteria with `claimed_done: true` and no `verify_commands` are accepted from the execute report (`verified_by=execute_claim`); no PhaseVerify Cursor run.
-4. **Command-backed verify** — for criteria with `verify_commands`, the worker runs shell checks, then the **same execute runner** runs `PhaseVerify` in the execute working dir and writes its verdict to the **absolute** worker-managed `<worker-managed dir>/<cycle_id>/verify-report.json` path. The agent MUST NOT modify any path inside the working dir during verify. The worker enforces this with a pre/post integrity snapshot of `git status --porcelain` plus `git rev-parse HEAD`; the whitelist is empty (report files live outside the working tree, so any porcelain diff is tampering), any HEAD movement, or any failure to capture the post-snapshot terminates the cycle as `verify_tampered` (terminal — no completion rows). When the working dir is not a git repo, the integrity check is bypassed and logged once at startup. Successful command-backed criteria are marked `verified_by=execute_agent`. On `CompletePhase`, verify phases also write a structured `details.verification` snapshot (attempt seq, pass/fail counts, per-criterion text/reasoning) into the mirrored `phase_completed` / `phase_failed` audit event so the SPA audit timeline and event detail page can explain outcomes without a verdicts round-trip.
-5. **Decision** — all pass → atomic `SetDoneWithEvidence` + `status=done`; any fail → terminate with reason `verification_failed:<id>,<id>,…` (sorted, deduped failing criterion IDs after the prefix) and **no** completion rows. One-shot per cycle ([ADR-0090](adr/ADR-0090-command-only-verify.md)); operators recover via `POST /tasks/{id}/retry`. The `verification_failed` prefix is contract-stable; consumers MUST use prefix matching (`startsWith`). Bare `verification_failed` (older cycles) remains a valid value. The reason column is 256 chars; long failure lists are truncated with a trailing `…` while keeping the prefix intact.
+1. **Execute** — prompt prepends all criteria with stable ids, any `verify_commands` for the agent to self-check, and the **absolute** worker-managed path the agent must write its report to (`<worker-managed dir>/<cycle_id>/criteria-report.json`, see "Report file contracts" below). `claimed_done` in the report is an assertion only — not final acceptance until the harness gate.
+2. **Gate** — criteria with `claimed_done: false` fail immediately (`verified_by=agent_self`).
+3. **Claim acceptance** — every active criterion with `claimed_done: true` is accepted as `verified_by=execute_claim`. There is no worker shell re-run and no PhaseVerify Cursor pass. Optional `verify_commands` are execute self-check instructions only.
+4. **Decision** — all pass → atomic `SetDoneWithEvidence` + `status=done`; any fail → terminate with reason `verification_failed:<id>,<id>,…` (sorted, deduped failing criterion IDs after the prefix) and **no** completion rows. One-shot per cycle; operators recover via `POST /tasks/{id}/retry`. The `verification_failed` prefix is contract-stable; consumers MUST use prefix matching (`startsWith`). Bare `verification_failed` (older cycles) remains a valid value. The reason column is 256 chars; long failure lists are truncated with a trailing `…` while keeping the prefix intact.
+
+Historical cycles may still show PhaseVerify / `verified_by=execute_agent` / `command_runs` / `verify-report.json` from the pre-ADR-0092 path.
 
 Pre-V1.1 completion rows may carry `verified_by=legacy` (backfilled at migrate); the current worker never writes that value.
 
 ### Report file contracts
 
-Paths live under a **worker-managed scratch directory** (`<worker-managed dir>/<cycle_id>/...`) which the operator never sees. The worker resolves the directory from `HAMIX_WORKER_REPORT_DIR` (default `<os.TempDir()>/hamix-worker`); the agent CLI is told the absolute path in its prompt and writes there directly. The directory lives outside `app_settings.repo_root` so customer working trees stay clean and the verify-pass integrity check has an empty whitelist (any porcelain diff against the working tree during verify is tampering). The per-cycle subdirectory is GC'd by the worker at cycle terminate so disk use stays bounded.
+Paths live under a **worker-managed scratch directory** (`<worker-managed dir>/<cycle_id>/...`) which the operator never sees. The worker resolves the directory from `HAMIX_WORKER_REPORT_DIR` (default `<os.TempDir()>/hamix-worker`); the agent CLI is told the absolute path in its prompt and writes there directly. The directory lives outside the task worktree so customer working trees stay clean. The per-cycle subdirectory is GC'd by the worker at cycle terminate so disk use stays bounded.
 
 | File | Writer | Schema |
 |---|---|---|
 | `<worker-managed dir>/<cycle_id>/criteria-report.json` | Execute agent | `{ "criteria": [{ "id", "claimed_done", "evidence" }], "commits": [{ "sha", "branch" }] }` — `commits` optional; worker validates SHAs against git ancestry at execute ingest ([ADR-0014](adr/ADR-0014-cycle-commit-tracking.md), [domain/cycle-commits.md](domain/cycle-commits.md)) |
-| `<worker-managed dir>/<cycle_id>/verify-report.json` | Execute agent (verify phase) | `{ "criteria": [{ "id", "verified", "reasoning" }] }` |
 
-Limits: 256 KB per report file; `evidence` and `reasoning` ≤ 16 KB each; verify `reasoning` ≥ 40 chars when `verified=true`. Duplicate ids in a report → invalid. Symlinks rejected.
+Limits: 256 KB per report file; `evidence` ≤ 16 KB. Duplicate ids in a report → invalid. Symlinks rejected.
+
+> **Historical:** Older cycles also used `verify-report.json` during a PhaseVerify pass. New cycles do not.
 
 ### Verdict tables
 

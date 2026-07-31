@@ -31,6 +31,7 @@ describe("agentProgressDisplay", () => {
     ["assistant", undefined, undefined, "Agent reply"],
     ["run_state", "setup_started", "harness_setup", "Setup"],
     ["run_state", "setup_spawn", "harness_setup", "Setup"],
+    ["run_state", "handoff_claims", "harness_setup", "Setup"],
     ["run_state", "handoff_verify", "harness_setup", "Setup"],
     ["run_state", "restart_resume", "harness_setup", "Setup"],
     ["custom_event", undefined, undefined, "custom event"],
@@ -71,6 +72,23 @@ describe("agentProgressDisplay", () => {
     ).toBe("Working…");
   });
 
+  it.each(["handoff_claims", "handoff_verify"] as const)(
+    "agentProgressMessage remaps %s to claim acceptance copy",
+    (subtype) => {
+      expect(
+        agentProgressMessage(
+          item({
+            progress: {
+              kind: "run_state",
+              subtype,
+              message: "Handing off to verify…",
+              tool: "harness_setup",
+            },
+          }),
+        ),
+      ).toBe("Accepting criteria claims…");
+    },
+  );
   it.each([
     [1_000_000, 1_000_000, "just now"],
     [1_000_000, 1_000_500, "just now"],

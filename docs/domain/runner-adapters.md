@@ -65,7 +65,7 @@ Package contracts: [`pkgs/agents/runner/doc.go`](../../pkgs/agents/runner/doc.go
 | **Descriptor** | Registry metadata (`id`, `label`, `default_binary_hint`) exposed to the SPA. |
 | **Factory** | `registry.Factory` — constructs a `Runner` from `BuildOptions`. |
 | **Capability** | Optional interface in [`schema.go`](../../pkgs/agents/runner/schema.go); detected at runtime via type assertion. |
-| **Execute runner** | Built from `app_settings.runner`. Used for both `PhaseExecute` and `PhaseVerify` ([ADR-0084](../adr/ADR-0084-executor-owned-verify.md)). Probe failure **blocks** worker startup. |
+| **Execute runner** | Built from `app_settings.runner`. Used for `PhaseExecute` (and historical `PhaseVerify` on old cycles). Probe failure **blocks** worker startup. New cycles do not open PhaseVerify ([ADR-0092](../adr/ADR-0092-execute-owns-verify-commands.md)). |
 | **adapterkit** | Shared exec, env policy, redaction, diagnostics, and probe helpers — not runner-specific. |
 | **runnerfake** | Deterministic in-memory runner for tests; never registered in production. |
 

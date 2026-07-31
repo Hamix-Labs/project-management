@@ -18,7 +18,6 @@ type Limits struct {
 	StderrTailBytes        int
 	DiagnosticTailBytes    int
 	StderrSummaryHintRunes int
-	ProgressSummaryRunes   int
 	ProbeLogBytes          int
 }
 
@@ -48,7 +47,6 @@ var (
 		StderrTailBytes:        8 * 1024,
 		DiagnosticTailBytes:    4 * 1024,
 		StderrSummaryHintRunes: 280,
-		ProgressSummaryRunes:   240,
 		ProbeLogBytes:          adapterkit.DefaultProbeLogBytes,
 	}
 )

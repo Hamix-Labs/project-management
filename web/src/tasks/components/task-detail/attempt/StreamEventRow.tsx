@@ -1,5 +1,8 @@
 import type { TaskCycleStreamEvent } from "@/types";
-import { agentProgressKindDescriptor } from "@/tasks/cycleDisplay/agentProgressDisplay";
+import {
+  agentProgressKindDescriptor,
+  resolveAgentProgressMessage,
+} from "@/tasks/cycleDisplay/agentProgressDisplay";
 import { PhaseSeqBadge } from "./AttemptPhaseSeqBadge";
 
 type StreamEventRowProps = {
@@ -8,7 +11,12 @@ type StreamEventRowProps = {
 };
 
 export function StreamEventRow({ ev, showPhaseBadge }: StreamEventRowProps) {
-  const preview = ev.message || ev.tool || "Agent reported progress.";
+  const preview = resolveAgentProgressMessage(
+    ev.subtype,
+    ev.message,
+    ev.tool,
+    "Agent reported progress.",
+  );
   const kind = agentProgressKindDescriptor(ev.kind, ev.subtype, ev.tool);
   return (
     <li className="task-attempt-stream-row">

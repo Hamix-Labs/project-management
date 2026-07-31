@@ -29,7 +29,7 @@ func DecideExecutePostRun(in ExecutePostRunInput) ExecuteEffects {
 	}
 
 	if in.CommitIngest.GitSnapshotSkipped || !in.CommitIngest.IngestAttempted {
-		return ExecuteEffects{ContinueToVerify: true}
+		return ExecuteEffects{ContinueToClaimAcceptance: true}
 	}
 
 	if in.CommitIngest.IngestErr {
@@ -49,14 +49,14 @@ func DecideExecutePostRun(in ExecutePostRunInput) ExecuteEffects {
 		}
 	}
 
-	return ExecuteEffects{ContinueToVerify: true}
+	return ExecuteEffects{ContinueToClaimAcceptance: true}
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func executeEffectsFromRunner(outcome ExecuteRunnerOutcome) ExecuteEffects {
 	switch outcome {
 	case ExecuteRunnerOutcomeOK:
-		return ExecuteEffects{ContinueToVerify: true}
+		return ExecuteEffects{ContinueToClaimAcceptance: true}
 	case ExecuteRunnerOutcomeTimeout:
 		return terminalExecute(taskcoredomain.StatusFailed, ReasonRunnerTimeout)
 	case ExecuteRunnerOutcomeStreamIdle:

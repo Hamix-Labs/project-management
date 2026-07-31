@@ -65,9 +65,9 @@ Schema and table definitions: [data-model.md](../data-model.md) (Checklist). HTT
 | Actor | Role | Trust |
 | --- | --- | --- |
 | **Operator** | Authors `initial_prompt` and criteria. | Trusted to define intent. |
-| **Worker (harness)** | Composes prompt, invokes runner, parses criteria report after execute, hands off to verify. | Trusted orchestrator. |
-| **Execute agent** | Implements work in `repo_root`; writes `criteria-report.json`. | **Not trusted** for final acceptance — self-claim is an assertion. |
-| **Agent verify** | Same runner; judges criteria in `PhaseVerify` (downstream). | Trusted verdict when integrity holds — see [verify-agent.md](./verify-agent.md). |
+| **Worker (harness)** | Composes prompt, invokes runner, parses criteria report after execute, runs claim acceptance. | Trusted orchestrator. |
+| **Execute agent** | Implements work in the task worktree; writes `criteria-report.json`. | **Not trusted** for final acceptance — self-claim is an assertion. |
+| **Claim acceptance** | Harness accepts `claimed_done: true` as `verified_by=execute_claim` ([ADR-0092](../adr/ADR-0092-execute-owns-verify-commands.md)). | Trusted gate — see [verify-agent.md](./verify-agent.md). |
 
 ## How it works
 
@@ -112,7 +112,7 @@ Each execute attempt follows this sequence in [`cycle_loop.go`](../../pkgs/agent
 
 6. **`CompletePhase(execute)`** — Persists `runner.Result` (summary, details, resolved model) on the phase row.
 
-7. **Verify handoff** — When `verificationSnapshot.enabled`, the worker parses `criteria-report.json` and enters the verify pipeline. When disabled (zero criteria), a successful execute completes the task directly.
+7. **Claim acceptance** — When `verificationSnapshot.enabled`, the worker parses `criteria-report.json` and enters claim acceptance ([verify-agent.md](./verify-agent.md)). When disabled (zero criteria), a successful execute completes the task directly.
 
 ### Interruption paths
 
@@ -213,7 +213,7 @@ Parser rules ([`criteria_parse.go`](../../pkgs/agents/harness/criteria_parse.go)
 | `CursorModel` | Per-task `cursor_model` override when set |
 | `OnProgress` | Persists to `task_cycle_stream_events`; publishes `agent_run_progress` SSE |
 
-Before Cursor stdout, the harness also emits worker-authored `run_state` progress (`Tool: harness_setup`) for setup milestones — phase start, git snapshot, resume plan, invoke, spawn, commit ingest, and handoff to verify — so the cycles ticker is never empty while prepare/spawn work runs. PhaseVerify uses the same pattern (same execute agent) for verify open / prompt / invoke.
+Before Cursor stdout, the harness also emits worker-authored `run_state` progress (`Tool: harness_setup`) for setup milestones — phase start, git snapshot, resume plan, invoke, spawn, commit ingest, and handoff to claim acceptance (`handoff_claims`) — so the cycles ticker is never empty while prepare/spawn work runs.
 
 See [`runner.Request`](../../pkgs/agents/runner/runner.go) and [architecture.md](../architecture.md) (Runner abstraction).
 

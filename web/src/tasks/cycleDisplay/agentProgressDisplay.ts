@@ -86,6 +86,7 @@ export function agentProgressKindDescriptor(
     }
     if (
       subtype?.startsWith("setup_") ||
+      subtype === "handoff_claims" ||
       subtype === "handoff_verify" ||
       subtype === "restart_resume"
     ) {
@@ -126,8 +127,37 @@ export function agentProgressKindLabel(
   return agentProgressKindDescriptor(kind, subtype, tool).label;
 }
 
+/** Display copy for post-execute claim acceptance (ADR-0092). */
+export const HANDOFF_CLAIMS_MESSAGE = "Accepting criteria claims…";
+
+function isHandoffClaimsSubtype(subtype: string | undefined): boolean {
+  return subtype === "handoff_claims" || subtype === "handoff_verify";
+}
+
+/**
+ * Resolves the operator-facing progress message. Remaps stored
+ * `handoff_claims` / historical `handoff_verify` rows so stream events match
+ * claim acceptance.
+ */
+export function resolveAgentProgressMessage(
+  subtype: string | undefined,
+  message: string | undefined,
+  tool: string | undefined,
+  fallback: string,
+): string {
+  if (isHandoffClaimsSubtype(subtype)) {
+    return HANDOFF_CLAIMS_MESSAGE;
+  }
+  return message || tool || fallback;
+}
+
 export function agentProgressMessage(item: AgentRunProgressItem): string {
-  return item.progress.message || item.progress.tool || "Working…";
+  return resolveAgentProgressMessage(
+    item.progress.subtype,
+    item.progress.message,
+    item.progress.tool,
+    "Working…",
+  );
 }
 
 export function formatAgentProgressElapsed(receivedAt: number, now: number): string {
