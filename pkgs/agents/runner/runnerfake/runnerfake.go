@@ -234,6 +234,11 @@ func (r *Runner) Run(ctx context.Context, req runner.Request) (runner.Result, er
 	if entry.err == nil && autoSession {
 		result = ensureFakeSessionID(result, req)
 	}
+	if entry.err == nil && req.Phase == cyclesdomain.PhaseExecute {
+		if seedErr := seedCommitRegisterForTests(req); seedErr != nil {
+			return runner.Result{}, fmt.Errorf("runnerfake: seed commit register: %w", seedErr)
+		}
+	}
 	return result, entry.err
 }
 

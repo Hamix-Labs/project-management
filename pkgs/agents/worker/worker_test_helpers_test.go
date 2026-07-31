@@ -14,6 +14,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
+	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/runnerfake"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/worker"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
@@ -216,6 +217,11 @@ func (b *blockingRunner) Run(ctx context.Context, req runner.Request) (runner.Re
 	}
 	select {
 	case <-b.release:
+		if b.err == nil {
+			if seedErr := runnerfake.SeedCommitRegisterForTests(req); seedErr != nil {
+				return runner.Result{}, seedErr
+			}
+		}
 		return b.result, b.err
 	case <-ctx.Done():
 		if b.honorCtx {
