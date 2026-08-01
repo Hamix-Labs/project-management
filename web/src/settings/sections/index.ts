@@ -4,5 +4,6 @@ export { SettingsHeader } from "./SettingsHeader";
 export { RunnerSettingsSection } from "./RunnerSettingsSection";
 export { PhasesSettingsSection } from "./PhasesSettingsSection";
 export { DisplaySettingsSection } from "./DisplaySettingsSection";
+export { DesktopDatabaseSettingsSection } from "./DesktopDatabaseSettingsSection";
 export { SettingsActions } from "./SettingsActions";
 export { SettingsStatusMessage } from "./SettingsStatusMessage";

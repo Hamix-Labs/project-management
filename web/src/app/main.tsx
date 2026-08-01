@@ -16,6 +16,7 @@ import { ROUTER_FUTURE_FLAGS } from "../lib/routerFutureFlags";
 import { AppErrorBoundary } from "../shared/AppErrorBoundary";
 import { ToastProvider } from "../shared/toast";
 import { installRUM } from "../observability";
+import { DesktopSetupGate } from "../desktop/DesktopSetupGate";
 
 const queryClient = createAppQueryClient();
 
@@ -63,7 +64,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <BrowserRouter future={ROUTER_FUTURE_FLAGS}>
       <QueryProviders>
         <ToastProvider>
-          <AppWithRecoveryBoundary />
+          <DesktopSetupGate>
+            <AppWithRecoveryBoundary />
+          </DesktopSetupGate>
         </ToastProvider>
       </QueryProviders>
     </BrowserRouter>

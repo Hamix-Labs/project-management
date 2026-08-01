@@ -17,5 +17,6 @@ export const SECTION_IDS = {
   runTimeout: "run-timeout",
   streamIdle: "stream-idle",
   display: "display",
+  database: "database",
   developer: "developer",
 } as const;

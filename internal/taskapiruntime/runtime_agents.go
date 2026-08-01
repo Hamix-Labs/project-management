@@ -1,8 +1,6 @@
-package main
+package taskapiruntime
 
 import (
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
-
 	"context"
 	"log/slog"
 
@@ -10,13 +8,11 @@ import (
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/taskapiconfig"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents"
+	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 )
 
-// run_agentworker.go wires the bounded ready-task queue, reconcile loop,
-// and agent worker supervisor boot. Supervisor lifecycle lives in
-// internal/taskapi/agentworker.
-func startReadyTaskAgents(ctx context.Context, taskStore *composition.API, hub *realtime.SSEHub) (context.CancelFunc, *agents.MemoryQueue, *agentworker.Supervisor, error) {
-	slog.Debug("trace", "cmd", cmdName, "operation", "taskapi.startReadyTaskAgents")
+func startReadyTaskAgents(ctx context.Context, taskStore *composition.API, hub *realtime.SSEHub, cmd string) (context.CancelFunc, *agents.MemoryQueue, *agentworker.Supervisor, error) {
+	slog.Debug("trace", "cmd", cmd, "operation", "taskapi.startReadyTaskAgents")
 	qcap := taskapiconfig.UserTaskAgentQueueCap()
 	agentQueue := agents.NewMemoryQueue(qcap)
 	taskStore.SetReadyTaskNotifier(agentQueue)
@@ -26,8 +22,8 @@ func startReadyTaskAgents(ctx context.Context, taskStore *composition.API, hub *
 		return nil, nil, nil, err
 	}
 	iv := agents.ReconcileTickInterval
-	slog.Info("ready task agent queue", "cmd", cmdName, "operation", "taskapi.agent_queue", "cap", qcap)
-	slog.Info("ready task agent reconcile", "cmd", cmdName, "operation", "taskapi.agent_reconcile",
+	slog.Info("ready task agent queue", "cmd", cmd, "operation", "taskapi.agent_queue", "cap", qcap)
+	slog.Info("ready task agent reconcile", "cmd", cmd, "operation", "taskapi.agent_reconcile",
 		"tick_interval", iv.String())
 
 	reconcileCtx, reconcileCancel := context.WithCancel(ctx)

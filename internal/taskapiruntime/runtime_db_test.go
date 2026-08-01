@@ -1,4 +1,4 @@
-package main
+package taskapiruntime
 
 import (
 	"bytes"
@@ -35,7 +35,7 @@ func TestEmitSchemaDriftAlerts_pendingWritesStderr(t *testing.T) {
 		CodeRevision: 2,
 		DBRevision:   1,
 	}
-	out := captureStderr(t, func() { emitSchemaDriftAlerts(report) })
+	out := captureStderr(t, func() { emitSchemaDriftAlerts(report, "taskapi") })
 	if out == "" {
 		t.Fatal("expected stderr banner")
 	}
@@ -49,7 +49,7 @@ func TestEmitSchemaDriftAlerts_pendingWritesStderr(t *testing.T) {
 
 func TestEmitSchemaDriftAlerts_okSilent(t *testing.T) {
 	report := postgres.SchemaDriftReport{Status: postgres.SchemaDriftOK}
-	out := captureStderr(t, func() { emitSchemaDriftAlerts(report) })
+	out := captureStderr(t, func() { emitSchemaDriftAlerts(report, "taskapi") })
 	if out != "" {
 		t.Fatalf("unexpected stderr: %q", out)
 	}
@@ -61,7 +61,7 @@ func TestEmitSchemaDriftAlerts_downgradeWritesStderr(t *testing.T) {
 		CodeRevision: 1,
 		DBRevision:   2,
 	}
-	out := captureStderr(t, func() { emitSchemaDriftAlerts(report) })
+	out := captureStderr(t, func() { emitSchemaDriftAlerts(report, "taskapi") })
 	if out == "" {
 		t.Fatal("expected stderr banner for downgrade")
 	}

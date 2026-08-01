@@ -26,6 +26,17 @@ Set up the repo, verify your change, and find the right documentation for learni
 
 > **Warning** — Workspace repo path, agent worker settings, cursor binary, and run timeout are configured in the SPA **Settings** page (`/settings`), not in `.env`. See [docs/configuration.md](docs/configuration.md).
 
+### Desktop app (optional)
+
+The downloadable host is `cmd/hamix-desktop` (Wails). Postgres URL is configured in the UI on first launch (or Settings → Database), stored under `{UserConfigDir}/hamix/desktop.json`. `DATABASE_URL` still overrides for local dev. See [ADR-0095](docs/adr/ADR-0095-desktop-wails-host.md) and [cmd/hamix-desktop/README.md](cmd/hamix-desktop/README.md).
+
+```bash
+./scripts/dev-desktop.sh        # Unix — build SPA + run desktop window
+.\scripts\dev-desktop.ps1       # Windows
+```
+
+Optional: `-Migrate` / `--migrate` (same sugar as `dev.*`). `-Live` / `--live` uses `wails dev` (Vite HMR; requires Wails CLI).
+
 ## Setup
 
 1. Copy `.env.example` to `.env` and set `DATABASE_URL`.
