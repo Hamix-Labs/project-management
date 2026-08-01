@@ -49,6 +49,7 @@ func TestSPAFallback_servesIndexForHTML(t *testing.T) {
 }
 
 func TestSPAFallback_apiWithoutRuntime_503(t *testing.T) {
+	t.Setenv("DATABASE_URL", "")
 	h := NewHost(desktopconfig.WithRoot(t.TempDir()), fstest.MapFS{})
 	rr := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/tasks", nil)
@@ -56,5 +57,27 @@ func TestSPAFallback_apiWithoutRuntime_503(t *testing.T) {
 	h.Handler().ServeHTTP(rr, req)
 	if rr.Code != http.StatusServiceUnavailable {
 		t.Fatalf("code %d body %q", rr.Code, rr.Body.String())
+	}
+	if !strings.Contains(rr.Body.String(), "database not configured") {
+		t.Fatalf("body %q", rr.Body.String())
+	}
+}
+
+func TestSPAFallback_apiWithoutRuntime_dsnConfigured_honestError(t *testing.T) {
+	t.Setenv("DATABASE_URL", "postgres://example.invalid/hamix")
+	h := NewHost(desktopconfig.WithRoot(t.TempDir()), fstest.MapFS{})
+	rr := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/tasks", nil)
+	req.Header.Set("Accept", "application/json")
+	h.Handler().ServeHTTP(rr, req)
+	if rr.Code != http.StatusServiceUnavailable {
+		t.Fatalf("code %d body %q", rr.Code, rr.Body.String())
+	}
+	body := rr.Body.String()
+	if strings.Contains(body, "database not configured") {
+		t.Fatalf("must not mask runtime failure as not configured: %q", body)
+	}
+	if !strings.Contains(body, "api runtime unavailable") {
+		t.Fatalf("body %q", body)
 	}
 }

@@ -69,4 +69,18 @@ Produces `build/bin/hamix-desktop` (platform-specific).
 
 ## Config
 
-DSN precedence: `DATABASE_URL` env → `{UserConfigDir}/hamix/desktop.json` → setup UI. See [docs/configuration.md](../../docs/configuration.md).
+DSN precedence (no global env required for local dev):
+
+1. `DATABASE_URL` from the process env — `dev-desktop.*` loads the **repo `.env`** (working directory = checkout root)
+2. Else `{UserConfigDir}/hamix/desktop.json`
+3. Else in-app setup UI
+
+Schema migrate is a **separate** step (`.\scripts\migrate.ps1`), same as browser `dev.ps1`. Desktop does not AutoMigrate on start; schema drift / DB start failure prints remediation and quits.
+
+## Logging
+
+- JSONL + stderr share `HAMIX_LOG_LEVEL` (default `info`) via `internal/applog`
+- Per-query SQL is **Debug**; slow SQL is **Warn** — default Info shows startup/access, not every query
+- Set `HAMIX_LOG_LEVEL=debug` when you want the SQL firehose
+
+See [docs/configuration.md](../../docs/configuration.md).
