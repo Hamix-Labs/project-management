@@ -14,6 +14,8 @@ import (
 // projects.next_task_number under the caller's transaction. Mirrors
 // taskevents NextEventSeq: SELECT … FOR UPDATE on Postgres; SQLite relies on
 // global write serialization.
+//
+//funclogmeasure:skip category=hot-path reason="Thin wrapper; allocateNextTaskNumbers emits the operation trace."
 func allocateNextTaskNumber(tx *gorm.DB, projectID string) (int, error) {
 	nums, err := allocateNextTaskNumbers(tx, projectID, 1)
 	if err != nil {
