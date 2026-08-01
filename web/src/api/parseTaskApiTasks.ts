@@ -166,6 +166,12 @@ export function parseTask(value: unknown): Task {
       base.worktree_id = wtID;
     }
   }
+  if (value.pull_request_url !== undefined && value.pull_request_url !== null) {
+    const prURL = parseString(value.pull_request_url, "pull_request_url").trim();
+    if (prURL !== "") {
+      base.pull_request_url = prURL;
+    }
+  }
   if (Array.isArray(value.tags)) {
     base.tags = value.tags.map((raw, i) => parseNonEmptyString(raw, `tags[${i}]`));
   } else if (value.tags === undefined) {

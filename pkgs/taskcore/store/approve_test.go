@@ -125,6 +125,54 @@ func TestUpdate_rejectsStatusPrReady(t *testing.T) {
 	}
 }
 
+func TestUpdate_rejectsPullRequestURLForUser(t *testing.T) {
+	t.Parallel()
+	db := tasktestdb.OpenSQLite(t)
+	st := taskcorestore.NewStore(db)
+	ctx := context.Background()
+
+	task, err := st.Create(ctx, taskcorestore.CreateTaskInput{
+		Title: "t", Status: domain.StatusReview, Priority: domain.PriorityMedium,
+	}, domain.ActorUser)
+	if err != nil {
+		t.Fatal(err)
+	}
+	url := "https://github.com/example/repo/pull/1"
+	_, _, err = st.Update(ctx, task.ID, taskcorestore.UpdateTaskInput{PullRequestURL: &url}, domain.ActorUser)
+	if !errors.Is(err, domain.ErrInvalidInput) {
+		t.Fatalf("err = %v, want ErrInvalidInput", err)
+	}
+}
+
+func TestUpdate_agentSetsPullRequestURL(t *testing.T) {
+	t.Parallel()
+	db := tasktestdb.OpenSQLite(t)
+	st := taskcorestore.NewStore(db)
+	ctx := context.Background()
+
+	task, err := st.Create(ctx, taskcorestore.CreateTaskInput{
+		Title: "t", Status: domain.StatusRunning, Priority: domain.PriorityMedium,
+	}, domain.ActorUser)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pr := domain.StatusPrReady
+	url := "https://github.com/example/repo/pull/9"
+	got, _, err := st.Update(ctx, task.ID, taskcorestore.UpdateTaskInput{
+		Status:         &pr,
+		PullRequestURL: &url,
+	}, domain.ActorAgent)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Status != domain.StatusPrReady {
+		t.Fatalf("status=%q", got.Status)
+	}
+	if got.PullRequestURL == nil || *got.PullRequestURL != url {
+		t.Fatalf("pull_request_url=%v", got.PullRequestURL)
+	}
+}
+
 func TestRequestTaskOpenPR_fromReviewQueuesIntent(t *testing.T) {
 	t.Parallel()
 	db := tasktestdb.OpenSQLite(t)

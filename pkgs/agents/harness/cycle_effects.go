@@ -4,6 +4,7 @@ import "github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 import (
 	"context"
 	"log/slog"
+	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/git"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/orchestration"
@@ -130,7 +131,12 @@ func (h *Harness) applyFinalizeEffects(
 	if !h.terminateCycle(parentCtx, state, cycle.TaskID, effects.CycleStatus, string(effects.Reason)) {
 		return false
 	}
-	if !h.transitionTask(parentCtx, task.ID, effects.TaskStatus, "final_task_transition") {
+	prURL := strings.TrimSpace(effects.PullRequestURL)
+	if prURL != "" {
+		if !h.transitionTaskWithPullRequestURL(parentCtx, task.ID, effects.TaskStatus, prURL, "final_task_transition") {
+			return false
+		}
+	} else if !h.transitionTask(parentCtx, task.ID, effects.TaskStatus, "final_task_transition") {
 		return false
 	}
 	if effects.TaskStatus == taskcoredomain.StatusDone {

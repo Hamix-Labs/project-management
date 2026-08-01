@@ -60,6 +60,11 @@ export type Task = {
   repository_id?: string;
   /** Git worktree binding (ADR-0039). */
   worktree_id?: string;
+  /**
+   * GitHub PR URL after open-PR finalize (one PR per task). Absent until
+   * the harness stamps it with status=pr_ready.
+   */
+  pull_request_url?: string;
   tags?: string[];
   milestone?: string | null;
   depends_on?: TaskDependencyEdge[];

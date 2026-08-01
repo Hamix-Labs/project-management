@@ -15,7 +15,6 @@ import {
   UserGlyph,
 } from "../ExecutionBarGlyphs";
 import { formatAttemptTiming } from "./cyclePanelUtils";
-import { isOpenPrRunKind } from "../../../task-display/openPrRunDisplay";
 
 type CycleHistoryListProps = {
   taskId: string;
@@ -95,9 +94,7 @@ function CycleRow({
               <TimerGlyph className="task-cycle-row-fact-icon" />
               <span>
                 {timing.inProgress
-                  ? isOpenPrRunKind(cycle.meta)
-                    ? "Creating PR"
-                    : "In progress"
+                  ? "In progress"
                   : (timing.duration ?? "—")}
               </span>
             </span>

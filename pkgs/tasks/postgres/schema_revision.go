@@ -92,7 +92,10 @@ import (
 //
 // Rev 28 (ADR-0094): one global Default project; tasks.repository_id;
 // drop per-repo default projects and idx_projects_repo_default.
-const SchemaRevision = 28
+//
+// Rev 29: tasks.pull_request_url — operational cache of the opened PR URL
+// (stamped by open-PR finalize with status=pr_ready).
+const SchemaRevision = 29
 
 const schemaMetaRowID = 1
 

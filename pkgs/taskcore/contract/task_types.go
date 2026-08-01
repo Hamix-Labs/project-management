@@ -80,6 +80,8 @@ type UpdateTaskInput struct {
 	PendingRetry      *domain.PendingRetry
 	ClearPendingRetry bool
 	WorktreeID        *string
+	// PullRequestURL is harness-only (open-PR finalize). Omitted from HTTP PATCH.
+	PullRequestURL *string
 }
 
 // ListFilter optionally restricts flat task listing.

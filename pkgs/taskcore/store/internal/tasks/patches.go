@@ -57,6 +57,25 @@ func applyTaskPatches(tx *gorm.DB, taskID string, cur *domain.Task, in UpdateInp
 	if err := applyWorktreePatch(cur, in.WorktreeID); err != nil {
 		return err
 	}
+	if err := applyPullRequestURLPatch(cur, in.PullRequestURL, by); err != nil {
+		return err
+	}
+	return nil
+}
+
+func applyPullRequestURLPatch(cur *domain.Task, url *string, by domain.Actor) error {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.tasks.applyPullRequestURLPatch")
+	if url == nil {
+		return nil
+	}
+	if by != domain.ActorAgent {
+		return fmt.Errorf("%w: pull_request_url is set by open-pr finalize only", domain.ErrInvalidInput)
+	}
+	trimmed := strings.TrimSpace(*url)
+	if trimmed == "" {
+		return fmt.Errorf("%w: pull_request_url", domain.ErrInvalidInput)
+	}
+	cur.PullRequestURL = &trimmed
 	return nil
 }
 

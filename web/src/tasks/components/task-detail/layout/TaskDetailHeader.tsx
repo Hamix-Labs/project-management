@@ -19,6 +19,7 @@ type TaskDetailHeaderTask = Pick<
   | "worktree_id"
   | "project_id"
   | "repository_id"
+  | "pull_request_url"
 >;
 
 type Props = {
@@ -106,6 +107,7 @@ export function TaskDetailHeader({ task }: Props) {
           worktreeId={task.worktree_id}
           projectId={task.project_id}
           repositoryId={task.repository_id}
+          pullRequestUrl={task.pull_request_url}
         />
       </header>
     </>

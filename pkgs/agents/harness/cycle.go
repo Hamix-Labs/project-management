@@ -116,6 +116,29 @@ func (h *Harness) transitionTask(ctx context.Context, taskID string, next taskco
 	return true
 }
 
+// transitionTaskWithPullRequestURL sets status and pull_request_url in one Update
+// (open-PR finalize: avoid pr_ready without URL).
+func (h *Harness) transitionTaskWithPullRequestURL(ctx context.Context, taskID string, next taskcoredomain.Status, prURL, op string) bool {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.transitionTaskWithPullRequestURL",
+		"task_id", taskID, "next", string(next), "op", op)
+	url := strings.TrimSpace(prURL)
+	if _, err := h.store.Update(ctx, taskID, taskcorestore.UpdateTaskInput{
+		Status:         &next,
+		PullRequestURL: &url,
+	}, taskcoredomain.ActorAgent); err != nil {
+		level := slog.LevelWarn
+		if errors.Is(err, taskcoredomain.ErrNotFound) {
+			level = slog.LevelInfo
+		}
+		slog.Log(ctx, level, "agent harness task transition with pull_request_url failed",
+			"cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.transitionTaskWithPullRequestURL.err",
+			"task_id", taskID, "next", string(next), "op", op, "err", err)
+		return false
+	}
+	h.publishTaskUpdated(taskID)
+	return true
+}
+
 // startCycle writes the StartCycle row and updates state on success.
 // MetaJSON carries runner identity, prompt hash, AND the operator's
 // model intent + the runner's resolved effective model (Phase 1a-ii of
