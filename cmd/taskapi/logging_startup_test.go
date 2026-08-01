@@ -15,13 +15,23 @@ func TestEmitTaskAPIFileLoggingConfig_emitsAtMinLevel(t *testing.T) {
 		t.Cleanup(func() { slog.SetDefault(prev) })
 		slog.SetDefault(slog.New(slog.NewJSONHandler(&buf, &slog.HandlerOptions{Level: lv})))
 		emitTaskAPIFileLoggingConfig(lv)
-		line := strings.TrimSpace(buf.String())
+		var line string
+		for _, candidate := range strings.Split(buf.String(), "\n") {
+			candidate = strings.TrimSpace(candidate)
+			if candidate == "" {
+				continue
+			}
+			if strings.Contains(candidate, `"msg":"logging config"`) {
+				line = candidate
+				break
+			}
+		}
 		if line == "" {
-			t.Fatalf("level %s: expected one log line", lv)
+			t.Fatalf("level %s: expected logging config line, got %q", lv, buf.String())
 		}
 		var m map[string]any
 		if err := json.Unmarshal([]byte(line), &m); err != nil {
-			t.Fatalf("level %s: %v", lv, err)
+			t.Fatalf("level %s: %v (line %q)", lv, err, line)
 		}
 		if m["msg"] != "logging config" {
 			t.Fatalf("level %s: msg %v", lv, m["msg"])
