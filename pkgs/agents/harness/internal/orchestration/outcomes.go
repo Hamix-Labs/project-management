@@ -42,7 +42,8 @@ type ExecuteEffects struct {
 
 // FinalizeEffects lists side effects after DecideFinalizeSuccess.
 type FinalizeEffects struct {
-	CycleStatus cyclesdomain.CycleStatus
-	TaskStatus  taskcoredomain.Status
-	Reason      TerminationReason
+	CycleStatus    cyclesdomain.CycleStatus
+	TaskStatus     taskcoredomain.Status
+	Reason         TerminationReason
+	PullRequestURL string // non-empty: stamp with TaskStatus in one Update (open-PR)
 }

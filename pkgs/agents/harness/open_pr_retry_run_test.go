@@ -106,6 +106,9 @@ func TestRunWithRetry_openPRSkipsVerifyAndLandsPrReady(t *testing.T) {
 	if got.Status != taskcoredomain.StatusPrReady {
 		t.Fatalf("status=%q want pr_ready", got.Status)
 	}
+	if got.PullRequestURL == nil || *got.PullRequestURL != "https://github.com/example/repo/pull/42" {
+		t.Fatalf("pull_request_url=%v want https://github.com/example/repo/pull/42", got.PullRequestURL)
+	}
 	cycles, err := st.ListCyclesForTask(ctx, tsk.ID, 10)
 	if err != nil {
 		t.Fatal(err)

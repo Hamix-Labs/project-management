@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"log/slog"
+	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/orchestration"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/sidecar"
@@ -41,8 +42,9 @@ func (h *Harness) runCycleLoopFinalizeOpenPR(
 		return
 	}
 	effects := orchestration.FinalizeEffects{
-		CycleStatus: cyclesdomain.CycleStatusSucceeded,
-		TaskStatus:  taskcoredomain.StatusPrReady,
+		CycleStatus:    cyclesdomain.CycleStatusSucceeded,
+		TaskStatus:     taskcoredomain.StatusPrReady,
+		PullRequestURL: strings.TrimSpace(rep.URL),
 	}
 	if ok := h.applyFinalizeEffects(parentCtx, task, cycle, state, effects); !ok {
 		slog.Error("agent harness open_pr finalize effects incomplete", "cmd", calltrace.LogCmd,
