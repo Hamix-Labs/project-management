@@ -15,6 +15,8 @@ type Task struct {
 	Status        domain.Status   `gorm:"not null;index;check:chk_tasks_status,status IN ('ready','running','blocked','review','pr_ready','done','failed','on_hold','closed')"`
 	Priority      domain.Priority `gorm:"not null;check:chk_tasks_priority,priority IN ('low','medium','high','critical')"`
 	ProjectID     *string         `gorm:"index:idx_tasks_project_number,unique,priority:1;index"`
+	// RepositoryID is the registered repo for managed-worktree allocate.
+	RepositoryID *string `gorm:"index"`
 	// Number is the per-project sequential ref (#N). Unique with project_id when both set.
 	Number *int `gorm:"index:idx_tasks_project_number,unique,priority:2"`
 	// JSONSlice (not serializer:json): empty slices must persist as "[]". GORM's

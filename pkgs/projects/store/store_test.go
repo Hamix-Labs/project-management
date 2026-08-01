@@ -19,12 +19,11 @@ func newProjectStoreOnly(t *testing.T) (*Store, *gorm.DB, context.Context) {
 	return NewStore(db), db, context.Background()
 }
 
-func seedRepoWithDefaultProject(t *testing.T, db *gorm.DB, ctx context.Context) (repoID string, defaultProj domain.Project) {
+func seedRepo(t *testing.T, db *gorm.DB, ctx context.Context) string {
 	t.Helper()
-	repoID = uuid.NewString()
+	repoID := uuid.NewString()
 	now := time.Now().UTC()
 	path := t.TempDir()
-	// Insert by table/columns only — projects must not import gitinventory models.
 	if err := db.WithContext(ctx).Table("git_repositories").Create(map[string]any{
 		"id":             repoID,
 		"path":           path,
@@ -36,11 +35,7 @@ func seedRepoWithDefaultProject(t *testing.T, db *gorm.DB, ctx context.Context) 
 	}).Error; err != nil {
 		t.Fatalf("seed repo: %v", err)
 	}
-	defaultProj, err := CreateDefaultProjectForRepo(ctx, db, repoID, now)
-	if err != nil {
-		t.Fatalf("CreateDefaultProjectForRepo: %v", err)
-	}
-	return repoID, defaultProj
+	return repoID
 }
 
 func TestProjectsStore_CreateProject_requiresRepositoryID(t *testing.T) {
@@ -50,25 +45,68 @@ func TestProjectsStore_CreateProject_requiresRepositoryID(t *testing.T) {
 	}
 }
 
-func TestProjectsStore_defaultProject_roundtrip(t *testing.T) {
+func TestProjectsStore_globalDefault_roundtrip(t *testing.T) {
 	s, db, ctx := newProjectStoreOnly(t)
-	repoID, defaultProj := seedRepoWithDefaultProject(t, db, ctx)
-	if !defaultProj.IsDefault || defaultProj.RepositoryID == nil || *defaultProj.RepositoryID != repoID {
+	defaultProj, err := EnsureGlobalDefaultProject(ctx, db, time.Now().UTC())
+	if err != nil {
+		t.Fatalf("EnsureGlobalDefaultProject: %v", err)
+	}
+	if !defaultProj.IsDefault || defaultProj.RepositoryID != nil {
 		t.Fatalf("default project = %#v", defaultProj)
 	}
-	got, err := s.GetDefaultProjectForRepository(ctx, repoID)
+	got, err := s.GetGlobalDefaultProject(ctx)
 	if err != nil {
-		t.Fatalf("GetDefaultProjectForRepository: %v", err)
+		t.Fatalf("GetGlobalDefaultProject: %v", err)
 	}
 	if got.ID != defaultProj.ID {
 		t.Fatalf("got = %#v, want id %q", got, defaultProj.ID)
 	}
+	again, err := EnsureGlobalDefaultProject(ctx, db, time.Now().UTC())
+	if err != nil {
+		t.Fatalf("EnsureGlobalDefaultProject again: %v", err)
+	}
+	if again.ID != defaultProj.ID {
+		t.Fatalf("idempotent ensure = %#v, want %#v", again, defaultProj)
+	}
 }
 
-func TestProjectsStore_DeleteProjectsForRepository_removesDefault(t *testing.T) {
+func TestProjectsStore_ListProjectsByRepository_includesGlobalDefault(t *testing.T) {
 	s, db, ctx := newProjectStoreOnly(t)
-	repoID, defaultProj := seedRepoWithDefaultProject(t, db, ctx)
-	_, err := s.CreateProject(ctx, CreateProjectInput{
+	repoID := seedRepo(t, db, ctx)
+	def, err := EnsureGlobalDefaultProject(ctx, db, time.Now().UTC())
+	if err != nil {
+		t.Fatalf("EnsureGlobalDefaultProject: %v", err)
+	}
+	custom, err := s.CreateProject(ctx, CreateProjectInput{
+		Name:         "Custom",
+		RepositoryID: &repoID,
+	})
+	if err != nil {
+		t.Fatalf("CreateProject: %v", err)
+	}
+	rows, err := s.ListProjectsByRepository(ctx, repoID)
+	if err != nil {
+		t.Fatalf("ListProjectsByRepository: %v", err)
+	}
+	if len(rows) != 2 {
+		t.Fatalf("list len=%d want 2: %#v", len(rows), rows)
+	}
+	if !rows[0].IsDefault || rows[0].ID != def.ID {
+		t.Fatalf("first row should be global default: %#v", rows[0])
+	}
+	if rows[1].ID != custom.ID {
+		t.Fatalf("second row should be custom: %#v", rows[1])
+	}
+}
+
+func TestProjectsStore_DeleteProjectsForRepository_keepsGlobalDefault(t *testing.T) {
+	s, db, ctx := newProjectStoreOnly(t)
+	repoID := seedRepo(t, db, ctx)
+	defaultProj, err := EnsureGlobalDefaultProject(ctx, db, time.Now().UTC())
+	if err != nil {
+		t.Fatalf("EnsureGlobalDefaultProject: %v", err)
+	}
+	_, err = s.CreateProject(ctx, CreateProjectInput{
 		Name:         "Custom",
 		RepositoryID: &repoID,
 	})
@@ -83,9 +121,13 @@ func TestProjectsStore_DeleteProjectsForRepository_removesDefault(t *testing.T) 
 		t.Fatal(err)
 	}
 	if n != 0 {
-		t.Fatalf("remaining projects=%d", n)
+		t.Fatalf("remaining repo projects=%d", n)
 	}
-	if _, err := s.GetProject(ctx, defaultProj.ID); !errors.Is(err, domain.ErrNotFound) {
-		t.Fatalf("GetProject after delete: %v", err)
+	got, err := s.GetProject(ctx, defaultProj.ID)
+	if err != nil {
+		t.Fatalf("GetProject global default: %v", err)
+	}
+	if !got.IsDefault {
+		t.Fatalf("global default missing: %#v", got)
 	}
 }

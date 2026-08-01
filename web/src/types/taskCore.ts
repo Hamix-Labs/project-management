@@ -53,6 +53,11 @@ export type Task = {
   created_at?: string;
   /** Present when this task belongs to a long-lived project context. */
   project_id?: string;
+  /**
+   * Registered repository for managed-worktree allocate (ADR-0083 / ADR-0094).
+   * Present on create responses even before `worktree_id` is set.
+   */
+  repository_id?: string;
   /** Git worktree binding (ADR-0039). */
   worktree_id?: string;
   tags?: string[];

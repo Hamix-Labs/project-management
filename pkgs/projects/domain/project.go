@@ -2,12 +2,13 @@ package domain
 
 import "time"
 
-// Project is a long-lived container for tasks bound to one repository.
+// Project is a long-lived container for tasks.
 //
-// RepositoryID ties a project to exactly one global repository (ADR-0037); the
-// repository must exist first. IsDefault marks the non-deletable system default
-// seeded when a repo is registered (ADR-0042). Plain indexed nullable column
-// (no FK constraint, same pattern as Task git-binding columns).
+// User projects (IsDefault=false) require RepositoryID tying them to exactly
+// one registered repository (ADR-0037). The single system Default (IsDefault,
+// ADR-0094) has a null RepositoryID and may hold tasks from any repository.
+// Plain indexed nullable column (no FK constraint, same pattern as Task
+// git-binding columns).
 type Project struct {
 	ID           string        `json:"id"`
 	Name         string        `json:"name"`

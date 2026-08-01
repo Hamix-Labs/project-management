@@ -28,38 +28,38 @@ type CreateProjectInput = internal.CreateProjectInput
 // UpdateProjectInput is a partial patch for project metadata.
 type UpdateProjectInput = internal.UpdateProjectInput
 
-// ListProjectsByRepository returns projects tied to a repository.
+// ListProjectsByRepository returns user projects for a repository plus the global Default.
 func (s *Store) ListProjectsByRepository(ctx context.Context, repoID string) ([]domain.Project, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ListProjectsByRepository")
 	return internal.ListProjectsByRepository(ctx, s.db, repoID)
 }
 
-// GetDefaultProjectForRepository returns the system default project for a repo.
-func (s *Store) GetDefaultProjectForRepository(ctx context.Context, repoID string) (domain.Project, error) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.GetDefaultProjectForRepository")
-	return internal.GetDefaultProjectForRepository(ctx, s.db, repoID)
+// GetGlobalDefaultProject returns the single system Default project.
+func (s *Store) GetGlobalDefaultProject(ctx context.Context) (domain.Project, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.GetGlobalDefaultProject")
+	return internal.GetGlobalDefaultProject(ctx, s.db)
 }
 
-// CreateDefaultProjectForRepo inserts the non-deletable default for a newly registered repo.
-func (s *Store) CreateDefaultProjectForRepo(ctx context.Context, repoID string) (domain.Project, error) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.CreateDefaultProjectForRepo")
-	return internal.CreateDefaultProjectForRepo(ctx, s.db, repoID, time.Now().UTC())
+// EnsureGlobalDefaultProject inserts the system Default when missing.
+func (s *Store) EnsureGlobalDefaultProject(ctx context.Context) (domain.Project, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.EnsureGlobalDefaultProject")
+	return internal.EnsureGlobalDefaultProject(ctx, s.db, time.Now().UTC())
 }
 
-// CreateDefaultProjectForRepoTx inserts the default project inside an open transaction.
+// EnsureGlobalDefaultProjectTx inserts the system Default inside an open transaction.
 //
-//funclogmeasure:skip category=delegate-already-logs reason="Package-level forwarder; internal.CreateDefaultProjectForRepo emits trace at the store chokepoint."
-func CreateDefaultProjectForRepo(ctx context.Context, tx *gorm.DB, repoID string, now time.Time) (domain.Project, error) {
-	return internal.CreateDefaultProjectForRepo(ctx, tx, repoID, now)
+//funclogmeasure:skip category=delegate-already-logs reason="Package-level forwarder; internal.EnsureGlobalDefaultProject emits trace at the store chokepoint."
+func EnsureGlobalDefaultProject(ctx context.Context, tx *gorm.DB, now time.Time) (domain.Project, error) {
+	return internal.EnsureGlobalDefaultProject(ctx, tx, now)
 }
 
-// DeleteProjectsForRepository removes all projects for a repository (including defaults).
+// DeleteProjectsForRepository removes user projects for a repository (not the global Default).
 func (s *Store) DeleteProjectsForRepository(ctx context.Context, repoID string) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.DeleteProjectsForRepository")
 	return internal.DeleteProjectsForRepository(ctx, s.db, repoID)
 }
 
-// DeleteProjectsForRepositoryTx removes all projects for a repository inside an open transaction.
+// DeleteProjectsForRepositoryTx removes user projects for a repository inside an open transaction.
 //
 //funclogmeasure:skip category=delegate-already-logs reason="Package-level forwarder; internal.DeleteProjectsForRepository emits trace at the store chokepoint."
 func DeleteProjectsForRepository(ctx context.Context, tx *gorm.DB, repoID string) error {

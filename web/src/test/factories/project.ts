@@ -2,7 +2,7 @@ import type { Project } from "@/types";
 import { FACTORY_GIT_REPO_ID } from "./git";
 
 export const FACTORY_REPO_DEFAULT_PROJECT_ID =
-  "00000000-0000-4000-8000-000000000040";
+  "00000000-0000-4000-8000-0000000000df";
 
 export function repoDefaultProjectFactory(
   overrides: Partial<Project> = {},
@@ -10,9 +10,8 @@ export function repoDefaultProjectFactory(
   return {
     id: FACTORY_REPO_DEFAULT_PROJECT_ID,
     name: "Default",
-    description: "",
+    description: "Built-in project for tasks not assigned to a custom project.",
     status: "active",
-    repository_id: FACTORY_GIT_REPO_ID,
     is_default: true,
     created_at: "2026-06-22T12:00:00Z",
     updated_at: "2026-06-22T12:00:00Z",

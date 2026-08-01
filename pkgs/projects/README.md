@@ -1,6 +1,6 @@
 # `pkgs/projects`
 
-Bounded context for first-class projects (CRUD, per-repo defaults, task membership). Extracted from `pkgs/tasks` per [ADR-0045](../../docs/adr/ADR-0045-bounded-context-projects.md). Project memory/context nodes were removed in [ADR-0087](../../docs/adr/ADR-0087-remove-project-context.md).
+Bounded context for first-class projects (CRUD, global system Default, task membership). Extracted from `pkgs/tasks` per [ADR-0045](../../docs/adr/ADR-0045-bounded-context-projects.md). Project memory/context nodes were removed in [ADR-0087](../../docs/adr/ADR-0087-remove-project-context.md). The system Default is global ([ADR-0094](../../docs/adr/ADR-0094-global-default-project.md)); user projects remain repo-bound.
 
 HTTP routes (`/projects`, `/projects/{id}`) and JSON shapes are registered via `pkgs/projects/handler.Register` from `pkgs/tasks/handler`.
 

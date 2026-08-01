@@ -89,7 +89,10 @@ import (
 // max_run_duration_seconds.
 //
 // Rev 27: tasks.status CHECK includes pr_ready (PR opened; awaiting mark-done).
-const SchemaRevision = 27
+//
+// Rev 28 (ADR-0094): one global Default project; tasks.repository_id;
+// drop per-repo default projects and idx_projects_repo_default.
+const SchemaRevision = 28
 
 const schemaMetaRowID = 1
 

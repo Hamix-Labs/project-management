@@ -1,31 +1,19 @@
 import { useState } from "react";
 import { Button } from "@/components/ui";
-import { useGlobalRepositories } from "@/hooks/useGlobalRepositories";
 import { EmptyState } from "@/shared/EmptyState";
 import { useDocumentTitle } from "@/shared/useDocumentTitle";
 import { useProjects } from "./hooks";
 import { ProjectCreateDialog } from "./ProjectCreateDialog";
 import { useCreateProjectMutation } from "./mutations";
-import {
-  ProjectListRow,
-  ProjectListSkeleton,
-  repositoryBasename,
-} from "./ProjectListRow";
+import { ProjectListRow, ProjectListSkeleton } from "./ProjectListRow";
 
 export function ProjectListPage() {
   useDocumentTitle("Projects");
   const { data, isLoading, error } = useProjects({ includeArchived: true });
-  const repositoriesQuery = useGlobalRepositories();
   const projects = data?.projects ?? [];
   const activeCount = projects.filter((p) => p.status === "active").length;
   const archivedCount = projects.length - activeCount;
   const [createOpen, setCreateOpen] = useState(false);
-  const repoLabelById = new Map(
-    (repositoriesQuery.data ?? []).map((repo) => [
-      repo.id,
-      repositoryBasename(repo.path) || repo.path,
-    ]),
-  );
 
   const createMutation = useCreateProjectMutation();
 
@@ -117,11 +105,6 @@ export function ProjectListPage() {
                 key={project.id}
                 project={project}
                 index={i}
-                repositoryLabel={
-                  project.repository_id
-                    ? repoLabelById.get(project.repository_id)
-                    : undefined
-                }
               />
             ))}
           </div>

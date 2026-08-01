@@ -109,5 +109,8 @@ func Run(ctx context.Context, db *gorm.DB, deps Deps) error {
 	if err := migrateDropVerifySettingsColumns(ctx, db); err != nil {
 		return fmt.Errorf("drop verify settings columns: %w", err)
 	}
+	if err := migrateGlobalDefaultProject(ctx, db); err != nil {
+		return fmt.Errorf("global default project: %w", err)
+	}
 	return nil
 }

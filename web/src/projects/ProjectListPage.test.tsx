@@ -99,28 +99,17 @@ describe("ProjectListPage", () => {
     ).toHaveLength(0);
   });
 
-  it("labels default projects with their repository basename", async () => {
-    const repoId = FACTORY_GIT_REPO_ID;
-    server.use(
-      gitRepositoriesList([
-        gitRepositoryFactory({
-          id: repoId,
-          path: "C:/Users/gomes/OneDrive/Documents/Hamix",
-        }),
-      ]),
-    );
-
+  it("labels the global default project as Default", async () => {
     renderPage([
       project(0, {
         name: "Default",
         is_default: true,
-        repository_id: repoId,
-        description: "Built-in project for tasks tied to this repository.",
+        description: "Built-in project for tasks not assigned to a custom project.",
       }),
     ]);
 
     expect(
-      await screen.findByRole("link", { name: /^Open project Default · Hamix$/ }),
+      await screen.findByRole("link", { name: /^Open project Default$/ }),
     ).toBeInTheDocument();
   });
 

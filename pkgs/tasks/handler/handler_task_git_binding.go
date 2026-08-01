@@ -37,8 +37,10 @@ func (h *Handler) validateTaskGitBindingV2(
 	if err != nil {
 		return err
 	}
-	if proj.RepositoryID == nil || strings.TrimSpace(*proj.RepositoryID) == "" {
-		return fmt.Errorf("%w: project not bound to repository", taskcoredomain.ErrInvalidInput)
+	if !proj.IsDefault {
+		if proj.RepositoryID == nil || strings.TrimSpace(*proj.RepositoryID) == "" {
+			return fmt.Errorf("%w: project not bound to repository", taskcoredomain.ErrInvalidInput)
+		}
 	}
 	return h.store.ValidateTaskWorktreeBinding(ctx, projectID, wtID)
 }
@@ -61,11 +63,13 @@ func (h *Handler) validateTaskRepositoryBinding(
 	if err != nil {
 		return err
 	}
-	if proj.RepositoryID == nil || strings.TrimSpace(*proj.RepositoryID) == "" {
-		return fmt.Errorf("%w: project not bound to repository", taskcoredomain.ErrInvalidInput)
-	}
-	if strings.TrimSpace(*proj.RepositoryID) != repoID {
-		return fmt.Errorf("%w: repository_id does not match project", taskcoredomain.ErrInvalidInput)
+	if !proj.IsDefault {
+		if proj.RepositoryID == nil || strings.TrimSpace(*proj.RepositoryID) == "" {
+			return fmt.Errorf("%w: project not bound to repository", taskcoredomain.ErrInvalidInput)
+		}
+		if strings.TrimSpace(*proj.RepositoryID) != repoID {
+			return fmt.Errorf("%w: repository_id does not match project", taskcoredomain.ErrInvalidInput)
+		}
 	}
 	if _, err := h.store.GetGitRepositoryByID(ctx, repoID); err != nil {
 		return err

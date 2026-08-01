@@ -153,9 +153,9 @@ func htGitBindingFromWorktree(t *testing.T, st *composition.API, worktreeID stri
 	if err != nil {
 		t.Fatalf("GetGitWorktreeByID: %v", err)
 	}
-	defaultProj, err := st.GetDefaultProjectForRepository(ctx, wt.RepositoryID)
+	defaultProj, err := st.EnsureGlobalDefaultProject(ctx)
 	if err != nil {
-		t.Fatalf("GetDefaultProjectForRepository: %v", err)
+		t.Fatalf("EnsureGlobalDefaultProject: %v", err)
 	}
 	return GitBinding{
 		RepositoryID: wt.RepositoryID,

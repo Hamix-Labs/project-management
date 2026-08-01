@@ -18,6 +18,7 @@ type TaskDetailHeaderTask = Pick<
   | "milestone"
   | "worktree_id"
   | "project_id"
+  | "repository_id"
 >;
 
 type Props = {
@@ -104,6 +105,7 @@ export function TaskDetailHeader({ task }: Props) {
           taskId={task.id}
           worktreeId={task.worktree_id}
           projectId={task.project_id}
+          repositoryId={task.repository_id}
         />
       </header>
     </>

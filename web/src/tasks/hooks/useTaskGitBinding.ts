@@ -8,9 +8,11 @@ import { resolveTaskGitBinding } from "../task-git/resolveTaskGitBinding";
 export function useTaskGitBinding(
   worktreeId: string | undefined,
   projectId?: string,
+  repositoryId?: string,
 ) {
   const wtId = (worktreeId ?? "").trim();
   const projectKey = (projectId ?? "").trim();
+  const repoHintFromTask = (repositoryId ?? "").trim();
 
   const repositoriesQuery = useGlobalRepositories({
     enabled: wtId !== "",
@@ -18,13 +20,17 @@ export function useTaskGitBinding(
   const repositories = repositoriesQuery.data ?? [];
 
   const projectQuery = useProject(projectKey, {
-    enabled: wtId !== "" && projectKey !== "",
+    enabled: wtId !== "" && projectKey !== "" && repoHintFromTask === "",
   });
-  const repositoryIdHint = projectQuery.data?.repository_id?.trim() || undefined;
+  const repositoryIdHint =
+    repoHintFromTask ||
+    projectQuery.data?.repository_id?.trim() ||
+    undefined;
 
   const repositoriesReady =
     !repositoriesQuery.isLoading && repositories.length > 0;
-  const projectReady = projectKey === "" || !projectQuery.isLoading;
+  const projectReady =
+    repoHintFromTask !== "" || projectKey === "" || !projectQuery.isLoading;
 
   return useQuery({
     queryKey: gitQueryKeys.taskBinding(wtId, repositoryIdHint),

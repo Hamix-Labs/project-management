@@ -62,6 +62,8 @@ func (h *Handler) patch(w http.ResponseWriter, r *http.Request) {
 		var err error
 		if wt != nil && strings.TrimSpace(*wt) != "" {
 			err = h.gitCompose.ValidatePromptMentionsForWorktree(r.Context(), wt, *body.InitialPrompt)
+		} else if cur.RepositoryID != nil && strings.TrimSpace(*cur.RepositoryID) != "" {
+			err = h.gitCompose.ValidatePromptMentionsForRepository(r.Context(), strings.TrimSpace(*cur.RepositoryID), *body.InitialPrompt)
 		} else {
 			err = h.gitCompose.ValidatePromptMentionsForProject(r.Context(), projectID, *body.InitialPrompt)
 		}
