@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { StatusBadge } from "@/components/task-status";
 import {
   TaskDetailSchedule,
@@ -9,6 +10,8 @@ import { canEditTask } from "../task-display/canEditTask";
 import {
   CREATING_PR_STATUS_LABEL,
   isOpenPrRunKind,
+  openPrSessionClearedByStatus,
+  shouldShowCreatingPrLabel,
 } from "../task-display/openPrRunDisplay";
 import { statusNeedsUserInput } from "../task-display";
 import type { TaskDetailLoadedViewProps } from "./TaskDetailLoadedView";
@@ -49,11 +52,28 @@ export function TaskDetailLoadedToolbar({
   const inPrReady = task.status === "pr_ready";
   const isClosed = task.status === "closed";
   const needsUser = statusNeedsUserInput(task.status);
-  const cyclesQuery = useTaskCycles(task.id, { enabled: task.status === "running" });
+  const cyclesQuery = useTaskCycles(task.id, {
+    enabled: task.status === "running",
+  });
   const runningOpenPr = (cyclesQuery.data?.cycles ?? []).some(
     (c) => c.status === "running" && isOpenPrRunKind(c.meta),
   );
-  const creatingPr = openPrMutation.isPending || runningOpenPr;
+  const [openPrSession, setOpenPrSession] = useState(false);
+  useEffect(() => {
+    if (openPrMutation.isPending) {
+      setOpenPrSession(true);
+    }
+  }, [openPrMutation.isPending]);
+  useEffect(() => {
+    if (openPrSessionClearedByStatus(task.status)) {
+      setOpenPrSession(false);
+    }
+  }, [task.status]);
+  const creatingPr = shouldShowCreatingPrLabel({
+    mutationPending: openPrMutation.isPending,
+    sessionActive: openPrSession,
+    hasRunningOpenPrCycle: runningOpenPr,
+  });
   const statusLabel = creatingPr ? CREATING_PR_STATUS_LABEL : undefined;
 
   return (

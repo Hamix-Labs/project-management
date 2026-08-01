@@ -151,6 +151,9 @@
     --badge-tone-review-bg: var(--pill-review-bg);
     --badge-tone-review-fg: var(--pill-review-text);
     --badge-tone-review-ring: var(--pill-review-border);
+    --badge-tone-pr_ready-bg: var(--pill-pr-ready-bg);
+    --badge-tone-pr_ready-fg: var(--pill-pr-ready-text);
+    --badge-tone-pr_ready-ring: var(--pill-pr-ready-border);
     --badge-tone-danger-bg: var(--danger-soft);
     --badge-tone-danger-fg: var(--danger-on-subtle-text);
     --badge-tone-danger-ring: var(--danger-border);
@@ -167,6 +170,9 @@
     --pill-review-bg: rgb(139 92 246 / 14%);
     --pill-review-text: rgb(196 181 253);
     --pill-review-border: rgb(139 92 246 / 30%);
+    --pill-pr-ready-bg: rgb(45 212 191 / 14%);
+    --pill-pr-ready-text: rgb(94 234 212);
+    --pill-pr-ready-border: rgb(45 212 191 / 30%);
     --pill-success-fill-bg: rgb(16 185 129 / 14%);
     --pill-success-fill-text: rgb(110 231 183);
     --pill-success-fill-border: rgb(52 211 153 / 35%);

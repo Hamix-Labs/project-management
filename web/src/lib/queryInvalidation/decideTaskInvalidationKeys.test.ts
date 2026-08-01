@@ -33,6 +33,11 @@ describe("decideTaskInvalidationKeys", () => {
       expected: [taskQueryKeys.eventsRoot("task-1")],
     },
     {
+      name: "cycles",
+      input: { scope: "cycles", taskId: "task-1" },
+      expected: [taskQueryKeys.cycles("task-1")],
+    },
+    {
       name: "drafts",
       input: { scope: "drafts" },
       expected: [taskQueryKeys.drafts()],
