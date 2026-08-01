@@ -20,6 +20,8 @@ Successful execute+verify previously finalized tasks as `status=done` with no hu
 
 Polish (rework from `review`) remains `POST /polish` and is independent of open-pr.
 
+**Execute visit policy** — `open_pr` (and instructions-only polish) resolve to `CommitIngestAllowEmptyWhenNoHeadDelta` + a post-execute path that skips claim acceptance; see [ADR-0093](./ADR-0093-mcp-commit-register.md) and `ResolveExecuteVisitPolicy`. Cycle meta stamps `skip_claim_acceptance` (and `polish_skip_verify` only for polish).
+
 ## Consequences
 
 ### Positive
