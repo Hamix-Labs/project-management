@@ -26,6 +26,7 @@ func FromDomainTask(d domain.Task) Task {
 		RunnerConfig:        jsonmap.DatatypesFromRaw(d.RunnerConfig),
 		PickupNotBefore:     d.PickupNotBefore,
 		CriteriaSatisfiedAt: d.CriteriaSatisfiedAt,
+		PullRequestURL:      d.PullRequestURL,
 		PendingRetry:        d.PendingRetry,
 		WorktreeID:          d.WorktreeID,
 	}
@@ -57,6 +58,7 @@ func ToDomainTask(m Task) domain.Task {
 		RunnerConfig:        runnerConfig,
 		PickupNotBefore:     m.PickupNotBefore,
 		CriteriaSatisfiedAt: m.CriteriaSatisfiedAt,
+		PullRequestURL:      m.PullRequestURL,
 		PendingRetry:        m.PendingRetry,
 		WorktreeID:          m.WorktreeID,
 	}

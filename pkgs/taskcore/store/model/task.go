@@ -29,6 +29,7 @@ type Task struct {
 	RunnerConfig        datatypes.JSON              `gorm:"column:runner_config;type:jsonb;not null;default:'{}'"`
 	PickupNotBefore     *time.Time                  `gorm:"index"`
 	CriteriaSatisfiedAt *time.Time                  `gorm:"index"`
+	PullRequestURL      *string                     `gorm:"type:text"`
 	PendingRetry        *domain.PendingRetry        `gorm:"column:pending_retry;serializer:json;type:jsonb"`
 	WorktreeID          *string                     `gorm:"index"`
 }

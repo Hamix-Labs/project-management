@@ -42,6 +42,9 @@ type Task struct {
 	// verified completion row; cleared when any item becomes unchecked.
 	// Maintained in checklist completion TX for SQL queue parity.
 	CriteriaSatisfiedAt *time.Time `json:"criteria_satisfied_at,omitempty"`
+	// PullRequestURL is the GitHub PR opened for this task (one PR per task).
+	// Set by open-PR finalize; readable on GET; not HTTP-PATCHABLE.
+	PullRequestURL *string `json:"pull_request_url,omitempty"`
 	// PendingRetry holds operator retry/polish intent between POST /retry or
 	// POST /polish and worker pickup. Not exposed on the public task API (json:"-").
 	PendingRetry *PendingRetry `json:"-"`

@@ -31,6 +31,7 @@ Work hierarchy is **Project → Task**. Tasks may have:
 | `milestone` | string \| null | Single anchor per task, `^[a-zA-Z0-9][a-zA-Z0-9 ._-]{0,63}$` when set. |
 | `depends_on` | object[] | Hydrated from `task_dependencies`: `{ task_id, satisfies }` where `satisfies` is `done` (default and only value). |
 | `criteria_satisfied_at` | RFC3339 UTC \| null | Set when all checklist items are verified complete; informational cache on the task row (dependency edges use predecessor `status = done`). |
+| `pull_request_url` | string \| null | GitHub PR URL for this task (one PR per task). Stamped by open-PR finalize with `status=pr_ready`; readable on GET; not HTTP-PATCHABLE. Audit twin: `pr_opened` event. |
 | `gate` | object \| null | Per-task dequeue pause (see below). |
 | `pickup_not_before` | RFC3339 UTC \| null | Defer when the worker may dequeue. |
 | `cursor_model` | string | Optional model override at runtime. |
