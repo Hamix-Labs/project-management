@@ -79,15 +79,15 @@ if [[ "$TESTS_ONLY" -eq 1 ]]; then
   fi
 elif [[ "$LINT_ONLY" -eq 1 ]]; then
   if [[ "$SKIP_FUNCLOG" -eq 0 ]]; then
-    TOTAL=8
+    TOTAL=9
   else
-    TOTAL=7
+    TOTAL=8
   fi
 else
   if [[ "$SKIP_FUNCLOG" -eq 0 ]]; then
-    TOTAL=11
+    TOTAL=12
   else
-    TOTAL=10
+    TOTAL=11
   fi
 fi
 
@@ -604,6 +604,55 @@ step_storekernel_boundary() {
   print_ok_line "$label" "$elapsed"
 }
 
+step_desktop_build_tags_contract() {
+  local label="desktop build tags"
+  local start=$SECONDS
+  step_prefix
+  printf '%s ' "$label"
+
+  local errors=""
+  local f
+  for f in scripts/build-desktop.ps1 scripts/build-desktop.sh; do
+    if [[ ! -f "$f" ]]; then
+      errors+=$'\n'"missing $f"
+      continue
+    fi
+    if ! grep -Fq -- '-tags desktop,production' "$f" \
+      && ! grep -Fq -- '-tags "desktop,production"' "$f"; then
+      errors+=$'\n'"$f must contain go build -tags desktop,production"
+    fi
+  done
+
+  if [[ ! -f scripts/dev-desktop.ps1 ]]; then
+    errors+=$'\n'"missing scripts/dev-desktop.ps1"
+  elif ! grep -Fq 'build-desktop.ps1' scripts/dev-desktop.ps1; then
+    errors+=$'\n'"scripts/dev-desktop.ps1 must invoke build-desktop.ps1"
+  elif grep -E 'go[[:space:]]+build.*cmd/hamix-desktop' scripts/dev-desktop.ps1 >/dev/null 2>&1; then
+    errors+=$'\n'"scripts/dev-desktop.ps1 must not go build ./cmd/hamix-desktop (use build-desktop.*)"
+  fi
+
+  if [[ ! -f scripts/dev-desktop.sh ]]; then
+    errors+=$'\n'"missing scripts/dev-desktop.sh"
+  elif ! grep -Fq 'build-desktop.sh' scripts/dev-desktop.sh; then
+    errors+=$'\n'"scripts/dev-desktop.sh must invoke build-desktop.sh"
+  elif grep -E 'go[[:space:]]+build.*cmd/hamix-desktop' scripts/dev-desktop.sh >/dev/null 2>&1; then
+    errors+=$'\n'"scripts/dev-desktop.sh must not go build ./cmd/hamix-desktop (use build-desktop.*)"
+  fi
+
+  local elapsed=$((SECONDS - start))
+  add_section_time "$elapsed"
+
+  if [[ -n "$(echo "$errors" | sed '/^$/d')" ]]; then
+    echo "${C_RED}FAILED${C_RESET}"
+    echo "Wails desktop build-tag contract (ADR-0095):"
+    echo "$errors" | sed '/^$/d'
+    fail_step "$label" 1
+  fi
+
+  PASSED=$((PASSED + 1))
+  print_ok_line "$label" "$elapsed"
+}
+
 step_test_group_coverage() {
   local label="test group coverage"
   local start=$SECONDS
@@ -752,6 +801,7 @@ step_storekernel_boundary
 step_tasks_domain_retired
 step_tasks_contract_retired
 step_tasks_wire_handler_api
+step_desktop_build_tags_contract
 
 if [[ "$LINT_ONLY" -eq 1 ]]; then
   step_test_group_coverage

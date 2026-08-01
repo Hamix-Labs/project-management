@@ -19,6 +19,7 @@ Postgres remains the store. The connection string cannot live in DB-backed `app_
 5. **One SPA:** same `web/` for browser and desktop; single bridge module for WebView IPC.
 6. **Wails import boundary:** only `cmd/hamix-desktop` (+ optional `internal/desktop` glue). Never import Wails from `pkgs/*`.
 7. **Browser path stays first-class:** contributors keep `taskapi` + Vite; desktop does not replace local web development.
+8. **Wails build tags:** Host binaries must be built with `-tags desktop,production` (or via `wails dev` / `wails build`). Untagged `go build ./cmd/hamix-desktop` selects Wails’ stub and is invalid. The SSOT for flags is `scripts/build-desktop.ps1` / `scripts/build-desktop.sh`; `dev-desktop.*` only orchestrates and must call those scripts.
 
 ## Consequences
 
@@ -33,6 +34,7 @@ Postgres remains the store. The connection string cannot live in DB-backed `app_
 - Changing the DSN requires app restart (no live reconnect in v1)
 - Users must bring their own Postgres (local, Docker, or cloud)
 - Production WebView builds are typically per-OS (not a single Windows cross-compile)
+- Contributors must not invent ad-hoc `go build` for this binary; CI asserts `build-desktop.*` / `dev-desktop.*` keep the tag contract
 
 ## Alternatives considered
 
@@ -51,6 +53,7 @@ Postgres remains the store. The connection string cannot live in DB-backed `app_
 - `DATABASE_URL` fields on Postgres-backed settings
 - Desktop-only forks of middleware, SSE, or composition
 - Build tags that hide half of `pkgs/` behind `//go:build desktop`
+- Documenting or scripting untagged `go build ./cmd/hamix-desktop` (use `scripts/build-desktop.*`)
 
 ## See also
 
