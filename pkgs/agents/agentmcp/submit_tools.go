@@ -19,9 +19,11 @@ const (
 type submitCriteriaTool struct{}
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
-func (submitCriteriaTool) Name() string  { return ToolSubmitCriteria }
+func (submitCriteriaTool) Name() string { return ToolSubmitCriteria }
+
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (submitCriteriaTool) Group() string { return GroupReports }
+
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (submitCriteriaTool) Description() string {
 	return "Validate and write criteria-report.json for this execute phase. Required before execute finishes."
