@@ -136,20 +136,18 @@ func (h *Handler) instantiateTaskTemplates(w http.ResponseWriter, r *http.Reques
 		handlerhttp.WriteStoreError(w, r, op, err)
 		return
 	}
-	if h.instantiateFromTemplate == nil {
+	if h.enqueueInstantiate == nil {
 		handlerhttp.WriteJSONError(w, r, op, http.StatusInternalServerError, "internal server error")
 		return
 	}
 	by := handlerhttp.ActorFromRequest(r)
-	resp := taskTemplateInstantiateResponseJSON{
-		Tasks:  make([]taskcoredomain.Task, 0),
-		Errors: make([]taskTemplateInstantiateErrorJSON, 0),
-	}
-	successCounts := make(map[string]int)
+	jobItems := make([]InstantiateJobItem, 0, len(items))
+	syncErrors := make([]taskTemplateInstantiateErrorJSON, 0)
+	total := 0
 	for _, item := range items {
 		detail, err := h.compose.GetTemplate(r.Context(), item.TemplateID)
 		if err != nil {
-			resp.Errors = append(resp.Errors, taskTemplateInstantiateErrorJSON{
+			syncErrors = append(syncErrors, taskTemplateInstantiateErrorJSON{
 				TemplateID: item.TemplateID,
 				Error:      err.Error(),
 			})
@@ -157,31 +155,35 @@ func (h *Handler) instantiateTaskTemplates(w http.ResponseWriter, r *http.Reques
 		}
 		applied, applyErr := applyFunctionBindingsToPayload(detail.Payload, item.FunctionBindings)
 		if applyErr != nil {
-			resp.Errors = append(resp.Errors, taskTemplateInstantiateErrorJSON{
+			syncErrors = append(syncErrors, taskTemplateInstantiateErrorJSON{
 				TemplateID: item.TemplateID,
 				Error:      applyErr.Error(),
 			})
 			continue
 		}
-		payloadRaw := applied
-		for range item.Count {
-			task, err := h.instantiateFromTemplate(r.Context(), r, op, payloadRaw, by)
-			if err != nil {
-				resp.Errors = append(resp.Errors, taskTemplateInstantiateErrorJSON{
-					TemplateID: item.TemplateID,
-					Error:      err.Error(),
-				})
-				continue
-			}
-			resp.Tasks = append(resp.Tasks, *task)
-			successCounts[item.TemplateID]++
-		}
+		jobItems = append(jobItems, InstantiateJobItem{
+			TemplateID: item.TemplateID,
+			Count:      item.Count,
+			Payload:    applied,
+		})
+		total += item.Count
 	}
-	if len(successCounts) > 0 {
-		if err := h.compose.IncrementTemplateInstantiateCounts(r.Context(), successCounts); err != nil {
-			handlerhttp.WriteStoreError(w, r, op, err)
-			return
-		}
+	if len(jobItems) == 0 {
+		handlerhttp.WriteJSON(w, r, op, http.StatusAccepted, taskTemplateInstantiateAcceptedJSON{
+			Accepted: false,
+			Total:    0,
+			Errors:   syncErrors,
+		})
+		return
 	}
-	handlerhttp.WriteJSON(w, r, op, http.StatusOK, resp)
+	ok := h.enqueueInstantiate(InstantiateJob{Items: jobItems, Actor: by})
+	if !ok {
+		handlerhttp.WriteJSONError(w, r, op, http.StatusServiceUnavailable, "instantiate queue full")
+		return
+	}
+	handlerhttp.WriteJSON(w, r, op, http.StatusAccepted, taskTemplateInstantiateAcceptedJSON{
+		Accepted: true,
+		Total:    total,
+		Errors:   syncErrors,
+	})
 }

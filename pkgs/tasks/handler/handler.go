@@ -9,6 +9,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/repo"
 	settingscontract "github.com/AlexsanderHamir/Hamix/pkgs/settings/contract"
+	composehandler "github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/handler"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/postgres"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 )
@@ -36,6 +37,9 @@ type Handler struct {
 	git            gitwork.Service
 	gitAvailable   bool
 	schemaDrift    postgres.SchemaDriftReport
+
+	enqueueInstantiate composehandler.EnqueueInstantiateFunc
+	instantiateWorker  *instantiateWorker
 }
 
 // NewHandler returns the task REST API and GET /events (SSE) when hub is non-nil.

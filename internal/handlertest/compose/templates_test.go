@@ -202,16 +202,14 @@ func TestHTTP_task_templates_instantiate(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer res.Body.Close()
-	if res.StatusCode != http.StatusOK {
+	if res.StatusCode != http.StatusAccepted {
 		b, _ := io.ReadAll(res.Body)
 		t.Fatalf("status %d body %s", res.StatusCode, b)
 	}
 	var body struct {
-		Tasks []struct {
-			Title           string  `json:"title"`
-			PickupNotBefore *string `json:"pickup_not_before"`
-		} `json:"tasks"`
-		Errors []struct {
+		Accepted bool `json:"accepted"`
+		Total    int  `json:"total"`
+		Errors   []struct {
 			TemplateID string `json:"template_id"`
 			Error      string `json:"error"`
 		} `json:"errors"`
@@ -219,17 +217,15 @@ func TestHTTP_task_templates_instantiate(t *testing.T) {
 	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
 		t.Fatal(err)
 	}
-	if len(body.Tasks) != 1 {
-		t.Fatalf("tasks %d want 1", len(body.Tasks))
-	}
-	if body.Tasks[0].Title != "From template" {
-		t.Fatalf("title %q", body.Tasks[0].Title)
-	}
-	if body.Tasks[0].PickupNotBefore != nil {
-		t.Fatalf("past pickup_not_before should be omitted, got %v", body.Tasks[0].PickupNotBefore)
+	if !body.Accepted || body.Total != 1 {
+		t.Fatalf("accepted=%v total=%d want true/1", body.Accepted, body.Total)
 	}
 	if len(body.Errors) != 1 || body.Errors[0].TemplateID != "missing-id" {
 		t.Fatalf("errors %+v", body.Errors)
+	}
+	tasks := handlertest.WaitForTaskTitleCount(t, st, "From template", 1)
+	if tasks[0].PickupNotBefore != nil {
+		t.Fatalf("past pickup_not_before should be omitted, got %v", tasks[0].PickupNotBefore)
 	}
 }
 
@@ -263,30 +259,22 @@ func TestHTTP_task_templates_instantiate_count(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer res.Body.Close()
-	if res.StatusCode != http.StatusOK {
+	if res.StatusCode != http.StatusAccepted {
 		b, _ := io.ReadAll(res.Body)
 		t.Fatalf("status %d body %s", res.StatusCode, b)
 	}
 	var body struct {
-		Tasks []struct {
-			Title string `json:"title"`
-		} `json:"tasks"`
-		Errors []any `json:"errors"`
+		Accepted bool  `json:"accepted"`
+		Total    int   `json:"total"`
+		Errors   []any `json:"errors"`
 	}
 	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
 		t.Fatal(err)
 	}
-	if len(body.Tasks) != 5 {
-		t.Fatalf("tasks %d want 5", len(body.Tasks))
+	if !body.Accepted || body.Total != 5 || len(body.Errors) != 0 {
+		t.Fatalf("body %+v", body)
 	}
-	for _, task := range body.Tasks {
-		if task.Title != "Repeated template" {
-			t.Fatalf("title %q", task.Title)
-		}
-	}
-	if len(body.Errors) != 0 {
-		t.Fatalf("errors %+v", body.Errors)
-	}
+	handlertest.WaitForTaskTitleCount(t, st, "Repeated template", 5)
 }
 
 func TestHTTP_task_templates_instantiate_items_mixed_counts(t *testing.T) {
@@ -310,27 +298,22 @@ func TestHTTP_task_templates_instantiate_items_mixed_counts(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer res.Body.Close()
-	if res.StatusCode != http.StatusOK {
+	if res.StatusCode != http.StatusAccepted {
 		b, _ := io.ReadAll(res.Body)
 		t.Fatalf("status %d body %s", res.StatusCode, b)
 	}
 	var body struct {
-		Tasks []struct {
-			Title string `json:"title"`
-		} `json:"tasks"`
+		Accepted bool `json:"accepted"`
+		Total    int  `json:"total"`
 	}
 	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
 		t.Fatal(err)
 	}
-	if len(body.Tasks) != 5 {
-		t.Fatalf("tasks %d want 5", len(body.Tasks))
+	if !body.Accepted || body.Total != 5 {
+		t.Fatalf("accepted=%v total=%d", body.Accepted, body.Total)
 	}
-	if body.Tasks[0].Title != "Template A" || body.Tasks[2].Title != "Template A" {
-		t.Fatalf("first three titles want Template A, got %q %q %q", body.Tasks[0].Title, body.Tasks[1].Title, body.Tasks[2].Title)
-	}
-	if body.Tasks[3].Title != "Template B" || body.Tasks[4].Title != "Template B" {
-		t.Fatalf("last two titles want Template B, got %q %q", body.Tasks[3].Title, body.Tasks[4].Title)
-	}
+	handlertest.WaitForTaskTitleCount(t, st, "Template A", 3)
+	handlertest.WaitForTaskTitleCount(t, st, "Template B", 2)
 }
 
 func TestHTTP_task_templates_instantiate_invalid_count(t *testing.T) {
@@ -553,32 +536,10 @@ func TestHTTP_task_templates_instantiate_count_increment(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer res.Body.Close()
-	if res.StatusCode != http.StatusOK {
+	if res.StatusCode != http.StatusAccepted {
 		b, _ := io.ReadAll(res.Body)
 		t.Fatalf("status %d body %s", res.StatusCode, b)
 	}
-
-	listRes, err := http.Get(srv.URL + "/task-templates")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer listRes.Body.Close()
-	var body struct {
-		Templates []struct {
-			ID               string `json:"id"`
-			InstantiateCount int    `json:"instantiate_count"`
-		} `json:"templates"`
-	}
-	if err := json.NewDecoder(listRes.Body).Decode(&body); err != nil {
-		t.Fatal(err)
-	}
-	if len(body.Templates) != 1 {
-		t.Fatalf("got %d templates want 1", len(body.Templates))
-	}
-	if body.Templates[0].ID != tmpl.ID {
-		t.Fatalf("id %q want %q", body.Templates[0].ID, tmpl.ID)
-	}
-	if body.Templates[0].InstantiateCount != 3 {
-		t.Fatalf("instantiate_count %d want 3", body.Templates[0].InstantiateCount)
-	}
+	handlertest.WaitForTaskTitleCount(t, st, "Counter tpl", 3)
+	handlertest.WaitForInstantiateCount(t, srv.URL, tmpl.ID, 3)
 }

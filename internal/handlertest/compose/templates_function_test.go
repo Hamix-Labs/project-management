@@ -39,12 +39,13 @@ func TestHTTP_task_templates_function_instantiate(t *testing.T) {
 	}
 	missBody, _ := io.ReadAll(miss.Body)
 	_ = miss.Body.Close()
-	if miss.StatusCode != http.StatusOK {
+	if miss.StatusCode != http.StatusAccepted {
 		t.Fatalf("missing binding status %d body %s", miss.StatusCode, missBody)
 	}
 	var missResp struct {
-		Tasks  []any `json:"tasks"`
-		Errors []struct {
+		Accepted bool  `json:"accepted"`
+		Total    int   `json:"total"`
+		Errors   []struct {
 			TemplateID string `json:"template_id"`
 			Error      string `json:"error"`
 		} `json:"errors"`
@@ -52,8 +53,8 @@ func TestHTTP_task_templates_function_instantiate(t *testing.T) {
 	if err := json.Unmarshal(missBody, &missResp); err != nil {
 		t.Fatal(err)
 	}
-	if len(missResp.Tasks) != 0 || len(missResp.Errors) != 1 {
-		t.Fatalf("want 0 tasks 1 error, got %+v", missResp)
+	if missResp.Accepted || missResp.Total != 0 || len(missResp.Errors) != 1 {
+		t.Fatalf("want rejected with 1 error, got %+v", missResp)
 	}
 
 	okRes, err := http.Post(srv.URL+"/task-templates/instantiate", "application/json",
@@ -63,26 +64,25 @@ func TestHTTP_task_templates_function_instantiate(t *testing.T) {
 	}
 	okBody, _ := io.ReadAll(okRes.Body)
 	_ = okRes.Body.Close()
-	if okRes.StatusCode != http.StatusOK {
+	if okRes.StatusCode != http.StatusAccepted {
 		t.Fatalf("status %d body %s", okRes.StatusCode, okBody)
 	}
 	var okResp struct {
-		Tasks []struct {
-			ID            string `json:"id"`
-			InitialPrompt string `json:"initial_prompt"`
-		} `json:"tasks"`
-		Errors []any `json:"errors"`
+		Accepted bool  `json:"accepted"`
+		Total    int   `json:"total"`
+		Errors   []any `json:"errors"`
 	}
 	if err := json.Unmarshal(okBody, &okResp); err != nil {
 		t.Fatal(err)
 	}
-	if len(okResp.Tasks) != 1 || len(okResp.Errors) != 0 {
+	if !okResp.Accepted || okResp.Total != 1 || len(okResp.Errors) != 0 {
 		t.Fatalf("resp %+v", okResp)
 	}
-	if !strings.Contains(okResp.Tasks[0].InitialPrompt, "## Scope (do not expand beyond)") {
-		t.Fatalf("prompt missing scope: %q", okResp.Tasks[0].InitialPrompt)
+	tasks := handlertest.WaitForTaskTitleCount(t, st, "Function template", 1)
+	if !strings.Contains(tasks[0].InitialPrompt, "## Scope (do not expand beyond)") {
+		t.Fatalf("prompt missing scope: %q", tasks[0].InitialPrompt)
 	}
-	if !strings.Contains(okResp.Tasks[0].InitialPrompt, "`pkgs/repo`") {
-		t.Fatalf("prompt missing dir: %q", okResp.Tasks[0].InitialPrompt)
+	if !strings.Contains(tasks[0].InitialPrompt, "`pkgs/repo`") {
+		t.Fatalf("prompt missing dir: %q", tasks[0].InitialPrompt)
 	}
 }
