@@ -4,6 +4,14 @@ name: CI
 on:
   pull_request:
     branches: [main]
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+      - ".cursor/**"
+      - ".codegraph/**"
+      - "assets/**"
+      - "LICENSE"
+      - ".env.example"
 
 jobs:
   go-lint:
