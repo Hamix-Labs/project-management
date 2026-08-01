@@ -24,6 +24,8 @@ export type TaskChangeFrame =
   | {
       kind: "task";
       taskId: string;
+      /** Wire `type` (task_created / task_updated / …) when known. */
+      changeType?: string;
       /**
        * Raw `data` field from the SSE frame, unvalidated. Present when
        * the server enriches task_created / task_updated with the full
@@ -201,7 +203,11 @@ export function parseTaskChangeFrame(data: string): TaskChangeFrame | null {
     return { kind: "project", projectId: id };
   }
   if (isTaskHintType(o.type)) {
-    const frame: TaskChangeFrame = { kind: "task", taskId: id };
+    const frame: TaskChangeFrame = {
+      kind: "task",
+      taskId: id,
+      changeType: typeof o.type === "string" ? o.type : undefined,
+    };
     if (o.data !== undefined) {
       frame.data = o.data;
     }

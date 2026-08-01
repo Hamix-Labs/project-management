@@ -14,6 +14,33 @@ import (
 	"gorm.io/gorm"
 )
 
+func TestAllocateNextTaskNumbers_batch(t *testing.T) {
+	t.Parallel()
+	db := tasktestdb.OpenSQLite(t)
+	ctx := context.Background()
+	pid := uuid.NewString()
+	if err := db.Create(&projectmodel.Project{
+		ID: pid, Name: "P", Status: projectsdomain.ProjectStatusActive,
+		NextTaskNumber: 10,
+	}).Error; err != nil {
+		t.Fatal(err)
+	}
+	nums, err := AllocateNextTaskNumbers(ctx, db, pid, 3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(nums) != 3 || nums[0] != 10 || nums[1] != 11 || nums[2] != 12 {
+		t.Fatalf("nums = %v want [10 11 12]", nums)
+	}
+	var p projectmodel.Project
+	if err := db.First(&p, "id = ?", pid).Error; err != nil {
+		t.Fatal(err)
+	}
+	if p.NextTaskNumber != 13 {
+		t.Fatalf("next = %d want 13", p.NextTaskNumber)
+	}
+}
+
 func TestAllocateNextTaskNumber_monotonic(t *testing.T) {
 	t.Parallel()
 	db := tasktestdb.OpenSQLite(t)

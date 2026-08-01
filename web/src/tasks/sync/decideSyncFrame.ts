@@ -1,5 +1,6 @@
 import { decideProjectInvalidationKeys } from "@/lib/queryInvalidation";
 import { settingsQueryKeys } from "@/lib/settingsQueryKeys";
+import { SSE_CHANGE_TYPE } from "@/types";
 import { taskQueryKeys } from "../task-query";
 import type { DecideSyncFrameInput, SyncFrameDecision } from "./syncTypes";
 
@@ -24,6 +25,13 @@ export function decideSyncFrame(input: DecideSyncFrameInput): SyncFrameDecision 
         taskId: frame.taskId,
         data: frame.data,
       });
+      if (frame.changeType === SSE_CHANGE_TYPE.taskCreated) {
+        effects.push({
+          kind: "insert_task_list",
+          taskId: frame.taskId,
+          data: frame.data,
+        });
+      }
     }
     return { schedule: "debounce", pendingDelta, effects };
   }

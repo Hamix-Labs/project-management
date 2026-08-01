@@ -1,10 +1,10 @@
 import { maxTemplateInstantiateCountPerItem } from "@/api";
 import { formatRelativeTime } from "@/shared/time/relativeTime";
 import { isRowActionExcluded } from "@/tasks/components/saved-entities/rowActionUtils";
-import type { Task } from "@/types";
 
 type InstantiateTemplatesBatchResult = {
-  tasks: Task[];
+  accepted: boolean;
+  total: number;
   errors: { template_id: string; error: string }[];
 };
 
@@ -29,13 +29,16 @@ export function sumSelectedInstanceCounts(
 export function formatInstantiateBatchError(
   result: InstantiateTemplatesBatchResult,
 ): string | null {
-  if (result.errors.length > 0 && result.tasks.length === 0) {
+  if (!result.accepted && result.errors.length > 0) {
     return result.errors.map((entry) => `${entry.template_id}: ${entry.error}`).join(" ");
   }
   if (result.errors.length > 0) {
-    return `Created ${result.tasks.length} task(s). Failed: ${result.errors
+    return `Accepted ${result.total} task(s). Skipped: ${result.errors
       .map((entry) => entry.template_id)
       .join(", ")}`;
+  }
+  if (!result.accepted || result.total < 1) {
+    return "Could not accept template create request.";
   }
   return null;
 }

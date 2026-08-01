@@ -24,21 +24,34 @@ type NormalizeComposeResult struct {
 // NormalizeComposeFunc validates and normalizes a template compose payload.
 type NormalizeComposeFunc func(ctx context.Context, raw json.RawMessage) (NormalizeComposeResult, error)
 
-// InstantiateFromTemplateFunc creates one task from a template payload (task create stays in tasks handler).
-type InstantiateFromTemplateFunc func(ctx context.Context, r *http.Request, op string, payload json.RawMessage, by taskcoredomain.Actor) (*taskcoredomain.Task, error)
+// InstantiateJobItem is one prepared template create unit for the async worker.
+type InstantiateJobItem struct {
+	TemplateID string
+	Count      int
+	Payload    json.RawMessage
+}
+
+// InstantiateJob is enqueued after POST /task-templates/instantiate accepts.
+type InstantiateJob struct {
+	Items []InstantiateJobItem
+	Actor taskcoredomain.Actor
+}
+
+// EnqueueInstantiateFunc schedules async template creates; returns false if rejected.
+type EnqueueInstantiateFunc func(job InstantiateJob) bool
 
 // Deps wires compose HTTP handlers into the taskapi mux.
 type Deps struct {
-	Compose                 contract.ComposeStore
-	NormalizeCompose        NormalizeComposeFunc
-	InstantiateFromTemplate InstantiateFromTemplateFunc
+	Compose            contract.ComposeStore
+	NormalizeCompose   NormalizeComposeFunc
+	EnqueueInstantiate EnqueueInstantiateFunc
 }
 
 // Handler serves task draft and template REST routes.
 type Handler struct {
-	compose                 contract.ComposeStore
-	normalizeCompose        NormalizeComposeFunc
-	instantiateFromTemplate InstantiateFromTemplateFunc
+	compose            contract.ComposeStore
+	normalizeCompose   NormalizeComposeFunc
+	enqueueInstantiate EnqueueInstantiateFunc
 }
 
 // Register mounts /task-drafts* and /task-templates* routes on m.
@@ -46,9 +59,9 @@ type Handler struct {
 //funclogmeasure:skip category=hot-path reason="Route table wiring only; operation trace is emitted by registered handlers."
 func Register(m *http.ServeMux, deps Deps) {
 	h := &Handler{
-		compose:                 deps.Compose,
-		normalizeCompose:        deps.NormalizeCompose,
-		instantiateFromTemplate: deps.InstantiateFromTemplate,
+		compose:            deps.Compose,
+		normalizeCompose:   deps.NormalizeCompose,
+		enqueueInstantiate: deps.EnqueueInstantiate,
 	}
 	m.Handle("GET /task-drafts", http.HandlerFunc(h.listTaskDrafts))
 	m.Handle("POST /task-drafts", http.HandlerFunc(h.saveTaskDraft))

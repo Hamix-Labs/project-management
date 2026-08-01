@@ -12,7 +12,6 @@ import (
 	settingshandler "github.com/AlexsanderHamir/Hamix/pkgs/settings/handler"
 	checklisthandler "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/handler"
 	composehandler "github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/handler"
-	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskcorehandler "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/handler"
 	taskcycleshandler "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/handler"
 	eventhandler "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/handler"
@@ -44,7 +43,6 @@ func (h *Handler) registerRoutes(m *http.ServeMux) {
 			h.notifyScopelessChange(realtime.ChangeType(typ))
 		},
 	})
-	tc := h.taskcoreHandler()
 	composehandler.Register(m, composehandler.Deps{
 		Compose: h.store,
 		NormalizeCompose: func(ctx context.Context, raw json.RawMessage) (composehandler.NormalizeComposeResult, error) {
@@ -54,17 +52,7 @@ func (h *Handler) registerRoutes(m *http.ServeMux) {
 			}
 			return composehandler.NormalizeComposeResult{Payload: payloadRaw, Title: compose.Title}, nil
 		},
-		InstantiateFromTemplate: func(ctx context.Context, r *http.Request, op string, payload json.RawMessage, by taskcoredomain.Actor) (*taskcoredomain.Task, error) {
-			compose, err := taskcorehandler.DecodeComposePayload(payload)
-			if err != nil {
-				return nil, err
-			}
-			return tc.CreateTaskFromComposeJSON(ctx, r, op, compose, taskcorehandler.CreateTaskComposeOpts{
-				StripDependsOn:          true,
-				OmitPastPickupNotBefore: true,
-				InstantiateFromTemplate: true,
-			}, by)
-		},
+		EnqueueInstantiate: h.ensureInstantiateWorker(),
 	})
 	checklisthandler.Register(m, checklisthandler.Deps{
 		Checklist:    h.store,

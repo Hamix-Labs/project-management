@@ -23,6 +23,8 @@ type CreateTaskComposeOpts struct {
 	StripDependsOn          bool
 	OmitPastPickupNotBefore bool
 	InstantiateFromTemplate bool
+	// Number, when set, uses a preallocated per-project task number.
+	Number *int
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
@@ -45,20 +47,24 @@ func taskCreateJSONToCompose(body taskCreateJSON) taskComposePayloadJSON {
 	}
 }
 
-func (h *Handler) CreateTaskFromComposeJSON(
+// PreparedComposeCreate holds validation results for repeated instantiate creates.
+type PreparedComposeCreate struct {
+	Input        taskcorecontract.CreateTaskInput
+	RepositoryID string
+}
+
+// PrepareComposeCreate validates once and builds CreateTaskInput (without Number).
+func (h *Handler) PrepareComposeCreate(
 	ctx context.Context,
-	r *http.Request,
-	op string,
 	payload TaskComposePayloadJSON,
 	opts CreateTaskComposeOpts,
-	by domain.Actor,
-) (*domain.Task, error) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.createTaskFromComposeJSON")
+) (*PreparedComposeCreate, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.prepareComposeCreate")
 	settings, err := h.settings.GetSettings(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if err := h.ValidateCompose(r.Context(), payload, settings, ValidateComposeOpts{
+	if err := h.ValidateCompose(ctx, payload, settings, ValidateComposeOpts{
 		GitMode: ComposeTaskRepoBinding,
 	}); err != nil {
 		return nil, err
@@ -99,28 +105,78 @@ func (h *Handler) CreateTaskFromComposeJSON(
 			return nil, getErr
 		}
 	}
-	repoID := strings.TrimSpace(*payload.RepositoryID)
-	if err := h.gitCompose.ValidatePromptMentionsForRepository(r.Context(), repoID, payload.InitialPrompt); err != nil {
+	repoID := ""
+	if payload.RepositoryID != nil {
+		repoID = strings.TrimSpace(*payload.RepositoryID)
+	}
+	if repoID != "" {
+		if err := h.gitCompose.ValidatePromptMentionsForRepository(ctx, repoID, payload.InitialPrompt); err != nil {
+			return nil, err
+		}
+	}
+	return &PreparedComposeCreate{
+		Input: taskcorecontract.CreateTaskInput{
+			ID:              taskID,
+			DraftID:         draftID,
+			Title:           payload.Title,
+			InitialPrompt:   payload.InitialPrompt,
+			Status:          payload.Status,
+			Priority:        payload.Priority,
+			ProjectID:       payload.ProjectID,
+			Runner:          runner,
+			CursorModel:     cursorModel,
+			PickupNotBefore: pickupNotBefore,
+			Tags:            payload.Tags,
+			Milestone:       payload.Milestone,
+			Gate:            opts.Gate,
+			DependsOn:       dependsOn,
+			ChecklistItems:  checklistItems,
+			WorktreeID:      nil,
+		},
+		RepositoryID: repoID,
+	}, nil
+}
+
+// CreateFromPrepared inserts one task from a prepared compose create and finalizes SSE.
+func (h *Handler) CreateFromPrepared(
+	ctx context.Context,
+	prepared *PreparedComposeCreate,
+	number *int,
+	by domain.Actor,
+) (*domain.Task, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.createFromPrepared")
+	if prepared == nil {
+		return nil, fmt.Errorf("%w: prepared create required", domain.ErrInvalidInput)
+	}
+	in := prepared.Input
+	in.ID = storekernel.ResolveID("")
+	in.Number = number
+	t, err := h.tasks.Create(ctx, in, by)
+	if err != nil {
 		return nil, err
 	}
-	t, err := h.tasks.Create(ctx, taskcorecontract.CreateTaskInput{
-		ID:              taskID,
-		DraftID:         draftID,
-		Title:           payload.Title,
-		InitialPrompt:   payload.InitialPrompt,
-		Status:          payload.Status,
-		Priority:        payload.Priority,
-		ProjectID:       payload.ProjectID,
-		Runner:          runner,
-		CursorModel:     cursorModel,
-		PickupNotBefore: pickupNotBefore,
-		Tags:            payload.Tags,
-		Milestone:       payload.Milestone,
-		Gate:            opts.Gate,
-		DependsOn:       dependsOn,
-		ChecklistItems:  checklistItems,
-		WorktreeID:      nil,
-	}, by)
+	return h.finalizeCreatedTask(ctx, t)
+}
+
+func (h *Handler) CreateTaskFromComposeJSON(
+	ctx context.Context,
+	r *http.Request,
+	op string,
+	payload TaskComposePayloadJSON,
+	opts CreateTaskComposeOpts,
+	by domain.Actor,
+) (*domain.Task, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.createTaskFromComposeJSON")
+	_ = r
+	_ = op
+	prepared, err := h.PrepareComposeCreate(ctx, payload, opts)
+	if err != nil {
+		return nil, err
+	}
+	if opts.Number != nil {
+		prepared.Input.Number = opts.Number
+	}
+	t, err := h.tasks.Create(ctx, prepared.Input, by)
 	if err != nil {
 		return nil, err
 	}

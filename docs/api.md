@@ -112,7 +112,7 @@ Model semantics (tags, milestone, `depends_on`, gate, worker readiness): [data-m
 
 ### Task templates
 
-Named, durable task compose blueprints. Payload shape matches task create fields (title, prompt, status, priority, checklist, runner, project, schedule, tags, milestone, `depends_on`) plus optional template-only `function_inputs` (see [ADR-0088](./adr/ADR-0088-template-functions.md)). Never publishes on SSE for CRUD; instantiate publishes `task_created` per success (same as `POST /tasks`).
+Named, durable task compose blueprints. Payload shape matches task create fields (title, prompt, status, priority, checklist, runner, project, schedule, tags, milestone, `depends_on`) plus optional template-only `function_inputs` (see [ADR-0088](./adr/ADR-0088-template-functions.md)). Never publishes on SSE for CRUD; instantiate accepts with **202** and publishes `task_created` per created task as each commit finishes (same enrichment as `POST /tasks`).
 
 | Method | Path | Notes |
 |---|---|---|
@@ -121,7 +121,7 @@ Named, durable task compose blueprints. Payload shape matches task create fields
 | GET | `/task-templates/{id}` | Full template with `payload` (may include `function_inputs`). |
 | PATCH | `/task-templates/{id}` | Partial `{ name?, payload? }`. **200** full detail. |
 | DELETE | `/task-templates/{id}` | `204`. |
-| POST | `/task-templates/instantiate` | Body `{ template_ids: string[], count?: number }` **or** `{ items: { template_id, count?, function_bindings? }[] }`. When `items` is non-empty it takes precedence. `function_bindings`: `[{ input_id, paths?, functions?: [{ path, name, line }] }]`. Required for templates with `function_inputs`; omitted/empty for ordinary templates. On success, appends a soft-scope block to `initial_prompt` and strips `function_inputs` before create. Omitted `count` defaults to **1**. Per-item/top-level `count` **1..25**; total creates ≤ **100**. Duplicate `template_id` in `items` → **400**. Partial success: **200** `{ tasks, errors: [{ template_id, error }] }`. Strips `depends_on`; omits past `pickup_not_before`. |
+| POST | `/task-templates/instantiate` | Body `{ template_ids: string[], count?: number }` **or** `{ items: { template_id, count?, function_bindings? }[] }`. When `items` is non-empty it takes precedence. `function_bindings`: `[{ input_id, paths?, functions?: [{ path, name, line }] }]`. Required for templates with `function_inputs`; omitted/empty for ordinary templates. Sync gate loads templates and applies bindings; missing templates / bind failures appear in `errors` without blocking other items. Omitted `count` defaults to **1**. Per-item/top-level `count` **1..25**; total creates ≤ **100**. Duplicate `template_id` in `items` → **400**. **Accepts asynchronously:** **202** `{ accepted, total, errors: [{ template_id, error }] }` when at least one item is queued (`accepted: true`, `total` = queued creates). Creates run on an owned worker; each successful create publishes enriched **`task_created` SSE immediately** (same as `POST /tasks`) so the task list can insert rows progressively — the HTTP response does **not** wait for creates and does not return `tasks[]`. Queue full → **503**. Strips `depends_on`; omits past `pickup_not_before`. |
 
 ### Execution cycles
 

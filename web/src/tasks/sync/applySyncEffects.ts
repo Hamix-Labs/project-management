@@ -5,6 +5,7 @@ import { rumSSEResyncReceived } from "@/observability";
 import { bustQueryPersistCache } from "@/lib/queryPersist";
 import { taskQueryKeys } from "../task-query";
 import { pushAgentRunProgress } from "../hooks/useAgentRunProgress";
+import { applyCreatedTaskToCache } from "../mutations/optimisticTaskList";
 import type { PendingDelta, SyncEffect } from "./syncTypes";
 import {
   cycleEnrichmentKey,
@@ -70,6 +71,16 @@ export function applySyncEffects(
             void queryClient.invalidateQueries({ queryKey });
           }
         }
+      } catch {
+        /* fall back to invalidate-and-refetch on flush */
+      }
+      continue;
+    }
+    if (effect.kind === "insert_task_list") {
+      try {
+        const parsed = parseTask(effect.data);
+        applyCreatedTaskToCache(queryClient, parsed);
+        enrichmentMarks.markTaskEnriched = effect.taskId;
       } catch {
         /* fall back to invalidate-and-refetch on flush */
       }

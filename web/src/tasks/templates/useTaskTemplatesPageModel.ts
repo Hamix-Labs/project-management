@@ -5,6 +5,7 @@ import { getTaskTemplate, listGlobalGitWorktrees, listTaskTemplates } from "@/ap
 import { TASK_TIMINGS } from "@/constants/tasks";
 import { useDelayedTrue } from "@/lib/useDelayedTrue";
 import { useDebouncedTrimmedValue } from "@/hooks/useDebouncedTrimmedValue";
+import { useOptionalToast } from "@/shared/toast/ToastProvider";
 import type { TaskTemplateSummary, TemplateFunctionBinding } from "@/types";
 import { useDeleteWithExitAnimation } from "../hooks/useDeleteWithExitAnimation";
 import { taskQueryKeys } from "../task-query";
@@ -50,6 +51,7 @@ function sortToApiParams(sort: TemplateSortKey): {
 }
 
 export function useTaskTemplatesPageModel(app: TaskTemplatesApp, navigate: ReturnType<typeof useNavigate>) {
+  const toast = useOptionalToast();
   const [searchInput, setSearchInput] = useState("");
   const debouncedQ = useDebouncedTrimmedValue(searchInput, 300);
   const [sort, setSort] = useState<TemplateSortKey>("recent");
@@ -182,16 +184,25 @@ export function useTaskTemplatesPageModel(app: TaskTemplatesApp, navigate: Retur
       }));
       const result = await app.instantiateTemplates(items);
       const batchMessage = formatInstantiateBatchError(result);
-      if (batchMessage !== null) {
+      if (batchMessage !== null && !result.accepted) {
         setBatchError(batchMessage);
         setBindDrafts(null);
-        if (result.errors.length > 0 && result.tasks.length > 0) {
+        if (result.errors.length > 0) {
           setSelectedIds([...new Set(result.errors.map((entry) => entry.template_id))]);
         }
         return;
       }
       setBindDrafts(null);
       setSelectedIds([]);
+      if (result.errors.length > 0) {
+        toast.info(batchMessage ?? `Creating ${result.total} tasks…`);
+      } else {
+        toast.success(
+          result.total === 1
+            ? "Creating 1 task…"
+            : `Creating ${result.total} tasks…`,
+        );
+      }
       navigate("/");
     } catch (err) {
       const message =

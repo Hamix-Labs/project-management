@@ -96,7 +96,11 @@ export async function deleteTaskTemplate(id: string): Promise<void> {
 
 export async function instantiateTaskTemplates(
   items: TaskTemplateInstantiateItem[],
-): Promise<{ tasks: import("@/types").Task[]; errors: { template_id: string; error: string }[] }> {
+): Promise<{
+  accepted: boolean;
+  total: number;
+  errors: { template_id: string; error: string }[];
+}> {
   const normalized = assertInstantiateTemplateItems(items);
   return fetchNamedEntityJson(
     "/task-templates/instantiate",

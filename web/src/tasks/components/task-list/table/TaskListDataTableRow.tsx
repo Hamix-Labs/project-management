@@ -8,7 +8,7 @@ import {
   StatusBadge,
 } from "../../../task-display";
 import { TASK_LIST_TAG_CHIP_LIMIT } from "../filters/taskListClientFilter";
-import { TaskListDeleteGlyph, TaskListEditGlyph } from "./TaskListRowActionIcons";
+import { TaskListCloseGlyph, TaskListEditGlyph } from "./TaskListRowActionIcons";
 import { formatInAppTimezone, useAppTimezone } from "@/shared/time/appTimezone";
 import { formatRelativeTime } from "@/shared/time/relativeTime";
 import { useNow } from "@/shared/useNow";
@@ -199,12 +199,12 @@ export function TaskListDataTableRow({
           </button>
           <button
             type="button"
-            className="task-list-icon-btn task-list-icon-btn--delete"
+            className="task-list-icon-btn task-list-icon-btn--close"
             aria-label={`Close task "${t.title}"`}
             onClick={() => onRequestClose(t)}
             disabled={saving || isExiting}
           >
-            <TaskListDeleteGlyph />
+            <TaskListCloseGlyph />
           </button>
         </div>
       </td>

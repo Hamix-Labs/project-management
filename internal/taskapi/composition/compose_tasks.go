@@ -99,6 +99,13 @@ func (a *API) Create(ctx context.Context, in taskcorestore.CreateTaskInput, by t
 	return t, nil
 }
 
+// AllocateNextTaskNumbers locks a project once and returns k contiguous numbers.
+func (a *API) AllocateNextTaskNumbers(ctx context.Context, projectID string, k int) ([]int, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.AllocateNextTaskNumbers",
+		"project_id", projectID, "count", k)
+	return a.taskcore.AllocateNextTaskNumbers(ctx, projectID, k)
+}
+
 func (a *API) enqueueWorktreeIfNeeded(ctx context.Context, t *taskcoredomain.Task) {
 	if a == nil || t == nil {
 		return

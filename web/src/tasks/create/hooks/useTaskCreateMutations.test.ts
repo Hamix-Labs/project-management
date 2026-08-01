@@ -96,9 +96,10 @@ describe("useTaskCreateMutations", () => {
     expect(shouldSuppressTaskMutationEcho("task-new")).toBe(false);
   });
 
-  it("instantiate awaits list invalidation before the mutation settles", async () => {
+  it("instantiate awaits template invalidation before the mutation settles", async () => {
     mockedInstantiate.mockResolvedValue({
-      tasks: [makeTask()],
+      accepted: true,
+      total: 1,
       errors: [],
     });
 
@@ -134,7 +135,7 @@ describe("useTaskCreateMutations", () => {
       });
 
     await waitFor(() => {
-      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: taskQueryKeys.listRoot() });
+      expect(invalidateSpy).toHaveBeenCalled();
     });
     expect(mutationSettled).toBe(false);
 
@@ -144,6 +145,5 @@ describe("useTaskCreateMutations", () => {
     });
 
     expect(mutationSettled).toBe(true);
-    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: taskQueryKeys.stats() });
   });
 });

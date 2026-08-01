@@ -57,19 +57,23 @@ describe("parseTaskChangeFrame", () => {
   it("returns a task frame for task_created/updated/deleted", () => {
     expect(
       parseTaskChangeFrame('{"type":"task_updated","id":"task-1"}'),
-    ).toEqual({ kind: "task", taskId: "task-1" });
+    ).toEqual({ kind: "task", taskId: "task-1", changeType: "task_updated" });
     expect(
       parseTaskChangeFrame('{"type":"task_created","id":"task-2"}'),
-    ).toEqual({ kind: "task", taskId: "task-2" });
+    ).toEqual({ kind: "task", taskId: "task-2", changeType: "task_created" });
     expect(
       parseTaskChangeFrame('{"type":"task_deleted","id":"task-3"}'),
-    ).toEqual({ kind: "task", taskId: "task-3" });
+    ).toEqual({ kind: "task", taskId: "task-3", changeType: "task_deleted" });
     expect(
       parseTaskChangeFrame('{"type":"task_gate_changed","id":"task-4"}'),
-    ).toEqual({ kind: "task", taskId: "task-4" });
+    ).toEqual({ kind: "task", taskId: "task-4", changeType: "task_gate_changed" });
     expect(
       parseTaskChangeFrame('{"type":"task_dependency_changed","id":"task-5"}'),
-    ).toEqual({ kind: "task", taskId: "task-5" });
+    ).toEqual({
+      kind: "task",
+      taskId: "task-5",
+      changeType: "task_dependency_changed",
+    });
   });
 
   it("collects task ids from gate and dependency SSE events", () => {
@@ -192,7 +196,7 @@ describe("parseTaskChangeFrame", () => {
           data: sample,
         }),
       ),
-    ).toEqual({ kind: "task", taskId: "task-1", data: sample });
+    ).toEqual({ kind: "task", taskId: "task-1", changeType: "task_updated", data: sample });
   });
 
   it("preserves enriched data on task_cycle_changed frames", () => {
@@ -217,7 +221,7 @@ describe("parseTaskChangeFrame", () => {
   it("omits data field on frames without enrichment", () => {
     expect(
       parseTaskChangeFrame('{"type":"task_updated","id":"task-1"}'),
-    ).toEqual({ kind: "task", taskId: "task-1" });
+    ).toEqual({ kind: "task", taskId: "task-1", changeType: "task_updated" });
   });
 
   it("handles every SSE_CHANGE_TYPES wire value (mirrors realtime/wire.go)", () => {
