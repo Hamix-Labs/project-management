@@ -37,12 +37,12 @@ type cycleLifecycleState struct {
 }
 
 type phaseLifecycleState struct {
-	runningPhase                 cyclesdomain.Phase
-	runningPhaseSeq              int64
-	runCorrelationID             string
-	executeReachedClaimAcceptance         bool
-	lastCompletedExecutePhaseSeq int64
-	lastVerifyAfterExecuteSeq    int64
+	runningPhase                  cyclesdomain.Phase
+	runningPhaseSeq               int64
+	runCorrelationID              string
+	executeReachedClaimAcceptance bool
+	lastCompletedExecutePhaseSeq  int64
+	lastVerifyAfterExecuteSeq     int64
 }
 
 type verifyLifecycleState struct {

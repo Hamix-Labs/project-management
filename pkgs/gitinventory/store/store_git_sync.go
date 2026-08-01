@@ -66,6 +66,7 @@ func (s *Store) WorktreeStaleMap(ctx context.Context, repoID string, now time.Ti
 		string(taskcoredomain.StatusRunning),
 		string(taskcoredomain.StatusBlocked),
 		string(taskcoredomain.StatusReview),
+		string(taskcoredomain.StatusPrReady),
 		string(taskcoredomain.StatusOnHold),
 	}
 	for _, wt := range wts {

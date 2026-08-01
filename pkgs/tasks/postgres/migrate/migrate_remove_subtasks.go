@@ -28,8 +28,8 @@ func migrateRemoveSubtasks(ctx context.Context, db *gorm.DB) error {
 	if err := db.WithContext(ctx).Exec(`ALTER TABLE tasks DROP CONSTRAINT IF EXISTS chk_tasks_status`).Error; err != nil {
 		return fmt.Errorf("drop tasks status constraint: %w", err)
 	}
-	// Include closed so re-runs after migrateTasksStatusClosed do not reject existing rows.
-	if err := db.WithContext(ctx).Exec(`ALTER TABLE tasks ADD CONSTRAINT chk_tasks_status CHECK (status IN ('ready','running','blocked','review','done','failed','on_hold','closed'))`).Error; err != nil {
+	// Include closed/pr_ready so re-runs after later status migrates do not reject existing rows.
+	if err := db.WithContext(ctx).Exec(`ALTER TABLE tasks ADD CONSTRAINT chk_tasks_status CHECK (status IN ('ready','running','blocked','review','pr_ready','done','failed','on_hold','closed'))`).Error; err != nil {
 		return fmt.Errorf("add tasks status constraint: %w", err)
 	}
 	if err := db.WithContext(ctx).Exec(`ALTER TABLE task_dependencies DROP CONSTRAINT IF EXISTS chk_task_dependencies_satisfies`).Error; err != nil {

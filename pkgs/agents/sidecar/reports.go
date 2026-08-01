@@ -33,6 +33,8 @@ const (
 	verifyReportFileName          = "verify-report.json"
 	criteriaSubmitReceiptFileName = "criteria-report.submitted"
 	verifySubmitReceiptFileName   = "verify-report.submitted"
+	pullRequestReportFileName     = "pull-request.json"
+	pullRequestReceiptFileName    = "pull-request.submitted"
 )
 
 type criteriaReport struct {
@@ -96,6 +98,16 @@ func VerifyReportPath(reportDir, cycleID string) string {
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func CriteriaSubmitReceiptPath(reportDir, cycleID string) string {
 	return filepath.Join(ReportCycleDir(reportDir, cycleID), criteriaSubmitReceiptFileName)
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func PullRequestReportPath(reportDir, cycleID string) string {
+	return filepath.Join(ReportCycleDir(reportDir, cycleID), pullRequestReportFileName)
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func PullRequestSubmitReceiptPath(reportDir, cycleID string) string {
+	return filepath.Join(ReportCycleDir(reportDir, cycleID), pullRequestReceiptFileName)
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
@@ -285,6 +297,8 @@ func WriteCriteriaReport(reportDir, cycleID string, criteria []CriteriaEntry) er
 }
 
 // WriteVerifyReport atomically writes verify-report.json for the cycle.
+//
+//funclogmeasure:skip category=hot-path reason="Atomic file rewrite; operation trace is emitted by the MCP/harness caller."
 func WriteVerifyReport(reportDir, cycleID string, criteria []VerifyEntry) error {
 	if err := EnsureReportCycleDir(reportDir, cycleID); err != nil {
 		return err
@@ -296,21 +310,72 @@ func WriteVerifyReport(reportDir, cycleID string, criteria []VerifyEntry) error 
 	return writeJSONAtomic(VerifyReportPath(reportDir, cycleID), rep)
 }
 
+// PullRequestReport is written by hamix.create_pull_request after a successful open.
+type PullRequestReport struct {
+	SchemaVersion int    `json:"schema_version"`
+	URL           string `json:"url"`
+	Number        int    `json:"number,omitempty"`
+	Title         string `json:"title,omitempty"`
+	Base          string `json:"base,omitempty"`
+	Head          string `json:"head,omitempty"`
+}
+
+// WritePullRequestReport atomically writes pull-request.json for the cycle.
+//
+//funclogmeasure:skip category=hot-path reason="Atomic file rewrite; operation trace is emitted by the MCP/harness caller."
+func WritePullRequestReport(reportDir, cycleID string, rep PullRequestReport) error {
+	if err := EnsureReportCycleDir(reportDir, cycleID); err != nil {
+		return err
+	}
+	if rep.SchemaVersion == 0 {
+		rep.SchemaVersion = CurrentSchemaVersion
+	}
+	return writeJSONAtomic(PullRequestReportPath(reportDir, cycleID), rep)
+}
+
+// ParsePullRequestReport reads pull-request.json for the cycle.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func ParsePullRequestReport(reportDir, cycleID string) (PullRequestReport, error) {
+	var rep PullRequestReport
+	if err := readJSONFile(PullRequestReportPath(reportDir, cycleID), &rep); err != nil {
+		return PullRequestReport{}, err
+	}
+	if strings.TrimSpace(rep.URL) == "" {
+		return PullRequestReport{}, fmt.Errorf("%w: empty url", ErrCriteriaReportInvalid)
+	}
+	return rep, nil
+}
+
+// RequirePullRequestSubmitReceipt ensures the PR receipt exists and matches nonce.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func RequirePullRequestSubmitReceipt(reportDir, cycleID, nonce string) error {
+	return requireSubmitReceipt(PullRequestSubmitReceiptPath(reportDir, cycleID), nonce)
+}
+
 // WriteSubmitReceipt writes the MCP submit receipt next to the report.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func WriteSubmitReceipt(path string, receipt SubmitReceipt) error {
 	return writeJSONAtomic(path, receipt)
 }
 
 // RequireCriteriaSubmitReceipt ensures the criteria receipt exists and matches nonce.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func RequireCriteriaSubmitReceipt(reportDir, cycleID, nonce string) error {
 	return requireSubmitReceipt(CriteriaSubmitReceiptPath(reportDir, cycleID), nonce)
 }
 
 // RequireVerifySubmitReceipt ensures the verify receipt exists and matches nonce.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func RequireVerifySubmitReceipt(reportDir, cycleID, nonce string) error {
 	return requireSubmitReceipt(VerifySubmitReceiptPath(reportDir, cycleID), nonce)
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func requireSubmitReceipt(path, nonce string) error {
 	var rec SubmitReceipt
 	if err := readJSONFile(path, &rec); err != nil {
@@ -328,6 +393,7 @@ func requireSubmitReceipt(path, nonce string) error {
 	return nil
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func writeJSONAtomic(path string, v any) error {
 	dir := filepath.Dir(path)
 	if err := os.MkdirAll(dir, 0o755); err != nil {
@@ -353,7 +419,11 @@ func writeJSONAtomic(path string, v any) error {
 }
 
 // MinVerifyReasoningChars is the minimum reasoning length when verified=true.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func MinVerifyReasoningChars() int { return minVerifyReasoning }
 
 // MaxFieldBytes is the max evidence/reasoning field size.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func MaxFieldBytes() int { return maxFieldBytes }

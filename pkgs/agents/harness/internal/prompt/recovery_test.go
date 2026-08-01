@@ -8,6 +8,32 @@ import (
 	"testing"
 )
 
+func TestComposeRecoveryDelta_humanOpenPR(t *testing.T) {
+	t.Parallel()
+	delta := ComposeRecoveryDelta(RecoveryContext{
+		Kind:       RecoveryHumanOpenPR,
+		Phase:      cyclesdomain.PhaseExecute,
+		CycleID:    "open-pr-cycle-1",
+		AttemptSeq: 2,
+		OpenPRKnownCommits: []cyclesdomain.TaskCycleCommit{{
+			SHA: "abc1234567890abcdef", Message: "feat: land work",
+		}},
+	})
+	for _, frag := range []string{
+		"Approve and open pull request", "open-pr-cycle-1", "hamix.create_pull_request",
+		"abc123456789", "feat: land work",
+	} {
+		if !strings.Contains(delta, frag) {
+			t.Fatalf("missing %q in %q", frag, delta)
+		}
+	}
+	for _, bad := range []string{"Human polish", "Fix the issue described above", "worker restarted"} {
+		if strings.Contains(delta, bad) {
+			t.Fatalf("must not contain %q: %q", bad, delta)
+		}
+	}
+}
+
 func TestComposeRecoveryDelta_verifyImplementation(t *testing.T) {
 	t.Parallel()
 	delta := ComposeRecoveryDelta(RecoveryContext{

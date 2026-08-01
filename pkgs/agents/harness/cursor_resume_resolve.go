@@ -147,6 +147,9 @@ func (h *Harness) buildRecoveryContext(
 	if runKind == taskcoredomain.PendingKindPolish {
 		ctx.Polish = polishNoticeInputFromCycle(cycle, state, opts.knownCommits)
 	}
+	if runKind == taskcoredomain.PendingKindOpenPR {
+		ctx.OpenPRKnownCommits = opts.knownCommits
+	}
 	if bundle := opts.continuation; bundle != nil && kind == prompt.RecoveryOperatorRetryResume {
 		ctx.FailureClass = string(bundle.FailureClass)
 		ctx.FailureReason = bundle.FailureReason

@@ -7,6 +7,9 @@ const (
 	StatusRunning Status = "running"
 	StatusBlocked Status = "blocked"
 	StatusReview  Status = "review"
+	// StatusPrReady means a pull request was opened for the task's work.
+	// Human POST /approve from this status reaches done. Not settable via PATCH.
+	StatusPrReady Status = "pr_ready"
 	StatusDone    Status = "done"
 	StatusFailed  Status = "failed"
 	// StatusOnHold flags a task that the operator wants to keep out of

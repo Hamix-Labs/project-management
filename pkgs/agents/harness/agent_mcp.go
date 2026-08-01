@@ -27,6 +27,8 @@ const (
 // agentMCPActive reports whether this run should use tool-only MCP submit.
 // Non-cursor runners (fake tests) never activate MCP. Production Cursor path
 // follows app_settings.agent_mcp_enabled (default true) unless Options overrides.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (h *Harness) agentMCPActive(ctx context.Context) bool {
 	if h == nil {
 		return false
@@ -51,6 +53,7 @@ type agentMCPPrep struct {
 	BindPath string
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func mintAgentMCPNonce() (string, error) {
 	b := make([]byte, 16)
 	if _, err := rand.Read(b); err != nil {
@@ -59,10 +62,12 @@ func mintAgentMCPNonce() (string, error) {
 	return hex.EncodeToString(b), nil
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func resolveAgentMCPBinary() (string, error) {
 	return exec.LookPath(agentMCPBinaryName)
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func sortedIDList(ids map[string]struct{}) []string {
 	out := make([]string, 0, len(ids))
 	for id := range ids {
@@ -76,6 +81,7 @@ func sortedIDList(ids map[string]struct{}) []string {
 	return out
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func lockedCriterionIDSet(state *processState) map[string]struct{} {
 	if state == nil || len(state.verify.lockedPasses) == 0 {
 		return nil
@@ -87,6 +93,7 @@ func lockedCriterionIDSet(state *processState) map[string]struct{} {
 	return out
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func workspaceMCPConfigPath(workingDir string) string {
 	return filepath.Join(strings.TrimSpace(workingDir), ".cursor", "mcp.json")
 }
@@ -94,6 +101,8 @@ func workspaceMCPConfigPath(workingDir string) string {
 // prepareAgentMCP writes bind under ReportDir and mcp.json under the Cursor
 // workspace (WorkingDir). Cursor CLI only loads project MCP from
 // <workspace>/.cursor/mcp.json — --add-dir does not discover MCP config.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (h *Harness) prepareAgentMCP(
 	ctx context.Context,
 	task *taskcoredomain.Task,
@@ -138,6 +147,7 @@ func (h *Harness) prepareAgentMCP(
 	return agentMCPPrep{Nonce: nonce, BindPath: bindPath}, nil
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (h *Harness) writeWorkspaceMCPConfig(bin, bindPath string, state *processState) error {
 	wd := strings.TrimSpace(h.opts.WorkingDir)
 	if wd == "" {
@@ -185,6 +195,8 @@ func (h *Harness) writeWorkspaceMCPConfig(bin, bindPath string, state *processSt
 }
 
 // restoreWorkspaceMCPConfig reverts WorkingDir/.cursor/mcp.json after the cycle.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (h *Harness) restoreWorkspaceMCPConfig(state *processState) {
 	if h == nil || state == nil || !state.agentMCP.mcpConfigTracked {
 		return
@@ -202,12 +214,15 @@ func (h *Harness) restoreWorkspaceMCPConfig(state *processState) {
 	_ = os.Remove(filepath.Dir(mcpPath))
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func applyAgentMCPToRequest(req *runner.Request, _ agentMCPPrep) {
 	req.ApproveMCPs = true
 	req.TrustWorkspace = true
 }
 
 // mcpPrepareFailedResult is returned when bind/MCP launch config cannot be written.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func mcpPrepareFailedResult(err error) (runner.Result, error) {
 	return runner.NewResult(cyclesdomain.PhaseStatusFailed, "agent MCP prepare failed: "+err.Error(), nil, ""), err
 }

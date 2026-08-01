@@ -253,6 +253,21 @@ export async function approveTask(id: string): Promise<Task> {
   return parseTask(raw);
 }
 
+export async function openPrTask(id: string): Promise<Task> {
+  const tid = assertTaskPathId(id);
+  const res = await fetchWithTimeout(
+    `/tasks/${encodeURIComponent(tid)}/open-pr`,
+    {
+      method: "POST",
+      headers: jsonHeaders,
+      body: "{}",
+    },
+  );
+  if (!res.ok) throw await apiErrorFromResponse(res);
+  const raw: unknown = await res.json();
+  return parseTask(raw);
+}
+
 export type PolishTaskInput = {
   instructions: string;
   parent_cycle_id?: string;

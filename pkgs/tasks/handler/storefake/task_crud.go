@@ -31,6 +31,12 @@ type PolishCall struct {
 	By    taskcoredomain.Actor
 }
 
+// OpenPRCall records one RequestTaskOpenPR invocation.
+type OpenPRCall struct {
+	Input taskcorecontract.RequestOpenPRInput
+	By    taskcoredomain.Actor
+}
+
 // GateCall records one ApplyTaskGateAction invocation.
 type GateCall struct {
 	TaskID string
@@ -56,6 +62,9 @@ type TaskCRUDFake struct {
 	polishErr  error
 	polishTask *taskcoredomain.Task
 
+	openPRErr  error
+	openPRTask *taskcoredomain.Task
+
 	gateErr  error
 	gateTask *taskcoredomain.Task
 
@@ -63,6 +72,7 @@ type TaskCRUDFake struct {
 	retryCalls   []RetryCall
 	approveCalls []ApproveCall
 	polishCalls  []PolishCall
+	openPRCalls  []OpenPRCall
 	gateCalls    []GateCall
 }
 
@@ -283,6 +293,53 @@ func (f *TaskCRUDFake) RequestTaskPolish(ctx context.Context, in taskcorecontrac
 	f.polishCalls = append(f.polishCalls, PolishCall{Input: in, By: by})
 	err := f.polishErr
 	task := f.polishTask
+	f.mu.Unlock()
+	if err != nil {
+		return nil, err
+	}
+	if task != nil {
+		return task, nil
+	}
+	return nil, errNotImplemented
+}
+
+// FailOpenPR configures RequestTaskOpenPR to return err.
+//
+//funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
+func (f *TaskCRUDFake) FailOpenPR(err error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.openPRErr = err
+}
+
+// OnOpenPR configures RequestTaskOpenPR to return task.
+//
+//funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
+func (f *TaskCRUDFake) OnOpenPR(task *taskcoredomain.Task) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.openPRTask = task
+}
+
+// OpenPRCalls returns a copy of recorded RequestTaskOpenPR calls.
+//
+//funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
+func (f *TaskCRUDFake) OpenPRCalls() []OpenPRCall {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	out := make([]OpenPRCall, len(f.openPRCalls))
+	copy(out, f.openPRCalls)
+	return out
+}
+
+// RequestTaskOpenPR records the call and returns the configured outcome.
+//
+//funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
+func (f *TaskCRUDFake) RequestTaskOpenPR(ctx context.Context, in taskcorecontract.RequestOpenPRInput, by taskcoredomain.Actor) (*taskcoredomain.Task, error) {
+	f.mu.Lock()
+	f.openPRCalls = append(f.openPRCalls, OpenPRCall{Input: in, By: by})
+	err := f.openPRErr
+	task := f.openPRTask
 	f.mu.Unlock()
 	if err != nil {
 		return nil, err

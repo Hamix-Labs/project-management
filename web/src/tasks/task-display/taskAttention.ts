@@ -23,8 +23,14 @@ export function userAttention(
     case "review":
       return {
         show: true,
-        headline: "Agent may need your review",
-        body: "This task is in review. Check the prompt and updates below.",
+        headline: "Ready for your review",
+        body: "Approve and open a pull request, or send polish instructions.",
+      };
+    case "pr_ready":
+      return {
+        show: true,
+        headline: "Pull request ready",
+        body: "A PR is open for this work. Mark the task done when you are ready for dependents to proceed.",
       };
     case "blocked":
       return {

@@ -149,11 +149,14 @@ func (w *Worker) healRunningAfterTerminalCycle(ctx context.Context, taskID strin
 	if latest == nil || latest.Status != cyclesdomain.CycleStatusSucceeded {
 		return false
 	}
-	review := taskcoredomain.StatusReview
-	if _, err := w.store.Update(ctx, taskID, taskcorestore.UpdateTaskInput{Status: &review}, taskcoredomain.ActorAgent); err != nil {
-		slog.Warn("agent worker heal running→review failed", "cmd", calltrace.LogCmd,
+	next := taskcoredomain.StatusReview
+	if openPRRunKindFromMeta(latest.MetaJSON) {
+		next = taskcoredomain.StatusPrReady
+	}
+	if _, err := w.store.Update(ctx, taskID, taskcorestore.UpdateTaskInput{Status: &next}, taskcoredomain.ActorAgent); err != nil {
+		slog.Warn("agent worker heal running after succeeded cycle failed", "cmd", calltrace.LogCmd,
 			"operation", "agent.worker.Worker.healRunningAfterTerminalCycle.update_err",
-			"task_id", taskID, "cycle_id", latest.ID, "err", err)
+			"task_id", taskID, "cycle_id", latest.ID, "next", string(next), "err", err)
 		return false
 	}
 	w.publishTaskUpdated(taskID)
@@ -377,4 +380,18 @@ func (w *Worker) clock() time.Time {
 		return w.opts.Clock()
 	}
 	return time.Now().UTC()
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure meta decode for heal target status."
+func openPRRunKindFromMeta(meta json.RawMessage) bool {
+	if len(meta) == 0 {
+		return false
+	}
+	var payload struct {
+		RunKind string `json:"run_kind"`
+	}
+	if err := json.Unmarshal(meta, &payload); err != nil {
+		return false
+	}
+	return taskcoredomain.PendingRunKind(strings.TrimSpace(payload.RunKind)) == taskcoredomain.PendingKindOpenPR
 }

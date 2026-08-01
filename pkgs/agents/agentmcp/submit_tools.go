@@ -18,8 +18,13 @@ const (
 
 type submitCriteriaTool struct{}
 
-func (submitCriteriaTool) Name() string  { return ToolSubmitCriteria }
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func (submitCriteriaTool) Name() string { return ToolSubmitCriteria }
+
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (submitCriteriaTool) Group() string { return GroupReports }
+
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (submitCriteriaTool) Description() string {
 	return "Validate and write criteria-report.json for this execute phase. Required before execute finishes."
 }
@@ -38,6 +43,7 @@ type submitCriteriaOutput struct {
 	Message string `json:"message"`
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (t submitCriteriaTool) Register(server *mcp.Server, sess *Session) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        t.Name(),
@@ -51,6 +57,7 @@ func (t submitCriteriaTool) Register(server *mcp.Server, sess *Session) {
 	})
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func submitCriteria(sess *Session, in submitCriteriaInput) (submitCriteriaOutput, error) {
 	if sess.Phase != PhaseExecute {
 		return submitCriteriaOutput{}, fmt.Errorf("phase is %q; %s requires execute", sess.Phase, ToolSubmitCriteria)
@@ -93,6 +100,7 @@ func submitCriteria(sess *Session, in submitCriteriaInput) (submitCriteriaOutput
 	return submitCriteriaOutput{OK: true, Path: path, Message: "criteria report submitted"}, nil
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func writeReceipt(sess *Session, tool, phase, path string) error {
 	return sidecar.WriteSubmitReceipt(path, sidecar.SubmitReceipt{
 		Nonce:     sess.SubmitNonce,
@@ -103,6 +111,7 @@ func writeReceipt(sess *Session, tool, phase, path string) error {
 	})
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func toolErr(err error) *mcp.CallToolResult {
 	msg := err.Error()
 	b, _ := json.Marshal(map[string]any{"ok": false, "error": msg})

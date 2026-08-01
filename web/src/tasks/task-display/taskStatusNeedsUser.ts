@@ -8,6 +8,7 @@ import type { Status } from "@/types";
 const NEEDS_USER_INPUT: ReadonlySet<Status> = new Set([
   "blocked",
   "review",
+  "pr_ready",
   "failed",
 ]);
 

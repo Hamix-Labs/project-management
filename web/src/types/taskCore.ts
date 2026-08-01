@@ -6,6 +6,7 @@ export type Status =
   | "running"
   | "blocked"
   | "review"
+  | "pr_ready"
   | "done"
   | "failed"
   | "on_hold"
@@ -303,6 +304,7 @@ export const STATUSES: Status[] = [
   "running",
   "blocked",
   "review",
+  "pr_ready",
   "done",
   "failed",
   "on_hold",
@@ -310,13 +312,12 @@ export const STATUSES: Status[] = [
 ];
 
 /**
- * Status values operators may set via create/PATCH. `closed` is
- * intentionally excluded — it is reached only via `POST /tasks/{id}/close`
- * (see docs/data-model.md) so PATCH-status edits and create-form
- * status pickers never surface it as a writable choice.
+ * Status values operators may set via create/PATCH. `closed` and `pr_ready`
+ * are intentionally excluded — closed via POST /close; pr_ready via harness
+ * open-pr finalize only.
  */
 export const CLIENT_WRITABLE_STATUSES: Status[] = STATUSES.filter(
-  (s) => s !== "closed",
+  (s) => s !== "closed" && s !== "pr_ready",
 );
 
 export const PRIORITIES: Priority[] = [
@@ -354,6 +355,8 @@ export const TASK_EVENT_TYPES = [
   "task_failed",
   "task_retry_requested",
   "task_polish_requested",
+  "open_pr_requested",
+  "pr_opened",
   "task_pickup_failed",
   // Execution-cycle audit mirrors. The backend writes these in the same
   // SQL transaction as task_cycles / task_cycle_phases rows so GET

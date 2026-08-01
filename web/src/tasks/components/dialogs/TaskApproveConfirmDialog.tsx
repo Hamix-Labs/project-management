@@ -19,10 +19,10 @@ export function TaskApproveConfirmDialog({
 }: Props) {
   return (
     <ConfirmDialog
-      title="Approve this task?"
+      title="Mark this task done?"
       description={<strong>{taskTitle}</strong>}
-      footnote="Marks the task Done. Dependents waiting on this task can proceed."
-      confirmLabel="Approve"
+      footnote="Marks the task Done after the pull request is open. Dependents waiting on this task can proceed."
+      confirmLabel="Mark done"
       confirmVariant="primary"
       busy={pending}
       cancelDisabled={saving}

@@ -14,6 +14,7 @@ const STATUS_CLASS: Record<Status, string> = {
   running: "ui-badge--status-running",
   blocked: "ui-badge--status-on_hold",
   review: "ui-badge--status-running",
+  pr_ready: "ui-badge--status-running",
   done: "ui-badge--status-done",
   failed: "ui-badge--status-failed",
   on_hold: "ui-badge--status-on_hold",

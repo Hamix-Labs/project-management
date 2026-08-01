@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { approveTask, patchTask, polishTask } from "@/api";
+import { approveTask, openPrTask, patchTask, polishTask } from "@/api";
 import type { ChecklistItemDraft } from "@/types";
 import {
   rumMutationRolledBack,
@@ -16,6 +16,80 @@ import {
 } from "@/tasks/mutations";
 import type { Task } from "@/types";
 import { taskQueryKeys } from "../task-query";
+
+function useTaskDetailOpenPrMutation(
+  taskId: string,
+  optimisticMutationsEnabled: boolean,
+  onOpenPrConfirmed: () => void,
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    unknown,
+    unknown,
+    void,
+    { prev: Task | undefined; startedAtMs: number; guarded: boolean }
+  >({
+    mutationFn: () => openPrTask(taskId),
+    onMutate: async () => {
+      const guard = beginGuardedTaskWrite({
+        taskId,
+        optimisticEnabled: optimisticMutationsEnabled,
+        rumKind: "task_open_pr",
+      });
+      if (!guard.guarded) {
+        return { prev: undefined, startedAtMs: guard.startedAtMs, guarded: false };
+      }
+      await queryClient.cancelQueries({ queryKey: taskQueryKeys.detail(taskId) });
+      const detailKey = taskQueryKeys.detail(taskId);
+      const prev = queryClient.getQueryData<Task>(detailKey);
+      if (prev) {
+        queryClient.setQueryData<Task>(detailKey, { ...prev, status: "ready" });
+      }
+      recordOptimisticApplied("task_open_pr", guard.startedAtMs);
+      return { prev, startedAtMs: guard.startedAtMs, guarded: true };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.prev) {
+        queryClient.setQueryData(taskQueryKeys.detail(taskId), context.prev);
+      }
+      if (context) {
+        if (context.prev !== undefined) {
+          rumMutationRolledBack(
+            "task_open_pr",
+            performance.now() - context.startedAtMs,
+          );
+        }
+        rumMutationSettled(
+          "task_open_pr",
+          performance.now() - context.startedAtMs,
+          0,
+        );
+      }
+    },
+    onSuccess: async (_data, _vars, context) => {
+      onOpenPrConfirmed();
+      await invalidateTaskCacheAsync(
+        queryClient,
+        { scope: "listStats" },
+        { scope: "detail", taskId },
+        { scope: "events", taskId },
+      );
+      if (context) {
+        rumMutationSettled(
+          "task_open_pr",
+          performance.now() - context.startedAtMs,
+          1,
+        );
+      }
+    },
+    onSettled: (_data, _err, _vars, context) => {
+      if (context?.guarded) {
+        endGuardedTaskWrite(taskId);
+      }
+    },
+  });
+}
 
 function useTaskDetailApproveMutation(
   taskId: string,
@@ -257,6 +331,7 @@ export function useTaskDetailMutations(taskId: string) {
   const [modelConfigOpen, setModelConfigOpen] = useState(false);
   const [autonomyConfirmOpen, setAutonomyConfirmOpen] = useState(false);
   const [approveConfirmOpen, setApproveConfirmOpen] = useState(false);
+  const [openPrConfirmOpen, setOpenPrConfirmOpen] = useState(false);
   const [polishDialogOpen, setPolishDialogOpen] = useState(false);
   const toast = useOptionalToast();
   const { optimisticMutationsEnabled } = useRolloutFlags();
@@ -264,6 +339,11 @@ export function useTaskDetailMutations(taskId: string) {
     taskId,
     optimisticMutationsEnabled,
     () => setApproveConfirmOpen(false),
+  );
+  const openPrMutation = useTaskDetailOpenPrMutation(
+    taskId,
+    optimisticMutationsEnabled,
+    () => setOpenPrConfirmOpen(false),
   );
   const polishMutation = useTaskDetailPolishMutation(
     taskId,
@@ -284,9 +364,12 @@ export function useTaskDetailMutations(taskId: string) {
     setAutonomyConfirmOpen,
     approveConfirmOpen,
     setApproveConfirmOpen,
+    openPrConfirmOpen,
+    setOpenPrConfirmOpen,
     polishDialogOpen,
     setPolishDialogOpen,
     approveMutation,
+    openPrMutation,
     polishMutation,
     autonomyMutation,
   };

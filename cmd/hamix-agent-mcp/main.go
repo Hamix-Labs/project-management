@@ -10,6 +10,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/agentmcp"
 )
 
+//funclogmeasure:skip category=tool-required-noop reason="cmd entrypoint; slog JSON sink is configured in run()."
 func main() {
 	bindPath := flag.String("bind", "", "path to agent-tool-bind.json")
 	flag.Parse()

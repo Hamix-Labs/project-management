@@ -3,9 +3,6 @@ package harness
 import (
 	"context"
 	"encoding/json"
-	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
-	cyclescontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/contract"
-	cyclesstore "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store"
 	"os"
 	"path/filepath"
 	"strings"
@@ -19,7 +16,10 @@ import (
 	checklistcontract "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/contract"
 	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
+	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
+	cyclescontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/contract"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
+	cyclesstore "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/store"
 )
 
 func harnessTestVerifyCmds() []checklistcontract.VerifyCommandInput {

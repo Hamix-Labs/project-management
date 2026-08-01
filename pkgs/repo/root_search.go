@@ -28,12 +28,16 @@ type SearchKinds struct {
 }
 
 // SearchKindsFilesOnly is the default for @-mention file browse.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func SearchKindsFilesOnly() SearchKinds {
 	return SearchKinds{File: true}
 }
 
 // ParseSearchKinds parses a comma-separated kinds query (file, dir).
 // Empty or whitespace-only defaults to files only. Unknown tokens return false.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func ParseSearchKinds(raw string) (SearchKinds, bool) {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
@@ -60,6 +64,7 @@ func ParseSearchKinds(raw string) (SearchKinds, bool) {
 	return k, true
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func shouldSkipSearchDir(name string) bool {
 	switch name {
 	case ".git", "node_modules", "vendor":

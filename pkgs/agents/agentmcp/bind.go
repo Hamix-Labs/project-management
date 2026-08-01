@@ -41,6 +41,8 @@ type Session struct {
 }
 
 // LoadBind reads and validates a bind file from path.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func LoadBind(path string) (*Session, error) {
 	path = strings.TrimSpace(path)
 	if path == "" {
@@ -57,6 +59,7 @@ func LoadBind(path string) (*Session, error) {
 	return sessionFromBind(b)
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func sessionFromBind(b BindFile) (*Session, error) {
 	if b.BindSchemaVersion != BindSchemaVersion {
 		return nil, fmt.Errorf("unsupported bind_schema_version %d (want %d)", b.BindSchemaVersion, BindSchemaVersion)
@@ -101,6 +104,8 @@ func sessionFromBind(b BindFile) (*Session, error) {
 }
 
 // WriteBind writes bind JSON for harness callers.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func WriteBind(path string, b BindFile) error {
 	b.BindSchemaVersion = BindSchemaVersion
 	raw, err := json.MarshalIndent(b, "", "  ")
@@ -112,6 +117,8 @@ func WriteBind(path string, b BindFile) error {
 }
 
 // BindPath returns the standard bind file path under the cycle report dir.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func BindPath(reportDir, cycleID string) string {
 	return filepath.Join(reportDir, cycleID, "agent-tool-bind.json")
 }

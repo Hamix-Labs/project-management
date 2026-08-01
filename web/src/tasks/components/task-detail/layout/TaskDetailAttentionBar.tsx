@@ -41,9 +41,12 @@ type Props = {
   autonomyMode?: "hidden" | "ready" | "on_hold";
   onToggleAutonomy?: () => void;
   autonomyPending?: boolean;
-  /** When set, shows Approve for a task in review (POST /approve). */
+  /** When set, shows Mark done for a task in pr_ready (POST /approve). */
   onApprove?: () => void;
   approvePending?: boolean;
+  /** When set, shows Approve & open PR for a task in review (POST /open-pr). */
+  onOpenPr?: () => void;
+  openPrPending?: boolean;
   /** When set, shows Polish for a task in review (POST /polish). */
   onPolish?: () => void;
   polishPending?: boolean;
@@ -64,6 +67,8 @@ export function TaskDetailToolbarActions({
   autonomyPending = false,
   onApprove,
   approvePending = false,
+  onOpenPr,
+  openPrPending = false,
   onPolish,
   polishPending = false,
 }: Props) {
@@ -73,17 +78,28 @@ export function TaskDetailToolbarActions({
     autonomyMode === "on_hold" ? "Resume" : "Pause";
   const autonomyPendingLabel =
     autonomyMode === "on_hold" ? "Resuming…" : "Pausing…";
+  const reviewActionsBusy = openPrPending || polishPending;
 
   return (
     <div className="task-detail-actions">
+      {onOpenPr ? (
+        <button
+          type="button"
+          className="task-detail-btn-approve"
+          onClick={onOpenPr}
+          disabled={saving || reviewActionsBusy || approvePending}
+        >
+          {openPrPending ? "Opening PR…" : "Approve & open PR"}
+        </button>
+      ) : null}
       {onApprove ? (
         <button
           type="button"
           className="task-detail-btn-approve"
           onClick={onApprove}
-          disabled={saving || approvePending || polishPending}
+          disabled={saving || approvePending || reviewActionsBusy}
         >
-          {approvePending ? "Approving…" : "Approve"}
+          {approvePending ? "Marking done…" : "Mark done"}
         </button>
       ) : null}
       {onPolish ? (
@@ -91,7 +107,7 @@ export function TaskDetailToolbarActions({
           type="button"
           className="task-detail-btn-polish"
           onClick={onPolish}
-          disabled={saving || approvePending || polishPending}
+          disabled={saving || reviewActionsBusy || approvePending}
         >
           Polish
         </button>

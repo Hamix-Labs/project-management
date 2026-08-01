@@ -50,6 +50,9 @@ func SelectRecoveryKind(in RecoveryKindInput) prompt.RecoveryKind {
 	if in.RunKind == taskcoredomain.PendingKindPolish {
 		return prompt.RecoveryHumanPolish
 	}
+	if in.RunKind == taskcoredomain.PendingKindOpenPR {
+		return prompt.RecoveryHumanOpenPR
+	}
 	if in.ResumeNotice {
 		return prompt.RecoveryProcessRestart
 	}

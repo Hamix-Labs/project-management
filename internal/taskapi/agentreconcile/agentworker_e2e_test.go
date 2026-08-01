@@ -417,6 +417,9 @@ func TestAgentWorkerE2E_dependencyBlocksUntilUpstreamDone(t *testing.T) {
 	}()
 
 	waitTaskStatusE2E(t, rootCtx, st, upstream.ID, taskcoredomain.StatusReview)
+	if err := st.TaskCore().DB().WithContext(rootCtx).Exec(`UPDATE tasks SET status = ? WHERE id = ?`, string(taskcoredomain.StatusPrReady), upstream.ID).Error; err != nil {
+		t.Fatalf("seed pr_ready: %v", err)
+	}
 	if _, err := st.RequestTaskApprove(rootCtx, upstream.ID, taskcoredomain.ActorUser); err != nil {
 		t.Fatalf("approve upstream: %v", err)
 	}

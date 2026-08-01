@@ -54,9 +54,12 @@ export function TaskDetailPage() {
     setAutonomyConfirmOpen,
     approveConfirmOpen,
     setApproveConfirmOpen,
+    openPrConfirmOpen,
+    setOpenPrConfirmOpen,
     polishDialogOpen,
     setPolishDialogOpen,
     approveMutation,
+    openPrMutation,
     polishMutation,
     autonomyMutation,
   } = useTaskDetailMutations(taskId);
@@ -92,6 +95,9 @@ export function TaskDetailPage() {
       approveConfirmOpen={approveConfirmOpen}
       setApproveConfirmOpen={setApproveConfirmOpen}
       approveMutation={approveMutation}
+      openPrConfirmOpen={openPrConfirmOpen}
+      setOpenPrConfirmOpen={setOpenPrConfirmOpen}
+      openPrMutation={openPrMutation}
       polishDialogOpen={polishDialogOpen}
       setPolishDialogOpen={setPolishDialogOpen}
       polishMutation={polishMutation}

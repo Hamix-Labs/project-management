@@ -35,6 +35,7 @@ export type RUMMutationKind =
   | "task_requeue"
   | "task_retry"
   | "task_approve"
+  | "task_open_pr"
   | "task_polish"
   | "task_autonomy"
   | "checklist_add"

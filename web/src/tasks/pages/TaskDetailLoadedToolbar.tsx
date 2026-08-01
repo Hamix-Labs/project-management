@@ -16,9 +16,11 @@ type TaskDetailLoadedToolbarProps = Pick<
   | "autonomyMode"
   | "setAutonomyConfirmOpen"
   | "setApproveConfirmOpen"
+  | "setOpenPrConfirmOpen"
   | "setPolishDialogOpen"
   | "setModelConfigOpen"
   | "approveMutation"
+  | "openPrMutation"
   | "polishMutation"
   | "autonomyMutation"
 >;
@@ -30,13 +32,16 @@ export function TaskDetailLoadedToolbar({
   autonomyMode,
   setAutonomyConfirmOpen,
   setApproveConfirmOpen,
+  setOpenPrConfirmOpen,
   setPolishDialogOpen,
   setModelConfigOpen,
   approveMutation,
+  openPrMutation,
   polishMutation,
   autonomyMutation,
 }: TaskDetailLoadedToolbarProps) {
   const inReview = task.status === "review";
+  const inPrReady = task.status === "pr_ready";
   const isClosed = task.status === "closed";
   const needsUser = statusNeedsUserInput(task.status);
 
@@ -78,7 +83,9 @@ export function TaskDetailLoadedToolbar({
         closePending={modals.closePending}
         onReopen={isClosed ? () => modals.reopen(task.id) : undefined}
         reopenPending={modals.reopenPending}
-        onApprove={inReview ? () => setApproveConfirmOpen(true) : undefined}
+        onOpenPr={inReview ? () => setOpenPrConfirmOpen(true) : undefined}
+        openPrPending={openPrMutation.isPending}
+        onApprove={inPrReady ? () => setApproveConfirmOpen(true) : undefined}
         approvePending={approveMutation.isPending}
         onPolish={inReview ? () => setPolishDialogOpen(true) : undefined}
         polishPending={polishMutation.isPending}

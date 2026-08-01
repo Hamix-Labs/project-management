@@ -97,6 +97,9 @@ func Run(ctx context.Context, db *gorm.DB, deps Deps) error {
 	if err := migrateTasksStatusClosed(ctx, db); err != nil {
 		return fmt.Errorf("tasks status closed: %w", err)
 	}
+	if err := migrateTasksStatusPrReady(ctx, db); err != nil {
+		return fmt.Errorf("tasks status pr_ready: %w", err)
+	}
 	if err := migrateContextKindToTag(ctx, db); err != nil {
 		return fmt.Errorf("context kind to tag: %w", err)
 	}
