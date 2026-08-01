@@ -11,6 +11,8 @@ export type CustomSelectOption =
   | {
       value: string;
       label: string;
+      /** Native tooltip; useful when `label` is a short form of a longer value. */
+      title?: string;
       pillClass?: string;
       /** Visual indent steps for hierarchical lists (e.g. parent task picker). */
       depth?: number;

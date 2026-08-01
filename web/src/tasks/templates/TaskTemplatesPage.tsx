@@ -9,7 +9,7 @@ import { TemplateFunctionBindModal } from "./components/TemplateFunctionBindModa
 import { TemplatePageBody } from "./components/TemplatePageBody";
 import { TemplatePageHeader } from "./components/TemplatePageHeader";
 import { TemplateToolbar } from "./components/TemplateToolbar";
-import { repositoryBasename } from "./templateUtils";
+import { repositoryDisplayName } from "@/lib/repositoryDisplayName";
 import { useTaskTemplatesPageModel } from "./useTaskTemplatesPageModel";
 
 export function TaskTemplatesPage() {
@@ -31,7 +31,7 @@ export function TaskTemplatesPage() {
   const repositoryNameById = useMemo(() => {
     const map = new Map<string, string>();
     for (const repo of repositoriesQuery.data ?? []) {
-      map.set(repo.id, repositoryBasename(repo.path) || repo.path);
+      map.set(repo.id, repositoryDisplayName(repo.path) || repo.path);
     }
     return map;
   }, [repositoriesQuery.data]);

@@ -151,4 +151,39 @@ describe("CustomSelect", () => {
       ),
     ).not.toBeNull();
   });
+
+  it("exposes option title on the trigger and listbox options", async () => {
+    const user = userEvent.setup();
+    const titled: CustomSelectOption[] = [
+      { value: "hamix", label: "hamix", title: "C:/Users/dev/Documents/hamix" },
+      {
+        value: "other",
+        label: "Hamix-project-management",
+        title: "C:/Users/dev/Documents/Hamix-project-management",
+      },
+    ];
+
+    render(
+      <CustomSelect
+        id="repo"
+        label="Repository"
+        value="hamix"
+        options={titled}
+        onChange={() => {}}
+      />,
+    );
+
+    const trigger = screen.getByRole("combobox", { name: /repository/i });
+    expect(trigger).toHaveTextContent("hamix");
+    expect(trigger).toHaveAttribute("title", "C:/Users/dev/Documents/hamix");
+
+    await user.click(trigger);
+    expect(screen.getByRole("option", { name: "hamix" })).toHaveAttribute(
+      "title",
+      "C:/Users/dev/Documents/hamix",
+    );
+    expect(
+      screen.getByRole("option", { name: "Hamix-project-management" }),
+    ).toHaveAttribute("title", "C:/Users/dev/Documents/Hamix-project-management");
+  });
 });

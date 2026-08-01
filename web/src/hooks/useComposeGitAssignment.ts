@@ -3,6 +3,7 @@ import { useGlobalRepositories } from "@/hooks/useGlobalRepositories";
 import { useGlobalWorktrees } from "@/hooks/useGlobalWorktrees";
 import { useGlobalBranches } from "@/hooks/useGlobalBranches";
 import { isFullyRegisteredWorktree } from "@/lib/gitWorktreeRegistration";
+import { repositoryDisplayName } from "@/lib/repositoryDisplayName";
 import { useProjectsByRepository } from "@/hooks/useProjectsByRepository";
 import {
   assignmentEquals,
@@ -103,7 +104,8 @@ export function useComposeGitAssignment(input: Input) {
 
   const repoOptions = repositories.map((r) => ({
     value: r.id,
-    label: r.path,
+    label: repositoryDisplayName(r.path) || r.path,
+    title: r.path,
   }));
 
   const worktreeOptions = worktrees.map((wt) => {

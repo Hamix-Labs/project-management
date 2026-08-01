@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { CustomSelect } from "@/components/custom-select";
 import { Button } from "@/components/ui";
 import { useGlobalRepositories } from "@/hooks/useGlobalRepositories";
+import { repositoryDisplayName } from "@/lib/repositoryDisplayName";
 import { Modal } from "@/shared/Modal";
 import { MutationErrorBanner } from "@/shared/MutationErrorBanner";
 
@@ -64,7 +65,8 @@ export function ProjectCreateDialog({
 
   const repoOptions = repositories.map((repo) => ({
     value: repo.id,
-    label: repo.path,
+    label: repositoryDisplayName(repo.path) || repo.path,
+    title: repo.path,
   }));
 
   return (
