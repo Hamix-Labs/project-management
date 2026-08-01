@@ -15,6 +15,7 @@ describe("ViewPullRequestLink", () => {
     expect(link).toHaveAttribute("target", "_blank");
     expect(link).toHaveAttribute("rel", "noopener noreferrer");
     expect(link).toHaveTextContent("View PR");
+    expect(link).toHaveClass("btn-utility", "task-detail-view-pr");
   });
 
   it("renders nothing for empty url", () => {

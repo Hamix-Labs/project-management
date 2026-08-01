@@ -12,27 +12,18 @@ import {
   TaskDetailCopyGlyph,
 } from "./TaskDetailActionGlyphs";
 import { OpenInEditorMenu } from "./OpenInEditorMenu";
-import { ViewPullRequestLink } from "./ViewPullRequestLink";
 
 type Props = {
   taskId: string;
   worktreeId?: string;
   projectId?: string;
   repositoryId?: string;
-  pullRequestUrl?: string;
 };
 
-function GitBindingActions({
-  openPath,
-  pullRequestUrl,
-}: {
-  openPath: string;
-  pullRequestUrl?: string;
-}) {
+function GitBindingActions({ openPath }: { openPath: string }) {
   const pathCopy = useCopyToClipboard("Copy path");
-  const prURL = (pullRequestUrl ?? "").trim();
   const hasPath = openPath.trim() !== "";
-  if (!hasPath && prURL === "") {
+  if (!hasPath) {
     return null;
   }
   return (
@@ -40,27 +31,22 @@ function GitBindingActions({
       className="task-detail-git-binding-actions"
       data-testid="task-detail-git-binding-actions"
     >
-      {hasPath ? (
-        <>
-          <button
-            type="button"
-            className="btn-utility task-detail-git-binding-copy"
-            onClick={() => pathCopy.copy(openPath)}
-            aria-label={
-              pathCopy.copied ? "Copied worktree path" : "Copy worktree path"
-            }
-          >
-            {pathCopy.copied ? (
-              <TaskDetailCheckGlyph className="task-detail-action-glyph" />
-            ) : (
-              <TaskDetailCopyGlyph className="task-detail-action-glyph" />
-            )}
-            {pathCopy.copyLabel}
-          </button>
-          <OpenInEditorMenu openPath={openPath} />
-        </>
-      ) : null}
-      {prURL !== "" ? <ViewPullRequestLink url={prURL} /> : null}
+      <button
+        type="button"
+        className="btn-utility task-detail-git-binding-copy"
+        onClick={() => pathCopy.copy(openPath)}
+        aria-label={
+          pathCopy.copied ? "Copied worktree path" : "Copy worktree path"
+        }
+      >
+        {pathCopy.copied ? (
+          <TaskDetailCheckGlyph className="task-detail-action-glyph" />
+        ) : (
+          <TaskDetailCopyGlyph className="task-detail-action-glyph" />
+        )}
+        {pathCopy.copyLabel}
+      </button>
+      <OpenInEditorMenu openPath={openPath} />
     </div>
   );
 }
@@ -70,7 +56,6 @@ export function TaskDetailGitBinding({
   worktreeId,
   projectId,
   repositoryId,
-  pullRequestUrl,
 }: Props) {
   const wtId = (worktreeId ?? "").trim();
   const bindingQuery = useTaskGitBinding(worktreeId);
@@ -87,18 +72,7 @@ export function TaskDetailGitBinding({
 
   if (wtId !== "") {
     if (bindingQuery.isLoading || !bindingQuery.data) {
-      const prURL = (pullRequestUrl ?? "").trim();
-      if (prURL === "") {
-        return null;
-      }
-      return (
-        <div
-          className="task-detail-git-binding"
-          data-testid="task-detail-git-binding"
-        >
-          <GitBindingActions openPath="" pullRequestUrl={prURL} />
-        </div>
-      );
+      return null;
     }
     const context = bindingQuery.data;
     const openPath = (context.openPath ?? context.worktree).trim();
@@ -109,7 +83,7 @@ export function TaskDetailGitBinding({
         data-testid="task-detail-git-binding"
       >
         <GitContextMeta context={context} />
-        <GitBindingActions openPath={openPath} pullRequestUrl={pullRequestUrl} />
+        <GitBindingActions openPath={openPath} />
       </div>
     );
   }
@@ -147,7 +121,6 @@ export function TaskDetailGitBinding({
       >
         Preparing workspace…
       </p>
-      <GitBindingActions openPath="" pullRequestUrl={pullRequestUrl} />
     </div>
   );
 }

@@ -4,7 +4,7 @@ type Props = {
   url: string;
 };
 
-/** Opens the task's GitHub PR in the default browser (same chrome as Open in). */
+/** Opens the task's GitHub PR (Open in–matched utility chrome). */
 export function ViewPullRequestLink({ url }: Props) {
   const href = url.trim();
   if (href === "") {
