@@ -74,6 +74,7 @@ function useTaskDetailOpenPrMutation(
         { scope: "listStats" },
         { scope: "detail", taskId },
         { scope: "events", taskId },
+        { scope: "cycles", taskId },
       );
       if (context) {
         rumMutationSettled(

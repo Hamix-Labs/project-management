@@ -19,5 +19,6 @@ export type TaskInvalidationScope =
   | { scope: "detail"; taskId: string }
   | { scope: "checklist"; taskId: string }
   | { scope: "events"; taskId: string }
+  | { scope: "cycles"; taskId: string }
   | { scope: "drafts" }
   | { scope: "templates" };
