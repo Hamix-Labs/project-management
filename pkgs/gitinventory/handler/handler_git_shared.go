@@ -77,7 +77,7 @@ func (h *Handler) serveListGitWorktrees(w http.ResponseWriter, r *http.Request, 
 		WriteGitStoreError(w, r, op, err)
 		return
 	}
-	staleMap, err := h.inventory.WorktreeStaleMap(r.Context(), repoID, time.Now().UTC())
+	staleMap, err := h.inventory.WorktreeStaleMap(r.Context(), rows, time.Now().UTC())
 	if err != nil {
 		// Stale hints are enrichment only; do not fail the worktree list (UI
 		// bindings depend on this endpoint returning 200).
@@ -93,6 +93,45 @@ func (h *Handler) serveListGitWorktrees(w http.ResponseWriter, r *http.Request, 
 		out = append(out, j)
 	}
 	writeJSON(w, r, op, http.StatusOK, gitWorktreesListResponse{Worktrees: out})
+}
+
+func (h *Handler) serveGetGitWorktree(w http.ResponseWriter, r *http.Request, op string) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", op)
+	r = calltrace.WithRequestRoot(r, op)
+	worktreeID := r.PathValue("worktreeId")
+	wt, err := h.inventory.GetGitWorktreeByID(r.Context(), worktreeID)
+	if err != nil {
+		WriteGitStoreError(w, r, op, err)
+		return
+	}
+	repo, err := h.inventory.GetGitRepositoryByID(r.Context(), wt.RepositoryID)
+	if err != nil {
+		WriteGitStoreError(w, r, op, err)
+		return
+	}
+	branchName := ""
+	if wt.BranchID != "" {
+		br, err := h.inventory.GetGitBranchByID(r.Context(), wt.BranchID)
+		if err != nil {
+			WriteGitStoreError(w, r, op, err)
+			return
+		}
+		branchName = br.Name
+	}
+	base := h.gitWorktreeJSON(wt)
+	writeJSON(w, r, op, http.StatusOK, gitWorktreeDetailJSON{
+		ID:                 base.ID,
+		RepositoryID:       base.RepositoryID,
+		Path:               base.Path,
+		HostPath:           base.HostPath,
+		Name:               base.Name,
+		IsMain:             base.IsMain,
+		BranchID:           base.BranchID,
+		CreatedAt:          base.CreatedAt,
+		RepositoryPath:     repo.Path,
+		RepositoryHostPath: h.paths.DisplayHostPath(repo.Path),
+		BranchName:         branchName,
+	})
 }
 
 func (h *Handler) serveDeleteGitWorktree(w http.ResponseWriter, r *http.Request, op string) {

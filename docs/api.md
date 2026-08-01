@@ -52,6 +52,7 @@ Git context follows [ADR-0037](./adr/ADR-0037-global-repos-project-tree.md) (glo
 | DELETE | `/git/repositories/{repoId}` | Deletes the repository inventory row, its worktrees/branches, and **all projects for that repo** (including the system default). **204**. **409** `has_running_task`. |
 | GET | `/git/repositories/{repoId}` | Single repository. **404** `repository_not_found`. |
 | GET | `/git/repositories/{repoId}/worktrees` | `{ worktrees: [...] }` including optional `stale` (idle terminal tasks older than 24h). |
+| GET | `/git/worktrees/{worktreeId}` | Single worktree with resolved `repository_path`, `repository_host_path`, and `branch_name` (for task-detail binding). **404** `worktree_not_found`. No `stale` enrichment. |
 | GET | `/git/repositories/{repoId}/worktrees/checkout-status` | Live git checkout state for **branch-bound** registered worktrees only: `{ worktrees: [{ worktree_id, available, reason?, dirty?, detached?, head_commit_at?, has_upstream?, ahead?, behind?, upstream? }] }`. |
 | POST | `/git/repositories/{repoId}/sync` | Fetch `origin` and refresh registered metadata without discovering operator worktrees. **202** `{ status, report }` (same shape as reconcile). **400** when fetch fails. |
 | POST | `/git/repositories/{repoId}/reconcile` | Repair registered repository/worktree paths against `git worktree list`. Body `{ bootstrap_path?, repair?, dry_run? }` (all optional). Does **not** insert unregistered worktrees. When the stored main path is missing, pass `bootstrap_path` or use **Relocate**. **202** `{ status, report }`. |

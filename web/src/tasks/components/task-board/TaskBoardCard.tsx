@@ -14,6 +14,7 @@ type Props = {
   projectName?: string;
   showProject: boolean;
   showTags: boolean;
+  prefetchTaskDetail: (id: string) => void;
 };
 
 function BranchGlyph() {
@@ -67,6 +68,7 @@ export function TaskBoardCard({
   projectName,
   showProject,
   showTags,
+  prefetchTaskDetail,
 }: Props) {
   const summary = taskListRowSubtitle({
     promptPreview: previewTextFromPrompt(task.initial_prompt),
@@ -79,11 +81,14 @@ export function TaskBoardCard({
   const showProjectChip = Boolean(showProject && projectName);
   const showChips =
     Boolean(branch) || showProjectChip || visibleTags.length > 0;
+  const onIntent = () => prefetchTaskDetail(task.id);
 
   return (
     <Link
       to={`/tasks/${encodeURIComponent(task.id)}`}
       className="task-board-card"
+      onPointerEnter={onIntent}
+      onFocus={onIntent}
     >
       <div className="task-board-card__top">
         <span className="task-board-card__id">{taskDisplayRef(task)}</span>

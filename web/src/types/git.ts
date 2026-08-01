@@ -22,6 +22,13 @@ export type GitWorktree = {
   stale?: boolean;
 };
 
+/** GET /git/worktrees/{id} — worktree plus resolved repo paths and branch name. */
+export type GitWorktreeDetail = GitWorktree & {
+  repository_path: string;
+  repository_host_path: string;
+  branch_name: string;
+};
+
 export type GitBranch = {
   id: string;
   repository_id: string;

@@ -138,11 +138,11 @@ func (a *API) SyncGitRepository(ctx context.Context, repoID string) (gitinventor
 	return a.git.SyncGitRepository(ctx, repoID)
 }
 
-// WorktreeStaleMap reports stale managed worktrees for a repository.
+// WorktreeStaleMap reports stale flags for the given worktrees.
 //
 //funclogmeasure:skip category=delegate-already-logs reason="Thin store facade; gitinventory.store.WorktreeStaleMap emits operation trace."
-func (a *API) WorktreeStaleMap(ctx context.Context, repoID string, now time.Time) (map[string]bool, error) {
-	return a.git.WorktreeStaleMap(ctx, repoID, now)
+func (a *API) WorktreeStaleMap(ctx context.Context, worktrees []gitdomain.GitWorktree, now time.Time) (map[string]bool, error) {
+	return a.git.WorktreeStaleMap(ctx, worktrees, now)
 }
 
 // CreateGitWorktree adds a worktree on disk and persists the row (project-scoped route compat).

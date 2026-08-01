@@ -7,6 +7,7 @@ import type {
   GitReconcileSkipped,
   GitWorktree,
   GitWorktreeCheckoutStatus,
+  GitWorktreeDetail,
 } from "@/types/git";
 import { isRecord, parseBooleanField, parseNonEmptyString, parseOptionalNonEmptyId, parseString } from "./parseTaskApiCore";
 
@@ -110,6 +111,25 @@ export function parseGitWorktreeList(raw: unknown): GitWorktree[] {
 
 export function parseGitWorktree(raw: unknown): GitWorktree {
   return parseGitWorktreeRow(raw, "worktree");
+}
+
+export function parseGitWorktreeDetail(raw: unknown): GitWorktreeDetail {
+  const base = parseGitWorktreeRow(raw, "worktree");
+  if (!isRecord(raw)) {
+    throw new Error("Invalid API response: worktree must be object");
+  }
+  return {
+    ...base,
+    repository_path: parseString(raw.repository_path, "worktree.repository_path"),
+    repository_host_path:
+      raw.repository_host_path === undefined || raw.repository_host_path === null
+        ? ""
+        : parseString(raw.repository_host_path, "worktree.repository_host_path"),
+    branch_name:
+      raw.branch_name === undefined || raw.branch_name === null
+        ? ""
+        : parseString(raw.branch_name, "worktree.branch_name"),
+  };
 }
 
 export function parseGitBranchList(raw: unknown): GitBranch[] {

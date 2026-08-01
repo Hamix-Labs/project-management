@@ -25,7 +25,7 @@ export function TaskDetailGitBinding({
   projectId,
 }: Props) {
   const wtId = (worktreeId ?? "").trim();
-  const bindingQuery = useTaskGitBinding(worktreeId, projectId);
+  const bindingQuery = useTaskGitBinding(worktreeId);
   const pathCopy = useCopyToClipboard("Copy path");
 
   const projectKey = (projectId ?? "").trim();
