@@ -79,7 +79,8 @@ Schema migrate is a **separate** step (`.\scripts\migrate.ps1`), same as browser
 
 ## Logging
 
-- JSONL: `logs/hamix-desktop-*.jsonl` (`HAMIX_LOG_DIR`, `HAMIX_LOG_LEVEL` for file min level)
-- Stderr: **warn+** by default (slow SQL, errors) — not a full SQL/HTTP dump
+- JSONL + stderr share `HAMIX_LOG_LEVEL` (default `info`) via `internal/applog`
+- Per-query SQL is **Debug**; slow SQL is **Warn** — default Info shows startup/access, not every query
+- Set `HAMIX_LOG_LEVEL=debug` when you want the SQL firehose
 
 See [docs/configuration.md](../../docs/configuration.md).

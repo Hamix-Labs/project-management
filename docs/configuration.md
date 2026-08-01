@@ -28,11 +28,11 @@ The two surfaces do not overlap. Anything in `app_settings` is **not** driven by
 | `HAMIX_API_TOKEN` | No | — | When set, `Authorization: Bearer <token>` required on every route except `/health*` and `/metrics`. |
 | `HAMIX_HTTP_REQUEST_TIMEOUT` | No | `30s` | Go duration. Request execution timeout for non-SSE routes via context deadline. `0` disables. `GET /events` is exempt. |
 | `HAMIX_LOG_DIR` | No | `./logs` | Directory for JSON log files. `taskapi -logdir` flag overrides. |
-| `HAMIX_LOG_LEVEL` | No | `info` | Minimum `slog` level for the JSONL file (`debug` / `info` / `warn` / `error`). `taskapi -loglevel` flag overrides. `hamix-desktop` also mirrors **warn+** to stderr (info SQL/HTTP stay in the file only). |
+| `HAMIX_LOG_LEVEL` | No | `info` | Minimum `slog` level (`debug` / `info` / `warn` / `error`). `taskapi -loglevel` flag overrides. Per-query SQL is **Debug**; slow SQL is **Warn**. `hamix-desktop` mirrors the same min level to stderr and the JSONL file. |
 | `HAMIX_DISABLE_LOGGING` | No | — | `1`/`true`/`yes`/`on`: no JSONL file; only `slog.Error` to stderr. Same as `taskapi -disable-logging`. |
 | `HAMIX_MIGRATE` | No | — | `1`/`true`/`yes`/`on`: run `postgres.Migrate` at taskapi startup. Same as `taskapi -migrate`. Default: skip migrate. |
 | `HAMIX_GIT_RECONCILE_ON_STARTUP` | No | — | When set to `repair-only`, taskapi runs a **conservative** git reconcile for each registered repository whose stored main path still exists on disk: path updates and branch head refresh only (`AllowRemove=false`, no bootstrap, no `git worktree repair`). Skips repos when the stored path is missing — operators must use the sync/relocate HTTP APIs. See [worktrees-and-branches.md](domain/worktrees-and-branches.md). |
-| `HAMIX_GORM_SLOW_QUERY_MS` | No | `200` | Statements slower than this log at `Warn`. `0` disables slow-SQL branch. |
+| `HAMIX_GORM_SLOW_QUERY_MS` | No | `200` | Statements slower than this log at `Warn`. Non-slow SQL is Debug. `0` disables the slow-SQL Warn branch. |
 | `HAMIX_RATE_LIMIT_PER_MIN` | No | `120` | Per-IP token bucket. `0` disables. Key is `RemoteAddr` host (no trusted `X-Forwarded-For`). Exempt: `/health*`, `/metrics`. Over limit: `429 rate limit exceeded` with `Retry-After: 60`. |
 | `HAMIX_IDEMPOTENCY_TTL` | No | `24h` | Idempotency cache TTL for `Idempotency-Key`. `0` disables. In-process only — not shared across replicas. |
 | `HAMIX_IDEMPOTENCY_MAX_ENTRIES` | No | `2048` | Max idempotency cache entries. `0` disables entry-count bounding. |
@@ -64,7 +64,7 @@ The two surfaces do not overlap. Anything in `app_settings` is **not** driven by
 
 Migrate is **not** automatic on desktop start (same as `taskapi` / `dev.ps1`). Use `.\scripts\migrate.ps1` or `dev-desktop.ps1 -Migrate`. Schema drift / runtime start failure prints remediation to stderr and quits the window.
 
-Logging: JSONL under `HAMIX_LOG_DIR` as `hamix-desktop-*.jsonl` (`internal/applog`); stderr defaults to **warn+** so SQL/HTTP info does not flood the terminal.
+Logging: JSONL under `HAMIX_LOG_DIR` as `hamix-desktop-*.jsonl` (`internal/applog`); stderr uses the same min level as the file (default Info). Per-query SQL stays at Debug so default Info is sparse; set `HAMIX_LOG_LEVEL=debug` to see every SQL line.
 
 `taskapi` is unchanged: it still requires `DATABASE_URL` after `.env` load. Desktop never writes the connection string into the DB-backed settings row.
 

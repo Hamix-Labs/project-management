@@ -92,9 +92,10 @@ func installDesktopLogging() (*os.File, error) {
 	if err != nil {
 		return nil, err
 	}
-	stderrLevel := slog.LevelWarn
-	fmt.Fprintf(os.Stderr, "%s: writing structured logs to %s (file min %s; stderr min %s)\n",
-		cmdName, logPath, fileLevel.String(), stderrLevel.String())
+	// Mirror file min level on stderr so Info startup/access stays visible; per-query SQL is Debug.
+	stderrLevel := fileLevel
+	fmt.Fprintf(os.Stderr, "%s: writing structured logs to %s (min level %s; file + stderr)\n",
+		cmdName, logPath, fileLevel.String())
 	applog.Install(applog.InstallConfig{
 		File:          logFile,
 		FileLevel:     fileLevel,
