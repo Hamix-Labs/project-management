@@ -2,6 +2,7 @@ import type {
   GitBranch,
   GitRepository,
   GitWorktree,
+  GitWorktreeDetail,
 } from "@/types/git";
 import type { ProjectListResponse } from "@/types/project";
 import { parseProjectListResponse } from "./projects";
@@ -9,6 +10,7 @@ import {
   parseGitBranchList,
   parseGitRepository,
   parseGitRepositoryList,
+  parseGitWorktreeDetail,
   parseGitWorktreeList,
 } from "./parseGitApi";
 import { assertTaskPathId } from "./taskRequestBounds";
@@ -42,6 +44,18 @@ export async function createGlobalGitRepository(input: {
 export async function deleteGlobalGitRepository(repositoryId: string): Promise<void> {
   const repoId = assertTaskPathId(repositoryId, "repository id");
   await gitFetchVoid(`${gitRoot}/repositories/${encodeURIComponent(repoId)}`, gitDeleteInit());
+}
+
+export async function getGlobalGitWorktree(
+  worktreeId: string,
+  options?: { signal?: AbortSignal },
+): Promise<GitWorktreeDetail> {
+  const wtId = assertTaskPathId(worktreeId, "worktree id");
+  const raw = await gitFetchJson(
+    `${gitRoot}/worktrees/${encodeURIComponent(wtId)}`,
+    gitJsonGetInit(options?.signal),
+  );
+  return parseGitWorktreeDetail(raw);
 }
 
 export async function listGlobalGitWorktrees(

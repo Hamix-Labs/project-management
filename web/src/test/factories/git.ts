@@ -1,4 +1,4 @@
-import type { GitBranch, GitRepository, GitWorktree } from "@/types/git";
+import type { GitBranch, GitRepository, GitWorktree, GitWorktreeDetail } from "@/types/git";
 import type { JsonBodyType } from "msw";
 
 export const FACTORY_GIT_REPO_ID = "00000000-0000-4000-8000-000000000010";
@@ -30,6 +30,20 @@ export function gitWorktreeFactory(overrides: Partial<GitWorktree> = {}): GitWor
     is_main: true,
     branch_id: FACTORY_GIT_BRANCH_ID,
     created_at: "2026-06-22T12:00:00Z",
+    ...overrides,
+  };
+}
+
+export function gitWorktreeDetailFactory(
+  overrides: Partial<GitWorktreeDetail> = {},
+): GitWorktreeDetail {
+  const base = gitWorktreeFactory(overrides);
+  const repo = gitRepositoryFactory();
+  return {
+    ...base,
+    repository_path: repo.path,
+    repository_host_path: repo.host_path,
+    branch_name: "main",
     ...overrides,
   };
 }
