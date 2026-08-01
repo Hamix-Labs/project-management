@@ -25,6 +25,7 @@ export type AgentRunProgressPayload = {
 export type SyncEffect =
   | { kind: "invalidate"; queryKey: readonly unknown[] }
   | { kind: "patch_task_detail"; taskId: string; data: unknown }
+  | { kind: "insert_task_list"; taskId: string; data: unknown }
   | { kind: "patch_cycle_detail"; taskId: string; cycleId: string; data: unknown }
   | { kind: "push_agent_run_progress"; payload: AgentRunProgressPayload }
   | { kind: "queue_progress_stream"; taskId: string; cycleId: string }
