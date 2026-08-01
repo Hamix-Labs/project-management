@@ -132,9 +132,10 @@
   line-height: 1.35;
 }
 
-/* Shared outline chrome for Copy path + Open in (inspiration card actions). */
+/* Shared outline chrome for Copy path + Open in + View PR. */
 button.task-detail-git-binding-copy.btn-utility,
-button.task-detail-open-in-trigger.btn-utility {
+button.task-detail-open-in-trigger.btn-utility,
+a.task-detail-view-pr.btn-utility {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -153,6 +154,7 @@ button.task-detail-open-in-trigger.btn-utility {
   border-radius: var(--radius-md);
   box-shadow: none;
   cursor: pointer;
+  text-decoration: none;
   transition:
     background var(--duration-normal) var(--ease-out),
     border-color var(--duration-normal) var(--ease-out),
@@ -160,14 +162,17 @@ button.task-detail-open-in-trigger.btn-utility {
 }
 
 button.task-detail-git-binding-copy.btn-utility:hover,
-button.task-detail-open-in-trigger.btn-utility:hover {
+button.task-detail-open-in-trigger.btn-utility:hover,
+a.task-detail-view-pr.btn-utility:hover {
   background: var(--bg-elevated);
   border-color: var(--border-chrome-muted);
   color: var(--text-primary);
+  text-decoration: none;
 }
 
 button.task-detail-git-binding-copy.btn-utility:focus-visible,
-button.task-detail-open-in-trigger.btn-utility:focus-visible {
+button.task-detail-open-in-trigger.btn-utility:focus-visible,
+a.task-detail-view-pr.btn-utility:focus-visible {
   outline: none;
   box-shadow: var(--shadow-focus);
 }

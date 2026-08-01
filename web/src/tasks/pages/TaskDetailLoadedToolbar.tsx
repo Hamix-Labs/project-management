@@ -5,6 +5,7 @@ import {
   TaskDetailToolbarActions,
 } from "../components/task-detail";
 import { TokenUsageChip } from "../components/task-detail/TokenUsageChip";
+import { ViewPullRequestLink } from "../components/task-detail/layout/ViewPullRequestLink";
 import { useTaskCycles } from "../hooks/useTaskCycles";
 import { canEditTask } from "../task-display/canEditTask";
 import {
@@ -94,6 +95,7 @@ export function TaskDetailLoadedToolbar({
               className="task-detail-status-badge"
               data-needs-user={needsUser ? "true" : undefined}
             />
+            <ViewPullRequestLink url={task.pull_request_url ?? ""} />
           </div>
         </div>
         <TaskDetailSchedule task={task} />
