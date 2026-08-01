@@ -30,7 +30,8 @@ show_help() {
   sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'
   cat <<'EOF'
 
-Default (no --live): npm build → copy into cmd/hamix-desktop/frontend/dist → run desktop binary.
+Default (no --live): npm build → copy into cmd/hamix-desktop/frontend/dist →
+  ./scripts/build-desktop.sh (go build -tags desktop,production) → run binary.
 DSN: DATABASE_URL in .env (or first-run / Settings UI). See docs/adr/ADR-0095-desktop-wails-host.md.
 EOF
 }
@@ -85,7 +86,8 @@ fi
 
 ( cd "$ROOT/web" && npm run build )
 node "$COPY_SCRIPT"
-go build -o "$DESKTOP_EXE" ./cmd/hamix-desktop
+# Wails tags live only in build-desktop.* (ADR-0095 / manual builds guide).
+"$ROOT/scripts/build-desktop.sh" --out "$DESKTOP_EXE"
 
 echo "starting $DESKTOP_EXE (Ctrl+C quits)" >&2
 exec "$DESKTOP_EXE"

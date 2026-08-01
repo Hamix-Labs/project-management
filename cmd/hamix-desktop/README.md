@@ -38,13 +38,28 @@ npm run build
 cd ../cmd/hamix-desktop
 node ./scripts/copy-web-dist.mjs
 cd ../..
-go build -o hamix-desktop-dev.exe ./cmd/hamix-desktop
+.\scripts\build-desktop.ps1   # go build -tags desktop,production (required)
 .\hamix-desktop-dev.exe
 ```
+
+```bash
+./scripts/build-desktop.sh
+./hamix-desktop-dev
+```
+
+**Build tags:** Untagged `go build ./cmd/hamix-desktop` is invalid — Wails ships a stub that shows an error dialog. Always use `scripts/build-desktop.*` (`-tags desktop,production`) or `wails dev` / `wails build` (CLI sets tags). See [Wails manual builds](https://wails.io/docs/guides/manual-builds/).
 
 Install the Wails CLI once for `-Live`: `go install github.com/wailsapp/wails/v2/cmd/wails@latest`
 
 ## Build
+
+Preferred for local/dev binaries (Go + Node only, no Wails CLI):
+
+```powershell
+.\scripts\build-desktop.ps1
+```
+
+Optional packaged release via Wails CLI:
 
 ```powershell
 wails build

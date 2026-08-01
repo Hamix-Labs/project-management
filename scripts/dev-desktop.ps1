@@ -24,7 +24,8 @@ Two-step workflow (same as browser):
   1. .\scripts\migrate.ps1
   2. .\scripts\dev-desktop.ps1
 
-Default (no -Live): npm build → copy into cmd/hamix-desktop/frontend/dist → run desktop binary.
+Default (no -Live): npm build → copy into cmd/hamix-desktop/frontend/dist →
+  .\scripts\build-desktop.ps1 (go build -tags desktop,production) → run binary.
 DSN: DATABASE_URL in .env (or first-run / Settings UI). See docs/adr/ADR-0095-desktop-wails-host.md.
 "@
 }
@@ -92,7 +93,8 @@ Or omit -Live to build the SPA and run the embedded desktop binary.
     & npm run build
     Set-Location $repo
     & node $copyScript
-    & go build -o $desktopExe "./cmd/hamix-desktop"
+    # Wails tags live only in build-desktop.* (ADR-0095 / manual builds guide).
+    & (Join-Path $PSScriptRoot "build-desktop.ps1") -Out $desktopExe
 
     Write-Host "starting $desktopExe (Ctrl+C quits the window process)" -ForegroundColor DarkGray
     $desktop = Start-Process -FilePath $desktopExe -WorkingDirectory $repo -PassThru -NoNewWindow

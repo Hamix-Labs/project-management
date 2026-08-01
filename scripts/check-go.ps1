@@ -52,9 +52,9 @@ $script:StepStats = ""
 if ($TestsOnly) {
     $script:Total = if ($Group) { 2 } else { 1 }
 } elseif ($LintOnly) {
-    $script:Total = if ($SkipFunclog) { 6 } else { 7 }
+    $script:Total = if ($SkipFunclog) { 7 } else { 8 }
 } else {
-    $script:Total = if ($SkipFunclog) { 9 } else { 10 }
+    $script:Total = if ($SkipFunclog) { 10 } else { 11 }
 }
 
 function Format-Duration {
@@ -327,6 +327,63 @@ function Step-TestGroupCoverage {
     Write-OkLine $label $sw.Elapsed
 }
 
+function Step-DesktopBuildTagsContract {
+    $label = "desktop build tags"
+    Write-StepPrefix
+    Write-Host -NoNewline "$label "
+
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
+    $errors = @()
+    $tagNeedle = '-tags desktop,production'
+    $tagNeedleAlt = '-tags "desktop,production"'
+
+    foreach ($rel in @(
+            'scripts/build-desktop.ps1',
+            'scripts/build-desktop.sh'
+        )) {
+        $path = Join-Path $repo $rel
+        if (-not (Test-Path $path)) {
+            $errors += "missing $rel"
+            continue
+        }
+        $text = Get-Content -Raw $path
+        if ($text -notmatch [regex]::Escape($tagNeedle) -and $text -notmatch [regex]::Escape($tagNeedleAlt)) {
+            $errors += "$rel must contain go build -tags desktop,production"
+        }
+    }
+
+    foreach ($pair in @(
+            @{ Rel = 'scripts/dev-desktop.ps1'; Needle = 'build-desktop.ps1' },
+            @{ Rel = 'scripts/dev-desktop.sh'; Needle = 'build-desktop.sh' }
+        )) {
+        $path = Join-Path $repo $pair.Rel
+        if (-not (Test-Path $path)) {
+            $errors += "missing $($pair.Rel)"
+            continue
+        }
+        $text = Get-Content -Raw $path
+        if ($text -notmatch [regex]::Escape($pair.Needle)) {
+            $errors += "$($pair.Rel) must invoke $($pair.Needle)"
+        }
+        # Forbid ad-hoc host builds; MCP/other go build lines are fine.
+        if ($text -match 'go\s+build[^\r\n]*cmd/hamix-desktop') {
+            $errors += "$($pair.Rel) must not go build ./cmd/hamix-desktop (use build-desktop.*)"
+        }
+    }
+
+    $sw.Stop()
+
+    if ($errors.Count -gt 0) {
+        Write-Host "FAILED" -ForegroundColor Red
+        Write-Host "Wails desktop build-tag contract (ADR-0095):" -ForegroundColor Red
+        $errors | ForEach-Object { Write-Host "  $_" -ForegroundColor Red }
+        Fail-Step $label 1 "use scripts/build-desktop.* with -tags desktop,production"
+    }
+
+    $script:Passed++
+    Write-OkLine $label $sw.Elapsed
+}
+
 function Invoke-CoverageGate {
     $label = "coverage gate ($Group)"
     Write-StepPrefix
@@ -444,6 +501,7 @@ Step-SSEPublishBoundary
 Step-ProjectsBoundary
 Step-GitinventoryBoundary
 Step-SettingsBoundary
+Step-DesktopBuildTagsContract
 
 if ($LintOnly) {
     Step-TestGroupCoverage
