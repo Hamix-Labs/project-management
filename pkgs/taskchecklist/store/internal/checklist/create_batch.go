@@ -10,7 +10,6 @@ import (
 	checklistdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/domain"
 	checklistmodel "github.com/AlexsanderHamir/Hamix/pkgs/taskchecklist/store/model"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
-	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store/taskload"
 	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
 	eventsaudit "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/store/audit"
 	"github.com/google/uuid"
@@ -32,18 +31,9 @@ func SeedDefinitionItemsAtCreateInTx(tx *gorm.DB, taskID string, items []CreateC
 	if len(items) == 0 {
 		return nil
 	}
-	if _, err := taskload.LoadTask(tx, taskID); err != nil {
-		return err
-	}
-	var maxOrder int
-	row := tx.Model(&checklistmodel.TaskChecklistItem{}).Select("COALESCE(MAX(sort_order), 0)").Where("task_id = ?", taskID)
-	if err := row.Scan(&maxOrder).Error; err != nil {
-		return fmt.Errorf("checklist order: %w", err)
-	}
-	seq, err := eventsaudit.NextEventSeq(tx, taskID)
-	if err != nil {
-		return err
-	}
+	// Caller just inserted the task in this tx — skip LoadTask / MAX(sort_order).
+	maxOrder := 0
+	seq := int64(2) // task_created used seq 1
 	for _, raw := range items {
 		text := strings.TrimSpace(raw.Text)
 		if text == "" {

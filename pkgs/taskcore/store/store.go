@@ -117,6 +117,13 @@ func (s *Store) Create(ctx context.Context, in CreateTaskInput, by domain.Actor)
 	return tasks.Create(ctx, s.db, in, by)
 }
 
+// AllocateNextTaskNumbers returns k contiguous per-project numbers (one lock).
+func (s *Store) AllocateNextTaskNumbers(ctx context.Context, projectID string, k int) ([]int, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcore.store.AllocateNextTaskNumbers",
+		"project_id", projectID, "count", k)
+	return tasks.AllocateNextTaskNumbers(ctx, s.db, projectID, k)
+}
+
 func (s *Store) Update(ctx context.Context, id string, in UpdateTaskInput, by domain.Actor) (*domain.Task, domain.Status, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcore.store.Update")
 	return tasks.Update(ctx, s.db, id, in, by)

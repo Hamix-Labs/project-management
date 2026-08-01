@@ -22,6 +22,9 @@ type CreateTaskInput struct {
 	Status          domain.Status
 	Priority        domain.Priority
 	ProjectID       *string
+	// Number, when non-nil, skips per-project allocateNextTaskNumber and uses
+	// this value (for batch instantiate pre-allocation).
+	Number          *int
 	Runner          string
 	CursorModel     string
 	PickupNotBefore *time.Time

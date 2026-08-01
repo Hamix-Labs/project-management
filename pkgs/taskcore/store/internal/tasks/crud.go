@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
+	"time"
 
 	projectsdomain "github.com/AlexsanderHamir/Hamix/pkgs/projects/domain"
 	projectmodel "github.com/AlexsanderHamir/Hamix/pkgs/projects/store/model"
@@ -69,12 +70,15 @@ func Create(ctx context.Context, db *gorm.DB, in CreateInput, by domain.Actor) (
 	if err != nil {
 		return nil, fmt.Errorf("create task: %w", err)
 	}
-	if err := hydrateDependsOn(ctx, db, t); err != nil {
-		return nil, err
+	if len(in.DependsOn) > 0 {
+		if err := hydrateDependsOn(ctx, db, t); err != nil {
+			return nil, err
+		}
+	} else {
+		t.DependsOn = nil
 	}
-	if err := hydrateCreatedAt(ctx, db, t); err != nil {
-		return nil, err
-	}
+	now := time.Now().UTC()
+	t.CreatedAt = &now
 	return t, nil
 }
 
@@ -238,11 +242,19 @@ func createTaskInTx(tx *gorm.DB, t *domain.Task, in CreateInput, by domain.Actor
 		if n == 0 {
 			return fmt.Errorf("%w: project not found", domain.ErrInvalidInput)
 		}
-		num, err := allocateNextTaskNumber(tx, *t.ProjectID)
-		if err != nil {
-			return err
+		if in.Number != nil {
+			num := *in.Number
+			if num < 1 {
+				return fmt.Errorf("%w: task number must be >= 1", domain.ErrInvalidInput)
+			}
+			t.Number = &num
+		} else {
+			num, err := allocateNextTaskNumber(tx, *t.ProjectID)
+			if err != nil {
+				return err
+			}
+			t.Number = &num
 		}
-		t.Number = &num
 	}
 	if err := tx.Create(model.FromDomainTaskPtr(t)).Error; err != nil {
 		if storekernel.IsDuplicatePrimaryKey(err, "tasks") {
