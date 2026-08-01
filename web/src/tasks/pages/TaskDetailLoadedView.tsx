@@ -33,6 +33,9 @@ export type TaskDetailLoadedViewProps = {
   approveConfirmOpen: boolean;
   setApproveConfirmOpen: (open: boolean) => void;
   approveMutation: ReturnType<typeof useTaskDetailMutations>["approveMutation"];
+  openPrConfirmOpen: boolean;
+  setOpenPrConfirmOpen: (open: boolean) => void;
+  openPrMutation: ReturnType<typeof useTaskDetailMutations>["openPrMutation"];
   polishDialogOpen: boolean;
   setPolishDialogOpen: (open: boolean) => void;
   polishMutation: ReturnType<typeof useTaskDetailMutations>["polishMutation"];
@@ -55,6 +58,9 @@ export function TaskDetailLoadedView({
   approveConfirmOpen,
   setApproveConfirmOpen,
   approveMutation,
+  openPrConfirmOpen,
+  setOpenPrConfirmOpen,
+  openPrMutation,
   polishDialogOpen,
   setPolishDialogOpen,
   polishMutation,
@@ -76,9 +82,11 @@ export function TaskDetailLoadedView({
         autonomyMode={autonomyMode}
         setAutonomyConfirmOpen={setAutonomyConfirmOpen}
         setApproveConfirmOpen={setApproveConfirmOpen}
+        setOpenPrConfirmOpen={setOpenPrConfirmOpen}
         setPolishDialogOpen={setPolishDialogOpen}
         setModelConfigOpen={setModelConfigOpen}
         approveMutation={approveMutation}
+        openPrMutation={openPrMutation}
         polishMutation={polishMutation}
         autonomyMutation={autonomyMutation}
       />
@@ -94,6 +102,9 @@ export function TaskDetailLoadedView({
         approveConfirmOpen={approveConfirmOpen}
         setApproveConfirmOpen={setApproveConfirmOpen}
         approveMutation={approveMutation}
+        openPrConfirmOpen={openPrConfirmOpen}
+        setOpenPrConfirmOpen={setOpenPrConfirmOpen}
+        openPrMutation={openPrMutation}
         polishDialogOpen={polishDialogOpen}
         setPolishDialogOpen={setPolishDialogOpen}
         polishMutation={polishMutation}

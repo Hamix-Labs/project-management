@@ -13,12 +13,13 @@ const (
 	RetryResume RetryMode = "resume"
 )
 
-// PendingRunKind distinguishes failure-retry from polish in pending_retry JSON.
+// PendingRunKind distinguishes failure-retry, polish, and open-pr in pending_retry JSON.
 type PendingRunKind string
 
 const (
 	PendingKindRetry  PendingRunKind = "retry"
 	PendingKindPolish PendingRunKind = "polish"
+	PendingKindOpenPR PendingRunKind = "open_pr"
 )
 
 // PendingRetry is ephemeral intent set by POST /tasks/{id}/retry or
@@ -57,7 +58,7 @@ func (p *PendingRetry) Validate() error {
 	}
 	kind := p.NormalizeKind()
 	switch kind {
-	case PendingKindRetry, PendingKindPolish:
+	case PendingKindRetry, PendingKindPolish, PendingKindOpenPR:
 	default:
 		return fmt.Errorf("%w: pending kind", ErrInvalidInput)
 	}
@@ -73,7 +74,8 @@ func (p *PendingRetry) Validate() error {
 	}
 	p.ParentCycleID = parent
 	instructions := strings.TrimSpace(p.Instructions)
-	if kind == PendingKindPolish {
+	switch kind {
+	case PendingKindPolish:
 		if p.Mode != RetryResume {
 			return fmt.Errorf("%w: polish requires mode resume", ErrInvalidInput)
 		}
@@ -84,7 +86,15 @@ func (p *PendingRetry) Validate() error {
 		p.FlaggedCriterionIDs = normalizeIDList(p.FlaggedCriterionIDs)
 		p.NewCriterionIDs = normalizeIDList(p.NewCriterionIDs)
 		p.SkipVerify = len(p.FlaggedCriterionIDs) == 0 && len(p.NewCriterionIDs) == 0
-	} else {
+	case PendingKindOpenPR:
+		if p.Mode != RetryResume {
+			return fmt.Errorf("%w: open_pr requires mode resume", ErrInvalidInput)
+		}
+		p.Instructions = ""
+		p.FlaggedCriterionIDs = nil
+		p.NewCriterionIDs = nil
+		p.SkipVerify = true
+	default:
 		p.Instructions = ""
 		p.FlaggedCriterionIDs = nil
 		p.NewCriterionIDs = nil

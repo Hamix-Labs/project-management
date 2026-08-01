@@ -30,6 +30,14 @@ func (h *Harness) composeExecutePrompt(ctx context.Context, task *taskcoredomain
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.Harness.composeExecutePrompt",
 		"task_id", task.ID, "cycle_id", cycle.ID, "resume_notice", opts.resumeNotice)
 	promptText := task.InitialPrompt
+	runKind := runKindFromCycleMeta(cycle)
+	if runKind == taskcoredomain.PendingKindOpenPR {
+		promptText = prompt.AppendOpenPRNotice(promptText, cycle, opts.knownCommits)
+		if !state.git.gitSnap.Skipped {
+			promptText = prompt.AppendOpenPRGitPolicy(promptText)
+		}
+		return promptText
+	}
 	promptText = prompt.InjectCriteria(
 		promptText,
 		checklistItemsForPrompt(state.verify.verifySnap.Criteria),
@@ -38,7 +46,6 @@ func (h *Harness) composeExecutePrompt(ctx context.Context, task *taskcoredomain
 		h.agentMCPActive(ctx),
 	)
 	retryMode := retryModeFromCycleMeta(cycle)
-	runKind := runKindFromCycleMeta(cycle)
 	if runKind == taskcoredomain.PendingKindPolish {
 		promptText = prompt.AppendPolishNotice(promptText, cycle, polishNoticeInputFromCycle(cycle, state, opts.knownCommits))
 	} else if bundle := opts.continuation; bundle != nil {
@@ -295,6 +302,10 @@ func (h *Harness) runCycleLoop(parentCtx context.Context, task *taskcoredomain.T
 		}
 	}
 	if opts.skipVerify {
+		if runKindFromCycleMeta(cycle) == taskcoredomain.PendingKindOpenPR {
+			h.runCycleLoopFinalizeOpenPR(parentCtx, task, cycle, state)
+			return
+		}
 		h.runCycleLoopFinalizeSuccessOpts(parentCtx, task, cycle, state, false)
 		return
 	}

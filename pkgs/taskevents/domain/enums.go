@@ -25,6 +25,8 @@ const (
 	EventTaskFailed            EventType = "task_failed"
 	EventTaskRetryRequested    EventType = "task_retry_requested"
 	EventTaskPolishRequested   EventType = "task_polish_requested"
+	EventOpenPRRequested       EventType = "open_pr_requested"
+	EventPROpened              EventType = "pr_opened"
 	// EventTaskPickupFailed is emitted when the worker cannot persist ready→running
 	// (e.g. store/jsonb errors). The task stays ready; pickup is deferred.
 	EventTaskPickupFailed EventType = "task_pickup_failed"

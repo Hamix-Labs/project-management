@@ -33,6 +33,8 @@ const (
 	verifyReportFileName          = "verify-report.json"
 	criteriaSubmitReceiptFileName = "criteria-report.submitted"
 	verifySubmitReceiptFileName   = "verify-report.submitted"
+	pullRequestReportFileName     = "pull-request.json"
+	pullRequestReceiptFileName    = "pull-request.submitted"
 )
 
 type criteriaReport struct {
@@ -96,6 +98,16 @@ func VerifyReportPath(reportDir, cycleID string) string {
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func CriteriaSubmitReceiptPath(reportDir, cycleID string) string {
 	return filepath.Join(ReportCycleDir(reportDir, cycleID), criteriaSubmitReceiptFileName)
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func PullRequestReportPath(reportDir, cycleID string) string {
+	return filepath.Join(ReportCycleDir(reportDir, cycleID), pullRequestReportFileName)
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func PullRequestSubmitReceiptPath(reportDir, cycleID string) string {
+	return filepath.Join(ReportCycleDir(reportDir, cycleID), pullRequestReceiptFileName)
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
@@ -294,6 +306,44 @@ func WriteVerifyReport(reportDir, cycleID string, criteria []VerifyEntry) error 
 		Criteria:      criteria,
 	}
 	return writeJSONAtomic(VerifyReportPath(reportDir, cycleID), rep)
+}
+
+// PullRequestReport is written by hamix.create_pull_request after a successful open.
+type PullRequestReport struct {
+	SchemaVersion int    `json:"schema_version"`
+	URL           string `json:"url"`
+	Number        int    `json:"number,omitempty"`
+	Title         string `json:"title,omitempty"`
+	Base          string `json:"base,omitempty"`
+	Head          string `json:"head,omitempty"`
+}
+
+// WritePullRequestReport atomically writes pull-request.json for the cycle.
+func WritePullRequestReport(reportDir, cycleID string, rep PullRequestReport) error {
+	if err := EnsureReportCycleDir(reportDir, cycleID); err != nil {
+		return err
+	}
+	if rep.SchemaVersion == 0 {
+		rep.SchemaVersion = CurrentSchemaVersion
+	}
+	return writeJSONAtomic(PullRequestReportPath(reportDir, cycleID), rep)
+}
+
+// ParsePullRequestReport reads pull-request.json for the cycle.
+func ParsePullRequestReport(reportDir, cycleID string) (PullRequestReport, error) {
+	var rep PullRequestReport
+	if err := readJSONFile(PullRequestReportPath(reportDir, cycleID), &rep); err != nil {
+		return PullRequestReport{}, err
+	}
+	if strings.TrimSpace(rep.URL) == "" {
+		return PullRequestReport{}, fmt.Errorf("%w: empty url", ErrCriteriaReportInvalid)
+	}
+	return rep, nil
+}
+
+// RequirePullRequestSubmitReceipt ensures the PR receipt exists and matches nonce.
+func RequirePullRequestSubmitReceipt(reportDir, cycleID, nonce string) error {
+	return requireSubmitReceipt(PullRequestSubmitReceiptPath(reportDir, cycleID), nonce)
 }
 
 // WriteSubmitReceipt writes the MCP submit receipt next to the report.

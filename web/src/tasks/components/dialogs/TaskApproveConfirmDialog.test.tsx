@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { TaskApproveConfirmDialog } from "./TaskApproveConfirmDialog";
 
 describe("TaskApproveConfirmDialog", () => {
-  it("confirms approve", async () => {
+  it("confirms mark done", async () => {
     const user = userEvent.setup();
     const onConfirm = vi.fn();
     render(
@@ -16,8 +16,8 @@ describe("TaskApproveConfirmDialog", () => {
         onConfirm={onConfirm}
       />,
     );
-    expect(screen.getByRole("heading", { name: /approve this task/i })).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /^approve$/i }));
+    expect(screen.getByRole("heading", { name: /mark this task done/i })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /^mark done$/i }));
     expect(onConfirm).toHaveBeenCalledOnce();
   });
 });

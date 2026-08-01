@@ -9,7 +9,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 )
 
-// postTaskApprove handles POST /tasks/{id}/approve for human completion after review.
+// postTaskApprove handles POST /tasks/{id}/approve for human completion after pr_ready.
 func (h *Handler) postTaskApprove(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.Handler.postTaskApprove")
 	const op = "tasks.approve"

@@ -56,6 +56,7 @@ type (
 	PickupNotBeforePatch    = tasks.PickupNotBeforePatch
 	RequestRetryInput       = tasks.RequestRetryInput
 	RequestPolishInput      = tasks.RequestPolishInput
+	RequestOpenPRInput      = tasks.RequestOpenPRInput
 	AgentPickupResult       = tasks.AgentPickupResult
 	ListFilter              = tasks.ListFilter
 	ReadyTaskQueueCursor    = ready.QueueCursor
@@ -104,6 +105,11 @@ func (s *Store) RequestTaskApprove(ctx context.Context, taskID string, by domain
 func (s *Store) RequestTaskPolish(ctx context.Context, in RequestPolishInput, by domain.Actor) (*domain.Task, domain.Status, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcore.store.RequestTaskPolish", "task_id", in.TaskID)
 	return tasks.RequestTaskPolish(ctx, s.db, in, by)
+}
+
+func (s *Store) RequestTaskOpenPR(ctx context.Context, in RequestOpenPRInput, by domain.Actor) (*domain.Task, domain.Status, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcore.store.RequestTaskOpenPR", "task_id", in.TaskID)
+	return tasks.RequestTaskOpenPR(ctx, s.db, in, by)
 }
 
 func (s *Store) Create(ctx context.Context, in CreateTaskInput, by domain.Actor) (*domain.Task, error) {

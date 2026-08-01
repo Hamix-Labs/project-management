@@ -8,10 +8,10 @@ import (
 	"gorm.io/gorm"
 )
 
-// migrateTasksStatusClosed (schema rev 19) extends chk_tasks_status to include
-// closed (operator exit replacing hard delete).
-func migrateTasksStatusClosed(ctx context.Context, db *gorm.DB) error {
-	slog.Debug("trace", "operation", "postgres.migrateTasksStatusClosed")
+// migrateTasksStatusPrReady (schema rev 27) extends chk_tasks_status to include
+// pr_ready (PR opened; awaiting human mark-done).
+func migrateTasksStatusPrReady(ctx context.Context, db *gorm.DB) error {
+	slog.Debug("trace", "operation", "postgres.migrateTasksStatusPrReady")
 	if db.Dialector == nil || db.Dialector.Name() != "postgres" {
 		return nil
 	}

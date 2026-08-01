@@ -21,6 +21,8 @@ const (
 	RecoveryVerifyInfra           RecoveryKind = "verify_infra_retry"
 	// RecoveryHumanPolish is Cursor --resume stdin for operator polish (not failure recovery).
 	RecoveryHumanPolish RecoveryKind = "human_polish"
+	// RecoveryHumanOpenPR is Cursor --resume stdin for approve-and-open-PR.
+	RecoveryHumanOpenPR RecoveryKind = "human_open_pr"
 )
 
 // CriterionFailure is one failed criterion for structured verify recovery text.
@@ -51,6 +53,8 @@ type RecoveryContext struct {
 	ToolOnly bool
 	// Polish drives RecoveryHumanPolish deltas (ComposePolishDirective).
 	Polish PolishNoticeInput
+	// OpenPRKnownCommits drives RecoveryHumanOpenPR deltas.
+	OpenPRKnownCommits []cyclesdomain.TaskCycleCommit
 }
 
 const (
@@ -77,6 +81,10 @@ func ComposeRecoveryDelta(ctx RecoveryContext) string {
 func composeExecuteRecoveryDelta(b *strings.Builder, ctx RecoveryContext) {
 	if ctx.Kind == RecoveryHumanPolish {
 		composeHumanPolishRecoveryDelta(b, ctx)
+		return
+	}
+	if ctx.Kind == RecoveryHumanOpenPR {
+		b.WriteString(ComposeOpenPRDirective(&cyclesdomain.TaskCycle{ID: ctx.CycleID}, ctx.OpenPRKnownCommits))
 		return
 	}
 	fmt.Fprintf(b, recoverySectionContinuation+"\n\n", ctx.AttemptSeq)

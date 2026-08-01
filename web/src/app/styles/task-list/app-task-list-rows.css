@@ -276,6 +276,12 @@
   border-color: var(--pill-review-border);
 }
 
+.cell-pill--status-pr_ready {
+  background: var(--pill-review-bg);
+  color: var(--pill-review-text);
+  border-color: var(--pill-review-border);
+}
+
 .cell-pill--status-done {
   background: var(--pill-success-fill-bg);
   color: var(--pill-success-fill-text);

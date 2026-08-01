@@ -88,24 +88,39 @@ describe("TaskDetailToolbarActions", () => {
     ).toBeDisabled();
   });
 
-  it("renders Approve and Polish when review handlers are provided", async () => {
+  it("renders Approve & open PR and Polish when review handlers are provided", async () => {
     const user = userEvent.setup();
-    const onApprove = vi.fn();
+    const onOpenPr = vi.fn();
     const onPolish = vi.fn();
     render(
       <TaskDetailToolbarActions
         saving={false}
         onEdit={vi.fn()}
         onClose={vi.fn()}
-        onApprove={onApprove}
+        onOpenPr={onOpenPr}
         onPolish={onPolish}
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: /^approve$/i }));
+    await user.click(screen.getByRole("button", { name: /approve & open pr/i }));
     await user.click(screen.getByRole("button", { name: /^polish$/i }));
-    expect(onApprove).toHaveBeenCalledOnce();
+    expect(onOpenPr).toHaveBeenCalledOnce();
     expect(onPolish).toHaveBeenCalledOnce();
+  });
+
+  it("renders Mark done when approve handler is provided", async () => {
+    const user = userEvent.setup();
+    const onApprove = vi.fn();
+    render(
+      <TaskDetailToolbarActions
+        saving={false}
+        onEdit={vi.fn()}
+        onClose={vi.fn()}
+        onApprove={onApprove}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: /^mark done$/i }));
+    expect(onApprove).toHaveBeenCalledOnce();
   });
 
   it("renders Model configuration only when showModelConfig is true", async () => {

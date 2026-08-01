@@ -75,6 +75,9 @@ func TestListQueueCandidates_excludesOpenDependency(t *testing.T) {
 	if _, _, err := Update(ctx, db, dep.ID, UpdateInput{Status: &review}, domain.ActorUser); err != nil {
 		t.Fatal(err)
 	}
+	if err := db.WithContext(ctx).Exec(`UPDATE tasks SET status = ? WHERE id = ?`, string(domain.StatusPrReady), dep.ID).Error; err != nil {
+		t.Fatal(err)
+	}
 	if _, _, err := RequestTaskApprove(ctx, db, dep.ID, domain.ActorUser); err != nil {
 		t.Fatal(err)
 	}

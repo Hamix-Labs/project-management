@@ -5,6 +5,7 @@ import { TaskModelConfigModal } from "../components/task-detail";
 import {
   AutonomyConfirmDialog,
   TaskApproveConfirmDialog,
+  TaskOpenPRConfirmDialog,
   TaskPolishDialog,
 } from "../components/dialogs";
 import { taskQueryKeys } from "../task-query";
@@ -22,6 +23,9 @@ type TaskDetailLoadedDialogsProps = Pick<
   | "approveConfirmOpen"
   | "setApproveConfirmOpen"
   | "approveMutation"
+  | "openPrConfirmOpen"
+  | "setOpenPrConfirmOpen"
+  | "openPrMutation"
   | "polishDialogOpen"
   | "setPolishDialogOpen"
   | "polishMutation"
@@ -40,6 +44,9 @@ export function TaskDetailLoadedDialogs({
   approveConfirmOpen,
   setApproveConfirmOpen,
   approveMutation,
+  openPrConfirmOpen,
+  setOpenPrConfirmOpen,
+  openPrMutation,
   polishDialogOpen,
   setPolishDialogOpen,
   polishMutation,
@@ -82,6 +89,27 @@ export function TaskDetailLoadedDialogs({
         />
       ) : null}
 
+      {openPrConfirmOpen ? (
+        <TaskOpenPRConfirmDialog
+          taskTitle={task.title}
+          saving={saving}
+          pending={openPrMutation.isPending}
+          error={
+            openPrMutation.isError
+              ? errorMessage(
+                  openPrMutation.error,
+                  "Couldn't queue approve and open PR.",
+                )
+              : null
+          }
+          onCancel={() => {
+            setOpenPrConfirmOpen(false);
+            if (openPrMutation.isError) openPrMutation.reset();
+          }}
+          onConfirm={() => openPrMutation.mutate()}
+        />
+      ) : null}
+
       {approveConfirmOpen ? (
         <TaskApproveConfirmDialog
           taskTitle={task.title}
@@ -89,7 +117,7 @@ export function TaskDetailLoadedDialogs({
           pending={approveMutation.isPending}
           error={
             approveMutation.isError
-              ? errorMessage(approveMutation.error, "Couldn't approve task.")
+              ? errorMessage(approveMutation.error, "Couldn't mark task done.")
               : null
           }
           onCancel={() => {

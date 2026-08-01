@@ -26,10 +26,11 @@ criteria/verify report submit and authoritative git commits.
 By default every execute/verify Cursor run gets a Hamix stdio MCP server bound
 to the current cycle. Execute agents must call `hamix.commit` for every new git
 commit (index only; stage via Shell) and `hamix.submit_criteria_report` for the
-criteria report. Verify agents call `hamix.submit_verify_report`. The MCP host
-validates args, writes artifacts under `ReportDir`, and writes submit receipts
-with the bind nonce where applicable. The harness requires the criteria/verify
-receipt before accepting those JSON reports, and validates the commit register
+criteria report. Open-PR runs call `hamix.create_pull_request` (push + `gh pr create`
++ receipt) instead of criteria submit. Verify agents call `hamix.submit_verify_report`.
+The MCP host validates args, writes artifacts under `ReportDir`, and writes submit
+receipts with the bind nonce where applicable. The harness requires the criteria/verify
+or pull-request receipt before accepting those outcomes, and validates the commit register
 against `cycle_base_sha..HEAD` after execute ([cycle-commits.md](./cycle-commits.md)).
 
 ## Key concepts
@@ -37,7 +38,7 @@ against `cycle_base_sha..HEAD` after execute ([cycle-commits.md](./cycle-commits
 | Term | Meaning |
 | --- | --- |
 | **Bind file** | `ReportDir/<cycle_id>/agent-tool-bind.json` — session contract for tools |
-| **Receipt** | `criteria-report.submitted` / `verify-report.submitted` next to the report |
+| **Receipt** | `criteria-report.submitted` / `verify-report.submitted` / `pull-request.submitted` next to the report |
 | **Commit register** | `commit-register.json` — SHAs appended by `hamix.commit` (ADR-0093) |
 | **Sidecar** | Shared parse/write package used by harness and MCP |
 | **Tool-only** | Orphan criteria/verify JSON without a matching receipt is rejected |

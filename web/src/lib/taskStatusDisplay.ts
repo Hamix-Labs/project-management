@@ -11,6 +11,8 @@ export function statusListLabel(status: Status): string {
       return "Blocked";
     case "review":
       return "Review";
+    case "pr_ready":
+      return "PR ready";
     case "done":
       return "Done";
     case "failed":
@@ -48,9 +50,10 @@ export const STATUS_META: Record<Status, StatusMeta> = {
   },
   // Match cell-pill--status-review (purple), not warning amber.
   review: { label: statusListLabel("review"), tone: "review", order: 3 },
-  blocked: { label: statusListLabel("blocked"), tone: "neutral", order: 4 },
-  failed: { label: statusListLabel("failed"), tone: "danger", order: 5 },
-  done: { label: statusListLabel("done"), tone: "success", order: 6 },
-  on_hold: { label: statusListLabel("on_hold"), tone: "neutral", order: 7 },
-  closed: { label: statusListLabel("closed"), tone: "neutral", order: 8 },
+  pr_ready: { label: statusListLabel("pr_ready"), tone: "review", order: 4 },
+  blocked: { label: statusListLabel("blocked"), tone: "neutral", order: 5 },
+  failed: { label: statusListLabel("failed"), tone: "danger", order: 6 },
+  done: { label: statusListLabel("done"), tone: "success", order: 7 },
+  on_hold: { label: statusListLabel("on_hold"), tone: "neutral", order: 8 },
+  closed: { label: statusListLabel("closed"), tone: "neutral", order: 9 },
 };

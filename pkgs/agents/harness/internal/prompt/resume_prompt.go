@@ -189,6 +189,55 @@ func AppendGitCommitPolicy(prompt string, operatorResume bool) string {
 	return b.String() + prompt
 }
 
+// AppendOpenPRNotice prepends the human approve-and-open-PR directive.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func AppendOpenPRNotice(prompt string, cycle *cyclesdomain.TaskCycle, known []cyclesdomain.TaskCycleCommit) string {
+	return ComposeOpenPRDirective(cycle, known) + prompt
+}
+
+// ComposeOpenPRDirective builds the open-PR execute directive for full prompts and resume deltas.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func ComposeOpenPRDirective(cycle *cyclesdomain.TaskCycle, known []cyclesdomain.TaskCycleCommit) string {
+	if cycle == nil {
+		return ""
+	}
+	var b strings.Builder
+	b.WriteString("## Approve and open pull request\n\n")
+	b.WriteString("The human reviewed this work and approved opening a pull request ")
+	b.WriteString(fmt.Sprintf("(new cycle_id=%s).\n\n", cycle.ID))
+	b.WriteString("You are continuing the same Cursor conversation. Do not rediscover the original task, ")
+	b.WriteString("rewrite the implementation, or re-submit criteria. Your only job is to open a clear pull request ")
+	b.WriteString("for the work already completed.\n\n")
+	if block := FormatKnownCommitsForResume(known); block != "" {
+		b.WriteString(block)
+	}
+	b.WriteString("### Required action\n\n")
+	b.WriteString("Call the MCP tool `hamix.create_pull_request` with a high-quality title and body. ")
+	b.WriteString("That tool pushes the branch and creates the PR. Do **not** use Shell `git push` or Shell `gh`.\n\n")
+	b.WriteString("### Pull request writing standards\n\n")
+	b.WriteString("Write for a busy reviewer who did not watch this agent run:\n\n")
+	b.WriteString("- **Title:** one specific line that states the change (imperative mood is fine). Avoid vague titles like \"Update code\" or \"Fix stuff\".\n")
+	b.WriteString("- **Summary:** two to four full sentences explaining *why* this change exists and what it does. Prefer complete sentences over abrupt fragments.\n")
+	b.WriteString("- **What changed:** a short bullet list of concrete scope (files/areas/behaviors). Omit noise.\n")
+	b.WriteString("- **How to verify:** a checklist of commands or manual steps a reviewer can run.\n")
+	b.WriteString("- **Risks / notes:** call out migrations, feature flags, follow-ups, or intentional non-goals when relevant.\n")
+	b.WriteString("- Do not dump raw chat logs, cycle IDs, or internal Hamix jargon into the PR body.\n\n")
+	return b.String()
+}
+
+// AppendOpenPRGitPolicy appends git rules for open-pr runs (push only via MCP tool).
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func AppendOpenPRGitPolicy(prompt string) string {
+	var b strings.Builder
+	b.WriteString("## Git and pull request (open-pr run)\n\n")
+	b.WriteString("Do not create new feature work. If a tiny commit is truly required before the PR, stage with Shell `git add` and commit only via `hamix.commit`.\n")
+	b.WriteString("Push and open the PR **only** via `hamix.create_pull_request`. Do not Shell `git push`, amend, rebase, force-push, or freeform-Write receipt files.\n\n")
+	return b.String() + prompt
+}
+
 // FormatKnownCommitsForResume lists commits already indexed for the task.
 //
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."

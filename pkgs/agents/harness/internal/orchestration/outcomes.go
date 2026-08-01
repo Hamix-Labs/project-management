@@ -33,11 +33,11 @@ type VerifyEffects struct {
 // ExecuteEffects lists side effects the harness root applies after DecideExecutePostRun.
 type ExecuteEffects struct {
 	ContinueToClaimAcceptance bool
-	StopLoop         bool
-	TerminateFailed  bool
-	TransitionTask   taskcoredomain.Status
-	Reason           TerminationReason
-	ResultSummary    string
+	StopLoop                  bool
+	TerminateFailed           bool
+	TransitionTask            taskcoredomain.Status
+	Reason                    TerminationReason
+	ResultSummary             string
 }
 
 // FinalizeEffects lists side effects after DecideFinalizeSuccess.

@@ -87,7 +87,9 @@ import (
 // Rev 26 (ADR-0091): reintroduce app_settings.stream_idle_stuck_seconds —
 // stdout silence fail-clean (default 900; 0 disables). Orthogonal to
 // max_run_duration_seconds.
-const SchemaRevision = 26
+//
+// Rev 27: tasks.status CHECK includes pr_ready (PR opened; awaiting mark-done).
+const SchemaRevision = 27
 
 const schemaMetaRowID = 1
 

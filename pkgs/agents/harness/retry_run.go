@@ -38,6 +38,10 @@ func (h *Harness) RunWithRetry(parentCtx context.Context, task *taskcoredomain.T
 		h.runPolish(parentCtx, task, intent)
 		return
 	}
+	if intent.NormalizeKind() == taskcoredomain.PendingKindOpenPR {
+		h.runOpenPR(parentCtx, task, intent)
+		return
+	}
 	switch intent.Mode {
 	case taskcoredomain.RetryFresh:
 		h.runFreshRetry(parentCtx, task, intent)
@@ -167,6 +171,58 @@ func (h *Harness) runPolish(parentCtx context.Context, task *taskcoredomain.Task
 		resumeNotice: true,
 		knownCommits: cp.KnownCommits,
 		skipVerify:   intent.SkipVerify,
+	})
+}
+
+// runOpenPR resumes the succeeded parent conversation to push and open a PR via MCP.
+func (h *Harness) runOpenPR(parentCtx context.Context, task *taskcoredomain.Task, intent *taskcoredomain.PendingRetry) {
+	cp, err := h.loadCheckpointFromParent(parentCtx, intent.ParentCycleID)
+	if err != nil {
+		slog.Warn("agent harness open_pr checkpoint failed", "cmd", calltrace.LogCmd,
+			"operation", "agent.harness.Harness.runOpenPR.checkpoint_err",
+			"task_id", task.ID, "parent_cycle_id", intent.ParentCycleID, "err", err)
+		h.failTaskAfterRetryPrep(parentCtx, task.ID, "retry_checkpoint_failed")
+		return
+	}
+	startedAt := h.opts.Clock()
+	lockedPasses, err := h.seedPolishLockedPasses(parentCtx, task.ID, nil, nil)
+	if err != nil {
+		slog.Warn("agent harness open_pr seed lockedPasses failed", "cmd", calltrace.LogCmd,
+			"operation", "agent.harness.Harness.runOpenPR.seed_err",
+			"task_id", task.ID, "err", err)
+		h.failTaskAfterRetryPrep(parentCtx, task.ID, "retry_checkpoint_failed")
+		return
+	}
+	state := processState{
+		cycle:  cycleLifecycleState{startedAt: startedAt},
+		verify: verifyLifecycleState{lockedPasses: lockedPasses},
+	}
+	defer h.recoverFromPanic(&state, *task)
+
+	parentID := intent.ParentCycleID
+	cycle, ok := h.startCycle(parentCtx, task, &state, startCycleOpts{
+		parentCycleID: &parentID,
+		retryMode:     taskcoredomain.RetryResume,
+		runKind:       taskcoredomain.PendingKindOpenPR,
+		skipVerify:    true,
+	})
+	if !ok {
+		h.bestEffortFailTask(parentCtx, task.ID)
+		return
+	}
+	snap, err := h.loadVerificationSnapshot(parentCtx, task)
+	if err != nil {
+		slog.Error("agent harness open_pr verification snapshot failed", "cmd", calltrace.LogCmd,
+			"operation", "agent.harness.Harness.runOpenPR.verify_snap_err",
+			"task_id", task.ID, "cycle_id", cycle.ID, "err", err)
+		h.bestEffortTerminate(parentCtx, &state, task.ID, cyclesdomain.CycleStatusFailed, "verification_snapshot_load_failed")
+		return
+	}
+	state.verify.verifySnap = snap
+	h.runCycleLoop(parentCtx, task, cycle, &state, cycleLoopOpts{
+		resumeNotice: true,
+		knownCommits: cp.KnownCommits,
+		skipVerify:   true,
 	})
 }
 

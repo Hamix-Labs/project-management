@@ -243,6 +243,9 @@ func applyStatusPatch(tx *gorm.DB, taskID string, cur *domain.Task, st *domain.S
 	if *st == domain.StatusDone {
 		return fmt.Errorf("%w: status done requires POST /tasks/{id}/approve", domain.ErrInvalidInput)
 	}
+	if *st == domain.StatusPrReady && by != domain.ActorAgent {
+		return fmt.Errorf("%w: status pr_ready is set by open-pr finalize only", domain.ErrInvalidInput)
+	}
 	b, err := storekernel.EventPairJSON(string(cur.Status), string(*st))
 	if err != nil {
 		return err

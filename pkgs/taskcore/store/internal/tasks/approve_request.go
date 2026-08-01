@@ -36,9 +36,10 @@ type approvalGrantedPayload struct {
 	CycleID string `json:"cycle_id,omitempty"`
 }
 
-// RequestTaskApprove transitions a task from review → done after human approval.
-// Returns (task, prevStatus, err). Emits status_changed, approval_granted, and
-// on_task_done (commits from the latest succeeded cycle).
+// RequestTaskApprove transitions a task from pr_ready → done after human
+// completion (PR already opened). Returns (task, prevStatus, err).
+// Emits status_changed and on_task_done (commits from the latest succeeded cycle).
+// approval_granted is emitted earlier by POST /open-pr.
 func RequestTaskApprove(ctx context.Context, db *gorm.DB, taskID string, by domain.Actor) (*domain.Task, domain.Status, error) {
 	defer storekernel.DeferLatency(storekernel.OpUpdateTask)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.tasks.RequestTaskApprove", "task_id", taskID)
@@ -64,13 +65,13 @@ func RequestTaskApprove(ctx context.Context, db *gorm.DB, taskID string, by doma
 		}
 		dcur := model.ToDomainTask(cur)
 		origStatus = dcur.Status
-		if dcur.Status != domain.StatusReview {
-			return fmt.Errorf("%w: task status is %q, want review", domain.ErrInvalidInput, dcur.Status)
+		if dcur.Status != domain.StatusPrReady {
+			return fmt.Errorf("%w: task status is %q, want pr_ready", domain.ErrInvalidInput, dcur.Status)
 		}
 		if err := checkliststore.ValidateCanMarkDoneInTx(tx, taskID); err != nil {
 			return err
 		}
-		cycleID, commits, err := latestSucceededCycleCommitsInTx(tx, taskID)
+		_, commits, err := latestSucceededCycleCommitsInTx(tx, taskID)
 		if err != nil {
 			return err
 		}
@@ -78,22 +79,11 @@ func RequestTaskApprove(ctx context.Context, db *gorm.DB, taskID string, by doma
 		if err != nil {
 			return err
 		}
-		statusPayload, err := storekernel.EventPairJSON(string(domain.StatusReview), string(domain.StatusDone))
+		statusPayload, err := storekernel.EventPairJSON(string(domain.StatusPrReady), string(domain.StatusDone))
 		if err != nil {
 			return err
 		}
 		if err := eventsaudit.AppendEvent(tx, taskID, nextSeq, taskeventsdomain.EventStatusChanged, by, statusPayload); err != nil {
-			return err
-		}
-		nextSeq++
-		approvalPayload, err := json.Marshal(approvalGrantedPayload{
-			From:    string(domain.StatusReview),
-			CycleID: cycleID,
-		})
-		if err != nil {
-			return err
-		}
-		if err := eventsaudit.AppendEvent(tx, taskID, nextSeq, taskeventsdomain.EventApprovalGranted, by, approvalPayload); err != nil {
 			return err
 		}
 		nextSeq++

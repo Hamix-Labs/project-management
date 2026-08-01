@@ -24,6 +24,8 @@ const LABELS: Record<TaskEventType, string> = {
   task_failed: "Task failed",
   task_retry_requested: "Retry requested",
   task_polish_requested: "Polish requested",
+  open_pr_requested: "Open PR requested",
+  pr_opened: "Pull request opened",
   task_pickup_failed: "Agent pickup failed",
   cycle_started: "Attempt started",
   cycle_completed: "Attempt completed",

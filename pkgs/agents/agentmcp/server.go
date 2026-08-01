@@ -40,6 +40,7 @@ func (r *Registry) RegisterAll(server *mcp.Server, sess *Session) {
 func DefaultTools() []Tool {
 	return []Tool{
 		commitTool{},
+		createPullRequestTool{},
 		submitCriteriaTool{},
 	}
 }

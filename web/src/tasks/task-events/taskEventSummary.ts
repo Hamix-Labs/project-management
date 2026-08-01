@@ -268,6 +268,8 @@ const CHECKLIST_SCOPE_TYPES = new Set<TaskEventType>([
 const APPROVAL_SCOPE_TYPES = new Set<TaskEventType>([
   "approval_requested",
   "approval_granted",
+  "open_pr_requested",
+  "pr_opened",
 ]);
 
 const TASK_SCOPE_TYPES = new Set<TaskEventType>([

@@ -104,3 +104,9 @@ type RequestPolishInput struct {
 	FlaggedCriterionIDs []string
 	NewCriteria         []CreateChecklistItemInput
 }
+
+// RequestOpenPRInput is the store payload for operator open-pr from review.
+type RequestOpenPRInput struct {
+	TaskID        string
+	ParentCycleID string
+}

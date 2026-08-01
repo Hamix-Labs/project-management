@@ -73,6 +73,20 @@ func (a *API) RequestTaskPolish(ctx context.Context, in taskcorestore.RequestPol
 	return updated, nil
 }
 
+func (a *API) RequestTaskOpenPR(ctx context.Context, in taskcorestore.RequestOpenPRInput, by taskcoredomain.Actor) (*taskcoredomain.Task, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.RequestTaskOpenPR", "task_id", in.TaskID)
+	updated, prev, err := a.taskcore.RequestTaskOpenPR(ctx, in, by)
+	if err != nil {
+		return nil, err
+	}
+	if updated == nil {
+		return nil, nil
+	}
+	now := time.Now().UTC()
+	a.applyNotifyDecision(ctx, *updated, scheduling.DecideNotifyAfterReadyTransition(prev, updated, false, now))
+	return updated, nil
+}
+
 func (a *API) Create(ctx context.Context, in taskcorestore.CreateTaskInput, by taskcoredomain.Actor) (*taskcoredomain.Task, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.Create")
 	t, err := a.taskcore.Create(ctx, in, by)
