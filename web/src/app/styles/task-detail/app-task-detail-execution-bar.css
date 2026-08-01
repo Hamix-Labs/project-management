@@ -42,6 +42,12 @@
   pointer-events: none;
 }
 
+/* View PR's btn-utility chrome sets margin: 0 with higher specificity;
+   restore the sibling inset so the hairline sits between status and the link. */
+.task-detail-execution-bar > a.task-detail-view-pr.btn-utility {
+  margin-left: calc(var(--space-3) * 2);
+}
+
 .task-detail-execution-bar__status {
   display: inline-flex;
   align-items: center;
@@ -58,6 +64,10 @@
 
 @media (max-width: 720px) {
   .task-detail-execution-bar > * + * {
+    margin-left: 0;
+  }
+
+  .task-detail-execution-bar > a.task-detail-view-pr.btn-utility {
     margin-left: 0;
   }
 
