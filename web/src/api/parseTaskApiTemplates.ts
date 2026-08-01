@@ -1,10 +1,10 @@
-import type { Task, TaskComposePayload } from "@/types/taskCore";
+import type { TaskComposePayload } from "@/types/taskCore";
 import type {
   TaskTemplateDetail,
   TaskTemplateSummary,
 } from "@/types/taskTemplates";
 import { parseComposePayloadCore } from "./parseTaskApiCompose";
-import { parseDependsOnList, parseTask } from "./parseTaskApiTasks";
+import { parseDependsOnList } from "./parseTaskApiTasks";
 import {
   isRecord,
   parseFiniteNumber,
@@ -180,22 +180,24 @@ export function parseTaskTemplateDetail(value: unknown): TaskTemplateDetail {
 }
 
 export function parseTaskTemplateInstantiateResponse(value: unknown): {
-  tasks: Task[];
+  accepted: boolean;
+  total: number;
   errors: { template_id: string; error: string }[];
 } {
   if (!isRecord(value)) {
     throw new Error("Invalid API response: instantiate response must be object");
   }
-  const tasksRaw = value.tasks;
+  const accepted = value.accepted === true;
+  const totalRaw = value.total;
+  const total =
+    typeof totalRaw === "number" && Number.isFinite(totalRaw) ? Math.max(0, Math.floor(totalRaw)) : 0;
   const errorsRaw = value.errors;
-  if (!Array.isArray(tasksRaw)) {
-    throw new Error("Invalid API response: tasks must be array");
-  }
   if (!Array.isArray(errorsRaw)) {
     throw new Error("Invalid API response: errors must be array");
   }
   return {
-    tasks: tasksRaw.map((t) => parseTask(t)),
+    accepted,
+    total,
     errors: errorsRaw.map((row, i) => {
       if (!isRecord(row)) {
         throw new Error(`Invalid API response: errors[${i}] must be object`);

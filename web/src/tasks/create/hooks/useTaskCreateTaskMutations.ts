@@ -7,16 +7,11 @@ import {
 import { rumMutationSettled } from "@/observability";
 import {
   applyCreatedTaskToCache,
-  applyCreatedTasksToCache,
   beginGuardedTaskWrite,
   endGuardedTaskWrite,
   invalidateTaskCacheAsync,
   invalidateTaskListAndStats,
 } from "@/tasks/mutations";
-import {
-  beginBulkTaskMutationGuard,
-  endBulkTaskMutationGuard,
-} from "@/tasks/sync";
 import { normalizeChecklistItems } from "../../task-compose/checklistRequirement";
 import type { CreateTaskMutationInput } from "../types";
 
@@ -80,19 +75,12 @@ export function useTaskCreateTaskMutations(input: {
     mutationFn: (items: import("@/api").TaskTemplateInstantiateItem[]) =>
       apiInstantiateTemplates(items),
     onSuccess: async (result) => {
-      if (result.tasks.length === 0) {
+      if (!result.accepted || result.total < 1) {
         return;
       }
-      const taskIds = result.tasks.map((task) => task.id);
-      beginBulkTaskMutationGuard(taskIds);
-      const startedAtMs = performance.now();
-      try {
-        applyCreatedTasksToCache(input.queryClient, result.tasks);
-        await invalidateTaskListAndStats(input.queryClient);
-        rumMutationSettled("task_create", performance.now() - startedAtMs, 201);
-      } finally {
-        endBulkTaskMutationGuard(taskIds);
-      }
+      // Tasks arrive via per-create SSE task_created → list cache insert.
+      await invalidateTaskCacheAsync(input.queryClient, { scope: "templates" });
+      rumMutationSettled("task_create", 0, 202);
     },
   });
 
