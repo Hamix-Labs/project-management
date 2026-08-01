@@ -156,7 +156,10 @@ func (h *Harness) startCycle(ctx context.Context, task *taskcoredomain.Task, sta
 		meta = mergeCycleMetaBytes(meta, map[string]any{"polish_new_ids": opts.newIDs})
 	}
 	if opts.skipVerify {
-		meta = mergeCycleMetaBytes(meta, map[string]any{"polish_skip_verify": true})
+		meta = mergeCycleMetaBytes(meta, map[string]any{"skip_claim_acceptance": true})
+		if opts.runKind == taskcoredomain.PendingKindPolish {
+			meta = mergeCycleMetaBytes(meta, map[string]any{"polish_skip_verify": true})
+		}
 	}
 	in := cyclescontract.StartCycleInput{
 		TaskID:        task.ID,

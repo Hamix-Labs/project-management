@@ -488,6 +488,9 @@ func TestRunWithRetry_polishSkipVerifySkipsVerifyPhase(t *testing.T) {
 	if !strings.Contains(meta, `"polish_skip_verify":true`) {
 		t.Fatalf("meta=%s want polish_skip_verify", meta)
 	}
+	if !strings.Contains(meta, `"skip_claim_acceptance":true`) {
+		t.Fatalf("meta=%s want skip_claim_acceptance", meta)
+	}
 	items, err := st.ListChecklistForSubject(ctx, tsk.ID)
 	if err != nil {
 		t.Fatal(err)

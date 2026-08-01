@@ -1,16 +1,18 @@
 package execute
 
-import "github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"log/slog"
+	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/cursorresume"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/git"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/orchestration"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/reports"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
@@ -100,7 +102,9 @@ func (s *Service) RunPhase(
 		ports.emitProgress(parentCtx, task.ID, cycle.ID, execPhase,
 			runner.SetupProgressEvent(runner.ProgressRunStateSetupIngest, "Validating commit register…"))
 		publish := ports.Publish
-		out.IngestOutcome, out.IngestErr = s.git.IngestExecuteCommits(parentCtx, task.ID, cycle, execPhase.PhaseSeq, snap, publish)
+		policy := visitPolicyFromCycle(cycle)
+		ingestOpts := git.IngestExecuteCommitsOpts{Mode: policy.CommitIngest}
+		out.IngestOutcome, out.IngestErr = s.git.IngestExecuteCommits(parentCtx, task.ID, cycle, execPhase.PhaseSeq, snap, publish, ingestOpts)
 		if out.IngestErr != nil {
 			slog.Warn("agent harness commit ingest error", "cmd", calltrace.LogCmd,
 				"operation", "agent.harness.execute.RunPhase.commit_ingest_err",
@@ -114,4 +118,22 @@ func (s *Service) RunPhase(
 
 	out.PostRunInput = BuildPostRunInput(parentCtx, runErr, operatorCancelled, snap, out.IngestAttempted, out.IngestOutcome, out.IngestErr)
 	return out
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure cycle meta decode for execute visit policy."
+func visitPolicyFromCycle(cycle *cyclesdomain.TaskCycle) orchestration.ExecuteVisitPolicy {
+	runKind := taskcoredomain.PendingRunKind("")
+	skipClaim := false
+	if cycle != nil && len(cycle.MetaJSON) > 0 {
+		var meta struct {
+			RunKind             string `json:"run_kind"`
+			SkipClaimAcceptance bool   `json:"skip_claim_acceptance"`
+			PolishSkipVerify    bool   `json:"polish_skip_verify"`
+		}
+		if err := json.Unmarshal(cycle.MetaJSON, &meta); err == nil {
+			runKind = taskcoredomain.PendingRunKind(strings.TrimSpace(meta.RunKind))
+			skipClaim = meta.SkipClaimAcceptance || meta.PolishSkipVerify
+		}
+	}
+	return orchestration.ResolveExecuteVisitPolicy(runKind, skipClaim)
 }

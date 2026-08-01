@@ -301,11 +301,15 @@ func (h *Harness) runCycleLoop(parentCtx context.Context, task *taskcoredomain.T
 			return
 		}
 	}
-	if opts.skipVerify {
-		if runKindFromCycleMeta(cycle) == taskcoredomain.PendingKindOpenPR {
-			h.runCycleLoopFinalizeOpenPR(parentCtx, task, cycle, state)
-			return
-		}
+	policy := orchestration.ResolveExecuteVisitPolicy(
+		runKindFromCycleMeta(cycle),
+		skipClaimAcceptanceFromCycleMeta(cycle),
+	)
+	switch policy.PostExecute {
+	case orchestration.PostExecuteOpenPR:
+		h.runCycleLoopFinalizeOpenPR(parentCtx, task, cycle, state)
+		return
+	case orchestration.PostExecuteReviewSkipClaims:
 		h.runCycleLoopFinalizeSuccessOpts(parentCtx, task, cycle, state, false)
 		return
 	}

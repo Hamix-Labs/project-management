@@ -3,7 +3,7 @@
 > **Note** - Product renamed T2A to Hamix; identifiers below reflect the name at decision time unless updated inline.
 
 **Date:** 2026-06-19
-**Status:** Accepted
+**Status:** Accepted (amended 2026-08-01 — ExecuteVisitPolicy)
 **Deciders:** Engineering
 
 ## Context
@@ -18,14 +18,15 @@ Extend `pkgs/agents/harness/internal/orchestration` with execute and loop-level 
 
 | Function | Role |
 |----------|------|
-| `DecideExecutePostRun` | Runner outcome + cancel + commit ingest → `ExecuteEffects` |
+| `DecideExecutePostRun` | Runner outcome + cancel + commit ingest → `ExecuteEffects` (run-kind-blind) |
+| `ResolveExecuteVisitPolicy` | `run_kind` + skip-claim → `CommitIngestMode` + `PostExecutePath` |
 | `DecideVerifyRetry` | Unchanged (verify retry/tamper) |
 | `DecideVerifyDisabledLegacy` | Legacy checklist completion err → terminal |
 | `DecideFinalizeSuccess` | Completion ledger err → downgrade to failed |
 
-**Boundary rule (unchanged):** orchestration imports `domain` only. Harness maps `runner.Result`/`error` → `ExecuteRunnerOutcome` before Decide.
+**Boundary rule (unchanged):** orchestration imports `domain` only. Harness maps `runner.Result`/`error` → `ExecuteRunnerOutcome` before Decide. Git ingest takes `CommitIngestMode` only (no knowledge of `open_pr`).
 
-**Effect applier** owns store ordering: `CompletePhase` before `TerminateCycle`; publish/metrics after successful writes.
+**Effect applier** owns store ordering: `CompletePhase` before `TerminateCycle`; publish/metrics after successful writes. Cycle loop branches finalize on `PostExecutePath` (`ClaimAcceptance` / `ReviewSkipClaims` / `OpenPR`).
 
 **Track C deferred:** a unified event-graph `Decide(...)` over the full cycle (including recovery) is still out of scope. The historical `LoopState` type was never wired and was deleted as unused (`5bced0a7`); do not revive it as a unify vehicle. Shutdown/panic recovery stays imperative in `recovery.go`. Live counters remain on harness-root `processState` (see ADR-0018).
 

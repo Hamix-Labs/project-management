@@ -88,7 +88,7 @@ describe("TaskDetailToolbarActions", () => {
     ).toBeDisabled();
   });
 
-  it("renders Approve & open PR and Polish when review handlers are provided", async () => {
+  it("renders Approve & Open PR and Polish when review handlers are provided", async () => {
     const user = userEvent.setup();
     const onOpenPr = vi.fn();
     const onPolish = vi.fn();

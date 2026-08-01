@@ -1,7 +1,7 @@
 # ADR-0093: MCP commit register
 
 **Date:** 2026-07-31
-**Status:** Accepted
+**Status:** Accepted (amended 2026-08-01 — empty-register visit mode)
 **Deciders:** Engineering
 **Supersedes:** Ingest-source decision of [ADR-0032](./ADR-0032-agent-claimed-commit-index.md)
 
@@ -28,11 +28,17 @@ enter the ledger only from `git rev-parse` after a commit Hamix itself created.
    `git rev-list --reverse <cycle_base_sha>..HEAD` and `R` the normalized
    register SHAs. Require `set(R) == set(H)`. `rev-list` is an equality oracle,
    not a fallback indexer.
-5. **Hard fail (behavior break vs ADR-0032)** — empty register when the git
+5. **Hard fail (behavior break vs ADR-0032)** — under
+   `CommitIngestRequireRegistered` (default), empty register when the git
    snapshot is not skipped → `execute_missing_commits`. `H \ R` →
    `execute_unregistered_commits`. `R \ H` or unresolvable/corrupt register →
    `execute_invalid_commit`.
-6. **Unchanged** — task-wide append-only `task_cycle_commits` ledger;
+6. **Empty-register visit mode** — `ResolveExecuteVisitPolicy` may select
+   `CommitIngestAllowEmptyWhenNoHeadDelta` for `open_pr` and instructions-only
+   polish (`skip_claim_acceptance`). Then empty `R` + empty `H` succeeds
+   (zero upserts); empty `R` + non-empty `H` → `execute_unregistered_commits`.
+   Exact set equality when `R` is non-empty is unchanged.
+7. **Unchanged** — task-wide append-only `task_cycle_commits` ledger;
    `ListCommitsForTask` for verify; non-git (`snap.Skipped`) skips ingest.
 
 ## Consequences
@@ -47,8 +53,10 @@ enter the ledger only from `git rev-parse` after a commit Hamix itself created.
 
 - Agents must use `hamix.commit` (prompt + I2 enforcement); Shell `git commit`
   alone fails execute.
-- Empty-claims soft success from ADR-0032 is gone — every git execute visit
-  needs ≥1 registered commit.
+- Empty-claims soft success from ADR-0032 is gone — git executes that expect
+  new work use `CommitIngestRequireRegistered` (≥1 registered commit). Visits
+  that only push/open a PR or polish instructions without code changes use
+  `CommitIngestAllowEmptyWhenNoHeadDelta` instead.
 - Does not cryptographically prevent Shell commit + forged register of a *true*
   SHA (ledger would still be accurate).
 

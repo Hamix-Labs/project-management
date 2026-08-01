@@ -117,6 +117,12 @@ func TestRunWithRetry_openPRSkipsVerifyAndLandsPrReady(t *testing.T) {
 	if !strings.Contains(meta, `"run_kind":"open_pr"`) {
 		t.Fatalf("meta=%s want run_kind open_pr", meta)
 	}
+	if !strings.Contains(meta, `"skip_claim_acceptance":true`) {
+		t.Fatalf("meta=%s want skip_claim_acceptance", meta)
+	}
+	if strings.Contains(meta, `"polish_skip_verify"`) {
+		t.Fatalf("meta=%s must not stamp polish_skip_verify for open_pr", meta)
+	}
 }
 
 func TestRunWithRetry_openPRMissingReportFails(t *testing.T) {

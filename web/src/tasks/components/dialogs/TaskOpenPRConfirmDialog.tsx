@@ -1,7 +1,6 @@
 import { ConfirmDialog } from "@/components/feedback/ConfirmDialog";
 
 type Props = {
-  taskTitle: string;
   saving: boolean;
   pending: boolean;
   error?: string | null;
@@ -10,7 +9,6 @@ type Props = {
 };
 
 export function TaskOpenPRConfirmDialog({
-  taskTitle,
   saving,
   pending,
   error = null,
@@ -19,10 +17,9 @@ export function TaskOpenPRConfirmDialog({
 }: Props) {
   return (
     <ConfirmDialog
-      title="Approve and open a pull request?"
-      description={<strong>{taskTitle}</strong>}
-      footnote="Approves the agent’s work and resumes the same conversation to push the branch and open a PR. The task moves to PR ready when the pull request exists."
-      confirmLabel="Approve & open PR"
+      title="Approve and Open a pull request?"
+      description="Resumes the same conversation to push and open the PR."
+      confirmLabel="Approve & Open PR"
       confirmVariant="primary"
       busy={pending}
       cancelDisabled={saving}
