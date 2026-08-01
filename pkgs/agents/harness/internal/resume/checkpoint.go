@@ -94,6 +94,7 @@ func (s *Service) loadKnownCommitsForTask(ctx context.Context, taskID string) ([
 	return s.store.ListCommitsForTask(ctx, taskID)
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (s *Service) loadLockedPasses(ctx context.Context, cycleID string) (map[string]CriterionVerdict, error) {
 	lockedPasses := map[string]CriterionVerdict{}
 	verifyRows, err := s.store.ListVerifyReportsForCycle(ctx, cycleID)

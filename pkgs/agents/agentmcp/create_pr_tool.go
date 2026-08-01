@@ -60,6 +60,7 @@ func (t createPullRequestTool) Register(server *mcp.Server, sess *Session) {
 	})
 }
 
+//funclogmeasure:skip category=hot-path reason="Git + gh I/O; callers surface errors to the agent."
 func runCreatePullRequest(ctx context.Context, sess *Session, in createPullRequestInput) (createPullRequestOutput, error) {
 	if sess.Phase != PhaseExecute {
 		return createPullRequestOutput{}, fmt.Errorf("phase is %q; %s requires execute", sess.Phase, ToolCreatePullRequest)
@@ -161,6 +162,7 @@ func runCreatePullRequest(ctx context.Context, sess *Session, in createPullReque
 	}, nil
 }
 
+//funclogmeasure:skip category=hot-path reason="Thin gh exec wrapper."
 func ghRun(ctx context.Context, dir string, args ...string) (string, error) {
 	cmd := exec.CommandContext(ctx, "gh", args...)
 	cmd.Dir = dir
@@ -169,6 +171,7 @@ func ghRun(ctx context.Context, dir string, args ...string) (string, error) {
 	return string(out), err
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func firstHTTPURLLine(s string) string {
 	for _, line := range strings.Split(s, "\n") {
 		line = strings.TrimSpace(line)

@@ -25,6 +25,8 @@ type functionRefBindingJSON struct {
 
 // applyFunctionBindingsToPayload validates bindings against the schema, appends a
 // soft-scope block to initial_prompt, and clears function_inputs for task create.
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func applyFunctionBindingsToPayload(raw json.RawMessage, bindings []functionBindingJSON) (json.RawMessage, error) {
 	payload, err := taskcorehandler.DecodeComposePayload(raw)
 	if err != nil {
@@ -111,6 +113,7 @@ func applyFunctionBindingsToPayload(raw json.RawMessage, bindings []functionBind
 	return taskcorehandler.ComposePayloadToRaw(payload)
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func normalizeBindingPaths(paths []string, multiple bool, kind string) ([]string, error) {
 	out := make([]string, 0, len(paths))
 	seen := make(map[string]struct{}, len(paths))
@@ -138,6 +141,7 @@ func normalizeBindingPaths(paths []string, multiple bool, kind string) ([]string
 	return out, nil
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func normalizeBindingFunctions(refs []functionRefBindingJSON, multiple bool) ([]functionRefBindingJSON, error) {
 	out := make([]functionRefBindingJSON, 0, len(refs))
 	for _, r := range refs {
@@ -161,6 +165,7 @@ func normalizeBindingFunctions(refs []functionRefBindingJSON, multiple bool) ([]
 	return out, nil
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func appendSoftScope(prompt string, dirs, files []string, funcs []functionRefBindingJSON) string {
 	var b strings.Builder
 	b.WriteString(strings.TrimRight(prompt, "\n"))

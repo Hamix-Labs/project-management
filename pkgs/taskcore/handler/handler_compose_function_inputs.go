@@ -31,6 +31,8 @@ type FunctionInputDef struct {
 }
 
 // FunctionInputRequired reports whether the slot must be bound (default true).
+//
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func (d FunctionInputDef) FunctionInputRequired() bool {
 	if d.Required == nil {
 		return true
