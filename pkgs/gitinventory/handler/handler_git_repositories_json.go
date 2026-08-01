@@ -38,6 +38,22 @@ type gitWorktreeJSON struct {
 	Stale        bool   `json:"stale,omitempty"`
 }
 
+// gitWorktreeDetailJSON is GET /git/worktrees/{id}: worktree row plus resolved
+// repository paths and branch name for task-detail binding (no stale flag).
+type gitWorktreeDetailJSON struct {
+	ID                 string `json:"id"`
+	RepositoryID       string `json:"repository_id"`
+	Path               string `json:"path"`
+	HostPath           string `json:"host_path"`
+	Name               string `json:"name"`
+	IsMain             bool   `json:"is_main"`
+	BranchID           string `json:"branch_id"`
+	CreatedAt          string `json:"created_at"`
+	RepositoryPath     string `json:"repository_path"`
+	RepositoryHostPath string `json:"repository_host_path"`
+	BranchName         string `json:"branch_name"`
+}
+
 type gitBranchesListResponse struct {
 	Branches []gitBranchJSON `json:"branches"`
 }
