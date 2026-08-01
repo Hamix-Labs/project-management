@@ -1,1 +1,5 @@
-export { TaskListDeleteGlyph, TaskListEditGlyph } from "@/shared/ListRowActionGlyphs";
+export {
+  TaskListCloseGlyph,
+  TaskListDeleteGlyph,
+  TaskListEditGlyph,
+} from "@/shared/ListRowActionGlyphs";

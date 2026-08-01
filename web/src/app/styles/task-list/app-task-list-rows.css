@@ -645,6 +645,16 @@
   border-color: color-mix(in srgb, var(--danger) 24%, transparent);
 }
 
+.task-list-icon-btn--close {
+  color: var(--text-tertiary);
+}
+
+.task-list-icon-btn--close:hover:not(:disabled) {
+  color: var(--danger);
+  background: var(--danger-soft);
+  border-color: color-mix(in srgb, var(--danger) 24%, transparent);
+}
+
 .task-list-icon-btn__glyph {
   display: block;
 }
