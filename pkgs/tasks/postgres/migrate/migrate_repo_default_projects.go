@@ -18,8 +18,16 @@ import (
 
 // migrateRepoDefaultProjects (schema rev 6, ADR-0042) backfills per-repo default
 // projects, reassigns tasks off the legacy global default, and deletes that row.
+//
+// After ADR-0094 (migrateGlobalDefaultProject), only one is_default row is allowed
+// (idx_projects_global_default). Re-seeding per-repo defaults would violate that
+// unique index on every subsequent Migrate run, so skip when a global Default
+// already exists.
 func migrateRepoDefaultProjects(ctx context.Context, db *gorm.DB) error {
 	slog.Debug("trace", "operation", "postgres.migrateRepoDefaultProjects")
+	if hasGlobalDefaultProject(ctx, db) {
+		return deleteLegacyGlobalDefaultProject(ctx, db)
+	}
 	if err := ensureDefaultProjectUniqueIndex(ctx, db); err != nil {
 		return err
 	}
@@ -30,6 +38,17 @@ func migrateRepoDefaultProjects(ctx context.Context, db *gorm.DB) error {
 		return err
 	}
 	return deleteLegacyGlobalDefaultProject(ctx, db)
+}
+
+// hasGlobalDefaultProject reports whether ADR-0094's unbound Default row exists.
+//
+//funclogmeasure:skip category=hot-path reason="Migration gate; caller migrateRepoDefaultProjects emits migrate traces."
+func hasGlobalDefaultProject(ctx context.Context, db *gorm.DB) bool {
+	var n int64
+	err := db.WithContext(ctx).Model(&projectmodel.Project{}).
+		Where("is_default = ? AND (repository_id IS NULL OR repository_id = '')", true).
+		Count(&n).Error
+	return err == nil && n > 0
 }
 
 func ensureDefaultProjectUniqueIndex(ctx context.Context, db *gorm.DB) error {
