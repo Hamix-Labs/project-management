@@ -18,10 +18,13 @@ type GitInventoryStore interface {
 	DeleteGitRepository(ctx context.Context, projectID, repoID string) error
 	ListGitWorktreesByRepo(ctx context.Context, repoID string) ([]domain.GitWorktree, error)
 	ListGitWorktrees(ctx context.Context, projectID, repoID string) ([]domain.GitWorktree, error)
+	GetGitWorktreeByID(ctx context.Context, worktreeID string) (domain.GitWorktree, error)
 	UnregisterGitWorktreeByID(ctx context.Context, worktreeID string) error
 	UnregisterGitWorktree(ctx context.Context, projectID, worktreeID string) error
 	ListGitBranchesByRepo(ctx context.Context, repoID string) ([]domain.GitBranch, error)
 	ListGitBranches(ctx context.Context, projectID, repoID string) ([]domain.GitBranch, error)
-	// WorktreeStaleMap reports stale managed worktrees for a repository.
-	WorktreeStaleMap(ctx context.Context, repoID string, now time.Time) (map[string]bool, error)
+	GetGitBranchByID(ctx context.Context, branchID string) (domain.GitBranch, error)
+	// WorktreeStaleMap reports stale flags for the given worktrees.
+	// Callers that already listed worktrees should pass those rows (no re-list).
+	WorktreeStaleMap(ctx context.Context, worktrees []domain.GitWorktree, now time.Time) (map[string]bool, error)
 }
