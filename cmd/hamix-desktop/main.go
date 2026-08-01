@@ -8,10 +8,13 @@ import (
 	"io/fs"
 	"log/slog"
 	"os"
+	"sync/atomic"
 
+	"github.com/AlexsanderHamir/Hamix/internal/applog"
 	"github.com/AlexsanderHamir/Hamix/internal/desktop"
 	"github.com/AlexsanderHamir/Hamix/internal/desktopconfig"
 	"github.com/AlexsanderHamir/Hamix/internal/envload"
+	"github.com/AlexsanderHamir/Hamix/internal/taskapiconfig"
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
@@ -31,11 +34,18 @@ func main() {
 }
 
 func run() error {
-	slog.Debug("trace", "cmd", cmdName, "operation", "hamix-desktop.run")
-	// Optional repo-root .env for local desktop dev (DATABASE_URL override).
+	// Optional repo-root .env for local desktop dev (DATABASE_URL / HAMIX_LOG_*).
 	if _, err := envload.OverloadDotenvIfPresent(""); err != nil {
 		return fmt.Errorf("preload .env: %w", err)
 	}
+
+	logFile, err := installDesktopLogging()
+	if err != nil {
+		return err
+	}
+	defer applog.Close(cmdName, logFile)
+
+	slog.Debug("trace", "cmd", cmdName, "operation", "hamix-desktop.run")
 
 	assetFS, err := fs.Sub(embeddedAssets, "frontend/dist")
 	if err != nil {
@@ -61,6 +71,40 @@ func run() error {
 	})
 }
 
+func installDesktopLogging() (*os.File, error) {
+	fileLevel, err := taskapiconfig.ResolveLogLevel("")
+	if err != nil {
+		return nil, err
+	}
+	minimized := taskapiconfig.LoggingMinimized(false)
+	var processLogSeq atomic.Uint64
+	if minimized {
+		fmt.Fprintf(os.Stderr, "%s: logging minimized (no log file; errors only to stderr); set by %s\n",
+			cmdName, taskapiconfig.EnvDisableLogging)
+		applog.Install(applog.InstallConfig{
+			Minimized:     true,
+			ProcessLogSeq: &processLogSeq,
+		})
+		return nil, nil
+	}
+
+	logFile, logPath, err := applog.OpenJSONL(cmdName, "", fileLevel)
+	if err != nil {
+		return nil, err
+	}
+	stderrLevel := slog.LevelWarn
+	fmt.Fprintf(os.Stderr, "%s: writing structured logs to %s (file min %s; stderr min %s)\n",
+		cmdName, logPath, fileLevel.String(), stderrLevel.String())
+	applog.Install(applog.InstallConfig{
+		File:          logFile,
+		FileLevel:     fileLevel,
+		StderrLevel:   &stderrLevel,
+		ProcessLogSeq: &processLogSeq,
+	})
+	applog.EmitFileLoggingConfig(cmdName, fileLevel)
+	return logFile, nil
+}
+
 // App is the Wails bind surface. Allowlist: database config + quit only.
 // Do not add domain APIs here (ADR-0095).
 type App struct {
@@ -82,6 +126,10 @@ func (a *App) startup(ctx context.Context) {
 			return
 		}
 		slog.Error("desktop runtime start failed", "cmd", cmdName, "operation", "desktop.startup", "err", err)
+		fmt.Fprintf(os.Stderr, "%s: %v\n", cmdName, err)
+		fmt.Fprintf(os.Stderr, "%s: fix schema with .\\scripts\\migrate.ps1 (or ./scripts/migrate.sh), then relaunch.\n", cmdName)
+		runtime.Quit(ctx)
+		return
 	}
 }
 

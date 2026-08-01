@@ -28,7 +28,7 @@ The two surfaces do not overlap. Anything in `app_settings` is **not** driven by
 | `HAMIX_API_TOKEN` | No | — | When set, `Authorization: Bearer <token>` required on every route except `/health*` and `/metrics`. |
 | `HAMIX_HTTP_REQUEST_TIMEOUT` | No | `30s` | Go duration. Request execution timeout for non-SSE routes via context deadline. `0` disables. `GET /events` is exempt. |
 | `HAMIX_LOG_DIR` | No | `./logs` | Directory for JSON log files. `taskapi -logdir` flag overrides. |
-| `HAMIX_LOG_LEVEL` | No | `info` | Minimum `slog` level (`debug` / `info` / `warn` / `error`). `taskapi -loglevel` flag overrides. |
+| `HAMIX_LOG_LEVEL` | No | `info` | Minimum `slog` level for the JSONL file (`debug` / `info` / `warn` / `error`). `taskapi -loglevel` flag overrides. `hamix-desktop` also mirrors **warn+** to stderr (info SQL/HTTP stay in the file only). |
 | `HAMIX_DISABLE_LOGGING` | No | — | `1`/`true`/`yes`/`on`: no JSONL file; only `slog.Error` to stderr. Same as `taskapi -disable-logging`. |
 | `HAMIX_MIGRATE` | No | — | `1`/`true`/`yes`/`on`: run `postgres.Migrate` at taskapi startup. Same as `taskapi -migrate`. Default: skip migrate. |
 | `HAMIX_GIT_RECONCILE_ON_STARTUP` | No | — | When set to `repair-only`, taskapi runs a **conservative** git reconcile for each registered repository whose stored main path still exists on disk: path updates and branch head refresh only (`AllowRemove=false`, no bootstrap, no `git worktree repair`). Skips repos when the stored path is missing — operators must use the sync/relocate HTTP APIs. See [worktrees-and-branches.md](domain/worktrees-and-branches.md). |
@@ -58,9 +58,13 @@ The two surfaces do not overlap. Anything in `app_settings` is **not** driven by
 
 `cmd/hamix-desktop` resolves the Postgres DSN via `internal/desktopconfig` ([ADR-0095](adr/ADR-0095-desktop-wails-host.md)):
 
-1. **`DATABASE_URL` env** — if set (after trim), use it (dev / CI / power-user override).
+1. **`DATABASE_URL` env** — if set (after trim), use it. Local desktop via `.\scripts\dev-desktop.ps1` loads the **checkout `.env`** into the process (cwd = repo root); no machine-wide env is required.
 2. Else **`{UserConfigDir}/hamix/desktop.json`** field `database_url` (same Hamix config root as managed worktrees, [ADR-0081](adr/ADR-0081-hamix-managed-worktrees.md)).
 3. Else **none** — first-run setup UI; the app does not store the DSN in Postgres `app_settings`.
+
+Migrate is **not** automatic on desktop start (same as `taskapi` / `dev.ps1`). Use `.\scripts\migrate.ps1` or `dev-desktop.ps1 -Migrate`. Schema drift / runtime start failure prints remediation to stderr and quits the window.
+
+Logging: JSONL under `HAMIX_LOG_DIR` as `hamix-desktop-*.jsonl` (`internal/applog`); stderr defaults to **warn+** so SQL/HTTP info does not flood the terminal.
 
 `taskapi` is unchanged: it still requires `DATABASE_URL` after `.env` load. Desktop never writes the connection string into the DB-backed settings row.
 
@@ -69,7 +73,7 @@ Reconcile tick interval is fixed in code (`pkgs/agents.ReconcileTickInterval`, 2
 ### Startup sequence (`taskapi`)
 
 1. Resolve `.env` (repo-root or `-env`), overlay logging env vars first so `HAMIX_LOG_*` apply before the log file is opened, then `envload.Load` (requires `DATABASE_URL`).
-2. Open the log file (`taskapi-YYYY-MM-DD-HHMMSS-<nanos>.jsonl` under `HAMIX_LOG_DIR`). When `HAMIX_DISABLE_LOGGING` is set, only `slog.Error` goes to stderr (text handler).
+2. Open the log file via `internal/applog` (`taskapi-YYYY-MM-DD-HHMMSS-<nanos>.jsonl` under `HAMIX_LOG_DIR`). When `HAMIX_DISABLE_LOGGING` is set, only `slog.Error` goes to stderr (text handler).
 3. `postgres.Open` — GORM connection. Configures `database/sql` pool (max open/idle, lifetime). No startup `Ping`.
 4. `postgres.CheckSchemaDrift` — compare code `SchemaRevision` to `schema_meta` row; stderr + log alert when migrate is required.
 5. **Optional** `postgres.Migrate` — only when `taskapi -migrate` or `HAMIX_MIGRATE=1`; otherwise skipped (see [Schema migrations](#schema-migrations)).

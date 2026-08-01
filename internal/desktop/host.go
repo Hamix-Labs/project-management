@@ -120,7 +120,13 @@ func (h *Host) serveAPI(w http.ResponseWriter, r *http.Request) {
 	if rt == nil || rt.Handler == nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusServiceUnavailable)
-		_, _ = w.Write([]byte(`{"error":"database not configured"}`))
+		// Prefer Quit on StartRuntime failure; this path is defense in depth.
+		// Never claim "not configured" when a DSN is already resolved.
+		msg := `{"error":"database not configured"}`
+		if _, src, err := h.paths.Resolve(); err == nil && src != desktopconfig.SourceNone {
+			msg = `{"error":"api runtime unavailable"}`
+		}
+		_, _ = w.Write([]byte(msg))
 		return
 	}
 	rt.Handler.ServeHTTP(w, r)
