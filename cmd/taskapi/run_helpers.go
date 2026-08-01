@@ -1,30 +1,20 @@
 package main
 
 import (
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
-
 	"context"
 	"fmt"
 	"log/slog"
 	"os"
 	"sync/atomic"
-	"time"
 
-	"github.com/AlexsanderHamir/Hamix/internal/taskapi/agentworker"
-	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
+	"github.com/AlexsanderHamir/Hamix/internal/envload"
 	"github.com/AlexsanderHamir/Hamix/internal/taskapiconfig"
-	"github.com/AlexsanderHamir/Hamix/pkgs/agents"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/middleware"
-	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/postgres"
-	"gorm.io/gorm"
+	"github.com/AlexsanderHamir/Hamix/internal/taskapiruntime"
 )
 
-// run_helpers.go is the taskapi entrypoint orchestrator: it owns the
-// taskAPIApp aggregate, buildTaskAPIApp wiring, runTaskAPIService
-// (the cmd.Run body), and a handful of small startup-config log
-// helpers that don't fit another concern. Per
-// backend/go/layout.mdc the lifecycle subsystems
-// (logging, db, agent worker, http) live in sibling run_*.go files.
+// run_helpers.go owns runTaskAPIService (the cmd.Run body): logging,
+// env load, shared runtime start, HTTP serve, and shutdown. Lifecycle
+// subsystems (logging, http) live in sibling run_*.go files.
 
 func logHTTPTimeoutsAndShutdown() {
 	slog.Info("http server limits", "cmd", cmdName, "operation", "taskapi.http_limits",
@@ -35,60 +25,6 @@ func logHTTPTimeoutsAndShutdown() {
 		"max_header_bytes", maxRequestHeaders,
 		"shutdown_timeout_sec", int(shutdownTimeout.Seconds()),
 	)
-}
-
-func logHandlerMiddlewareConfig() {
-	rlim := middleware.RateLimitPerMinuteConfigured()
-	slog.Info("rate limit config", "cmd", cmdName, "operation", "taskapi.rate_limit",
-		"enabled", rlim > 0, "per_ip_per_min", rlim)
-	slog.Info("api auth config", "cmd", cmdName, "operation", "taskapi.api_auth",
-		"enabled", middleware.APIAuthEnabled())
-
-	mb := middleware.MaxRequestBodyBytesConfigured()
-	slog.Info("max request body config", "cmd", cmdName, "operation", "taskapi.max_body",
-		"enabled", mb > 0, "max_bytes", mb)
-	reqTimeout := middleware.RequestTimeout()
-	reqTimeoutSec := int(reqTimeout / time.Second)
-	if reqTimeout > 0 && reqTimeoutSec == 0 {
-		reqTimeoutSec = 1
-	}
-	slog.Info("request timeout config", "cmd", cmdName, "operation", "taskapi.request_timeout",
-		"enabled", reqTimeout > 0, "timeout_sec", reqTimeoutSec)
-	idemTTL := middleware.IdempotencyTTL()
-	idemMaxEntries, idemMaxBytes := middleware.IdempotencyCacheLimits()
-	idemSec := int(idemTTL / time.Second)
-	if idemTTL > 0 && idemSec == 0 {
-		idemSec = 1
-	}
-	slog.Info("idempotency config", "cmd", cmdName, "operation", "taskapi.idempotency",
-		"enabled", idemTTL > 0, "ttl_sec", idemSec,
-		"max_entries", idemMaxEntries, "max_bytes", idemMaxBytes)
-}
-
-type taskAPIApp struct {
-	taskStore   *composition.API
-	hub         *realtime.SSEHub
-	agentQueue  *agents.MemoryQueue
-	agentWorker *agentworker.Supervisor
-	schemaDrift postgres.SchemaDriftReport
-}
-
-func buildTaskAPIApp(ctx context.Context, db *gorm.DB) (*taskAPIApp, context.CancelFunc, error) {
-	slog.Debug("trace", "cmd", cmdName, "operation", "taskapi.buildTaskAPIApp")
-	taskStore := composition.NewAPI(db)
-	// Production hub picks the full default options (ring buffer for
-	// Last-Event-ID resume, per-subscriber backpressure with slow-
-	// consumer eviction, 15s heartbeats, AND 50ms {type,id} duplicate
-	// coalescing). Tests construct via NewSSEHub(), which keeps the
-	// loss-prevention machinery enabled but disables coalescing so
-	// back-to-back distinct ops never collide on the 50ms window.
-	hub := realtime.NewSSEHubWith(realtime.DefaultSSEHubOptions())
-	logHandlerMiddlewareConfig()
-	cancel, q, aw, err := startReadyTaskAgents(ctx, taskStore, hub)
-	if err != nil {
-		return nil, nil, err
-	}
-	return &taskAPIApp{taskStore: taskStore, hub: hub, agentQueue: q, agentWorker: aw}, cancel, nil
 }
 
 func runTaskAPIService(port, host, envPath, logDir, logLevelFlag string, disableLogging bool, migrateFlag bool) int {
@@ -102,48 +38,42 @@ func runTaskAPIService(port, host, envPath, logDir, logLevelFlag string, disable
 	var processLogSeq atomic.Uint64
 	installTaskAPIDefaultLogger(logFile, minimized, minLevel, &processLogSeq, logPath)
 
-	migrateEnabled := taskapiconfig.MigrateEnabled(migrateFlag)
-	dbStartup, err := loadEnvAndOpenDatabase(envPath, migrateEnabled)
+	envLoadedPath, err := envload.Load(envPath)
 	if err != nil {
-		if dbStartup.db != nil {
-			closeSQLDBOrLog(dbStartup.db)
-		}
 		fmt.Fprintf(os.Stderr, "%s: startup failed: %v\n", cmdName, err)
-		slog.Error("startup failed", "cmd", cmdName, "operation", "taskapi.startup_db", "err", err)
+		slog.Error("startup failed", "cmd", cmdName, "operation", "taskapi.startup_env", "err", err)
 		return 1
 	}
-	db := dbStartup.db
+	slog.Info("env loaded", "cmd", cmdName, "operation", "taskapi.startup", "path", envLoadedPath)
 
+	migrateEnabled := taskapiconfig.MigrateEnabled(migrateFlag)
 	appCtx, appCancel := context.WithCancel(context.Background())
 	defer appCancel()
 
-	app, stopAgents, err := buildTaskAPIApp(appCtx, db)
+	rt, err := taskapiruntime.Start(appCtx, taskapiruntime.Options{
+		DatabaseURL: os.Getenv("DATABASE_URL"),
+		Migrate:     migrateEnabled,
+		CmdName:     cmdName,
+	})
 	if err != nil {
-		slog.Error("startup failed", "cmd", cmdName, "operation", "taskapi.startup_app", "err", err)
-		closeSQLDBOrLog(db)
+		fmt.Fprintf(os.Stderr, "%s: startup failed: %v\n", cmdName, err)
+		slog.Error("startup failed", "cmd", cmdName, "operation", "taskapi.startup_runtime", "err", err)
 		return 1
 	}
-	app.schemaDrift = dbStartup.schemaDrift
-	maybeRunGitReconcileOnStartup(appCtx, app.taskStore)
-	shutdownViaSignal, serveErr := runTaskAPIHTTPServer(appCtx, port, host, app)
-	// Order: cancel worker ctx and wait for it to drain (best-effort
-	// aborted/cycle writes need a live DB pool) → cancel reconcile →
-	// close DB. Done in this strict order even on serve error so the
-	// audit trail finishes before the pool closes.
-	app.agentWorker.Drain()
-	stopAgents()
+	logHTTPTimeoutsAndShutdown()
 
+	maybeRunGitReconcileOnStartup(appCtx, rt)
+	shutdownViaSignal, serveErr := runTaskAPIHTTPServer(appCtx, port, host, rt)
+
+	closeErr := rt.Close()
 	if serveErr != nil {
 		slog.Error("server error", "cmd", cmdName, "operation", "taskapi.serve", "err", serveErr)
-		closeSQLDBOrLog(db)
 		return 1
 	}
-
-	dbClosed := closeSQLDBOrLog(db)
-	if !dbClosed {
+	if closeErr != nil {
 		return 1
 	}
 	slog.Info("process exit", "cmd", cmdName, "operation", "taskapi.shutdown", "phase", "exit",
-		"db_closed", dbClosed, "signal_shutdown", shutdownViaSignal)
+		"db_closed", true, "signal_shutdown", shutdownViaSignal)
 	return 0
 }

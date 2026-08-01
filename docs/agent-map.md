@@ -56,6 +56,8 @@ Repository paths grouped by subsystem. Read only the rows relevant to your task.
 | Request logging | `pkgs/tasks/logctx/`, `pkgs/obs/calltrace/` | `request_id`, `log_seq`, `call_path` in logs | [observability-trace-lines.md](./domain/observability-trace-lines.md) |
 | JSON response helpers | `pkgs/tasks/apijson/` | Security headers, `WriteJSONError` | — |
 | HTTP middleware | `pkgs/tasks/middleware/`, `internal/taskapi/` | Middleware stack, server assembly | [middleware/README.md](../pkgs/tasks/middleware/README.md) |
+| Shared API runtime | `internal/taskapiruntime/` | DB open/migrate, agents, `NewHTTPHandler` for hosts | [ADR-0095](./adr/ADR-0095-desktop-wails-host.md), [configuration.md](./configuration.md) |
+| Desktop DSN config | `internal/desktopconfig/` | `DATABASE_URL` env → `{UserConfigDir}/hamix/desktop.json` | [ADR-0095](./adr/ADR-0095-desktop-wails-host.md), [configuration.md](./configuration.md) |
 | Dev SSE simulation | `pkgs/tasks/devsim/` | `HAMIX_SSE_TEST` synthetic events for local UI | [api.md](./api.md), [configuration.md](./configuration.md) |
 
 ## Web
@@ -78,12 +80,13 @@ Repository paths grouped by subsystem. Read only the rows relevant to your task.
 | Worktrees mutations | `web/src/worktrees/mutations/` | Global git invalidate + register/sync/remove hooks | [ADR-0044](./adr/ADR-0044-query-invalidation-catalog.md) |
 | Git API client | `web/src/api/gitGlobal.ts`, `web/src/api/parseGitApi.ts` | `GET/POST /git/*` fetch + parsers | [api.md](./api.md) |
 | Settings | `web/src/settings/` | App settings page and settings hooks | [web.md](./web.md) §Routes |
+| Desktop WebView bridge | `web/src/desktop/` | Sole `window.go` IPC call site (config setup) | [ADR-0095](./adr/ADR-0095-desktop-wails-host.md) |
 
 ## Infra and test helpers
 
 | Area | Path | Purpose | Deep dive |
 | --- | --- | --- | --- |
-| Binaries | `cmd/taskapi/`, `cmd/dbcheck/` | Entrypoints only; wire deps and run | [cmd/taskapi/README.md](../cmd/taskapi/README.md) |
+| Binaries | `cmd/taskapi/`, `cmd/dbcheck/`, `cmd/hamix-desktop/` | Entrypoints only; wire deps and run | [cmd/taskapi/README.md](../cmd/taskapi/README.md), [ADR-0095](./adr/ADR-0095-desktop-wails-host.md) |
 | Env loading | `internal/envload/` | Resolve `.env` from repo root | [configuration.md](./configuration.md) |
 | taskapi config | `internal/taskapiconfig/` | Listen host, log level, queue cap, dev SSE interval | [configuration.md](./configuration.md) |
 | SQLite test DB | `internal/tasktestdb/` | In-memory GORM for default Go tests | [CONTRIBUTING.md](../CONTRIBUTING.md#before-you-open-a-pr) |

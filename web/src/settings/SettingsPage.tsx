@@ -1,5 +1,6 @@
 import { useDocumentTitle } from "@/shared/useDocumentTitle";
 import {
+  DesktopDatabaseSettingsSection,
   DisplaySettingsSection,
   PhasesSettingsSection,
   RunnerSettingsSection,
@@ -15,6 +16,7 @@ import {
   useSettingsPageModel,
   type SettingsPageLoadedViewProps,
 } from "./useSettingsPageModel";
+import { isDesktopHost } from "@/desktop/bridge";
 import "./settings.css";
 
 const SETTINGS_NAV_ITEMS: SettingsNavItem[] = [
@@ -23,6 +25,14 @@ const SETTINGS_NAV_ITEMS: SettingsNavItem[] = [
   { id: SECTION_IDS.display, label: "Display" },
   { id: SECTION_IDS.developer, label: "Developer" },
 ];
+
+function settingsNavItems(): SettingsNavItem[] {
+  if (!isDesktopHost()) return SETTINGS_NAV_ITEMS;
+  return [
+    { id: SECTION_IDS.database, label: "Database" },
+    ...SETTINGS_NAV_ITEMS,
+  ];
+}
 
 function SettingsPageLoadedView({
   form,
@@ -56,10 +66,12 @@ function SettingsPageLoadedView({
 
       <div className="settings-layout">
         <aside className="settings-layout-aside">
-          <SettingsNav items={SETTINGS_NAV_ITEMS} />
+          <SettingsNav items={settingsNavItems()} />
         </aside>
 
         <form className="settings-form" onSubmit={onSubmit}>
+          <DesktopDatabaseSettingsSection />
+
           <RunnerSettingsSection
             form={form}
             resolvedDefaultBin={resolvedDefaultBin}

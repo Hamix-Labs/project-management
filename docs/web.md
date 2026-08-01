@@ -11,6 +11,7 @@ Vite + React client under `web/`. All `fetch` calls live in `web/src/api/`; resp
 ## In this article
 
 - [Routes](#routes)
+- [Desktop host](#desktop-host)
 - [Board view](#board-view)
 - [Cold start](#cold-start)
 - [Task sync (SSE cache coherence)](#task-sync-sse-cache-coherence)
@@ -35,6 +36,10 @@ Vite + React client under `web/`. All `fetch` calls live in `web/src/api/`; resp
 | `/tasks/:id` | `web/src/tasks/pages/` | Task detail |
 
 Primary nav links: Tasks, Templates, Drafts, Projects, Repositories (Settings is header gear). Register a repo via `/repositories` or `/repositories?register=1` — see [domain/worktrees-and-branches.md](./domain/worktrees-and-branches.md). Legacy `/worktrees` and `/worktrees/:repositoryId` redirect to `/repositories`.
+
+## Desktop host
+
+Same SPA embeds in `cmd/hamix-desktop` (Wails). `web/src/desktop/bridge.ts` is the **only** WebView IPC call site. First launch without a DSN shows the setup screen (`DesktopSetupGate`) instead of the main app. Settings → Database (desktop only) edits `{UserConfigDir}/hamix/desktop.json`. See [ADR-0095](./adr/ADR-0095-desktop-wails-host.md).
 
 ## Board view
 

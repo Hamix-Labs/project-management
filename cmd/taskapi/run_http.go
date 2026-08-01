@@ -15,6 +15,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi"
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/taskapiconfig"
+	"github.com/AlexsanderHamir/Hamix/internal/taskapiruntime"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/devsim"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler"
@@ -24,8 +25,7 @@ import (
 
 // run_http.go owns the HTTP server lifecycle for taskapi: mux mount
 // (incl. /metrics + optional SSE dev ticker), listener bind, and the
-// graceful Serve+Shutdown loop. Split off run_helpers.go per
-// backend/go/layout.mdc (split by responsibility).
+// graceful Serve+Shutdown loop.
 
 func mountTaskAPIMux(ctx context.Context, api http.Handler, hub *realtime.SSEHub, taskStore *composition.API, agentQueue *agents.MemoryQueue) *http.ServeMux {
 	taskapi.RegisterDefaultPrometheusCollectors()
@@ -100,9 +100,8 @@ func serveUntilShutdown(srv *http.Server, ln net.Listener) (shutdownViaSignal bo
 	return shutdownViaSignal, nil
 }
 
-func runTaskAPIHTTPServer(ctx context.Context, port, host string, app *taskAPIApp) (shutdownViaSignal bool, err error) {
-	api := taskapi.NewHTTPHandler(app.taskStore, app.hub, nil, app.agentWorker, app.schemaDrift)
-	mux := mountTaskAPIMux(ctx, api, app.hub, app.taskStore, app.agentQueue)
+func runTaskAPIHTTPServer(ctx context.Context, port, host string, rt *taskapiruntime.Runtime) (shutdownViaSignal bool, err error) {
+	mux := mountTaskAPIMux(ctx, rt.Handler, rt.Hub, rt.Store, rt.AgentQueue)
 
 	listenHost := taskapiconfig.ListenHost(host)
 	ln, err := net.Listen("tcp", net.JoinHostPort(listenHost, port))

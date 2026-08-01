@@ -10,6 +10,7 @@ The two surfaces do not overlap. Anything in `app_settings` is **not** driven by
 ## In this article
 
 - [Environment variables](#environment-variables)
+- [Desktop database URL](#desktop-database-url)
 - [Schema migrations](#schema-migrations)
 - [App settings](#app-settings-app_settings-row)
 - [Metrics](#metrics-get-metrics)
@@ -53,6 +54,16 @@ The two surfaces do not overlap. Anything in `app_settings` is **not** driven by
 | `VITE_TASKAPI_ORIGIN` | `http://127.0.0.1:8080` | Vite dev proxy target (`web/` only). See [web.md](./web.md). |
 | `VITE_UI_TEST_MODE` | — | When `true`/`1`, demo JSON for some GET routes (layouts without DB seed). Mutations still hit taskapi. Settings → UI test mode. |
 
+### Desktop database URL
+
+`cmd/hamix-desktop` resolves the Postgres DSN via `internal/desktopconfig` ([ADR-0095](adr/ADR-0095-desktop-wails-host.md)):
+
+1. **`DATABASE_URL` env** — if set (after trim), use it (dev / CI / power-user override).
+2. Else **`{UserConfigDir}/hamix/desktop.json`** field `database_url` (same Hamix config root as managed worktrees, [ADR-0081](adr/ADR-0081-hamix-managed-worktrees.md)).
+3. Else **none** — first-run setup UI; the app does not store the DSN in Postgres `app_settings`.
+
+`taskapi` is unchanged: it still requires `DATABASE_URL` after `.env` load. Desktop never writes the connection string into the DB-backed settings row.
+
 Reconcile tick interval is fixed in code (`pkgs/agents.ReconcileTickInterval`, 2 minutes), not an env var.
 
 ### Startup sequence (`taskapi`)
@@ -63,7 +74,7 @@ Reconcile tick interval is fixed in code (`pkgs/agents.ReconcileTickInterval`, 2
 4. `postgres.CheckSchemaDrift` — compare code `SchemaRevision` to `schema_meta` row; stderr + log alert when migrate is required.
 5. **Optional** `postgres.Migrate` — only when `taskapi -migrate` or `HAMIX_MIGRATE=1`; otherwise skipped (see [Schema migrations](#schema-migrations)).
 6. `store.NewStore`, `(*store.Store).SetReadyTaskNotifier` (in-process queue), `(*store.Store).SetPickupWake` (deferred ready), `handler.NewSSEHub`.
-7. Agent worker supervisor (`cmd/taskapi/run_agentworker.go`) reads `app_settings`, builds the runner via `pkgs/agents/runner/registry`, probes the binary, and starts the worker when conditions are met. Deep dive: [domain/agent-supervisor.md](domain/agent-supervisor.md).
+7. Agent worker supervisor (`internal/taskapiruntime` → `internal/taskapi/agentworker`) reads `app_settings`, builds the runner via `pkgs/agents/runner/registry`, probes the binary, and starts the worker when conditions are met. Deep dive: [domain/agent-supervisor.md](domain/agent-supervisor.md).
 8. `internal/taskapi.NewHTTPHandler` wires store + hub + repo into `handler.NewHandler`, then applies `pkgs/tasks/middleware.Stack` (recovery, metrics, access logging, rate limit, optional auth, timeouts, body cap, idempotency).
 9. `http.Server` on `-port` (default 8080). `ReadHeaderTimeout` / `ReadTimeout` / `IdleTimeout` / `MaxHeaderBytes` are set; `WriteTimeout` is intentionally **not** set so SSE streams are not cut off.
 

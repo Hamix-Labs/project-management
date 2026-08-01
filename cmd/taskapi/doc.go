@@ -1,16 +1,16 @@
 // Command taskapi is an HTTP server for task CRUD backed by Postgres.
 // File map for this directory: README.md in the same folder.
 //
-// Taskapi-specific startup env parsing (listen host, log level, agent queue cap, dev SSE interval)
-// lives in package github.com/AlexsanderHamir/Hamix/internal/taskapiconfig; shared .env discovery is internal/envload.
-// The instrumented HTTP stack (middleware wrapping handler.NewHandler) is github.com/AlexsanderHamir/Hamix/internal/taskapi.
+// Shared API stack (DB, agents, NewHTTPHandler) lives in
+// github.com/AlexsanderHamir/Hamix/internal/taskapiruntime.
+// Taskapi-specific startup env parsing lives in internal/taskapiconfig;
+// shared .env discovery is internal/envload. This package owns logging,
+// listen/serve, and /metrics mux wrapping only.
 //
-// It loads environment with envload.Load (repo-root .env or -env path), opens the database with
-// pkgs/tasks/postgres.Open, optionally runs postgres.Migrate when -migrate or HAMIX_MIGRATE is set,
-// checks schema drift on every startup and exits before listening when migrate is required, constructs handler.NewSSEHub for
-// task change notifications, optionally opens pkgs/repo from app_settings.repo_root for GET /repo/* and prompt
-// validation, then mounts handler.NewHandler (REST + GET /events SSE + optional /repo) on / with
-// WithRecovery, WithHTTPMetrics, WithAccessLog, WithRateLimit, WithAPIAuth, WithRequestTimeout, WithMaxRequestBody, and WithIdempotency; GET /metrics (Prometheus text) is registered separately on the mux behind handler.WrapPrometheusHandler (baseline security headers).
+// It loads environment with envload.Load (repo-root .env or -env path),
+// starts the shared runtime via taskapiruntime.Start, optionally with
+// Migrate when -migrate or HAMIX_MIGRATE is set, then mounts
+// Runtime.Handler on / with GET /metrics on the mux.
 //
 // Flags (see also -h):
 //
@@ -25,8 +25,8 @@
 // Each process start creates a new file named taskapi-YYYY-MM-DD-HHMMSS-<nanos>.jsonl (local time) under
 // the log directory; records are JSON objects, one per line (slog JSON handler). One line is printed to
 // stderr with the log file path. GORM SQL traces (duration, rows, parameterized SQL) use the same sink.
-// SIGINT/SIGTERM trigger graceful shutdown with a 10s timeout, then the database pool is closed and the
-// log file is synced and closed.
+// SIGINT/SIGTERM trigger graceful shutdown with a 10s timeout, then Runtime.Close drains agents and
+// closes the database pool; the log file is synced and closed.
 //
 // The HTTP server sets read header/read/idle timeouts and a max header size; WriteTimeout is left unset so GET /events (SSE) can stay open.
 //

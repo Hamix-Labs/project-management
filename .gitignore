@@ -8,8 +8,12 @@ coverage-handler
 coverage-pg
 node_modules/
 web/dist/
+cmd/hamix-desktop/build/
+cmd/hamix-desktop/frontend/dist/assets/
 taskapi-dev
 taskapi-dev.exe
+hamix-desktop-dev
+hamix-desktop-dev.exe
 /hamix-agent-mcp
 /hamix-agent-mcp.exe
 /worker
