@@ -39,7 +39,7 @@ func (h *Harness) ingestExecuteCommits(
 	execPhaseSeq int64,
 	snap git.PhaseSnapshot,
 ) (executeCommitIngestOutcome, error) {
-	return h.gitSvc().IngestExecuteCommits(ctx, taskID, cycle, execPhaseSeq, snap, h.publish)
+	return h.gitSvc().IngestExecuteCommits(ctx, taskID, cycle, execPhaseSeq, snap, h.publish, git.IngestExecuteCommitsOpts{})
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."

@@ -44,7 +44,7 @@ function useTaskDetailOpenPrMutation(
       const detailKey = taskQueryKeys.detail(taskId);
       const prev = queryClient.getQueryData<Task>(detailKey);
       if (prev) {
-        queryClient.setQueryData<Task>(detailKey, { ...prev, status: "ready" });
+        queryClient.setQueryData<Task>(detailKey, { ...prev, status: "running" });
       }
       recordOptimisticApplied("task_open_pr", guard.startedAtMs);
       return { prev, startedAtMs: guard.startedAtMs, guarded: true };

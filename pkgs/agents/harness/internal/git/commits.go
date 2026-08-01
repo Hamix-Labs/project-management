@@ -36,6 +36,13 @@ type ExecuteCommitIngestOutcome struct {
 	CommitCount int
 }
 
+// IngestExecuteCommitsOpts controls post-execute commit register validation.
+type IngestExecuteCommitsOpts struct {
+	// AllowEmptyRegister permits an empty MCP register when HEAD has no new
+	// commits since cycle_base (open-pr runs push existing work; no new commits).
+	AllowEmptyRegister bool
+}
+
 // FreshRetryResetOutcome reports whether fresh-retry git reset was skipped.
 type FreshRetryResetOutcome struct {
 	Skipped bool
@@ -226,6 +233,7 @@ func (s *Service) IngestExecuteCommits(
 	execPhaseSeq int64,
 	snap PhaseSnapshot,
 	publish func(taskID, cycleID string),
+	opts IngestExecuteCommitsOpts,
 ) (ExecuteCommitIngestOutcome, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "agent.harness.git.IngestExecuteCommits",
 		"task_id", taskID, "cycle_id", cycle.ID, "phase_seq", execPhaseSeq)
@@ -247,7 +255,17 @@ func (s *Service) IngestExecuteCommits(
 		return ExecuteCommitIngestOutcome{}, err
 	}
 	if len(regEntries) == 0 {
-		return ExecuteCommitIngestOutcome{FailReason: ExecuteMissingCommitsReason}, nil
+		if !opts.AllowEmptyRegister {
+			return ExecuteCommitIngestOutcome{FailReason: ExecuteMissingCommitsReason}, nil
+		}
+		headSHAs, herr := s.revListCycleRange(ctx, g.Worktree, g.CycleBaseSHA)
+		if herr != nil {
+			return ExecuteCommitIngestOutcome{FailReason: ExecuteInvalidCommitReason}, nil
+		}
+		if len(headSHAs) > 0 {
+			return ExecuteCommitIngestOutcome{FailReason: ExecuteUnregisteredCommitsReason}, nil
+		}
+		return ExecuteCommitIngestOutcome{}, nil
 	}
 
 	headSHAs, err := s.revListCycleRange(ctx, g.Worktree, g.CycleBaseSHA)

@@ -30,7 +30,13 @@ const PHASE_STATUS_LABELS: Record<PhaseStatus, string> = {
   skipped: "Skipped",
 };
 
-export function cycleStatusLabel(s: CycleStatus): string {
+export function cycleStatusLabel(
+  s: CycleStatus,
+  opts?: { runKind?: string },
+): string {
+  if (s === "running" && opts?.runKind === "open_pr") {
+    return "Creating PR";
+  }
   return CYCLE_STATUS_LABELS[s];
 }
 

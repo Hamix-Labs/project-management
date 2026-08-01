@@ -5,14 +5,16 @@ import { StatusChip } from "./StatusChip";
 
 type Props = HTMLAttributes<HTMLSpanElement> & {
   status: CycleStatus;
+  /** Overrides the default cycle status label (e.g. Creating PR). */
+  label?: string;
 };
 
-export function CycleStatusBadge({ status, className, ...rest }: Props) {
+export function CycleStatusBadge({ status, label, className, ...rest }: Props) {
   const meta = CYCLE_STATUS_META[status];
   return (
     <StatusChip
       tone={meta.tone}
-      label={meta.label}
+      label={label ?? meta.label}
       pulse={meta.pulse}
       className={className}
       {...rest}

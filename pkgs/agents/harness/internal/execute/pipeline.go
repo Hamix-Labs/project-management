@@ -1,8 +1,8 @@
 package execute
 
-import "github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"log/slog"
 
@@ -11,6 +11,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/orchestration"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/reports"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
@@ -100,7 +101,10 @@ func (s *Service) RunPhase(
 		ports.emitProgress(parentCtx, task.ID, cycle.ID, execPhase,
 			runner.SetupProgressEvent(runner.ProgressRunStateSetupIngest, "Validating commit register…"))
 		publish := ports.Publish
-		out.IngestOutcome, out.IngestErr = s.git.IngestExecuteCommits(parentCtx, task.ID, cycle, execPhase.PhaseSeq, snap, publish)
+		ingestOpts := git.IngestExecuteCommitsOpts{
+			AllowEmptyRegister: cycleAllowsEmptyCommitRegister(cycle),
+		}
+		out.IngestOutcome, out.IngestErr = s.git.IngestExecuteCommits(parentCtx, task.ID, cycle, execPhase.PhaseSeq, snap, publish, ingestOpts)
 		if out.IngestErr != nil {
 			slog.Warn("agent harness commit ingest error", "cmd", calltrace.LogCmd,
 				"operation", "agent.harness.execute.RunPhase.commit_ingest_err",
@@ -114,4 +118,18 @@ func (s *Service) RunPhase(
 
 	out.PostRunInput = BuildPostRunInput(parentCtx, runErr, operatorCancelled, snap, out.IngestAttempted, out.IngestOutcome, out.IngestErr)
 	return out
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure cycle meta decode for commit ingest policy."
+func cycleAllowsEmptyCommitRegister(cycle *cyclesdomain.TaskCycle) bool {
+	if cycle == nil || len(cycle.MetaJSON) == 0 {
+		return false
+	}
+	var meta struct {
+		RunKind string `json:"run_kind"`
+	}
+	if err := json.Unmarshal(cycle.MetaJSON, &meta); err != nil {
+		return false
+	}
+	return meta.RunKind == string(taskcoredomain.PendingKindOpenPR)
 }
