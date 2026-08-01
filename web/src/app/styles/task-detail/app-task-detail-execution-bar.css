@@ -45,8 +45,6 @@
 .task-detail-execution-bar__status {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
-  flex-wrap: wrap;
 }
 
 .task-detail-execution-bar .task-detail-status-badge,

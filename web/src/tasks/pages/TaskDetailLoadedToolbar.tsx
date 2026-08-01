@@ -95,8 +95,8 @@ export function TaskDetailLoadedToolbar({
               className="task-detail-status-badge"
               data-needs-user={needsUser ? "true" : undefined}
             />
-            <ViewPullRequestLink url={task.pull_request_url ?? ""} />
           </div>
+          <ViewPullRequestLink url={task.pull_request_url ?? ""} />
         </div>
         <TaskDetailSchedule task={task} />
       </div>
