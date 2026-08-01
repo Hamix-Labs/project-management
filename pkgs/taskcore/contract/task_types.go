@@ -15,13 +15,13 @@ type VerifyCommandInput = checklistcontract.VerifyCommandInput
 
 // CreateTaskInput is the task creation payload.
 type CreateTaskInput struct {
-	ID              string
-	DraftID         string
-	Title           string
-	InitialPrompt   string
-	Status          domain.Status
-	Priority        domain.Priority
-	ProjectID       *string
+	ID            string
+	DraftID       string
+	Title         string
+	InitialPrompt string
+	Status        domain.Status
+	Priority      domain.Priority
+	ProjectID     *string
 	// Number, when non-nil, skips per-project allocateNextTaskNumber and uses
 	// this value (for batch instantiate pre-allocation).
 	Number          *int

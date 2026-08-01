@@ -49,9 +49,9 @@ type taskTemplateInstantiateErrorJSON struct {
 }
 
 type taskTemplateInstantiateAcceptedJSON struct {
-	Accepted bool                                `json:"accepted"`
-	Total    int                                 `json:"total"`
-	Errors   []taskTemplateInstantiateErrorJSON  `json:"errors"`
+	Accepted bool                               `json:"accepted"`
+	Total    int                                `json:"total"`
+	Errors   []taskTemplateInstantiateErrorJSON `json:"errors"`
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by listTaskTemplates."

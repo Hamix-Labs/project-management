@@ -44,7 +44,7 @@ func (h *Handler) registerRoutes(m *http.ServeMux) {
 		},
 	})
 	composehandler.Register(m, composehandler.Deps{
-		Compose:          h.store,
+		Compose: h.store,
 		NormalizeCompose: func(ctx context.Context, raw json.RawMessage) (composehandler.NormalizeComposeResult, error) {
 			payloadRaw, compose, err := h.normalizeComposePayloadRaw(ctx, raw)
 			if err != nil {

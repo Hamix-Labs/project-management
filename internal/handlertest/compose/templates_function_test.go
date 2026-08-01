@@ -43,8 +43,8 @@ func TestHTTP_task_templates_function_instantiate(t *testing.T) {
 		t.Fatalf("missing binding status %d body %s", miss.StatusCode, missBody)
 	}
 	var missResp struct {
-		Accepted bool  `json:"accepted"`
-		Total    int   `json:"total"`
+		Accepted bool `json:"accepted"`
+		Total    int  `json:"total"`
 		Errors   []struct {
 			TemplateID string `json:"template_id"`
 			Error      string `json:"error"`
