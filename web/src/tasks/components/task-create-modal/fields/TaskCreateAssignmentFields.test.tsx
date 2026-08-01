@@ -93,6 +93,10 @@ describe("TaskCreateAssignmentFields", () => {
       expect(onAssignmentChange).not.toHaveBeenCalled();
     });
 
+    const trigger = screen.getByRole("combobox", { name: /repository/i });
+    expect(trigger).toHaveTextContent("main");
+    expect(trigger).toHaveAttribute("title", "/repo/main");
+
     fetchMock.mockRestore();
   });
 

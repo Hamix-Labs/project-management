@@ -2,14 +2,6 @@ import { Link } from "react-router-dom";
 import { useProjectDetailPrefetcher } from "@/app/hooks/usePrefetchOnIntent";
 import type { Project } from "@/types";
 
-/** Last path segment for repo labels (e.g. `C:/proj/hamix` → `hamix`). */
-export function repositoryBasename(path: string): string {
-  const normalized = path.trim().replace(/\\/g, "/").replace(/\/+$/, "");
-  if (normalized === "") return path;
-  const slash = normalized.lastIndexOf("/");
-  return slash >= 0 ? normalized.slice(slash + 1) : normalized;
-}
-
 function formatDate(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";

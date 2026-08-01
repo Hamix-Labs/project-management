@@ -93,6 +93,7 @@ export function CustomSelect({
   const current = useMemo((): {
     value: string;
     label: string;
+    title?: string;
     pillClass?: string;
     depth?: number;
     rowTag?: string;
@@ -103,6 +104,7 @@ export function CustomSelect({
       ): o is {
         value: string;
         label: string;
+        title?: string;
         pillClass?: string;
         depth?: number;
         rowTag?: string;
@@ -295,6 +297,7 @@ export function CustomSelect({
         role="combobox"
         className="custom-select-trigger"
         data-testid={triggerTestId}
+        title={current.title}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={listboxId}

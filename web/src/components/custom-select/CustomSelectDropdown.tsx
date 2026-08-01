@@ -105,6 +105,7 @@ export const CustomSelectDropdown = forwardRef<HTMLUListElement, Props>(
               role="option"
               aria-selected={o.value === value}
               aria-label={o.rowTag ? `${o.rowTag}: ${o.label}` : undefined}
+              title={o.title}
               className={
                 i === highlight
                   ? "custom-select-option custom-select-option--highlight"
