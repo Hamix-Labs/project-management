@@ -5,3 +5,4 @@ export type {
 export { taskQueryKeys } from "@/lib/taskQueryKeys";
 export * from "./sseInvalidate";
 export * from "./resolveTaskDependencySummaries";
+export * from "./findCachedTask";

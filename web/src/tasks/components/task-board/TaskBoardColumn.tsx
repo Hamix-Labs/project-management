@@ -8,6 +8,7 @@ type Props = {
   projectNameById: Record<string, string>;
   showProject: boolean;
   showTags: boolean;
+  prefetchTaskDetail: (id: string) => void;
 };
 
 export function TaskBoardColumn({
@@ -16,6 +17,7 @@ export function TaskBoardColumn({
   projectNameById,
   showProject,
   showTags,
+  prefetchTaskDetail,
 }: Props) {
   const headingId = `task-board-col-${column.id}`;
   return (
@@ -47,6 +49,7 @@ export function TaskBoardColumn({
               task={task}
               showProject={showProject}
               showTags={showTags}
+              prefetchTaskDetail={prefetchTaskDetail}
               projectName={
                 task.project_id
                   ? projectNameById[task.project_id]
