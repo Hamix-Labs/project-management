@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log/slog"
+	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/cursorresume"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/git"
@@ -101,9 +102,8 @@ func (s *Service) RunPhase(
 		ports.emitProgress(parentCtx, task.ID, cycle.ID, execPhase,
 			runner.SetupProgressEvent(runner.ProgressRunStateSetupIngest, "Validating commit register…"))
 		publish := ports.Publish
-		ingestOpts := git.IngestExecuteCommitsOpts{
-			AllowEmptyRegister: cycleAllowsEmptyCommitRegister(cycle),
-		}
+		policy := visitPolicyFromCycle(cycle)
+		ingestOpts := git.IngestExecuteCommitsOpts{Mode: policy.CommitIngest}
 		out.IngestOutcome, out.IngestErr = s.git.IngestExecuteCommits(parentCtx, task.ID, cycle, execPhase.PhaseSeq, snap, publish, ingestOpts)
 		if out.IngestErr != nil {
 			slog.Warn("agent harness commit ingest error", "cmd", calltrace.LogCmd,
@@ -120,16 +120,20 @@ func (s *Service) RunPhase(
 	return out
 }
 
-//funclogmeasure:skip category=hot-path reason="Pure cycle meta decode for commit ingest policy."
-func cycleAllowsEmptyCommitRegister(cycle *cyclesdomain.TaskCycle) bool {
-	if cycle == nil || len(cycle.MetaJSON) == 0 {
-		return false
+//funclogmeasure:skip category=hot-path reason="Pure cycle meta decode for execute visit policy."
+func visitPolicyFromCycle(cycle *cyclesdomain.TaskCycle) orchestration.ExecuteVisitPolicy {
+	runKind := taskcoredomain.PendingRunKind("")
+	skipClaim := false
+	if cycle != nil && len(cycle.MetaJSON) > 0 {
+		var meta struct {
+			RunKind             string `json:"run_kind"`
+			SkipClaimAcceptance bool   `json:"skip_claim_acceptance"`
+			PolishSkipVerify    bool   `json:"polish_skip_verify"`
+		}
+		if err := json.Unmarshal(cycle.MetaJSON, &meta); err == nil {
+			runKind = taskcoredomain.PendingRunKind(strings.TrimSpace(meta.RunKind))
+			skipClaim = meta.SkipClaimAcceptance || meta.PolishSkipVerify
+		}
 	}
-	var meta struct {
-		RunKind string `json:"run_kind"`
-	}
-	if err := json.Unmarshal(cycle.MetaJSON, &meta); err != nil {
-		return false
-	}
-	return meta.RunKind == string(taskcoredomain.PendingKindOpenPR)
+	return orchestration.ResolveExecuteVisitPolicy(runKind, skipClaim)
 }

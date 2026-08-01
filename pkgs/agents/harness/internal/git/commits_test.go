@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/internal/gittest"
+	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/orchestration"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/sidecar"
 	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 	cyclescontract "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/contract"
@@ -137,11 +138,54 @@ func TestIngestExecuteCommits_emptyRegisterAllowedWhenNoNewCommits(t *testing.T)
 	base, _ := repo.Run(ctx, dir, "rev-parse", "HEAD")
 	svc := NewService(st, repo, t.TempDir())
 	snap := PhaseSnapshot{Repo: dir, Worktree: dir, BaseSHA: trimLine(base), CycleBaseSHA: trimLine(base)}
-	outcome, err := svc.IngestExecuteCommits(ctx, tsk.ID, cycle, 1, snap, nil, IngestExecuteCommitsOpts{AllowEmptyRegister: true})
+	outcome, err := svc.IngestExecuteCommits(ctx, tsk.ID, cycle, 1, snap, nil, IngestExecuteCommitsOpts{
+		Mode: orchestration.CommitIngestAllowEmptyWhenNoHeadDelta,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if outcome.FailReason != "" || outcome.CommitCount != 0 {
+		t.Fatalf("got %+v", outcome)
+	}
+}
+
+func TestIngestExecuteCommits_allowEmptyShellOnlyUnregistered(t *testing.T) {
+	t.Parallel()
+	gittest.SkipIfNoGit(t)
+	ctx := context.Background()
+	st := storefake.New(t).API
+	tsk, err := st.Create(ctx, taskcorestore.CreateTaskInput{
+		Title: "t", InitialPrompt: "p", Priority: taskcoredomain.PriorityMedium, Status: taskcoredomain.StatusReady,
+	}, taskcoredomain.ActorUser)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cycle, err := st.StartCycle(ctx, cyclescontract.StartCycleInput{TaskID: tsk.ID, TriggeredBy: taskcoredomain.ActorAgent})
+	if err != nil {
+		t.Fatal(err)
+	}
+	dir := t.TempDir()
+	gittest.Init(t, dir)
+	repo := NewExecRepo()
+	base, _ := repo.Run(ctx, dir, "rev-parse", "HEAD")
+	if err := os.WriteFile(filepath.Join(dir, "x.txt"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	for _, args := range [][]string{{"add", "x.txt"}, {"commit", "-m", "shell"}} {
+		cmd := exec.Command("git", append([]string{"-C", dir, "-c", "user.email=t@e.local", "-c", "user.name=t"}, args...)...)
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
+	}
+	svc := NewService(st, repo, t.TempDir())
+	snap := PhaseSnapshot{Repo: dir, Worktree: dir, BaseSHA: trimLine(base), CycleBaseSHA: trimLine(base)}
+	outcome, err := svc.IngestExecuteCommits(ctx, tsk.ID, cycle, 1, snap, nil, IngestExecuteCommitsOpts{
+		Mode: orchestration.CommitIngestAllowEmptyWhenNoHeadDelta,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if outcome.FailReason != ExecuteUnregisteredCommitsReason {
 		t.Fatalf("got %+v", outcome)
 	}
 }

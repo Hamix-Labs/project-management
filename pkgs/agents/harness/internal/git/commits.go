@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/orchestration"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/sidecar"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 )
@@ -38,9 +39,8 @@ type ExecuteCommitIngestOutcome struct {
 
 // IngestExecuteCommitsOpts controls post-execute commit register validation.
 type IngestExecuteCommitsOpts struct {
-	// AllowEmptyRegister permits an empty MCP register when HEAD has no new
-	// commits since cycle_base (open-pr runs push existing work; no new commits).
-	AllowEmptyRegister bool
+	// Mode selects empty-register policy (orchestration.CommitIngest*).
+	Mode orchestration.CommitIngestMode
 }
 
 // FreshRetryResetOutcome reports whether fresh-retry git reset was skipped.
@@ -255,7 +255,7 @@ func (s *Service) IngestExecuteCommits(
 		return ExecuteCommitIngestOutcome{}, err
 	}
 	if len(regEntries) == 0 {
-		if !opts.AllowEmptyRegister {
+		if opts.Mode != orchestration.CommitIngestAllowEmptyWhenNoHeadDelta {
 			return ExecuteCommitIngestOutcome{FailReason: ExecuteMissingCommitsReason}, nil
 		}
 		headSHAs, herr := s.revListCycleRange(ctx, g.Worktree, g.CycleBaseSHA)
