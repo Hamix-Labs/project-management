@@ -6,7 +6,11 @@ import { rememberPersistedDetailId } from "@/lib/queryPersist";
 import { rumNavigationTiming } from "@/observability";
 import type { Task, TaskChecklistResponse } from "@/types";
 import type { UseQueryResult } from "@tanstack/react-query";
-import { resolveTaskDependencySummaries, taskQueryKeys } from "../task-query";
+import {
+  findCachedTask,
+  resolveTaskDependencySummaries,
+  taskQueryKeys,
+} from "../task-query";
 import { QUERY_POLICY } from "../queryPolicy";
 
 function useTaskDetailNavigationTiming(
@@ -55,11 +59,12 @@ function useTaskDetailNavigationTiming(
 export function useTaskDetailPageQueries(taskId: string) {
   const queryClient = useQueryClient();
 
-  const taskQuery = useQuery({
+  const taskQuery = useQuery<Task, Error>({
     queryKey: taskQueryKeys.detail(taskId),
     queryFn: ({ signal }) => getTask(taskId, { signal }),
     enabled: Boolean(taskId),
     staleTime: QUERY_POLICY.detailStaleTimeMs,
+    placeholderData: () => findCachedTask(queryClient, taskId),
   });
 
   const checklistQuery = useQuery({

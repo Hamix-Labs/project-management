@@ -218,6 +218,62 @@ func TestHandler_listGlobalGitWorktrees_serializesBranchID(t *testing.T) {
 	}
 }
 
+func TestHandler_getGlobalGitWorktree_resolvesRepoAndBranch(t *testing.T) {
+	h, _, main := gitHandlerTest(t)
+	repoID := createGlobalGitRepo(t, h, main)
+
+	listReq := httptest.NewRequest(http.MethodGet, "/git/repositories/"+repoID+"/worktrees", nil)
+	listRec := httptest.NewRecorder()
+	h.ServeHTTP(listRec, listReq)
+	if listRec.Code != http.StatusOK {
+		t.Fatalf("list status=%d body=%s", listRec.Code, listRec.Body.String())
+	}
+	var listResp gitWorktreesListResponse
+	if err := json.Unmarshal(listRec.Body.Bytes(), &listResp); err != nil {
+		t.Fatal(err)
+	}
+	if len(listResp.Worktrees) != 1 {
+		t.Fatalf("len=%d want 1", len(listResp.Worktrees))
+	}
+	wtID := listResp.Worktrees[0].ID
+
+	req := httptest.NewRequest(http.MethodGet, "/git/worktrees/"+wtID, nil)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("get status=%d body=%s", rec.Code, rec.Body.String())
+	}
+	var detail gitWorktreeDetailJSON
+	if err := json.Unmarshal(rec.Body.Bytes(), &detail); err != nil {
+		t.Fatal(err)
+	}
+	if detail.ID != wtID {
+		t.Fatalf("id=%q want %q", detail.ID, wtID)
+	}
+	if detail.RepositoryID != repoID {
+		t.Fatalf("repository_id=%q want %q", detail.RepositoryID, repoID)
+	}
+	if filepath.Clean(detail.RepositoryPath) != filepath.Clean(main) {
+		t.Fatalf("repository_path=%q want %q", detail.RepositoryPath, main)
+	}
+	if detail.BranchName == "" {
+		t.Fatal("expected branch_name on main worktree detail")
+	}
+	if detail.BranchID == "" {
+		t.Fatal("expected branch_id")
+	}
+}
+
+func TestHandler_getGlobalGitWorktree_notFound(t *testing.T) {
+	h, _, _ := gitHandlerTest(t)
+	req := httptest.NewRequest(http.MethodGet, "/git/worktrees/does-not-exist", nil)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("status=%d want 404 body=%s", rec.Code, rec.Body.String())
+	}
+}
+
 func TestHandler_gitErrHTTP_domainSentinels(t *testing.T) {
 	tests := []struct {
 		name   string

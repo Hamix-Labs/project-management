@@ -27,6 +27,16 @@ describe("StatusBadge", () => {
     );
   });
 
+  it("maps pr_ready to the pr_ready tone (distinct from review)", () => {
+    const { container } = render(<StatusBadge status="pr_ready" />);
+    expect(container.firstChild).toHaveClass(
+      "task-status-badge--tone-pr_ready",
+    );
+    expect(container.firstChild).not.toHaveClass(
+      "task-status-badge--tone-review",
+    );
+  });
+
   it("maps every status to a tone class", () => {
     for (const status of STATUSES) {
       const { container } = render(<StatusBadge status={status} />);

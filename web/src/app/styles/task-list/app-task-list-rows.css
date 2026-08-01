@@ -277,9 +277,9 @@
 }
 
 .cell-pill--status-pr_ready {
-  background: var(--pill-review-bg);
-  color: var(--pill-review-text);
-  border-color: var(--pill-review-border);
+  background: var(--pill-pr-ready-bg);
+  color: var(--pill-pr-ready-text);
+  border-color: var(--pill-pr-ready-border);
 }
 
 .cell-pill--status-done {

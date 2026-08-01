@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
 import { ROUTER_FUTURE_FLAGS } from "@/lib/routerFutureFlags";
 import { TaskBoardSection } from "./TaskBoardSection";
@@ -13,8 +14,13 @@ function withDepth(t: ReturnType<typeof makeTask>): TaskWithDepth {
 }
 
 function renderBoard(ui: ReactElement) {
+  const qc = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
   return render(
-    <MemoryRouter future={ROUTER_FUTURE_FLAGS}>{ui}</MemoryRouter>,
+    <QueryClientProvider client={qc}>
+      <MemoryRouter future={ROUTER_FUTURE_FLAGS}>{ui}</MemoryRouter>
+    </QueryClientProvider>,
   );
 }
 
@@ -36,6 +42,7 @@ describe("TaskBoardCard", () => {
         showProject
         showTags
         projectName="core-api"
+        prefetchTaskDetail={() => {}}
       />,
     );
     expect(screen.getByText("abcdef12")).toBeInTheDocument();

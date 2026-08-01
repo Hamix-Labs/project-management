@@ -1,110 +1,72 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  FACTORY_GIT_BRANCH_ID,
-  FACTORY_GIT_REPO_ID,
-  FACTORY_GIT_WORKTREE_ID,
-  gitBranchFactory,
-  gitRepositoryFactory,
-  gitWorktreeFactory,
-} from "@/test/factories/git";
+import { FACTORY_GIT_WORKTREE_ID } from "@/test/factories/git";
 import { resolveTaskGitBinding } from "./resolveTaskGitBinding";
 
-const { mockListWorktrees, mockListBranches } = vi.hoisted(() => ({
-  mockListWorktrees: vi.fn(),
-  mockListBranches: vi.fn(),
+const { mockGetWorktree } = vi.hoisted(() => ({
+  mockGetWorktree: vi.fn(),
 }));
 
 vi.mock("@/api/gitGlobal", () => ({
-  listGlobalGitWorktrees: mockListWorktrees,
-  listGlobalGitBranches: mockListBranches,
+  getGlobalGitWorktree: mockGetWorktree,
 }));
 
 describe("resolveTaskGitBinding", () => {
   beforeEach(() => {
-    mockListWorktrees.mockReset();
-    mockListBranches.mockReset();
+    mockGetWorktree.mockReset();
   });
 
   it("returns null when worktree id is empty", async () => {
-    await expect(
-      resolveTaskGitBinding("", [gitRepositoryFactory()]),
-    ).resolves.toBeNull();
-    expect(mockListWorktrees).not.toHaveBeenCalled();
+    await expect(resolveTaskGitBinding("")).resolves.toBeNull();
+    expect(mockGetWorktree).not.toHaveBeenCalled();
   });
 
   it("resolves repo, worktree path, and branch name", async () => {
-    mockListWorktrees.mockResolvedValue([
-      gitWorktreeFactory({
-        id: FACTORY_GIT_WORKTREE_ID,
-        path: "/repo/feature",
-        branch_id: FACTORY_GIT_BRANCH_ID,
-      }),
-    ]);
-    mockListBranches.mockResolvedValue([
-      gitBranchFactory({ id: FACTORY_GIT_BRANCH_ID, name: "feature/commits" }),
-    ]);
+    mockGetWorktree.mockResolvedValue({
+      id: FACTORY_GIT_WORKTREE_ID,
+      repository_id: "repo",
+      path: "/repo/feature",
+      host_path: "",
+      name: "feature",
+      is_main: false,
+      created_at: "2026-06-22T12:00:00Z",
+      repository_path: "/repo/main",
+      repository_host_path: "",
+      branch_name: "feature/commits",
+    });
 
-    await expect(
-      resolveTaskGitBinding(FACTORY_GIT_WORKTREE_ID, [
-        gitRepositoryFactory({ id: FACTORY_GIT_REPO_ID, path: "/repo/main" }),
-      ]),
-    ).resolves.toEqual({
+    await expect(resolveTaskGitBinding(FACTORY_GIT_WORKTREE_ID)).resolves.toEqual({
       repo: "/repo/main",
       worktree: "/repo/feature",
       openPath: "/repo/feature",
       branch: "feature/commits",
     });
+    expect(mockGetWorktree).toHaveBeenCalledWith(FACTORY_GIT_WORKTREE_ID, {
+      signal: undefined,
+    });
   });
 
   it("prefers host_path for openPath when present", async () => {
-    mockListWorktrees.mockResolvedValue([
-      gitWorktreeFactory({
-        id: FACTORY_GIT_WORKTREE_ID,
-        path: "/container/wt",
-        host_path: "/Users/a/.hamix/wt",
-        branch_id: FACTORY_GIT_BRANCH_ID,
-      }),
-    ]);
-    mockListBranches.mockResolvedValue([
-      gitBranchFactory({ id: FACTORY_GIT_BRANCH_ID, name: "feature/x" }),
-    ]);
+    mockGetWorktree.mockResolvedValue({
+      id: FACTORY_GIT_WORKTREE_ID,
+      repository_id: "repo",
+      path: "/container/wt",
+      host_path: "/Users/a/.hamix/wt",
+      name: "feature",
+      is_main: false,
+      created_at: "2026-06-22T12:00:00Z",
+      repository_path: "/repo/main",
+      repository_host_path: "",
+      branch_name: "feature/x",
+    });
 
-    await expect(
-      resolveTaskGitBinding(FACTORY_GIT_WORKTREE_ID, [
-        gitRepositoryFactory({ id: FACTORY_GIT_REPO_ID, path: "/repo/main" }),
-      ]),
-    ).resolves.toMatchObject({
+    await expect(resolveTaskGitBinding(FACTORY_GIT_WORKTREE_ID)).resolves.toMatchObject({
       worktree: "/container/wt",
       openPath: "/Users/a/.hamix/wt",
     });
   });
 
-  it("searches the hinted repository first", async () => {
-    const otherRepoId = "00000000-0000-4000-8000-000000000099";
-    mockListWorktrees.mockImplementation(async (repositoryId: string) => {
-      if (repositoryId === FACTORY_GIT_REPO_ID) {
-        return [
-          gitWorktreeFactory({
-            id: FACTORY_GIT_WORKTREE_ID,
-            path: "/repo/main",
-          }),
-        ];
-      }
-      return [];
-    });
-    mockListBranches.mockResolvedValue([
-      gitBranchFactory({ name: "main" }),
-    ]);
-
-    await resolveTaskGitBinding(
-      FACTORY_GIT_WORKTREE_ID,
-      [
-        gitRepositoryFactory({ id: otherRepoId, path: "/other" }),
-        gitRepositoryFactory({ id: FACTORY_GIT_REPO_ID, path: "/repo/main" }),
-      ],
-      { repositoryIdHint: FACTORY_GIT_REPO_ID },
-    );
-
-    expect(mockListWorktrees.mock.calls[0]?.[0]).toBe(FACTORY_GIT_REPO_ID);
+  it("returns null when get-by-id fails", async () => {
+    mockGetWorktree.mockRejectedValue(new Error("not found"));
+    await expect(resolveTaskGitBinding(FACTORY_GIT_WORKTREE_ID)).resolves.toBeNull();
   });
 });

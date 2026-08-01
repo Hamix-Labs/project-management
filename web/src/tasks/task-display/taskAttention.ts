@@ -24,7 +24,7 @@ export function userAttention(
       return {
         show: true,
         headline: "Ready for your review",
-        body: "Approve and open a pull request, or send polish instructions.",
+        body: "Approve and Open a pull request, or send polish instructions.",
       };
     case "pr_ready":
       return {

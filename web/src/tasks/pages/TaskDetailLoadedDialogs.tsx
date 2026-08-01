@@ -91,14 +91,13 @@ export function TaskDetailLoadedDialogs({
 
       {openPrConfirmOpen ? (
         <TaskOpenPRConfirmDialog
-          taskTitle={task.title}
           saving={saving}
           pending={openPrMutation.isPending}
           error={
             openPrMutation.isError
               ? errorMessage(
                   openPrMutation.error,
-                  "Couldn't queue approve and open PR.",
+                  "Couldn't queue Approve & Open PR.",
                 )
               : null
           }

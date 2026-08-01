@@ -2,6 +2,7 @@ import { useMemo, type ReactNode } from "react";
 import { useDelayedTrue } from "@/lib/useDelayedTrue";
 import { EmptyState, EmptyStateFilterGlyph } from "@/shared/EmptyState";
 import { Button } from "@/components/ui";
+import { useTaskDetailPrefetcher } from "@/app/hooks/usePrefetchOnIntent";
 import { TaskListFilters } from "../task-list/filters/TaskListFilters";
 import { TaskListSectionHeading } from "../task-list/section/TaskListSectionHeading";
 import type { TaskWithDepth } from "../../task-tree";
@@ -52,6 +53,7 @@ export function TaskBoardSection({
     showProjectColumn,
     smoothTransitions,
   });
+  const prefetchTaskDetail = useTaskDetailPrefetcher();
 
   const groups = useMemo(
     () => groupTasksByBoardColumn(filters.filteredTasks),
@@ -155,6 +157,7 @@ export function TaskBoardSection({
               projectNameById={filters.projectNameById}
               showProject={showProjectColumn}
               showTags={filters.tagsUiEnabled}
+              prefetchTaskDetail={prefetchTaskDetail}
             />
           ))}
         </div>

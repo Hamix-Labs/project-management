@@ -27,7 +27,7 @@ export function TaskDetailGitBinding({
   repositoryId,
 }: Props) {
   const wtId = (worktreeId ?? "").trim();
-  const bindingQuery = useTaskGitBinding(worktreeId, projectId, repositoryId);
+  const bindingQuery = useTaskGitBinding(worktreeId);
   const pathCopy = useCopyToClipboard("Copy path");
 
   const projectKey = (projectId ?? "").trim();
@@ -35,7 +35,9 @@ export function TaskDetailGitBinding({
     enabled: wtId === "" && projectKey !== "",
   });
   const repositoriesQuery = useGlobalRepositories({
-    enabled: wtId === "" && (projectKey !== "" || (repositoryId ?? "").trim() !== ""),
+    enabled:
+      wtId === "" &&
+      (projectKey !== "" || (repositoryId ?? "").trim() !== ""),
   });
 
   if (wtId !== "") {

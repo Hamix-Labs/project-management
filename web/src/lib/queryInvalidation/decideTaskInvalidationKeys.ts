@@ -16,6 +16,8 @@ export function decideTaskInvalidationKeys(
       ];
     case "events":
       return [taskQueryKeys.eventsRoot(input.taskId)];
+    case "cycles":
+      return [taskQueryKeys.cycles(input.taskId)];
     case "drafts":
       return [taskQueryKeys.drafts()];
     case "templates":

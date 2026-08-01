@@ -10,11 +10,6 @@ export const gitQueryKeys = {
     [...gitQueryKeys.all, "global", "branches", repositoryId] as const,
   projectsByRepo: (repositoryId: string) =>
     [...gitQueryKeys.all, "global", "projects", repositoryId] as const,
-  taskBinding: (worktreeId: string, repositoryIdHint?: string) =>
-    [
-      ...gitQueryKeys.all,
-      "task-binding",
-      worktreeId,
-      repositoryIdHint ?? "all",
-    ] as const,
+  taskBinding: (worktreeId: string) =>
+    [...gitQueryKeys.all, "task-binding", worktreeId] as const,
 };

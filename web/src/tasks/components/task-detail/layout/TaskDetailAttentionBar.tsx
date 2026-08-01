@@ -44,7 +44,7 @@ type Props = {
   /** When set, shows Mark done for a task in pr_ready (POST /approve). */
   onApprove?: () => void;
   approvePending?: boolean;
-  /** When set, shows Approve & open PR for a task in review (POST /open-pr). */
+  /** When set, shows Approve & Open PR for a task in review (POST /open-pr). */
   onOpenPr?: () => void;
   openPrPending?: boolean;
   /** When set, shows Polish for a task in review (POST /polish). */
@@ -89,7 +89,7 @@ export function TaskDetailToolbarActions({
           onClick={onOpenPr}
           disabled={saving || reviewActionsBusy || approvePending}
         >
-          {openPrPending ? "Opening PR…" : "Approve & open PR"}
+          {openPrPending ? "Opening PR…" : "Approve & Open PR"}
         </button>
       ) : null}
       {onApprove ? (

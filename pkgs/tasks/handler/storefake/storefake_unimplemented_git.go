@@ -54,6 +54,11 @@ func (unimplementedHandlerStore) ListGitWorktrees(context.Context, string, strin
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
+func (unimplementedHandlerStore) GetGitWorktreeByID(context.Context, string) (gitdomain.GitWorktree, error) {
+	return gitdomain.GitWorktree{}, errNotImplemented
+}
+
+//funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
 func (unimplementedHandlerStore) UnregisterGitWorktreeByID(context.Context, string) error {
 	return errNotImplemented
 }
@@ -71,6 +76,11 @@ func (unimplementedHandlerStore) ListGitBranchesByRepo(context.Context, string) 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
 func (unimplementedHandlerStore) ListGitBranches(context.Context, string, string) ([]gitdomain.GitBranch, error) {
 	return nil, errNotImplemented
+}
+
+//funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
+func (unimplementedHandlerStore) GetGitBranchByID(context.Context, string) (gitdomain.GitBranch, error) {
+	return gitdomain.GitBranch{}, errNotImplemented
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
@@ -99,7 +109,7 @@ func (unimplementedHandlerStore) SyncGitRepository(context.Context, string) (git
 }
 
 //funclogmeasure:skip category=tool-required-noop reason="Handler test fake only; store I/O traces live on production HTTP handler chokepoints."
-func (unimplementedHandlerStore) WorktreeStaleMap(context.Context, string, time.Time) (map[string]bool, error) {
+func (unimplementedHandlerStore) WorktreeStaleMap(context.Context, []gitdomain.GitWorktree, time.Time) (map[string]bool, error) {
 	return nil, errNotImplemented
 }
 

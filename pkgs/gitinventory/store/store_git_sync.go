@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/contract"
+	gitdomain "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/domain"
 	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
@@ -43,19 +44,29 @@ func (s *Store) SyncGitRepository(ctx context.Context, repoID string) (contract.
 	})
 }
 
-// WorktreeStaleMap reports which worktree IDs are stale for the given repo.
-func (s *Store) WorktreeStaleMap(ctx context.Context, repoID string, now time.Time) (map[string]bool, error) {
+// WorktreeStaleMap reports which of the given worktree IDs are stale.
+// Query count is O(1) in len(worktrees): two set queries (active tasks,
+// latest terminal cycle end), then in-memory classification.
+func (s *Store) WorktreeStaleMap(ctx context.Context, worktrees []gitdomain.GitWorktree, now time.Time) (map[string]bool, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "gitinventory.store.WorktreeStaleMap")
-	repoID = strings.TrimSpace(repoID)
-	if repoID == "" {
-		return nil, fmt.Errorf("%w: repository_id required", taskcoredomain.ErrInvalidInput)
+	out := make(map[string]bool, len(worktrees))
+	if len(worktrees) == 0 {
+		return out, nil
 	}
-	wts, err := s.ListGitWorktreesByRepo(ctx, repoID)
-	if err != nil {
-		return nil, err
-	}
-	out := make(map[string]bool, len(wts))
+
 	cutoff := now.UTC().Add(-WorktreeStaleAfter)
+	candidateIDs := make([]string, 0, len(worktrees))
+	for _, wt := range worktrees {
+		out[wt.ID] = false
+		if wt.IsMain {
+			continue
+		}
+		candidateIDs = append(candidateIDs, wt.ID)
+	}
+	if len(candidateIDs) == 0 {
+		return out, nil
+	}
+
 	terminalCycles := []string{
 		string(cyclesdomain.CycleStatusSucceeded),
 		string(cyclesdomain.CycleStatusFailed),
@@ -69,37 +80,80 @@ func (s *Store) WorktreeStaleMap(ctx context.Context, repoID string, now time.Ti
 		string(taskcoredomain.StatusPrReady),
 		string(taskcoredomain.StatusOnHold),
 	}
-	for _, wt := range wts {
-		if wt.IsMain {
-			out[wt.ID] = false
+
+	var activeIDs []string
+	if err := s.db.WithContext(ctx).Table("tasks").
+		Where("worktree_id IN ? AND status IN ?", candidateIDs, nonTerminal).
+		Distinct("worktree_id").
+		Pluck("worktree_id", &activeIDs).Error; err != nil {
+		return nil, fmt.Errorf("count active tasks: %w", err)
+	}
+	active := make(map[string]struct{}, len(activeIDs))
+	for _, id := range activeIDs {
+		active[id] = struct{}{}
+	}
+
+	type latestRow struct {
+		WorktreeID string `gorm:"column:worktree_id"`
+		Latest     string `gorm:"column:latest"`
+	}
+	var latestRows []latestRow
+	if err := s.db.WithContext(ctx).
+		Table("task_cycles AS c").
+		Select("t.worktree_id AS worktree_id, MAX(c.ended_at) AS latest").
+		Joins("INNER JOIN tasks AS t ON t.id = c.task_id").
+		Where("t.worktree_id IN ? AND c.status IN ? AND c.ended_at IS NOT NULL", candidateIDs, terminalCycles).
+		Group("t.worktree_id").
+		Scan(&latestRows).Error; err != nil {
+		return nil, fmt.Errorf("latest terminal cycle: %w", err)
+	}
+	latestByID := make(map[string]time.Time, len(latestRows))
+	for _, row := range latestRows {
+		if strings.TrimSpace(row.Latest) == "" {
 			continue
 		}
-		var active int64
-		if err := s.db.WithContext(ctx).Table("tasks").
-			Where("worktree_id = ? AND status IN ?", wt.ID, nonTerminal).
-			Count(&active).Error; err != nil {
-			return nil, fmt.Errorf("count active tasks: %w", err)
+		latest, err := parseSQLiteDateTime(row.Latest)
+		if err != nil {
+			return nil, fmt.Errorf("latest terminal cycle: parse %q: %w", row.Latest, err)
 		}
-		if active > 0 {
-			out[wt.ID] = false
+		latestByID[row.WorktreeID] = latest
+	}
+
+	for _, id := range candidateIDs {
+		if _, ok := active[id]; ok {
+			out[id] = false
 			continue
 		}
-		// tasks has no updated_at column; use latest terminal cycle end time.
-		var latest *time.Time
-		row := s.db.WithContext(ctx).
-			Table("task_cycles AS c").
-			Select("MAX(c.ended_at)").
-			Joins("INNER JOIN tasks AS t ON t.id = c.task_id").
-			Where("t.worktree_id = ? AND c.status IN ? AND c.ended_at IS NOT NULL", wt.ID, terminalCycles).
-			Row()
-		if err := row.Scan(&latest); err != nil {
-			return nil, fmt.Errorf("latest terminal cycle: %w", err)
-		}
-		if latest == nil {
-			out[wt.ID] = false
+		latest, ok := latestByID[id]
+		if !ok {
+			out[id] = false
 			continue
 		}
-		out[wt.ID] = latest.UTC().Before(cutoff)
+		out[id] = latest.UTC().Before(cutoff)
 	}
 	return out, nil
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure datetime parse helper; callers emit operation traces."
+func parseSQLiteDateTime(raw string) (time.Time, error) {
+	raw = strings.TrimSpace(raw)
+	layouts := []string{
+		time.RFC3339Nano,
+		time.RFC3339,
+		"2006-01-02 15:04:05.999999999-07:00",
+		"2006-01-02 15:04:05.999999999+00:00",
+		"2006-01-02 15:04:05.999999999",
+		"2006-01-02 15:04:05",
+	}
+	var firstErr error
+	for _, layout := range layouts {
+		t, err := time.Parse(layout, raw)
+		if err == nil {
+			return t, nil
+		}
+		if firstErr == nil {
+			firstErr = err
+		}
+	}
+	return time.Time{}, firstErr
 }

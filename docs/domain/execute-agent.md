@@ -144,8 +144,8 @@ Always required in git worktrees ([ADR-0014](../adr/ADR-0014-cycle-commit-tracki
 - The agent must commit all work that satisfies claimed criteria before finishing execute.
 - List every commit SHA and branch in `criteria-report.json` under `commits` — **no** ID markers in commit messages.
 - Create **new commits only**; never amend, rebase, or rewrite SHAs from this cycle.
-- **MCP commit register (ADR-0093):** after runner exit the harness validates `commit-register.json` against `cycle_base_sha..HEAD` (exact set equality) and upserts register SHAs. Empty register or Shell-only commits fail execute (`execute_missing_commits` / `execute_unregistered_commits`). Agents stage via Shell and commit only via `hamix.commit`.
-- Do not push.
+- **MCP commit register (ADR-0093):** after runner exit the harness validates `commit-register.json` against `cycle_base_sha..HEAD` per `ExecuteVisitPolicy.CommitIngest` and upserts register SHAs when present. Default mode requires a non-empty register (`execute_missing_commits` / `execute_unregistered_commits` on Shell-only HEAD). `open_pr` and instructions-only polish use allow-empty-when-no-head-delta. Agents stage via Shell and commit only via `hamix.commit`.
+- Do not push (except `open_pr`, which pushes and opens a PR via MCP).
 
 When `WorkingDir` is empty or not a git repo, snapshot/ingest/gates are skipped.
 

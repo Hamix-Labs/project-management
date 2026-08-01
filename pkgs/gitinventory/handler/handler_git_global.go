@@ -83,6 +83,11 @@ func gitWorktreeCheckoutStatusFromRow(row contract.WorktreeCheckoutStatusRow) gi
 }
 
 //funclogmeasure:skip category=delegate-already-logs reason="Global route wrapper; serve* emits operation trace."
+func (h *Handler) getGlobalGitWorktree(w http.ResponseWriter, r *http.Request) {
+	h.serveGetGitWorktree(w, r, "git.worktrees.get_global")
+}
+
+//funclogmeasure:skip category=delegate-already-logs reason="Global route wrapper; serve* emits operation trace."
 func (h *Handler) deleteGlobalGitWorktree(w http.ResponseWriter, r *http.Request) {
 	h.serveDeleteGitWorktree(w, r, "git.worktrees.delete_global")
 }

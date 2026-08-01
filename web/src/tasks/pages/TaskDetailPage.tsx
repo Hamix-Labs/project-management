@@ -68,12 +68,11 @@ export function TaskDetailPage() {
     return renderMissingTaskId();
   }
 
-  if (taskQuery.isPending) {
+  if (!taskQuery.data) {
+    if (taskQuery.isError) {
+      return renderTaskLoadError(taskQuery.error, () => void taskQuery.refetch());
+    }
     return <TaskDetailPageSkeleton />;
-  }
-
-  if (taskQuery.isError) {
-    return renderTaskLoadError(taskQuery.error, () => void taskQuery.refetch());
   }
 
   const task = taskQuery.data;

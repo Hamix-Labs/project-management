@@ -66,6 +66,7 @@ func Register(m *http.ServeMux, deps Deps) {
 	m.Handle("POST /git/repositories/{repoId}/reconcile", http.HandlerFunc(h.reconcileGlobalGitRepository))
 	m.Handle("POST /git/repositories/{repoId}/relocate", http.HandlerFunc(h.relocateGlobalGitRepository))
 	m.Handle("POST /git/worktrees/{worktreeId}/relocate", http.HandlerFunc(h.relocateGlobalGitWorktree))
+	m.Handle("GET /git/worktrees/{worktreeId}", http.HandlerFunc(h.getGlobalGitWorktree))
 	m.Handle("DELETE /git/worktrees/{worktreeId}", http.HandlerFunc(h.deleteGlobalGitWorktree))
 	m.Handle("GET /git/repositories/{repoId}/branches", http.HandlerFunc(h.listGlobalGitBranches))
 	m.Handle("GET /git/repositories/{repoId}/projects", http.HandlerFunc(h.listRepoProjects))

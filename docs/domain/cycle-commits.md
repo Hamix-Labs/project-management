@@ -17,11 +17,12 @@ How the worker indexes git commits per task from the MCP commit register, and fe
 
 ## Overview
 
-When `app_settings.repo_root` points at a git worktree, the execute agent stages with Shell `git add` and creates commits **only** via MCP `hamix.commit`. Each successful call appends the full HEAD SHA to `commit-register.json` under the cycle report dir. After a successful runner exit, the worker requires exact set equality between the register and `cycle_base_sha..HEAD`, then upserts register SHAs into `task_cycle_commits`.
+When `app_settings.repo_root` points at a git worktree, the execute agent stages with Shell `git add` and creates commits **only** via MCP `hamix.commit`. Each successful call appends the full HEAD SHA to `commit-register.json` under the cycle report dir. After a successful runner exit, the worker applies `ExecuteVisitPolicy.CommitIngest` ([ADR-0093](../adr/ADR-0093-mcp-commit-register.md)): default exact set equality between the register and `cycle_base_sha..HEAD`, then upserts register SHAs into `task_cycle_commits`. Visits with `CommitIngestAllowEmptyWhenNoHeadDelta` (`open_pr`, instructions-only polish) allow an empty register when HEAD has no commits beyond `cycle_base`.
 
 | Failure | Reason |
 | --- | --- |
-| Empty / missing register | `execute_missing_commits` |
+| Empty / missing register (require-registered mode) | `execute_missing_commits` |
+| Empty register + HEAD advanced (allow-empty mode) | `execute_unregistered_commits` |
 | HEAD advanced outside register | `execute_unregistered_commits` |
 | Register SHA missing from HEAD range / unresolvable | `execute_invalid_commit` |
 
@@ -42,10 +43,12 @@ Criteria claims only — **no** `commits[]` ingest. Legacy `commits[]` fields ar
 
 ### Ingest (worker)
 
-1. Read register via `ParseCommitRegister`.
-2. Build `H = rev-list --reverse cycle_base_sha..HEAD` and `R =` normalized register SHAs.
-3. Require `set(R) == set(H)`.
-4. Upsert on `(cycle_id, sha)` — append-only; never delete or supersede rows.
+1. Resolve `CommitIngestMode` via `ResolveExecuteVisitPolicy(run_kind, skip_claim_acceptance)`.
+2. Read register via `ParseCommitRegister`.
+3. Build `H = rev-list --reverse cycle_base_sha..HEAD` and `R =` normalized register SHAs.
+4. If `R` is empty and mode is `AllowEmptyWhenNoHeadDelta`: succeed iff `H` is empty; else fail as above.
+5. Otherwise require `set(R) == set(H)`.
+6. Upsert on `(cycle_id, sha)` — append-only; never delete or supersede rows.
 
 ### Verify prompt
 
