@@ -1,9 +1,11 @@
 # ADR-0042: Per-repository default projects
 
+**Status:** Superseded by [ADR-0094](./ADR-0094-global-default-project.md)  
 **Date:** 2026-07-05  
-**Status:** Accepted (superseded in part by [ADR-0081](./ADR-0081-hamix-managed-worktrees.md) — task create uses `repository_id` + allocate; per-repo default projects remain)  
 **Deciders:** Hamix maintainers  
 **Supersedes:** [ADR-0037](./ADR-0037-global-repos-project-tree.md) §5 Case A (optional `project_id`) and §6 global default project
+
+> **Superseded:** Installations now use one global Default project (`repository_id` null) instead of per-repo defaults. See ADR-0094.
 
 ## Context
 

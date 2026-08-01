@@ -60,4 +60,4 @@ Tasks reference projects only via `Task.ProjectID *string` — no import cycle i
 
 - [pkgs/projects/README.md](../../pkgs/projects/README.md)
 - [docs/agent-map.md](../agent-map.md)
-- [ADR-0042](./ADR-0042-repo-default-projects.md) — per-repo default projects
+- [ADR-0042](./ADR-0042-repo-default-projects.md) — superseded by [ADR-0094](./ADR-0094-global-default-project.md) (global Default)

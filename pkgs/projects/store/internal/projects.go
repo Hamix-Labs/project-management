@@ -211,37 +211,25 @@ func trimOptional(value *string) *string {
 	return &trimmed
 }
 
-// CreateDefaultProjectForRepo inserts the non-deletable default for a newly registered repo.
-// Idempotent: returns the existing default when one is already present.
-func CreateDefaultProjectForRepo(ctx context.Context, tx *gorm.DB, repoID string, now time.Time) (domain.Project, error) {
+// CreateDefaultProjectForRepo is removed — use EnsureGlobalDefaultProject (ADR-0094).
+
+// EnsureGlobalDefaultProject inserts the single non-deletable system Default
+// when missing. Idempotent: returns the existing global Default when present.
+func EnsureGlobalDefaultProject(ctx context.Context, tx *gorm.DB, now time.Time) (domain.Project, error) {
 	defer storekernel.DeferLatency(storekernel.OpCreateProject)()
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.projects.CreateDefaultProjectForRepo")
-	repoID = strings.TrimSpace(repoID)
-	if repoID == "" {
-		return domain.Project{}, fmt.Errorf("%w: repository_id required", domain.ErrInvalidInput)
-	}
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.projects.EnsureGlobalDefaultProject")
 	var existing projectmodel.Project
 	err := tx.WithContext(ctx).
-		Where("repository_id = ? AND is_default = ?", repoID, true).
+		Where("is_default = ? AND (repository_id IS NULL OR repository_id = '')", true).
 		First(&existing).Error
 	if err == nil {
 		return projectmodel.ToDomainProject(existing), nil
 	}
 	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return domain.Project{}, fmt.Errorf("lookup default project: %w", err)
+		return domain.Project{}, fmt.Errorf("lookup global default project: %w", err)
 	}
 	now = now.UTC()
-	drow := domain.Project{
-		ID:             storekernel.ResolveID(""),
-		Name:           domain.DefaultProjectName,
-		Description:    "Built-in project for tasks tied to this repository.",
-		Status:         domain.ProjectStatusActive,
-		RepositoryID:   &repoID,
-		IsDefault:      true,
-		NextTaskNumber: 1,
-		CreatedAt:      now,
-		UpdatedAt:      now,
-	}
+	drow := domain.GlobalDefaultProject(now)
 	row := projectmodel.FromDomainProject(drow)
 	if err := tx.WithContext(ctx).Create(&row).Error; err != nil {
 		return domain.Project{}, storekernel.MapWriteError(err, "duplicate default project", domain.ErrConflict, domain.ErrInvalidInput)
@@ -249,7 +237,8 @@ func CreateDefaultProjectForRepo(ctx context.Context, tx *gorm.DB, repoID string
 	return drow, nil
 }
 
-// ListProjectsByRepository returns projects tied to a repository.
+// ListProjectsByRepository returns user projects for a repository plus the
+// global system Default (ADR-0094).
 func ListProjectsByRepository(ctx context.Context, db *gorm.DB, repoID string) ([]domain.Project, error) {
 	defer storekernel.DeferLatency(storekernel.OpListProjects)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.projects.ListProjectsByRepository")
@@ -262,7 +251,7 @@ func ListProjectsByRepository(ctx context.Context, db *gorm.DB, repoID string) (
 	}
 	var rows []projectmodel.Project
 	err := db.WithContext(ctx).
-		Where("repository_id = ?", repoID).
+		Where("repository_id = ? OR (is_default = ? AND (repository_id IS NULL OR repository_id = ''))", repoID, true).
 		Order("is_default DESC, updated_at DESC").
 		Find(&rows).Error
 	if err != nil {
@@ -287,17 +276,13 @@ func ensureRepositoryExists(ctx context.Context, db *gorm.DB, repoID string) err
 	return nil
 }
 
-// GetDefaultProjectForRepository returns the system default project for a repo.
-func GetDefaultProjectForRepository(ctx context.Context, db *gorm.DB, repoID string) (domain.Project, error) {
+// GetGlobalDefaultProject returns the single system Default project.
+func GetGlobalDefaultProject(ctx context.Context, db *gorm.DB) (domain.Project, error) {
 	defer storekernel.DeferLatency(storekernel.OpGetProject)()
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.projects.GetDefaultProjectForRepository")
-	repoID = strings.TrimSpace(repoID)
-	if repoID == "" {
-		return domain.Project{}, fmt.Errorf("%w: repository_id required", domain.ErrInvalidInput)
-	}
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.projects.GetGlobalDefaultProject")
 	var row projectmodel.Project
 	err := db.WithContext(ctx).
-		Where("repository_id = ? AND is_default = ?", repoID, true).
+		Where("is_default = ? AND (repository_id IS NULL OR repository_id = '')", true).
 		First(&row).Error
 	if err != nil {
 		return domain.Project{}, storekernel.MapNotFound(err, domain.ErrNotFound)
@@ -305,10 +290,8 @@ func GetDefaultProjectForRepository(ctx context.Context, db *gorm.DB, repoID str
 	return projectmodel.ToDomainProject(row), nil
 }
 
-// DeleteProjectsForRepository removes every project tied to a repository,
-// including the system default. Used when the repository itself is deleted so
-// "Default" rows do not accumulate as orphans. Caller must pass an open
-// transaction when coordinating with git_repositories delete.
+// DeleteProjectsForRepository removes user projects tied to a repository.
+// The global Default (null repository_id) is never deleted.
 func DeleteProjectsForRepository(ctx context.Context, db *gorm.DB, repoID string) error {
 	defer storekernel.DeferLatency(storekernel.OpDeleteProject)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.projects.DeleteProjectsForRepository")

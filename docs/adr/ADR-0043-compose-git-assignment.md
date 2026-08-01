@@ -47,5 +47,5 @@ The wire payload also omitted `repository_id`, forcing async `getProject` hydrat
 ## See also
 
 - [docs/web.md](../web.md) §Task create flow
-- [ADR-0042](./ADR-0042-repo-default-projects.md) — per-repo default projects
+- [ADR-0094](./ADR-0094-global-default-project.md) — global Default project (supersedes ADR-0042)
 - [ADR-0039](./ADR-0039-fixed-worktree-branch.md) — worktree binding

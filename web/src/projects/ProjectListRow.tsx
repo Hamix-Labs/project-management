@@ -19,17 +19,14 @@ function formatDate(value: string) {
 export function ProjectListRow({
   project,
   index,
-  repositoryLabel,
 }: {
   project: Project;
   index: number;
+  /** @deprecated Unused; kept for call-site compatibility during ADR-0094. */
   repositoryLabel?: string;
 }) {
   const isArchived = project.status === "archived";
-  const displayName =
-    project.is_default && repositoryLabel
-      ? `${project.name} · ${repositoryLabel}`
-      : project.name;
+  const displayName = project.name;
   const openLabel = `Open project ${displayName}`;
   const to = `/projects/${encodeURIComponent(project.id)}`;
   const prefetchProjectDetail = useProjectDetailPrefetcher();

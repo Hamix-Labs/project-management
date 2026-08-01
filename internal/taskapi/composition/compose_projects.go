@@ -9,20 +9,25 @@ import (
 	projectsstore "github.com/AlexsanderHamir/Hamix/pkgs/projects/store"
 )
 
-// CreateDefaultProjectForRepo delegates to the projects bounded context.
-// Preferred: call via (*API).projects through CreateGlobalGitRepository composition.
-var CreateDefaultProjectForRepo = projectsstore.CreateDefaultProjectForRepo
+// EnsureGlobalDefaultProject delegates to the projects bounded context.
+var EnsureGlobalDefaultProject = projectsstore.EnsureGlobalDefaultProject
 
-// ListProjectsByRepository returns projects tied to a repository.
+// ListProjectsByRepository returns user projects for a repository plus the global Default.
 func (a *API) ListProjectsByRepository(ctx context.Context, repoID string) ([]domain.Project, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ListProjectsByRepository")
 	return a.projects.ListProjectsByRepository(ctx, repoID)
 }
 
-// GetDefaultProjectForRepository returns the system default project for a repo.
-func (a *API) GetDefaultProjectForRepository(ctx context.Context, repoID string) (domain.Project, error) {
-	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.GetDefaultProjectForRepository")
-	return a.projects.GetDefaultProjectForRepository(ctx, repoID)
+// GetGlobalDefaultProject returns the single system Default project.
+func (a *API) GetGlobalDefaultProject(ctx context.Context) (domain.Project, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.GetGlobalDefaultProject")
+	return a.projects.GetGlobalDefaultProject(ctx)
+}
+
+// EnsureGlobalDefaultProject inserts the system Default when missing.
+func (a *API) EnsureGlobalDefaultProject(ctx context.Context) (domain.Project, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.EnsureGlobalDefaultProject")
+	return a.projects.EnsureGlobalDefaultProject(ctx)
 }
 
 // CreateProject inserts a new active project.

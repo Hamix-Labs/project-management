@@ -17,12 +17,14 @@ type Props = {
   taskId: string;
   worktreeId?: string;
   projectId?: string;
+  repositoryId?: string;
 };
 
 export function TaskDetailGitBinding({
   taskId,
   worktreeId,
   projectId,
+  repositoryId,
 }: Props) {
   const wtId = (worktreeId ?? "").trim();
   const bindingQuery = useTaskGitBinding(worktreeId);
@@ -33,7 +35,9 @@ export function TaskDetailGitBinding({
     enabled: wtId === "" && projectKey !== "",
   });
   const repositoriesQuery = useGlobalRepositories({
-    enabled: wtId === "" && projectKey !== "",
+    enabled:
+      wtId === "" &&
+      (projectKey !== "" || (repositoryId ?? "").trim() !== ""),
   });
 
   if (wtId !== "") {
@@ -83,7 +87,10 @@ export function TaskDetailGitBinding({
 
   const branch = taskBranchName(tid);
   const worktreeName = predictedTaskWorktreeName(tid);
-  const repoId = projectQuery.data?.repository_id?.trim() ?? "";
+  const repoId =
+    (repositoryId ?? "").trim() ||
+    projectQuery.data?.repository_id?.trim() ||
+    "";
   const repoPath =
     repositoriesQuery.data?.find((r) => r.id === repoId)?.path?.trim() ?? "";
 

@@ -63,7 +63,9 @@ func ValidateTaskWorktreeBinding(ctx context.Context, d GitDeps, projectID *stri
 		return err
 	}
 	if proj.RepositoryID == nil || *proj.RepositoryID != wt.RepositoryID {
-		return gitdomain.NewGitErr(gitdomain.GitCodeProjectRepoMismatch, "project is not tied to this repository")
+		if !proj.IsDefault {
+			return gitdomain.NewGitErr(gitdomain.GitCodeProjectRepoMismatch, "project is not tied to this repository")
+		}
 	}
 	return nil
 }

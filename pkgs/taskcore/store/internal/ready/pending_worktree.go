@@ -18,8 +18,8 @@ type PendingWorktreeRow struct {
 	RepositoryID string
 }
 
-// ListPendingWorktree returns ready tasks with no worktree_id, joined to the
-// project repository for eager provision (ADR-0083).
+// ListPendingWorktree returns ready tasks with no worktree_id, using the
+// persisted task repository_id for eager provision (ADR-0083 / ADR-0094).
 func ListPendingWorktree(ctx context.Context, db *gorm.DB, limit int) ([]PendingWorktreeRow, error) {
 	defer storekernel.DeferLatency(storekernel.OpListReadyQueue)()
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ready.ListPendingWorktree")
@@ -35,11 +35,10 @@ func ListPendingWorktree(ctx context.Context, db *gorm.DB, limit int) ([]Pending
 	}
 	var rows []scanRow
 	err := db.WithContext(ctx).Model(&model.Task{}).
-		Select("tasks.id AS task_id, projects.repository_id AS repository_id").
-		Joins("INNER JOIN projects ON projects.id = tasks.project_id").
+		Select("tasks.id AS task_id, tasks.repository_id AS repository_id").
 		Where("tasks.status = ?", domain.StatusReady).
 		Where("tasks.worktree_id IS NULL OR tasks.worktree_id = ''").
-		Where("projects.repository_id IS NOT NULL AND projects.repository_id <> ''").
+		Where("tasks.repository_id IS NOT NULL AND tasks.repository_id <> ''").
 		Order("tasks.id ASC").
 		Limit(limit).
 		Scan(&rows).Error

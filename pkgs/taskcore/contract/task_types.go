@@ -22,6 +22,8 @@ type CreateTaskInput struct {
 	Status        domain.Status
 	Priority      domain.Priority
 	ProjectID     *string
+	// RepositoryID is persisted for async worktree provision (ADR-0083/0094).
+	RepositoryID *string
 	// Number, when non-nil, skips per-project allocateNextTaskNumber and uses
 	// this value (for batch instantiate pre-allocation).
 	Number          *int

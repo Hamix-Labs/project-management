@@ -6,7 +6,8 @@ Tasks, projects, execution cycles/phases, checklists, dependencies, and gates. H
 
 Work hierarchy is **Project → Task**. Tasks may have:
 
-- `project_id` (required for agent runs) — shared-context membership. Every task with a `worktree_id` must reference a project whose `repository_id` matches that worktree's repo. Use the repo's system default project when no custom grouping is needed. See [ADR-0042](./adr/ADR-0042-repo-default-projects.md).
+- `project_id` (required for agent runs) — shared-context membership. Every task with a `worktree_id` must reference a project that either is the global system Default (`is_default`, any repo) or has `repository_id` matching that worktree's repo. Use the global Default when no custom grouping is needed. See [ADR-0094](./adr/ADR-0094-global-default-project.md).
+- `repository_id` — registered repo for managed-worktree allocate; persisted on the task so provision reconcile works with the global Default.
 - `tags` and `milestone` — flat labels for organization within a project.
 - `depends_on` — directed acyclic graph of task-level dependencies.
 
@@ -20,6 +21,7 @@ Work hierarchy is **Project → Task**. Tasks may have:
 | `title` | string | Required after trim. |
 | `initial_prompt` | string (HTML) | TipTap rich text; `@`-mentions validated against the task's `worktree_id` when present. |
 | `worktree_id` | string \| null | FK to `git_worktrees.id`; set by server allocate on create from `repository_id` (ADR-0081). |
+| `repository_id` | string \| null | Registered repo for allocate/reconcile (ADR-0094); required on create with `project_id`. |
 | `status` | enum | `ready` / `running` / `blocked` / `review` / `pr_ready` / `done` / `failed` / `on_hold` / `closed`. Default `ready`. After successful agent execute+verify the task enters **`review`** (awaiting human approve-and-open-PR). `POST /tasks/{id}/open-pr` queues PR creation; harness success sets **`pr_ready`**. Only `POST /tasks/{id}/approve` from `pr_ready` may set **`done`**. `on_hold` is operator-set: pickup is gated on `status = ready` so an `on_hold` task is intentionally kept out of the worker's queue until the operator flips it back to `ready` (PATCH `/tasks/{id}`). **`closed`** is the operator exit that replaces hard delete: set only via `POST /tasks/{id}/close` (idempotent); reopen with `POST /tasks/{id}/reopen` → `ready`. Closed tasks are not worker-eligible. A closed predecessor does **not** satisfy `depends_on` edges (same as `on_hold`/`failed`/`pr_ready`). |
 | `pending_retry` | JSON \| null | Ephemeral operator intent between `POST /tasks/{id}/retry` or `POST /tasks/{id}/polish` and worker pickup. `{ kind?: retry|polish, mode: fresh|resume, parent_cycle_id, instructions? }`. Empty/omitted `kind` means `retry` (back-compat). Polish always uses `mode=resume` with non-empty `instructions`. Not exposed on the HTTP task JSON (`json:"-"`); consumed and cleared atomically when the worker transitions `ready→running`. |
 | `priority` | enum | `low` / `medium` / `high` / `critical`. Required at create. |
@@ -339,7 +341,7 @@ Instantiate (`POST /task-templates/instantiate`) maps payload → `POST /tasks` 
 
 ## Projects
 
-Projects are repo-bound containers for tasks (`project_id`, per-project `#N`, system default per repository). Project memory tables (`project_context_items`, `project_context_edges`, `task_context_snapshots`) and `projects.context_summary` were removed — see [ADR-0087](./adr/ADR-0087-remove-project-context.md).
+Projects are containers for tasks (`project_id`, per-project `#N`). User projects are repo-bound; the single system Default has null `repository_id` and may hold tasks from any repository ([ADR-0094](./adr/ADR-0094-global-default-project.md)). Project memory tables (`project_context_items`, `project_context_edges`, `task_context_snapshots`) and `projects.context_summary` were removed — see [ADR-0087](./adr/ADR-0087-remove-project-context.md).
 
 ## Git workflow (`git_repositories`, `git_worktrees`, `git_branches`)
 
@@ -405,10 +407,10 @@ Tasks reference `worktree_id` (FK -> `git_worktrees.id`, required for agent runs
 
 | Column | Type | Notes |
 |---|---|---|
-| `repository_id` | string fk -> `git_repositories.id` | Required for all projects except legacy rows removed by migration. |
-| `is_default` | bool | System-seeded default for the repo; at most one per `repository_id`. Non-deletable. |
+| `repository_id` | string fk -> `git_repositories.id` | Required for user projects; null for the global system Default. |
+| `is_default` | bool | Single system Default (`repository_id` null); non-deletable. |
 
-When a repository is registered (`POST /git/repositories`), the system creates a default project (`name: "Default"`, `is_default: true`) for that repo. Users create additional projects via `POST /projects` with `repository_id`. See [ADR-0042](./adr/ADR-0042-repo-default-projects.md).
+The system seeds one Default project (`name: "Default"`, `is_default: true`, `repository_id` null) via migrate/ensure — not on repository register. Users create additional projects via `POST /projects` with `repository_id`. See [ADR-0094](./adr/ADR-0094-global-default-project.md).
 
 ## Audit log (`task_events`)
 

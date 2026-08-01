@@ -154,6 +154,12 @@ export function parseTask(value: unknown): Task {
       base.project_id = projectID;
     }
   }
+  if (value.repository_id !== undefined && value.repository_id !== null) {
+    const repositoryID = parseString(value.repository_id, "repository_id").trim();
+    if (repositoryID !== "") {
+      base.repository_id = repositoryID;
+    }
+  }
   if (value.worktree_id !== undefined && value.worktree_id !== null) {
     const wtID = parseString(value.worktree_id, "worktree_id").trim();
     if (wtID !== "") {

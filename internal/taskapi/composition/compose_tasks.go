@@ -113,6 +113,13 @@ func (a *API) enqueueWorktreeIfNeeded(ctx context.Context, t *taskcoredomain.Tas
 	if t.WorktreeID != nil && strings.TrimSpace(*t.WorktreeID) != "" {
 		return
 	}
+	if t.RepositoryID != nil {
+		repoID := strings.TrimSpace(*t.RepositoryID)
+		if repoID != "" {
+			a.EnqueueWorktreeProvision(ctx, t.ID, repoID)
+			return
+		}
+	}
 	if t.ProjectID == nil || strings.TrimSpace(*t.ProjectID) == "" {
 		return
 	}

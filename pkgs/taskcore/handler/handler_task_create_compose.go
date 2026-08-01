@@ -123,6 +123,7 @@ func (h *Handler) PrepareComposeCreate(
 			Status:          payload.Status,
 			Priority:        payload.Priority,
 			ProjectID:       payload.ProjectID,
+			RepositoryID:    payload.RepositoryID,
 			Runner:          runner,
 			CursorModel:     cursorModel,
 			PickupNotBefore: pickupNotBefore,

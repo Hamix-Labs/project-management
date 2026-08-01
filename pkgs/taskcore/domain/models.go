@@ -12,6 +12,10 @@ type Task struct {
 	Status        Status   `json:"status"`
 	Priority      Priority `json:"priority"`
 	ProjectID     *string  `json:"project_id,omitempty"`
+	// RepositoryID is the registered repo for managed-worktree allocate
+	// (ADR-0083 / ADR-0094). Required on create for the allocate path; persisted
+	// so reconcile works when the project is the global Default (null repo).
+	RepositoryID *string `json:"repository_id,omitempty"`
 	// Number is the per-project human-facing task ref (#N). Assigned when
 	// project_id is set; immutable thereafter. Null when the task has no project.
 	Number    *int      `json:"number,omitempty"`
