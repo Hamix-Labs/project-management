@@ -30,19 +30,19 @@ func New() CLI { return RealCLI{} }
 // Nop is a no-op CLI for tests that do not exercise gh stack.
 type Nop struct{}
 
-//funclogmeasure:skip category=hot-path reason="Test double no-op."
+//funclogmeasure:skip category=tool-required-noop reason="Test double; no gh stack I/O in unit tests."
 func (Nop) Init(context.Context, string, string, string) error { return nil }
 
-//funclogmeasure:skip category=hot-path reason="Test double no-op."
+//funclogmeasure:skip category=tool-required-noop reason="Test double; no gh stack I/O in unit tests."
 func (Nop) Add(context.Context, string, string) error { return nil }
 
-//funclogmeasure:skip category=hot-path reason="Test double no-op."
+//funclogmeasure:skip category=tool-required-noop reason="Test double; no gh stack I/O in unit tests."
 func (Nop) Submit(context.Context, string) (string, error) { return "", nil }
 
-//funclogmeasure:skip category=hot-path reason="Test double no-op."
+//funclogmeasure:skip category=tool-required-noop reason="Test double; no gh stack I/O in unit tests."
 func (Nop) Rebase(context.Context, string) error { return nil }
 
-//funclogmeasure:skip category=hot-path reason="Test double no-op."
+//funclogmeasure:skip category=tool-required-noop reason="Test double; no gh stack I/O in unit tests."
 func (Nop) ViewJSON(context.Context, string) (string, error) { return "[]", nil }
 
 //funclogmeasure:skip category=hot-path reason="Thin gh exec wrapper; callers surface errors."
