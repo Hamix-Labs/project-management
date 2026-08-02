@@ -3,7 +3,8 @@ import { CustomSelect, isCustomSelectHeader } from "@/components/custom-select";
 import { DraftResumeModal } from "./draft-resume";
 import { CloseConfirmDialog } from "./dialogs";
 import { filePreviewLanguageFromPath } from "@/components/file-preview";
-import { MentionRangePanel, RichPromptEditor } from "@/components/rich-prompt";
+import { MentionRangePanel } from "@/components/rich-prompt";
+import { BlockNotePromptEditor } from "@/components/prompt-editor";
 import { taskCreateModalBusyLabel, TaskCreateModal } from "./task-create-modal";
 import { TaskChangeModelModal, TaskDetailHeader } from "./task-detail";
 import { TaskComposeFields } from "./task-compose";
@@ -20,7 +21,7 @@ describe("tasks component barrels", () => {
     expect(TaskPager).toBeTypeOf("function");
     expect(TaskCreateModal).toBeTypeOf("function");
     expect(CustomSelect).toBeTypeOf("function");
-    expect(RichPromptEditor).toBeTypeOf("function");
+    expect(BlockNotePromptEditor).toBeTypeOf("function");
     expect(MentionRangePanel).toBeTypeOf("function");
     expect(TaskDetailPageSkeleton).toBeTypeOf("function");
     expect(TaskDetailHeader).toBeTypeOf("function");

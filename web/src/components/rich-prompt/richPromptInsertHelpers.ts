@@ -1,4 +1,3 @@
-import type { Editor } from "@tiptap/react";
 import type { RepoWorkspaceProbe } from "@/api";
 
 export type PendingFileInsert = {
@@ -14,27 +13,6 @@ export type RepoHintFlags = {
   showRepoUnknownHint: boolean;
   showFileSearchSpinner: boolean;
 };
-
-export function insertRepoFileMentionAt(
-  editor: Editor,
-  insertAt: number,
-  path: string,
-  lineStart?: number,
-  lineEnd?: number,
-) {
-  const attrs =
-    lineStart != null && lineEnd != null
-      ? { path, lineStart, lineEnd }
-      : { path };
-  editor
-    .chain()
-    .focus()
-    .insertContentAt(insertAt, [
-      { type: "repoFileMention", attrs },
-      { type: "text", text: " " },
-    ])
-    .run();
-}
 
 export function computeRepoHintFlags(
   workspaceProbe: RepoWorkspaceProbe | "pending",

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import type { Task } from "@/types";
+import { usePromptEditorReturnResume } from "../prompt-editor/usePromptEditorReturnResume";
 import { useTaskCloseFlow } from "./useTaskCloseFlow";
 import { useTaskCreateFlow } from "./useTaskCreateFlow";
 import { useTasksHomeList } from "./useTasksHomeList";
@@ -41,6 +42,7 @@ export function useTasksApp({
     closeCreateModal,
     newTitle,
     newPrompt,
+    setNewPrompt,
     newPriority,
     newProjectID,
     newTagsCsv,
@@ -50,8 +52,16 @@ export function useTasksApp({
     composeStatus,
     beginEditSession,
     createModalOpen,
+    resumeComposeFromPromptEditor,
+    promptEditorSuspended,
     ...createFlow
   } = useTaskCreateFlow();
+
+  usePromptEditorReturnResume({
+    setNewPrompt,
+    resumeComposeFromPromptEditor,
+    promptEditorSuspended,
+  });
 
   const editingTaskIdRef = useRef<string | null>(null);
   editingTaskIdRef.current = editingTaskId;
@@ -170,6 +180,7 @@ export function useTasksApp({
     composeStatus,
     newTitle,
     newPrompt,
+    setNewPrompt,
     newPriority,
     newProjectID,
     newTagsCsv,

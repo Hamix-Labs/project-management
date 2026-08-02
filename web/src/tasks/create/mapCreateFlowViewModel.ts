@@ -1,4 +1,5 @@
 import { errorMessage } from "@/lib/errorMessage";
+import type { NavigateFunction } from "react-router-dom";
 import { taskMutationErrorMessage } from "./taskTagValidation";
 import type { useTaskCreateDraftAutosave } from "./hooks/useTaskCreateDraftAutosave";
 import type { useTaskCreateEntryActions } from "./hooks/useTaskCreateEntryActions";
@@ -38,6 +39,7 @@ export function mapCreateFlowViewModel(input: {
       "appendNewChecklistCriterion" | "updateNewChecklistRow" | "removeNewChecklistRow" | "applyTestScenario"
     >;
   draftsQuery: TaskDraftsQuery;
+  openPromptEditor: (navigate: NavigateFunction) => Promise<void>;
 }) {
   return {
     createFlowError: input.createFlowError,
@@ -133,6 +135,9 @@ export function mapCreateFlowViewModel(input: {
     composeStatus: input.modal.composeStatus,
     setComposeStatus: input.modal.setComposeStatus,
     beginEditSession: input.modal.beginEditSession,
+    openPromptEditor: input.openPromptEditor,
+    resumeComposeFromPromptEditor: input.modal.resumeComposeFromPromptEditor,
+    promptEditorSuspended: input.modal.promptEditorSuspended,
   };
 }
 
