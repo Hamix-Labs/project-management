@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import type { Task } from "@/types";
 import { useTaskCloseFlow } from "./useTaskCloseFlow";
 import { useTaskCreateFlow } from "./useTaskCreateFlow";
@@ -86,7 +86,22 @@ export function useTasksApp({
     if (!closeTarget) resetCloseError();
   }, [closeTarget, resetCloseError]);
 
-  const list = useTasksHomeList({ dataEnabled, bootstrapSettled });
+  const [worktreeFamilyId, setWorktreeFamilyIdState] = useState("all");
+  const setWorktreeFamilyId = useCallback((next: string) => {
+    setWorktreeFamilyIdState(next);
+  }, []);
+
+  const list = useTasksHomeList({
+    dataEnabled,
+    bootstrapSettled,
+    worktreeFamilyId,
+  });
+
+  useEffect(() => {
+    list.resetTaskListPage();
+    // Reset page when the family filter changes; list identity is stable enough.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only family id should reset page
+  }, [worktreeFamilyId]);
 
   const edit = useTaskEditFlow({
     editingTaskId,
@@ -203,6 +218,8 @@ export function useTasksApp({
     taskListPageSize: list.taskListPageSize,
     hasNextTaskPage: list.hasNextTaskPage,
     hasPrevTaskPage: list.hasPrevTaskPage,
+    worktreeFamilyId,
+    setWorktreeFamilyId,
     /** True when home list/board queries may run (route + bootstrap). */
     homeDataReady,
   };

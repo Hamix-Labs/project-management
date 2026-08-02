@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getTaskStats, listTasks } from "../../api";
-import { flattenTaskTreeRoots } from "../task-tree";
+import { flattenTaskTreeRoots, sortWorktreeFamilyTasks } from "../task-tree";
 import { TASK_LIST_PAGE_SIZE } from "../task-paging";
 import { taskQueryKeys } from "../task-query";
 import { useHysteresisBoolean } from "@/lib/useHysteresisBoolean";
@@ -25,20 +25,27 @@ export type UseTasksHomeListOptions = {
 export function useTasksHomeList({
   dataEnabled = true,
   bootstrapSettled = true,
-}: UseTasksHomeListOptions = {}) {
+  worktreeFamilyId = "all",
+}: UseTasksHomeListOptions & { worktreeFamilyId?: string } = {}) {
   const [taskListPage, setTaskListPage] = useState(0);
   const homeDataReady = dataEnabled && bootstrapSettled;
+  const familyWorktreeId =
+    worktreeFamilyId !== "all" ? worktreeFamilyId.trim() : "";
 
   const tasksQuery = useQuery({
     queryKey: taskQueryKeys.list({
       limit: TASK_LIST_PAGE_SIZE,
       offset: taskListPage * TASK_LIST_PAGE_SIZE,
+      ...(familyWorktreeId ? { worktreeId: familyWorktreeId } : {}),
     }),
     queryFn: ({ signal }) =>
       listTasks(
         TASK_LIST_PAGE_SIZE,
         taskListPage * TASK_LIST_PAGE_SIZE,
-        { signal },
+        {
+          signal,
+          ...(familyWorktreeId ? { worktreeId: familyWorktreeId } : {}),
+        },
       ),
     enabled: homeDataReady,
     staleTime: QUERY_POLICY.listStaleTimeMs,
@@ -60,13 +67,17 @@ export function useTasksHomeList({
     setTaskListPage(0);
   }, []);
 
-  const rootTaskTrees = useMemo(
-    () => tasksQuery.data?.tasks ?? [],
-    [tasksQuery.data?.tasks],
-  );
+  const rootTaskTrees = useMemo(() => {
+    const rows = tasksQuery.data?.tasks ?? [];
+    if (!familyWorktreeId) return rows;
+    return sortWorktreeFamilyTasks(rows);
+  }, [tasksQuery.data?.tasks, familyWorktreeId]);
   const tasks = useMemo(
-    () => flattenTaskTreeRoots(rootTaskTrees),
-    [rootTaskTrees],
+    () =>
+      flattenTaskTreeRoots(rootTaskTrees, {
+        worktreeFamilyActive: familyWorktreeId !== "",
+      }),
+    [rootTaskTrees, familyWorktreeId],
   );
 
   const loading = tasksQuery.isPending;

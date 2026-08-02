@@ -4,7 +4,7 @@ import { taskQueryKeys } from "@/lib/taskQueryKeys";
 import { useHysteresisBoolean } from "@/lib/useHysteresisBoolean";
 import { errorMessage } from "@/lib/errorMessage";
 import { TASK_TIMINGS } from "@/constants/tasks";
-import { flattenTaskTreeRoots } from "../task-tree";
+import { flattenTaskTreeRoots, sortWorktreeFamilyTasks } from "../task-tree";
 import { QUERY_POLICY } from "../queryPolicy";
 import { fetchActiveTasksForBoard } from "../components/task-board/fetchActiveTasksForBoard";
 import type { TaskHomeView } from "../pages/taskHomeView";
@@ -25,23 +25,36 @@ export function useTasksBoard({
   view,
   dataEnabled = true,
   bootstrapSettled = true,
-}: UseTasksBoardOptions) {
+  worktreeFamilyId = "all",
+}: UseTasksBoardOptions & { worktreeFamilyId?: string }) {
   const enabled = view === "board" && dataEnabled && bootstrapSettled;
+  const familyWorktreeId =
+    worktreeFamilyId !== "all" ? worktreeFamilyId.trim() : "";
 
   const query = useQuery({
-    queryKey: taskQueryKeys.board(),
-    queryFn: ({ signal }) => fetchActiveTasksForBoard({ signal }),
+    queryKey: taskQueryKeys.board(
+      familyWorktreeId ? { worktreeId: familyWorktreeId } : undefined,
+    ),
+    queryFn: ({ signal }) =>
+      fetchActiveTasksForBoard({
+        signal,
+        ...(familyWorktreeId ? { worktreeId: familyWorktreeId } : {}),
+      }),
     enabled,
     staleTime: QUERY_POLICY.listStaleTimeMs,
   });
 
-  const rootTasks = useMemo(
-    () => query.data?.tasks ?? [],
-    [query.data?.tasks],
-  );
+  const rootTasks = useMemo(() => {
+    const rows = query.data?.tasks ?? [];
+    if (!familyWorktreeId) return rows;
+    return sortWorktreeFamilyTasks(rows);
+  }, [query.data?.tasks, familyWorktreeId]);
   const tasks = useMemo(
-    () => flattenTaskTreeRoots(rootTasks),
-    [rootTasks],
+    () =>
+      flattenTaskTreeRoots(rootTasks, {
+        worktreeFamilyActive: familyWorktreeId !== "",
+      }),
+    [rootTasks, familyWorktreeId],
   );
 
   const loading = enabled && query.isPending;

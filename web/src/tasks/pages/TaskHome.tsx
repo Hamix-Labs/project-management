@@ -36,6 +36,7 @@ export function TaskHome() {
     view,
     dataEnabled: list.homeDataReady,
     bootstrapSettled: true,
+    worktreeFamilyId: list.worktreeFamilyId,
   });
 
   const createIntent = searchParams.get("create");
@@ -86,6 +87,8 @@ export function TaskHome() {
       onListFiltersChange: list.resetTaskListPage,
       hasNextPage: list.hasNextTaskPage,
       hasPrevPage: list.hasPrevTaskPage,
+      worktreeFamilyFilter: list.worktreeFamilyId,
+      onWorktreeFamilyFilterChange: list.setWorktreeFamilyId,
       onEdit: modals.openEdit,
       onRequestClose: modals.requestClose,
       taskStats: list.taskStats ?? null,
@@ -105,6 +108,8 @@ export function TaskHome() {
       list.resetTaskListPage,
       list.hasNextTaskPage,
       list.hasPrevTaskPage,
+      list.worktreeFamilyId,
+      list.setWorktreeFamilyId,
       modals.openEdit,
       modals.requestClose,
       list.taskStats,
@@ -205,6 +210,8 @@ export function TaskHome() {
             onRetry={() => void board.refetch()}
             projectFilterOptions={projectFilterOptions}
             showProjectColumn={projectsUiEnabled}
+            worktreeFamilyFilter={list.worktreeFamilyId}
+            onWorktreeFamilyFilterChange={list.setWorktreeFamilyId}
             actions={listActions}
             emptyListAction={emptyAction}
           />

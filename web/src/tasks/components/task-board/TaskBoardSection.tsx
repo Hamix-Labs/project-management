@@ -13,6 +13,7 @@ import { TaskBoardColumn } from "./TaskBoardColumn";
 import { TaskBoardSkeleton } from "./TaskBoardSkeleton";
 import { BoardActivePill } from "./BoardActivePill";
 import { useTaskBoardFilters } from "./useTaskBoardFilters";
+import { worktreeFamilyFilterOptions } from "../task-list/filters/worktreeFamilyFilterOptions";
 
 type Props = {
   tasks: TaskWithDepth[];
@@ -24,6 +25,8 @@ type Props = {
   onRetry: () => void;
   projectFilterOptions?: Array<{ id: string; name: string }>;
   showProjectColumn?: boolean;
+  worktreeFamilyFilter?: string;
+  onWorktreeFamilyFilterChange?: (value: string) => void;
   actions?: ReactNode;
   emptyListAction?: { label: string; onClick: () => void; disabled?: boolean };
   smoothTransitions?: boolean;
@@ -41,6 +44,8 @@ export function TaskBoardSection({
   onRetry,
   projectFilterOptions = [],
   showProjectColumn = true,
+  worktreeFamilyFilter = "all",
+  onWorktreeFamilyFilterChange,
   actions,
   emptyListAction,
   smoothTransitions = true,
@@ -54,6 +59,10 @@ export function TaskBoardSection({
     smoothTransitions,
   });
   const prefetchTaskDetail = useTaskDetailPrefetcher();
+  const familyOptions = useMemo(
+    () => worktreeFamilyFilterOptions(tasks),
+    [tasks],
+  );
 
   const groups = useMemo(
     () => groupTasksByBoardColumn(filters.filteredTasks),
@@ -88,6 +97,9 @@ export function TaskBoardSection({
             onProjectFilterChange={
               showProjectColumn ? filters.setProjectFilter : undefined
             }
+            worktreeFamilyFilter={worktreeFamilyFilter}
+            worktreeFamilyOptions={familyOptions}
+            onWorktreeFamilyFilterChange={onWorktreeFamilyFilterChange}
             tagFilter={filters.tagFilter}
             tagOptions={filters.tagFilterOptions}
             onTagFilterChange={
