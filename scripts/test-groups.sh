@@ -45,7 +45,9 @@ assert_groups_cover_all() {
   fi
 
   all="$(repo_packages | sort -u)"
-  count="$(printf '%s\n' "$all" | grep -c . || true)"
+  # Prefer here-string over `printf | grep` so `set -o pipefail` cannot treat
+  # SIGPIPE from early grep -q exit as a failed membership check.
+  count="$(grep -c . <<<"$all" || true)"
   if [[ "$count" -eq 0 ]]; then
     echo "go list returned no packages; is the module tree intact?" >&2
     return 1
@@ -54,12 +56,12 @@ assert_groups_cover_all() {
   for g in $(group_names); do
     grouped+="$(group_packages "$g" | sort -u)"$'\n'
   done
-  grouped="$(printf '%s\n' "$grouped" | sort -u | grep -v '^$' || true)"
+  grouped="$(grep -v '^$' <<<"$grouped" | sort -u || true)"
 
   missing=""
   while IFS= read -r pkg; do
     [[ -z "$pkg" ]] && continue
-    if ! printf '%s\n' "$grouped" | grep -Fxq "$pkg"; then
+    if ! grep -Fxq -- "$pkg" <<<"$grouped"; then
       missing+="${pkg}"$'\n'
     fi
   done <<< "$all"
@@ -67,7 +69,7 @@ assert_groups_cover_all() {
   extra=""
   while IFS= read -r pkg; do
     [[ -z "$pkg" ]] && continue
-    if ! printf '%s\n' "$all" | grep -Fxq "$pkg"; then
+    if ! grep -Fxq -- "$pkg" <<<"$all"; then
       extra+="${pkg}"$'\n'
     fi
   done <<< "$grouped"
