@@ -12,7 +12,9 @@ type Args = {
   setLoaded: (v: boolean) => void;
   setLoadError: (err: string | null) => void;
   setLastSavedAt: (at: number) => void;
+  /** Prefer launch worktree; fall back to adapter snapshot. */
   worktreeId?: string;
+  onResolvedWorktreeId?: (id: string | undefined) => void;
 };
 
 export function usePromptEditorDocumentLoad({
@@ -24,6 +26,7 @@ export function usePromptEditorDocumentLoad({
   setLoadError,
   setLastSavedAt,
   worktreeId,
+  onResolvedWorktreeId,
 }: Args) {
   const [repoLabel, setRepoLabel] = useState("No repo");
 
@@ -39,6 +42,8 @@ export function usePromptEditorDocumentLoad({
         } else {
           setHtml(snap.html);
         }
+        const fromSnap = snap.worktreeId?.trim() || undefined;
+        onResolvedWorktreeId?.(fromSnap);
         setLoaded(true);
         if (!dirtyRef.current) setLastSavedAt(Date.now());
       } catch (err) {
@@ -52,6 +57,7 @@ export function usePromptEditorDocumentLoad({
     adapter,
     dirtyRef,
     launch?.seedHtml,
+    onResolvedWorktreeId,
     setHtml,
     setLastSavedAt,
     setLoadError,

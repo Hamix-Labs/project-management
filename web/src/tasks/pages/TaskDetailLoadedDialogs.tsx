@@ -153,6 +153,7 @@ export function TaskDetailLoadedDialogs({
         <TaskPolishDialog
           key={polishInstructions}
           taskId={task.id}
+          taskTitle={task.title}
           worktreeId={task.worktree_id}
           initialInstructions={polishInstructions}
           criteria={polishCriteria}

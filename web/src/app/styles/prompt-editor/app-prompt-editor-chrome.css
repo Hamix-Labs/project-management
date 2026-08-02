@@ -204,7 +204,7 @@
   flex-shrink: 0;
 }
 
-/* ---------- Editor body (no bordered form shell) ---------- */
+/* ---------- Editor body shell (BlockNote chrome in *-blocknote.css) ---------- */
 .prompt-editor-page__body {
   flex: 1;
   min-height: 320px;
@@ -219,56 +219,6 @@
   background: transparent;
   box-shadow: none;
   padding: 0;
-}
-
-.prompt-editor-page__body .blocknote-prompt-editor {
-  min-height: 320px;
-}
-
-.blocknote-prompt-editor .bn-editor {
-  min-height: 280px;
-  padding: 0;
-  font-family: var(--font-sans);
-  font-size: 16px;
-  line-height: 1.75;
-  color: var(--prompt-editor-text);
-  background: transparent;
-}
-
-.blocknote-prompt-editor .bn-editor h2 {
-  font-size: 21px;
-  font-weight: 500;
-  margin: 30px 0 10px;
-  font-family: var(--font-sans);
-}
-
-.blocknote-prompt-editor .bn-editor p {
-  font-size: 16px;
-  line-height: 1.75;
-  margin: 0 0 4px;
-}
-
-.blocknote-prompt-editor .bn-editor ul,
-.blocknote-prompt-editor .bn-editor ol {
-  margin: 4px 0;
-  padding-left: 22px;
-  font-size: 16px;
-  line-height: 1.75;
-}
-
-.blocknote-prompt-editor--disabled {
-  opacity: 0.6;
-  pointer-events: none;
-}
-
-.blocknote-prompt-wrap .repo-file-chip {
-  display: inline;
-  font-family: var(--prompt-editor-font-mono);
-  font-size: 0.9em;
-  color: var(--prompt-editor-accent);
-  background: var(--prompt-editor-accent-tint);
-  padding: 0.05em 0.35em;
-  border-radius: 4px;
 }
 
 .prompt-editor-page__loading {
@@ -314,4 +264,3 @@
     animation: none;
   }
 }
-

@@ -41,6 +41,13 @@ export function PromptEditorMentionMenu(
             </>
           )}
       </div>
+      {items.length === 0 &&
+      loadingState !== "loading" &&
+      loadingState !== "loading-initial" ? (
+        <div className="prompt-editor-mention-menu__empty">
+          No matching files. Bind a worktree to search the repo.
+        </div>
+      ) : null}
       {items.map((item, i) => {
         const { fileName, dirPath } = splitRepoPath(item.title);
         return (
