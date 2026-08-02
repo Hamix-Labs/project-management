@@ -28,6 +28,8 @@ func NewStore(db *gorm.DB, gitSvc gitwork.Service) *Store {
 }
 
 // WithStackCLI replaces the gh stack CLI (tests use gitstack.Nop).
+//
+//funclogmeasure:skip category=hot-path reason="Startup wiring hook."
 func (s *Store) WithStackCLI(cli gitstack.CLI) *Store {
 	if s == nil {
 		return nil

@@ -123,6 +123,7 @@ func (s *Store) SetWorktreeActiveBranch(ctx context.Context, worktreeID, branchI
 	return nil
 }
 
+//funclogmeasure:skip category=hot-path reason="Thin git helper; EnsureTaskStackLayer emits the operation trace."
 func (s *Store) localBranchExists(ctx context.Context, worktreePath, branch string) (bool, error) {
 	opened, err := s.gitSvc().OpenRepository(ctx, worktreePath)
 	if err != nil {

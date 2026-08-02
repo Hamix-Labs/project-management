@@ -23,17 +23,29 @@ type CLI interface {
 type RealCLI struct{}
 
 // New returns the default CLI implementation.
+//
+//funclogmeasure:skip category=hot-path reason="Pure constructor without I/O."
 func New() CLI { return RealCLI{} }
 
 // Nop is a no-op CLI for tests that do not exercise gh stack.
 type Nop struct{}
 
+//funclogmeasure:skip category=hot-path reason="Test double no-op."
 func (Nop) Init(context.Context, string, string, string) error { return nil }
-func (Nop) Add(context.Context, string, string) error          { return nil }
-func (Nop) Submit(context.Context, string) (string, error)     { return "", nil }
-func (Nop) Rebase(context.Context, string) error               { return nil }
-func (Nop) ViewJSON(context.Context, string) (string, error)   { return "[]", nil }
 
+//funclogmeasure:skip category=hot-path reason="Test double no-op."
+func (Nop) Add(context.Context, string, string) error { return nil }
+
+//funclogmeasure:skip category=hot-path reason="Test double no-op."
+func (Nop) Submit(context.Context, string) (string, error) { return "", nil }
+
+//funclogmeasure:skip category=hot-path reason="Test double no-op."
+func (Nop) Rebase(context.Context, string) error { return nil }
+
+//funclogmeasure:skip category=hot-path reason="Test double no-op."
+func (Nop) ViewJSON(context.Context, string) (string, error) { return "[]", nil }
+
+//funclogmeasure:skip category=hot-path reason="Thin gh exec wrapper; callers surface errors."
 func (RealCLI) Init(ctx context.Context, workDir, baseBranch, firstBranch string) error {
 	baseBranch = strings.TrimSpace(baseBranch)
 	firstBranch = strings.TrimSpace(firstBranch)
@@ -49,6 +61,7 @@ func (RealCLI) Init(ctx context.Context, workDir, baseBranch, firstBranch string
 	return err
 }
 
+//funclogmeasure:skip category=hot-path reason="Thin gh exec wrapper; callers surface errors."
 func (RealCLI) Add(ctx context.Context, workDir, branch string) error {
 	branch = strings.TrimSpace(branch)
 	if branch == "" {
@@ -58,19 +71,23 @@ func (RealCLI) Add(ctx context.Context, workDir, branch string) error {
 	return err
 }
 
+//funclogmeasure:skip category=hot-path reason="Thin gh exec wrapper; callers surface errors."
 func (RealCLI) Submit(ctx context.Context, workDir string) (string, error) {
 	return run(ctx, workDir, "stack", "submit", "--auto", "--open")
 }
 
+//funclogmeasure:skip category=hot-path reason="Thin gh exec wrapper; callers surface errors."
 func (RealCLI) Rebase(ctx context.Context, workDir string) error {
 	_, err := run(ctx, workDir, "stack", "rebase", "--no-trunk")
 	return err
 }
 
+//funclogmeasure:skip category=hot-path reason="Thin gh exec wrapper; callers surface errors."
 func (RealCLI) ViewJSON(ctx context.Context, workDir string) (string, error) {
 	return run(ctx, workDir, "stack", "view", "--json")
 }
 
+//funclogmeasure:skip category=hot-path reason="Thin gh exec wrapper."
 func run(ctx context.Context, dir string, args ...string) (string, error) {
 	cmd := exec.CommandContext(ctx, "gh", args...)
 	cmd.Dir = dir
