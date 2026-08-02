@@ -68,6 +68,7 @@ const RepositoriesListPage = lazy(() =>
 import { UiTestModeBanner } from "@/dev/UiTestModeBanner";
 import { ErrorBanner } from "../shared/ErrorBanner";
 import { ModalStackProvider } from "../shared/ModalStackContext";
+import { ImmersiveShell } from "./ImmersiveShell";
 import { NotFoundPage } from "./NotFoundPage";
 import { RouteAnnouncer } from "./RouteAnnouncer";
 import { RoutedMainOutlet } from "./RoutedMainOutlet";
@@ -75,7 +76,8 @@ import { useBootstrap } from "./hooks/useBootstrap";
 import { useSettingsRoutePrefetch } from "./hooks/usePrefetchOnIntent";
 import "./App.css";
 
-function AppShell() {
+/** Product chrome (nav, settings, create/close modals) for standard app routes. */
+function StandardShell() {
   const app = useTasksAppContext();
   const { error } = useTasksAppMeta();
   const location = useLocation();
@@ -91,148 +93,146 @@ function AppShell() {
   const settingsIntent = useSettingsRoutePrefetch();
 
   return (
-    <ModalStackProvider>
-      <div className="app">
-        <a href="#main-content" className="skip-link">
-          Skip to main content
-        </a>
-        <header
-          className="app-header app-header--sticky"
-          data-elevated={headerElevated ? "true" : "false"}
-        >
-          <div className="app-header-top">
-            {/* Brand sits OUTSIDE <nav> so the wordmark is not announced
-                as a navigation destination peer to Tasks/Drafts/etc.
-                It still links home (with aria-current on /) so keyboard
-                + click affordance stays. */}
+    <div className="app">
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
+      <header
+        className="app-header app-header--sticky"
+        data-elevated={headerElevated ? "true" : "false"}
+      >
+        <div className="app-header-top">
+          {/* Brand sits OUTSIDE <nav> so the wordmark is not announced
+              as a navigation destination peer to Tasks/Drafts/etc.
+              It still links home (with aria-current on /) so keyboard
+              + click affordance stays. */}
+          <Link
+            to="/"
+            className="app-brand"
+            {...(homeIsCurrent
+              ? { "aria-current": "page" as const }
+              : {})}
+          >
+            <HamixWordmark className="app-title app-title--logo app-title--wordmark" />
+          </Link>
+          <nav className="app-nav" aria-label="Primary">
             <Link
               to="/"
-              className="app-brand"
+              className="app-nav__link"
               {...(homeIsCurrent
                 ? { "aria-current": "page" as const }
                 : {})}
             >
-              <HamixWordmark className="app-title app-title--logo app-title--wordmark" />
+              Tasks
             </Link>
-            <nav className="app-nav" aria-label="Primary">
+            <Link
+              to="/templates"
+              className="app-nav__link"
+              {...(templatesIsCurrent
+                ? { "aria-current": "page" as const }
+                : {})}
+            >
+              Templates
+            </Link>
+            <Link
+              to="/repositories"
+              className="app-nav__link"
+              {...(repositoriesIsCurrent
+                ? { "aria-current": "page" as const }
+                : {})}
+            >
+              Repositories
+            </Link>
+            <Link
+              to="/drafts"
+              className="app-nav__link"
+              {...(draftsIsCurrent
+                ? { "aria-current": "page" as const }
+                : {})}
+            >
+              Drafts
+            </Link>
+            {projectsUiEnabled ? (
               <Link
-                to="/"
+                to="/projects"
                 className="app-nav__link"
-                {...(homeIsCurrent
+                {...(projectsIsCurrent
                   ? { "aria-current": "page" as const }
                   : {})}
               >
-                Tasks
+                Projects
               </Link>
-              <Link
-                to="/templates"
-                className="app-nav__link"
-                {...(templatesIsCurrent
-                  ? { "aria-current": "page" as const }
-                  : {})}
+            ) : null}
+          </nav>
+          <div className="app-header-actions">
+            <Link
+              to="/settings"
+              className="app-header-settings-link"
+              aria-label="Open settings"
+              title="Settings"
+              onPointerEnter={settingsIntent.onPointerEnter}
+              onFocus={settingsIntent.onFocus}
+              {...(location.pathname.startsWith("/settings")
+                ? { "aria-current": "page" as const }
+                : {})}
+            >
+              <svg
+                className="app-header-settings-icon"
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+                focusable="false"
               >
-                Templates
-              </Link>
-              <Link
-                to="/repositories"
-                className="app-nav__link"
-                {...(repositoriesIsCurrent
-                  ? { "aria-current": "page" as const }
-                  : {})}
-              >
-                Repositories
-              </Link>
-              <Link
-                to="/drafts"
-                className="app-nav__link"
-                {...(draftsIsCurrent
-                  ? { "aria-current": "page" as const }
-                  : {})}
-              >
-                Drafts
-              </Link>
-              {projectsUiEnabled ? (
-                <Link
-                  to="/projects"
-                  className="app-nav__link"
-                  {...(projectsIsCurrent
-                    ? { "aria-current": "page" as const }
-                    : {})}
-                >
-                  Projects
-                </Link>
-              ) : null}
-            </nav>
-            <div className="app-header-actions">
-              <Link
-                to="/settings"
-                className="app-header-settings-link"
-                aria-label="Open settings"
-                title="Settings"
-                onPointerEnter={settingsIntent.onPointerEnter}
-                onFocus={settingsIntent.onFocus}
-                {...(location.pathname.startsWith("/settings")
-                  ? { "aria-current": "page" as const }
-                  : {})}
-              >
-                <svg
-                  className="app-header-settings-icon"
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                  focusable="false"
-                >
-                  <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
-                <span className="visually-hidden">Settings</span>
-              </Link>
-            </div>
+                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+              <span className="visually-hidden">Settings</span>
+            </Link>
           </div>
-        </header>
-        <UiTestModeBanner />
-        {error ? <ErrorBanner message={error} /> : null}
+        </div>
+      </header>
+      <UiTestModeBanner />
+      {error ? <ErrorBanner message={error} /> : null}
 
-        <main id="main-content" tabIndex={-1}>
-          <RoutedMainOutlet />
-          <TaskCreateModalsLayer />
+      <main id="main-content" tabIndex={-1}>
+        <RoutedMainOutlet />
+        <TaskCreateModalsLayer />
 
-          {app.closeTarget ? (
-            <CloseConfirmDialog
-              taskTitle={app.closeTarget.title}
-              taskId={app.closeTarget.id}
-              taskNumber={app.closeTarget.number}
-              saving={app.saving}
-              closePending={app.closePending}
-              error={app.closeError}
-              onCancel={app.cancelClose}
-              onConfirm={() => void app.confirmClose()}
-            />
-          ) : null}
+        {app.closeTarget ? (
+          <CloseConfirmDialog
+            taskTitle={app.closeTarget.title}
+            taskId={app.closeTarget.id}
+            taskNumber={app.closeTarget.number}
+            saving={app.saving}
+            closePending={app.closePending}
+            error={app.closeError}
+            onCancel={app.cancelClose}
+            onConfirm={() => void app.confirmClose()}
+          />
+        ) : null}
 
-          {app.changeModelTask ? (
-            <TaskChangeModelModal
-              task={app.changeModelTask}
-              cursorModel={app.changeModelDraft}
-              onCursorModelChange={app.setChangeModelDraft}
-              saving={app.saving}
-              patchPending={app.patchPending}
-              error={app.patchError}
-              onSubmit={(e) => void app.submitChangeModel(e)}
-              onCancel={app.closeChangeModel}
-            />
-          ) : null}
-        </main>
-        <RouteAnnouncer />
-      </div>
-    </ModalStackProvider>
+        {app.changeModelTask ? (
+          <TaskChangeModelModal
+            task={app.changeModelTask}
+            cursorModel={app.changeModelDraft}
+            onCursorModelChange={app.setChangeModelDraft}
+            saving={app.saving}
+            patchPending={app.patchPending}
+            error={app.patchError}
+            onSubmit={(e) => void app.submitChangeModel(e)}
+            onCancel={app.closeChangeModel}
+          />
+        ) : null}
+      </main>
+      <RouteAnnouncer />
+    </div>
   );
 }
 
@@ -269,46 +269,50 @@ export default function App() {
 
   return (
     <TasksAppProvider value={app}>
-      <Routes>
-        <Route path="/" element={<AppShell />}>
-          <Route index element={<TaskHome />} />
-          <Route path="drafts" element={<TaskDraftsPage />} />
-          <Route path="templates" element={<TaskTemplatesPage />} />
-          <Route path="repositories" element={<RepositoriesListPage />} />
-          <Route path="worktrees" element={<Navigate to="/repositories" replace />} />
-          <Route
-            path="worktrees/:repositoryId"
-            element={<Navigate to="/repositories" replace />}
-          />
-          {projectsUiEnabled ? (
-            <>
-              <Route path="projects" element={<ProjectListPage />} />
-              <Route path="projects/:projectId" element={<ProjectDetailPage />} />
-            </>
-          ) : (
-            <Route path="projects/*" element={<Navigate to="/" replace />} />
-          )}
-          <Route path="settings" element={<SettingsPage />} />
-          <Route
-            path="prompt/:sourceKind/:sourceId"
-            element={<PromptEditorPage />}
-          />
-          <Route
-            path="tasks/:taskId/events/:eventSeq"
-            element={<TaskEventDetailPage />}
-          />
-          <Route
-            path="tasks/:taskId/commits/:sha"
-            element={<TaskCommitDiffPage />}
-          />
-          <Route
-            path="tasks/:taskId/cycles/:cycleId"
-            element={<TaskCycleDetailPage />}
-          />
-          <Route path="tasks/:taskId" element={<TaskDetailPage />} />
-          <Route path="*" element={<NotFoundPage />} />
-        </Route>
-      </Routes>
+      <ModalStackProvider>
+        <Routes>
+          <Route path="/" element={<StandardShell />}>
+            <Route index element={<TaskHome />} />
+            <Route path="drafts" element={<TaskDraftsPage />} />
+            <Route path="templates" element={<TaskTemplatesPage />} />
+            <Route path="repositories" element={<RepositoriesListPage />} />
+            <Route path="worktrees" element={<Navigate to="/repositories" replace />} />
+            <Route
+              path="worktrees/:repositoryId"
+              element={<Navigate to="/repositories" replace />}
+            />
+            {projectsUiEnabled ? (
+              <>
+                <Route path="projects" element={<ProjectListPage />} />
+                <Route path="projects/:projectId" element={<ProjectDetailPage />} />
+              </>
+            ) : (
+              <Route path="projects/*" element={<Navigate to="/" replace />} />
+            )}
+            <Route path="settings" element={<SettingsPage />} />
+            <Route
+              path="tasks/:taskId/events/:eventSeq"
+              element={<TaskEventDetailPage />}
+            />
+            <Route
+              path="tasks/:taskId/commits/:sha"
+              element={<TaskCommitDiffPage />}
+            />
+            <Route
+              path="tasks/:taskId/cycles/:cycleId"
+              element={<TaskCycleDetailPage />}
+            />
+            <Route path="tasks/:taskId" element={<TaskDetailPage />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Route>
+          <Route element={<ImmersiveShell />}>
+            <Route
+              path="prompt/:sourceKind/:sourceId"
+              element={<PromptEditorPage />}
+            />
+          </Route>
+        </Routes>
+      </ModalStackProvider>
     </TasksAppProvider>
   );
 }
