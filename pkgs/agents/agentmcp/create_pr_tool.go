@@ -204,6 +204,7 @@ func runCreatePullRequest(ctx context.Context, sess *Session, in createPullReque
 	}, nil
 }
 
+//funclogmeasure:skip category=hot-path reason="Thin gh helper; runCreatePullRequest is the chokepoint."
 func collectStackPRLayers(ctx context.Context, workDir string) ([]sidecar.PullRequestLayer, error) {
 	raw, err := stackCLI.ViewJSON(ctx, workDir)
 	if err != nil {
@@ -237,6 +238,7 @@ func collectStackPRLayers(ctx context.Context, workDir string) ([]sidecar.PullRe
 	return layers, nil
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
 func pickLayer(layers []sidecar.PullRequestLayer, head string) (url string, number int, base, prHead string) {
 	for _, l := range layers {
 		if l.Head == head {
@@ -250,6 +252,7 @@ func pickLayer(layers []sidecar.PullRequestLayer, head string) (url string, numb
 	return "", 0, "", ""
 }
 
+//funclogmeasure:skip category=hot-path reason="Thin gh helper; runCreatePullRequest is the chokepoint."
 func viewPR(ctx context.Context, workDir, head string) (url string, number int, base, prHead string, err error) {
 	viewOut, viewErr := ghRun(ctx, workDir, "pr", "view", head, "--json", "url,number,baseRefName,headRefName")
 	if viewErr != nil {
