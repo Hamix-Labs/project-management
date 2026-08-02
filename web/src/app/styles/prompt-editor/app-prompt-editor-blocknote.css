@@ -1,0 +1,190 @@
+/* BlockNote body, placeholder, side menu, slash menu, formatting toolbar */
+
+.prompt-editor-page__body .blocknote-prompt-editor {
+  min-height: 320px;
+}
+
+.prompt-editor-page__body .blocknote-prompt-wrap,
+.prompt-editor-page__body .blocknote-prompt-editor,
+.prompt-editor-page__body .bn-container,
+.prompt-editor-page__body .bn-editor {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  background: transparent;
+  resize: none;
+}
+
+.blocknote-prompt-editor .bn-editor {
+  min-height: 280px;
+  /* Restore BlockNote default left gutter for side menu; keep flush otherwise. */
+  padding: 0;
+  padding-inline-start: var(--prompt-editor-side-gutter);
+  padding-inline-end: 0;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.75;
+  color: var(--prompt-editor-text);
+  background: transparent;
+}
+
+/* Placeholder: sans + muted, never italic */
+.blocknote-prompt-editor
+  .bn-block-content:has(.ProseMirror-trailingBreak:only-child)::after,
+.blocknote-prompt-editor
+  .bn-block-content:has(.ProseMirror-trailingBreak:only-child):after {
+  font-style: normal !important;
+  font-family: var(--font-sans) !important;
+  font-size: 16px;
+  line-height: 1.75;
+  color: var(--prompt-editor-text-muted) !important;
+}
+
+/* Side menu (drag handle / add block) */
+.blocknote-prompt-editor .bn-side-menu {
+  opacity: 0;
+  transition: opacity var(--duration-fast, 100ms) var(--ease-default, ease);
+}
+
+.blocknote-prompt-editor .bn-block-outer:hover > .bn-side-menu,
+.blocknote-prompt-editor .bn-side-menu:hover,
+.blocknote-prompt-editor .bn-side-menu:focus-within {
+  opacity: 1;
+}
+
+.blocknote-prompt-editor .bn-side-menu .bn-ak-button {
+  color: var(--prompt-editor-text-muted);
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.blocknote-prompt-editor .bn-side-menu .bn-ak-button:hover {
+  color: var(--prompt-editor-text-secondary);
+  background: var(--prompt-editor-embed-head-bg);
+}
+
+.blocknote-prompt-editor .bn-editor h2 {
+  font-size: 21px;
+  font-weight: 500;
+  margin: 30px 0 10px;
+  font-family: var(--font-sans);
+}
+
+.blocknote-prompt-editor .bn-editor p {
+  font-size: 16px;
+  line-height: 1.75;
+  margin: 0 0 4px;
+}
+
+.blocknote-prompt-editor .bn-editor ul,
+.blocknote-prompt-editor .bn-editor ol {
+  margin: 4px 0;
+  padding-left: 22px;
+  font-size: 16px;
+  line-height: 1.75;
+}
+
+.blocknote-prompt-editor--disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.blocknote-prompt-wrap .repo-file-chip {
+  display: inline;
+  font-family: var(--prompt-editor-font-mono);
+  font-size: 0.9em;
+  color: var(--prompt-editor-accent);
+  background: var(--prompt-editor-accent-tint);
+  padding: 0.05em 0.35em;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blocknote-prompt-editor .bn-side-menu {
+    transition: none;
+    opacity: 1;
+  }
+}
+
+/* ---------- Slash suggestion menu ---------- */
+.blocknote-prompt-editor .bn-ak-menu {
+  min-width: 280px;
+  max-width: min(340px, 92vw);
+  padding: 6px;
+  border-radius: 10px;
+  border: 1px solid var(--prompt-editor-border-strong);
+  background: var(--prompt-editor-surface);
+  color: var(--prompt-editor-text);
+  box-shadow: var(--prompt-editor-menu-shadow);
+  font-family: var(--font-sans);
+}
+
+.blocknote-prompt-editor .bn-ak-group-label {
+  padding: 8px 10px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--prompt-editor-text-muted);
+  opacity: 1;
+}
+
+.blocknote-prompt-editor .bn-ak-menu-item {
+  border-radius: 7px;
+  padding: 8px 10px;
+  font-size: 13.5px;
+  color: var(--prompt-editor-text);
+}
+
+.blocknote-prompt-editor .bn-ak-menu-item[data-active-item],
+.blocknote-prompt-editor .bn-ak-menu-item[data-active],
+.blocknote-prompt-editor .bn-ak-menu-item:active {
+  background: var(--prompt-editor-accent-tint);
+  color: var(--prompt-editor-text);
+}
+
+.blocknote-prompt-editor .bn-ak-menu-item .bn-ak-badge,
+.blocknote-prompt-editor .bn-ak-menu-item kbd,
+.blocknote-prompt-editor .bn-ak-menu-item .badge {
+  margin-left: auto;
+  font-family: var(--font-sans);
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--prompt-editor-text-muted);
+  background: var(--prompt-editor-bg);
+  border: 1px solid var(--prompt-editor-border-strong);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+
+/* ---------- Floating formatting toolbar ---------- */
+.blocknote-prompt-editor .bn-ak-toolbar {
+  border-radius: 9px;
+  background: var(--prompt-editor-toolbar-bg);
+  color: var(--prompt-editor-toolbar-fg);
+  border: 1px solid transparent;
+  box-shadow: var(--prompt-editor-menu-shadow);
+  padding: 4px;
+  gap: 2px;
+}
+
+.blocknote-prompt-editor .bn-ak-toolbar .bn-ak-button {
+  color: var(--prompt-editor-toolbar-fg);
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.blocknote-prompt-editor .bn-ak-toolbar .bn-ak-button:hover,
+.blocknote-prompt-editor .bn-ak-toolbar .bn-ak-button[data-active],
+.blocknote-prompt-editor .bn-ak-toolbar .bn-ak-button:active {
+  background: var(--prompt-editor-toolbar-hover);
+  color: var(--prompt-editor-toolbar-fg);
+}
+
+.blocknote-prompt-editor .bn-ak-toolbar .bn-ak-separator {
+  border-color: var(--prompt-editor-toolbar-muted);
+  opacity: 0.35;
+  height: 1.25rem;
+}
