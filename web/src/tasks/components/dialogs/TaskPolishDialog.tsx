@@ -25,6 +25,8 @@ export type PolishConfirmPayload = {
 type Props = {
   worktreeId?: string;
   taskId: string;
+  /** Persisted task title for editor crumb/header. */
+  taskTitle?: string;
   /** Seeded when returning from Prompt Editor. */
   initialInstructions?: string;
   criteria?: PolishCriterionOption[];
@@ -38,6 +40,7 @@ type Props = {
 export function TaskPolishDialog({
   worktreeId,
   taskId,
+  taskTitle,
   initialInstructions = "",
   criteria = [],
   saving,
@@ -145,6 +148,7 @@ export function TaskPolishDialog({
                   instructionsHtml: instructions,
                   worktreeId: worktreeId?.trim() || undefined,
                   taskId,
+                  taskTitle,
                   returnPath: location.pathname,
                 });
               }}
