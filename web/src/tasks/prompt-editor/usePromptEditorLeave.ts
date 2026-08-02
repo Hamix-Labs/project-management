@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useBlocker, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import type { PromptDocumentAdapter } from "./types";
 import type { PromptEditorLaunchContext } from "./types";
 import {
@@ -17,7 +17,7 @@ type Args = {
   setSaving: (v: boolean) => void;
 };
 
-/** Leave / Escape / history-back flush shared with autosave durability. */
+/** Leave / Escape flush; `beforeunload` when dirty. Avoids `useBlocker` (needs a data router). */
 export function usePromptEditorLeave({
   adapter,
   launch,
@@ -87,24 +87,15 @@ export function usePromptEditorLeave({
     return () => window.removeEventListener("keydown", onKey);
   }, [leaveEditor]);
 
-  const blocker = useBlocker(
-    ({ currentLocation, nextLocation }) =>
-      !leavingRef.current &&
-      dirtyRef.current &&
-      currentLocation.pathname !== nextLocation.pathname,
-  );
-
   useEffect(() => {
-    if (blocker.state !== "blocked") return;
-    void (async () => {
-      try {
-        await leaveEditor();
-        blocker.proceed?.();
-      } catch {
-        blocker.reset?.();
-      }
-    })();
-  }, [blocker, leaveEditor]);
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (leavingRef.current || !dirtyRef.current) return;
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [dirtyRef]);
 
   return { leaveEditor, leavePending };
 }
