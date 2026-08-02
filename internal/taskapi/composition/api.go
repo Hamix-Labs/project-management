@@ -6,6 +6,7 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi/storehooks"
 	gitinventorystore "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store"
+	"github.com/AlexsanderHamir/Hamix/pkgs/gitstack"
 	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	projectsstore "github.com/AlexsanderHamir/Hamix/pkgs/projects/store"
 	settingsstore "github.com/AlexsanderHamir/Hamix/pkgs/settings/store"
@@ -51,6 +52,17 @@ func NewAPI(db *gorm.DB) *API {
 		events:    taskeventsstore.NewStore(db),
 		hooks:     storehooks.NewRuntime(),
 	}
+}
+
+// WithGitStackCLI replaces the gh stack CLI used for allocate/layer ensure (tests use Nop).
+//
+//funclogmeasure:skip category=hot-path reason="Startup wiring hook."
+func (a *API) WithGitStackCLI(cli gitstack.CLI) *API {
+	if a == nil || a.git == nil {
+		return a
+	}
+	a.git.WithStackCLI(cli)
+	return a
 }
 
 //funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by storehooks chokepoints."
