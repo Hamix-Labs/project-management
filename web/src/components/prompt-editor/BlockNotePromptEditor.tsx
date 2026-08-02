@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   SuggestionMenuController,
   useCreateBlockNote,
-  type DefaultReactSuggestionItem,
 } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/ariakit";
 import "@blocknote/core/style.css";
@@ -14,6 +13,11 @@ import { computeRepoHintFlags } from "@/components/rich-prompt/richPromptInsertH
 import { useRepoWorkspaceProbe } from "@/components/rich-prompt/useRepoWorkspaceProbe";
 import { looksLikeStoredHtml, plainTextToInitialHtml } from "@/lib/promptFormat";
 import { promptEditorSchema } from "./blockNoteSchema";
+import { PromptEditorRepoContext } from "./context/PromptEditorRepoContext";
+import {
+  PromptEditorMentionMenu,
+  type PromptFileMentionItem,
+} from "./mention/PromptEditorMentionMenu";
 
 export type BlockNotePromptEditorProps = {
   id: string;
@@ -91,7 +95,7 @@ export function BlockNotePromptEditor({
   );
 
   const getMentionItems = useCallback(
-    async (query: string): Promise<DefaultReactSuggestionItem[]> => {
+    async (query: string): Promise<PromptFileMentionItem[]> => {
       const wt = worktreeRef.current?.trim();
       if (!wt) {
         setFileSearchUnavailable(true);
@@ -109,6 +113,7 @@ export function BlockNotePromptEditor({
           const path = pathRaw.replace(/\\/g, "/");
           return {
             title: path,
+            query,
             onItemClick: () => {
               setRangeWarning(null);
               setPendingInsert({ path });
@@ -125,7 +130,7 @@ export function BlockNotePromptEditor({
     [],
   );
 
-  const insertMention = useCallback(
+  const insertChip = useCallback(
     (path: string, lineStart?: number, lineEnd?: number) => {
       const props =
         lineStart != null && lineEnd != null
@@ -144,62 +149,87 @@ export function BlockNotePromptEditor({
     [editor, emitHtml],
   );
 
+  const insertEmbed = useCallback(
+    (path: string, lineStart: number, lineEnd: number) => {
+      const embed = {
+        type: "repoFileEmbed" as const,
+        props: {
+          path,
+          lineStart: String(lineStart),
+          lineEnd: String(lineEnd),
+        },
+      };
+      const paragraph = { type: "paragraph" as const };
+      // Insert embed at cursor, then a following paragraph for continued typing.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- schema-typed insertBlocks
+      editor.insertBlocks([embed, paragraph] as any, editor.getTextCursorPosition().block, "after");
+      emitHtml();
+    },
+    [editor, emitHtml],
+  );
+
   return (
-    <div className="rich-prompt-wrap blocknote-prompt-wrap" id={id}>
-      <div
-        className={
-          disabled
-            ? "blocknote-prompt-editor blocknote-prompt-editor--disabled"
-            : "blocknote-prompt-editor"
-        }
-        aria-disabled={disabled || undefined}
-      >
-        <BlockNoteView
-          editor={editor}
-          editable={!disabled}
-          theme="light"
-          onChange={emitHtml}
-          slashMenu={true}
+    <PromptEditorRepoContext.Provider value={{ worktreeId }}>
+      <div className="rich-prompt-wrap blocknote-prompt-wrap" id={id}>
+        <div
+          className={
+            disabled
+              ? "blocknote-prompt-editor blocknote-prompt-editor--disabled"
+              : "blocknote-prompt-editor"
+          }
+          aria-disabled={disabled || undefined}
         >
-          <SuggestionMenuController
-            triggerCharacter="@"
-            getItems={async (q) => getMentionItems(q)}
+          <BlockNoteView
+            editor={editor}
+            editable={!disabled}
+            theme="light"
+            onChange={emitHtml}
+            slashMenu={true}
+          >
+            <SuggestionMenuController
+              triggerCharacter="@"
+              getItems={async (q) => getMentionItems(q)}
+              // Custom menu items include `query` for the search header.
+              suggestionMenuComponent={
+                PromptEditorMentionMenu as never
+              }
+            />
+          </BlockNoteView>
+        </div>
+        {pendingInsert ? (
+          <RichPromptFileReferenceModal
+            id={`${id}-range`}
+            pendingInsert={{ insertAt: 0, path: pendingInsert.path }}
+            disabled={disabled}
+            worktreeId={worktreeId}
+            rangeWarning={rangeWarning}
+            onClose={() => {
+              setPendingInsert(null);
+              setRangeWarning(null);
+            }}
+            onInsertWithRange={async (start, end) => {
+              insertEmbed(pendingInsert.path, start, end);
+              setPendingInsert(null);
+              setRangeWarning(null);
+            }}
+            onInsertPathOnly={() => {
+              insertChip(pendingInsert.path);
+              setPendingInsert(null);
+              setRangeWarning(null);
+            }}
           />
-        </BlockNoteView>
-      </div>
-      {pendingInsert ? (
-        <RichPromptFileReferenceModal
-          id={`${id}-range`}
-          pendingInsert={{ insertAt: 0, path: pendingInsert.path }}
-          disabled={disabled}
-          worktreeId={worktreeId}
-          rangeWarning={rangeWarning}
-          onClose={() => {
-            setPendingInsert(null);
-            setRangeWarning(null);
-          }}
-          onInsertWithRange={async (start, end) => {
-            insertMention(pendingInsert.path, start, end);
-            setPendingInsert(null);
-            setRangeWarning(null);
-          }}
-          onInsertPathOnly={() => {
-            insertMention(pendingInsert.path);
-            setPendingInsert(null);
-            setRangeWarning(null);
-          }}
+        ) : null}
+        <RichPromptRepoHints
+          showSelectWorktreeHint={repoHints.showSelectWorktreeHint}
+          showRepoMisconfigHint={repoHints.showRepoMisconfigHint}
+          workspaceBroken={repoHints.workspaceBroken}
+          fileSearchFailedWhileAvailable={
+            repoHints.fileSearchFailedWhileAvailable
+          }
+          showRepoUnknownHint={repoHints.showRepoUnknownHint}
+          showFileSearchSpinner={repoHints.showFileSearchSpinner}
         />
-      ) : null}
-      <RichPromptRepoHints
-        showSelectWorktreeHint={repoHints.showSelectWorktreeHint}
-        showRepoMisconfigHint={repoHints.showRepoMisconfigHint}
-        workspaceBroken={repoHints.workspaceBroken}
-        fileSearchFailedWhileAvailable={
-          repoHints.fileSearchFailedWhileAvailable
-        }
-        showRepoUnknownHint={repoHints.showRepoUnknownHint}
-        showFileSearchSpinner={repoHints.showFileSearchSpinner}
-      />
-    </div>
+      </div>
+    </PromptEditorRepoContext.Provider>
   );
 }

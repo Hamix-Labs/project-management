@@ -1,14 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import type { PromptEditorSaveStatusKind } from "@/components/prompt-editor/chrome";
 import {
   createPromptDocumentAdapter,
   isPromptSourceKind,
 } from "./promptDocumentAdapter";
+import { readPromptEditorLaunch } from "./promptEditorSession";
 import {
-  clearPromptEditorLaunch,
-  readPromptEditorLaunch,
-  writePromptEditorReturn,
-} from "./promptEditorSession";
+  crumbKindLabel,
+  formatRelativeEdited,
+  wordCountFromHtml,
+} from "./promptEditorPageMeta";
+import { usePromptEditorDocumentLoad } from "./usePromptEditorDocumentLoad";
+import { usePromptEditorLeave } from "./usePromptEditorLeave";
 import type { PromptEditorLaunchContext } from "./types";
 
 const AUTOSAVE_MS = 800;
@@ -18,7 +22,6 @@ export function usePromptEditorPageController() {
     sourceKind: string;
     sourceId: string;
   }>();
-  const navigate = useNavigate();
   const launchRef = useRef<PromptEditorLaunchContext | null>(null);
   if (launchRef.current === null) {
     launchRef.current = readPromptEditorLaunch();
@@ -39,86 +42,103 @@ export function usePromptEditorPageController() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [donePending, setDonePending] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(
+    launch?.seedHtml ? Date.now() : null,
+  );
+  const [tick, setTick] = useState(0);
   const htmlRef = useRef(html);
   htmlRef.current = html;
   const dirtyRef = useRef(false);
 
+  const worktreeId = launch?.worktreeId?.trim() || undefined;
+  const title = launch?.title?.trim() || "Prompt";
+
+  const { repoLabel } = usePromptEditorDocumentLoad({
+    adapter,
+    launch,
+    dirtyRef,
+    setHtml,
+    setLoaded,
+    setLoadError,
+    setLastSavedAt,
+    worktreeId,
+  });
+
   useEffect(() => {
+    const id = window.setInterval(() => setTick((t) => t + 1), 30_000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const flushSave = useCallback(async () => {
     if (!adapter) return;
-    const ac = new AbortController();
-    void (async () => {
-      try {
-        const snap = await adapter.load(ac.signal);
-        if (ac.signal.aborted) return;
-        if (launch?.seedHtml !== undefined && launch.seedHtml !== "") {
-          setHtml(launch.seedHtml);
-        } else {
-          setHtml(snap.html);
-        }
-        setLoaded(true);
-      } catch (err) {
-        if (ac.signal.aborted) return;
-        setLoadError(err instanceof Error ? err.message : String(err));
-        setLoaded(true);
-      }
-    })();
-    return () => ac.abort();
-  }, [adapter, launch?.seedHtml]);
+    setSaving(true);
+    try {
+      await adapter.save(htmlRef.current);
+      dirtyRef.current = false;
+      setSaveError(null);
+      setLastSavedAt(Date.now());
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : String(err));
+      throw err;
+    } finally {
+      setSaving(false);
+    }
+  }, [adapter]);
 
   useEffect(() => {
     if (!adapter || !loaded || !dirtyRef.current) return;
     const t = window.setTimeout(() => {
-      setSaving(true);
-      void adapter
-        .save(htmlRef.current)
-        .then(() => setSaveError(null))
-        .catch((err: unknown) =>
-          setSaveError(err instanceof Error ? err.message : String(err)),
-        )
-        .finally(() => setSaving(false));
+      void flushSave().catch(() => undefined);
     }, AUTOSAVE_MS);
     return () => window.clearTimeout(t);
-  }, [html, adapter, loaded]);
+  }, [html, adapter, loaded, flushSave]);
 
   const onChange = useCallback((next: string) => {
     dirtyRef.current = true;
     setHtml(next);
   }, []);
 
-  const onDone = useCallback(async () => {
-    if (!adapter) return;
-    setDonePending(true);
-    try {
-      await adapter.save(htmlRef.current);
-      const returnPath = launch?.returnPath ?? "/";
-      writePromptEditorReturn({
-        resumeCompose: Boolean(launch?.resumeCompose),
-        resumePolish: Boolean(launch?.resumePolish),
-        polishTaskId: launch?.polishTaskId,
-        returnPath,
-        html: htmlRef.current,
-      });
-      clearPromptEditorLaunch();
-      navigate(returnPath);
-    } catch (err) {
-      setSaveError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setDonePending(false);
-    }
-  }, [adapter, launch, navigate]);
+  const { leaveEditor, leavePending } = usePromptEditorLeave({
+    adapter,
+    launch,
+    htmlRef,
+    dirtyRef,
+    setSaveError,
+    setLastSavedAt,
+    setSaving,
+  });
+
+  const saveStatus: PromptEditorSaveStatusKind = saveError
+    ? "error"
+    : saving || leavePending
+      ? "saving"
+      : "saved";
+
+  const words = wordCountFromHtml(html);
+  void tick;
 
   return {
     kindOk,
     sourceId,
+    sourceKind,
     launch,
     html,
     loaded,
     loadError,
     saveError,
     saving,
-    donePending,
+    leavePending,
+    saveStatus,
+    title,
+    crumbKindLabel: crumbKindLabel(sourceKind),
+    editedLabel: formatRelativeEdited(lastSavedAt),
+    wordCountLabel: words === 0 ? "0 words" : `~${words} words`,
+    repoLabel,
+    worktreeId,
     onChange,
-    onDone,
+    leaveEditor,
+    retrySave: () => {
+      void flushSave().catch(() => undefined);
+    },
   };
 }
