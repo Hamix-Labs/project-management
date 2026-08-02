@@ -8,6 +8,20 @@
   padding-right: max(var(--layout-gutter-x), env(safe-area-inset-right, 0px));
 }
 
+/* ImmersiveShell: full viewport, no product-nav gutters (Prompt Editor, etc.). */
+.app.app--immersive {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.app.app--immersive #main-content {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
 /* Commit diff needs more horizontal room for split view and long paths. */
 .app:has(.task-commit-diff-page) {
   --layout-max-width: 90rem;
