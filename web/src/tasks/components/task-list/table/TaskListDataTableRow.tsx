@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import type { CSSProperties } from "react";
 import type { Task } from "@/types";
 import { taskDisplayRef } from "@/lib/taskShortId";
 import type { CloseTargetInput } from "../../../hooks/useTaskCloseFlow";
@@ -77,6 +78,7 @@ export function TaskListDataTableRow({
   const rowSelected = !isExiting && selection ? selection.isSelected(t.id) : false;
   const rowClass = [
     "task-list-row",
+    t.depth > 0 ? "task-list-row--depth-1" : "",
     isEntering ? "task-list-row--enter" : "",
     isExiting ? "task-list-row--exit" : "",
     isFilterExit ? "task-list-row--filter-exit" : "",
@@ -94,6 +96,17 @@ export function TaskListDataTableRow({
   const createdTitle = t.created_at
     ? formatInAppTimezone(t.created_at, appTimezone)
     : undefined;
+  const titleLinkClass = [
+    "cell-title-link",
+    "cell-title-link--cell",
+    t.depth > 0 ? "cell-title-link--tree" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const titleLinkStyle =
+    t.depth > 0
+      ? ({ ["--task-list-tree-depth" as string]: t.depth } as CSSProperties)
+      : undefined;
 
   return (
     <tr
@@ -132,7 +145,8 @@ export function TaskListDataTableRow({
       <td className="cell-title">
         <Link
           to={taskHref}
-          className={["cell-title-link", "cell-title-link--cell"].filter(Boolean).join(" ")}
+          className={titleLinkClass}
+          style={titleLinkStyle}
           aria-label={`Open task details: ${displayRef} ${t.title}`}
         >
           <div className="cell-title-stack">

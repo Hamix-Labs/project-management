@@ -86,7 +86,11 @@ export function TaskBoardCard({
   return (
     <Link
       to={`/tasks/${encodeURIComponent(task.id)}`}
-      className="task-board-card"
+      className={
+        task.depth > 0
+          ? "task-board-card task-board-card--depth-1"
+          : "task-board-card"
+      }
       onPointerEnter={onIntent}
       onFocus={onIntent}
     >

@@ -16,6 +16,10 @@
     transform var(--duration-normal) var(--ease-out);
 }
 
+.task-board-card--depth-1 {
+  margin-left: var(--task-list-tree-indent-step, 0.875rem);
+}
+
 .task-board-card:hover {
   border-color: var(--brand-border-soft, var(--border-strong, var(--border-hairline)));
   box-shadow: var(--shadow-md);
