@@ -20,7 +20,12 @@ func ShouldNotifyReadyNow(pickupNotBefore *time.Time, now time.Time) bool {
 
 func (a *API) Get(ctx context.Context, id string) (*taskcoredomain.Task, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.Get")
-	return a.taskcore.Get(ctx, id)
+	t, err := a.taskcore.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	a.enrichTaskWorktreeRoot(ctx, t)
+	return t, nil
 }
 
 func (a *API) AgentPickup(ctx context.Context, taskID string, by taskcoredomain.Actor) (*taskcorecontract.AgentPickupResult, error) {
@@ -96,6 +101,7 @@ func (a *API) Create(ctx context.Context, in taskcorestore.CreateTaskInput, by t
 	now := time.Now().UTC()
 	a.applyNotifyDecision(ctx, *t, scheduling.DecideNotifyAfterReadyTransition("", t, false, now))
 	a.enqueueWorktreeIfNeeded(ctx, t)
+	a.enrichTaskWorktreeRoot(ctx, t)
 	return t, nil
 }
 
@@ -150,6 +156,7 @@ func (a *API) Update(ctx context.Context, id string, in taskcorestore.UpdateTask
 	now := time.Now().UTC()
 	pickupTouched := in.PickupNotBefore != nil
 	a.applyNotifyDecision(ctx, *updated, scheduling.DecideNotifyAfterReadyTransition(prev, updated, pickupTouched, now))
+	a.enrichTaskWorktreeRoot(ctx, updated)
 	return updated, nil
 }
 
@@ -202,17 +209,32 @@ func (a *API) Delete(ctx context.Context, id string, by taskcoredomain.Actor) ([
 
 func (a *API) ListFlat(ctx context.Context, limit, offset int, filter *taskcorestore.ListFilter) ([]taskcoredomain.Task, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ListFlat")
-	return a.taskcore.ListFlat(ctx, limit, offset, filter)
+	tasks, err := a.taskcore.ListFlat(ctx, limit, offset, filter)
+	if err != nil {
+		return nil, err
+	}
+	a.enrichTasksWorktreeRoots(ctx, tasks)
+	return tasks, nil
 }
 
 func (a *API) ListFlatPage(ctx context.Context, limit, offset int, filter *taskcorestore.ListFilter) ([]taskcoredomain.Task, bool, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ListFlatPage")
-	return a.taskcore.ListFlatPage(ctx, limit, offset, filter)
+	tasks, hasMore, err := a.taskcore.ListFlatPage(ctx, limit, offset, filter)
+	if err != nil {
+		return nil, false, err
+	}
+	a.enrichTasksWorktreeRoots(ctx, tasks)
+	return tasks, hasMore, nil
 }
 
 func (a *API) ListFlatAfter(ctx context.Context, limit int, afterID string) ([]taskcoredomain.Task, bool, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.ListFlatAfter")
-	return a.taskcore.ListFlatAfter(ctx, limit, afterID)
+	tasks, hasMore, err := a.taskcore.ListFlatAfter(ctx, limit, afterID)
+	if err != nil {
+		return nil, false, err
+	}
+	a.enrichTasksWorktreeRoots(ctx, tasks)
+	return tasks, hasMore, nil
 }
 
 func (a *API) AddTaskDependency(ctx context.Context, taskID, dependsOnTaskID string, satisfies taskcoredomain.DependencySatisfies) error {

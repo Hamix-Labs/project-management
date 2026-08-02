@@ -176,7 +176,34 @@ func TestListFlat_filterByTagAndMilestone(t *testing.T) {
 	if len(out) != 1 || out[0].Title != "tagged" {
 		t.Fatalf("milestone filter: got %+v", out)
 	}
+
+	wtID := "wt-filter-1"
+	if _, err := Create(ctx, db, CreateInput{
+		Title:      "on-wt",
+		Status:     domain.StatusReady,
+		Priority:   domain.PriorityMedium,
+		WorktreeID: &wtID,
+	}, domain.ActorUser); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Create(ctx, db, CreateInput{
+		Title:      "other-wt",
+		Status:     domain.StatusReady,
+		Priority:   domain.PriorityMedium,
+		WorktreeID: ptr("wt-filter-2"),
+	}, domain.ActorUser); err != nil {
+		t.Fatal(err)
+	}
+	out, err = ListFlat(ctx, db, 50, 0, &ListFilter{WorktreeID: &wtID})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(out) != 1 || out[0].Title != "on-wt" {
+		t.Fatalf("worktree filter: got %+v", out)
+	}
 }
+
+func ptr(s string) *string { return &s }
 
 func containsCandidateID(cands []ready.QueueCandidate, id string) bool {
 	for _, c := range cands {

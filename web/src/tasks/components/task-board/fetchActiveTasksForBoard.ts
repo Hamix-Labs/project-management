@@ -14,6 +14,7 @@ export type FetchActiveTasksForBoardOptions = {
   activeCap?: number;
   maxPages?: number;
   pageSize?: number;
+  worktreeId?: string;
 };
 
 function assertNotAborted(signal?: AbortSignal): void {
@@ -29,8 +30,8 @@ function assertNotAborted(signal?: AbortSignal): void {
  * caps. Returns a `TaskListResponse` so the result can live under
  * `taskQueryKeys.board()` / `listRoot()` optimistic helpers.
  *
- * `has_more` is true when the walk stopped early (active cap or page
- * cap with more server rows) so the UI can show a truncation hint.
+ * When `worktreeId` is set, uses offset list filter (family view) instead
+ * of keyset walk — after_id pagination does not support worktree_id.
  */
 export async function fetchActiveTasksForBoard(
   options: FetchActiveTasksForBoardOptions = {},
@@ -40,6 +41,24 @@ export async function fetchActiveTasksForBoard(
   const maxPages = options.maxPages ?? BOARD_MAX_PAGES;
   const pageSize = options.pageSize ?? BOARD_PAGE_SIZE;
   const { signal } = options;
+  const worktreeId = options.worktreeId?.trim();
+
+  if (worktreeId) {
+    assertNotAborted(signal);
+    const res = await listTasks(Math.min(200, activeCap), 0, {
+      signal,
+      worktreeId,
+    });
+    const active = res.tasks.filter(
+      (task) => task.status !== "done" && task.status !== "closed",
+    );
+    return {
+      tasks: active,
+      limit: res.limit,
+      offset: 0,
+      has_more: res.has_more || active.length >= activeCap,
+    };
+  }
 
   const active: Task[] = [];
   let afterId: string | undefined;

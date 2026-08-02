@@ -109,7 +109,18 @@ func (h *Handler) PrepareComposeCreate(
 	if payload.RepositoryID != nil {
 		repoID = strings.TrimSpace(*payload.RepositoryID)
 	}
-	if repoID != "" {
+	var worktreeID *string
+	if payload.WorktreeID != nil {
+		wt := strings.TrimSpace(*payload.WorktreeID)
+		if wt != "" {
+			worktreeID = &wt
+		}
+	}
+	if worktreeID != nil {
+		if err := h.gitCompose.ValidatePromptMentionsForWorktree(ctx, worktreeID, payload.InitialPrompt); err != nil {
+			return nil, err
+		}
+	} else if repoID != "" {
 		if err := h.gitCompose.ValidatePromptMentionsForRepository(ctx, repoID, payload.InitialPrompt); err != nil {
 			return nil, err
 		}
@@ -132,7 +143,7 @@ func (h *Handler) PrepareComposeCreate(
 			Gate:            opts.Gate,
 			DependsOn:       dependsOn,
 			ChecklistItems:  checklistItems,
-			WorktreeID:      nil,
+			WorktreeID:      worktreeID,
 		},
 		RepositoryID: repoID,
 	}, nil
@@ -229,7 +240,13 @@ func (h *Handler) ValidateCompose(ctx context.Context, payload TaskComposePayloa
 			return err
 		}
 	case ComposeTaskRepoBinding:
-		if err := h.gitCompose.ValidateTaskRepositoryBinding(ctx, payload.ProjectID, payload.RepositoryID); err != nil {
+		// Optional worktree_id binds an existing managed worktree (enqueue onto
+		// shared workspace); ValidateComposeGitBinding covers repo + worktree.
+		if payload.WorktreeID != nil && strings.TrimSpace(*payload.WorktreeID) != "" {
+			if err := h.gitCompose.ValidateComposeGitBinding(ctx, payload.RepositoryID, payload.ProjectID, payload.WorktreeID); err != nil {
+				return err
+			}
+		} else if err := h.gitCompose.ValidateTaskRepositoryBinding(ctx, payload.ProjectID, payload.RepositoryID); err != nil {
 			return err
 		}
 	}

@@ -7,7 +7,11 @@ export type TaskEventsCursorKey =
   | { k: "after"; seq: number };
 
 /** Parameters that identify a single page of `GET /tasks`. */
-export type TaskListParams = { limit: number; offset: number };
+export type TaskListParams = {
+  limit: number;
+  offset: number;
+  worktreeId?: string;
+};
 
 export const taskQueryKeys = {
   all: ["tasks"] as const,
@@ -28,7 +32,10 @@ export const taskQueryKeys = {
    * Value must remain a `TaskListResponse` so `optimisticTaskList`
    * helpers that scan `listRoot()` keep working.
    */
-  board: () => [...taskQueryKeys.listRoot(), "board"] as const,
+  board: (params?: { worktreeId?: string }) =>
+    params?.worktreeId
+      ? ([...taskQueryKeys.listRoot(), "board", { worktreeId: params.worktreeId }] as const)
+      : ([...taskQueryKeys.listRoot(), "board"] as const),
   /** Prefix for all task detail queries (SSE flush partial match). */
   detailRoot: () => [...taskQueryKeys.all, "detail"] as const,
   detail: (id: string) => [...taskQueryKeys.all, "detail", id] as const,

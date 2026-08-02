@@ -100,7 +100,21 @@ func (h *Handler) validateComposeGitBinding(
 	if wtID == "" {
 		return nil
 	}
-	return h.store.ValidateTaskWorktreeBinding(ctx, projectID, wtID)
+	if err := h.store.ValidateTaskWorktreeBinding(ctx, projectID, wtID); err != nil {
+		return err
+	}
+	repoID := trimmedOptionalID(repositoryID)
+	if repoID == "" {
+		return nil
+	}
+	wt, err := h.store.GetGitWorktreeByID(ctx, wtID)
+	if err != nil {
+		return err
+	}
+	if strings.TrimSpace(wt.RepositoryID) != repoID {
+		return fmt.Errorf("%w: worktree_id does not belong to repository_id", taskcoredomain.ErrInvalidInput)
+	}
+	return nil
 }
 
 func (h *Handler) validatePromptMentionsForWorktree(ctx context.Context, worktreeID *string, prompt string) error {

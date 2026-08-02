@@ -82,6 +82,8 @@ function makeApp(overrides: Partial<App> = {}): App {
     taskStats: undefined,
     taskStatsLoading: true,
     homeDataReady: true,
+    worktreeFamilyId: "all",
+    setWorktreeFamilyId: () => {},
     ...overrides,
   } as unknown as App;
 }

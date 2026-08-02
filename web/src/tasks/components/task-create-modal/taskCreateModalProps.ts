@@ -54,6 +54,8 @@ export type TaskCreateModalGitBinding = {
   repositoryId: string;
   projectId: string;
   worktreeId: string;
+  /** When true, repository/project selects are disabled (enqueue / locked project). */
+  assignmentLocked?: boolean;
   onRepositoryChange: (repositoryId: string) => void;
   onProjectChange: (projectId: string) => void;
   onWorktreeChange: (worktreeId: string) => void;

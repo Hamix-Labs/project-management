@@ -123,6 +123,28 @@ export function TaskDetailLoadedToolbar({
         approvePending={approveMutation.isPending}
         onPolish={inReview ? () => setPolishDialogOpen(true) : undefined}
         polishPending={polishMutation.isPending}
+        onEnqueue={
+          !isClosed
+            ? () => {
+                const projectID = task.project_id?.trim() ?? "";
+                const repositoryID = task.repository_id?.trim() ?? "";
+                const worktreeID = task.worktree_id?.trim() ?? "";
+                if (!projectID || !repositoryID || !worktreeID) return;
+                modals.openCreateModal({
+                  projectID,
+                  repositoryID,
+                  worktreeID,
+                  lockProjectAssignment: true,
+                  lockGitAssignment: true,
+                });
+              }
+            : undefined
+        }
+        enqueueDisabledReason={
+          !isClosed && !(task.worktree_id ?? "").trim()
+            ? "Worktree is still provisioning"
+            : undefined
+        }
         onConfigureModel={() => setModelConfigOpen(true)}
         showModelConfig={task.status === "failed"}
         autonomyMode={autonomyMode}

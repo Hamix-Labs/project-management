@@ -18,6 +18,7 @@ import { useTaskListSectionBulkActions } from "./useTaskListSectionBulkActions";
 import { TaskListToolbar } from "./TaskListToolbar";
 import { TaskListTableRegion } from "./TaskListTableRegion";
 import { TaskListBulkLayer } from "./TaskListBulkLayer";
+import { worktreeFamilyFilterOptions } from "../filters/worktreeFamilyFilterOptions";
 
 type Props = {
   tasks: TaskWithDepth[];
@@ -39,6 +40,9 @@ type Props = {
   projectFilterOptions?: Array<{ id: string; name: string }>;
   /** When false, hides the project filter and table column (launch omission). */
   showProjectColumn?: boolean;
+  /** Shared worktree-family filter (`worktree_id` or `"all"`). */
+  worktreeFamilyFilter?: string;
+  onWorktreeFamilyFilterChange?: (value: string) => void;
   onListPageChange: (page: number) => void;
   /** Reset to first server page when filters change. */
   onListFiltersChange: () => void;
@@ -84,6 +88,8 @@ export const TaskListSection = memo(function TaskListSection({
   listPageSize,
   projectFilterOptions = [],
   showProjectColumn = true,
+  worktreeFamilyFilter = "all",
+  onWorktreeFamilyFilterChange,
   onListPageChange,
   onListFiltersChange,
   hasNextPage,
@@ -116,6 +122,11 @@ export const TaskListSection = memo(function TaskListSection({
     scheduleUiEnabled,
   });
 
+  const familyOptions = useMemo(
+    () => worktreeFamilyFilterOptions(tasks),
+    [tasks],
+  );
+
   const skipFiltersResetOnMount = useRef(true);
   const { clearSelection } = bulk.selection;
 
@@ -135,6 +146,7 @@ export const TaskListSection = memo(function TaskListSection({
     filters.titleSearch,
     filters.sortKey,
     filters.sortDir,
+    worktreeFamilyFilter,
     onListFiltersChange,
     clearSelection,
   ]);
@@ -161,6 +173,9 @@ export const TaskListSection = memo(function TaskListSection({
         taskStats={taskStats}
         showProjectColumn={showProjectColumn}
         projectFilterOptions={projectFilterOptions}
+        worktreeFamilyFilter={worktreeFamilyFilter}
+        worktreeFamilyOptions={familyOptions}
+        onWorktreeFamilyFilterChange={onWorktreeFamilyFilterChange}
         filters={filters}
       />
       <TaskListTableRegion

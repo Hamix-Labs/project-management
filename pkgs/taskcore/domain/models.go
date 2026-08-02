@@ -53,6 +53,9 @@ type Task struct {
 	CreatedAt *time.Time `json:"created_at,omitempty"`
 	// WorktreeID binds the task to a registered git worktree row.
 	WorktreeID *string `json:"worktree_id,omitempty"`
+	// WorktreeRootTaskID is the task whose id named the managed branch
+	// (hamix/task-<8 hex>) for this worktree. Computed on read; not a column.
+	WorktreeRootTaskID *string `json:"worktree_root_task_id,omitempty"`
 }
 
 // TaskDependency is a directed edge: task_id depends on depends_on_task_id completing first.

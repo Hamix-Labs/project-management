@@ -14,6 +14,9 @@ type Props = {
   taskStats?: TaskStatsResponse | null;
   showProjectColumn: boolean;
   projectFilterOptions: Array<{ id: string; name: string }>;
+  worktreeFamilyFilter?: string;
+  worktreeFamilyOptions?: Array<{ value: string; label: string }>;
+  onWorktreeFamilyFilterChange?: (value: string) => void;
   filters: Filters;
 };
 
@@ -24,6 +27,9 @@ export function TaskListToolbar({
   taskStats,
   showProjectColumn,
   projectFilterOptions,
+  worktreeFamilyFilter,
+  worktreeFamilyOptions,
+  onWorktreeFamilyFilterChange,
   filters,
 }: Props) {
   const showStatusFilter = filters.lifecycleFilter === "open";
@@ -53,6 +59,9 @@ export function TaskListToolbar({
             onProjectFilterChange={
               showProjectColumn ? filters.setProjectFilter : undefined
             }
+            worktreeFamilyFilter={worktreeFamilyFilter}
+            worktreeFamilyOptions={worktreeFamilyOptions}
+            onWorktreeFamilyFilterChange={onWorktreeFamilyFilterChange}
             tagFilter={filters.tagFilter}
             tagOptions={filters.tagFilterOptions}
             onTagFilterChange={

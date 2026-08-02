@@ -340,6 +340,33 @@ describe("useTaskCreateFlow", () => {
     expect(result.current.createModalAssignmentLocked).toBe(true);
   });
 
+  it("prefills locked git assignment when enqueueing onto a worktree", async () => {
+    const { Wrapper } = makeWrapper();
+    const { result } = renderHook(() => useTaskCreateFlow(), {
+      wrapper: Wrapper,
+    });
+
+    await waitFor(() => {
+      expect(result.current.draftListLoading).toBe(false);
+    });
+
+    act(() => {
+      result.current.openCreateModal({
+        projectID: "project-1",
+        repositoryID: "repo-1",
+        worktreeID: "wt-1",
+        lockProjectAssignment: true,
+        lockGitAssignment: true,
+      });
+    });
+
+    expect(result.current.createModalOpen).toBe(true);
+    expect(result.current.newProjectID).toBe("project-1");
+    expect(result.current.newRepositoryID).toBe("repo-1");
+    expect(result.current.newWorktreeID).toBe("wt-1");
+    expect(result.current.createModalAssignmentLocked).toBe(true);
+  });
+
   it("opens repository setup prompt instead of create modal when no repos exist", async () => {
     mockedEnsureRepos.mockResolvedValueOnce(false);
     const { Wrapper } = makeWrapper();

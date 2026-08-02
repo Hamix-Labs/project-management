@@ -182,6 +182,59 @@ func TestDelete_skipsSharedWorktree(t *testing.T) {
 	}
 }
 
+func TestDelete_removesWorktreeWhenLastSharerDeletedAfterOwner(t *testing.T) {
+	ctx := context.Background()
+	t.Setenv(gitinventory.EnvManagedWorktreeRoot, t.TempDir())
+	api := composition.NewAPI(tasktestdb.OpenSQLite(t))
+
+	repo, err := api.CreateGlobalGitRepository(ctx, gitinventorystore.CreateGitRepositoryInput{Path: seedRemoteMainRepo(t)})
+	if err != nil {
+		t.Fatalf("CreateGlobalGitRepository: %v", err)
+	}
+	ownerID := uuid.NewString()
+	wt, err := api.GitStore().AllocateTaskWorktree(ctx, repo.ID, ownerID)
+	if err != nil {
+		t.Fatalf("AllocateTaskWorktree: %v", err)
+	}
+	wtPath := filepath.FromSlash(wt.Path)
+	owner, err := api.Create(ctx, taskcorestore.CreateTaskInput{
+		ID:         ownerID,
+		Title:      "owner",
+		Priority:   taskcoredomain.PriorityMedium,
+		WorktreeID: &wt.ID,
+	}, taskcoredomain.ActorUser)
+	if err != nil {
+		t.Fatalf("Create owner: %v", err)
+	}
+	shared, err := api.Create(ctx, taskcorestore.CreateTaskInput{
+		Title:      "shared",
+		Priority:   taskcoredomain.PriorityMedium,
+		WorktreeID: &wt.ID,
+	}, taskcoredomain.ActorUser)
+	if err != nil {
+		t.Fatalf("Create shared: %v", err)
+	}
+
+	if _, err := api.Delete(ctx, owner.ID, taskcoredomain.ActorUser); err != nil {
+		t.Fatalf("Delete owner: %v", err)
+	}
+	if _, err := api.GetGitWorktreeByID(ctx, wt.ID); err != nil {
+		t.Fatalf("worktree must remain while sharer exists: %v", err)
+	}
+
+	if _, err := api.Delete(ctx, shared.ID, taskcoredomain.ActorUser); err != nil {
+		t.Fatalf("Delete shared: %v", err)
+	}
+	if _, err := api.GetGitWorktreeByID(ctx, wt.ID); err == nil {
+		t.Fatal("expected worktree removed after last sharer delete")
+	} else if gitdomain.GitErrCode(err) != gitdomain.GitCodeWorktreeNotFound {
+		t.Fatalf("GetGitWorktreeByID: %v", err)
+	}
+	if _, err := os.Stat(wtPath); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("expected worktree dir removed, stat=%v", err)
+	}
+}
+
 func TestDelete_bestEffortWhenWorktreeAlreadyGone(t *testing.T) {
 	ctx := context.Background()
 	t.Setenv(gitinventory.EnvManagedWorktreeRoot, t.TempDir())

@@ -19,6 +19,9 @@ type Props = {
   tagFilter?: string;
   tagOptions?: string[];
   onTagFilterChange?: (value: string) => void;
+  worktreeFamilyFilter?: string;
+  worktreeFamilyOptions?: Array<{ value: string; label: string }>;
+  onWorktreeFamilyFilterChange?: (value: string) => void;
   titleSearch: string;
   onTitleSearchChange: (value: string) => void;
   searchInputRef?: RefObject<HTMLInputElement>;
@@ -37,6 +40,9 @@ export function TaskListFilters({
   tagFilter = "all",
   tagOptions = [],
   onTagFilterChange,
+  worktreeFamilyFilter = "all",
+  worktreeFamilyOptions = [],
+  onWorktreeFamilyFilterChange,
   titleSearch,
   onTitleSearchChange,
   searchInputRef,
@@ -56,6 +62,11 @@ export function TaskListFilters({
       value: tag,
       label: tag,
     })),
+  ];
+
+  const familyFilterSelectOptions = [
+    { value: "all", label: "All worktrees" },
+    ...worktreeFamilyOptions,
   ];
 
   const scheduleUiEnabled = !isUiFeatureOmitted("schedule");
@@ -110,6 +121,21 @@ export function TaskListFilters({
               value={projectFilter}
               options={projectFilterOptions}
               onChange={onProjectFilterChange}
+            />
+          </div>
+        ) : null}
+        {onWorktreeFamilyFilterChange ? (
+          <div className="task-list-filter-field task-list-filter-field--worktree-family">
+            <CustomSelect
+              id="task-list-filter-worktree-family"
+              label="Worktree family"
+              compact
+              dropdownVariant="toolbar"
+              dropdownMinWidth={260}
+              listboxName="Filter by worktree family"
+              value={worktreeFamilyFilter}
+              options={familyFilterSelectOptions}
+              onChange={onWorktreeFamilyFilterChange}
             />
           </div>
         ) : null}

@@ -51,6 +51,7 @@ export function buildTaskCreateModalProps(
       repositoryId: input.repositoryId,
       projectId: input.projectId,
       worktreeId: input.worktreeId,
+      assignmentLocked: input.assignmentLocked,
       onRepositoryChange: input.onRepositoryChange,
       onProjectChange: input.onProjectChange,
       onWorktreeChange: input.onWorktreeChange,

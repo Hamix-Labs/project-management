@@ -57,6 +57,7 @@ export function TaskCreateModalFormBody({
         repositoryId={git.repositoryId}
         projectId={git.projectId}
         worktreeId={git.worktreeId}
+        assignmentLocked={git.assignmentLocked === true}
         onTitleChange={essentials.onTitleChange}
         onPriorityChange={essentials.onPriorityChange}
         onRepositoryChange={git.onRepositoryChange}

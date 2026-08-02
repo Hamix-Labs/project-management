@@ -2,6 +2,7 @@ package taskcore_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -353,5 +354,69 @@ func TestHTTP_createTask_checklistVerifyCommandsPersisted(t *testing.T) {
 	}
 	if clBody.Items[0].VerifyCommands[0].Command != "go test ./..." {
 		t.Fatalf("command=%q", clBody.Items[0].VerifyCommands[0].Command)
+	}
+}
+
+// TestHTTP_createTask_bindsExistingWorktree pins POST /tasks with worktree_id
+// reuses an allocated managed worktree (enqueue) instead of provisioning a new one.
+func TestHTTP_createTask_bindsExistingWorktree(t *testing.T) {
+	srv := handlertest.NewCreateServer(t)
+	defer srv.Close()
+
+	firstID := handlertest.MustCreateTask(t, srv.URL, `{"title":"owner","priority":"medium"}`)
+	var ownerWT string
+	deadline := time.Now().Add(15 * time.Second)
+	for {
+		res, raw := handlertest.GetTask(t, srv.URL, firstID)
+		if res.StatusCode != http.StatusOK {
+			t.Fatalf("get owner status %d body=%s", res.StatusCode, raw)
+		}
+		var owner taskcoredomain.Task
+		if err := json.Unmarshal(raw, &owner); err != nil {
+			t.Fatalf("decode owner: %v", err)
+		}
+		if owner.WorktreeID != nil && strings.TrimSpace(*owner.WorktreeID) != "" {
+			ownerWT = strings.TrimSpace(*owner.WorktreeID)
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("timed out waiting for owner worktree_id body=%s", raw)
+		}
+		time.Sleep(25 * time.Millisecond)
+	}
+
+	binding := handlertest.MustGitBinding(t, srv.URL)
+	body := fmt.Sprintf(
+		`{"title":"enqueued","priority":"medium","checklist_items":[{"text":"c"}],"project_id":%q,"repository_id":%q,"worktree_id":%q}`,
+		binding.ProjectID, binding.RepositoryID, ownerWT,
+	)
+	res, raw := handlertest.PostCreateRaw(t, srv.URL, body)
+	if res.StatusCode != http.StatusCreated {
+		t.Fatalf("enqueue create status %d body=%s", res.StatusCode, raw)
+	}
+	var child taskcoredomain.Task
+	if err := json.Unmarshal(raw, &child); err != nil {
+		t.Fatalf("decode child: %v", err)
+	}
+	if child.WorktreeID == nil || *child.WorktreeID != ownerWT {
+		t.Fatalf("child worktree_id=%v want %q", child.WorktreeID, ownerWT)
+	}
+}
+
+// TestHTTP_createTask_rejectsMainWorktreeBind pins that enqueue cannot target main.
+func TestHTTP_createTask_rejectsMainWorktreeBind(t *testing.T) {
+	srv := handlertest.NewCreateServer(t)
+	defer srv.Close()
+	binding := handlertest.MustGitBinding(t, srv.URL)
+	body := fmt.Sprintf(
+		`{"title":"bad","priority":"medium","checklist_items":[{"text":"c"}],"project_id":%q,"repository_id":%q,"worktree_id":%q}`,
+		binding.ProjectID, binding.RepositoryID, binding.WorktreeID,
+	)
+	res, raw := handlertest.PostCreateRaw(t, srv.URL, body)
+	if res.StatusCode != http.StatusBadRequest {
+		t.Fatalf("status %d (want 400) body=%s", res.StatusCode, raw)
+	}
+	if !strings.Contains(string(raw), "main worktree") {
+		t.Fatalf("error body=%s want main worktree mention", raw)
 	}
 }

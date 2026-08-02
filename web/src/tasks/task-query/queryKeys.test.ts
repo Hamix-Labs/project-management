@@ -24,6 +24,18 @@ describe("taskQueryKeys", () => {
   it("places board key under listRoot for invalidation and optimistic updates", () => {
     expect(taskQueryKeys.board()).toEqual(["tasks", "list", "board"]);
     expect(taskQueryKeys.board().slice(0, 2)).toEqual(taskQueryKeys.listRoot());
+    expect(taskQueryKeys.board({ worktreeId: "wt-1" })).toEqual([
+      "tasks",
+      "list",
+      "board",
+      { worktreeId: "wt-1" },
+    ]);
+  });
+
+  it("includes worktreeId in list keys when filtering by family", () => {
+    expect(
+      taskQueryKeys.list({ limit: 20, offset: 0, worktreeId: "wt-1" }),
+    ).toEqual(["tasks", "list", { limit: 20, offset: 0, worktreeId: "wt-1" }]);
   });
 
   it("defines eventsRoot prefix covering paged and infinite event queries", () => {

@@ -22,6 +22,32 @@ describe("TaskDetailToolbarActions", () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
+  it("invokes enqueue when worktree is ready", async () => {
+    const user = userEvent.setup();
+    const onEnqueue = vi.fn();
+    render(
+      <TaskDetailToolbarActions
+        saving={false}
+        onEdit={vi.fn()}
+        onEnqueue={onEnqueue}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: /enqueue task/i }));
+    expect(onEnqueue).toHaveBeenCalledOnce();
+  });
+
+  it("disables enqueue while worktree is provisioning", () => {
+    render(
+      <TaskDetailToolbarActions
+        saving={false}
+        onEdit={vi.fn()}
+        onEnqueue={vi.fn()}
+        enqueueDisabledReason="Worktree is still provisioning"
+      />,
+    );
+    expect(screen.getByRole("button", { name: /enqueue task/i })).toBeDisabled();
+  });
+
   it("disables action buttons while saving", () => {
     render(
       <TaskDetailToolbarActions

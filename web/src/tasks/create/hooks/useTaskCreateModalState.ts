@@ -29,6 +29,8 @@ export function useTaskCreateModalState(
   populateFromTask: (t: Task) => void,
   setNewChecklistItems: Dispatch<SetStateAction<ChecklistItemDraft[]>>,
   setNewProjectID: (id: string) => void,
+  setNewRepositoryID: (id: string) => void,
+  setNewWorktreeID: (id: string) => void,
 ) {
   const createModalPrefillRef = useRef<CreateModalPrefill | null>(null);
   const [uiPhase, dispatchUiPhase] = useReducer(
@@ -62,9 +64,17 @@ export function useTaskCreateModalState(
     const prefill = createModalPrefillRef.current;
     if (!prefill?.projectID) return;
     setNewProjectID(prefill.projectID);
-    setCreateModalAssignmentLocked(prefill.lockProjectAssignment);
+    if (prefill.repositoryID?.trim()) {
+      setNewRepositoryID(prefill.repositoryID.trim());
+    }
+    if (prefill.worktreeID?.trim()) {
+      setNewWorktreeID(prefill.worktreeID.trim());
+    }
+    setCreateModalAssignmentLocked(
+      prefill.lockProjectAssignment || prefill.lockGitAssignment === true,
+    );
     createModalPrefillRef.current = null;
-  }, [setNewProjectID]);
+  }, [setNewProjectID, setNewRepositoryID, setNewWorktreeID]);
 
   const closeCreateModal = useCallback(() => {
     editSessionGenerationRef.current += 1;

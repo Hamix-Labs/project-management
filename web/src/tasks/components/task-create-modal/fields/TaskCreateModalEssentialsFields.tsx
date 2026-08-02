@@ -10,6 +10,7 @@ type Props = {
   projectId: string;
   worktreeId: string;
   disabled: boolean;
+  assignmentLocked?: boolean;
   showWorktree: boolean;
   onTitleChange: (v: string) => void;
   onPriorityChange: (p: PriorityChoice) => void;
@@ -26,6 +27,7 @@ export function TaskCreateModalEssentialsFields({
   projectId,
   worktreeId,
   disabled,
+  assignmentLocked = false,
   showWorktree,
   onTitleChange,
   onPriorityChange,
@@ -61,7 +63,7 @@ export function TaskCreateModalEssentialsFields({
               onWorktreeChange(next.worktreeId);
             }
           }}
-          disabled={disabled}
+          disabled={disabled || assignmentLocked}
         />
       ) : null}
     </>

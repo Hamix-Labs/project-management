@@ -111,6 +111,54 @@ func TestHTTP_listTasks_envelopeShape(t *testing.T) {
 	})
 }
 
+// TestHTTP_listTasks_worktreeIDFilter pins GET /tasks?worktree_id= returns only
+// tasks bound to that worktree.
+func TestHTTP_listTasks_worktreeIDFilter(t *testing.T) {
+	srv := handlertest.NewCreateServer(t)
+	defer srv.Close()
+
+	ownerID := handlertest.MustCreateTask(t, srv.URL, `{"title":"owner","priority":"medium"}`)
+	handlertest.MustCreateTask(t, srv.URL, `{"title":"other","priority":"medium"}`)
+	var ownerWT string
+	deadline := time.Now().Add(15 * time.Second)
+	for {
+		res, raw := handlertest.GetTask(t, srv.URL, ownerID)
+		if res.StatusCode != http.StatusOK {
+			t.Fatalf("get status %d body=%s", res.StatusCode, raw)
+		}
+		var owner struct {
+			WorktreeID *string `json:"worktree_id"`
+		}
+		if err := json.Unmarshal(raw, &owner); err != nil {
+			t.Fatal(err)
+		}
+		if owner.WorktreeID != nil && *owner.WorktreeID != "" {
+			ownerWT = *owner.WorktreeID
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("timed out waiting for worktree_id")
+		}
+		time.Sleep(25 * time.Millisecond)
+	}
+
+	binding := handlertest.MustGitBinding(t, srv.URL)
+	body := `{"title":"child","priority":"medium","checklist_items":[{"text":"c"}],"project_id":"` + binding.ProjectID + `","repository_id":"` + binding.RepositoryID + `","worktree_id":"` + ownerWT + `"}`
+	res, raw := handlertest.PostCreateRaw(t, srv.URL, body)
+	if res.StatusCode != http.StatusCreated {
+		t.Fatalf("create child status %d body=%s", res.StatusCode, raw)
+	}
+
+	listRaw, _ := handlertest.MustGetJSON(t, srv.URL, "/tasks?worktree_id="+ownerWT+"&limit=50")
+	var got listResponseRaw
+	if err := json.Unmarshal(listRaw, &got); err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Tasks) != 2 {
+		t.Fatalf("family size=%d want 2 body=%s", len(got.Tasks), listRaw)
+	}
+}
+
 // TestHTTP_listTasks_limitCoercedEcho pins the documented `limit` echo-after-
 // coercion semantic: `?limit=0` returns `"limit":50` (default), `?limit=200`
 // returns `"limit":200` (max boundary). This is the contract the web client
