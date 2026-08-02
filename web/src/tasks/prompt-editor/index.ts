@@ -26,3 +26,8 @@ export {
   useOpenPolishPromptEditor,
 } from "./useOpenPromptEditor";
 export { usePromptEditorReturnResume } from "./usePromptEditorReturnResume";
+export type {
+  PromptDocumentStore,
+  PromptDocumentVersion,
+  PromptEditorCapability,
+} from "./futureSeams";
