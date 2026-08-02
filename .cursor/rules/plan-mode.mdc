@@ -56,9 +56,11 @@ isProject: false
 
 Reference shape: `.cursor/plans/worktree_harness_refactor_3665a1bb.plan.md` + its child plans.
 
-## 4. Delivery rules
+## 4. Delivery Rules
 
-1. **Commits** — break work into reviewable commits; never ship a single commit with ~2k+ lines of change.
-2. **PR order** — plan PRs and merge order so the human only reviews and merges (minimal manual conflict/rebase work).
-3. **Cleanup** — delete leftover artifacts (temp files, dead code, WIP branches/docs) once the plan is fully executed.
-4. **PR copy** — write descriptive titles and bodies (why, what’s in scope, how to verify).
+1. **Commits** — Break work into small, reviewable commits. Commit continuously as meaningful milestones are completed; never accumulate large (~2k+ line) changes into a single commit.
+2. **Stacked PRs** — When a feature can be decomposed into independent, reviewable increments, use stacked pull requests. Each PR should represent a single logical change, build on the previous one, and remain understandable in isolation. Avoid stacking when it adds unnecessary complexity.
+3. **PR Planning** — Plan the pull request structure and merge order upfront so reviewers can focus on reviewing and merging, with minimal manual rebasing or conflict resolution.
+4. **PR Quality** — Every pull request must include a clear, descriptive title and body explaining the motivation, scope of the change, and verification steps.
+5. **Work Isolation** — Always create and work from a dedicated worktree and branch. Never perform implementation work directly from the primary worktree.
+6. **Cleanup** — Once the work is complete, remove temporary files, dead code, work-in-progress artifacts, and any other implementation leftovers before considering the task finished.
