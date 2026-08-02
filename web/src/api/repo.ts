@@ -12,6 +12,8 @@ export const repoQueryKeys = {
   all: ["repo"] as const,
   diff: (worktreeId: string, sha: string) =>
     [...repoQueryKeys.all, "diff", worktreeId, sha] as const,
+  file: (worktreeId: string, path: string) =>
+    [...repoQueryKeys.all, "file", worktreeId, path] as const,
 };
 
 /**

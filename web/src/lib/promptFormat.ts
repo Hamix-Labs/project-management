@@ -116,7 +116,15 @@ export function sanitizePromptHtml(input: string): string {
           name === "data-path" ||
           name === "data-line-start" ||
           name === "data-line-end");
-      if (!allowedForA && !allowedForRepoChip) {
+      const allowedForFileEmbed =
+        (tag === "div" || tag === "span" || tag === "pre") &&
+        (name === "class" ||
+          name === "data-repo-file-embed" ||
+          name === "data-path" ||
+          name === "data-line-start" ||
+          name === "data-line-end" ||
+          name === "data-content-type");
+      if (!allowedForA && !allowedForRepoChip && !allowedForFileEmbed) {
         el.removeAttribute(attr.name);
         continue;
       }
