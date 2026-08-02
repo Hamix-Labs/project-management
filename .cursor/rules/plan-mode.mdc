@@ -71,3 +71,5 @@ Reference shape: `.cursor/plans/worktree_harness_refactor_3665a1bb.plan.md` + it
 6. **Work Isolation** — Always create and work from a dedicated worktree and branch. Never perform implementation work directly from the primary worktree.
 
 7. **Cleanup** — Once the work is complete, remove temporary files, dead code, work-in-progress artifacts, and any other implementation leftovers before considering the task finished.
+
+8. **PR Done Criteria** — A pull request is done when the local scripts that mirror CI (e.g. `.\scripts\check.ps1`) pass. Do not watch or poll CI/CD; local verification is sufficient.
