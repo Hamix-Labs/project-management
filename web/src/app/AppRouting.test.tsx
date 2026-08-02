@@ -103,4 +103,18 @@ describe("App routing", () => {
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent(/network|failed|fetch/i);
   });
+
+  it("hides primary nav on immersive prompt editor routes", async () => {
+    renderAppAt(["/prompt/ephemeral/test-doc"]);
+
+    await waitFor(() => {
+      expect(document.querySelector(".app--immersive")).toBeTruthy();
+    });
+    expect(screen.queryByRole("navigation", { name: /^primary$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /^hamix$/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("main")).toHaveAttribute("id", "main-content");
+    expect(
+      screen.getByRole("link", { name: /^skip to main content$/i }),
+    ).toHaveAttribute("href", "#main-content");
+  });
 });
