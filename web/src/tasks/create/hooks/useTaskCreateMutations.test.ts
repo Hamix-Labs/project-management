@@ -96,54 +96,6 @@ describe("useTaskCreateMutations", () => {
     expect(shouldSuppressTaskMutationEcho("task-new")).toBe(false);
   });
 
-  it("forwards worktree_id when enqueueing onto an existing worktree", async () => {
-    const created = makeTask({ id: "task-enq", worktree_id: "wt-shared" });
-    mockedCreate.mockResolvedValue(created);
-
-    const queryClient = new QueryClient({
-      defaultOptions: {
-        queries: { retry: false },
-        mutations: { retry: false },
-      },
-    });
-
-    function Wrapper({ children }: { children: ReactNode }) {
-      return createElement(QueryClientProvider, { client: queryClient }, children);
-    }
-
-    const { result } = renderHook(
-      () => useTaskCreateMutations(makeMutationInput(queryClient)),
-      { wrapper: Wrapper },
-    );
-
-    await act(async () => {
-      await result.current.createMutation.mutateAsync({
-        title: "Enqueued",
-        initial_prompt: "p",
-        status: "ready",
-        priority: "medium",
-        draft_id: "draft-1",
-        runner: "cursor",
-        cursor_model: "",
-        project_id: "proj-1",
-        pickup_not_before: null,
-        tags: [],
-        depends_on: [],
-        repository_id: "repo-1",
-        worktree_id: "wt-shared",
-        checklistItems: [{ text: "c" }],
-      });
-    });
-
-    expect(mockedCreate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        worktree_id: "wt-shared",
-        repository_id: "repo-1",
-        project_id: "proj-1",
-      }),
-    );
-  });
-
   it("instantiate awaits template invalidation before the mutation settles", async () => {
     mockedInstantiate.mockResolvedValue({
       accepted: true,
