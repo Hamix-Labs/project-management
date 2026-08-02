@@ -42,6 +42,9 @@ export function useTaskCreateTaskMutations(input: {
         ...(mutationInput.repository_id
           ? { repository_id: mutationInput.repository_id }
           : {}),
+        ...(mutationInput.worktree_id
+          ? { worktree_id: mutationInput.worktree_id }
+          : {}),
         checklist_items: normalizeChecklistItems(mutationInput.checklistItems),
       });
       return { task, input: mutationInput };
