@@ -37,6 +37,7 @@ const flatDefaults = {
   checklistItems: [{ text: "Criterion" }],
   onTitleChange: vi.fn(),
   onPromptChange: vi.fn(),
+  onOpenPromptEditor: vi.fn(),
   onPriorityChange: vi.fn(),
   onAppendChecklistCriterion: vi.fn(),
   onUpdateChecklistRow: vi.fn(),

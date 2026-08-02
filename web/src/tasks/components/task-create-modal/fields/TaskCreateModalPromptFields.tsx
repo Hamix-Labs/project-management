@@ -2,30 +2,23 @@ import { TaskComposePromptField } from "../../task-compose/fields/TaskComposePro
 
 type Props = {
   idsPrefix: string;
-  editorKey: string;
   prompt: string;
   disabled: boolean;
-  onPromptChange: (v: string) => void;
-  worktreeId?: string;
+  onOpenPromptEditor: () => void;
 };
 
 export function TaskCreateModalPromptFields({
   idsPrefix,
-  editorKey,
   prompt,
   disabled,
-  onPromptChange,
-  worktreeId,
+  onOpenPromptEditor,
 }: Props) {
   return (
     <TaskComposePromptField
       idsPrefix={idsPrefix}
-      editorKey={editorKey}
       prompt={prompt}
       disabled={disabled}
-      onPromptChange={onPromptChange}
-      worktreeId={worktreeId}
-      hideLabel
+      onOpenPromptEditor={onOpenPromptEditor}
     />
   );
 }

@@ -37,7 +37,6 @@ export function TaskCreateModalShell({
   onCloseScenarios,
 }: Props) {
   const editingTaskId = session.editingTaskId ?? null;
-  const editingTemplateId = session.editingTemplateId ?? null;
   const editingTaskRunner = session.editingTaskRunner ?? "";
   const autonomyDisabled = execution.autonomyDisabled ?? false;
   const createError = session.createError ?? null;
@@ -75,8 +74,6 @@ export function TaskCreateModalShell({
           >
             <TaskCreateModalFormBody
               presentation={presentation}
-              editingTaskId={editingTaskId}
-              editingTemplateId={editingTemplateId}
               editingTaskRunner={editingTaskRunner}
               onComposeStatusChange={session.onComposeStatusChange}
               essentials={essentials}

@@ -87,6 +87,22 @@ export function useTaskCreateModalState(
     resetNewTaskForm();
   }, [resetNewTaskForm]);
 
+  /** Hide compose chrome without resetting form — Prompt Editor owns the prompt. */
+  const suspendForPromptEditor = useCallback(() => {
+    if (uiPhase.kind !== "compose") return;
+    dispatchUiPhase({
+      type: "suspendForPromptEditor",
+      target: uiPhase.target,
+      operation: uiPhase.operation,
+      editingTaskId: uiPhase.editingTaskId,
+      editingTemplateId: uiPhase.editingTemplateId,
+    });
+  }, [uiPhase]);
+
+  const resumeComposeFromPromptEditor = useCallback(() => {
+    dispatchUiPhase({ type: "resumeComposeFromPromptEditor" });
+  }, []);
+
   const beginEditSession = useCallback(
     async (t: Task) => {
       editChecklistAbortRef.current?.abort();
@@ -271,6 +287,9 @@ export function useTaskCreateModalState(
     applyCreateModalPrefill,
     resetNewTaskForm,
     closeCreateModal,
+    suspendForPromptEditor,
+    resumeComposeFromPromptEditor,
+    promptEditorSuspended: uiFlags.promptEditorSuspended,
     beginEditSession,
     beginEntryRequest,
     isEntryRequestCurrent,

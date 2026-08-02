@@ -14,8 +14,6 @@ import type { TaskCreateModalPresentation } from "./taskCreateModalPresentation"
 
 type Props = {
   presentation: TaskCreateModalPresentation;
-  editingTaskId: string | null;
-  editingTemplateId: string | null;
   editingTaskRunner: string;
   onComposeStatusChange?: (status: Status) => void;
   essentials: TaskCreateModalEssentials;
@@ -28,8 +26,6 @@ type Props = {
 
 export function TaskCreateModalFormBody({
   presentation,
-  editingTaskId,
-  editingTemplateId,
   editingTaskRunner,
   onComposeStatusChange,
   essentials,
@@ -39,13 +35,6 @@ export function TaskCreateModalFormBody({
   execution,
   appTimezone,
 }: Props) {
-  const editorKey = presentation.isTaskEdit
-    ? editingTaskId ?? "edit-prompt-modal"
-    : presentation.isTemplateMode && presentation.isEdit
-      ? editingTemplateId ?? "template-edit-prompt-modal"
-      : presentation.isTemplateMode
-        ? "template-prompt-modal"
-        : "create-prompt-modal";
   const checklistRequirement = presentation.isTaskEdit ? "optional" : "required";
 
   return (
@@ -67,10 +56,8 @@ export function TaskCreateModalFormBody({
 
       <TaskCreateModalPromptSection
         presentation={presentation}
-        editorKey={editorKey}
         prompt={prompt.prompt}
-        worktreeId={git.worktreeId}
-        onPromptChange={prompt.onPromptChange}
+        onOpenPromptEditor={prompt.onOpenPromptEditor}
       />
 
       <TaskCreateModalCriteriaSection

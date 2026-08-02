@@ -9,6 +9,7 @@
 @import "./styles/task-drafts/app-task-drafts.css";
 @import "./styles/task-templates/app-task-templates.css";
 @import "./styles/app-rich-prompt.css";
+@import "./styles/prompt-editor/app-prompt-editor.css";
 @import "./styles/app-modals.css";
 @import "./styles/app-task-detail.css";
 @import "./styles/app-task-timeline.css";

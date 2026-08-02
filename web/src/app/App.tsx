@@ -20,6 +20,11 @@ import { useStickyShellElevation } from "@/lib/useStickyShellElevation";
 // landing user actually needs. Vite resolves the deep module paths to
 // individual chunks; the barrel re-exports remain but tree-shake out
 // of the main chunk because no synchronous consumer imports them.
+const PromptEditorPage = lazy(() =>
+  import("@/tasks/pages/PromptEditorPage").then((m) => ({
+    default: m.PromptEditorPage,
+  })),
+);
 const TaskDetailPage = lazy(() =>
   import("@/tasks/pages/TaskDetailPage").then((m) => ({
     default: m.TaskDetailPage,
@@ -284,6 +289,10 @@ export default function App() {
             <Route path="projects/*" element={<Navigate to="/" replace />} />
           )}
           <Route path="settings" element={<SettingsPage />} />
+          <Route
+            path="prompt/:sourceKind/:sourceId"
+            element={<PromptEditorPage />}
+          />
           <Route
             path="tasks/:taskId/events/:eventSeq"
             element={<TaskEventDetailPage />}

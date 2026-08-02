@@ -4,7 +4,6 @@ import { TaskComposeFields } from "../../task-compose";
 
 type Props = {
   idsPrefix?: string;
-  editorKey?: string;
   disabled: boolean;
   title: string;
   onTitleChange: (value: string) => void;
@@ -15,17 +14,15 @@ type Props = {
   hideComposeChecklist: boolean;
   checklistRequirement?: "optional" | "required";
   checklistDisabled?: boolean;
-  onPromptChange: (value: string) => void;
+  onOpenPromptEditor: () => void;
   onAppendChecklistCriterion: (item: ChecklistItemDraft | string) => void;
   onUpdateChecklistRow: (index: number, item: ChecklistItemDraft) => void;
   onRemoveChecklistRow: (index: number) => void;
   betweenTitleAndPrompt?: ReactNode;
-  worktreeId?: string;
 };
 
 export function TaskCreateModalPrimaryFields({
   idsPrefix = "task-new",
-  editorKey = "create-prompt-modal",
   disabled,
   title,
   onTitleChange,
@@ -36,17 +33,15 @@ export function TaskCreateModalPrimaryFields({
   hideComposeChecklist,
   checklistRequirement = "optional",
   checklistDisabled = false,
-  onPromptChange,
+  onOpenPromptEditor,
   onAppendChecklistCriterion,
   onUpdateChecklistRow,
   onRemoveChecklistRow,
   betweenTitleAndPrompt,
-  worktreeId,
 }: Props) {
   return (
     <TaskComposeFields
       idsPrefix={idsPrefix}
-      editorKey={editorKey}
       title={title}
       prompt={prompt}
       priority={priority}
@@ -56,13 +51,12 @@ export function TaskCreateModalPrimaryFields({
       checklistDisabled={checklistDisabled}
       disabled={disabled}
       onTitleChange={onTitleChange}
-      onPromptChange={onPromptChange}
+      onOpenPromptEditor={onOpenPromptEditor}
       onPriorityChange={onPriorityChange}
       onAppendChecklistCriterion={onAppendChecklistCriterion}
       onUpdateChecklistRow={onUpdateChecklistRow}
       onRemoveChecklistRow={onRemoveChecklistRow}
       betweenTitleAndPrompt={betweenTitleAndPrompt}
-      worktreeId={worktreeId}
     />
   );
 }

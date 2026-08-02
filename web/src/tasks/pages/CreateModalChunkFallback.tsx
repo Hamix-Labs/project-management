@@ -1,6 +1,6 @@
 import { Modal } from "@/shared/Modal";
 
-/** Shown while the create-modal / TipTap chunk loads after open. */
+/** Shown while the create-modal chunk loads after open. */
 export function CreateModalChunkFallback({ onClose }: { onClose: () => void }) {
   return (
     <Modal
@@ -8,11 +8,11 @@ export function CreateModalChunkFallback({ onClose }: { onClose: () => void }) {
       onClose={onClose}
       size="wide"
       busy
-      busyLabel="Loading editor…"
+      busyLabel="Loading form…"
       dismissibleWhileBusy
     >
       <h2 id="create-modal-chunk-title" className="visually-hidden">
-        Loading editor
+        Loading form
       </h2>
     </Modal>
   );

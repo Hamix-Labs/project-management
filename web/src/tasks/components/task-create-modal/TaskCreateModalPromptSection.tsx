@@ -1,35 +1,29 @@
-import { TaskCreateModalPromptFields } from "./fields/TaskCreateModalPromptFields";
+import { PromptEditorEntry } from "@/components/prompt-editor";
 import { TaskCreateModalSection } from "./fields/TaskCreateModalSection";
 import type { TaskCreateModalPresentation } from "./taskCreateModalPresentation";
 
 type Props = {
   presentation: TaskCreateModalPresentation;
-  editorKey: string;
   prompt: string;
-  worktreeId: string;
-  onPromptChange: (v: string) => void;
+  onOpenPromptEditor: () => void;
 };
 
 export function TaskCreateModalPromptSection({
   presentation,
-  editorKey,
   prompt,
-  worktreeId,
-  onPromptChange,
+  onOpenPromptEditor,
 }: Props) {
   return (
     <TaskCreateModalSection
       variant="prompt"
       title="Initial prompt"
-      lede="The full brief the agent starts from. Supports Markdown."
+      lede="Write the full brief in the Prompt Editor — headings, lists, and @ file references."
     >
-      <TaskCreateModalPromptFields
-        idsPrefix={presentation.idsPrefix}
-        editorKey={editorKey}
-        prompt={prompt}
+      <PromptEditorEntry
+        promptHtml={prompt}
         disabled={presentation.disabled}
-        onPromptChange={onPromptChange}
-        worktreeId={worktreeId.trim() || undefined}
+        onOpen={onOpenPromptEditor}
+        openLabel="Open Prompt Editor"
       />
     </TaskCreateModalSection>
   );

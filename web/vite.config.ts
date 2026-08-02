@@ -19,8 +19,8 @@ export default defineConfig({
     rolldownOptions: {
       output: {
         // Vite 8 / Rolldown: prefer codeSplitting over deprecated manualChunks.
-        // Capture react* before editor so TipTap does not recursively absorb
-        // React into the editor chunk (which would keep TipTap on cold start).
+        // Capture react* before editor so BlockNote does not recursively absorb
+        // React into the editor chunk (which would keep BlockNote on cold start).
         codeSplitting: {
           groups: [
             {
@@ -33,7 +33,7 @@ export default defineConfig({
             },
             {
               name: "editor",
-              test: /node_modules[/\\](@tiptap|prosemirror|tippy\.js)/,
+              test: /node_modules[/\\](@blocknote|prosemirror)/,
             },
           ],
         },
