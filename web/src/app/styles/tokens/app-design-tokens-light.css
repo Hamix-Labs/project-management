@@ -329,6 +329,10 @@
     serif;
   --prompt-editor-font-mono: var(--font-mono);
   --prompt-editor-canvas-max: 760px;
+  --prompt-editor-toolbar-bg: #242018;
+  --prompt-editor-toolbar-fg: #f5f2ea;
+  --prompt-editor-toolbar-muted: #a39d8d;
+  --prompt-editor-side-gutter: 54px;
 
   font-family: var(--font-sans);
   line-height: 1.5;

@@ -218,6 +218,10 @@
     --prompt-editor-save-dot: #5cae6b;
     --prompt-editor-embed-head-bg: var(--surface-3);
     --prompt-editor-menu-shadow: var(--shadow-md);
+    --prompt-editor-toolbar-bg: #242018;
+    --prompt-editor-toolbar-fg: #f5f2ea;
+    --prompt-editor-toolbar-muted: var(--text-tertiary);
+    --prompt-editor-side-gutter: 54px;
 
     --overlay-backdrop: rgb(0 0 0 / 58%);
 
