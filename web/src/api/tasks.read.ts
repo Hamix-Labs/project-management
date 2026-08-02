@@ -122,7 +122,7 @@ export async function getTaskEvent(
 export async function listTasks(
   limit = 200,
   offset = 0,
-  options?: { signal?: AbortSignal; afterId?: string },
+  options?: { signal?: AbortSignal; afterId?: string; worktreeId?: string },
 ): Promise<TaskListResponse> {
   const lim = assertListIntQuery("limit", limit, 0, 200);
   const q = new URLSearchParams({ limit: lim });
@@ -130,6 +130,10 @@ export async function listTasks(
     q.set("after_id", assertAfterId(options.afterId));
   } else {
     q.set("offset", assertNonNegativeOffset("offset", offset));
+  }
+  const worktreeId = options?.worktreeId?.trim();
+  if (worktreeId) {
+    q.set("worktree_id", worktreeId);
   }
   const res = await fetchWithTimeout(`/tasks?${q}`, {
     headers: { Accept: "application/json" },

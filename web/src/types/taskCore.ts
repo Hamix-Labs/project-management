@@ -61,6 +61,11 @@ export type Task = {
   /** Git worktree binding (ADR-0039). */
   worktree_id?: string;
   /**
+   * Task whose id named the managed branch for this worktree (read-only,
+   * computed). Present when `worktree_id` is set on a Hamix-managed tree.
+   */
+  worktree_root_task_id?: string;
+  /**
    * GitHub PR URL after open-PR finalize (one PR per task). Absent until
    * the harness stamps it with status=pr_ready.
    */

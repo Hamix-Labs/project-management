@@ -166,6 +166,12 @@ export function parseTask(value: unknown): Task {
       base.worktree_id = wtID;
     }
   }
+  if (value.worktree_root_task_id !== undefined && value.worktree_root_task_id !== null) {
+    const rootID = parseString(value.worktree_root_task_id, "worktree_root_task_id").trim();
+    if (rootID !== "") {
+      base.worktree_root_task_id = rootID;
+    }
+  }
   if (value.pull_request_url !== undefined && value.pull_request_url !== null) {
     const prURL = parseString(value.pull_request_url, "pull_request_url").trim();
     if (prURL !== "") {
