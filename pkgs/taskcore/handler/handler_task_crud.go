@@ -105,13 +105,14 @@ func (h *Handler) list(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.debugHTTPRequest(r, op, "limit", limit, "offset", offset, "after_id", afterID)
+	filter := parseListFilter(q)
 	var tasks []domain.Task
 	var hasMore bool
 	if afterID != "" {
 		tasks, hasMore, err = h.tasks.ListFlatAfter(r.Context(), limit, afterID)
 		offset = 0
 	} else {
-		tasks, hasMore, err = h.tasks.ListFlatPage(r.Context(), limit, offset, nil)
+		tasks, hasMore, err = h.tasks.ListFlatPage(r.Context(), limit, offset, filter)
 	}
 	if err != nil {
 		mode := "offset"
@@ -188,4 +189,15 @@ func parseListParams(ctx context.Context, q url.Values) (limit, offset int, afte
 		offset = n
 	}
 	return limit, offset, afterID, nil
+}
+
+const maxListWorktreeIDParamBytes = 128
+
+//funclogmeasure:skip category=hot-path reason="Pure query parse without I/O; operation trace is emitted by list."
+func parseListFilter(q url.Values) *contract.ListFilter {
+	wt := strings.TrimSpace(q.Get("worktree_id"))
+	if wt == "" || len(wt) > maxListWorktreeIDParamBytes {
+		return nil
+	}
+	return &contract.ListFilter{WorktreeID: &wt}
 }

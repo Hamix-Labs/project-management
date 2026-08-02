@@ -86,8 +86,9 @@ type UpdateTaskInput struct {
 
 // ListFilter optionally restricts flat task listing.
 type ListFilter struct {
-	Tag       *string
-	Milestone *string
+	Tag        *string
+	Milestone  *string
+	WorktreeID *string
 }
 
 // ProjectFieldPatch updates project_id when non-nil.

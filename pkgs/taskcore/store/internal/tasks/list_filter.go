@@ -30,5 +30,11 @@ func applyListFilter(q *gorm.DB, db *gorm.DB, filter *ListFilter) *gorm.DB {
 			q = q.Where("tasks.milestone = ?", m)
 		}
 	}
+	if filter.WorktreeID != nil {
+		wt := strings.TrimSpace(*filter.WorktreeID)
+		if wt != "" {
+			q = q.Where("tasks.worktree_id = ?", wt)
+		}
+	}
 	return q
 }
