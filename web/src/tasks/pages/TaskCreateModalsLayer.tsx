@@ -123,6 +123,7 @@ function TaskCreateModalsLayerBody() {
               repositoryId: app.newRepositoryID,
               projectId: app.newProjectID,
               worktreeId: app.newWorktreeID,
+              assignmentLocked: app.createModalAssignmentLocked,
               onRepositoryChange: (repositoryId) => {
                 app.setNewRepositoryID(repositoryId);
                 app.setNewProjectID("");

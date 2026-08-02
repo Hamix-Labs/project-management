@@ -71,7 +71,9 @@ export function TaskCreateAssignmentFields({
       />
 
       <p className="worktrees-git-selector__manage">
-        Hamix allocates a worktree and branch when the task is created.{" "}
+        {worktreeId.trim() !== "" && disabled
+          ? "This task will reuse the selected worktree and branch. "
+          : "Hamix allocates a worktree and branch when the task is created. "}
         <Link to="/repositories" target="_blank" rel="noopener noreferrer">
           Inspect repositories
         </Link>

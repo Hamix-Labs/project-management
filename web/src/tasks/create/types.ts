@@ -31,7 +31,11 @@ export type CreateTaskMutationInput = {
 
 export type CreateModalPrefill = {
   projectID: string;
+  repositoryID?: string;
+  worktreeID?: string;
   lockProjectAssignment: boolean;
+  /** When true, repo/project (and bound worktree) cannot be changed — enqueue mode. */
+  lockGitAssignment?: boolean;
 };
 
 export type ComposeTarget = "task" | "template";

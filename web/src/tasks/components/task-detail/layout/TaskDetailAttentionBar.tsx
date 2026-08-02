@@ -50,6 +50,12 @@ type Props = {
   /** When set, shows Polish for a task in review (POST /polish). */
   onPolish?: () => void;
   polishPending?: boolean;
+  /**
+   * Enqueue another task onto this task's worktree. Omitted while
+   * worktree_id is still provisioning.
+   */
+  onEnqueue?: () => void;
+  enqueueDisabledReason?: string;
 };
 
 export function TaskDetailToolbarActions({
@@ -71,6 +77,8 @@ export function TaskDetailToolbarActions({
   openPrPending = false,
   onPolish,
   polishPending = false,
+  onEnqueue,
+  enqueueDisabledReason,
 }: Props) {
   const showAutonomy =
     autonomyMode !== "hidden" && typeof onToggleAutonomy === "function";
@@ -135,6 +143,17 @@ export function TaskDetailToolbarActions({
         <TaskListEditGlyph />
         Edit task
       </button>
+      {onEnqueue ? (
+        <button
+          type="button"
+          className="task-detail-btn-polish"
+          onClick={onEnqueue}
+          disabled={saving || Boolean(enqueueDisabledReason)}
+          title={enqueueDisabledReason}
+        >
+          Enqueue Task
+        </button>
+      ) : null}
       {showModelConfig && onConfigureModel ? (
         <button
           type="button"

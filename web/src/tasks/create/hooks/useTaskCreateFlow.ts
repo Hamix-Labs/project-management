@@ -26,6 +26,8 @@ export function useTaskCreateFlow() {
     form.populateFromTask,
     form.setNewChecklistItems,
     form.setNewProjectID,
+    form.setNewRepositoryID,
+    form.setNewWorktreeID,
   );
   const draftsQuery = useQuery({
     queryKey: taskQueryKeys.drafts(),

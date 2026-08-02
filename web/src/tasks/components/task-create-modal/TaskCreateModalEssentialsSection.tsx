@@ -10,6 +10,7 @@ type Props = {
   repositoryId: string;
   projectId: string;
   worktreeId: string;
+  assignmentLocked?: boolean;
   onTitleChange: (v: string) => void;
   onPriorityChange: (p: PriorityChoice) => void;
   onRepositoryChange: (repositoryId: string) => void;
@@ -24,6 +25,7 @@ export function TaskCreateModalEssentialsSection({
   repositoryId,
   projectId,
   worktreeId,
+  assignmentLocked = false,
   onTitleChange,
   onPriorityChange,
   onRepositoryChange,
@@ -44,6 +46,7 @@ export function TaskCreateModalEssentialsSection({
         projectId={projectId}
         worktreeId={worktreeId}
         disabled={presentation.disabled}
+        assignmentLocked={assignmentLocked}
         showWorktree={!presentation.isTaskEdit}
         onTitleChange={onTitleChange}
         onPriorityChange={onPriorityChange}

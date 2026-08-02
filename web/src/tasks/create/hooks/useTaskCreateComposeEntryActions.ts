@@ -14,7 +14,10 @@ export function useTaskCreateComposeEntryActions(input: {
   const openComposeModal = useCallback(
     async (opts?: {
       projectID?: string;
+      repositoryID?: string;
+      worktreeID?: string;
       lockProjectAssignment?: boolean;
+      lockGitAssignment?: boolean;
       target?: ComposeTarget;
       operation?: ComposeOperation;
       skipDraftPicker?: boolean;
@@ -25,12 +28,18 @@ export function useTaskCreateComposeEntryActions(input: {
       input.modal.createModalPrefillRef.current = projectID
         ? {
             projectID,
+            repositoryID: opts?.repositoryID?.trim() || undefined,
+            worktreeID: opts?.worktreeID?.trim() || undefined,
             lockProjectAssignment: opts?.lockProjectAssignment === true,
+            lockGitAssignment: opts?.lockGitAssignment === true,
           }
         : null;
       const target = opts?.target ?? "task";
       const operation = opts?.operation ?? "create";
-      if (target === "task" && operation === "create" && !opts?.skipDraftPicker) {
+      const skipDraftPicker =
+        opts?.skipDraftPicker === true ||
+        (opts?.lockGitAssignment === true && Boolean(opts?.worktreeID?.trim()));
+      if (target === "task" && operation === "create" && !skipDraftPicker) {
         const hasRepos = await ensureRepositoriesRegistered(input.queryClient);
         if (!input.modal.isEntryRequestCurrent(requestId)) {
           return;
@@ -43,7 +52,7 @@ export function useTaskCreateComposeEntryActions(input: {
       if (!input.modal.isEntryRequestCurrent(requestId)) {
         return;
       }
-      if (target === "template" || opts?.skipDraftPicker) {
+      if (target === "template" || skipDraftPicker) {
         input.modal.resetNewTaskForm();
         input.modal.applyCreateModalPrefill();
         input.modal.openComposePhase({ target, operation });
@@ -70,10 +79,19 @@ export function useTaskCreateComposeEntryActions(input: {
   );
 
   const openCreateModal = useCallback(
-    (prefill?: { projectID: string; lockProjectAssignment?: boolean }) => {
+    (prefill?: {
+      projectID: string;
+      repositoryID?: string;
+      worktreeID?: string;
+      lockProjectAssignment?: boolean;
+      lockGitAssignment?: boolean;
+    }) => {
       void openComposeModal({
         projectID: prefill?.projectID,
+        repositoryID: prefill?.repositoryID,
+        worktreeID: prefill?.worktreeID,
         lockProjectAssignment: prefill?.lockProjectAssignment,
+        lockGitAssignment: prefill?.lockGitAssignment,
         target: "task",
         operation: "create",
       });
