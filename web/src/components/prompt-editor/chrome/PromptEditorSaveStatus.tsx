@@ -1,4 +1,8 @@
-export type PromptEditorSaveStatusKind = "saved" | "saving" | "error";
+export type PromptEditorSaveStatusKind =
+  | "saved"
+  | "saving"
+  | "unsaved"
+  | "error";
 
 export type PromptEditorSaveStatusProps = {
   kind: PromptEditorSaveStatusKind;
@@ -40,6 +44,17 @@ export function PromptEditorSaveStatus({
             Retry
           </button>
         ) : null}
+      </span>
+    );
+  }
+  if (kind === "unsaved") {
+    return (
+      <span className="prompt-editor-save-status" aria-live="polite">
+        <span
+          className="prompt-editor-save-status__dot prompt-editor-save-status__dot--muted"
+          aria-hidden="true"
+        />
+        Unsaved changes
       </span>
     );
   }
