@@ -1,7 +1,7 @@
 # ADR-0039: Fixed branch per worktree, task binds worktree_id
 
 **Date:** 2026-06-27
-**Status:** Accepted (superseded in part by [ADR-0081](./ADR-0081-hamix-managed-worktrees.md) — task create allocates worktrees; fixed branch + `worktree_id` binding remain)
+**Status:** Accepted (superseded in part by [ADR-0081](./ADR-0081-hamix-managed-worktrees.md) — task create allocates worktrees; and by [ADR-0097](./ADR-0097-worktree-stack-layers.md) — active `branch_id` may move across stack layer branches on the same worktree)
 **Deciders:** Hamix maintainers
 
 ## Context
