@@ -10,6 +10,7 @@ import {
   TaskPolishDialog,
 } from "../components/dialogs";
 import { consumePromptEditorReturn } from "../prompt-editor/promptEditorSession";
+import { isWorktreeRootTask } from "../task-git/isWorktreeRootTask";
 import { taskQueryKeys } from "../task-query";
 import type { TaskDetailLoadedViewProps } from "./TaskDetailLoadedView";
 
@@ -115,6 +116,7 @@ export function TaskDetailLoadedDialogs({
         <TaskOpenPRConfirmDialog
           saving={saving}
           pending={openPrMutation.isPending}
+          worktreeId={task.worktree_id}
           error={
             openPrMutation.isError
               ? errorMessage(
@@ -136,6 +138,11 @@ export function TaskDetailLoadedDialogs({
           taskTitle={task.title}
           saving={saving}
           pending={approveMutation.isPending}
+          mode={
+            task.status === "review" && !isWorktreeRootTask(task)
+              ? "stack_layer"
+              : "mark_done"
+          }
           error={
             approveMutation.isError
               ? errorMessage(approveMutation.error, "Couldn't mark task done.")

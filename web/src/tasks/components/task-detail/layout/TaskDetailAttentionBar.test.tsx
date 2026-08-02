@@ -149,6 +149,23 @@ describe("TaskDetailToolbarActions", () => {
     expect(onApprove).toHaveBeenCalledOnce();
   });
 
+  it("renders Approve label for stack layer approve", async () => {
+    const user = userEvent.setup();
+    const onApprove = vi.fn();
+    render(
+      <TaskDetailToolbarActions
+        saving={false}
+        onEdit={vi.fn()}
+        onClose={vi.fn()}
+        onApprove={onApprove}
+        approveLabel="Approve"
+        approvePendingLabel="Approving…"
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: /^approve$/i }));
+    expect(onApprove).toHaveBeenCalledOnce();
+  });
+
   it("renders Model configuration only when showModelConfig is true", async () => {
     const user = userEvent.setup();
     const onConfigureModel = vi.fn();
