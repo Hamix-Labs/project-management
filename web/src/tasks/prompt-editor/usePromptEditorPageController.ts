@@ -42,16 +42,25 @@ export function usePromptEditorPageController() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [dirty, setDirty] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(
     launch?.seedHtml ? Date.now() : null,
   );
   const [tick, setTick] = useState(0);
+  const [adapterWorktreeId, setAdapterWorktreeId] = useState<
+    string | undefined
+  >(undefined);
   const htmlRef = useRef(html);
   htmlRef.current = html;
   const dirtyRef = useRef(false);
 
-  const worktreeId = launch?.worktreeId?.trim() || undefined;
-  const title = launch?.title?.trim() || "Prompt";
+  const launchWorktreeId = launch?.worktreeId?.trim() || undefined;
+  const worktreeId = launchWorktreeId || adapterWorktreeId;
+  const title = launch?.title?.trim() || "Untitled task";
+
+  const onResolvedWorktreeId = useCallback((id: string | undefined) => {
+    setAdapterWorktreeId(id?.trim() || undefined);
+  }, []);
 
   const { repoLabel } = usePromptEditorDocumentLoad({
     adapter,
@@ -62,6 +71,7 @@ export function usePromptEditorPageController() {
     setLoadError,
     setLastSavedAt,
     worktreeId,
+    onResolvedWorktreeId,
   });
 
   useEffect(() => {
@@ -75,6 +85,7 @@ export function usePromptEditorPageController() {
     try {
       await adapter.save(htmlRef.current);
       dirtyRef.current = false;
+      setDirty(false);
       setSaveError(null);
       setLastSavedAt(Date.now());
     } catch (err) {
@@ -95,6 +106,7 @@ export function usePromptEditorPageController() {
 
   const onChange = useCallback((next: string) => {
     dirtyRef.current = true;
+    setDirty(true);
     setHtml(next);
   }, []);
 
@@ -112,7 +124,9 @@ export function usePromptEditorPageController() {
     ? "error"
     : saving || leavePending
       ? "saving"
-      : "saved";
+      : dirty
+        ? "unsaved"
+        : "saved";
 
   const words = wordCountFromHtml(html);
   void tick;
