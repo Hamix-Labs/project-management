@@ -5,13 +5,17 @@ import (
 	"log/slog"
 	"strings"
 
-	gitinventorystore "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store"
 	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 )
 
 // bestEffortRemoveTaskWorktree removes a Hamix-managed task worktree (+ matching
 // hamix/task-* branch) after the task row is gone. Failures are logged only —
 // task delete already succeeded.
+//
+// When no tasks remain on the worktree, any last remaining binder (allocator or
+// sharer) may trigger cleanup for branches named hamix/task-*. Requiring the
+// deleted task id to match the branch name orphans the checkout when the
+// allocator is deleted first.
 func (a *API) bestEffortRemoveTaskWorktree(ctx context.Context, taskID, worktreeID string) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.bestEffortRemoveTaskWorktree")
 	worktreeID = strings.TrimSpace(worktreeID)
@@ -32,8 +36,7 @@ func (a *API) bestEffortRemoveTaskWorktree(ctx context.Context, taskID, worktree
 		slog.Warn("task delete worktree cleanup: load branch", "task_id", taskID, "worktree_id", worktreeID, "branch_id", wt.BranchID, "err", err)
 		return
 	}
-	wantBranch := gitinventorystore.TaskBranchName(taskID)
-	if br.Name != wantBranch {
+	if !strings.HasPrefix(br.Name, "hamix/task-") {
 		return
 	}
 	n, err := a.taskcore.CountTasksByWorktreeID(ctx, worktreeID)
