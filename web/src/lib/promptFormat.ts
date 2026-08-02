@@ -58,6 +58,8 @@ export function sanitizePromptHtml(input: string): string {
     "h5",
     "h6",
     "hr",
+    "span",
+    "div",
   ]);
   const dropWithContentTags = new Set([
     "script",
@@ -107,7 +109,14 @@ export function sanitizePromptHtml(input: string): string {
       const name = attr.name.toLowerCase();
       const value = attr.value;
       const allowedForA = tag === "a" && (name === "href" || name === "title");
-      if (!allowedForA) {
+      const allowedForRepoChip =
+        tag === "span" &&
+        (name === "class" ||
+          name === "data-repo-file" ||
+          name === "data-path" ||
+          name === "data-line-start" ||
+          name === "data-line-end");
+      if (!allowedForA && !allowedForRepoChip) {
         el.removeAttribute(attr.name);
         continue;
       }
@@ -132,7 +141,7 @@ export function sanitizePromptHtml(input: string): string {
   return doc.body.innerHTML;
 }
 
-/** Heuristic: stored prompt looks like TipTap HTML. */
+/** Heuristic: stored prompt looks like rich HTML (TipTap/BlockNote). */
 export function looksLikeStoredHtml(s: string): boolean {
   const t = s.trim();
   return t.startsWith("<") && /<\/[a-z][\s\S]*>/i.test(t);
