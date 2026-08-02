@@ -321,13 +321,13 @@ type PullRequestLayer struct {
 
 // PullRequestReport is written by hamix.create_pull_request after a successful open.
 type PullRequestReport struct {
-	SchemaVersion int                 `json:"schema_version"`
-	URL           string              `json:"url"`
-	Number        int                 `json:"number,omitempty"`
-	Title         string              `json:"title,omitempty"`
-	Base          string              `json:"base,omitempty"`
-	Head          string              `json:"head,omitempty"`
-	Layers        []PullRequestLayer  `json:"layers,omitempty"`
+	SchemaVersion int                `json:"schema_version"`
+	URL           string             `json:"url"`
+	Number        int                `json:"number,omitempty"`
+	Title         string             `json:"title,omitempty"`
+	Base          string             `json:"base,omitempty"`
+	Head          string             `json:"head,omitempty"`
+	Layers        []PullRequestLayer `json:"layers,omitempty"`
 }
 
 // WritePullRequestReport atomically writes pull-request.json for the cycle.
