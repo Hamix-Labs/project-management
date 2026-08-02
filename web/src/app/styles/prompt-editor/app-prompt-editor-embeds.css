@@ -1,0 +1,117 @@
+.file-embed {
+  display: block;
+  margin: 10px 0 16px;
+  border: 1px solid var(--prompt-editor-border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--prompt-editor-surface);
+}
+
+.file-embed-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  background: var(--prompt-editor-embed-head-bg);
+  border-bottom: 1px solid var(--prompt-editor-border);
+  font-size: 12.5px;
+}
+
+[data-theme="dark"] .file-embed-head,
+.app[data-theme="dark"] .file-embed-head {
+  background: var(--prompt-editor-embed-head-bg);
+}
+
+.file-embed-head svg {
+  color: var(--prompt-editor-text-secondary);
+  flex-shrink: 0;
+}
+
+.file-embed-path {
+  font-family: var(--prompt-editor-font-mono);
+  color: var(--prompt-editor-text);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-embed-range {
+  color: var(--prompt-editor-text-muted);
+  font-family: var(--prompt-editor-font-mono);
+  flex-shrink: 0;
+}
+
+.file-embed-code {
+  font-family: var(--prompt-editor-font-mono);
+  font-size: 12.5px;
+  line-height: 1.65;
+  padding: 10px 14px;
+  color: var(--prompt-editor-text-secondary);
+  overflow: auto;
+  white-space: pre;
+  max-height: 280px;
+  margin: 0;
+}
+
+.file-embed-code .ln {
+  display: inline-block;
+  width: 28px;
+  color: var(--prompt-editor-text-muted);
+  user-select: none;
+}
+
+.file-embed-body {
+  padding: 12px 14px;
+  font-size: 13px;
+  color: var(--prompt-editor-text-secondary);
+}
+
+.file-embed-body--error {
+  color: var(--danger);
+}
+
+.file-embed-skeleton {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.file-embed-skeleton__line {
+  height: 12px;
+  border-radius: 4px;
+  background: var(--prompt-editor-border);
+  animation: prompt-editor-pulse 1.5s ease-in-out infinite;
+}
+
+.file-embed-retry {
+  margin-top: 8px;
+  font-size: 12.5px;
+  font-family: inherit;
+  cursor: pointer;
+  color: var(--prompt-editor-accent);
+  background: none;
+  border: 1px solid var(--prompt-editor-border);
+  border-radius: 6px;
+  padding: 4px 10px;
+}
+
+.file-embed-retry:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+@media (max-width: 640px) {
+  .prompt-editor-topbar {
+    padding: 12px 16px;
+  }
+
+  .prompt-editor-page__canvas {
+    padding: 40px 20px 120px;
+  }
+
+  .prompt-editor-doc-header__title {
+    font-size: 28px;
+  }
+}

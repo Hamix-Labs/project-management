@@ -310,6 +310,26 @@
   --mention-syntax-number: #1e6fd6;
   --mention-syntax-function: #b35000;
 
+  /* Prompt editor immersive document surface (Notion-like paper) */
+  --prompt-editor-bg: #fbfaf7;
+  --prompt-editor-surface: #ffffff;
+  --prompt-editor-border: #e8e5dd;
+  --prompt-editor-border-strong: #d8d4c8;
+  --prompt-editor-text: #1f1d18;
+  --prompt-editor-text-secondary: #6b6558;
+  --prompt-editor-text-muted: #a39d8d;
+  --prompt-editor-accent: var(--brand);
+  --prompt-editor-accent-tint: var(--brand-muted);
+  --prompt-editor-accent-tint-strong: #dedaf9;
+  --prompt-editor-save-dot: #5cae6b;
+  --prompt-editor-embed-head-bg: #f5f3ee;
+  --prompt-editor-menu-shadow:
+    0 8px 24px rgb(20 18 12 / 10%), 0 2px 6px rgb(20 18 12 / 6%);
+  --prompt-editor-font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia,
+    serif;
+  --prompt-editor-font-mono: var(--font-mono);
+  --prompt-editor-canvas-max: 760px;
+
   font-family: var(--font-sans);
   line-height: 1.5;
   font-size: var(--text-sm);
