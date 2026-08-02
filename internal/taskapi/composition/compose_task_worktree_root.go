@@ -2,9 +2,11 @@ package composition
 
 import (
 	"context"
+	"log/slog"
 	"strings"
 
 	gitinventorystore "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/store"
+	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	taskcorestore "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/store"
 )
@@ -12,6 +14,7 @@ import (
 // enrichTaskWorktreeRoot sets WorktreeRootTaskID when the task is bound to a
 // Hamix-managed task worktree (branch hamix/task-*).
 func (a *API) enrichTaskWorktreeRoot(ctx context.Context, t *taskcoredomain.Task) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.enrichTaskWorktreeRoot")
 	if a == nil || t == nil || t.WorktreeID == nil {
 		return
 	}
@@ -24,6 +27,7 @@ func (a *API) enrichTaskWorktreeRoot(ctx context.Context, t *taskcoredomain.Task
 }
 
 func (a *API) enrichTasksWorktreeRoots(ctx context.Context, tasks []taskcoredomain.Task) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.enrichTasksWorktreeRoots")
 	if a == nil || len(tasks) == 0 {
 		return
 	}
@@ -47,6 +51,7 @@ func (a *API) enrichTasksWorktreeRoots(ctx context.Context, tasks []taskcoredoma
 }
 
 func (a *API) resolveWorktreeRootTaskID(ctx context.Context, worktreeID string) *string {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.resolveWorktreeRootTaskID")
 	if a.git == nil || a.taskcore == nil {
 		return nil
 	}
