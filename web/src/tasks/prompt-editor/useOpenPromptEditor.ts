@@ -11,6 +11,10 @@ import {
   promptEditorPath,
   writePromptEditorLaunch,
 } from "./promptEditorSession";
+import {
+  resolveEditorTitle,
+  type EditorMode,
+} from "./resolveEditorTitle";
 import type { PromptSourceKind } from "./types";
 
 type ComposeOpenInput = {
@@ -18,6 +22,14 @@ type ComposeOpenInput = {
   modal: ReturnType<typeof useTaskCreateModalState>;
   mutations: ReturnType<typeof useTaskCreateMutations>;
 };
+
+function composeEditorMode(
+  modal: ComposeOpenInput["modal"],
+): EditorMode {
+  if (modal.editingTaskId) return "edit-task";
+  if (modal.composeTarget === "template") return "template";
+  return "compose";
+}
 
 /**
  * Flush compose state and navigate to the full-page Prompt Editor.
@@ -59,17 +71,20 @@ export function createOpenComposePromptEditor(input: ComposeOpenInput) {
       }
     }
 
+    const mode = composeEditorMode(modal);
+    const liveTitle = form.newTitle;
+    const title = resolveEditorTitle(mode, {
+      formTitle: liveTitle,
+      taskName: liveTitle,
+      templateName: liveTitle,
+    });
+
     writePromptEditorLaunch({
       worktreeId: form.newWorktreeID.trim() || undefined,
       returnPath: "/",
       resumeCompose: true,
       seedHtml: form.newPrompt,
-      title:
-        modal.composeTarget === "template"
-          ? "Template prompt"
-          : modal.editingTaskId
-            ? "Edit prompt"
-            : "Initial prompt",
+      title,
       placeholder: "Write the implementation brief…",
     });
 
@@ -87,21 +102,26 @@ export function useOpenPolishPromptEditor() {
       instructionsHtml: string;
       worktreeId?: string;
       taskId: string;
+      /** Live task title at open time (persisted task). */
+      taskTitle?: string;
       returnPath: string;
       ephemeralId?: string;
     }) => {
       const id = opts.ephemeralId ?? generateEphemeralPromptId();
+      const title = resolveEditorTitle("polish", {
+        taskName: opts.taskTitle,
+      });
       writeEphemeralPrompt(id, {
         html: opts.instructionsHtml,
         worktreeId: opts.worktreeId,
-        name: "Polish instructions",
+        name: title,
       });
       writePromptEditorLaunch({
         worktreeId: opts.worktreeId,
         returnPath: opts.returnPath,
         resumePolish: true,
         polishTaskId: opts.taskId,
-        title: "Polish instructions",
+        title,
         placeholder: "Describe what should change in this polish pass…",
       });
       navigate(promptEditorPath("ephemeral", id));

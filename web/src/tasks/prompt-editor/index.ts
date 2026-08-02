@@ -22,6 +22,11 @@ export {
   writePromptEditorReturn,
 } from "./promptEditorSession";
 export {
+  resolveEditorTitle,
+  type EditorMode,
+  type ResolveEditorTitleContext,
+} from "./resolveEditorTitle";
+export {
   createOpenComposePromptEditor,
   useOpenPolishPromptEditor,
 } from "./useOpenPromptEditor";
