@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
+	"github.com/AlexsanderHamir/Hamix/pkgs/gitstack"
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 )
 
@@ -15,7 +16,8 @@ func gitTestStore(t *testing.T) (*Store, context.Context, gitwork.Service) {
 		t.Skip("git not on PATH")
 	}
 	gitSvc := gitwork.New()
-	return NewStore(tasktestdb.OpenSQLite(t), gitSvc), context.Background(), gitSvc
+	s := NewStore(tasktestdb.OpenSQLite(t), gitSvc).WithStackCLI(gitstack.Nop{})
+	return s, context.Background(), gitSvc
 }
 
 func initGitRepo(t *testing.T) string {
