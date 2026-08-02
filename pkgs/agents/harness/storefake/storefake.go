@@ -9,6 +9,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/harness/internal/contract"
+	"github.com/AlexsanderHamir/Hamix/pkgs/gitstack"
 )
 
 // Fake satisfies harness.Store using the same SQLite-backed store as integration
@@ -22,7 +23,7 @@ type Fake struct {
 //funclogmeasure:skip category=tool-required-noop reason="Harness test fake only; store I/O traces live on production harness.Run chokepoints."
 func New(t *testing.T) *Fake {
 	t.Helper()
-	st := composition.NewAPI(tasktestdb.OpenSQLite(t))
+	st := composition.NewAPI(tasktestdb.OpenSQLite(t)).WithGitStackCLI(gitstack.Nop{})
 	return &Fake{API: st}
 }
 

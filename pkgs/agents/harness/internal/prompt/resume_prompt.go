@@ -214,8 +214,8 @@ func ComposeOpenPRDirective(cycle *cyclesdomain.TaskCycle, known []cyclesdomain.
 		b.WriteString(block)
 	}
 	b.WriteString("### Required action\n\n")
-	b.WriteString("Call the MCP tool `hamix.create_pull_request` with a high-quality title and body. ")
-	b.WriteString("That tool pushes the branch and creates the PR. Do **not** use Shell `git push` or Shell `gh`.\n\n")
+	b.WriteString("Call the MCP tool `hamix.create_pull_request` with a high-quality title and body for this layer. ")
+	b.WriteString("That tool publishes the worktree GitHub stack (`gh stack submit`) or opens the PR. Do **not** use Shell `git push` or Shell `gh`.\n\n")
 	b.WriteString("### Pull request writing standards\n\n")
 	b.WriteString("Write for a busy reviewer who did not watch this agent run:\n\n")
 	b.WriteString("- **Title:** one specific line that states the change (imperative mood is fine). Avoid vague titles like \"Update code\" or \"Fix stuff\".\n")
@@ -234,7 +234,7 @@ func AppendOpenPRGitPolicy(prompt string) string {
 	var b strings.Builder
 	b.WriteString("## Git and pull request (open-pr run)\n\n")
 	b.WriteString("Do not create new feature work. If a tiny commit is truly required before the PR, stage with Shell `git add` and commit only via `hamix.commit`.\n")
-	b.WriteString("Push and open the PR **only** via `hamix.create_pull_request`. Do not Shell `git push`, amend, rebase, force-push, or freeform-Write receipt files.\n\n")
+	b.WriteString("Publish the stack / open the PR **only** via `hamix.create_pull_request`. Do not Shell `git push`, amend, rebase, force-push, or freeform-Write receipt files.\n\n")
 	return b.String() + prompt
 }
 

@@ -102,6 +102,12 @@ func (s *Store) RequestTaskApprove(ctx context.Context, taskID string, by domain
 	return tasks.RequestTaskApprove(ctx, s.db, taskID, by)
 }
 
+// RequestTaskApproveStackLayer approves a non-root stack layer from review → done.
+func (s *Store) RequestTaskApproveStackLayer(ctx context.Context, taskID string, by domain.Actor) (*domain.Task, domain.Status, error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcore.store.RequestTaskApproveStackLayer", "task_id", taskID)
+	return tasks.RequestTaskApproveStackLayer(ctx, s.db, taskID, by)
+}
+
 func (s *Store) RequestTaskPolish(ctx context.Context, in RequestPolishInput, by domain.Actor) (*domain.Task, domain.Status, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "taskcore.store.RequestTaskPolish", "task_id", in.TaskID)
 	return tasks.RequestTaskPolish(ctx, s.db, in, by)
