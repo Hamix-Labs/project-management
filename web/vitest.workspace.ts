@@ -58,18 +58,29 @@ export default defineWorkspace([
   {
     ...sharedVite,
     test: {
-      ...sharedTest,
       name: "unit",
       include: ["src/**/*.test.ts"],
+      // node by default — avoid jsdom+MSW per-file tax. DOM/hook files set
+      // // @vitest-environment jsdom at the top of the file.
+      environment: "node",
+      setupFiles: ["./src/test/setup.unit.ts"],
+      restoreMocks: true,
+      unstubGlobals: false,
     },
   },
   {
     ...sharedVite,
     test: {
-      ...sharedTest,
       name: "components",
       include: ["src/**/*.test.tsx"],
       exclude: fullAppIncludes,
+      environment: "jsdom",
+      setupFiles: ["./src/test/setup.components.ts"],
+      restoreMocks: true,
+      unstubGlobals: false,
+      // Interactive CustomSelect flows need headroom under parallel load.
+      testTimeout: 15_000,
+      maxWorkers: 4,
     },
   },
   {

@@ -8,20 +8,22 @@
 # Flags:
 #   --verbose, -v       Stream full tool output (CI uses this)
 #   --install           Run npm ci in web/ before other steps
+#   --install-only      Run npm ci in web/ and exit (CI web-deps job)
 #   --group=<name>      Restrict to lint|build|test-unit|test-components|test-app|test-task-pages|test-task-create|test-settings|test-projects|test-worktrees (CI matrix)
 #   --help, -h          Show options
 #
 # CI:
-#   ./scripts/check-web.sh --install --verbose --group=lint
-#   ./scripts/check-web.sh --install --verbose --group=build
-#   ./scripts/check-web.sh --install --verbose --group=test-unit
-#   ./scripts/check-web.sh --install --verbose --group=test-components
-#   ./scripts/check-web.sh --install --verbose --group=test-app
-#   ./scripts/check-web.sh --install --verbose --group=test-task-pages
-#   ./scripts/check-web.sh --install --verbose --group=test-task-create
-#   ./scripts/check-web.sh --install --verbose --group=test-settings
-#   ./scripts/check-web.sh --install --verbose --group=test-projects
-#   ./scripts/check-web.sh --install --verbose --group=test-worktrees
+#   ./scripts/check-web.sh --install-only --verbose
+#   ./scripts/check-web.sh --verbose --group=lint
+#   ./scripts/check-web.sh --verbose --group=build
+#   ./scripts/check-web.sh --verbose --group=test-unit
+#   ./scripts/check-web.sh --verbose --group=test-components
+#   ./scripts/check-web.sh --verbose --group=test-app
+#   ./scripts/check-web.sh --verbose --group=test-task-pages
+#   ./scripts/check-web.sh --verbose --group=test-task-create
+#   ./scripts/check-web.sh --verbose --group=test-settings
+#   ./scripts/check-web.sh --verbose --group=test-projects
+#   ./scripts/check-web.sh --verbose --group=test-worktrees
 
 set -uo pipefail
 
@@ -30,16 +32,18 @@ cd "$repo"
 
 VERBOSE=0
 INSTALL=0
+INSTALL_ONLY=0
 GROUP=""
 
 show_help() {
-  sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,24p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --verbose|-v) VERBOSE=1; shift ;;
     --install) INSTALL=1; shift ;;
+    --install-only) INSTALL_ONLY=1; shift ;;
     --group=*) GROUP="${1#--group=}"; shift ;;
     --group)
       GROUP="${2:-}"
@@ -52,6 +56,11 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+if [[ "$INSTALL_ONLY" -eq 1 && ( "$INSTALL" -eq 1 || -n "$GROUP" ) ]]; then
+  echo "--install-only cannot be combined with --install or --group" >&2
+  exit 2
+fi
 
 if [[ -n "$GROUP" ]]; then
   case "$GROUP" in
@@ -74,7 +83,9 @@ CHECK_START=$SECONDS
 STEP=0
 PASSED=0
 
-if [[ -n "$GROUP" ]]; then
+if [[ "$INSTALL_ONLY" -eq 1 ]]; then
+  TOTAL=1
+elif [[ -n "$GROUP" ]]; then
   case "$GROUP" in
     lint) TOTAL=3 ;;
     build) TOTAL=1 ;;
@@ -129,6 +140,7 @@ run_web_test() {
     add_section_time "$elapsed"
     if [[ $code -eq 0 ]]; then
       PASSED=$((PASSED + 1))
+      enforce_step_budget "$label" "$elapsed"
       return 0
     fi
     fail_step "$label" "$code"
@@ -147,6 +159,7 @@ run_web_test() {
     print_ok_line "$label" "$elapsed" "${STEP_STATS:-}"
     STEP_STATS=""
     rm -f "$log"
+    enforce_step_budget "$label" "$elapsed"
     return 0
   fi
 
@@ -175,6 +188,7 @@ run_web_lint() {
     add_section_time "$elapsed"
     if [[ $code -eq 0 ]]; then
       PASSED=$((PASSED + 1))
+      enforce_step_budget "$label" "$elapsed"
       return 0
     fi
     fail_step "$label" "$code"
@@ -193,6 +207,7 @@ run_web_lint() {
     print_ok_line "$label" "$elapsed" "${STEP_STATS:-}"
     STEP_STATS=""
     rm -f "$log"
+    enforce_step_budget "$label" "$elapsed"
     return 0
   fi
 
@@ -209,6 +224,11 @@ maybe_npm_ci() {
 }
 
 print_banner
+
+if [[ "$INSTALL_ONLY" -eq 1 ]]; then
+  run_cmd "npm ci" bash -c 'cd web && npm ci'
+  complete_ok
+fi
 
 case "$GROUP" in
   lint)

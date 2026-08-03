@@ -7,23 +7,31 @@
 # Flags:
 #   -Verbose           Stream full tool output (CI uses this)
 #   -Install           Run npm ci in web/ before other steps
+#   -InstallOnly       Run npm ci in web/ and exit (CI web-deps job)
 #   -Group <name>      Restrict to lint|build|test-unit|test-components|test-app|test-task-pages|test-task-create|test-settings|test-projects|test-worktrees (CI matrix)
 #   -Help              Show options
 #
 # CI:
-#   ./scripts/check-web.sh --install --verbose --group=lint
+#   ./scripts/check-web.sh --install-only --verbose
+#   ./scripts/check-web.sh --verbose --group=lint
 
 param(
     [switch]$Help,
     [switch]$Verbose,
     [switch]$Install,
+    [switch]$InstallOnly,
     [ValidateSet("lint", "build", "test-unit", "test-components", "test-app", "test-task-pages", "test-task-create", "test-settings", "test-projects", "test-worktrees", "")]
     [string]$Group = ""
 )
 
 if ($Help -or $args -contains '--help' -or $args -contains '-h') {
-    Get-Content $PSCommandPath | Select-Object -Skip 1 -First 16 | ForEach-Object { $_ -replace '^# ?', '' }
+    Get-Content $PSCommandPath | Select-Object -Skip 1 -First 18 | ForEach-Object { $_ -replace '^# ?', '' }
     exit 0
+}
+
+if ($InstallOnly -and ($Install -or $Group)) {
+    Write-Error "-InstallOnly cannot be combined with -Install or -Group"
+    exit 2
 }
 
 $ErrorActionPreference = "Stop"
@@ -42,6 +50,7 @@ $script:Passed = 0
 
 function Get-TotalSteps {
     param([string]$Scope)
+    if ($InstallOnly) { return 1 }
     $base = switch ($Scope) {
         "lint" { 3 }
         "build" { 1 }
@@ -76,6 +85,28 @@ function Fail-Step {
     exit $Code
 }
 
+$script:CheckStepBudgetSecs = 120
+
+function Enforce-StepBudget {
+    param(
+        [string]$Label,
+        [TimeSpan]$Elapsed
+    )
+    if ($Label -eq "npm ci") { return }
+    $secs = [int][Math]::Round($Elapsed.TotalSeconds)
+    if ($secs -le $script:CheckStepBudgetSecs) { return }
+
+    $shown = Format-Duration $Elapsed
+    if ($env:GITHUB_ACTIONS) {
+        Write-Host "::error title=check step budget::$Label exceeded step budget ($shown > $($script:CheckStepBudgetSecs)s). Split the suite, slim the harness, or speed up the tests."
+    }
+    Write-Host ""
+    Write-Host "check FAILED: $Label exceeded step budget ($shown > $($script:CheckStepBudgetSecs)s)" -ForegroundColor Red
+    Write-Host "  This step must finish within $($script:CheckStepBudgetSecs)s (keep check steps under two minutes)."
+    Write-Host "  Split the suite, slim the harness, or speed up the tests — do not raise the budget casually."
+    exit 1
+}
+
 function Complete-Ok {
     $elapsed = (Get-Date) - $CheckStart
     Write-Host ""
@@ -93,6 +124,7 @@ function Write-OkLine {
     $line = (" " * $pad) + "ok $(Format-Duration $Elapsed)"
     if ($Stats) { $line += "  ($Stats)" }
     Write-Host $line -ForegroundColor Green
+    Enforce-StepBudget $Label $Elapsed
 }
 
 function Invoke-CapturedStep {
@@ -185,6 +217,11 @@ function Invoke-MaybeNpmCi {
 
 Write-Host "Hamix check (web)"
 Write-Host ""
+
+if ($InstallOnly) {
+    Invoke-CapturedStep "npm ci" { Push-Location $webDir; try { npm ci } finally { Pop-Location } }
+    Complete-Ok
+}
 
 switch ($Group) {
     "lint" {

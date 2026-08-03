@@ -3,9 +3,12 @@ import { render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 import type { TaskCycle } from "@/types/cycle";
+import { ensureMswListening } from "@/test/mswLifecycle";
 import { server } from "@/test/server";
 import { taskTokenUsageGet } from "@/test/handlers/cycles";
 import { CycleHistoryList } from "./CycleHistoryList";
+
+ensureMswListening();
 
 function createWrapper() {
   const qc = new QueryClient({

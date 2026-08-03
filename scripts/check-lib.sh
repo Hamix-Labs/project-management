@@ -9,6 +9,7 @@
 : "${TOTAL:=0}"
 : "${SECTION_TIME:=0}"
 : "${STEP_STATS:=}"
+: "${CHECK_STEP_BUDGET_SECS:=120}"
 
 if [[ -t 1 ]]; then
   C_RESET=$'\033[0m'
@@ -43,6 +44,31 @@ fail_step() {
     echo "  fix: $fix" >&2
   fi
   exit "$code"
+}
+
+# Fail when a check-script step exceeds CHECK_STEP_BUDGET_SECS (install excluded).
+enforce_step_budget() {
+  local label="$1"
+  local elapsed="$2"
+
+  case "$label" in
+    "npm ci") return 0 ;;
+  esac
+
+  if [[ "$elapsed" -le "$CHECK_STEP_BUDGET_SECS" ]]; then
+    return 0
+  fi
+
+  if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
+    printf '::error title=check step budget::%s exceeded step budget (%s > %ss). Split the suite, slim the harness, or speed up the tests.\n' \
+      "$label" "$(format_secs "$elapsed")" "$CHECK_STEP_BUDGET_SECS"
+  fi
+
+  echo ""
+  echo "${C_RED}check FAILED: ${label} exceeded step budget ($(format_secs "$elapsed") > ${CHECK_STEP_BUDGET_SECS}s)${C_RESET}" >&2
+  echo "  This step must finish within ${CHECK_STEP_BUDGET_SECS}s (keep check steps under two minutes)." >&2
+  echo "  Split the suite, slim the harness, or speed up the tests — do not raise the budget casually." >&2
+  exit 1
 }
 
 complete_ok() {
@@ -97,6 +123,7 @@ run_capture() {
     print_ok_line "$label" "$elapsed" "${STEP_STATS:-}"
     STEP_STATS=""
     rm -f "$log"
+    enforce_step_budget "$label" "$elapsed"
     return 0
   fi
 
@@ -124,6 +151,7 @@ run_stream() {
 
   if [[ $code -eq 0 ]]; then
     PASSED=$((PASSED + 1))
+    enforce_step_budget "$label" "$elapsed"
     return 0
   fi
   fail_step "$label" "$code"

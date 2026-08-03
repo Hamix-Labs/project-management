@@ -69,14 +69,18 @@ Taskapi does **not** migrate on dev startup by default. See [Schema migrations i
 
 Verification steps live in `scripts/check-go.sh` / `scripts/check-web.sh` (and PowerShell twins). CI runs those leaf scripts directly — not duplicated commands in `.github/workflows/ci.yml`.
 
+Each **check-script step** (e.g. `web (test-unit)`, `go-tests (core)`) must finish within **2 minutes** (120s). Exceeding that fails the check with a clear budget error (install / `npm ci` is excluded). Split or slim the suite — do not raise the budget casually. Actions plumbing (checkout, setup-node) is not budgeted.
+
 | I want to… | Command |
 |------------|---------|
 | Run everything locally | `./scripts/check.sh` or `.\scripts\check.ps1` |
 | First run / lockfile changed | `./scripts/check.sh --install` or `.\scripts\check.ps1 -Install` |
+| Same as CI web deps seed | `./scripts/check-web.sh --install-only --verbose` or `.\scripts\check-web.ps1 -InstallOnly -Verbose` |
 | Same as CI Go lint | `./scripts/check-go.sh --lint-only --verbose` or `.\scripts\check-go.ps1 -LintOnly -Verbose` |
 | Same as CI Go tests (one group) | `./scripts/check-go.sh --tests-only --group=core --verbose` (groups: `core`, `tasks`, `agents`, `harness`) — includes [coverage gate](docs/domain/testing.md#coverage-floors) |
 | Same as CI Go (full local bar) | `./scripts/check-go.sh --verbose` or `.\scripts\check-go.ps1 -Verbose` |
-| Same as CI web | `./scripts/check-web.sh --install --verbose` or `.\scripts\check-web.ps1 -Install -Verbose` |
+| Same as CI web matrix cell | `./scripts/check-web.sh --verbose --group=test-unit` (after install / `node_modules` present); groups match CI: `lint`, `build`, `test-unit`, `test-components`, … |
+| Full local web bar | `./scripts/check-web.sh --verbose` or `.\scripts\check-web.ps1 -Verbose` (`-Install` if needed) |
 | Go only (fast) | `./scripts/check.sh --go-only` or `.\scripts\check.ps1 -GoOnly` |
 | Full logs | add `--verbose` / `-Verbose` |
 

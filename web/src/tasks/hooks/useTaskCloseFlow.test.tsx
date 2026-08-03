@@ -17,7 +17,10 @@ import {
   taskReopen,
   taskReopenError,
 } from "@/test/handlers/tasks";
+import { ensureMswListening } from "@/test/mswLifecycle";
 import { server } from "@/test/server";
+
+ensureMswListening();
 
 describe("useTaskCloseFlow", () => {
   beforeEach(() => {
