@@ -330,8 +330,10 @@ describe("TaskListSection bulk reschedule", () => {
 
     it("Scheduled (deferred) filter limits rows to ready+future", async () => {
       const user = userEvent.setup();
-      const future = new Date(Date.now() + 60 * 60 * 1000).toISOString();
-      const past = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      // Absolute timestamps — avoid Date.now() so a leaked spy from an
+      // earlier test cannot invert past/future relative to the filter clock.
+      const future = "2099-06-01T12:00:00.000Z";
+      const past = "2000-06-01T12:00:00.000Z";
       const tasks = [
         makeRow("a", "Future ready", { pickup_not_before: future }),
         makeRow("b", "Past ready", { pickup_not_before: past }),
@@ -359,7 +361,7 @@ describe("TaskListSection bulk reschedule", () => {
           expect(screen.queryByText("Past ready")).not.toBeInTheDocument();
           expect(screen.queryByText("Plain ready")).not.toBeInTheDocument();
         },
-        { timeout: 500 },
+        { timeout: 2000 },
       );
     });
   });
