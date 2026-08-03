@@ -15,6 +15,7 @@ import {
   shouldShowCreatingPrLabel,
 } from "../task-display/openPrRunDisplay";
 import { statusNeedsUserInput } from "../task-display";
+import { isWorktreeRootTask } from "../task-git/isWorktreeRootTask";
 import type { TaskDetailLoadedViewProps } from "./TaskDetailLoadedView";
 
 type TaskDetailLoadedToolbarProps = Pick<
@@ -51,8 +52,10 @@ export function TaskDetailLoadedToolbar({
 }: TaskDetailLoadedToolbarProps) {
   const inReview = task.status === "review";
   const inPrReady = task.status === "pr_ready";
+  const isRoot = isWorktreeRootTask(task);
   const isClosed = task.status === "closed";
   const needsUser = statusNeedsUserInput(task.status);
+  const layerApprove = inReview && !isRoot;
   const cyclesQuery = useTaskCycles(task.id, {
     enabled: task.status === "running",
   });
@@ -117,10 +120,18 @@ export function TaskDetailLoadedToolbar({
         closePending={modals.closePending}
         onReopen={isClosed ? () => modals.reopen(task.id) : undefined}
         reopenPending={modals.reopenPending}
-        onOpenPr={inReview ? () => setOpenPrConfirmOpen(true) : undefined}
+        onOpenPr={
+          inReview && isRoot ? () => setOpenPrConfirmOpen(true) : undefined
+        }
         openPrPending={openPrMutation.isPending}
-        onApprove={inPrReady ? () => setApproveConfirmOpen(true) : undefined}
+        onApprove={
+          inPrReady || layerApprove
+            ? () => setApproveConfirmOpen(true)
+            : undefined
+        }
         approvePending={approveMutation.isPending}
+        approveLabel={layerApprove ? "Approve" : "Mark done"}
+        approvePendingLabel={layerApprove ? "Approving…" : "Marking done…"}
         onPolish={inReview ? () => setPolishDialogOpen(true) : undefined}
         polishPending={polishMutation.isPending}
         onEnqueue={

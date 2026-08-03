@@ -41,9 +41,13 @@ type Props = {
   autonomyMode?: "hidden" | "ready" | "on_hold";
   onToggleAutonomy?: () => void;
   autonomyPending?: boolean;
-  /** When set, shows Mark done for a task in pr_ready (POST /approve). */
+  /** When set, shows Mark done / Approve (POST /approve). */
   onApprove?: () => void;
   approvePending?: boolean;
+  /** Idle label for the approve button (default Mark done). */
+  approveLabel?: string;
+  /** Pending label for the approve button. */
+  approvePendingLabel?: string;
   /** When set, shows Approve & Open PR for a task in review (POST /open-pr). */
   onOpenPr?: () => void;
   openPrPending?: boolean;
@@ -73,6 +77,8 @@ export function TaskDetailToolbarActions({
   autonomyPending = false,
   onApprove,
   approvePending = false,
+  approveLabel = "Mark done",
+  approvePendingLabel = "Marking done…",
   onOpenPr,
   openPrPending = false,
   onPolish,
@@ -107,7 +113,7 @@ export function TaskDetailToolbarActions({
           onClick={onApprove}
           disabled={saving || approvePending || reviewActionsBusy}
         >
-          {approvePending ? "Marking done…" : "Mark done"}
+          {approvePending ? approvePendingLabel : approveLabel}
         </button>
       ) : null}
       {onPolish ? (
