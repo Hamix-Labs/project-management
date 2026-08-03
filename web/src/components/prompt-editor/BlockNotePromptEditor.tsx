@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   SuggestionMenuController,
   useCreateBlockNote,
@@ -11,7 +11,6 @@ import { RichPromptFileReferenceModal } from "@/components/rich-prompt/RichPromp
 import { RichPromptRepoHints } from "@/components/rich-prompt/RichPromptRepoHints";
 import { computeRepoHintFlags } from "@/components/rich-prompt/richPromptInsertHelpers";
 import { useRepoWorkspaceProbe } from "@/components/rich-prompt/useRepoWorkspaceProbe";
-import { looksLikeStoredHtml, plainTextToInitialHtml } from "@/lib/promptFormat";
 import { promptEditorSchema } from "./blockNoteSchema";
 import { useEnhanceCodeBlockToolbars } from "./code/useEnhanceCodeBlockToolbars";
 import { PromptEditorRepoContext } from "./context/PromptEditorRepoContext";
@@ -19,11 +18,15 @@ import {
   PromptEditorMentionMenu,
   type PromptFileMentionItem,
 } from "./mention/PromptEditorMentionMenu";
+import { htmlToInitialBlocks } from "./promptEditorHtml";
 
 export type BlockNotePromptEditorProps = {
   id: string;
-  value: string;
+  /** Committed snapshot HTML — used once for initialContent (keyed remount). */
+  initialHtml: string;
   onChange: (html: string) => void;
+  /** Fired once on mount when HTML→blocks used the plain-text fallback. */
+  onHydrateFallback?: () => void;
   disabled?: boolean;
   placeholder?: string;
   worktreeId?: string;
@@ -31,15 +34,11 @@ export type BlockNotePromptEditorProps = {
 
 type PendingInsert = { path: string };
 
-function htmlForEditor(value: string): string {
-  if (!value.trim()) return "<p></p>";
-  return looksLikeStoredHtml(value) ? value : plainTextToInitialHtml(value);
-}
-
 export function BlockNotePromptEditor({
   id,
-  value,
+  initialHtml,
   onChange,
+  onHydrateFallback,
   disabled = false,
   placeholder = "Write the implementation brief…",
   worktreeId,
@@ -53,29 +52,24 @@ export function BlockNotePromptEditor({
   const [fileSearchUnavailable, setFileSearchUnavailable] = useState(false);
   const [fileSearchBusy, setFileSearchBusy] = useState(false);
   const skipEmitRef = useRef(true);
-  const lastEmittedRef = useRef(value);
-  const seededRef = useRef(false);
+  const hydrateMetaRef = useRef(htmlToInitialBlocks(initialHtml));
+
+  const initialContent = useMemo(
+    () => hydrateMetaRef.current.blocks,
+    [],
+  );
 
   const editor = useCreateBlockNote({
     schema: promptEditorSchema,
+    initialContent,
     placeholders: { default: placeholder },
   });
 
   useEffect(() => {
-    const html = htmlForEditor(value);
-    if (seededRef.current && html === lastEmittedRef.current) {
-      return;
+    if (hydrateMetaRef.current.usedFallback) {
+      onHydrateFallback?.();
     }
-    try {
-      const blocks = editor.tryParseHTMLToBlocks(html);
-      skipEmitRef.current = true;
-      editor.replaceBlocks(editor.document, blocks);
-      lastEmittedRef.current = html;
-      seededRef.current = true;
-    } catch {
-      // leave current document
-    }
-  }, [value, editor]);
+  }, [onHydrateFallback]);
 
   const emitHtml = useCallback(() => {
     if (skipEmitRef.current) {
@@ -83,7 +77,6 @@ export function BlockNotePromptEditor({
       return;
     }
     const html = editor.blocksToHTMLLossy(editor.document);
-    lastEmittedRef.current = html;
     onChange(html);
   }, [editor, onChange]);
 

@@ -30,7 +30,7 @@ describe("usePromptEditorLeave", () => {
           },
           htmlRef,
           dirtyRef,
-          setSaveError: vi.fn(),
+          setSessionError: vi.fn(),
           setLastSavedAt: vi.fn(),
           setSaving: vi.fn(),
         }),
@@ -38,5 +38,6 @@ describe("usePromptEditorLeave", () => {
     );
     expect(result.current.leavePending).toBe(false);
     expect(typeof result.current.leaveEditor).toBe("function");
+    expect(typeof result.current.leaveWithoutSave).toBe("function");
   });
 });

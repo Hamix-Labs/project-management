@@ -4,7 +4,7 @@ import {
   PromptEditorDocHeader,
   PromptEditorTopbar,
 } from "@/components/prompt-editor";
-import { MutationErrorBanner } from "@/shared/MutationErrorBanner";
+import { PromptEditorSessionAlert } from "@/components/prompt-editor/chrome/PromptEditorSessionAlert";
 import { useDocumentTitle } from "@/shared/useDocumentTitle";
 import { usePromptEditorPageController } from "../prompt-editor/usePromptEditorPageController";
 
@@ -28,6 +28,7 @@ export function PromptEditorPage() {
       <PromptEditorTopbar
         title={c.title}
         saveStatus={c.saveStatus}
+        saveErrorDetail={c.saveError?.detail}
         leavePending={c.leavePending}
         onBack={() => void c.leaveEditor()}
         onRetrySave={c.retrySave}
@@ -41,30 +42,60 @@ export function PromptEditorPage() {
           repoLabel={c.repoLabel}
         />
 
-        <MutationErrorBanner error={c.loadError} />
-        <MutationErrorBanner error={c.saveError} />
+        {c.hydrateWarning ? (
+          <PromptEditorSessionAlert
+            title={c.hydrateWarning.title}
+            detail={c.hydrateWarning.detail}
+            variant="warning"
+            onDismiss={c.dismissHydrateWarning}
+          />
+        ) : null}
+
+        {c.saveError ? (
+          <PromptEditorSessionAlert
+            title={c.saveError.title}
+            detail={c.saveError.detail}
+            onRetry={c.retrySave}
+            retryLabel="Retry save"
+          />
+        ) : null}
 
         <div className="prompt-editor-page__body">
-          {c.loaded ? (
+          {c.status === "loading" ? (
+            <div className="prompt-editor-page__skeleton" aria-busy="true">
+              <p className="prompt-editor-page__loading">Loading prompt…</p>
+              <div className="prompt-editor-page__skeleton-line prompt-editor-page__skeleton-line--title" />
+              <div className="prompt-editor-page__skeleton-line" />
+              <div className="prompt-editor-page__skeleton-line" />
+              <div className="prompt-editor-page__skeleton-line prompt-editor-page__skeleton-line--short" />
+            </div>
+          ) : null}
+
+          {c.loadError ? (
+            <PromptEditorSessionAlert
+              title={c.loadError.title}
+              detail={c.loadError.detail}
+              onRetry={c.retryLoad}
+              onBack={c.leaveWithoutSave}
+              retryLabel="Retry"
+              backLabel="Back"
+            />
+          ) : null}
+
+          {c.ready ? (
             <BlockNotePromptEditor
+              key={`${c.sourceKind}-${c.sourceId}`}
               id="prompt-editor-page"
-              value={c.html}
+              initialHtml={c.html}
               onChange={c.onChange}
+              onHydrateFallback={c.onHydrateFallback}
               disabled={c.leavePending}
               placeholder={
                 c.launch?.placeholder ?? "Write the implementation brief…"
               }
               worktreeId={c.worktreeId}
             />
-          ) : (
-            <div className="prompt-editor-page__skeleton" aria-busy="true">
-              <div className="prompt-editor-page__skeleton-line prompt-editor-page__skeleton-line--title" />
-              <div className="prompt-editor-page__skeleton-line" />
-              <div className="prompt-editor-page__skeleton-line" />
-              <div className="prompt-editor-page__skeleton-line prompt-editor-page__skeleton-line--short" />
-              <span className="visually-hidden">Loading prompt…</span>
-            </div>
-          )}
+          ) : null}
         </div>
       </div>
     </div>

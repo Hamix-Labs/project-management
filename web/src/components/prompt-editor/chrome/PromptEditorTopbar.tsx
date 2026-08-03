@@ -4,6 +4,7 @@ export type PromptEditorTopbarProps = {
   backLabel?: string;
   title: string;
   saveStatus: PromptEditorSaveStatusKind;
+  saveErrorDetail?: string;
   leavePending?: boolean;
   onBack: () => void;
   onRetrySave?: () => void;
@@ -13,6 +14,7 @@ export function PromptEditorTopbar({
   backLabel = "Back to task",
   title,
   saveStatus,
+  saveErrorDetail,
   leavePending = false,
   onBack,
   onRetrySave,
@@ -47,7 +49,11 @@ export function PromptEditorTopbar({
         </div>
       </div>
       <div className="prompt-editor-topbar__right">
-        <PromptEditorSaveStatus kind={saveStatus} onRetry={onRetrySave} />
+        <PromptEditorSaveStatus
+          kind={saveStatus}
+          errorDetail={saveErrorDetail}
+          onRetry={onRetrySave}
+        />
         <button
           type="button"
           className="prompt-editor-topbar__history"

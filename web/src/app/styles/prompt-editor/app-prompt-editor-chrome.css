@@ -249,3 +249,43 @@
     animation: none;
   }
 }
+
+/* ---------- Session alerts (load / hydrate / save) ---------- */
+.prompt-editor-session-alert {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--prompt-editor-border-strong);
+}
+
+.prompt-editor-session-alert--error {
+  background: var(--danger-soft);
+  border-color: var(--danger-border);
+}
+
+.prompt-editor-session-alert--warning {
+  background: var(--warning-surface);
+  border-color: var(--warning-border);
+  color: var(--prompt-editor-text);
+}
+
+.prompt-editor-session-alert__title {
+  margin: 0 0 4px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.prompt-editor-session-alert__detail {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--prompt-editor-text-secondary);
+}
+
+.prompt-editor-session-alert__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+

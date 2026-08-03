@@ -1,51 +1,38 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
-import type { PromptEditorSaveStatusKind } from "@/components/prompt-editor/chrome";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  createPromptDocumentAdapter,
-  isPromptSourceKind,
-} from "./promptDocumentAdapter";
-import { readPromptEditorLaunch } from "./promptEditorSession";
+  deriveEditedLabel,
+  deriveSaveStatus,
+  deriveWordCountLabel,
+  pickLoadError,
+  pickSaveError,
+} from "./promptEditorPageViewModel";
+import { usePromptEditorAutosave } from "./usePromptEditorAutosave";
 import {
-  formatRelativeEdited,
-  wordCountFromHtml,
-} from "./promptEditorPageMeta";
-import { usePromptEditorDocumentLoad } from "./usePromptEditorDocumentLoad";
+  usePromptEditorDocumentLoad,
+  type PromptEditorLoadStatus,
+} from "./usePromptEditorDocumentLoad";
 import { usePromptEditorLeave } from "./usePromptEditorLeave";
-import type { PromptEditorLaunchContext } from "./types";
-
-const AUTOSAVE_MS = 800;
+import { usePromptEditorRouteAdapter } from "./usePromptEditorRouteAdapter";
+import {
+  HYDRATE_FALLBACK_WARNING,
+  type PromptEditorSessionError,
+} from "./promptEditorSessionError";
 
 export function usePromptEditorPageController() {
-  const { sourceKind = "", sourceId = "" } = useParams<{
-    sourceKind: string;
-    sourceId: string;
-  }>();
-  const launchRef = useRef<PromptEditorLaunchContext | null>(null);
-  if (launchRef.current === null) {
-    launchRef.current = readPromptEditorLaunch();
-  }
-  const launch = launchRef.current;
+  const { sourceKind, sourceId, kindOk, launch, adapter } =
+    usePromptEditorRouteAdapter();
 
-  const kindOk = isPromptSourceKind(sourceKind);
-  const adapter = useMemo(() => {
-    if (!kindOk || !sourceId) return null;
-    return createPromptDocumentAdapter(
-      { kind: sourceKind, id: sourceId },
-      launch ?? undefined,
-    );
-  }, [kindOk, sourceKind, sourceId, launch]);
-
-  const [html, setHtml] = useState(launch?.seedHtml ?? "");
-  const [loaded, setLoaded] = useState(Boolean(launch?.seedHtml));
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const [status, setStatus] = useState<PromptEditorLoadStatus>("loading");
+  const [html, setHtml] = useState("");
+  const [sessionError, setSessionError] =
+    useState<PromptEditorSessionError | null>(null);
+  const [hydrateWarning, setHydrateWarning] =
+    useState<PromptEditorSessionError | null>(null);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
-  const [lastSavedAt, setLastSavedAt] = useState<number | null>(
-    launch?.seedHtml ? Date.now() : null,
-  );
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
   const [tick, setTick] = useState(0);
+  const [loadNonce, setLoadNonce] = useState(0);
   const [adapterWorktreeId, setAdapterWorktreeId] = useState<
     string | undefined
   >(undefined);
@@ -53,22 +40,37 @@ export function usePromptEditorPageController() {
   htmlRef.current = html;
   const dirtyRef = useRef(false);
 
-  const launchWorktreeId = launch?.worktreeId?.trim() || undefined;
-  const worktreeId = launchWorktreeId || adapterWorktreeId;
+  const worktreeId =
+    launch?.worktreeId?.trim() || adapterWorktreeId || undefined;
   const title = launch?.title?.trim() || "Untitled task";
 
   const onResolvedWorktreeId = useCallback((id: string | undefined) => {
     setAdapterWorktreeId(id?.trim() || undefined);
   }, []);
 
+  const onCommit = useCallback((snap: { html: string }) => {
+    setHtml(snap.html);
+    setSessionError(null);
+    setHydrateWarning(null);
+    if (!dirtyRef.current) setLastSavedAt(Date.now());
+  }, []);
+
+  const onLoadError = useCallback((err: PromptEditorSessionError) => {
+    setSessionError(err);
+  }, []);
+
+  const onStatus = useCallback((next: PromptEditorLoadStatus) => {
+    setStatus(next);
+  }, []);
+
   const { repoLabel } = usePromptEditorDocumentLoad({
     adapter,
     launch,
+    loadNonce,
     dirtyRef,
-    setHtml,
-    setLoaded,
-    setLoadError,
-    setLastSavedAt,
+    onCommit,
+    onLoadError,
+    onStatus,
     worktreeId,
     onResolvedWorktreeId,
   });
@@ -78,30 +80,17 @@ export function usePromptEditorPageController() {
     return () => window.clearInterval(id);
   }, []);
 
-  const flushSave = useCallback(async () => {
-    if (!adapter) return;
-    setSaving(true);
-    try {
-      await adapter.save(htmlRef.current);
-      dirtyRef.current = false;
-      setDirty(false);
-      setSaveError(null);
-      setLastSavedAt(Date.now());
-    } catch (err) {
-      setSaveError(err instanceof Error ? err.message : String(err));
-      throw err;
-    } finally {
-      setSaving(false);
-    }
-  }, [adapter]);
-
-  useEffect(() => {
-    if (!adapter || !loaded || !dirtyRef.current) return;
-    const t = window.setTimeout(() => {
-      void flushSave().catch(() => undefined);
-    }, AUTOSAVE_MS);
-    return () => window.clearTimeout(t);
-  }, [html, adapter, loaded, flushSave]);
+  const { retrySave } = usePromptEditorAutosave({
+    adapter,
+    status,
+    html,
+    htmlRef,
+    dirtyRef,
+    setDirty,
+    setSaving,
+    setSessionError,
+    setLastSavedAt,
+  });
 
   const onChange = useCallback((next: string) => {
     dirtyRef.current = true;
@@ -109,25 +98,23 @@ export function usePromptEditorPageController() {
     setHtml(next);
   }, []);
 
-  const { leaveEditor, leavePending } = usePromptEditorLeave({
+  const onHydrateFallback = useCallback(() => {
+    setHydrateWarning(HYDRATE_FALLBACK_WARNING);
+  }, []);
+
+  const { leaveEditor, leaveWithoutSave, leavePending } = usePromptEditorLeave({
     adapter,
     launch,
     htmlRef,
     dirtyRef,
-    setSaveError,
+    setSessionError,
     setLastSavedAt,
     setSaving,
   });
 
-  const saveStatus: PromptEditorSaveStatusKind = saveError
-    ? "error"
-    : saving || leavePending
-      ? "saving"
-      : dirty
-        ? "unsaved"
-        : "saved";
-
-  const words = wordCountFromHtml(html);
+  const saveError = pickSaveError(sessionError);
+  const loadError = pickLoadError(status, sessionError);
+  const ready = status === "ready";
   void tick;
 
   return {
@@ -136,21 +123,33 @@ export function usePromptEditorPageController() {
     sourceKind,
     launch,
     html,
-    loaded,
+    status,
+    ready,
     loadError,
     saveError,
+    hydrateWarning,
+    dismissHydrateWarning: () => setHydrateWarning(null),
     saving,
     leavePending,
-    saveStatus,
+    saveStatus: deriveSaveStatus({
+      saveError,
+      saving,
+      leavePending,
+      dirty,
+    }),
     title,
-    editedLabel: formatRelativeEdited(lastSavedAt),
-    wordCountLabel: words === 0 ? "0 words" : `~${words} words`,
-    repoLabel,
+    editedLabel: deriveEditedLabel(status, ready, lastSavedAt),
+    wordCountLabel: deriveWordCountLabel(ready, html),
+    repoLabel: ready ? repoLabel : "—",
     worktreeId,
     onChange,
+    onHydrateFallback,
     leaveEditor,
-    retrySave: () => {
-      void flushSave().catch(() => undefined);
+    leaveWithoutSave,
+    retryLoad: () => {
+      setSessionError(null);
+      setLoadNonce((n) => n + 1);
     },
+    retrySave,
   };
 }
