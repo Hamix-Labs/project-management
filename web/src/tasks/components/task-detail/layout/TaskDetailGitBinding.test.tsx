@@ -4,10 +4,13 @@ import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it } from "vitest";
 import { gitQueryKeys } from "@/lib/gitQueryKeys";
+import { ensureMswListening } from "@/test/mswLifecycle";
 import { server } from "@/test/server";
 import { globalGitApiHandlers } from "@/test/handlers/gitMsw";
 import { FACTORY_GIT_WORKTREE_ID } from "@/test/factories/git";
 import { TaskDetailGitBinding } from "./TaskDetailGitBinding";
+
+ensureMswListening();
 
 const SAMPLE_TASK_ID = "0acaf529-9adf-4333-8992-29aa308eadba";
 

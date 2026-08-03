@@ -71,10 +71,13 @@ export default defineWorkspace([
   {
     ...sharedVite,
     test: {
-      ...sharedTest,
       name: "components",
       include: ["src/**/*.test.tsx"],
       exclude: fullAppIncludes,
+      environment: "jsdom",
+      setupFiles: ["./src/test/setup.components.ts"],
+      restoreMocks: true,
+      unstubGlobals: false,
     },
   },
   {

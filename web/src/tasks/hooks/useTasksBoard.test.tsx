@@ -4,8 +4,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { http, HttpResponse } from "msw";
 import { useTasksBoard } from "./useTasksBoard";
+import { ensureMswListening } from "@/test/mswLifecycle";
 import { server } from "@/test/server";
 import { makeTask } from "@/test/taskDefaults";
+
+ensureMswListening();
 
 function wrapper(client: QueryClient) {
   return function W({ children }: { children: ReactNode }) {
