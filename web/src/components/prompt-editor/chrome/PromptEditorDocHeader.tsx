@@ -1,6 +1,5 @@
 export type PromptEditorDocHeaderProps = {
   title: string;
-  badgeLabel?: string;
   editedLabel: string;
   wordCountLabel: string;
   repoLabel: string;
@@ -8,16 +7,12 @@ export type PromptEditorDocHeaderProps = {
 
 export function PromptEditorDocHeader({
   title,
-  badgeLabel = "Implementation brief",
   editedLabel,
   wordCountLabel,
   repoLabel,
 }: PromptEditorDocHeaderProps) {
   return (
     <div className="prompt-editor-doc-header">
-      <p className="prompt-editor-doc-header__eyebrow">
-        <span className="prompt-editor-doc-header__badge">{badgeLabel}</span>
-      </p>
       <h1 className="prompt-editor-doc-header__title">{title}</h1>
       <div className="prompt-editor-doc-header__meta">
         <span className="prompt-editor-doc-header__meta-item">

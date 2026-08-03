@@ -7,7 +7,6 @@ import {
 } from "./promptDocumentAdapter";
 import { readPromptEditorLaunch } from "./promptEditorSession";
 import {
-  crumbKindLabel,
   formatRelativeEdited,
   wordCountFromHtml,
 } from "./promptEditorPageMeta";
@@ -144,7 +143,6 @@ export function usePromptEditorPageController() {
     leavePending,
     saveStatus,
     title,
-    crumbKindLabel: crumbKindLabel(sourceKind),
     editedLabel: formatRelativeEdited(lastSavedAt),
     wordCountLabel: words === 0 ? "0 words" : `~${words} words`,
     repoLabel,

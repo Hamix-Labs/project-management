@@ -26,7 +26,6 @@ export function PromptEditorPage() {
   return (
     <div className="prompt-editor-page">
       <PromptEditorTopbar
-        crumbKindLabel={c.crumbKindLabel}
         title={c.title}
         saveStatus={c.saveStatus}
         leavePending={c.leavePending}
