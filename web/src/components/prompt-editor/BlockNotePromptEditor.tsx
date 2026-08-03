@@ -13,6 +13,7 @@ import { computeRepoHintFlags } from "@/components/rich-prompt/richPromptInsertH
 import { useRepoWorkspaceProbe } from "@/components/rich-prompt/useRepoWorkspaceProbe";
 import { looksLikeStoredHtml, plainTextToInitialHtml } from "@/lib/promptFormat";
 import { promptEditorSchema } from "./blockNoteSchema";
+import { useEnhanceCodeBlockToolbars } from "./code/useEnhanceCodeBlockToolbars";
 import { PromptEditorRepoContext } from "./context/PromptEditorRepoContext";
 import {
   PromptEditorMentionMenu,
@@ -168,10 +169,14 @@ export function BlockNotePromptEditor({
     [editor, emitHtml],
   );
 
+  const editorHostRef = useRef<HTMLDivElement>(null);
+  useEnhanceCodeBlockToolbars(editorHostRef, disabled);
+
   return (
     <PromptEditorRepoContext.Provider value={{ worktreeId }}>
       <div className="rich-prompt-wrap blocknote-prompt-wrap" id={id}>
         <div
+          ref={editorHostRef}
           className={
             disabled
               ? "blocknote-prompt-editor blocknote-prompt-editor--disabled"

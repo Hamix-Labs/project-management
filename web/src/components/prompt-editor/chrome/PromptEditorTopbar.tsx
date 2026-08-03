@@ -2,7 +2,6 @@ import { PromptEditorSaveStatus, type PromptEditorSaveStatusKind } from "./Promp
 
 export type PromptEditorTopbarProps = {
   backLabel?: string;
-  crumbKindLabel: string;
   title: string;
   saveStatus: PromptEditorSaveStatusKind;
   leavePending?: boolean;
@@ -12,7 +11,6 @@ export type PromptEditorTopbarProps = {
 
 export function PromptEditorTopbar({
   backLabel = "Back to task",
-  crumbKindLabel,
   title,
   saveStatus,
   leavePending = false,
@@ -45,7 +43,7 @@ export function PromptEditorTopbar({
           /
         </span>
         <div className="prompt-editor-topbar__crumb">
-          {crumbKindLabel} · <b>{title}</b>
+          <b>{title}</b>
         </div>
       </div>
       <div className="prompt-editor-topbar__right">

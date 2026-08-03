@@ -1,20 +1,4 @@
-import type { PromptSourceKind } from "./types";
 import { previewTextFromPrompt } from "@/lib/promptFormat";
-
-export function crumbKindLabel(kind: PromptSourceKind | string): string {
-  switch (kind) {
-    case "draft":
-      return "Draft";
-    case "task":
-      return "Task";
-    case "template":
-      return "Template";
-    case "ephemeral":
-      return "New task";
-    default:
-      return "Prompt";
-  }
-}
 
 export function formatRelativeEdited(at: number | null): string {
   if (at == null) return "Not edited yet";

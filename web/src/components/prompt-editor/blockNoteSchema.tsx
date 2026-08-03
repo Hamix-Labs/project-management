@@ -1,10 +1,12 @@
 import {
   BlockNoteSchema,
+  createCodeBlockSpec,
   defaultBlockSpecs,
   defaultInlineContentSpecs,
 } from "@blocknote/core";
 import { createReactInlineContentSpec } from "@blocknote/react";
 import { createRepoFileEmbed } from "./blocks/repoFileEmbedSpec";
+import { promptCodeBlockOptions } from "./code/promptCodeBlockOptions";
 import { repoFileMentionLabel } from "./repoFileMentionLabel";
 
 function parseOptionalInt(raw: string | null): number | undefined {
@@ -74,6 +76,7 @@ export const RepoFileMentionInline = createReactInlineContentSpec(
 export const promptEditorSchema = BlockNoteSchema.create({
   blockSpecs: {
     ...defaultBlockSpecs,
+    codeBlock: createCodeBlockSpec(promptCodeBlockOptions),
     repoFileEmbed: createRepoFileEmbed(),
   },
   inlineContentSpecs: {
