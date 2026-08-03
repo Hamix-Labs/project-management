@@ -81,6 +81,28 @@ function Fail-Step {
     exit $Code
 }
 
+$script:CheckStepBudgetSecs = 60
+
+function Enforce-StepBudget {
+    param(
+        [string]$Label,
+        [TimeSpan]$Elapsed
+    )
+    if ($Label -eq "npm ci") { return }
+    $secs = [int][Math]::Round($Elapsed.TotalSeconds)
+    if ($secs -le $script:CheckStepBudgetSecs) { return }
+
+    $shown = Format-Duration $Elapsed
+    if ($env:GITHUB_ACTIONS) {
+        Write-Host "::error title=check step budget::$Label exceeded step budget ($shown > $($script:CheckStepBudgetSecs)s). Split the suite, slim the harness, or speed up the tests."
+    }
+    Write-Host ""
+    Write-Host "check FAILED: $Label exceeded step budget ($shown > $($script:CheckStepBudgetSecs)s)" -ForegroundColor Red
+    Write-Host "  This step must finish within $($script:CheckStepBudgetSecs)s (seconds-scale suites)."
+    Write-Host "  Split the suite, slim the harness, or speed up the tests — do not raise the budget casually."
+    exit 1
+}
+
 function Complete-Ok {
     param([string]$Detail = "")
     $elapsed = (Get-Date) - $CheckStart
@@ -100,6 +122,7 @@ function Write-OkLine {
     $line = (" " * $pad) + "ok $(Format-Duration $Elapsed)"
     if ($Stats) { $line += "  ($Stats)" }
     Write-Host $line -ForegroundColor Green
+    Enforce-StepBudget $Label $Elapsed
 }
 
 function Invoke-CapturedStep {

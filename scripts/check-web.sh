@@ -140,6 +140,7 @@ run_web_test() {
     add_section_time "$elapsed"
     if [[ $code -eq 0 ]]; then
       PASSED=$((PASSED + 1))
+      enforce_step_budget "$label" "$elapsed"
       return 0
     fi
     fail_step "$label" "$code"
@@ -158,6 +159,7 @@ run_web_test() {
     print_ok_line "$label" "$elapsed" "${STEP_STATS:-}"
     STEP_STATS=""
     rm -f "$log"
+    enforce_step_budget "$label" "$elapsed"
     return 0
   fi
 
@@ -186,6 +188,7 @@ run_web_lint() {
     add_section_time "$elapsed"
     if [[ $code -eq 0 ]]; then
       PASSED=$((PASSED + 1))
+      enforce_step_budget "$label" "$elapsed"
       return 0
     fi
     fail_step "$label" "$code"
@@ -204,6 +207,7 @@ run_web_lint() {
     print_ok_line "$label" "$elapsed" "${STEP_STATS:-}"
     STEP_STATS=""
     rm -f "$log"
+    enforce_step_budget "$label" "$elapsed"
     return 0
   fi
 
