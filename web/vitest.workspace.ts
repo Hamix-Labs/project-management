@@ -78,6 +78,9 @@ export default defineWorkspace([
       setupFiles: ["./src/test/setup.components.ts"],
       restoreMocks: true,
       unstubGlobals: false,
+      // Interactive CustomSelect flows need headroom under parallel load.
+      testTimeout: 15_000,
+      maxWorkers: 4,
     },
   },
   {
