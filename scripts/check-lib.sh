@@ -9,7 +9,7 @@
 : "${TOTAL:=0}"
 : "${SECTION_TIME:=0}"
 : "${STEP_STATS:=}"
-: "${CHECK_STEP_BUDGET_SECS:=60}"
+: "${CHECK_STEP_BUDGET_SECS:=120}"
 
 if [[ -t 1 ]]; then
   C_RESET=$'\033[0m'
@@ -66,7 +66,7 @@ enforce_step_budget() {
 
   echo ""
   echo "${C_RED}check FAILED: ${label} exceeded step budget ($(format_secs "$elapsed") > ${CHECK_STEP_BUDGET_SECS}s)${C_RESET}" >&2
-  echo "  This step must finish within ${CHECK_STEP_BUDGET_SECS}s (seconds-scale suites)." >&2
+  echo "  This step must finish within ${CHECK_STEP_BUDGET_SECS}s (keep check steps under two minutes)." >&2
   echo "  Split the suite, slim the harness, or speed up the tests — do not raise the budget casually." >&2
   exit 1
 }

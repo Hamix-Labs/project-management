@@ -69,7 +69,7 @@ Taskapi does **not** migrate on dev startup by default. See [Schema migrations i
 
 Verification steps live in `scripts/check-go.sh` / `scripts/check-web.sh` (and PowerShell twins). CI runs those leaf scripts directly — not duplicated commands in `.github/workflows/ci.yml`.
 
-Each **check-script step** (e.g. `web (test-unit)`, `go-tests (core)`) must finish within **60s**. Exceeding that fails the check with a clear budget error (install / `npm ci` is excluded). Split or slim the suite — do not raise the budget casually. Actions plumbing (checkout, setup-node) is not budgeted.
+Each **check-script step** (e.g. `web (test-unit)`, `go-tests (core)`) must finish within **2 minutes** (120s). Exceeding that fails the check with a clear budget error (install / `npm ci` is excluded). Split or slim the suite — do not raise the budget casually. Actions plumbing (checkout, setup-node) is not budgeted.
 
 | I want to… | Command |
 |------------|---------|

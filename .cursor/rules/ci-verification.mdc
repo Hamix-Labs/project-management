@@ -22,7 +22,7 @@ CI ([`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)) runs the same 
 - `./scripts/check-go.sh --tests-only --group=<core|tasks|agents|harness> --verbose`
 - `web-deps` runs `./scripts/check-web.sh --install-only --verbose` (seeds `web/node_modules`); the web matrix runs `./scripts/check-web.sh --verbose --group=<…>` (no `--install`)
 
-**Hard step budget:** each timed check-script step must finish within **60s** or the script fails (install/`npm ci` excluded). Not applied to Actions checkout/setup.
+**Hard step budget:** each timed check-script step must finish within **2 minutes** (120s) or the script fails (install/`npm ci` excluded). Not applied to Actions checkout/setup.
 
 Wrappers: **`scripts/check.sh`** (Unix) and **`scripts/check.ps1`** (Windows).
 

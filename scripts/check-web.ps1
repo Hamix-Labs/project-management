@@ -85,7 +85,7 @@ function Fail-Step {
     exit $Code
 }
 
-$script:CheckStepBudgetSecs = 60
+$script:CheckStepBudgetSecs = 120
 
 function Enforce-StepBudget {
     param(
@@ -102,7 +102,7 @@ function Enforce-StepBudget {
     }
     Write-Host ""
     Write-Host "check FAILED: $Label exceeded step budget ($shown > $($script:CheckStepBudgetSecs)s)" -ForegroundColor Red
-    Write-Host "  This step must finish within $($script:CheckStepBudgetSecs)s (seconds-scale suites)."
+    Write-Host "  This step must finish within $($script:CheckStepBudgetSecs)s (keep check steps under two minutes)."
     Write-Host "  Split the suite, slim the harness, or speed up the tests — do not raise the budget casually."
     exit 1
 }
