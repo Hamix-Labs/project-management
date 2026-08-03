@@ -7,23 +7,31 @@
 # Flags:
 #   -Verbose           Stream full tool output (CI uses this)
 #   -Install           Run npm ci in web/ before other steps
+#   -InstallOnly       Run npm ci in web/ and exit (CI web-deps job)
 #   -Group <name>      Restrict to lint|build|test-unit|test-components|test-app|test-task-pages|test-task-create|test-settings|test-projects|test-worktrees (CI matrix)
 #   -Help              Show options
 #
 # CI:
-#   ./scripts/check-web.sh --install --verbose --group=lint
+#   ./scripts/check-web.sh --install-only --verbose
+#   ./scripts/check-web.sh --verbose --group=lint
 
 param(
     [switch]$Help,
     [switch]$Verbose,
     [switch]$Install,
+    [switch]$InstallOnly,
     [ValidateSet("lint", "build", "test-unit", "test-components", "test-app", "test-task-pages", "test-task-create", "test-settings", "test-projects", "test-worktrees", "")]
     [string]$Group = ""
 )
 
 if ($Help -or $args -contains '--help' -or $args -contains '-h') {
-    Get-Content $PSCommandPath | Select-Object -Skip 1 -First 16 | ForEach-Object { $_ -replace '^# ?', '' }
+    Get-Content $PSCommandPath | Select-Object -Skip 1 -First 18 | ForEach-Object { $_ -replace '^# ?', '' }
     exit 0
+}
+
+if ($InstallOnly -and ($Install -or $Group)) {
+    Write-Error "-InstallOnly cannot be combined with -Install or -Group"
+    exit 2
 }
 
 $ErrorActionPreference = "Stop"
@@ -42,6 +50,7 @@ $script:Passed = 0
 
 function Get-TotalSteps {
     param([string]$Scope)
+    if ($InstallOnly) { return 1 }
     $base = switch ($Scope) {
         "lint" { 3 }
         "build" { 1 }
@@ -185,6 +194,11 @@ function Invoke-MaybeNpmCi {
 
 Write-Host "Hamix check (web)"
 Write-Host ""
+
+if ($InstallOnly) {
+    Invoke-CapturedStep "npm ci" { Push-Location $webDir; try { npm ci } finally { Pop-Location } }
+    Complete-Ok
+}
 
 switch ($Group) {
     "lint" {
