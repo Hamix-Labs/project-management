@@ -20,7 +20,7 @@ CI ([`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)) runs the same 
 
 - `./scripts/check-go.sh --lint-only --verbose`
 - `./scripts/check-go.sh --tests-only --group=<core|tasks|agents|harness> --verbose`
-- `./scripts/check-web.sh --install --verbose`
+- `web-deps` seeds `web/node_modules` once; the web matrix runs `./scripts/check-web.sh --verbose --group=<…>` (no `--install`)
 
 Wrappers: **`scripts/check.sh`** (Unix) and **`scripts/check.ps1`** (Windows).
 
