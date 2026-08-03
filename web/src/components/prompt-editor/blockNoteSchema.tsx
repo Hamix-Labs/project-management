@@ -1,8 +1,10 @@
 import {
   BlockNoteSchema,
+  createCodeBlockSpec,
   defaultBlockSpecs,
   defaultInlineContentSpecs,
 } from "@blocknote/core";
+import { codeBlockOptions } from "@blocknote/code-block";
 import { createReactInlineContentSpec } from "@blocknote/react";
 import { createRepoFileEmbed } from "./blocks/repoFileEmbedSpec";
 import { repoFileMentionLabel } from "./repoFileMentionLabel";
@@ -74,6 +76,7 @@ export const RepoFileMentionInline = createReactInlineContentSpec(
 export const promptEditorSchema = BlockNoteSchema.create({
   blockSpecs: {
     ...defaultBlockSpecs,
+    codeBlock: createCodeBlockSpec(codeBlockOptions),
     repoFileEmbed: createRepoFileEmbed(),
   },
   inlineContentSpecs: {

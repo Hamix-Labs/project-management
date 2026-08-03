@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@blocknote/ariakit": "^0.52.1",
+    "@blocknote/code-block": "^0.52.1",
     "@blocknote/core": "^0.52.1",
     "@blocknote/react": "^0.52.1",
     "@emnapi/core": "^1.10.0",
