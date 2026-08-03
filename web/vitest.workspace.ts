@@ -58,9 +58,14 @@ export default defineWorkspace([
   {
     ...sharedVite,
     test: {
-      ...sharedTest,
       name: "unit",
       include: ["src/**/*.test.ts"],
+      // node by default — avoid jsdom+MSW per-file tax. DOM/hook files set
+      // // @vitest-environment jsdom at the top of the file.
+      environment: "node",
+      setupFiles: ["./src/test/setup.unit.ts"],
+      restoreMocks: true,
+      unstubGlobals: false,
     },
   },
   {
