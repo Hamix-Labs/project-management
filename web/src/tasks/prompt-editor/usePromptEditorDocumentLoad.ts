@@ -3,65 +3,94 @@ import { getGlobalGitWorktree } from "@/api/gitGlobal";
 import type { PromptDocumentAdapter } from "./types";
 import type { PromptEditorLaunchContext } from "./types";
 import { repoBasename } from "./promptEditorPageMeta";
+import {
+  loadSessionError,
+  type PromptEditorSessionError,
+} from "./promptEditorSessionError";
+
+export type PromptEditorLoadStatus = "loading" | "ready" | "error";
+
+type CommitSnapshot = {
+  html: string;
+  worktreeId?: string;
+};
 
 type Args = {
   adapter: PromptDocumentAdapter | null;
   launch: PromptEditorLaunchContext | null;
+  /** Bump to re-run load (Retry). */
+  loadNonce: number;
   dirtyRef: React.MutableRefObject<boolean>;
-  setHtml: (html: string) => void;
-  setLoaded: (v: boolean) => void;
-  setLoadError: (err: string | null) => void;
-  setLastSavedAt: (at: number) => void;
-  /** Prefer launch worktree; fall back to adapter snapshot. */
+  onCommit: (snap: CommitSnapshot) => void;
+  onLoadError: (err: PromptEditorSessionError) => void;
+  onStatus: (status: PromptEditorLoadStatus) => void;
   worktreeId?: string;
   onResolvedWorktreeId?: (id: string | undefined) => void;
 };
 
+/**
+ * Loads the prompt snapshot with a cancelled-flag generation so in-flight
+ * results never leave the session stuck in loading after abort/remount.
+ */
 export function usePromptEditorDocumentLoad({
   adapter,
   launch,
+  loadNonce,
   dirtyRef,
-  setHtml,
-  setLoaded,
-  setLoadError,
-  setLastSavedAt,
+  onCommit,
+  onLoadError,
+  onStatus,
   worktreeId,
   onResolvedWorktreeId,
 }: Args) {
   const [repoLabel, setRepoLabel] = useState("No repo");
 
   useEffect(() => {
-    if (!adapter) return;
-    const ac = new AbortController();
+    if (!adapter) {
+      onStatus("error");
+      onLoadError(
+        loadSessionError(new Error("Unknown or missing prompt document.")),
+      );
+      return;
+    }
+
+    let cancelled = false;
+    onStatus("loading");
+
     void (async () => {
       try {
-        const snap = await adapter.load(ac.signal);
-        if (ac.signal.aborted) return;
-        if (launch?.seedHtml !== undefined && launch.seedHtml !== "") {
-          setHtml(launch.seedHtml);
-        } else {
-          setHtml(snap.html);
-        }
+        const snap = await adapter.load();
+        if (cancelled) return;
+        const html =
+          launch?.seedHtml !== undefined && launch.seedHtml !== ""
+            ? launch.seedHtml
+            : snap.html;
         const fromSnap = snap.worktreeId?.trim() || undefined;
         onResolvedWorktreeId?.(fromSnap);
-        setLoaded(true);
-        if (!dirtyRef.current) setLastSavedAt(Date.now());
+        onCommit({ html, worktreeId: fromSnap });
+        if (!dirtyRef.current) {
+          // parent sets lastSavedAt on commit
+        }
+        onStatus("ready");
       } catch (err) {
-        if (ac.signal.aborted) return;
-        setLoadError(err instanceof Error ? err.message : String(err));
-        setLoaded(true);
+        if (cancelled) return;
+        onLoadError(loadSessionError(err));
+        onStatus("error");
       }
     })();
-    return () => ac.abort();
+
+    return () => {
+      cancelled = true;
+    };
   }, [
     adapter,
     dirtyRef,
     launch?.seedHtml,
+    loadNonce,
+    onCommit,
+    onLoadError,
     onResolvedWorktreeId,
-    setHtml,
-    setLastSavedAt,
-    setLoadError,
-    setLoaded,
+    onStatus,
   ]);
 
   useEffect(() => {
@@ -70,17 +99,19 @@ export function usePromptEditorDocumentLoad({
       setRepoLabel("No repo");
       return;
     }
-    const ac = new AbortController();
-    void getGlobalGitWorktree(wt, { signal: ac.signal })
+    let cancelled = false;
+    void getGlobalGitWorktree(wt)
       .then((detail) => {
-        if (ac.signal.aborted) return;
+        if (cancelled) return;
         const path = detail.repository_path || detail.repository_host_path || "";
         setRepoLabel(path ? repoBasename(path) : "No repo");
       })
       .catch(() => {
-        if (!ac.signal.aborted) setRepoLabel("No repo");
+        if (!cancelled) setRepoLabel("No repo");
       });
-    return () => ac.abort();
+    return () => {
+      cancelled = true;
+    };
   }, [worktreeId]);
 
   return { repoLabel };

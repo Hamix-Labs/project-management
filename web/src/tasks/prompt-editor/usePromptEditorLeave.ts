@@ -6,13 +6,17 @@ import {
   clearPromptEditorLaunch,
   writePromptEditorReturn,
 } from "./promptEditorSession";
+import {
+  leaveSaveSessionError,
+  type PromptEditorSessionError,
+} from "./promptEditorSessionError";
 
 type Args = {
   adapter: PromptDocumentAdapter | null;
   launch: PromptEditorLaunchContext | null;
   htmlRef: React.MutableRefObject<string>;
   dirtyRef: React.MutableRefObject<boolean>;
-  setSaveError: (err: string | null) => void;
+  setSessionError: (err: PromptEditorSessionError | null) => void;
   setLastSavedAt: (at: number) => void;
   setSaving: (v: boolean) => void;
 };
@@ -23,7 +27,7 @@ export function usePromptEditorLeave({
   launch,
   htmlRef,
   dirtyRef,
-  setSaveError,
+  setSessionError,
   setLastSavedAt,
   setSaving,
 }: Args) {
@@ -39,7 +43,7 @@ export function usePromptEditorLeave({
     try {
       await adapter.save(htmlRef.current);
       dirtyRef.current = false;
-      setSaveError(null);
+      setSessionError(null);
       setLastSavedAt(Date.now());
       const returnPath = launch?.returnPath ?? "/";
       writePromptEditorReturn({
@@ -52,7 +56,7 @@ export function usePromptEditorLeave({
       clearPromptEditorLaunch();
       navigate(returnPath);
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : String(err));
+      setSessionError(leaveSaveSessionError(err));
       leavingRef.current = false;
     } finally {
       setSaving(false);
@@ -65,9 +69,16 @@ export function usePromptEditorLeave({
     launch,
     navigate,
     setLastSavedAt,
-    setSaveError,
+    setSessionError,
     setSaving,
   ]);
+
+  /** Leave without saving — used from the load-error panel. */
+  const leaveWithoutSave = useCallback(() => {
+    const returnPath = launch?.returnPath ?? "/";
+    clearPromptEditorLaunch();
+    navigate(returnPath);
+  }, [launch?.returnPath, navigate]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -97,5 +108,5 @@ export function usePromptEditorLeave({
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, [dirtyRef]);
 
-  return { leaveEditor, leavePending };
+  return { leaveEditor, leaveWithoutSave, leavePending };
 }

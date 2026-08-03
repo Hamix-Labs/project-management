@@ -6,11 +6,14 @@ export type PromptEditorSaveStatusKind =
 
 export type PromptEditorSaveStatusProps = {
   kind: PromptEditorSaveStatusKind;
+  /** Underlying save/leave failure detail for accessibility and UI. */
+  errorDetail?: string;
   onRetry?: () => void;
 };
 
 export function PromptEditorSaveStatus({
   kind,
+  errorDetail,
   onRetry,
 }: PromptEditorSaveStatusProps) {
   if (kind === "saving") {
@@ -25,10 +28,14 @@ export function PromptEditorSaveStatus({
     );
   }
   if (kind === "error") {
+    const detailId = errorDetail
+      ? "prompt-editor-save-status-detail"
+      : undefined;
     return (
       <span
         className="prompt-editor-save-status prompt-editor-save-status--error"
         aria-live="assertive"
+        aria-describedby={detailId}
       >
         <span
           className="prompt-editor-save-status__dot prompt-editor-save-status__dot--error"
@@ -43,6 +50,11 @@ export function PromptEditorSaveStatus({
           >
             Retry
           </button>
+        ) : null}
+        {errorDetail ? (
+          <span id={detailId} className="visually-hidden">
+            {errorDetail}
+          </span>
         ) : null}
       </span>
     );

@@ -16,6 +16,11 @@ type MountRecord = {
  * BlockNote's code block uses content:"plain", which createReactBlockSpec cannot
  * host. We keep createCodeBlockSpec (highlighter + shortcuts) and replace the
  * native <select> chrome with a Notion-like searchable toolbar.
+ *
+ * This is a finite DOM bridge: mark each block once, ignore mutations under our
+ * toolbar roots, and unmount only when the block leaves the document.
+ * Longer-term exit: a first-class React code block when BlockNote can host
+ * plain-content blocks (or an upstream extension API).
  */
 export function useEnhanceCodeBlockToolbars(
   containerRef: RefObject<HTMLElement | null>,
@@ -31,6 +36,8 @@ export function useEnhanceCodeBlockToolbars(
     if (!container) return;
 
     const mounts = mountsRef.current;
+    let sweeping = false;
+    let debounceTimer: number | null = null;
 
     const renderToolbar = (wrap: Element, record: MountRecord) => {
       const { root, select } = record;
@@ -91,29 +98,66 @@ export function useEnhanceCodeBlockToolbars(
     };
 
     const sweep = () => {
-      const live = new Set<Element>();
-      container
-        .querySelectorAll('[data-content-type="codeBlock"]')
-        .forEach((block) => {
-          enhanceBlock(block);
-          const wrap = block.querySelector(":scope > div");
-          if (wrap) live.add(wrap);
-        });
+      if (sweeping) return;
+      sweeping = true;
+      try {
+        const live = new Set<Element>();
+        container
+          .querySelectorAll('[data-content-type="codeBlock"]')
+          .forEach((block) => {
+            enhanceBlock(block);
+            const wrap = block.querySelector(":scope > div");
+            if (wrap) live.add(wrap);
+          });
 
-      for (const [wrap, record] of mounts) {
-        if (live.has(wrap)) continue;
-        record.select.removeEventListener("change", record.onSelectChange);
-        record.root.unmount();
-        mounts.delete(wrap);
+        for (const [wrap, record] of mounts) {
+          if (live.has(wrap)) continue;
+          if (!wrap.isConnected) {
+            record.select.removeEventListener("change", record.onSelectChange);
+            record.root.unmount();
+            mounts.delete(wrap);
+          }
+        }
+      } finally {
+        sweeping = false;
       }
     };
 
+    const scheduleSweep = () => {
+      if (debounceTimer != null) window.clearTimeout(debounceTimer);
+      debounceTimer = window.setTimeout(() => {
+        debounceTimer = null;
+        sweep();
+      }, 16);
+    };
+
     sweep();
-    const mo = new MutationObserver(() => sweep());
+    const mo = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        const t = m.target;
+        if (t instanceof Element && t.closest(".prompt-code-toolbar-root")) {
+          continue;
+        }
+        if (
+          m.type === "childList" &&
+          [...m.addedNodes, ...m.removedNodes].every(
+            (n) =>
+              n instanceof Element &&
+              (n.classList?.contains("prompt-code-toolbar-root") ||
+                n.closest?.(".prompt-code-toolbar-root")),
+          )
+        ) {
+          continue;
+        }
+        scheduleSweep();
+        return;
+      }
+    });
     mo.observe(container, { childList: true, subtree: true });
 
     return () => {
       mo.disconnect();
+      if (debounceTimer != null) window.clearTimeout(debounceTimer);
       for (const [, record] of mounts) {
         record.select.removeEventListener("change", record.onSelectChange);
         record.root.unmount();
