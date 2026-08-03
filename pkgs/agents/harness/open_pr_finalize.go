@@ -55,7 +55,34 @@ func (h *Harness) runCycleLoopFinalizeOpenPR(
 		}
 		return
 	}
+	h.stampStackLayerPRs(parentCtx, task, rep)
 	h.emitPROpened(parentCtx, task.ID, cycle.ID, rep)
+}
+
+func (h *Harness) stampStackLayerPRs(ctx context.Context, task *taskcoredomain.Task, rep sidecar.PullRequestReport) {
+	if h == nil || h.store == nil || task == nil || task.WorktreeID == nil {
+		return
+	}
+	if len(rep.Layers) == 0 {
+		return
+	}
+	urlByBranch := make(map[string]string, len(rep.Layers))
+	for _, layer := range rep.Layers {
+		head := strings.TrimSpace(layer.Head)
+		url := strings.TrimSpace(layer.URL)
+		if head == "" || url == "" {
+			continue
+		}
+		urlByBranch[head] = url
+	}
+	if len(urlByBranch) == 0 {
+		return
+	}
+	if err := h.store.ApplyStackPullRequestURLs(ctx, strings.TrimSpace(*task.WorktreeID), urlByBranch); err != nil {
+		slog.Warn("agent harness stack PR URL stamp failed", "cmd", calltrace.LogCmd,
+			"operation", "agent.harness.Harness.stampStackLayerPRs",
+			"task_id", task.ID, "err", err)
+	}
 }
 
 type prOpenedPayload struct {

@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/sidecar"
+	"github.com/AlexsanderHamir/Hamix/pkgs/gitstack"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -17,6 +18,9 @@ const (
 	maxPRTitleBytes       = 256
 	maxPRBodyBytes        = 64 * 1024
 )
+
+// stackCLI is the gh stack runner (tests may replace).
+var stackCLI gitstack.CLI = gitstack.New()
 
 type createPullRequestTool struct{}
 
@@ -28,13 +32,13 @@ func (createPullRequestTool) Group() string { return GroupGit }
 
 //funclogmeasure:skip category=hot-path reason="MCP tool metadata accessor."
 func (createPullRequestTool) Description() string {
-	return "Push the current branch and open a GitHub pull request for this task. Required to finish an open-pr run. Do not use Shell git push or gh pr create."
+	return "Publish the worktree GitHub stack (gh stack submit) or open a single PR. Required to finish an open-pr run. Do not use Shell git push or gh pr create."
 }
 
 type createPullRequestInput struct {
-	Title string `json:"title" jsonschema:"pull request title"`
-	Body  string `json:"body" jsonschema:"pull request body in markdown"`
-	Base  string `json:"base,omitempty" jsonschema:"optional base branch (default: repo default)"`
+	Title string `json:"title" jsonschema:"pull request title for the current (root) layer"`
+	Body  string `json:"body" jsonschema:"pull request body in markdown for the current layer"`
+	Base  string `json:"base,omitempty" jsonschema:"optional base branch override for fallback single-PR path"`
 }
 
 type createPullRequestOutput struct {
@@ -94,6 +98,50 @@ func runCreatePullRequest(ctx context.Context, sess *Session, in createPullReque
 		return createPullRequestOutput{}, fmt.Errorf("detached HEAD; checkout a branch before opening a PR")
 	}
 
+	// Prefer stacked publish (ADR-0097). Fall back to single gh pr create when
+	// local stack tracking is unavailable.
+	_ = stackCLI.Rebase(ctx, workDir)
+	if _, submitErr := stackCLI.Submit(ctx, workDir); submitErr == nil {
+		layers, layerErr := collectStackPRLayers(ctx, workDir)
+		if layerErr != nil {
+			return createPullRequestOutput{}, layerErr
+		}
+		url, number, prBase, prHead := pickLayer(layers, head)
+		if url == "" {
+			// Submit succeeded but view lag — resolve current branch PR.
+			url, number, prBase, prHead, err = viewPR(ctx, workDir, head)
+			if err != nil || url == "" {
+				return createPullRequestOutput{}, fmt.Errorf("stack submit succeeded but no PR URL for %q", head)
+			}
+		}
+		if prBase != "" {
+			base = prBase
+		}
+		if prHead != "" {
+			head = prHead
+		}
+		// Best-effort title/body edit on the current layer PR.
+		_, _ = ghRun(ctx, workDir, "pr", "edit", head, "--title", title, "--body", body)
+		rep := sidecar.PullRequestReport{
+			SchemaVersion: sidecar.CurrentSchemaVersion,
+			URL:           url,
+			Number:        number,
+			Title:         title,
+			Base:          base,
+			Head:          head,
+			Layers:        layers,
+		}
+		if err := sidecar.WritePullRequestReport(sess.ReportDir, sess.CycleID, rep); err != nil {
+			return createPullRequestOutput{}, err
+		}
+		if err := writeReceipt(sess, ToolCreatePullRequest, PhaseExecute, sidecar.PullRequestSubmitReceiptPath(sess.ReportDir, sess.CycleID)); err != nil {
+			return createPullRequestOutput{}, err
+		}
+		return createPullRequestOutput{
+			OK: true, URL: url, Number: number, Title: title, Base: base, Head: head,
+		}, nil
+	}
+
 	pushOut, err := gitRun(ctx, workDir, "push", "-u", "origin", "HEAD")
 	if err != nil {
 		detail := strings.TrimSpace(pushOut)
@@ -118,25 +166,16 @@ func runCreatePullRequest(ctx context.Context, sess *Session, in createPullReque
 
 	url := firstHTTPURLLine(prOut)
 	number := 0
-	viewOut, viewErr := ghRun(ctx, workDir, "pr", "view", "--json", "url,number,baseRefName,headRefName")
-	if viewErr == nil {
-		var view struct {
-			URL         string `json:"url"`
-			Number      int    `json:"number"`
-			BaseRefName string `json:"baseRefName"`
-			HeadRefName string `json:"headRefName"`
+	if u, n, b, h, viewErr := viewPR(ctx, workDir, head); viewErr == nil {
+		if u != "" {
+			url = u
 		}
-		if json.Unmarshal([]byte(viewOut), &view) == nil {
-			if u := strings.TrimSpace(view.URL); u != "" {
-				url = u
-			}
-			number = view.Number
-			if base == "" {
-				base = view.BaseRefName
-			}
-			if h := strings.TrimSpace(view.HeadRefName); h != "" {
-				head = h
-			}
+		number = n
+		if base == "" {
+			base = b
+		}
+		if h != "" {
+			head = h
 		}
 	}
 	if url == "" {
@@ -150,6 +189,9 @@ func runCreatePullRequest(ctx context.Context, sess *Session, in createPullReque
 		Title:         title,
 		Base:          base,
 		Head:          head,
+		Layers: []sidecar.PullRequestLayer{{
+			Head: head, URL: url, Number: number, Base: base, Title: title,
+		}},
 	}
 	if err := sidecar.WritePullRequestReport(sess.ReportDir, sess.CycleID, rep); err != nil {
 		return createPullRequestOutput{}, err
@@ -160,6 +202,72 @@ func runCreatePullRequest(ctx context.Context, sess *Session, in createPullReque
 	return createPullRequestOutput{
 		OK: true, URL: url, Number: number, Title: title, Base: base, Head: head,
 	}, nil
+}
+
+//funclogmeasure:skip category=hot-path reason="Thin gh helper; runCreatePullRequest is the chokepoint."
+func collectStackPRLayers(ctx context.Context, workDir string) ([]sidecar.PullRequestLayer, error) {
+	raw, err := stackCLI.ViewJSON(ctx, workDir)
+	if err != nil {
+		return nil, fmt.Errorf("gh stack view: %w", err)
+	}
+	var view struct {
+		Branches []struct {
+			Name string `json:"name"`
+		} `json:"branches"`
+	}
+	if err := json.Unmarshal([]byte(raw), &view); err != nil {
+		return nil, fmt.Errorf("parse stack view: %w", err)
+	}
+	var layers []sidecar.PullRequestLayer
+	for _, b := range view.Branches {
+		name := strings.TrimSpace(b.Name)
+		if name == "" {
+			continue
+		}
+		url, number, base, head, viewErr := viewPR(ctx, workDir, name)
+		if viewErr != nil || url == "" {
+			continue
+		}
+		if head == "" {
+			head = name
+		}
+		layers = append(layers, sidecar.PullRequestLayer{
+			Head: head, URL: url, Number: number, Base: base,
+		})
+	}
+	return layers, nil
+}
+
+//funclogmeasure:skip category=hot-path reason="Pure helper without I/O; operation trace is emitted by the calling chokepoint."
+func pickLayer(layers []sidecar.PullRequestLayer, head string) (url string, number int, base, prHead string) {
+	for _, l := range layers {
+		if l.Head == head {
+			return l.URL, l.Number, l.Base, l.Head
+		}
+	}
+	if len(layers) > 0 {
+		l := layers[0]
+		return l.URL, l.Number, l.Base, l.Head
+	}
+	return "", 0, "", ""
+}
+
+//funclogmeasure:skip category=hot-path reason="Thin gh helper; runCreatePullRequest is the chokepoint."
+func viewPR(ctx context.Context, workDir, head string) (url string, number int, base, prHead string, err error) {
+	viewOut, viewErr := ghRun(ctx, workDir, "pr", "view", head, "--json", "url,number,baseRefName,headRefName")
+	if viewErr != nil {
+		return "", 0, "", "", viewErr
+	}
+	var view struct {
+		URL         string `json:"url"`
+		Number      int    `json:"number"`
+		BaseRefName string `json:"baseRefName"`
+		HeadRefName string `json:"headRefName"`
+	}
+	if err := json.Unmarshal([]byte(viewOut), &view); err != nil {
+		return "", 0, "", "", err
+	}
+	return strings.TrimSpace(view.URL), view.Number, view.BaseRefName, strings.TrimSpace(view.HeadRefName), nil
 }
 
 //funclogmeasure:skip category=hot-path reason="Thin gh exec wrapper."
