@@ -15,6 +15,14 @@
   resize: none;
 }
 
+/* Override .rich-prompt-wrap .tiptap max-height so the page scrolls, not the editor. */
+.prompt-editor-page__body .rich-prompt-wrap .tiptap,
+.prompt-editor-page__body .blocknote-prompt-editor .bn-editor {
+  max-height: none;
+  overflow: visible;
+  overflow-y: visible;
+}
+
 .blocknote-prompt-editor .bn-editor {
   min-height: 280px;
   /* Restore BlockNote default left gutter for side menu; keep flush otherwise. */
@@ -188,3 +196,64 @@
   opacity: 0.35;
   height: 1.25rem;
 }
+
+/* ---------- Code blocks (light Notion-like surface + language select) ---------- */
+.blocknote-prompt-editor .bn-block-content[data-content-type="codeBlock"] {
+  color: var(--prompt-editor-text);
+  background-color: var(--prompt-editor-surface);
+  border: 1px solid var(--prompt-editor-border-strong);
+  border-radius: 8px;
+}
+
+.blocknote-prompt-editor .bn-block-content[data-content-type="codeBlock"] > pre {
+  padding: 16px 16px 18px;
+}
+
+.blocknote-prompt-editor .bn-block-content[data-content-type="codeBlock"] > pre code,
+.blocknote-prompt-editor .bn-block-content[data-content-type="codeBlock"] .bn-inline-content {
+  color: var(--prompt-editor-text);
+  font-family: var(--prompt-editor-font-mono);
+  font-size: 13.5px;
+  line-height: 1.55;
+  background: transparent;
+}
+
+.blocknote-prompt-editor .bn-block-content[data-content-type="codeBlock"] > div {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  z-index: 2;
+}
+
+.blocknote-prompt-editor .bn-block-content[data-content-type="codeBlock"] > div > select {
+  appearance: auto;
+  cursor: pointer;
+  opacity: 0.85;
+  color: var(--prompt-editor-text-secondary);
+  background-color: var(--prompt-editor-embed-head-bg);
+  border: 1px solid var(--prompt-editor-border-strong);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  transition: opacity var(--duration-fast, 100ms) var(--ease-default, ease);
+}
+
+.blocknote-prompt-editor .bn-block-content[data-content-type="codeBlock"] > div > select > option {
+  color: var(--prompt-editor-text);
+}
+
+.blocknote-prompt-editor
+  .bn-block-content[data-content-type="codeBlock"]:hover
+  > div
+  > select,
+.blocknote-prompt-editor .bn-block-content[data-content-type="codeBlock"] > div > select:focus {
+  opacity: 1;
+}
+
+.blocknote-prompt-editor .bn-block-content[data-content-type="codeBlock"] > div > select:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+

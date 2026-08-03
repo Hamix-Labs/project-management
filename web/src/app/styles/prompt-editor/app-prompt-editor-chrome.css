@@ -153,23 +153,8 @@
 
 .prompt-editor-doc-header {
   margin-bottom: 0;
-}
-
-.prompt-editor-doc-header__eyebrow {
-  margin: 0 0 10px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.prompt-editor-doc-header__badge {
-  background: var(--prompt-editor-accent-tint);
-  color: var(--prompt-editor-accent);
-  padding: 2px 8px;
-  border-radius: 5px;
-  font-size: 11px;
-  letter-spacing: 0.03em;
-  font-weight: 600;
+  /* Match BlockNote side-menu gutter so title/meta align with body text. */
+  padding-inline-start: var(--prompt-editor-side-gutter);
 }
 
 .prompt-editor-doc-header__title {
