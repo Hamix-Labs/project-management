@@ -71,11 +71,21 @@ func (s *Store) AllocateTaskWorktree(ctx context.Context, repoID, taskID string)
 	if err := os.MkdirAll(filepath.FromSlash(filepath.Dir(wtPath)), 0o755); err != nil {
 		return gitdomain.GitWorktree{}, fmt.Errorf("create managed worktree parent: %w", err)
 	}
-	return s.createGitWorktreeOnRepo(ctx, repo, CreateGitWorktreeInput{
+	wt, err := s.createGitWorktreeOnRepo(ctx, repo, CreateGitWorktreeInput{
 		Path:         filepath.FromSlash(wtPath),
 		Name:         branch,
 		Branch:       branch,
 		CreateBranch: true,
 		StartPoint:   startPoint,
 	})
+	if err != nil {
+		return gitdomain.GitWorktree{}, err
+	}
+	// Always initialize a local gh stack (stack of one until enqueued layers are added).
+	if initErr := s.stackCLI().Init(ctx, wt.Path, defaultBranch, branch); initErr != nil {
+		slog.Warn("gitinventory stack init failed after allocate",
+			"cmd", calltrace.LogCmd, "operation", "gitinventory.store.AllocateTaskWorktree.stack_init",
+			"worktree_id", wt.ID, "branch", branch, "err", initErr)
+	}
+	return wt, nil
 }

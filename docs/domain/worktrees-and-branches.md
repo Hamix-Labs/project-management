@@ -6,14 +6,16 @@ How Hamix-managed git worktrees scope agent runs, `/repo/*` autocomplete, and `@
 | --- | --- |
 | **Applies to** | `pkgs/gitwork/`, `pkgs/repo/`, git store/handlers, `web/src/worktrees/`, task `worktree_id` / `repository_id` |
 | **Audience** | Contributors touching git binding, worker `WorkingDir`, or prompt mention validation |
-| **Prerequisite** | [ADR-0081](../adr/ADR-0081-hamix-managed-worktrees.md), [ADR-0033](../adr/ADR-0033-git-worktrees-and-branches.md), [ADR-0039](../adr/ADR-0039-fixed-worktree-branch.md), [data-model.md](../data-model.md) (git tables) |
+| **Prerequisite** | [ADR-0081](../adr/ADR-0081-hamix-managed-worktrees.md), [ADR-0033](../adr/ADR-0033-git-worktrees-and-branches.md), [ADR-0039](../adr/ADR-0039-fixed-worktree-branch.md), [ADR-0097](../adr/ADR-0097-worktree-stack-layers.md), [data-model.md](../data-model.md) (git tables) |
 | **Companion articles** | [execute-agent.md](./execute-agent.md), [agent-supervisor.md](./agent-supervisor.md), [cycle-commits.md](./cycle-commits.md) |
 
 ## Overview
 
 Hamix scopes workspace access through **managed git worktrees** (`git_worktrees` rows). Operators register a **repository** by local path. Creating a task with `repository_id` (+ `project_id`) persists the task immediately; the server then **eagerly allocates** a linked worktree and branch (`hamix/task-<8 hex>`) in the background, persists `worktree_id`, and starts from `origin/<defaultBranch>` after `git fetch` ([ADR-0083](../adr/ADR-0083-async-task-worktree-provision.md)). Optionally, `POST /tasks` may include an existing non-main **`worktree_id`** to bind the new task to that workspace without allocating (enqueue). Agents never bind to the main/`is_main` checkout or the repository default branch, and do not pick up a task until `worktree_id` is set.
 
-Tasks that share a `worktree_id` form a **worktree family**. The **root** is the task whose id named the managed branch (`hamix/task-<8 hex>`); other binders are siblings on the same checkout. Read APIs expose computed `worktree_root_task_id` (not a FK). `GET /tasks?worktree_id=` lists the family. This is workspace sharing, not subtasks ([ADR-0010](../adr/ADR-0010-remove-subtasks.md)).
+Tasks that share a `worktree_id` form a **worktree family**. The **root** is the task whose id named the allocate-time managed branch (`hamix/task-<8 hex>`, stored as `git_worktrees.name`); other binders are siblings on the same checkout, each with its own **stack layer** branch of the same naming form ([ADR-0097](../adr/ADR-0097-worktree-stack-layers.md)). Read APIs expose computed `worktree_root_task_id` (not a FK). `GET /tasks?worktree_id=` lists the family. This is workspace sharing, not subtasks ([ADR-0010](../adr/ADR-0010-remove-subtasks.md)).
+
+Root allocate runs `gh stack init` so every managed worktree is a local GitHub stack (possibly of one layer). When an enqueued task first runs, Hamix runs `gh stack add` for that task’s layer from the current tip (parent may still be in progress). `git_worktrees.branch_id` tracks the **active** layer under the worktree gate.
 
 When no git repository is registered:
 
@@ -39,7 +41,7 @@ Happy path:
 
 **Unregister vs delete from disk (API):** **Unregister** drops only the Hamix row. **Delete from disk** runs `git worktree remove` and deletes the row. The main worktree cannot be deleted from disk via the API.
 
-**Runtime:** tasks on the same worktree run sequentially (per-worktree gate). Tasks on different worktrees may run in parallel up to `app_settings.agent_task_parallelism` (Settings → **Max parallel tasks**). The worker refuses main/default-branch bindings and verifies HEAD matches the bound branch (no `git checkout` at pickup).
+**Runtime:** tasks on the same worktree run sequentially (per-worktree gate). Tasks on different worktrees may run in parallel up to `app_settings.agent_task_parallelism` (Settings → **Max parallel tasks**). The worker refuses main/default-branch bindings. At pickup it ensures the task’s stack layer (checkout + rebind), then verifies HEAD matches the active bound branch.
 
 ## Sync and path repair
 

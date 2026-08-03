@@ -66,4 +66,7 @@ type AgentQueueStore interface {
 	AgentPickup(ctx context.Context, taskID string, by domain.Actor) (*AgentPickupResult, error)
 	ReadyForAgentPickup(ctx context.Context, t *domain.Task, now time.Time) (bool, FailedPredicate, error)
 	ResolveTaskGitContext(ctx context.Context, worktreeID string) (TaskGitContext, error)
+	// EnsureTaskStackLayer checks out the task's hamix/task-* layer on its
+	// worktree and rebinds the active branch (ADR-0097). No-op when already set.
+	EnsureTaskStackLayer(ctx context.Context, taskID string) error
 }
