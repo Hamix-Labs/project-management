@@ -54,6 +54,7 @@ export function createOpenComposePromptEditor(input: ComposeOpenInput) {
         writeEphemeralPrompt("template-new", {
           html: form.newPrompt,
           worktreeId: form.newWorktreeID.trim() || undefined,
+          repositoryId: form.newRepositoryID.trim() || undefined,
         });
       }
     } else {
@@ -81,6 +82,7 @@ export function createOpenComposePromptEditor(input: ComposeOpenInput) {
 
     writePromptEditorLaunch({
       worktreeId: form.newWorktreeID.trim() || undefined,
+      repositoryId: form.newRepositoryID.trim() || undefined,
       returnPath: "/",
       resumeCompose: true,
       seedHtml: form.newPrompt,

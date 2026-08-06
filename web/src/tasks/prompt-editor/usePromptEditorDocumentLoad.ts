@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
-import { getGlobalGitWorktree } from "@/api/gitGlobal";
+import {
+  getGlobalGitRepository,
+  getGlobalGitWorktree,
+} from "@/api/gitGlobal";
 import type { PromptDocumentAdapter } from "./types";
 import type { PromptEditorLaunchContext } from "./types";
 import { repoBasename } from "./promptEditorPageMeta";
@@ -13,6 +16,7 @@ export type PromptEditorLoadStatus = "loading" | "ready" | "error";
 type CommitSnapshot = {
   html: string;
   worktreeId?: string;
+  repositoryId?: string;
 };
 
 type Args = {
@@ -25,7 +29,9 @@ type Args = {
   onLoadError: (err: PromptEditorSessionError) => void;
   onStatus: (status: PromptEditorLoadStatus) => void;
   worktreeId?: string;
+  repositoryId?: string;
   onResolvedWorktreeId?: (id: string | undefined) => void;
+  onResolvedRepositoryId?: (id: string | undefined) => void;
 };
 
 /**
@@ -41,7 +47,9 @@ export function usePromptEditorDocumentLoad({
   onLoadError,
   onStatus,
   worktreeId,
+  repositoryId,
   onResolvedWorktreeId,
+  onResolvedRepositoryId,
 }: Args) {
   const [repoLabel, setRepoLabel] = useState("No repo");
 
@@ -65,9 +73,15 @@ export function usePromptEditorDocumentLoad({
           launch?.seedHtml !== undefined && launch.seedHtml !== ""
             ? launch.seedHtml
             : snap.html;
-        const fromSnap = snap.worktreeId?.trim() || undefined;
-        onResolvedWorktreeId?.(fromSnap);
-        onCommit({ html, worktreeId: fromSnap });
+        const fromSnapWt = snap.worktreeId?.trim() || undefined;
+        const fromSnapRepo = snap.repositoryId?.trim() || undefined;
+        onResolvedWorktreeId?.(fromSnapWt);
+        onResolvedRepositoryId?.(fromSnapRepo);
+        onCommit({
+          html,
+          worktreeId: fromSnapWt,
+          repositoryId: fromSnapRepo,
+        });
         if (!dirtyRef.current) {
           // parent sets lastSavedAt on commit
         }
@@ -89,30 +103,45 @@ export function usePromptEditorDocumentLoad({
     loadNonce,
     onCommit,
     onLoadError,
+    onResolvedRepositoryId,
     onResolvedWorktreeId,
     onStatus,
   ]);
 
   useEffect(() => {
-    const wt = worktreeId;
-    if (!wt) {
+    const wt = worktreeId?.trim() || undefined;
+    const repo = repositoryId?.trim() || undefined;
+    if (!wt && !repo) {
       setRepoLabel("No repo");
       return;
     }
     let cancelled = false;
-    void getGlobalGitWorktree(wt)
-      .then((detail) => {
-        if (cancelled) return;
-        const path = detail.repository_path || detail.repository_host_path || "";
-        setRepoLabel(path ? repoBasename(path) : "No repo");
-      })
-      .catch(() => {
-        if (!cancelled) setRepoLabel("No repo");
-      });
+    if (wt) {
+      void getGlobalGitWorktree(wt)
+        .then((detail) => {
+          if (cancelled) return;
+          const path =
+            detail.repository_path || detail.repository_host_path || "";
+          setRepoLabel(path ? repoBasename(path) : "No repo");
+        })
+        .catch(() => {
+          if (!cancelled) setRepoLabel("No repo");
+        });
+    } else if (repo) {
+      void getGlobalGitRepository(repo)
+        .then((detail) => {
+          if (cancelled) return;
+          const path = detail.path || detail.host_path || "";
+          setRepoLabel(path ? repoBasename(path) : "No repo");
+        })
+        .catch(() => {
+          if (!cancelled) setRepoLabel("No repo");
+        });
+    }
     return () => {
       cancelled = true;
     };
-  }, [worktreeId]);
+  }, [worktreeId, repositoryId]);
 
   return { repoLabel };
 }
