@@ -34,6 +34,10 @@ export type DraftAutosaveSignatureInput = {
    * project flips the dirty bit and triggers an autosave.
    */
   projectId: string;
+  /** Repository binding; empty means unbound. */
+  repositoryId: string;
+  /** Worktree binding; empty means unbound / allocate-on-create. */
+  worktreeId: string;
   checklistItems: Array<{
     text: string;
     verify_commands?: ChecklistVerifyCommandInput[];
@@ -61,6 +65,8 @@ export function draftAutosaveSignature(
       runner: input.runner,
       cursor_model: input.cursorModel,
       project_id: input.projectId,
+      repository_id: input.repositoryId,
+      worktree_id: input.worktreeId,
       checklist_items: input.checklistItems,
     },
   });

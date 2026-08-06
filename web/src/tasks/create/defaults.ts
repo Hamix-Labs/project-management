@@ -34,6 +34,8 @@ export function buildFreshDraftAutosaveBaseline(
     runner: defaultRunnerFromSettings(settings),
     cursorModel: defaultCursorModelFromSettings(settings),
     projectId: "",
+    repositoryId: "",
+    worktreeId: "",
     checklistItems: [],
   });
 }
