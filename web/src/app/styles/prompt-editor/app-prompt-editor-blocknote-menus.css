@@ -3,6 +3,18 @@
    outside .blocknote-prompt-editor, so also target .bn-suggestion-menu /
    .bn-menu-dropdown. Specificity must beat Ariakit default blue invert. */
 
+/*
+ * Floating UI host (GenericPopover) is display:flex + inline maxHeight.
+ * Default row flex + BlockNote height:fit-content leaves min-height:auto on
+ * the menu, so it won't shrink and scroll stops before the last items.
+ */
+.bn-container div:has(> .bn-suggestion-menu.bn-ak-menu),
+body div:has(> .bn-suggestion-menu.bn-ak-menu) {
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
 .blocknote-prompt-editor .bn-ak-menu,
 .bn-suggestion-menu.bn-ak-menu,
 .bn-menu-dropdown.bn-ak-menu {
@@ -15,6 +27,25 @@
   color: var(--prompt-editor-text);
   box-shadow: var(--prompt-editor-menu-shadow);
   font-family: var(--font-sans);
+  box-sizing: border-box;
+}
+
+.bn-ariakit .bn-suggestion-menu.bn-ak-menu,
+.bn-suggestion-menu.bn-ak-menu {
+  /* Override BlockNote fit-content so the flex host can constrain height */
+  height: auto;
+  max-height: none;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-padding-block: 6px;
+}
+
+.bn-suggestion-menu .bn-ak-menu-item {
+  /* Avoid scroll-margin eating the last visible row at max scroll */
+  scroll-margin: 0;
 }
 
 .blocknote-prompt-editor .bn-ak-group-label,
