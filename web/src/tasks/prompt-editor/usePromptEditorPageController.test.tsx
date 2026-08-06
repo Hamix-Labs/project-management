@@ -60,4 +60,17 @@ describe("usePromptEditorPageController dirty load commit", () => {
     await waitFor(() => expect(result.current.ready).toBe(true));
     expect(result.current.html).toBe("<p>local typed words here now</p>");
   });
+
+  it("updates wordCountLabel when onChange receives new html", async () => {
+    const { result } = renderHook(() => usePromptEditorPageController());
+
+    await waitFor(() => expect(result.current.ready).toBe(true));
+    expect(result.current.wordCountLabel).toBe("~3 words");
+
+    act(() => {
+      result.current.onChange("<p>one two three four five</p>");
+    });
+
+    expect(result.current.wordCountLabel).toBe("~5 words");
+  });
 });
