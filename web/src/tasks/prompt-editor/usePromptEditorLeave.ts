@@ -15,6 +15,7 @@ type Args = {
   adapter: PromptDocumentAdapter | null;
   launch: PromptEditorLaunchContext | null;
   htmlRef: React.MutableRefObject<string>;
+  titleRef: React.MutableRefObject<string>;
   dirtyRef: React.MutableRefObject<boolean>;
   setSessionError: (err: PromptEditorSessionError | null) => void;
   setLastSavedAt: (at: number) => void;
@@ -26,6 +27,7 @@ export function usePromptEditorLeave({
   adapter,
   launch,
   htmlRef,
+  titleRef,
   dirtyRef,
   setSessionError,
   setLastSavedAt,
@@ -52,6 +54,7 @@ export function usePromptEditorLeave({
         polishTaskId: launch?.polishTaskId,
         returnPath,
         html: htmlRef.current,
+        title: titleRef.current,
       });
       clearPromptEditorLaunch();
       navigate(returnPath);
@@ -66,6 +69,7 @@ export function usePromptEditorLeave({
     adapter,
     dirtyRef,
     htmlRef,
+    titleRef,
     launch,
     navigate,
     setLastSavedAt,
@@ -86,7 +90,7 @@ export function usePromptEditorLeave({
       const target = e.target as HTMLElement | null;
       if (
         target?.closest?.(
-          "[role='listbox'], [role='dialog'], .bn-suggestion-menu, .prompt-editor-mention-menu",
+          "[role='listbox'], [role='dialog'], .bn-suggestion-menu, .prompt-editor-mention-menu, .prompt-editor-doc-header__title",
         )
       ) {
         return;

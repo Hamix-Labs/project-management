@@ -13,6 +13,7 @@ import {
 } from "./usePromptEditorDocumentLoad";
 import { usePromptEditorLeave } from "./usePromptEditorLeave";
 import { usePromptEditorRouteAdapter } from "./usePromptEditorRouteAdapter";
+import { usePromptEditorTitle } from "./usePromptEditorTitle";
 import {
   HYDRATE_FALLBACK_WARNING,
   type PromptEditorSessionError,
@@ -42,18 +43,30 @@ export function usePromptEditorPageController() {
 
   const worktreeId =
     launch?.worktreeId?.trim() || adapterWorktreeId || undefined;
-  const title = launch?.title?.trim() || "Untitled task";
+
+  const { title, titleRef, onTitleCommit, applyHydratedName } =
+    usePromptEditorTitle({
+      launchTitle: launch?.title,
+      adapter,
+      sourceKind,
+      sourceId,
+      setSessionError,
+    });
 
   const onResolvedWorktreeId = useCallback((id: string | undefined) => {
     setAdapterWorktreeId(id?.trim() || undefined);
   }, []);
 
-  const onCommit = useCallback((snap: { html: string }) => {
-    setHtml(snap.html);
-    setSessionError(null);
-    setHydrateWarning(null);
-    if (!dirtyRef.current) setLastSavedAt(Date.now());
-  }, []);
+  const onCommit = useCallback(
+    (snap: { html: string; name?: string }) => {
+      setHtml(snap.html);
+      applyHydratedName(snap.name);
+      setSessionError(null);
+      setHydrateWarning(null);
+      if (!dirtyRef.current) setLastSavedAt(Date.now());
+    },
+    [applyHydratedName],
+  );
 
   const onLoadError = useCallback((err: PromptEditorSessionError) => {
     setSessionError(err);
@@ -106,6 +119,7 @@ export function usePromptEditorPageController() {
     adapter,
     launch,
     htmlRef,
+    titleRef,
     dirtyRef,
     setSessionError,
     setLastSavedAt,
@@ -138,6 +152,7 @@ export function usePromptEditorPageController() {
       dirty,
     }),
     title,
+    onTitleCommit,
     editedLabel: deriveEditedLabel(status, ready, lastSavedAt),
     wordCountLabel: deriveWordCountLabel(ready, html),
     repoLabel: ready ? repoLabel : "—",

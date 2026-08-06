@@ -31,6 +31,7 @@ describe("usePromptEditorDocumentLoad", () => {
     expect(onCommit).toHaveBeenCalledWith({
       html: "<p>hello there friend</p>",
       worktreeId: undefined,
+      name: undefined,
     });
     expect(onLoadError).not.toHaveBeenCalled();
   });
@@ -59,6 +60,7 @@ describe("usePromptEditorDocumentLoad", () => {
       expect(onCommit).toHaveBeenCalledWith({
         html: "<p>seeded content here</p>",
         worktreeId: undefined,
+        name: undefined,
       }),
     );
   });
@@ -131,6 +133,7 @@ describe("usePromptEditorDocumentLoad", () => {
     await waitFor(() => expect(onCommit).toHaveBeenCalledWith({
       html: "<p>second</p>",
       worktreeId: undefined,
+      name: undefined,
     }));
 
     await act(async () => {

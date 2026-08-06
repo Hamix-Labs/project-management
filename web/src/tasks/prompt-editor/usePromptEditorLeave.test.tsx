@@ -16,6 +16,7 @@ function wrapper({ children }: { children: ReactNode }) {
 describe("usePromptEditorLeave", () => {
   it("mounts under MemoryRouter without requiring a data router", () => {
     const htmlRef = { current: "<p>hi</p>" };
+    const titleRef = { current: "My title" };
     const dirtyRef = { current: false };
     const { result } = renderHook(
       () =>
@@ -30,6 +31,7 @@ describe("usePromptEditorLeave", () => {
             resumeCompose: true,
           },
           htmlRef,
+          titleRef,
           dirtyRef,
           setSessionError: vi.fn(),
           setLastSavedAt: vi.fn(),
