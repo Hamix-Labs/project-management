@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useCallback, useRef } from "react";
 import {
   buildPromptEditorChromeLabels,
   pickLoadError,
@@ -14,11 +14,14 @@ export function usePromptEditorPageController() {
     usePromptEditorRouteAdapter();
 
   const applyHydratedNameRef = useRef<(name?: string) => void>(() => {});
+  const applyHydratedName = useCallback((name?: string) => {
+    applyHydratedNameRef.current(name);
+  }, []);
 
   const htmlSession = usePromptEditorHtmlSession({
     adapter,
     launch,
-    applyHydratedName: (name) => applyHydratedNameRef.current(name),
+    applyHydratedName,
   });
 
   const titleState = usePromptEditorTitle({

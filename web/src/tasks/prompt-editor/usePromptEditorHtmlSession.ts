@@ -39,6 +39,10 @@ export function usePromptEditorHtmlSession({
   const htmlRef = useRef(html);
   htmlRef.current = html;
   const dirtyRef = useRef(false);
+  // Keep hydrate callback out of onCommit identity — an unstable parent
+  // wrapper would retrigger document load forever (status stuck on loading).
+  const applyHydratedNameRef = useRef(applyHydratedName);
+  applyHydratedNameRef.current = applyHydratedName;
 
   const worktreeId =
     launch?.worktreeId?.trim() || adapterWorktreeId || undefined;
@@ -47,16 +51,13 @@ export function usePromptEditorHtmlSession({
     setAdapterWorktreeId(id?.trim() || undefined);
   }, []);
 
-  const onCommit = useCallback(
-    (snap: { html: string; name?: string }) => {
-      setHtml(snap.html);
-      applyHydratedName(snap.name);
-      setSessionError(null);
-      setHydrateWarning(null);
-      if (!dirtyRef.current) setLastSavedAt(Date.now());
-    },
-    [applyHydratedName],
-  );
+  const onCommit = useCallback((snap: { html: string; name?: string }) => {
+    setHtml(snap.html);
+    applyHydratedNameRef.current(snap.name);
+    setSessionError(null);
+    setHydrateWarning(null);
+    if (!dirtyRef.current) setLastSavedAt(Date.now());
+  }, []);
 
   const onLoadError = useCallback((err: PromptEditorSessionError) => {
     setSessionError(err);
