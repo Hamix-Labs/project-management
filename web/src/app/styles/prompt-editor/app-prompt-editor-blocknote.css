@@ -231,8 +231,32 @@
   outline: none !important;
 }
 
-.blocknote-prompt-editor .bn-block-content[data-content-type="codeBlock"] > div > select {
+/* Hide BlockNote's native select only after our React toolbar mounts. */
+.blocknote-prompt-editor
+  .bn-block-content[data-content-type="codeBlock"]
+  > div:has(.prompt-code-toolbar-root)
+  > select {
   display: none !important;
+}
+
+/* Fallback chrome if the bridge has not mounted yet (or failed). */
+.blocknote-prompt-editor
+  .bn-block-content[data-content-type="codeBlock"]
+  > div:not(:has(.prompt-code-toolbar-root))
+  > select {
+  display: inline-block;
+  max-width: 160px;
+  margin: 0;
+  padding: 4px 8px;
+  border: 1px solid var(--prompt-editor-border-strong);
+  border-radius: 6px;
+  background: var(--prompt-editor-surface);
+  color: var(--prompt-editor-text-secondary);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  opacity: 1;
+  cursor: pointer;
 }
 
 .prompt-code-toolbar-root {

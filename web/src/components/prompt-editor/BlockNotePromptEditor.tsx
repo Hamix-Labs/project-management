@@ -162,14 +162,14 @@ export function BlockNotePromptEditor({
     [editor, emitHtml],
   );
 
-  const editorHostRef = useRef<HTMLDivElement>(null);
-  useEnhanceCodeBlockToolbars(editorHostRef, disabled);
+  const [editorHost, setEditorHost] = useState<HTMLDivElement | null>(null);
+  useEnhanceCodeBlockToolbars(editorHost, disabled);
 
   return (
     <PromptEditorRepoContext.Provider value={{ worktreeId }}>
       <div className="rich-prompt-wrap blocknote-prompt-wrap" id={id}>
         <div
-          ref={editorHostRef}
+          ref={setEditorHost}
           className={
             disabled
               ? "blocknote-prompt-editor blocknote-prompt-editor--disabled"
