@@ -142,8 +142,13 @@
   }
 }
 
-/* ---------- Slash suggestion menu ---------- */
-.blocknote-prompt-editor .bn-ak-menu {
+/* ---------- Slash / drag-handle / Ariakit menus ----------
+   Slash items use aria-selected (not data-active-item). Menus may portal
+   outside .blocknote-prompt-editor, so also target .bn-suggestion-menu /
+   .bn-menu-dropdown. Specificity must beat Ariakit hsl(204…) blue invert. */
+.blocknote-prompt-editor .bn-ak-menu,
+.bn-suggestion-menu.bn-ak-menu,
+.bn-menu-dropdown.bn-ak-menu {
   min-width: 280px;
   max-width: min(340px, 92vw);
   padding: 6px;
@@ -155,7 +160,9 @@
   font-family: var(--font-sans);
 }
 
-.blocknote-prompt-editor .bn-ak-group-label {
+.blocknote-prompt-editor .bn-ak-group-label,
+.bn-suggestion-menu .bn-ak-group-label,
+.bn-menu-dropdown .bn-ak-group-label {
   padding: 8px 10px 4px;
   font-size: 11px;
   font-weight: 600;
@@ -165,23 +172,88 @@
   opacity: 1;
 }
 
-.blocknote-prompt-editor .bn-ak-menu-item {
+.blocknote-prompt-editor .bn-ak-menu-item,
+.bn-suggestion-menu .bn-ak-menu-item,
+.bn-menu-dropdown .bn-ak-menu-item {
   border-radius: 7px;
   padding: 8px 10px;
   font-size: 13.5px;
   color: var(--prompt-editor-text);
+  background: transparent;
 }
 
+.blocknote-prompt-editor .bn-ak-menu-item .bn-ak-suggestion-menu-item-title,
+.bn-suggestion-menu .bn-ak-menu-item .bn-ak-suggestion-menu-item-title {
+  color: var(--prompt-editor-text);
+  font-weight: 500;
+}
+
+.blocknote-prompt-editor .bn-ak-menu-item .bn-ak-suggestion-menu-item-subtitle,
+.bn-suggestion-menu .bn-ak-menu-item .bn-ak-suggestion-menu-item-subtitle {
+  color: var(--prompt-editor-text-muted);
+}
+
+/* Hover + selected: accent tint, never Ariakit solid blue + white text */
+.blocknote-prompt-editor .bn-ak-menu-item[aria-selected="true"],
 .blocknote-prompt-editor .bn-ak-menu-item[data-active-item],
 .blocknote-prompt-editor .bn-ak-menu-item[data-active],
-.blocknote-prompt-editor .bn-ak-menu-item:active {
+.blocknote-prompt-editor .bn-ak-menu-item:hover,
+.blocknote-prompt-editor .bn-ak-menu-item:active,
+.bn-suggestion-menu .bn-ak-menu-item[aria-selected="true"],
+.bn-suggestion-menu .bn-ak-menu-item[data-active-item],
+.bn-suggestion-menu .bn-ak-menu-item[data-active],
+.bn-suggestion-menu .bn-ak-menu-item:hover,
+.bn-suggestion-menu .bn-ak-menu-item:active,
+.bn-menu-dropdown .bn-ak-menu-item[aria-selected="true"],
+.bn-menu-dropdown .bn-ak-menu-item[data-active-item],
+.bn-menu-dropdown .bn-ak-menu-item[data-active],
+.bn-menu-dropdown .bn-ak-menu-item:hover,
+.bn-menu-dropdown .bn-ak-menu-item:active {
+  background-color: var(--prompt-editor-accent-tint);
   background: var(--prompt-editor-accent-tint);
   color: var(--prompt-editor-text);
+  /* Reset Ariakit :active padding jump that shifts layout */
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.blocknote-prompt-editor .bn-ak-menu-item[aria-selected="true"] .bn-ak-suggestion-menu-item-title,
+.blocknote-prompt-editor .bn-ak-menu-item[data-active-item] .bn-ak-suggestion-menu-item-title,
+.blocknote-prompt-editor .bn-ak-menu-item:hover .bn-ak-suggestion-menu-item-title,
+.bn-suggestion-menu .bn-ak-menu-item[aria-selected="true"] .bn-ak-suggestion-menu-item-title,
+.bn-suggestion-menu .bn-ak-menu-item[data-active-item] .bn-ak-suggestion-menu-item-title,
+.bn-suggestion-menu .bn-ak-menu-item:hover .bn-ak-suggestion-menu-item-title {
+  color: var(--prompt-editor-text);
+}
+
+.blocknote-prompt-editor .bn-ak-menu-item[aria-selected="true"] .bn-ak-suggestion-menu-item-subtitle,
+.blocknote-prompt-editor .bn-ak-menu-item[data-active-item] .bn-ak-suggestion-menu-item-subtitle,
+.blocknote-prompt-editor .bn-ak-menu-item:hover .bn-ak-suggestion-menu-item-subtitle,
+.bn-suggestion-menu .bn-ak-menu-item[aria-selected="true"] .bn-ak-suggestion-menu-item-subtitle,
+.bn-suggestion-menu .bn-ak-menu-item[data-active-item] .bn-ak-suggestion-menu-item-subtitle,
+.bn-suggestion-menu .bn-ak-menu-item:hover .bn-ak-suggestion-menu-item-subtitle {
+  color: var(--prompt-editor-text-secondary);
+}
+
+.blocknote-prompt-editor .bn-ak-menu-item[data-focus-visible],
+.blocknote-prompt-editor .bn-ak-menu-item:focus-visible,
+.bn-suggestion-menu .bn-ak-menu-item[data-focus-visible],
+.bn-suggestion-menu .bn-ak-menu-item:focus-visible,
+.bn-menu-dropdown .bn-ak-menu-item[data-focus-visible],
+.bn-menu-dropdown .bn-ak-menu-item:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
 }
 
 .blocknote-prompt-editor .bn-ak-menu-item .bn-ak-badge,
 .blocknote-prompt-editor .bn-ak-menu-item kbd,
-.blocknote-prompt-editor .bn-ak-menu-item .badge {
+.blocknote-prompt-editor .bn-ak-menu-item .badge,
+.bn-suggestion-menu .bn-ak-menu-item .bn-ak-badge,
+.bn-suggestion-menu .bn-ak-menu-item kbd,
+.bn-suggestion-menu .bn-ak-menu-item .badge,
+.bn-menu-dropdown .bn-ak-menu-item .bn-ak-badge,
+.bn-menu-dropdown .bn-ak-menu-item kbd,
+.bn-menu-dropdown .bn-ak-menu-item .badge {
   margin-left: auto;
   font-family: var(--font-sans);
   font-size: 10.5px;
@@ -189,8 +261,22 @@
   color: var(--prompt-editor-text-muted);
   background: var(--prompt-editor-bg);
   border: 1px solid var(--prompt-editor-border-strong);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   padding: 1px 5px;
+}
+
+/* Keep shortcut chips muted on selected/hover rows (no invert) */
+.blocknote-prompt-editor .bn-ak-menu-item[aria-selected="true"] .bn-ak-badge,
+.blocknote-prompt-editor .bn-ak-menu-item[aria-selected="true"] kbd,
+.blocknote-prompt-editor .bn-ak-menu-item:hover .bn-ak-badge,
+.blocknote-prompt-editor .bn-ak-menu-item:hover kbd,
+.bn-suggestion-menu .bn-ak-menu-item[aria-selected="true"] .bn-ak-badge,
+.bn-suggestion-menu .bn-ak-menu-item[aria-selected="true"] kbd,
+.bn-suggestion-menu .bn-ak-menu-item:hover .bn-ak-badge,
+.bn-suggestion-menu .bn-ak-menu-item:hover kbd {
+  color: var(--prompt-editor-text-muted);
+  background: var(--prompt-editor-bg);
+  border-color: var(--prompt-editor-border-strong);
 }
 
 /* ---------- Floating formatting toolbar ---------- */
