@@ -50,20 +50,14 @@
   color: var(--prompt-editor-text-muted);
 }
 
-/* Hover + selected: accent tint, never solid invert */
-.blocknote-prompt-editor .bn-ak-menu-item[aria-selected="true"],
-.blocknote-prompt-editor .bn-ak-menu-item[data-active-item],
-.blocknote-prompt-editor .bn-ak-menu-item[data-active],
+/*
+ * Highlight: pointer hover is exclusive. Keyboard aria-selected only shows
+ * when the menu has no hovered row (otherwise both would tint).
+ */
 .blocknote-prompt-editor .bn-ak-menu-item:hover,
 .blocknote-prompt-editor .bn-ak-menu-item:active,
-.bn-suggestion-menu .bn-ak-menu-item[aria-selected="true"],
-.bn-suggestion-menu .bn-ak-menu-item[data-active-item],
-.bn-suggestion-menu .bn-ak-menu-item[data-active],
 .bn-suggestion-menu .bn-ak-menu-item:hover,
 .bn-suggestion-menu .bn-ak-menu-item:active,
-.bn-menu-dropdown .bn-ak-menu-item[aria-selected="true"],
-.bn-menu-dropdown .bn-ak-menu-item[data-active-item],
-.bn-menu-dropdown .bn-ak-menu-item[data-active],
 .bn-menu-dropdown .bn-ak-menu-item:hover,
 .bn-menu-dropdown .bn-ak-menu-item:active {
   background-color: var(--prompt-editor-accent-tint);
@@ -74,21 +68,83 @@
   padding-bottom: 8px;
 }
 
-.blocknote-prompt-editor .bn-ak-menu-item[aria-selected="true"] .bn-ak-suggestion-menu-item-title,
-.blocknote-prompt-editor .bn-ak-menu-item[data-active-item] .bn-ak-suggestion-menu-item-title,
+.blocknote-prompt-editor .bn-ak-menu:not(:has(.bn-ak-menu-item:hover))
+  .bn-ak-menu-item[aria-selected="true"],
+.blocknote-prompt-editor .bn-ak-menu:not(:has(.bn-ak-menu-item:hover))
+  .bn-ak-menu-item[data-active-item],
+.blocknote-prompt-editor .bn-ak-menu:not(:has(.bn-ak-menu-item:hover))
+  .bn-ak-menu-item[data-active],
+.bn-suggestion-menu:not(:has(.bn-ak-menu-item:hover))
+  .bn-ak-menu-item[aria-selected="true"],
+.bn-suggestion-menu:not(:has(.bn-ak-menu-item:hover))
+  .bn-ak-menu-item[data-active-item],
+.bn-suggestion-menu:not(:has(.bn-ak-menu-item:hover))
+  .bn-ak-menu-item[data-active],
+.bn-menu-dropdown:not(:has(.bn-ak-menu-item:hover))
+  .bn-ak-menu-item[aria-selected="true"],
+.bn-menu-dropdown:not(:has(.bn-ak-menu-item:hover))
+  .bn-ak-menu-item[data-active-item],
+.bn-menu-dropdown:not(:has(.bn-ak-menu-item:hover))
+  .bn-ak-menu-item[data-active] {
+  background-color: var(--prompt-editor-accent-tint);
+  background: var(--prompt-editor-accent-tint);
+  color: var(--prompt-editor-text);
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+/* Drop keyboard selection chrome while another row is hovered */
+.blocknote-prompt-editor .bn-ak-menu:has(.bn-ak-menu-item:hover)
+  .bn-ak-menu-item[aria-selected="true"]:not(:hover),
+.blocknote-prompt-editor .bn-ak-menu:has(.bn-ak-menu-item:hover)
+  .bn-ak-menu-item[data-active-item]:not(:hover),
+.bn-suggestion-menu:has(.bn-ak-menu-item:hover)
+  .bn-ak-menu-item[aria-selected="true"]:not(:hover),
+.bn-suggestion-menu:has(.bn-ak-menu-item:hover)
+  .bn-ak-menu-item[data-active-item]:not(:hover),
+.bn-menu-dropdown:has(.bn-ak-menu-item:hover)
+  .bn-ak-menu-item[aria-selected="true"]:not(:hover),
+.bn-menu-dropdown:has(.bn-ak-menu-item:hover)
+  .bn-ak-menu-item[data-active-item]:not(:hover) {
+  background: transparent;
+  background-color: transparent;
+}
+
 .blocknote-prompt-editor .bn-ak-menu-item:hover .bn-ak-suggestion-menu-item-title,
-.bn-suggestion-menu .bn-ak-menu-item[aria-selected="true"] .bn-ak-suggestion-menu-item-title,
-.bn-suggestion-menu .bn-ak-menu-item[data-active-item] .bn-ak-suggestion-menu-item-title,
-.bn-suggestion-menu .bn-ak-menu-item:hover .bn-ak-suggestion-menu-item-title {
+.bn-suggestion-menu .bn-ak-menu-item:hover .bn-ak-suggestion-menu-item-title,
+.blocknote-prompt-editor
+  .bn-ak-menu:not(:has(.bn-ak-menu-item:hover))
+  .bn-ak-menu-item[aria-selected="true"]
+  .bn-ak-suggestion-menu-item-title,
+.blocknote-prompt-editor
+  .bn-ak-menu:not(:has(.bn-ak-menu-item:hover))
+  .bn-ak-menu-item[data-active-item]
+  .bn-ak-suggestion-menu-item-title,
+.bn-suggestion-menu:not(:has(.bn-ak-menu-item:hover))
+  .bn-ak-menu-item[aria-selected="true"]
+  .bn-ak-suggestion-menu-item-title,
+.bn-suggestion-menu:not(:has(.bn-ak-menu-item:hover))
+  .bn-ak-menu-item[data-active-item]
+  .bn-ak-suggestion-menu-item-title {
   color: var(--prompt-editor-text);
 }
 
-.blocknote-prompt-editor .bn-ak-menu-item[aria-selected="true"] .bn-ak-suggestion-menu-item-subtitle,
-.blocknote-prompt-editor .bn-ak-menu-item[data-active-item] .bn-ak-suggestion-menu-item-subtitle,
 .blocknote-prompt-editor .bn-ak-menu-item:hover .bn-ak-suggestion-menu-item-subtitle,
-.bn-suggestion-menu .bn-ak-menu-item[aria-selected="true"] .bn-ak-suggestion-menu-item-subtitle,
-.bn-suggestion-menu .bn-ak-menu-item[data-active-item] .bn-ak-suggestion-menu-item-subtitle,
-.bn-suggestion-menu .bn-ak-menu-item:hover .bn-ak-suggestion-menu-item-subtitle {
+.bn-suggestion-menu .bn-ak-menu-item:hover .bn-ak-suggestion-menu-item-subtitle,
+.blocknote-prompt-editor
+  .bn-ak-menu:not(:has(.bn-ak-menu-item:hover))
+  .bn-ak-menu-item[aria-selected="true"]
+  .bn-ak-suggestion-menu-item-subtitle,
+.blocknote-prompt-editor
+  .bn-ak-menu:not(:has(.bn-ak-menu-item:hover))
+  .bn-ak-menu-item[data-active-item]
+  .bn-ak-suggestion-menu-item-subtitle,
+.bn-suggestion-menu:not(:has(.bn-ak-menu-item:hover))
+  .bn-ak-menu-item[aria-selected="true"]
+  .bn-ak-suggestion-menu-item-subtitle,
+.bn-suggestion-menu:not(:has(.bn-ak-menu-item:hover))
+  .bn-ak-menu-item[data-active-item]
+  .bn-ak-suggestion-menu-item-subtitle {
   color: var(--prompt-editor-text-secondary);
 }
 
