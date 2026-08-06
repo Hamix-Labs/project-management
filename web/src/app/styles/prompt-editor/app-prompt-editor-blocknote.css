@@ -254,6 +254,7 @@
 .prompt-code-toolbar__copy {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 4px;
   margin: 0;
   border: none;
@@ -265,14 +266,25 @@
   line-height: 1;
   cursor: pointer;
   border-radius: 6px;
+  min-height: 28px;
 }
 
 .prompt-code-toolbar__lang {
-  padding: 5px 8px;
+  padding: 6px 8px;
+}
+
+.prompt-code-toolbar__divider {
+  display: block;
+  width: 1px;
+  align-self: stretch;
+  margin: 4px 2px;
+  background: var(--prompt-editor-border-strong);
+  flex-shrink: 0;
 }
 
 .prompt-code-toolbar__copy {
-  padding: 5px 6px;
+  padding: 6px;
+  min-width: 28px;
 }
 
 .prompt-code-toolbar__lang:hover:not(:disabled),

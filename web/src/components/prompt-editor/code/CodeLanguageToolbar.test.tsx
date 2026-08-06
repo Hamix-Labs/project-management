@@ -79,4 +79,33 @@ describe("CodeLanguageToolbar", () => {
     await user.click(screen.getByRole("button", { name: /copy code/i }));
     expect(onCopy).toHaveBeenCalledTimes(1);
   });
+
+  it("renders a decorative divider between language and copy", () => {
+    const { container } = render(
+      <CodeLanguageToolbar
+        languages={LANGUAGES}
+        value="go"
+        onChange={() => {}}
+        onCopy={() => {}}
+      />,
+    );
+
+    const toolbar = container.querySelector(".prompt-code-toolbar");
+    const divider = toolbar?.querySelector(".prompt-code-toolbar__divider");
+    expect(divider).toBeTruthy();
+    expect(divider?.getAttribute("aria-hidden")).toBe("true");
+
+    const children = [...(toolbar?.children ?? [])];
+    const langIdx = children.findIndex((el) =>
+      el.classList.contains("prompt-code-toolbar__lang"),
+    );
+    const dividerIdx = children.findIndex((el) =>
+      el.classList.contains("prompt-code-toolbar__divider"),
+    );
+    const copyIdx = children.findIndex((el) =>
+      el.classList.contains("prompt-code-toolbar__copy"),
+    );
+    expect(langIdx).toBeLessThan(dividerIdx);
+    expect(dividerIdx).toBeLessThan(copyIdx);
+  });
 });
