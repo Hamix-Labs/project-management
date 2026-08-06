@@ -23,6 +23,7 @@ describe("usePromptEditorLeave", () => {
           adapter: {
             load: vi.fn(),
             save: vi.fn(async () => undefined),
+            saveName: vi.fn(async () => undefined),
           },
           launch: {
             returnPath: "/",
