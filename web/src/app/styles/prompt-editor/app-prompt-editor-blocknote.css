@@ -48,9 +48,10 @@
   color: var(--prompt-editor-text-muted) !important;
 }
 
-/* Side menu (drag handle / add block) */
+/* Side menu (drag handle / add block) — quiet Notion-like weight */
 .blocknote-prompt-editor .bn-side-menu {
   opacity: 0;
+  gap: 0;
   transition: opacity var(--duration-fast, 100ms) var(--ease-default, ease);
 }
 
@@ -60,16 +61,42 @@
   opacity: 1;
 }
 
-.blocknote-prompt-editor .bn-side-menu .bn-ak-button {
+.blocknote-prompt-editor .bn-side-menu .bn-ak-button,
+.blocknote-prompt-editor .bn-side-menu .bn-ak-button.bn-ak-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--touch-target-min);
+  height: var(--touch-target-min);
+  min-width: var(--touch-target-min);
+  min-height: var(--touch-target-min);
+  padding: 0;
+  margin: 0;
   color: var(--prompt-editor-text-muted);
   background: transparent;
   border: none;
+  border-radius: var(--radius-sm);
   box-shadow: none;
+  gap: 0;
 }
 
-.blocknote-prompt-editor .bn-side-menu .bn-ak-button:hover {
+.blocknote-prompt-editor .bn-side-menu .bn-ak-button svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.blocknote-prompt-editor .bn-side-menu .bn-ak-button:hover,
+.blocknote-prompt-editor .bn-side-menu .bn-ak-button.bn-ak-secondary:hover {
   color: var(--prompt-editor-text-secondary);
-  background: var(--prompt-editor-embed-head-bg);
+  background: transparent;
+}
+
+.blocknote-prompt-editor .bn-side-menu .bn-ak-button[data-focus-visible],
+.blocknote-prompt-editor .bn-side-menu .bn-ak-button:focus-visible {
+  outline: none;
+  color: var(--prompt-editor-text-secondary);
+  box-shadow: var(--shadow-focus);
 }
 
 .blocknote-prompt-editor .bn-editor h2 {
