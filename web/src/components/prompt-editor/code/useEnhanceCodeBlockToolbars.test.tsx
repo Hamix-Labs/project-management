@@ -41,6 +41,11 @@ describe("useEnhanceCodeBlockToolbars", () => {
     expect(
       screen.getByRole("button", { name: /copy code/i }),
     ).toBeInTheDocument();
+    expect(
+      document.querySelector(
+        ".blocknote-prompt-editor > .prompt-code-toolbar-root",
+      ),
+    ).toBeTruthy();
   });
 
   it("changes the hidden select when a language is chosen", async () => {

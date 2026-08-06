@@ -1,5 +1,6 @@
-import { useEffect, useRef } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { useLayoutEffect, useEffect, useRef } from "react";
+import ReactDOM from "react-dom/client";
+import type { Root } from "react-dom/client";
 import { CodeLanguageToolbar } from "./CodeLanguageToolbar";
 import {
   promptCodeLanguages,
@@ -11,45 +12,68 @@ type MountRecord = {
   select: HTMLSelectElement;
   onSelectChange: () => void;
   mountEl: HTMLElement;
+  block: HTMLElement;
 };
+
+function resolveCreateRoot(): typeof ReactDOM.createRoot {
+  const mod = ReactDOM as typeof ReactDOM & {
+    default?: { createRoot?: typeof ReactDOM.createRoot };
+  };
+  const fn = mod.createRoot ?? mod.default?.createRoot;
+  if (typeof fn !== "function") {
+    throw new Error("react-dom/client createRoot is unavailable");
+  }
+  return fn;
+}
+
+function positionMount(
+  host: HTMLElement,
+  block: HTMLElement,
+  mountEl: HTMLElement,
+) {
+  const hostRect = host.getBoundingClientRect();
+  const blockRect = block.getBoundingClientRect();
+  const top = blockRect.top - hostRect.top + host.scrollTop + 8;
+  const right = hostRect.right - blockRect.right + host.scrollLeft + 10;
+  mountEl.style.top = `${Math.max(0, top)}px`;
+  mountEl.style.right = `${Math.max(0, right)}px`;
+  mountEl.style.left = "auto";
+}
 
 /**
  * BlockNote's code block uses content:"plain", which createReactBlockSpec cannot
  * host. We keep createCodeBlockSpec (highlighter + shortcuts) and replace the
  * native <select> chrome with a Notion-like searchable toolbar.
  *
- * Pass the host element from a callback ref / useState — a plain useRef can be
- * null on the first effect tick and leave the MutationObserver never attached.
- *
- * StrictMode re-runs must clear the enhance marker and detach the mount node
- * on cleanup, or the second pass skips remount while CSS hides the native select.
+ * The toolbar is portaled onto the editor host (outside ProseMirror). Mutating
+ * inside the code-block node view is wiped or ingested as document text.
  */
 export function useEnhanceCodeBlockToolbars(
   container: HTMLElement | null,
   disabled: boolean,
 ) {
   const mountsRef = useRef(new Map<Element, MountRecord>());
-  const languagesRef = useRef<PromptCodeLanguage[]>(promptCodeLanguages());
+  const languagesRef = useRef<PromptCodeLanguage[] | null>(null);
+  if (languagesRef.current == null) {
+    languagesRef.current = promptCodeLanguages();
+  }
   const disabledRef = useRef(disabled);
   disabledRef.current = disabled;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!container) return;
 
     const mounts = mountsRef.current;
     let sweeping = false;
     let debounceTimer: number | null = null;
-    let raf = 0;
-    let lateTimer: number | null = null;
+    const pollTimers: number[] = [];
 
-    const teardownMount = (wrap: Element, record: MountRecord) => {
+    const teardownMount = (block: Element, record: MountRecord) => {
       record.select.removeEventListener("change", record.onSelectChange);
-      if (wrap instanceof HTMLElement) {
-        delete wrap.dataset.promptCodeToolbar;
+      if (block instanceof HTMLElement) {
+        delete block.dataset.promptCodeToolbar;
       }
-      mounts.delete(wrap);
-      // Detach immediately so a StrictMode remount cannot reuse this node
-      // while the previous createRoot is still attached.
+      mounts.delete(block);
       record.mountEl.remove();
       const root = record.root;
       queueMicrotask(() => {
@@ -61,12 +85,12 @@ export function useEnhanceCodeBlockToolbars(
       });
     };
 
-    const renderToolbar = (wrap: Element, record: MountRecord) => {
-      const { root, select } = record;
-      const codeEl = wrap.parentElement?.querySelector("code");
+    const renderToolbar = (record: MountRecord) => {
+      const { root, select, block } = record;
+      const codeEl = block.querySelector("code");
       root.render(
         <CodeLanguageToolbar
-          languages={languagesRef.current}
+          languages={languagesRef.current ?? []}
           value={select.value}
           disabled={disabledRef.current || select.disabled}
           onChange={(languageId) => {
@@ -82,23 +106,31 @@ export function useEnhanceCodeBlockToolbars(
     };
 
     const enhanceBlock = (block: Element) => {
-      const wrap = block.querySelector(":scope > div");
-      if (!(wrap instanceof HTMLElement)) return;
+      if (!(block instanceof HTMLElement)) return;
 
-      const select = wrap.querySelector("select");
+      const select = block.querySelector(":scope > div select, :scope > div > select");
       if (!(select instanceof HTMLSelectElement)) return;
 
-      const existing = mounts.get(wrap);
-      if (existing && wrap.dataset.promptCodeToolbar === "1") {
+      const existing = mounts.get(block);
+      if (existing && block.dataset.promptCodeToolbar === "1") {
+        positionMount(container, block, existing.mountEl);
         return;
       }
-      // Stale mark from a prior effect pass (StrictMode) or detached root.
-      if (wrap.dataset.promptCodeToolbar === "1" && !existing) {
-        wrap.querySelector(".prompt-code-toolbar-root")?.remove();
-        delete wrap.dataset.promptCodeToolbar;
+      if (block.dataset.promptCodeToolbar === "1" && !existing) {
+        container
+          .querySelector(
+            `.prompt-code-toolbar-root[data-for-block="${CSS.escape(block.dataset.promptCodeToolbarId ?? "")}"]`,
+          )
+          ?.remove();
+        delete block.dataset.promptCodeToolbar;
+        delete block.dataset.promptCodeToolbarId;
       }
 
-      wrap.dataset.promptCodeToolbar = "1";
+      const toolbarId =
+        block.dataset.promptCodeToolbarId ??
+        `code-${Math.random().toString(36).slice(2, 10)}`;
+      block.dataset.promptCodeToolbarId = toolbarId;
+      block.dataset.promptCodeToolbar = "1";
       select.hidden = true;
       select.setAttribute("aria-hidden", "true");
       select.tabIndex = -1;
@@ -108,18 +140,22 @@ export function useEnhanceCodeBlockToolbars(
       pre?.setAttribute("spellcheck", "false");
       code?.setAttribute("spellcheck", "false");
 
-      let mount = wrap.querySelector(".prompt-code-toolbar-root");
+      let mount = container.querySelector(
+        `:scope > .prompt-code-toolbar-root[data-for-block="${CSS.escape(toolbarId)}"]`,
+      );
       if (!(mount instanceof HTMLElement)) {
         mount = document.createElement("div");
         mount.className = "prompt-code-toolbar-root";
-        wrap.appendChild(mount);
+        mount.dataset.forBlock = toolbarId;
+        container.appendChild(mount);
       }
+      positionMount(container, block, mount);
 
       try {
-        const root = createRoot(mount);
+        const root = resolveCreateRoot()(mount);
         const onSelectChange = () => {
-          const record = mounts.get(wrap);
-          if (record) renderToolbar(wrap, record);
+          const record = mounts.get(block);
+          if (record) renderToolbar(record);
         };
         select.addEventListener("change", onSelectChange);
         const record: MountRecord = {
@@ -127,11 +163,13 @@ export function useEnhanceCodeBlockToolbars(
           select,
           onSelectChange,
           mountEl: mount,
+          block,
         };
-        mounts.set(wrap, record);
-        renderToolbar(wrap, record);
+        mounts.set(block, record);
+        renderToolbar(record);
       } catch (err) {
-        delete wrap.dataset.promptCodeToolbar;
+        delete block.dataset.promptCodeToolbar;
+        delete block.dataset.promptCodeToolbarId;
         mount.remove();
         select.hidden = false;
         select.removeAttribute("aria-hidden");
@@ -149,13 +187,15 @@ export function useEnhanceCodeBlockToolbars(
           .querySelectorAll('[data-content-type="codeBlock"]')
           .forEach((block) => {
             enhanceBlock(block);
-            const wrap = block.querySelector(":scope > div");
-            if (wrap) live.add(wrap);
+            live.add(block);
           });
 
-        for (const [wrap, record] of mounts) {
-          if (live.has(wrap) && wrap.isConnected) continue;
-          teardownMount(wrap, record);
+        for (const [block, record] of mounts) {
+          if (live.has(block) && block.isConnected) {
+            positionMount(container, record.block, record.mountEl);
+            continue;
+          }
+          teardownMount(block, record);
         }
       } finally {
         sweeping = false;
@@ -171,11 +211,9 @@ export function useEnhanceCodeBlockToolbars(
     };
 
     sweep();
-    // BlockNote may paint ProseMirror after the first effect tick.
-    raf = window.requestAnimationFrame(() => {
-      sweep();
-      lateTimer = window.setTimeout(sweep, 50);
-    });
+    for (const ms of [0, 50, 200, 500]) {
+      pollTimers.push(window.setTimeout(sweep, ms));
+    }
 
     const mo = new MutationObserver((mutations) => {
       for (const m of mutations) {
@@ -183,13 +221,15 @@ export function useEnhanceCodeBlockToolbars(
         if (t instanceof Element && t.closest(".prompt-code-toolbar-root")) {
           continue;
         }
+        const nodes = [...m.addedNodes, ...m.removedNodes];
         if (
           m.type === "childList" &&
-          [...m.addedNodes, ...m.removedNodes].every(
+          nodes.length > 0 &&
+          nodes.every(
             (n) =>
               n instanceof Element &&
-              (n.classList?.contains("prompt-code-toolbar-root") ||
-                n.closest?.(".prompt-code-toolbar-root")),
+              (n.classList.contains("prompt-code-toolbar-root") ||
+                !!n.closest(".prompt-code-toolbar-root")),
           )
         ) {
           continue;
@@ -198,26 +238,36 @@ export function useEnhanceCodeBlockToolbars(
         return;
       }
     });
-    mo.observe(container, { childList: true, subtree: true });
+    mo.observe(container, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["data-content-type"],
+    });
+
+    const onScrollOrResize = () => scheduleSweep();
+    container.addEventListener("scroll", onScrollOrResize, { passive: true });
+    window.addEventListener("resize", onScrollOrResize);
 
     return () => {
       mo.disconnect();
-      window.cancelAnimationFrame(raf);
+      container.removeEventListener("scroll", onScrollOrResize);
+      window.removeEventListener("resize", onScrollOrResize);
       if (debounceTimer != null) window.clearTimeout(debounceTimer);
-      if (lateTimer != null) window.clearTimeout(lateTimer);
-      for (const [wrap, record] of [...mounts.entries()]) {
-        teardownMount(wrap, record);
+      for (const id of pollTimers) window.clearTimeout(id);
+      for (const [block, record] of [...mounts.entries()]) {
+        teardownMount(block, record);
       }
       mounts.clear();
     };
   }, [container]);
 
   useEffect(() => {
-    for (const [wrap, record] of mountsRef.current) {
-      const codeEl = wrap.parentElement?.querySelector("code");
+    for (const [, record] of mountsRef.current) {
+      const codeEl = record.block.querySelector("code");
       record.root.render(
         <CodeLanguageToolbar
-          languages={languagesRef.current}
+          languages={languagesRef.current ?? []}
           value={record.select.value}
           disabled={disabled || record.select.disabled}
           onChange={(languageId) => {

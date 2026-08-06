@@ -197,6 +197,10 @@
   height: 1.25rem;
 }
 
+.blocknote-prompt-editor {
+  position: relative;
+}
+
 /* ---------- Code blocks (light surface + Notion top-right toolbar) ---------- */
 .blocknote-prompt-editor .bn-block-content[data-content-type="codeBlock"] {
   position: relative;
@@ -221,33 +225,50 @@
   background: transparent;
 }
 
-/* Native BlockNote select is replaced by React toolbar; keep wrapper as anchor. */
-.blocknote-prompt-editor .bn-block-content[data-content-type="codeBlock"] > div {
+/* Collapse BlockNote's select chrome once the React toolbar is active. */
+.blocknote-prompt-editor
+  .bn-block-content[data-content-type="codeBlock"][data-prompt-code-toolbar="1"]
+  > div {
   position: absolute;
-  top: 8px;
-  right: 10px;
-  left: auto;
-  z-index: 3;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
   outline: none !important;
 }
 
-/* Hide BlockNote's native select only after our React toolbar mounts. */
 .blocknote-prompt-editor
-  .bn-block-content[data-content-type="codeBlock"]
-  > div:has(.prompt-code-toolbar-root)
+  .bn-block-content[data-content-type="codeBlock"][data-prompt-code-toolbar="1"]
+  > div
   > select {
   display: none !important;
 }
 
-/* Fallback chrome if the bridge has not mounted yet (or failed). */
+/* Fallback: native select inside the block before the bridge mounts. */
 .blocknote-prompt-editor
-  .bn-block-content[data-content-type="codeBlock"]
-  > div:not(:has(.prompt-code-toolbar-root))
+  .bn-block-content[data-content-type="codeBlock"]:not([data-prompt-code-toolbar="1"])
+  > div {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  left: auto;
+  width: max-content;
+  max-width: calc(100% - 20px);
+  z-index: 3;
+  outline: none !important;
+}
+
+.blocknote-prompt-editor
+  .bn-block-content[data-content-type="codeBlock"]:not([data-prompt-code-toolbar="1"])
+  > div
   > select {
+  position: static;
+  inset: auto;
   display: inline-block;
-  max-width: 160px;
   margin: 0;
   padding: 4px 8px;
+  max-width: 160px;
   border: 1px solid var(--prompt-editor-border-strong);
   border-radius: 6px;
   background: var(--prompt-editor-surface);
@@ -257,6 +278,15 @@
   font-weight: 500;
   opacity: 1;
   cursor: pointer;
+}
+
+/* Portaled onto .blocknote-prompt-editor — sits over the code block top-right. */
+.blocknote-prompt-editor > .prompt-code-toolbar-root {
+  position: absolute;
+  z-index: 5;
+  width: max-content;
+  max-width: min(280px, calc(100% - 24px));
+  pointer-events: auto;
 }
 
 .prompt-code-toolbar-root {
