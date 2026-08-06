@@ -175,7 +175,7 @@
 }
 
 .prompt-editor-doc-header__title:focus-visible {
-  box-shadow: var(--shadow-focus, 0 0 0 3px rgba(59, 130, 246, 0.35));
+  box-shadow: var(--shadow-focus);
 }
 
 .prompt-editor-doc-header__title:disabled {

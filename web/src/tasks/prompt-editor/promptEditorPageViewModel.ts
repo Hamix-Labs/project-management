@@ -50,3 +50,27 @@ export function deriveWordCountLabel(ready: boolean, html: string): string {
   const words = wordCountFromHtml(html);
   return words === 0 ? "0 words" : `~${words} words`;
 }
+
+export function buildPromptEditorChromeLabels(input: {
+  status: PromptEditorLoadStatus;
+  ready: boolean;
+  lastSavedAt: number | null;
+  html: string;
+  repoLabel: string;
+  saveError: PromptEditorSessionError | null;
+  saving: boolean;
+  leavePending: boolean;
+  dirty: boolean;
+}) {
+  return {
+    saveStatus: deriveSaveStatus({
+      saveError: input.saveError,
+      saving: input.saving,
+      leavePending: input.leavePending,
+      dirty: input.dirty,
+    }),
+    editedLabel: deriveEditedLabel(input.status, input.ready, input.lastSavedAt),
+    wordCountLabel: deriveWordCountLabel(input.ready, input.html),
+    repoLabel: input.ready ? input.repoLabel : "—",
+  };
+}
