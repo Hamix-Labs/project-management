@@ -3,91 +3,16 @@ import { TASK_DRAFTS } from "@/constants/tasks";
 import {
   type ChecklistItemDraft,
   type PriorityChoice,
-  type TaskDraftChecklistItem,
   type TaskDraftDetail,
 } from "@/types";
 import { normalizeChecklistItems } from "../task-compose/checklistRequirement";
-import { draftAutosaveSignature } from "../task-drafts";
-import {
-  defaultCursorModelFromSettings,
-  defaultRunnerFromSettings,
-} from "./defaults";
-import type { DraftSavePayload, TaskCreateFormFields } from "./types";
+import { draftPayloadFingerprint } from "../task-drafts";
+import { resumedDraftFields } from "./resumedDraftFields";
+import type { DraftPayloadFields, DraftSavePayload } from "./types";
 
-export function mapDraftChecklistItems(
-  items: TaskDraftChecklistItem[] | undefined,
-): ChecklistItemDraft[] {
-  return (items ?? []).map((item) => ({
-    text: item.text,
-    ...(item.verify_commands?.length ? { verify_commands: item.verify_commands } : {}),
-  }));
-}
+export { mapDraftChecklistItems } from "./resumedDraftFields";
 
-function resumedRunnerFromDraft(draftRunner: unknown, settings: AppSettings | undefined): string {
-  if (typeof draftRunner === "string" && draftRunner.trim()) {
-    return draftRunner.trim();
-  }
-  return defaultRunnerFromSettings(settings);
-}
-
-function resumedCursorModelFromDraft(
-  draftModel: unknown,
-  settings: AppSettings | undefined,
-): string {
-  if (typeof draftModel === "string") {
-    return draftModel;
-  }
-  return defaultCursorModelFromSettings(settings);
-}
-
-function optionalDraftId(value: unknown): string {
-  return typeof value === "string" ? value : "";
-}
-
-export function buildResumedDraftAutosaveBaseline(input: {
-  draftID: string;
-  title: string;
-  prompt: string;
-  priority: PriorityChoice;
-  runner: string;
-  cursorModel: string;
-  projectID: string;
-  repositoryID: string;
-  worktreeID: string;
-  checklistItems: TaskDraftChecklistItem[];
-}): string {
-  return draftAutosaveSignature({
-    id: input.draftID,
-    name: input.title.trim() || TASK_DRAFTS.untitledDraftName,
-    title: input.title,
-    prompt: input.prompt,
-    priority: input.priority,
-    runner: input.runner,
-    cursorModel: input.cursorModel,
-    projectId: input.projectID,
-    repositoryId: input.repositoryID,
-    worktreeId: input.worktreeID,
-    checklistItems: input.checklistItems,
-  });
-}
-
-export function computeDraftAutosaveSignature(fields: TaskCreateFormFields): string {
-  return draftAutosaveSignature({
-    id: fields.newDraftID,
-    name: fields.newTitle.trim() || TASK_DRAFTS.untitledDraftName,
-    title: fields.newTitle,
-    prompt: fields.newPrompt,
-    priority: fields.newPriority,
-    projectId: fields.newProjectID,
-    repositoryId: fields.newRepositoryID,
-    worktreeId: fields.newWorktreeID,
-    checklistItems: normalizeChecklistItems(fields.newChecklistItems),
-    runner: fields.newTaskRunner,
-    cursorModel: fields.newTaskCursorModel,
-  });
-}
-
-export function buildDraftSavePayload(fields: TaskCreateFormFields): DraftSavePayload {
+export function buildDraftSavePayload(fields: DraftPayloadFields): DraftSavePayload {
   return {
     id: fields.newDraftID,
     name: fields.newTitle.trim() || TASK_DRAFTS.untitledDraftName,
@@ -103,6 +28,15 @@ export function buildDraftSavePayload(fields: TaskCreateFormFields): DraftSavePa
       checklist_items: normalizeChecklistItems(fields.newChecklistItems),
     },
   };
+}
+
+/**
+ * Dirty-bit fingerprint for the current form, taken from the payload that would
+ * be persisted. Deriving it (instead of listing the fields again) is what keeps
+ * "saved" and "dirty" in agreement.
+ */
+export function computeDraftAutosaveSignature(fields: DraftPayloadFields): string {
+  return draftPayloadFingerprint(buildDraftSavePayload(fields));
 }
 
 export function applyResumedDraftToForm(input: {
@@ -123,40 +57,19 @@ export function applyResumedDraftToForm(input: {
   setDraftAutosaveBaseline: (baseline: string) => void;
   setDraftAutosaveBaselineID: (id: string) => void;
 }) {
-  const resumedRunner = resumedRunnerFromDraft(input.draft.payload.runner, input.settings);
-  const resumedModel = resumedCursorModelFromDraft(
-    input.draft.payload.cursor_model,
-    input.settings,
-  );
-  input.setNewTaskRunner(resumedRunner);
-  input.setNewTaskCursorModel(resumedModel);
+  const fields = resumedDraftFields(input.draft, input.settings);
+  input.setNewDraftID(fields.newDraftID);
+  input.setNewTitle(fields.newTitle);
+  input.setNewPrompt(fields.newPrompt);
+  input.setNewPriority(fields.newPriority);
+  input.setNewTaskRunner(fields.newTaskRunner);
+  input.setNewTaskCursorModel(fields.newTaskCursorModel);
+  input.setNewChecklistItems(fields.newChecklistItems);
+  input.setNewProjectID(fields.newProjectID);
+  input.setNewRepositoryID(fields.newRepositoryID);
+  input.setNewWorktreeID(fields.newWorktreeID);
   input.setNewSchedule(null);
   input.setNewAutonomyEnabled(true);
-  input.setNewDraftID(input.draft.id);
-  input.setNewTitle(input.draft.payload.title ?? "");
-  input.setNewPrompt(input.draft.payload.initial_prompt ?? "");
-  input.setNewPriority(input.draft.payload.priority ?? "");
-  input.setNewChecklistItems(mapDraftChecklistItems(input.draft.payload.checklist_items));
-  const resumedProjectID = optionalDraftId(input.draft.payload.project_id);
-  const resumedRepositoryID = optionalDraftId(input.draft.payload.repository_id);
-  const resumedWorktreeID = optionalDraftId(input.draft.payload.worktree_id);
-  input.setNewProjectID(resumedProjectID);
-  input.setNewRepositoryID(resumedRepositoryID);
-  input.setNewWorktreeID(resumedWorktreeID);
-  const resumedTitle = input.draft.payload.title ?? "";
-  input.setDraftAutosaveBaseline(
-    buildResumedDraftAutosaveBaseline({
-      draftID: input.draft.id,
-      title: resumedTitle,
-      prompt: input.draft.payload.initial_prompt ?? "",
-      priority: input.draft.payload.priority ?? "",
-      runner: resumedRunner,
-      cursorModel: resumedModel,
-      projectID: resumedProjectID,
-      repositoryID: resumedRepositoryID,
-      worktreeID: resumedWorktreeID,
-      checklistItems: input.draft.payload.checklist_items ?? [],
-    }),
-  );
-  input.setDraftAutosaveBaselineID(input.draft.id);
+  input.setDraftAutosaveBaseline(computeDraftAutosaveSignature(fields));
+  input.setDraftAutosaveBaselineID(fields.newDraftID);
 }

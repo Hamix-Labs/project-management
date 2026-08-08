@@ -1,4 +1,4 @@
-import type { PriorityChoice, ChecklistVerifyCommandInput } from "@/types";
+import type { DraftSavePayload } from "@/types";
 
 /**
  * Treat editor-empty TipTap markup as the empty string when computing the
@@ -20,54 +20,26 @@ export function normalizeDraftPromptForDirty(prompt: string): string {
   return prompt;
 }
 
-export type DraftAutosaveSignatureInput = {
-  id: string;
-  name: string;
-  title: string;
-  prompt: string;
-  priority: PriorityChoice;
-  runner: string;
-  cursorModel: string;
-  /**
-   * Project the operator is composing against. Empty string means "no
-   * project bound". Folded into the autosave signature so changing the
-   * project flips the dirty bit and triggers an autosave.
-   */
-  projectId: string;
-  /** Repository binding; empty means unbound. */
-  repositoryId: string;
-  /** Worktree binding; empty means unbound / allocate-on-create. */
-  worktreeId: string;
-  checklistItems: Array<{
-    text: string;
-    verify_commands?: ChecklistVerifyCommandInput[];
-  }>;
-};
-
 /**
  * Stable, JSON-serialized fingerprint of a create-task draft.
  * Used by the autosave loop to short-circuit no-op writes: when the current
- * signature equals the last-saved baseline, the debounce timer skips POST.
+ * fingerprint equals the last-saved baseline, the debounce timer skips POST.
  *
- * The shape mirrors `TaskDraftPayload` so the baseline reflects exactly what
- * the server would persist.
+ * Derived from the save payload itself rather than a parallel field list. That
+ * is the point: a field that reaches the server necessarily reaches the dirty
+ * bit, so the two cannot drift (which is how `repository_id` once became
+ * unsaveable — it was persisted but invisible to the gate).
+ *
+ * Key order is inherited from the payload builder. Overwriting an existing key
+ * via spread keeps its original position, so `initial_prompt` stays put.
  */
-export function draftAutosaveSignature(
-  input: DraftAutosaveSignatureInput,
-): string {
+export function draftPayloadFingerprint(input: DraftSavePayload): string {
   return JSON.stringify({
     id: input.id,
     name: input.name,
     payload: {
-      title: input.title,
-      initial_prompt: normalizeDraftPromptForDirty(input.prompt),
-      priority: input.priority,
-      runner: input.runner,
-      cursor_model: input.cursorModel,
-      project_id: input.projectId,
-      repository_id: input.repositoryId,
-      worktree_id: input.worktreeId,
-      checklist_items: input.checklistItems,
+      ...input.payload,
+      initial_prompt: normalizeDraftPromptForDirty(input.payload.initial_prompt),
     },
   });
 }

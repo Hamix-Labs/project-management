@@ -1,7 +1,5 @@
 import type { AppSettings } from "@/api/settings";
-import { TASK_DRAFTS } from "@/constants/tasks";
 import { DEFAULT_NEW_TASK_STATUS, type Status } from "@/types";
-import { draftAutosaveSignature } from "../task-drafts";
 
 export function generateTaskDraftID(): string {
   return typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
@@ -19,23 +17,4 @@ export function defaultCursorModelFromSettings(settings: AppSettings | undefined
 
 export function createSubmitStatusForAutonomy(autonomyEnabled: boolean): Status {
   return autonomyEnabled ? DEFAULT_NEW_TASK_STATUS : "on_hold";
-}
-
-export function buildFreshDraftAutosaveBaseline(
-  settings: AppSettings | undefined,
-  generatedID: string,
-): string {
-  return draftAutosaveSignature({
-    id: generatedID,
-    name: TASK_DRAFTS.untitledDraftName,
-    title: "",
-    prompt: "",
-    priority: "",
-    runner: defaultRunnerFromSettings(settings),
-    cursorModel: defaultCursorModelFromSettings(settings),
-    projectId: "",
-    repositoryId: "",
-    worktreeId: "",
-    checklistItems: [],
-  });
 }

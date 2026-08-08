@@ -5,9 +5,10 @@ import type {
   PriorityChoice,
   Status,
   TaskDependencyEdge,
-  TaskDraftChecklistItem,
   TaskDraftSummary,
 } from "@/types";
+
+export type { DraftSavePayload } from "@/types";
 
 export type TaskDraftsQuery = UseQueryResult<TaskDraftSummary[], Error>;
 
@@ -61,18 +62,21 @@ export type TaskCreateFormFields = {
   newFunctionInputs: import("@/types").TemplateFunctionInputDef[];
 };
 
-export type DraftSavePayload = {
-  id: string;
-  name: string;
-  payload: {
-    title: string;
-    initial_prompt: string;
-    priority: PriorityChoice;
-    runner: string;
-    cursor_model: string;
-    project_id: string;
-    repository_id: string;
-    worktree_id: string;
-    checklist_items: TaskDraftChecklistItem[];
-  };
-};
+/**
+ * The form fields a draft save actually persists. Narrower than
+ * `TaskCreateFormFields` so pure mappers (fresh / resumed) can produce exactly
+ * what the payload builder consumes, with the compiler rejecting omissions.
+ */
+export type DraftPayloadFields = Pick<
+  TaskCreateFormFields,
+  | "newDraftID"
+  | "newTitle"
+  | "newPrompt"
+  | "newPriority"
+  | "newTaskRunner"
+  | "newTaskCursorModel"
+  | "newProjectID"
+  | "newRepositoryID"
+  | "newWorktreeID"
+  | "newChecklistItems"
+>;
