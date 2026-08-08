@@ -13,6 +13,7 @@ export type PromptEditorLoadStatus = "loading" | "ready" | "error";
 type CommitSnapshot = {
   html: string;
   worktreeId?: string;
+  name?: string;
 };
 
 type Args = {
@@ -67,7 +68,11 @@ export function usePromptEditorDocumentLoad({
             : snap.html;
         const fromSnap = snap.worktreeId?.trim() || undefined;
         onResolvedWorktreeId?.(fromSnap);
-        onCommit({ html, worktreeId: fromSnap });
+        onCommit({
+          html,
+          worktreeId: fromSnap,
+          name: snap.name,
+        });
         if (!dirtyRef.current) {
           // parent sets lastSavedAt on commit
         }

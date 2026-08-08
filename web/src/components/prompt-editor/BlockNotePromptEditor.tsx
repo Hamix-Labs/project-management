@@ -54,7 +54,6 @@ export function BlockNotePromptEditor({
   const [rangeWarning, setRangeWarning] = useState<string | null>(null);
   const [fileSearchUnavailable, setFileSearchUnavailable] = useState(false);
   const [fileSearchBusy, setFileSearchBusy] = useState(false);
-  const skipEmitRef = useRef(true);
   const hydrateMetaRef = useRef(htmlToInitialBlocks(initialHtml));
 
   const initialContent = useMemo(
@@ -75,10 +74,6 @@ export function BlockNotePromptEditor({
   }, [onHydrateFallback]);
 
   const emitHtml = useCallback(() => {
-    if (skipEmitRef.current) {
-      skipEmitRef.current = false;
-      return;
-    }
     const html = editor.blocksToHTMLLossy(editor.document);
     onChange(html);
   }, [editor, onChange]);

@@ -71,6 +71,8 @@ export type DraftSavePayload = {
     runner: string;
     cursor_model: string;
     project_id: string;
+    repository_id: string;
+    worktree_id: string;
     checklist_items: TaskDraftChecklistItem[];
   };
 };

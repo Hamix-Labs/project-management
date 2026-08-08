@@ -39,6 +39,8 @@ export function useTaskCreateDraftEntryActions(input: {
         setNewPriority: input.form.setNewPriority,
         setNewChecklistItems: input.form.setNewChecklistItems,
         setNewProjectID: input.form.setNewProjectID,
+        setNewRepositoryID: input.form.setNewRepositoryID,
+        setNewWorktreeID: input.form.setNewWorktreeID,
         setDraftAutosaveBaseline: input.form.setDraftAutosaveBaseline,
         setDraftAutosaveBaselineID: input.form.setDraftAutosaveBaselineID,
       });
