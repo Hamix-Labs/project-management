@@ -10,7 +10,7 @@ alwaysApply: false
 
 # Web layout — vertical modules
 
-The SPA lives under `web/src/`. This repo uses **vertical modules** (`tasks/`, `projects/`, …), not `src/features/`. Boundaries are enforced by `scripts/check-code-standards.ps1` and [ADR-0044](../../docs/adr/ADR-0044-query-invalidation-catalog.md).
+The SPA lives under `web/src/`. This repo uses **vertical modules** (`tasks/`, `projects/`, …), not `src/features/`. Boundaries are enforced by `cmd/checkstandards` and [ADR-0044](../../docs/adr/ADR-0044-query-invalidation-catalog.md).
 
 **Companion:** file-size limits in `CODE_STANDARDS.mdc`. UI quality: `frontend/*.mdc`. Tests: `web-testing-bar.mdc`. Data policy: [docs/web.md](../../docs/web.md).
 
@@ -116,7 +116,7 @@ app/
 
 ## CI enforcement
 
-`npm run check:standards` → `scripts/check-code-standards.ps1`:
+`npm run check:standards` → `cmd/checkstandards`:
 
 - `fetch(` only under `web/src/api/` (excluding tests)
 - Vertical cross-import matrix (table above)

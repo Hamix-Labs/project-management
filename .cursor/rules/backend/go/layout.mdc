@@ -134,7 +134,7 @@ cmd/*
 
 ### CI checks
 
-`scripts/check-go.sh` runs boundary steps per BC. `scripts/check-code-standards.ps1` guards handler DB imports and policy package purity.
+`scripts/check-go.sh` runs boundary steps per BC. `cmd/checkstandards` guards handler DB imports and policy package purity.
 
 ---
 
