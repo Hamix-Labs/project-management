@@ -1,0 +1,17 @@
+{
+  "$schema": "https://www.cursor.com/schemas/environment.schema.json",
+  "name": "Hamix",
+  "install": "bash .cursor/install.sh",
+  "start": "bash .cursor/start.sh",
+  "ports": [
+    { "name": "taskapi", "port": 8080 },
+    { "name": "web", "port": 5173 }
+  ],
+  "terminals": [
+    {
+      "name": "dev",
+      "command": "./scripts/dev.sh",
+      "description": "Already running: taskapi on http://127.0.0.1:8080 and the Vite dev server on http://localhost:5173. Open the UI in the browser to verify web changes instead of starting your own server. Restart this terminal rather than running ./scripts/dev.sh again."
+    }
+  ]
+}
