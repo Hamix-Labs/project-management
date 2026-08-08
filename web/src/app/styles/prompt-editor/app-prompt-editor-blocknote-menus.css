@@ -224,32 +224,136 @@ body div:has(> .bn-suggestion-menu.bn-ak-menu) {
 }
 
 /* ---------- Floating formatting toolbar ---------- */
-.blocknote-prompt-editor .bn-ak-toolbar {
-  border-radius: 9px;
+.blocknote-prompt-editor .bn-formatting-toolbar.bn-ak-toolbar {
+  /* 30px controls in a 38px shell mirrors Notion's compact selection toolbar. */
+  align-items: center;
+  min-height: 38px;
+  max-width: min(calc(100vw - 32px), 720px);
+  overflow: visible;
+  border-radius: 8px;
   background: var(--prompt-editor-toolbar-bg);
   color: var(--prompt-editor-toolbar-fg);
-  border: 1px solid transparent;
-  box-shadow: var(--prompt-editor-menu-shadow);
+  border: 1px solid rgb(255 255 255 / 8%);
+  box-shadow:
+    0 16px 40px rgb(20 18 12 / 24%),
+    0 4px 12px rgb(20 18 12 / 18%);
   padding: 4px;
-  gap: 2px;
+  gap: 1px;
 }
 
-.blocknote-prompt-editor .bn-ak-toolbar .bn-ak-button {
+.blocknote-prompt-editor .bn-formatting-toolbar .bn-ak-button,
+.blocknote-prompt-editor .bn-formatting-toolbar .bn-ak-button.bn-ak-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 30px;
+  min-height: 30px;
+  padding: 0 7px;
+  gap: 5px;
+  border-radius: 6px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
   color: var(--prompt-editor-toolbar-fg);
   background: transparent;
   border: none;
   box-shadow: none;
+  white-space: nowrap;
+  transition:
+    background-color var(--duration-fast, 100ms) var(--ease-default, ease),
+    color var(--duration-fast, 100ms) var(--ease-default, ease);
 }
 
-.blocknote-prompt-editor .bn-ak-toolbar .bn-ak-button:hover,
-.blocknote-prompt-editor .bn-ak-toolbar .bn-ak-button[data-active],
-.blocknote-prompt-editor .bn-ak-toolbar .bn-ak-button:active {
+.blocknote-prompt-editor .bn-formatting-toolbar .bn-ak-button.bn-button {
+  width: 30px;
+  padding: 0;
+}
+
+.blocknote-prompt-editor .bn-formatting-toolbar > .bn-ak-button:first-child {
+  justify-content: flex-start;
+  min-width: 124px;
+  max-width: 176px;
+  padding-inline: 10px 8px;
+}
+
+.blocknote-prompt-editor .bn-formatting-toolbar .bn-ak-button svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+}
+
+.blocknote-prompt-editor .bn-formatting-toolbar .bn-ak-button:hover,
+.blocknote-prompt-editor .bn-formatting-toolbar .bn-ak-button[data-active],
+.blocknote-prompt-editor .bn-formatting-toolbar .bn-ak-button[data-selected],
+.blocknote-prompt-editor .bn-formatting-toolbar .bn-ak-button[aria-pressed="true"],
+.blocknote-prompt-editor .bn-formatting-toolbar .bn-ak-button:active {
   background: var(--prompt-editor-toolbar-hover);
   color: var(--prompt-editor-toolbar-fg);
+  box-shadow: none;
+  padding-top: 0;
 }
 
-.blocknote-prompt-editor .bn-ak-toolbar .bn-ak-separator {
-  border-color: var(--prompt-editor-toolbar-muted);
-  opacity: 0.35;
-  height: 1.25rem;
+.blocknote-prompt-editor .bn-formatting-toolbar .bn-ak-button[data-focus-visible],
+.blocknote-prompt-editor .bn-formatting-toolbar .bn-ak-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgb(255 255 255 / 28%);
+}
+
+.blocknote-prompt-editor .bn-formatting-toolbar .bn-ak-separator {
+  width: 1px;
+  height: 20px;
+  margin: 0 3px;
+  border-color: transparent;
+  background: rgb(255 255 255 / 14%);
+  opacity: 1;
+}
+
+.blocknote-prompt-editor .bn-formatting-toolbar .bn-ak-popover.bn-select {
+  min-width: 220px;
+  padding: 5px;
+  border-radius: 8px;
+  border: 1px solid rgb(255 255 255 / 8%);
+  background: var(--prompt-editor-toolbar-bg);
+  color: var(--prompt-editor-toolbar-fg);
+  box-shadow:
+    0 16px 40px rgb(20 18 12 / 24%),
+    0 4px 12px rgb(20 18 12 / 18%);
+}
+
+.blocknote-prompt-editor .bn-formatting-toolbar .bn-ak-select-item {
+  display: flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 8px;
+  gap: 8px;
+  border-radius: 6px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--prompt-editor-toolbar-fg);
+  background: transparent;
+}
+
+.blocknote-prompt-editor .bn-formatting-toolbar .bn-ak-select-item svg {
+  width: 16px;
+  height: 16px;
+}
+
+.blocknote-prompt-editor .bn-formatting-toolbar .bn-ak-select-item:hover,
+.blocknote-prompt-editor
+  .bn-formatting-toolbar
+  .bn-ak-select-item[data-active-item] {
+  color: var(--prompt-editor-toolbar-fg);
+  background: var(--prompt-editor-toolbar-hover);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blocknote-prompt-editor .bn-formatting-toolbar .bn-ak-button,
+  .blocknote-prompt-editor
+    .bn-formatting-toolbar
+    .bn-ak-button.bn-ak-secondary {
+    transition: none;
+  }
 }
