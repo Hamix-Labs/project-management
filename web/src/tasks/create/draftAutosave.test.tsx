@@ -43,13 +43,17 @@ describe("draft autosave on create modal", () => {
     expect(screen.queryByRole("alert")).toBeNull();
   });
 
-  it("does not submit manual save when draft has no changes", async () => {
+  // I8 — clicking Save draft is explicit intent, so it writes even when the
+  // dirty gate says nothing changed. This deliberately reverses the older
+  // "manual save no-ops when clean" contract: that gate is what made an
+  // unfingerprinted field (repository_id) impossible to save by hand.
+  it("submits an explicit save even when the draft looks unchanged", async () => {
     const user = userEvent.setup();
     const draftSaves: string[] = [];
     server.use(
       draftCreateCapture(
         (body) => draftSaves.push(body),
-        { status: 404, body: { error: "Not Found" } },
+        { status: 201, body: { id: "d1", name: "Untitled draft" } },
       ),
     );
 
@@ -59,7 +63,8 @@ describe("draft autosave on create modal", () => {
     const dialog = await openNewTaskModal(user);
     await user.click(within(dialog).getByRole("button", { name: /^save draft$/i }));
 
-    expect(draftSaves).toHaveLength(0);
+    await waitFor(() => expect(draftSaves).toHaveLength(1));
+    expect(JSON.parse(draftSaves[0]).payload).toHaveProperty("repository_id");
     expect(
       within(dialog).queryByText(
         /Draft autosave failed\. You can still create the task\./i,

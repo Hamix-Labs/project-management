@@ -6,20 +6,8 @@ import {
   saveTaskDraft as apiSaveDraft,
 } from "@/api";
 import { isAbortError } from "@/lib/isAbortError";
-import type { PriorityChoice } from "@/types";
+import type { DraftSavePayload } from "@/types";
 import { invalidateTaskCacheAsync } from "@/tasks/mutations";
-
-type DraftSavePayload = {
-  title: string;
-  initial_prompt: string;
-  priority: PriorityChoice;
-  runner: string;
-  cursor_model: string;
-  project_id: string;
-  repository_id: string;
-  worktree_id: string;
-  checklist_items: import("@/types").TaskDraftChecklistItem[];
-};
 
 export function useTaskCreateDraftMutations(input: {
   queryClient: import("@tanstack/react-query").QueryClient;
@@ -39,12 +27,7 @@ export function useTaskCreateDraftMutations(input: {
   }, []);
 
   const saveDraftMutation = useMutation({
-    mutationFn: async (mutationInput: {
-      id: string;
-      name: string;
-      payload: DraftSavePayload;
-      signature: string;
-    }) => {
+    mutationFn: async (mutationInput: DraftSavePayload & { signature: string }) => {
       // Supersede any prior in-flight save (draft change or rapid autosave).
       cancelInFlightSave();
       const ac = new AbortController();

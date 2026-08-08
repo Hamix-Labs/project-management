@@ -105,8 +105,8 @@ export function useTaskCreateFlow() {
   const submitActions = useTaskCreateSubmitActions({ form, modal, mutations });
   const checklistActions = useTaskCreateChecklistActions({ form });
   const openPromptEditor = useMemo(
-    () => createOpenComposePromptEditor({ form, modal, mutations }),
-    [form, modal, mutations],
+    () => createOpenComposePromptEditor({ form, modal, autosave }),
+    [autosave, form, modal],
   );
 
   const actions = { ...entryActions, ...submitActions, ...checklistActions };

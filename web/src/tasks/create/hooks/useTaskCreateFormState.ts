@@ -10,11 +10,12 @@ import type { QueryClient } from "@tanstack/react-query";
 import type { ChecklistItemDraft, PriorityChoice, Task } from "@/types";
 import { settingsQueryKeys } from "@/lib/settingsQueryKeys";
 import {
-  buildFreshDraftAutosaveBaseline,
   defaultCursorModelFromSettings,
   defaultRunnerFromSettings,
   generateTaskDraftID,
 } from "../defaults";
+import { computeDraftAutosaveSignature } from "../draftPayload";
+import { freshDraftFields } from "../resumedDraftFields";
 import type { TaskCreateFormFields } from "../types";
 
 export function useTaskCreateFormState(queryClient: QueryClient) {
@@ -80,7 +81,9 @@ export function useTaskCreateFormState(queryClient: QueryClient) {
     setCreateFormError(null);
     setNewDraftID(generatedID);
     setLastDraftSavedAt(null);
-    setDraftAutosaveBaseline(buildFreshDraftAutosaveBaseline(settings, generatedID));
+    setDraftAutosaveBaseline(
+      computeDraftAutosaveSignature(freshDraftFields(settings, generatedID)),
+    );
     setDraftAutosaveBaselineID(generatedID);
   }, [queryClient, setNewDraftID]);
 

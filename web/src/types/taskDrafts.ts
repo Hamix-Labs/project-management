@@ -26,6 +26,29 @@ export type TaskDraftPayload = {
   worktree_id?: string;
 };
 
+/**
+ * Wire shape for a draft save (`POST /task-drafts`).
+ *
+ * Single source of truth for the persisted field set: the autosave fingerprint
+ * is derived from this value rather than re-enumerating the fields, so a field
+ * cannot be persisted without also affecting the dirty bit.
+ */
+export type DraftSavePayload = {
+  id: string;
+  name: string;
+  payload: {
+    title: string;
+    initial_prompt: string;
+    priority: PriorityChoice;
+    runner: string;
+    cursor_model: string;
+    project_id: string;
+    repository_id: string;
+    worktree_id: string;
+    checklist_items: TaskDraftChecklistItem[];
+  };
+};
+
 export type TaskDraftSummary = {
   id: string;
   name: string;
