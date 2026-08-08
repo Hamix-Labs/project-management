@@ -1,189 +1,144 @@
-import { useEffect, useRef, type RefObject } from "react";
-import { createRoot, type Root } from "react-dom/client";
-import { CodeLanguageToolbar } from "./CodeLanguageToolbar";
+import { useLayoutEffect, useEffect, useRef } from "react";
+import { createBlockKeyFactory } from "./codeToolbarDom";
+import {
+  CodeToolbarMounts,
+  type CodeBlockLanguageEditor,
+} from "./codeToolbarMounts";
 import {
   promptCodeLanguages,
   type PromptCodeLanguage,
 } from "./promptCodeBlockOptions";
 
-type MountRecord = {
-  root: Root;
-  select: HTMLSelectElement;
-  onSelectChange: () => void;
-};
+export type { CodeBlockLanguageEditor };
+
+const CODE_BLOCK_SELECTOR = '[data-content-type="codeBlock"]';
 
 /**
  * BlockNote's code block uses content:"plain", which createReactBlockSpec cannot
  * host. We keep createCodeBlockSpec (highlighter + shortcuts) and replace the
  * native <select> chrome with a Notion-like searchable toolbar.
  *
- * This is a finite DOM bridge: mark each block once, ignore mutations under our
- * toolbar roots, and unmount only when the block leaves the document.
- * Longer-term exit: a first-class React code block when BlockNote can host
- * plain-content blocks (or an upstream extension API).
+ * The toolbar is portaled onto the editor host, outside ProseMirror: mounting it
+ * inside the node view made ProseMirror strip our markers and remount a second
+ * toolbar on top of the native select on every sweep.
  */
 export function useEnhanceCodeBlockToolbars(
-  containerRef: RefObject<HTMLElement | null>,
+  container: HTMLElement | null,
   disabled: boolean,
+  editor?: CodeBlockLanguageEditor | null,
 ) {
-  const mountsRef = useRef(new Map<Element, MountRecord>());
-  const languagesRef = useRef<PromptCodeLanguage[]>(promptCodeLanguages());
+  const languagesRef = useRef<PromptCodeLanguage[] | null>(null);
+  if (languagesRef.current == null) {
+    languagesRef.current = promptCodeLanguages();
+  }
   const disabledRef = useRef(disabled);
   disabledRef.current = disabled;
+  const mountsRef = useRef<CodeToolbarMounts | null>(null);
 
-  useEffect(() => {
-    const container = containerRef.current;
+  useLayoutEffect(() => {
     if (!container) return;
 
-    const mounts = mountsRef.current;
+    const mounts = new CodeToolbarMounts({
+      host: container,
+      editor,
+      languages: () => languagesRef.current ?? [],
+      isDisabled: () => disabledRef.current,
+      keyOf: createBlockKeyFactory(),
+    });
+    mountsRef.current = mounts;
+
     let sweeping = false;
-    let debounceTimer: number | null = null;
-
-    const renderToolbar = (wrap: Element, record: MountRecord) => {
-      const { root, select } = record;
-      const codeEl = wrap.parentElement?.querySelector("code");
-      root.render(
-        <CodeLanguageToolbar
-          languages={languagesRef.current}
-          value={select.value}
-          disabled={disabledRef.current || select.disabled}
-          onChange={(languageId) => {
-            select.value = languageId;
-            select.dispatchEvent(new Event("change", { bubbles: true }));
-          }}
-          onCopy={async () => {
-            const text = codeEl?.textContent ?? "";
-            await navigator.clipboard.writeText(text);
-          }}
-        />,
-      );
-    };
-
-    const enhanceBlock = (block: Element) => {
-      const wrap = block.querySelector(":scope > div");
-      if (!(wrap instanceof HTMLElement)) return;
-      if (wrap.dataset.promptCodeToolbar === "1") {
-        return;
-      }
-
-      const select = wrap.querySelector("select");
-      if (!(select instanceof HTMLSelectElement)) return;
-
-      wrap.dataset.promptCodeToolbar = "1";
-      select.hidden = true;
-      select.setAttribute("aria-hidden", "true");
-      select.tabIndex = -1;
-
-      const pre = block.querySelector("pre");
-      const code = block.querySelector("code");
-      pre?.setAttribute("spellcheck", "false");
-      code?.setAttribute("spellcheck", "false");
-
-      let mount = wrap.querySelector(".prompt-code-toolbar-root");
-      if (!(mount instanceof HTMLElement)) {
-        mount = document.createElement("div");
-        mount.className = "prompt-code-toolbar-root";
-        wrap.appendChild(mount);
-      }
-
-      const root = createRoot(mount);
-      const onSelectChange = () => {
-        const record = mounts.get(wrap);
-        if (record) renderToolbar(wrap, record);
-      };
-      select.addEventListener("change", onSelectChange);
-      const record: MountRecord = { root, select, onSelectChange };
-      mounts.set(wrap, record);
-      renderToolbar(wrap, record);
-    };
+    let sweepTimer: number | null = null;
+    let positionTimer: number | null = null;
+    const pollTimers: number[] = [];
 
     const sweep = () => {
       if (sweeping) return;
       sweeping = true;
       try {
-        const live = new Set<Element>();
-        container
-          .querySelectorAll('[data-content-type="codeBlock"]')
-          .forEach((block) => {
-            enhanceBlock(block);
-            const wrap = block.querySelector(":scope > div");
-            if (wrap) live.add(wrap);
-          });
-
-        for (const [wrap, record] of mounts) {
-          if (live.has(wrap)) continue;
-          if (!wrap.isConnected) {
-            record.select.removeEventListener("change", record.onSelectChange);
-            record.root.unmount();
-            mounts.delete(wrap);
-          }
-        }
+        const live = new Set<string>();
+        container.querySelectorAll(CODE_BLOCK_SELECTOR).forEach((block) => {
+          const key = mounts.ensure(block);
+          if (key) live.add(key);
+        });
+        mounts.prune(live);
       } finally {
         sweeping = false;
       }
     };
 
     const scheduleSweep = () => {
-      if (debounceTimer != null) window.clearTimeout(debounceTimer);
-      debounceTimer = window.setTimeout(() => {
-        debounceTimer = null;
+      if (sweepTimer != null) window.clearTimeout(sweepTimer);
+      sweepTimer = window.setTimeout(() => {
+        sweepTimer = null;
         sweep();
-      }, 16);
+      }, 32);
+    };
+
+    const reposition = () => mounts.repositionAll();
+    const scheduleReposition = () => {
+      if (positionTimer != null) return;
+      positionTimer = window.setTimeout(() => {
+        positionTimer = null;
+        reposition();
+      }, 32);
     };
 
     sweep();
+    // BlockNote mounts its node views over a few frames after the editor appears.
+    for (const ms of [0, 50, 200]) {
+      pollTimers.push(window.setTimeout(sweep, ms));
+    }
+
     const mo = new MutationObserver((mutations) => {
+      let needsSweep = false;
+      let needsReposition = false;
       for (const m of mutations) {
-        const t = m.target;
-        if (t instanceof Element && t.closest(".prompt-code-toolbar-root")) {
+        const target = m.target;
+        if (!(target instanceof Element)) {
+          needsSweep = true;
           continue;
         }
-        if (
-          m.type === "childList" &&
-          [...m.addedNodes, ...m.removedNodes].every(
-            (n) =>
-              n instanceof Element &&
-              (n.classList?.contains("prompt-code-toolbar-root") ||
-                n.closest?.(".prompt-code-toolbar-root")),
-          )
-        ) {
+        if (target.closest(".prompt-code-toolbar-root")) continue;
+        // Highlighting rewrites spans inside <pre>, which can only shift blocks.
+        if (target.closest("pre")) {
+          needsReposition = true;
           continue;
         }
-        scheduleSweep();
-        return;
+        needsSweep = true;
       }
+      if (needsSweep) scheduleSweep();
+      else if (needsReposition) scheduleReposition();
     });
-    mo.observe(container, { childList: true, subtree: true });
+    mo.observe(container, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["data-content-type", "data-id"],
+    });
+
+    const unsubscribe = editor?.onChange(() => {
+      mounts.renderAll();
+      scheduleReposition();
+    });
+
+    container.addEventListener("scroll", reposition, { passive: true });
+    window.addEventListener("resize", reposition);
 
     return () => {
       mo.disconnect();
-      if (debounceTimer != null) window.clearTimeout(debounceTimer);
-      for (const [, record] of mounts) {
-        record.select.removeEventListener("change", record.onSelectChange);
-        record.root.unmount();
-      }
+      if (typeof unsubscribe === "function") unsubscribe();
+      container.removeEventListener("scroll", reposition);
+      window.removeEventListener("resize", reposition);
+      if (sweepTimer != null) window.clearTimeout(sweepTimer);
+      if (positionTimer != null) window.clearTimeout(positionTimer);
+      for (const id of pollTimers) window.clearTimeout(id);
       mounts.clear();
+      mountsRef.current = null;
     };
-  }, [containerRef]);
+  }, [container, editor]);
 
   useEffect(() => {
-    for (const [wrap, record] of mountsRef.current) {
-      const codeEl = wrap.parentElement?.querySelector("code");
-      record.root.render(
-        <CodeLanguageToolbar
-          languages={languagesRef.current}
-          value={record.select.value}
-          disabled={disabled || record.select.disabled}
-          onChange={(languageId) => {
-            record.select.value = languageId;
-            record.select.dispatchEvent(new Event("change", { bubbles: true }));
-          }}
-          onCopy={async () => {
-            const text = codeEl?.textContent ?? "";
-            await navigator.clipboard.writeText(text);
-          }}
-        />,
-      );
-    }
+    mountsRef.current?.renderAll();
   }, [disabled]);
 }

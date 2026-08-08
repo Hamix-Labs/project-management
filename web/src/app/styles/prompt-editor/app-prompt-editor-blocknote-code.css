@@ -1,5 +1,10 @@
 /* Code blocks (light surface + Notion top-right toolbar) */
 
+/* Positioning context for the toolbars portaled out of ProseMirror. */
+.blocknote-prompt-editor {
+  position: relative;
+}
+
 .blocknote-prompt-editor .bn-block-content[data-content-type="codeBlock"] {
   position: relative;
   color: var(--prompt-editor-text);
@@ -23,18 +28,78 @@
   background: transparent;
 }
 
-/* Native BlockNote select is replaced by React toolbar; keep wrapper as anchor. */
-.blocknote-prompt-editor .bn-block-content[data-content-type="codeBlock"] > div {
+/* Collapse BlockNote's native select whenever a portal toolbar is present.
+   Do not rely on data-* on the node view — ProseMirror strips those. */
+.blocknote-prompt-editor:has(> .prompt-code-toolbar-root)
+  .bn-block-content[data-content-type="codeBlock"]
+  > div {
+  position: absolute !important;
+  top: 0 !important;
+  right: 0 !important;
+  left: auto !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  border: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  outline: none !important;
+}
+
+.blocknote-prompt-editor:has(> .prompt-code-toolbar-root)
+  .bn-block-content[data-content-type="codeBlock"]
+  > div
+  > select {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Fallback: native select inside the block before the bridge mounts. */
+.blocknote-prompt-editor:not(:has(> .prompt-code-toolbar-root))
+  .bn-block-content[data-content-type="codeBlock"]
+  > div {
   position: absolute;
   top: 8px;
   right: 10px;
   left: auto;
+  width: max-content;
+  max-width: calc(100% - 20px);
   z-index: 3;
   outline: none !important;
 }
 
-.blocknote-prompt-editor .bn-block-content[data-content-type="codeBlock"] > div > select {
-  display: none !important;
+.blocknote-prompt-editor:not(:has(> .prompt-code-toolbar-root))
+  .bn-block-content[data-content-type="codeBlock"]
+  > div
+  > select {
+  position: static;
+  inset: auto;
+  display: inline-block;
+  margin: 0;
+  padding: 4px 8px;
+  max-width: 160px;
+  border: 1px solid var(--prompt-editor-border-strong);
+  border-radius: 6px;
+  background: var(--prompt-editor-surface);
+  color: var(--prompt-editor-text-secondary);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  opacity: 1;
+  cursor: pointer;
+}
+
+/* Portaled onto .blocknote-prompt-editor — sits over the code block top-right. */
+.blocknote-prompt-editor > .prompt-code-toolbar-root {
+  position: absolute;
+  z-index: 5;
+  width: max-content;
+  max-width: min(280px, calc(100% - 24px));
+  pointer-events: auto;
 }
 
 .prompt-code-toolbar-root {
@@ -56,6 +121,7 @@
 .prompt-code-toolbar__copy {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 4px;
   margin: 0;
   border: none;
@@ -67,14 +133,25 @@
   line-height: 1;
   cursor: pointer;
   border-radius: 6px;
+  min-height: 28px;
 }
 
 .prompt-code-toolbar__lang {
-  padding: 5px 8px;
+  padding: 6px 8px;
+}
+
+.prompt-code-toolbar__divider {
+  display: block;
+  width: 1px;
+  align-self: stretch;
+  margin: 4px 2px;
+  background: var(--prompt-editor-border-strong);
+  flex-shrink: 0;
 }
 
 .prompt-code-toolbar__copy {
-  padding: 5px 6px;
+  padding: 6px;
+  min-width: 28px;
 }
 
 .prompt-code-toolbar__lang:hover:not(:disabled),

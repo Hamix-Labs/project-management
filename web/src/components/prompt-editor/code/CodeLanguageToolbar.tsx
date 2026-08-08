@@ -87,6 +87,7 @@ export function CodeLanguageToolbar({
           <path d="M6 9l6 6 6-6" />
         </svg>
       </button>
+      <span className="prompt-code-toolbar__divider" aria-hidden="true" />
       <button
         type="button"
         className="prompt-code-toolbar__copy"
