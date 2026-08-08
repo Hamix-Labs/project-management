@@ -22,6 +22,7 @@ import {
   type PromptFileMentionItem,
 } from "./mention/PromptEditorMentionMenu";
 import { htmlToInitialBlocks } from "./promptEditorHtml";
+import { usePromptEditorFileWorktree } from "./usePromptEditorFileWorktree";
 
 export type BlockNotePromptEditorProps = {
   id: string;
@@ -33,6 +34,7 @@ export type BlockNotePromptEditorProps = {
   disabled?: boolean;
   placeholder?: string;
   worktreeId?: string;
+  repositoryId?: string;
 };
 
 type PendingInsert = { path: string };
@@ -45,9 +47,16 @@ export function BlockNotePromptEditor({
   disabled = false,
   placeholder = "Write the implementation brief…",
   worktreeId,
+  repositoryId,
 }: BlockNotePromptEditorProps) {
-  const worktreeRef = useRef(worktreeId);
-  worktreeRef.current = worktreeId;
+  const fileWorktree = usePromptEditorFileWorktree({
+    worktreeId,
+    repositoryId,
+  });
+  const fileWorktreeRef = useRef(fileWorktree.worktreeId);
+  fileWorktreeRef.current = fileWorktree.worktreeId;
+  const fileWorktreeResolvingRef = useRef(fileWorktree.resolving);
+  fileWorktreeResolvingRef.current = fileWorktree.resolving;
   const [pendingInsert, setPendingInsert] = useState<PendingInsert | null>(
     null,
   );
@@ -78,19 +87,19 @@ export function BlockNotePromptEditor({
     onChange(html);
   }, [editor, onChange]);
 
-  const workspaceProbe = useRepoWorkspaceProbe(worktreeId);
+  const workspaceProbe = useRepoWorkspaceProbe(fileWorktree.worktreeId);
   const repoHints = computeRepoHintFlags(
     workspaceProbe,
     fileSearchUnavailable,
-    fileSearchBusy,
-    worktreeId,
+    fileSearchBusy || fileWorktree.resolving,
+    fileWorktree.worktreeId,
   );
 
   const getMentionItems = useCallback(
     async (query: string): Promise<PromptFileMentionItem[]> => {
-      const wt = worktreeRef.current?.trim();
+      const wt = fileWorktreeRef.current?.trim();
       if (!wt) {
-        setFileSearchUnavailable(true);
+        setFileSearchUnavailable(!fileWorktreeResolvingRef.current);
         return [];
       }
       setFileSearchBusy(true);
@@ -165,7 +174,9 @@ export function BlockNotePromptEditor({
   useEnhanceCodeBlockToolbars(editorHost, disabled, toolbarEditor);
 
   return (
-    <PromptEditorRepoContext.Provider value={{ worktreeId }}>
+    <PromptEditorRepoContext.Provider
+      value={{ worktreeId: fileWorktree.worktreeId }}
+    >
       <div className="rich-prompt-wrap blocknote-prompt-wrap" id={id}>
         <div
           ref={setEditorHost}
@@ -198,7 +209,7 @@ export function BlockNotePromptEditor({
             id={`${id}-range`}
             pendingInsert={{ insertAt: 0, path: pendingInsert.path }}
             disabled={disabled}
-            worktreeId={worktreeId}
+            worktreeId={fileWorktree.worktreeId}
             rangeWarning={rangeWarning}
             onClose={() => {
               setPendingInsert(null);

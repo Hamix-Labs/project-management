@@ -98,6 +98,7 @@ export function PromptEditorPage() {
                 c.launch?.placeholder ?? "Write the implementation brief…"
               }
               worktreeId={c.worktreeId}
+              repositoryId={c.repositoryId}
             />
           ) : null}
         </div>

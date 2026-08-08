@@ -81,6 +81,7 @@ export function usePromptEditorPageController() {
     title: titleState.title,
     onTitleCommit: titleState.onTitleCommit,
     worktreeId: htmlSession.worktreeId,
+    repositoryId: htmlSession.repositoryId,
     onChange: htmlSession.onChange,
     onHydrateFallback: htmlSession.onHydrateFallback,
     leaveEditor,

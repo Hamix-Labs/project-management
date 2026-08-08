@@ -144,6 +144,7 @@ export function usePromptEditorHtmlSession({
     setLastSavedAt,
     repoLabel,
     worktreeId,
+    repositoryId,
     onChange,
     onHydrateFallback,
     retryLoad,
