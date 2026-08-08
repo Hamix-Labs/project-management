@@ -233,10 +233,8 @@ body div:has(> .bn-suggestion-menu.bn-ak-menu) {
   border-radius: 8px;
   background: var(--prompt-editor-toolbar-bg);
   color: var(--prompt-editor-toolbar-fg);
-  border: 1px solid rgb(255 255 255 / 8%);
-  box-shadow:
-    0 16px 40px rgb(20 18 12 / 24%),
-    0 4px 12px rgb(20 18 12 / 18%);
+  border: 1px solid var(--prompt-editor-toolbar-border);
+  box-shadow: var(--prompt-editor-toolbar-shadow);
   padding: 4px;
   gap: 1px;
 }
@@ -298,7 +296,7 @@ body div:has(> .bn-suggestion-menu.bn-ak-menu) {
 .blocknote-prompt-editor .bn-formatting-toolbar .bn-ak-button[data-focus-visible],
 .blocknote-prompt-editor .bn-formatting-toolbar .bn-ak-button:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px rgb(255 255 255 / 28%);
+  box-shadow: var(--prompt-editor-toolbar-focus);
 }
 
 .blocknote-prompt-editor .bn-formatting-toolbar .bn-ak-separator {
@@ -306,7 +304,7 @@ body div:has(> .bn-suggestion-menu.bn-ak-menu) {
   height: 20px;
   margin: 0 3px;
   border-color: transparent;
-  background: rgb(255 255 255 / 14%);
+  background: var(--prompt-editor-toolbar-separator);
   opacity: 1;
 }
 
@@ -314,12 +312,10 @@ body div:has(> .bn-suggestion-menu.bn-ak-menu) {
   min-width: 220px;
   padding: 5px;
   border-radius: 8px;
-  border: 1px solid rgb(255 255 255 / 8%);
+  border: 1px solid var(--prompt-editor-toolbar-border);
   background: var(--prompt-editor-toolbar-bg);
   color: var(--prompt-editor-toolbar-fg);
-  box-shadow:
-    0 16px 40px rgb(20 18 12 / 24%),
-    0 4px 12px rgb(20 18 12 / 18%);
+  box-shadow: var(--prompt-editor-toolbar-shadow);
 }
 
 .blocknote-prompt-editor .bn-formatting-toolbar .bn-ak-select-item {
