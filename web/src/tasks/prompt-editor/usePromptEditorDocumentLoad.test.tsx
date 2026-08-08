@@ -187,7 +187,7 @@ describe("usePromptEditorDocumentLoad", () => {
       }),
     );
 
-    await waitFor(() => expect(result.current.repoLabel).toBe("my-app repo"));
+    await waitFor(() => expect(result.current.repoLabel).toBe("my-app"));
     expect(mockGetRepository).toHaveBeenCalledWith(FACTORY_GIT_REPO_ID);
     expect(mockGetWorktree).not.toHaveBeenCalled();
   });
@@ -220,9 +220,7 @@ describe("usePromptEditorDocumentLoad", () => {
       }),
     );
 
-    await waitFor(() =>
-      expect(result.current.repoLabel).toBe("from-worktree repo"),
-    );
+    await waitFor(() => expect(result.current.repoLabel).toBe("from-worktree"));
     expect(mockGetWorktree).toHaveBeenCalledWith(FACTORY_GIT_WORKTREE_ID);
     expect(mockGetRepository).not.toHaveBeenCalled();
   });

@@ -15,10 +15,3 @@ export function wordCountFromHtml(html: string): number {
   if (!text) return 0;
   return text.split(/\s+/).filter(Boolean).length;
 }
-
-export function repoBasename(path: string): string {
-  const norm = path.replace(/\\/g, "/").replace(/\/+$/, "");
-  const parts = norm.split("/");
-  const base = parts[parts.length - 1] || path;
-  return base.endsWith(" repo") ? base : `${base} repo`;
-}

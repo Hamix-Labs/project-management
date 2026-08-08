@@ -3,9 +3,9 @@ import {
   getGlobalGitRepository,
   getGlobalGitWorktree,
 } from "@/api/gitGlobal";
+import { repositoryDisplayName } from "@/lib/repositoryDisplayName";
 import type { PromptDocumentAdapter } from "./types";
 import type { PromptEditorLaunchContext } from "./types";
-import { repoBasename } from "./promptEditorPageMeta";
 import {
   loadSessionError,
   type PromptEditorSessionError,
@@ -122,7 +122,7 @@ export function usePromptEditorDocumentLoad({
           if (cancelled) return;
           const path =
             detail.repository_path || detail.repository_host_path || "";
-          setRepoLabel(path ? repoBasename(path) : "No repo");
+          setRepoLabel(path ? repositoryDisplayName(path) : "No repo");
         })
         .catch(() => {
           if (!cancelled) setRepoLabel("No repo");
@@ -132,7 +132,7 @@ export function usePromptEditorDocumentLoad({
         .then((detail) => {
           if (cancelled) return;
           const path = detail.path || detail.host_path || "";
-          setRepoLabel(path ? repoBasename(path) : "No repo");
+          setRepoLabel(path ? repositoryDisplayName(path) : "No repo");
         })
         .catch(() => {
           if (!cancelled) setRepoLabel("No repo");
