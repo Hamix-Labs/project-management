@@ -4,7 +4,7 @@ import {
   pickLoadError,
   pickSaveError,
 } from "./promptEditorPageViewModel";
-import { usePromptDocumentInvalidate } from "./usePromptDocumentInvalidate";
+import { usePromptDocumentCoherence } from "./usePromptDocumentCoherence";
 import { usePromptEditorHtmlSession } from "./usePromptEditorHtmlSession";
 import { usePromptEditorLeave } from "./usePromptEditorLeave";
 import { usePromptEditorRouteAdapter } from "./usePromptEditorRouteAdapter";
@@ -14,7 +14,7 @@ export function usePromptEditorPageController() {
   const { sourceKind, sourceId, kindOk, launch, adapter } =
     usePromptEditorRouteAdapter();
 
-  const onDocumentSaved = usePromptDocumentInvalidate(sourceKind, sourceId);
+  const onDocumentSaved = usePromptDocumentCoherence(sourceKind, sourceId);
 
   const applyHydratedNameRef = useRef<(name?: string) => void>(() => {});
   const applyHydratedName = useCallback((name?: string) => {
@@ -46,7 +46,6 @@ export function usePromptEditorPageController() {
     setSessionError: htmlSession.setSessionError,
     setLastSavedAt: htmlSession.setLastSavedAt,
     setSaving: htmlSession.setSaving,
-    onDocumentSaved,
   });
 
   const saveError = pickSaveError(htmlSession.sessionError);

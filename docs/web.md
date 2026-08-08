@@ -18,6 +18,7 @@ Vite + React client under `web/`. All `fetch` calls live in `web/src/api/`; resp
 - [Task create flow](#task-create-flow)
 - [Query policy](#query-policy)
 - [Project/worktree mutation invalidation](#projectworktree-mutation-invalidation)
+- [Prompt IDE document writes](#prompt-ide-document-writes)
 - [Task detail — execution cycles](#task-detail--execution-cycles)
 - [CSS ownership](#css-ownership)
 - [See also](#see-also)
@@ -100,6 +101,16 @@ Project and git writes invalidate React Query through a shared catalog — not i
 3. [`projects/mutations/`](../web/src/projects/mutations/) — project create/delete/patch hooks
 4. [`worktrees/mutations/`](../web/src/worktrees/mutations/) — global and legacy git hooks
 5. [`tasks/sync/decideSyncFrame.ts`](../web/src/tasks/sync/decideSyncFrame.ts) — SSE `project` frames use the same project scopes
+
+## Prompt IDE document writes
+
+The Prompt IDE (`/prompt/:sourceKind/:sourceId`) writes through a document adapter rather than a mutation hook: one seam saves body HTML and the document name for every source kind (task, draft, template, ephemeral). Because those writes skip the mutation layer, cache coherence is explicit.
+
+1. [`tasks/prompt-editor/promptDocumentAdapter.ts`](../web/src/tasks/prompt-editor/promptDocumentAdapter.ts) — per-kind `load` / `save` / `saveName`
+2. [`tasks/mutations/invalidatePromptDocumentCoherence.ts`](../web/src/tasks/mutations/invalidatePromptDocumentCoherence.ts) — pure kind → `TaskInvalidationScope[]` table (draft → drafts, template → templates, task → detail + listStats, ephemeral → none)
+3. [`tasks/prompt-editor/usePromptDocumentCoherence.ts`](../web/src/tasks/prompt-editor/usePromptDocumentCoherence.ts) — invalidates on rename and on editor unmount
+
+**Why unmount, not just Done:** `TasksAppProvider` sits above the Prompt IDE route (`ImmersiveShell`), so the drafts query stays mounted while the editor is open. Returning to `/drafts` never remounts it and therefore never refetches — without an explicit invalidate the list keeps serving the pre-rename name until a full reload. Unmount covers every exit (Done, Escape, browser Back); a rename also invalidates immediately so the list behind the editor is already correct.
 
 ## Task detail — execution cycles
 
