@@ -49,7 +49,7 @@ export function usePromptEditorPageController() {
   }, []);
 
   const onCommit = useCallback((snap: { html: string }) => {
-    setHtml(snap.html);
+    if (!dirtyRef.current) setHtml(snap.html);
     setSessionError(null);
     setHydrateWarning(null);
     if (!dirtyRef.current) setLastSavedAt(Date.now());
