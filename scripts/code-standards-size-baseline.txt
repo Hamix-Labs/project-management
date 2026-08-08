@@ -1,6 +1,6 @@
 # CODE_STANDARDS red-zone baseline (audit F-11-03 / Wave C6).
 # Paths that already exceed the red line count may stay listed here.
-# NEW red-zone files (not listed) fail scripts/check-code-standards.ps1.
+# NEW red-zone files (not listed) fail cmd/checkstandards.
 # Burn-down: split/shrink a file below Red, then delete its line here.
 #
 internal/taskapi/agentreconcile/agent_real_cursor_e2e_test.go
