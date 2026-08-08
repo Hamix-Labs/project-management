@@ -46,6 +46,18 @@ export async function deleteGlobalGitRepository(repositoryId: string): Promise<v
   await gitFetchVoid(`${gitRoot}/repositories/${encodeURIComponent(repoId)}`, gitDeleteInit());
 }
 
+export async function getGlobalGitRepository(
+  repositoryId: string,
+  options?: { signal?: AbortSignal },
+): Promise<GitRepository> {
+  const repoId = assertTaskPathId(repositoryId, "repository id");
+  const raw = await gitFetchJson(
+    `${gitRoot}/repositories/${encodeURIComponent(repoId)}`,
+    gitJsonGetInit(options?.signal),
+  );
+  return parseGitRepository(raw);
+}
+
 export async function getGlobalGitWorktree(
   worktreeId: string,
   options?: { signal?: AbortSignal },

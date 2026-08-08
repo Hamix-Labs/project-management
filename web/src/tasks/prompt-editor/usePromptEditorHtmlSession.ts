@@ -36,6 +36,9 @@ export function usePromptEditorHtmlSession({
   const [adapterWorktreeId, setAdapterWorktreeId] = useState<
     string | undefined
   >(undefined);
+  const [adapterRepositoryId, setAdapterRepositoryId] = useState<
+    string | undefined
+  >(undefined);
   const htmlRef = useRef(html);
   htmlRef.current = html;
   const dirtyRef = useRef(false);
@@ -46,9 +49,15 @@ export function usePromptEditorHtmlSession({
 
   const worktreeId =
     launch?.worktreeId?.trim() || adapterWorktreeId || undefined;
+  const repositoryId =
+    launch?.repositoryId?.trim() || adapterRepositoryId || undefined;
 
   const onResolvedWorktreeId = useCallback((id: string | undefined) => {
     setAdapterWorktreeId(id?.trim() || undefined);
+  }, []);
+
+  const onResolvedRepositoryId = useCallback((id: string | undefined) => {
+    setAdapterRepositoryId(id?.trim() || undefined);
   }, []);
 
   const onCommit = useCallback((snap: { html: string; name?: string }) => {
@@ -77,7 +86,9 @@ export function usePromptEditorHtmlSession({
     onLoadError,
     onStatus,
     worktreeId,
+    repositoryId,
     onResolvedWorktreeId,
+    onResolvedRepositoryId,
   });
 
   useEffect(() => {

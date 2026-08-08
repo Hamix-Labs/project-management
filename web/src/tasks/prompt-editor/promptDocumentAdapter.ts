@@ -28,12 +28,17 @@ export function readEphemeralPrompt(id: string): PromptDocumentSnapshot {
     const parsed = JSON.parse(raw) as {
       html?: string;
       worktreeId?: string;
+      repositoryId?: string;
       name?: string;
     };
     return {
       html: typeof parsed.html === "string" ? parsed.html : "",
       worktreeId:
         typeof parsed.worktreeId === "string" ? parsed.worktreeId : undefined,
+      repositoryId:
+        typeof parsed.repositoryId === "string"
+          ? parsed.repositoryId
+          : undefined,
       name: typeof parsed.name === "string" ? parsed.name : undefined,
     };
   } catch {
@@ -50,6 +55,7 @@ export function writeEphemeralPrompt(
     JSON.stringify({
       html: snap.html,
       worktreeId: snap.worktreeId,
+      repositoryId: snap.repositoryId,
       name: snap.name,
     }),
   );
@@ -68,6 +74,7 @@ export function createPromptDocumentAdapter(
             html: draft.payload.initial_prompt ?? "",
             name: draft.name,
             worktreeId: launch?.worktreeId,
+            repositoryId: launch?.repositoryId,
           };
         },
         async save(html) {
@@ -102,6 +109,8 @@ export function createPromptDocumentAdapter(
             html: task.initial_prompt ?? "",
             name: task.title,
             worktreeId: launch?.worktreeId ?? task.worktree_id ?? undefined,
+            repositoryId:
+              launch?.repositoryId ?? task.repository_id ?? undefined,
           };
         },
         async save(html) {
@@ -120,6 +129,7 @@ export function createPromptDocumentAdapter(
               html: snap?.html ?? "",
               name: snap?.name?.trim() || "New template",
               worktreeId: launch?.worktreeId,
+              repositoryId: launch?.repositoryId,
             };
           }
           const tpl = await getTaskTemplate(ref.id, { signal });
@@ -127,6 +137,7 @@ export function createPromptDocumentAdapter(
             html: tpl.payload.initial_prompt ?? "",
             name: tpl.name,
             worktreeId: launch?.worktreeId,
+            repositoryId: launch?.repositoryId,
           };
         },
         async save(html) {
@@ -135,6 +146,7 @@ export function createPromptDocumentAdapter(
             writeEphemeralPrompt("template-new", {
               html,
               worktreeId: launch?.worktreeId ?? prev.worktreeId,
+              repositoryId: launch?.repositoryId ?? prev.repositoryId,
               name: prev.name,
             });
             return;
@@ -155,6 +167,7 @@ export function createPromptDocumentAdapter(
             writeEphemeralPrompt("template-new", {
               html: prev.html,
               worktreeId: launch?.worktreeId ?? prev.worktreeId,
+              repositoryId: launch?.repositoryId ?? prev.repositoryId,
               name: trimmed,
             });
             return;
@@ -173,6 +186,7 @@ export function createPromptDocumentAdapter(
           return {
             ...snap,
             worktreeId: launch?.worktreeId ?? snap.worktreeId,
+            repositoryId: launch?.repositoryId ?? snap.repositoryId,
           };
         },
         async save(html) {
@@ -180,6 +194,7 @@ export function createPromptDocumentAdapter(
           writeEphemeralPrompt(ref.id, {
             html,
             worktreeId: launch?.worktreeId ?? prev.worktreeId,
+            repositoryId: launch?.repositoryId ?? prev.repositoryId,
             name: prev.name,
           });
         },
@@ -188,6 +203,7 @@ export function createPromptDocumentAdapter(
           writeEphemeralPrompt(ref.id, {
             html: prev.html,
             worktreeId: launch?.worktreeId ?? prev.worktreeId,
+            repositoryId: launch?.repositoryId ?? prev.repositoryId,
             name: name.trim(),
           });
         },

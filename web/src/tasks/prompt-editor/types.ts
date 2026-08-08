@@ -9,6 +9,8 @@ export type PromptDocumentRef = {
 /** Optional context for @-mentions and return navigation. */
 export type PromptEditorLaunchContext = {
   worktreeId?: string;
+  /** Registered repo when worktree is not allocated yet (compose / pre-allocate). */
+  repositoryId?: string;
   returnPath?: string;
   /** When true, Done resumes the suspended compose modal. */
   resumeCompose?: boolean;
@@ -26,6 +28,7 @@ export type PromptDocumentSnapshot = {
   /** Display name when known (draft/template). */
   name?: string;
   worktreeId?: string;
+  repositoryId?: string;
 };
 
 export type PromptDocumentAdapter = {

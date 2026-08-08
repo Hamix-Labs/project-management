@@ -14,6 +14,7 @@ export type GitRouteScope = "project" | "global";
 export type GitRouteMatch =
   | { kind: "repositories-list" }
   | { kind: "repositories-create" }
+  | { kind: "repositories-get" }
   | { kind: "worktrees-list" }
   | { kind: "branches-list" }
   | { kind: "repo-projects" };
@@ -39,6 +40,13 @@ export function matchGitRoute(
   if (scope === "global" && url.includes(`${base}/repositories/`) && url.endsWith("/projects")) {
     return { kind: "repo-projects" };
   }
+  if (
+    scope === "global" &&
+    url.includes(`${base}/repositories/`) &&
+    !url.slice(url.indexOf(`${base}/repositories/`) + `${base}/repositories/`.length).includes("/")
+  ) {
+    return { kind: "repositories-get" };
+  }
   return null;
 }
 
@@ -55,6 +63,8 @@ export function gitRouteJsonBody(match: GitRouteMatch, scope: GitRouteScope): Js
       const body = globalGitRepositoriesResponse() as { repositories: unknown[] };
       return body.repositories[0] as JsonBodyType;
     }
+    case "repositories-get":
+      return gitRepositoryFactory() as JsonBodyType;
     case "worktrees-list":
       return scope === "global"
         ? globalGitWorktreesResponse()

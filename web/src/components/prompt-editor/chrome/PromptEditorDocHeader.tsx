@@ -120,8 +120,11 @@ export function PromptEditorDocHeader({
             strokeWidth="2"
             aria-hidden="true"
           >
-            <path d="M4 20V10M12 20V4M20 20v-7" />
+            <path d="M4 7a2 2 0 0 1 2-2h3.5l2 2H18a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7Z" />
+            <circle cx="10.5" cy="13.5" r="1.75" />
+            <path d="M12.25 13.5H16" />
           </svg>
+          <span className="visually-hidden">Repository: </span>
           {repoLabel}
         </span>
       </div>
