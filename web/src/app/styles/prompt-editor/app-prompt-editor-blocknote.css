@@ -1,4 +1,4 @@
-/* BlockNote body, placeholder, side menu, slash menu, formatting toolbar */
+/* BlockNote body, placeholder, and side menu (add / drag) */
 
 .prompt-editor-page__body .blocknote-prompt-editor {
   min-height: 320px;
@@ -48,9 +48,10 @@
   color: var(--prompt-editor-text-muted) !important;
 }
 
-/* Side menu (drag handle / add block) */
+/* Side menu (drag handle / add block) — quiet Notion-like weight + tight pair */
 .blocknote-prompt-editor .bn-side-menu {
   opacity: 0;
+  gap: 2px;
   transition: opacity var(--duration-fast, 100ms) var(--ease-default, ease);
 }
 
@@ -60,16 +61,69 @@
   opacity: 1;
 }
 
-.blocknote-prompt-editor .bn-side-menu .bn-ak-button {
+.blocknote-prompt-editor .bn-side-menu .bn-ak-button,
+.blocknote-prompt-editor .bn-side-menu .bn-ak-button.bn-ak-secondary {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* Compact visual size (Notion); hit area expanded via ::before */
+  width: 22px;
+  height: 24px;
+  min-width: 22px;
+  min-height: 24px;
+  padding: 0;
+  margin: 0;
   color: var(--prompt-editor-text-muted);
   background: transparent;
   border: none;
+  border-radius: var(--radius-sm);
   box-shadow: none;
+  gap: 0;
 }
 
-.blocknote-prompt-editor .bn-side-menu .bn-ak-button:hover {
-  color: var(--prompt-editor-text-secondary);
+/* Expand hit area without spreading icons (WCAG 2.5.8 AA ≥24px; prefer tall target) */
+.blocknote-prompt-editor .bn-side-menu .bn-ak-button::before {
+  content: "";
+  position: absolute;
+  top: calc((var(--touch-target-min) - 24px) / -2);
+  bottom: calc((var(--touch-target-min) - 24px) / -2);
+  left: -4px;
+  right: -4px;
+}
+
+.blocknote-prompt-editor .bn-side-menu .bn-ak-button svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+
+/* Notion-like subtle chip behind the six-dot grip only */
+.blocknote-prompt-editor .bn-side-menu .bn-ak-button[data-test="dragHandle"] {
   background: var(--prompt-editor-embed-head-bg);
+}
+
+.blocknote-prompt-editor .bn-side-menu .bn-ak-button:hover,
+.blocknote-prompt-editor .bn-side-menu .bn-ak-button.bn-ak-secondary:hover {
+  color: var(--prompt-editor-text-secondary);
+}
+
+.blocknote-prompt-editor .bn-side-menu .bn-ak-button[data-test="dragHandleAdd"]:hover {
+  background: transparent;
+}
+
+.blocknote-prompt-editor .bn-side-menu .bn-ak-button[data-test="dragHandle"]:hover {
+  background: var(--prompt-editor-border);
+  color: var(--prompt-editor-text-secondary);
+}
+
+.blocknote-prompt-editor .bn-side-menu .bn-ak-button[data-focus-visible],
+.blocknote-prompt-editor .bn-side-menu .bn-ak-button:focus-visible {
+  outline: none;
+  color: var(--prompt-editor-text-secondary);
+  box-shadow: var(--shadow-focus);
 }
 
 .blocknote-prompt-editor .bn-editor h2 {
@@ -114,256 +168,3 @@
     opacity: 1;
   }
 }
-
-/* ---------- Slash suggestion menu ---------- */
-.blocknote-prompt-editor .bn-ak-menu {
-  min-width: 280px;
-  max-width: min(340px, 92vw);
-  padding: 6px;
-  border-radius: 10px;
-  border: 1px solid var(--prompt-editor-border-strong);
-  background: var(--prompt-editor-surface);
-  color: var(--prompt-editor-text);
-  box-shadow: var(--prompt-editor-menu-shadow);
-  font-family: var(--font-sans);
-}
-
-.blocknote-prompt-editor .bn-ak-group-label {
-  padding: 8px 10px 4px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--prompt-editor-text-muted);
-  opacity: 1;
-}
-
-.blocknote-prompt-editor .bn-ak-menu-item {
-  border-radius: 7px;
-  padding: 8px 10px;
-  font-size: 13.5px;
-  color: var(--prompt-editor-text);
-}
-
-.blocknote-prompt-editor .bn-ak-menu-item[data-active-item],
-.blocknote-prompt-editor .bn-ak-menu-item[data-active],
-.blocknote-prompt-editor .bn-ak-menu-item:active {
-  background: var(--prompt-editor-accent-tint);
-  color: var(--prompt-editor-text);
-}
-
-.blocknote-prompt-editor .bn-ak-menu-item .bn-ak-badge,
-.blocknote-prompt-editor .bn-ak-menu-item kbd,
-.blocknote-prompt-editor .bn-ak-menu-item .badge {
-  margin-left: auto;
-  font-family: var(--font-sans);
-  font-size: 10.5px;
-  font-weight: 500;
-  color: var(--prompt-editor-text-muted);
-  background: var(--prompt-editor-bg);
-  border: 1px solid var(--prompt-editor-border-strong);
-  border-radius: 4px;
-  padding: 1px 5px;
-}
-
-/* ---------- Floating formatting toolbar ---------- */
-.blocknote-prompt-editor .bn-ak-toolbar {
-  border-radius: 9px;
-  background: var(--prompt-editor-toolbar-bg);
-  color: var(--prompt-editor-toolbar-fg);
-  border: 1px solid transparent;
-  box-shadow: var(--prompt-editor-menu-shadow);
-  padding: 4px;
-  gap: 2px;
-}
-
-.blocknote-prompt-editor .bn-ak-toolbar .bn-ak-button {
-  color: var(--prompt-editor-toolbar-fg);
-  background: transparent;
-  border: none;
-  box-shadow: none;
-}
-
-.blocknote-prompt-editor .bn-ak-toolbar .bn-ak-button:hover,
-.blocknote-prompt-editor .bn-ak-toolbar .bn-ak-button[data-active],
-.blocknote-prompt-editor .bn-ak-toolbar .bn-ak-button:active {
-  background: var(--prompt-editor-toolbar-hover);
-  color: var(--prompt-editor-toolbar-fg);
-}
-
-.blocknote-prompt-editor .bn-ak-toolbar .bn-ak-separator {
-  border-color: var(--prompt-editor-toolbar-muted);
-  opacity: 0.35;
-  height: 1.25rem;
-}
-
-/* ---------- Code blocks (light surface + Notion top-right toolbar) ---------- */
-.blocknote-prompt-editor .bn-block-content[data-content-type="codeBlock"] {
-  position: relative;
-  color: var(--prompt-editor-text);
-  background-color: var(--prompt-editor-embed-head-bg);
-  border: 1px solid var(--prompt-editor-border-strong);
-  border-radius: 8px;
-  overflow: visible;
-}
-
-.blocknote-prompt-editor .bn-block-content[data-content-type="codeBlock"] > pre {
-  padding: 40px 16px 18px;
-  margin: 0;
-}
-
-.blocknote-prompt-editor .bn-block-content[data-content-type="codeBlock"] > pre code,
-.blocknote-prompt-editor .bn-block-content[data-content-type="codeBlock"] .bn-inline-content {
-  color: var(--prompt-editor-text);
-  font-family: var(--prompt-editor-font-mono);
-  font-size: 13.5px;
-  line-height: 1.55;
-  background: transparent;
-}
-
-/* Native BlockNote select is replaced by React toolbar; keep wrapper as anchor. */
-.blocknote-prompt-editor .bn-block-content[data-content-type="codeBlock"] > div {
-  position: absolute;
-  top: 8px;
-  right: 10px;
-  left: auto;
-  z-index: 3;
-  outline: none !important;
-}
-
-.blocknote-prompt-editor .bn-block-content[data-content-type="codeBlock"] > div > select {
-  display: none !important;
-}
-
-.prompt-code-toolbar-root {
-  position: relative;
-}
-
-.prompt-code-toolbar {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  padding: 2px;
-  border-radius: 8px;
-  border: 1px solid var(--prompt-editor-border-strong);
-  background: var(--prompt-editor-surface);
-  box-shadow: var(--prompt-editor-menu-shadow);
-}
-
-.prompt-code-toolbar__lang,
-.prompt-code-toolbar__copy {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin: 0;
-  border: none;
-  background: transparent;
-  color: var(--prompt-editor-text-secondary);
-  font-family: var(--font-sans);
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 1;
-  cursor: pointer;
-  border-radius: 6px;
-}
-
-.prompt-code-toolbar__lang {
-  padding: 5px 8px;
-}
-
-.prompt-code-toolbar__copy {
-  padding: 5px 6px;
-}
-
-.prompt-code-toolbar__lang:hover:not(:disabled),
-.prompt-code-toolbar__copy:hover:not(:disabled) {
-  background: var(--prompt-editor-embed-head-bg);
-  color: var(--prompt-editor-text);
-}
-
-.prompt-code-toolbar__lang:focus-visible,
-.prompt-code-toolbar__copy:focus-visible {
-  outline: none;
-  box-shadow: var(--shadow-focus);
-}
-
-.prompt-code-toolbar__lang:disabled,
-.prompt-code-toolbar__copy:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-.prompt-code-lang-menu {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
-  z-index: 30;
-  width: min(260px, 72vw);
-  max-height: min(320px, 50vh);
-  display: flex;
-  flex-direction: column;
-  border-radius: 10px;
-  border: 1px solid var(--prompt-editor-border-strong);
-  background: var(--prompt-editor-surface);
-  box-shadow: var(--prompt-editor-menu-shadow);
-  overflow: hidden;
-}
-
-.prompt-code-lang-menu__search {
-  margin: 0;
-  padding: 10px 12px;
-  border: none;
-  border-bottom: 1px solid var(--prompt-editor-border);
-  background: transparent;
-  color: var(--prompt-editor-text);
-  font-family: var(--font-sans);
-  font-size: 13px;
-  outline: none;
-}
-
-.prompt-code-lang-menu__search:focus {
-  box-shadow: inset 0 0 0 2px var(--prompt-editor-accent);
-}
-
-.prompt-code-lang-menu__list {
-  list-style: none;
-  margin: 0;
-  padding: 6px;
-  overflow-y: auto;
-  flex: 1;
-  min-height: 0;
-}
-
-.prompt-code-lang-menu__item {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 8px 10px;
-  border: none;
-  border-radius: 7px;
-  background: transparent;
-  color: var(--prompt-editor-text);
-  font-family: var(--font-sans);
-  font-size: 13.5px;
-  text-align: left;
-  cursor: pointer;
-}
-
-.prompt-code-lang-menu__item:hover,
-.prompt-code-lang-menu__item[data-selected="true"] {
-  background: var(--prompt-editor-embed-head-bg);
-}
-
-.prompt-code-lang-menu__item:focus-visible {
-  outline: none;
-  box-shadow: var(--shadow-focus);
-}
-
-.prompt-code-lang-menu__empty {
-  padding: 10px 12px;
-  color: var(--prompt-editor-text-muted);
-  font-size: 13px;
-}
-

@@ -52,7 +52,8 @@ export function usePromptEditorHtmlSession({
   }, []);
 
   const onCommit = useCallback((snap: { html: string; name?: string }) => {
-    setHtml(snap.html);
+    // A late or retried load must not wipe in-progress edits (#128).
+    if (!dirtyRef.current) setHtml(snap.html);
     applyHydratedNameRef.current(snap.name);
     setSessionError(null);
     setHydrateWarning(null);
