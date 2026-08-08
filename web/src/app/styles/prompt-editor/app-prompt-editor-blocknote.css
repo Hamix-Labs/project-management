@@ -225,29 +225,39 @@
   background: transparent;
 }
 
-/* Collapse BlockNote's select chrome once the React toolbar is active. */
-.blocknote-prompt-editor
-  .bn-block-content[data-content-type="codeBlock"][data-prompt-code-toolbar="1"]
+/* Collapse BlockNote's native select whenever a portal toolbar is present.
+   Do not rely on data-* on the node view — ProseMirror strips those. */
+.blocknote-prompt-editor:has(> .prompt-code-toolbar-root)
+  .bn-block-content[data-content-type="codeBlock"]
   > div {
-  position: absolute;
-  width: 0;
-  height: 0;
-  overflow: hidden;
-  opacity: 0;
-  pointer-events: none;
+  position: absolute !important;
+  top: 0 !important;
+  right: 0 !important;
+  left: auto !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  border: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
   outline: none !important;
 }
 
-.blocknote-prompt-editor
-  .bn-block-content[data-content-type="codeBlock"][data-prompt-code-toolbar="1"]
+.blocknote-prompt-editor:has(> .prompt-code-toolbar-root)
+  .bn-block-content[data-content-type="codeBlock"]
   > div
   > select {
   display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 /* Fallback: native select inside the block before the bridge mounts. */
-.blocknote-prompt-editor
-  .bn-block-content[data-content-type="codeBlock"]:not([data-prompt-code-toolbar="1"])
+.blocknote-prompt-editor:not(:has(> .prompt-code-toolbar-root))
+  .bn-block-content[data-content-type="codeBlock"]
   > div {
   position: absolute;
   top: 8px;
@@ -259,8 +269,8 @@
   outline: none !important;
 }
 
-.blocknote-prompt-editor
-  .bn-block-content[data-content-type="codeBlock"]:not([data-prompt-code-toolbar="1"])
+.blocknote-prompt-editor:not(:has(> .prompt-code-toolbar-root))
+  .bn-block-content[data-content-type="codeBlock"]
   > div
   > select {
   position: static;

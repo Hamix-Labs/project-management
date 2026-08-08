@@ -26,6 +26,18 @@ function resolveCreateRoot(): typeof ReactDOM.createRoot {
   return fn;
 }
 
+function hideNativeSelect(select: HTMLSelectElement) {
+  select.hidden = true;
+  select.setAttribute("aria-hidden", "true");
+  select.tabIndex = -1;
+  select.style.setProperty("display", "none", "important");
+  const wrap = select.parentElement;
+  if (wrap instanceof HTMLElement) {
+    wrap.style.cssText =
+      "position:absolute;width:0;height:0;overflow:hidden;opacity:0;pointer-events:none;border:none;margin:0;padding:0;";
+  }
+}
+
 function positionMount(
   host: HTMLElement,
   block: HTMLElement,
@@ -40,13 +52,19 @@ function positionMount(
   mountEl.style.left = "auto";
 }
 
+function findSelect(block: Element): HTMLSelectElement | null {
+  const select = block.querySelector(":scope > div select");
+  return select instanceof HTMLSelectElement ? select : null;
+}
+
 /**
  * BlockNote's code block uses content:"plain", which createReactBlockSpec cannot
  * host. We keep createCodeBlockSpec (highlighter + shortcuts) and replace the
  * native <select> chrome with a Notion-like searchable toolbar.
  *
- * The toolbar is portaled onto the editor host (outside ProseMirror). Mutating
- * inside the code-block node view is wiped or ingested as document text.
+ * The toolbar is portaled onto the editor host (outside ProseMirror). Do not key
+ * mount lifetime off data-* on the node view — ProseMirror strips those and that
+ * previously remounted a second toolbar on top of the native select every sweep.
  */
 export function useEnhanceCodeBlockToolbars(
   container: HTMLElement | null,
@@ -70,9 +88,6 @@ export function useEnhanceCodeBlockToolbars(
 
     const teardownMount = (block: Element, record: MountRecord) => {
       record.select.removeEventListener("change", record.onSelectChange);
-      if (block instanceof HTMLElement) {
-        delete block.dataset.promptCodeToolbar;
-      }
       mounts.delete(block);
       record.mountEl.remove();
       const root = record.root;
@@ -105,59 +120,77 @@ export function useEnhanceCodeBlockToolbars(
       );
     };
 
+    const bindSelect = (
+      record: MountRecord,
+      select: HTMLSelectElement,
+    ): MountRecord => {
+      if (record.select === select) {
+        hideNativeSelect(select);
+        return record;
+      }
+      record.select.removeEventListener("change", record.onSelectChange);
+      const onSelectChange = () => {
+        const current = mounts.get(record.block);
+        if (current) renderToolbar(current);
+      };
+      select.addEventListener("change", onSelectChange);
+      const next: MountRecord = {
+        ...record,
+        select,
+        onSelectChange,
+      };
+      mounts.set(record.block, next);
+      hideNativeSelect(select);
+      renderToolbar(next);
+      return next;
+    };
+
     const enhanceBlock = (block: Element) => {
       if (!(block instanceof HTMLElement)) return;
 
-      const select = block.querySelector(":scope > div select, :scope > div > select");
-      if (!(select instanceof HTMLSelectElement)) return;
+      const select = findSelect(block);
+      if (!select) return;
 
       const existing = mounts.get(block);
-      if (existing && block.dataset.promptCodeToolbar === "1") {
+      if (existing) {
+        bindSelect(existing, select);
         positionMount(container, block, existing.mountEl);
         return;
       }
-      if (block.dataset.promptCodeToolbar === "1" && !existing) {
-        container
-          .querySelector(
-            `.prompt-code-toolbar-root[data-for-block="${CSS.escape(block.dataset.promptCodeToolbarId ?? "")}"]`,
-          )
-          ?.remove();
-        delete block.dataset.promptCodeToolbar;
-        delete block.dataset.promptCodeToolbarId;
+
+      // Re-associate if ProseMirror replaced the block element but left our portal.
+      for (const [prevBlock, record] of mounts) {
+        if (prevBlock === block) continue;
+        if (prevBlock.isConnected) continue;
+        if (!record.mountEl.isConnected) continue;
+        mounts.delete(prevBlock);
+        const moved: MountRecord = { ...record, block };
+        mounts.set(block, moved);
+        bindSelect(moved, select);
+        positionMount(container, block, moved.mountEl);
+        return;
       }
 
-      const toolbarId =
-        block.dataset.promptCodeToolbarId ??
-        `code-${Math.random().toString(36).slice(2, 10)}`;
-      block.dataset.promptCodeToolbarId = toolbarId;
-      block.dataset.promptCodeToolbar = "1";
-      select.hidden = true;
-      select.setAttribute("aria-hidden", "true");
-      select.tabIndex = -1;
+      const toolbarId = `code-${Math.random().toString(36).slice(2, 10)}`;
+      const mount = document.createElement("div");
+      mount.className = "prompt-code-toolbar-root";
+      mount.dataset.forBlock = toolbarId;
+      container.appendChild(mount);
+      positionMount(container, block, mount);
 
       const pre = block.querySelector("pre");
       const code = block.querySelector("code");
       pre?.setAttribute("spellcheck", "false");
       code?.setAttribute("spellcheck", "false");
 
-      let mount = container.querySelector(
-        `:scope > .prompt-code-toolbar-root[data-for-block="${CSS.escape(toolbarId)}"]`,
-      );
-      if (!(mount instanceof HTMLElement)) {
-        mount = document.createElement("div");
-        mount.className = "prompt-code-toolbar-root";
-        mount.dataset.forBlock = toolbarId;
-        container.appendChild(mount);
-      }
-      positionMount(container, block, mount);
-
       try {
         const root = resolveCreateRoot()(mount);
         const onSelectChange = () => {
-          const record = mounts.get(block);
-          if (record) renderToolbar(record);
+          const current = mounts.get(block);
+          if (current) renderToolbar(current);
         };
         select.addEventListener("change", onSelectChange);
+        hideNativeSelect(select);
         const record: MountRecord = {
           root,
           select,
@@ -168,12 +201,7 @@ export function useEnhanceCodeBlockToolbars(
         mounts.set(block, record);
         renderToolbar(record);
       } catch (err) {
-        delete block.dataset.promptCodeToolbar;
-        delete block.dataset.promptCodeToolbarId;
         mount.remove();
-        select.hidden = false;
-        select.removeAttribute("aria-hidden");
-        select.tabIndex = 0;
         console.error("prompt-editor: code toolbar mount failed", err);
       }
     };
@@ -191,12 +219,17 @@ export function useEnhanceCodeBlockToolbars(
           });
 
         for (const [block, record] of mounts) {
-          if (live.has(block) && block.isConnected) {
-            positionMount(container, record.block, record.mountEl);
-            continue;
-          }
+          if (live.has(block) && block.isConnected) continue;
+          // Keep portal if we can re-associate on the next enhance pass.
+          if (!block.isConnected && record.mountEl.isConnected) continue;
           teardownMount(block, record);
         }
+
+        // Drop orphan portals left by remount bugs.
+        container.querySelectorAll(":scope > .prompt-code-toolbar-root").forEach((el) => {
+          const kept = [...mounts.values()].some((r) => r.mountEl === el);
+          if (!kept) el.remove();
+        });
       } finally {
         sweeping = false;
       }
@@ -207,11 +240,18 @@ export function useEnhanceCodeBlockToolbars(
       debounceTimer = window.setTimeout(() => {
         debounceTimer = null;
         sweep();
-      }, 16);
+      }, 32);
+    };
+
+    const repositionAll = () => {
+      for (const [, record] of mounts) {
+        if (!record.block.isConnected) continue;
+        positionMount(container, record.block, record.mountEl);
+      }
     };
 
     sweep();
-    for (const ms of [0, 50, 200, 500]) {
+    for (const ms of [0, 50, 200]) {
       pollTimers.push(window.setTimeout(sweep, ms));
     }
 
@@ -234,6 +274,19 @@ export function useEnhanceCodeBlockToolbars(
         ) {
           continue;
         }
+        // Ignore decoration churn inside an already-enhanced code block.
+        if (
+          t instanceof Element &&
+          t.closest('[data-content-type="codeBlock"]') &&
+          !nodes.some(
+            (n) =>
+              n instanceof Element &&
+              (n.matches?.('[data-content-type="codeBlock"]') ||
+                !!n.querySelector?.('[data-content-type="codeBlock"]')),
+          )
+        ) {
+          continue;
+        }
         scheduleSweep();
         return;
       }
@@ -245,14 +298,13 @@ export function useEnhanceCodeBlockToolbars(
       attributeFilter: ["data-content-type"],
     });
 
-    const onScrollOrResize = () => scheduleSweep();
-    container.addEventListener("scroll", onScrollOrResize, { passive: true });
-    window.addEventListener("resize", onScrollOrResize);
+    container.addEventListener("scroll", repositionAll, { passive: true });
+    window.addEventListener("resize", repositionAll);
 
     return () => {
       mo.disconnect();
-      container.removeEventListener("scroll", onScrollOrResize);
-      window.removeEventListener("resize", onScrollOrResize);
+      container.removeEventListener("scroll", repositionAll);
+      window.removeEventListener("resize", repositionAll);
       if (debounceTimer != null) window.clearTimeout(debounceTimer);
       for (const id of pollTimers) window.clearTimeout(id);
       for (const [block, record] of [...mounts.entries()]) {
