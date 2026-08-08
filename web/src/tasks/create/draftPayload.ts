@@ -40,6 +40,10 @@ function resumedCursorModelFromDraft(
   return defaultCursorModelFromSettings(settings);
 }
 
+function optionalDraftId(value: unknown): string {
+  return typeof value === "string" ? value : "";
+}
+
 export function buildResumedDraftAutosaveBaseline(input: {
   draftID: string;
   title: string;
@@ -48,6 +52,8 @@ export function buildResumedDraftAutosaveBaseline(input: {
   runner: string;
   cursorModel: string;
   projectID: string;
+  repositoryID: string;
+  worktreeID: string;
   checklistItems: TaskDraftChecklistItem[];
 }): string {
   return draftAutosaveSignature({
@@ -59,6 +65,8 @@ export function buildResumedDraftAutosaveBaseline(input: {
     runner: input.runner,
     cursorModel: input.cursorModel,
     projectId: input.projectID,
+    repositoryId: input.repositoryID,
+    worktreeId: input.worktreeID,
     checklistItems: input.checklistItems,
   });
 }
@@ -71,6 +79,8 @@ export function computeDraftAutosaveSignature(fields: TaskCreateFormFields): str
     prompt: fields.newPrompt,
     priority: fields.newPriority,
     projectId: fields.newProjectID,
+    repositoryId: fields.newRepositoryID,
+    worktreeId: fields.newWorktreeID,
     checklistItems: normalizeChecklistItems(fields.newChecklistItems),
     runner: fields.newTaskRunner,
     cursorModel: fields.newTaskCursorModel,
@@ -88,6 +98,8 @@ export function buildDraftSavePayload(fields: TaskCreateFormFields): DraftSavePa
       runner: fields.newTaskRunner,
       cursor_model: fields.newTaskCursorModel,
       project_id: fields.newProjectID,
+      repository_id: fields.newRepositoryID,
+      worktree_id: fields.newWorktreeID,
       checklist_items: normalizeChecklistItems(fields.newChecklistItems),
     },
   };
@@ -106,6 +118,8 @@ export function applyResumedDraftToForm(input: {
   setNewPriority: (priority: PriorityChoice) => void;
   setNewChecklistItems: (items: ChecklistItemDraft[]) => void;
   setNewProjectID: (id: string) => void;
+  setNewRepositoryID: (id: string) => void;
+  setNewWorktreeID: (id: string) => void;
   setDraftAutosaveBaseline: (baseline: string) => void;
   setDraftAutosaveBaselineID: (id: string) => void;
 }) {
@@ -123,11 +137,12 @@ export function applyResumedDraftToForm(input: {
   input.setNewPrompt(input.draft.payload.initial_prompt ?? "");
   input.setNewPriority(input.draft.payload.priority ?? "");
   input.setNewChecklistItems(mapDraftChecklistItems(input.draft.payload.checklist_items));
-  const resumedProjectID =
-    typeof input.draft.payload.project_id === "string"
-      ? input.draft.payload.project_id
-      : "";
+  const resumedProjectID = optionalDraftId(input.draft.payload.project_id);
+  const resumedRepositoryID = optionalDraftId(input.draft.payload.repository_id);
+  const resumedWorktreeID = optionalDraftId(input.draft.payload.worktree_id);
   input.setNewProjectID(resumedProjectID);
+  input.setNewRepositoryID(resumedRepositoryID);
+  input.setNewWorktreeID(resumedWorktreeID);
   const resumedTitle = input.draft.payload.title ?? "";
   input.setDraftAutosaveBaseline(
     buildResumedDraftAutosaveBaseline({
@@ -138,6 +153,8 @@ export function applyResumedDraftToForm(input: {
       runner: resumedRunner,
       cursorModel: resumedModel,
       projectID: resumedProjectID,
+      repositoryID: resumedRepositoryID,
+      worktreeID: resumedWorktreeID,
       checklistItems: input.draft.payload.checklist_items ?? [],
     }),
   );

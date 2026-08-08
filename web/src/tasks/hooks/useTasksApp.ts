@@ -43,6 +43,7 @@ export function useTasksApp({
     newTitle,
     newPrompt,
     setNewPrompt,
+    setNewTitle,
     newPriority,
     newProjectID,
     newTagsCsv,
@@ -59,6 +60,7 @@ export function useTasksApp({
 
   usePromptEditorReturnResume({
     setNewPrompt,
+    setNewTitle,
     resumeComposeFromPromptEditor,
     promptEditorSuspended,
   });
@@ -181,6 +183,7 @@ export function useTasksApp({
     newTitle,
     newPrompt,
     setNewPrompt,
+    setNewTitle,
     newPriority,
     newProjectID,
     newTagsCsv,

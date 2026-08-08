@@ -16,6 +16,8 @@ function baseInput(): DraftAutosaveSignatureInput {
     runner: TASK_TEST_DEFAULTS.runner,
     cursorModel: TASK_TEST_DEFAULTS.cursor_model,
     projectId: "",
+    repositoryId: "",
+    worktreeId: "",
     checklistItems: [],
   };
 }
@@ -102,6 +104,8 @@ describe("draftAutosaveSignature", () => {
         runner: TASK_TEST_DEFAULTS.runner,
         cursor_model: TASK_TEST_DEFAULTS.cursor_model,
         project_id: "",
+        repository_id: "",
+        worktree_id: "",
         checklist_items: [],
       },
     });
@@ -115,6 +119,30 @@ describe("draftAutosaveSignature", () => {
     const b = draftAutosaveSignature({
       ...baseInput(),
       projectId: "project-2",
+    });
+    expect(a).not.toBe(b);
+  });
+
+  it("changes when the bound repository changes", () => {
+    const a = draftAutosaveSignature({
+      ...baseInput(),
+      repositoryId: "repo-1",
+    });
+    const b = draftAutosaveSignature({
+      ...baseInput(),
+      repositoryId: "repo-2",
+    });
+    expect(a).not.toBe(b);
+  });
+
+  it("changes when the bound worktree changes", () => {
+    const a = draftAutosaveSignature({
+      ...baseInput(),
+      worktreeId: "wt-1",
+    });
+    const b = draftAutosaveSignature({
+      ...baseInput(),
+      worktreeId: "wt-2",
     });
     expect(a).not.toBe(b);
   });

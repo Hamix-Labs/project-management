@@ -1,8 +1,12 @@
+import { useEffect, useRef, useState } from "react";
+
 export type PromptEditorDocHeaderProps = {
   title: string;
   editedLabel: string;
   wordCountLabel: string;
   repoLabel: string;
+  disabled?: boolean;
+  onTitleCommit?: (next: string) => void | Promise<void>;
 };
 
 export function PromptEditorDocHeader({
@@ -10,10 +14,71 @@ export function PromptEditorDocHeader({
   editedLabel,
   wordCountLabel,
   repoLabel,
+  disabled = false,
+  onTitleCommit,
 }: PromptEditorDocHeaderProps) {
+  const [draft, setDraft] = useState(title);
+  const committedRef = useRef(title);
+  const skipBlurCommitRef = useRef(false);
+
+  useEffect(() => {
+    setDraft(title);
+    committedRef.current = title;
+  }, [title]);
+
+  const editable = Boolean(onTitleCommit) && !disabled;
+
+  const commit = () => {
+    if (!onTitleCommit || disabled) return;
+    const next = draft.trim();
+    if (!next) {
+      setDraft(committedRef.current);
+      return;
+    }
+    if (next === committedRef.current) {
+      setDraft(committedRef.current);
+      return;
+    }
+    void onTitleCommit(next);
+  };
+
   return (
     <div className="prompt-editor-doc-header">
-      <h1 className="prompt-editor-doc-header__title">{title}</h1>
+      {editable ? (
+        <input
+          type="text"
+          className="prompt-editor-doc-header__title"
+          aria-label="Document title"
+          value={draft}
+          disabled={disabled}
+          onChange={(ev) => setDraft(ev.target.value)}
+          onBlur={() => {
+            if (skipBlurCommitRef.current) {
+              skipBlurCommitRef.current = false;
+              return;
+            }
+            commit();
+          }}
+          onKeyDown={(ev) => {
+            if (ev.key === "Enter") {
+              ev.preventDefault();
+              skipBlurCommitRef.current = true;
+              (ev.target as HTMLInputElement).blur();
+              commit();
+              return;
+            }
+            if (ev.key === "Escape") {
+              ev.preventDefault();
+              ev.stopPropagation();
+              skipBlurCommitRef.current = true;
+              setDraft(committedRef.current);
+              (ev.target as HTMLInputElement).blur();
+            }
+          }}
+        />
+      ) : (
+        <h1 className="prompt-editor-doc-header__title">{title}</h1>
+      )}
       <div className="prompt-editor-doc-header__meta">
         <span className="prompt-editor-doc-header__meta-item">
           <svg

@@ -1,14 +1,26 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
+import type { ReactNode } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { PromptDocumentAdapter } from "./types";
 
 const load = vi.fn();
 const save = vi.fn(async () => undefined);
+const saveName = vi.fn(async () => undefined);
 
 const adapter: PromptDocumentAdapter = {
   load: (...args) => load(...args),
   save,
+  saveName,
 };
+
+const queryClient = new QueryClient();
+
+function wrapper({ children }: { children: ReactNode }) {
+  return (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  );
+}
 
 vi.mock("./usePromptEditorRouteAdapter", () => ({
   usePromptEditorRouteAdapter: () => ({
@@ -42,7 +54,9 @@ describe("usePromptEditorPageController dirty load commit", () => {
   });
 
   it("does not overwrite html when a late load commits while dirty", async () => {
-    const { result } = renderHook(() => usePromptEditorPageController());
+    const { result } = renderHook(() => usePromptEditorPageController(), {
+      wrapper,
+    });
 
     await waitFor(() => expect(result.current.ready).toBe(true));
     expect(result.current.html).toBe("<p>server one snapshot</p>");
@@ -62,7 +76,9 @@ describe("usePromptEditorPageController dirty load commit", () => {
   });
 
   it("updates wordCountLabel when onChange receives new html", async () => {
-    const { result } = renderHook(() => usePromptEditorPageController());
+    const { result } = renderHook(() => usePromptEditorPageController(), {
+      wrapper,
+    });
 
     await waitFor(() => expect(result.current.ready).toBe(true));
     expect(result.current.wordCountLabel).toBe("~3 words");
