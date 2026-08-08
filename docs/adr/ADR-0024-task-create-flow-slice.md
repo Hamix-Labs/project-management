@@ -2,6 +2,7 @@
 
 > **Note** â€” Product renamed T2A â†’ Hamix; identifiers below reflect the name at decision time unless updated inline.
 > **Superseded in part (2026-06-20):** Draft task evaluation (create-modal Evaluate button, `POST /tasks/evaluate`, invariant I5) was removed. Historical invariant and race-test references below remain for context.
+> **Amended (2026-08-08):** The autosave fingerprint is now derived from the draft save payload instead of a parallel field list; the deferred pure field mapper has landed as `resumedDraftFields` / `freshDraftFields`; invariant I8 distinguishes gated implicit saves from unconditional explicit ones. See [Amendment: draft dirty bit](#amendment-2026-08-08--draft-dirty-bit-and-explicit-saves).
 
 **Date:** 2026-06-19
 **Status:** Accepted
@@ -36,6 +37,7 @@ UI stays in [`task-create-modal/`](../../web/src/tasks/components/task-create-mo
 | I5 | Evaluation snapshot applies only when `variables.id === newDraftIDRef.current` |
 | I6 | Default `project_id` sent on create when dropdown unchanged |
 | I7 | Entry routing: loading → picker; error → fresh form + hint; drafts → picker; else fresh form |
+| I8 | Implicit saves (debounced autosave) are gated on the dirty bit; explicit saves (Save draft, prompt-editor handoff) are not |
 
 ### Boundary rules
 
@@ -54,7 +56,46 @@ UI stays in [`task-create-modal/`](../../web/src/tasks/components/task-create-mo
 ### Negative / Trade-offs
 
 - Temporary shim at old import path
-- `applyResumedDraftToForm` still uses setter callbacks (Apply); pure field mapper is a follow-up
+- ~~`applyResumedDraftToForm` still uses setter callbacks (Apply); pure field mapper is a follow-up~~ — landed 2026-08-08 as `resumedDraftFields`
+
+## Amendment (2026-08-08) — draft dirty bit and explicit saves
+
+### Context
+
+`draftAutosaveSignature` took a hand-written input bag that was documented as
+mirroring the persisted payload but could not enforce it. The same field set was
+enumerated in five places (the signature type, `computeDraftAutosaveSignature`,
+the resumed baseline builder, the fresh baseline builder, and
+`buildDraftSavePayload`). They drifted: `repository_id` reached the wire but not
+the fingerprint, so selecting a repository left the draft looking clean and both
+save paths returned early on the shared gate. The operator's repository choice
+was silently discarded.
+
+### Decision
+
+- The fingerprint is **derived** from the save payload:
+  `draftPayloadFingerprint(buildDraftSavePayload(fields))`. `DraftSavePayload`
+  moves to `types/taskDrafts.ts` as the single source of truth for the persisted
+  field set. Adding a persisted field now unavoidably affects the dirty bit.
+- Fresh and resumed drafts are produced by pure mappers (`freshDraftFields`,
+  `resumedDraftFields`) typed as `DraftPayloadFields`. Form state and baseline
+  derive from one value, so a restored field cannot be missing from its own
+  baseline. This closes the follow-up deferred above and removes both ad-hoc
+  baseline builders.
+- **I8:** the debounced autosave keeps the dirty gate (an untouched modal must
+  not create junk drafts); `saveDraftNow` / `saveDraftNowAsync` drop it, because
+  a click on Save draft is intent, not a heuristic. This reverses the earlier
+  pinned behavior "manual save no-ops when the draft is clean".
+- The prompt-editor handoff calls `saveDraftNowAsync` instead of assembling its
+  own payload and signature, removing the last independent construction site.
+
+### Consequences
+
+- An explicit click on an untouched modal now creates an empty draft. Accepted:
+  explicit intent, and autosave still refuses.
+- Two tests that asserted the old gate were rewritten to observe the debounced
+  path, which is where the gate still lives.
+- A structural guard test pins the fingerprint key set to the payload key set.
 
 ## Alternatives Considered
 
