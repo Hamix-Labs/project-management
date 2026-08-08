@@ -27,6 +27,8 @@ vi.mock("@blocknote/react", () => ({
     getTextCursorPosition: () => ({ block: { id: "b1" } }),
   }),
   SuggestionMenuController: () => null,
+  SideMenuController: () => null,
+  useExtensionState: () => "hidden",
 }));
 
 vi.mock("@blocknote/ariakit", () => ({

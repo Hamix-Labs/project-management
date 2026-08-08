@@ -21,6 +21,7 @@ import {
   PromptEditorMentionMenu,
   type PromptFileMentionItem,
 } from "./mention/PromptEditorMentionMenu";
+import { PromptEditorSideMenuController } from "./PromptEditorSideMenuController";
 import { htmlToInitialBlocks } from "./promptEditorHtml";
 
 export type BlockNotePromptEditorProps = {
@@ -182,7 +183,9 @@ export function BlockNotePromptEditor({
             theme="light"
             onChange={emitHtml}
             slashMenu={true}
+            sideMenu={false}
           >
+            <PromptEditorSideMenuController editorHost={editorHost} />
             <SuggestionMenuController
               triggerCharacter="@"
               getItems={async (q) => getMentionItems(q)}
