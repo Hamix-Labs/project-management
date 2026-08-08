@@ -24,65 +24,65 @@ export function useTaskCreateDraftAutosave(input: {
   );
 
   const buildDraftSaveInput = useCallback(
-    () => buildDraftSavePayload(input.formFields),
-    [input.formFields],
+    () => ({
+      ...buildDraftSavePayload(input.formFields),
+      signature: currentDraftAutosaveSignature,
+    }),
+    [currentDraftAutosaveSignature, input.formFields],
   );
 
-  const saveDraftNow = useCallback(() => {
-    // I1 — no autosave while editing an existing task or composing a template.
+  // I1 — no draft writes while editing an existing task or composing a template.
+  // The baseline-id check keeps a save bound to the draft it was computed from.
+  const draftSaveAllowed = useCallback(() => {
     if (
       input.editingTaskId ||
       input.composeTarget !== "task" ||
       !input.createModalOpen ||
       !input.formFields.newDraftID
     ) {
-      return;
+      return false;
     }
-    if (input.draftAutosaveBaselineID !== input.formFields.newDraftID) return;
-    if (currentDraftAutosaveSignature === input.draftAutosaveBaseline) return;
+    return input.draftAutosaveBaselineID === input.formFields.newDraftID;
+  }, [input]);
+
+  const cancelPendingAutosave = useCallback(() => {
     if (input.autosaveTimerRef.current) {
       clearTimeout(input.autosaveTimerRef.current);
       input.autosaveTimerRef.current = null;
     }
-    input.saveDraftMutation.mutate({
-      ...buildDraftSaveInput(),
-      signature: currentDraftAutosaveSignature,
-    });
-  }, [
-    buildDraftSaveInput,
-    currentDraftAutosaveSignature,
-    input,
-  ]);
+  }, [input.autosaveTimerRef]);
+
+  // I8 — explicit saves are not gated on the dirty bit. The operator asked.
+  const saveDraftNow = useCallback(() => {
+    if (!draftSaveAllowed()) return;
+    cancelPendingAutosave();
+    input.saveDraftMutation.mutate(buildDraftSaveInput());
+  }, [buildDraftSaveInput, cancelPendingAutosave, draftSaveAllowed, input.saveDraftMutation]);
+
+  /** Awaitable explicit save, for callers that navigate away on completion. */
+  const saveDraftNowAsync = useCallback(async () => {
+    if (!draftSaveAllowed()) return;
+    cancelPendingAutosave();
+    await input.saveDraftMutation.mutateAsync(buildDraftSaveInput());
+  }, [buildDraftSaveInput, cancelPendingAutosave, draftSaveAllowed, input.saveDraftMutation]);
 
   useEffect(() => {
-    // I1 — no autosave while editing an existing task or composing a template.
-    if (
-      input.editingTaskId ||
-      input.composeTarget !== "task" ||
-      !input.createModalOpen ||
-      !input.formFields.newDraftID
-    ) {
-      return;
-    }
-    if (input.draftAutosaveBaselineID !== input.formFields.newDraftID) return;
+    // I8 — implicit saves stay gated, so an untouched modal writes nothing.
+    if (!draftSaveAllowed()) return;
     if (currentDraftAutosaveSignature === input.draftAutosaveBaseline) return;
-    const signatureAtSchedule = currentDraftAutosaveSignature;
+    // buildDraftSaveInput carries the signature from this render, so the write
+    // is stamped with the state that scheduled it, not whatever lands later.
+    const scheduled = buildDraftSaveInput();
     input.autosaveTimerRef.current = setTimeout(() => {
-      input.saveDraftMutation.mutate({
-        ...buildDraftSaveInput(),
-        signature: signatureAtSchedule,
-      });
+      input.saveDraftMutation.mutate(scheduled);
       input.autosaveTimerRef.current = null;
     }, DRAFT_AUTOSAVE_DEBOUNCE_MS);
-    return () => {
-      if (input.autosaveTimerRef.current) {
-        clearTimeout(input.autosaveTimerRef.current);
-        input.autosaveTimerRef.current = null;
-      }
-    };
+    return cancelPendingAutosave;
   }, [
     buildDraftSaveInput,
+    cancelPendingAutosave,
     currentDraftAutosaveSignature,
+    draftSaveAllowed,
     input,
   ]);
 
@@ -111,6 +111,7 @@ export function useTaskCreateDraftAutosave(input: {
 
   return {
     saveDraftNow,
+    saveDraftNowAsync,
     draftSaveLabel,
     draftSaveError: input.createModalOpen && saveFailedVisibly,
   };

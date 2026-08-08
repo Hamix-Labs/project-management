@@ -149,14 +149,19 @@ describe("useTasksApp saveDraftMutation race", () => {
     });
     expect(savedId).toBeDefined();
 
-    // Re-running saveDraftNow without changing anything must short-circuit
-    // (signature now matches the baseline) - proof the baseline was actually
-    // updated to the just-saved state, not skipped by the guard.
+    // Proof the baseline was actually updated to the just-saved state: the
+    // debounced autosave has nothing left to write. (The explicit saveDraftNow
+    // is no longer a witness for this - under I8 it writes unconditionally.)
     mockedSaveDraft.mockClear();
-    act(() => {
-      result.current.saveDraftNow();
-    });
-    expect(mockedSaveDraft).not.toHaveBeenCalled();
+    vi.useFakeTimers();
+    try {
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(2000);
+      });
+      expect(mockedSaveDraft).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("baseline tracks the snapshot that was sent, not live form state, so edits made while a save is in flight still autosave on the next dispatch", async () => {
@@ -218,14 +223,20 @@ describe("useTasksApp saveDraftMutation race", () => {
       expect(result.current.draftSavePending).toBe(false);
     });
 
-    // The user-visible damage check: the next autosave dispatch MUST send
+    // The user-visible damage check: the debounced autosave MUST send
     // "Title v2" to the server. Without the fix, the baseline matched the
-    // current signature and the gate inside saveDraftNow returned early,
-    // so mockedSaveDraft would not be called a second time and the v2
-    // edit would be lost on the server until the next state change.
-    act(() => {
-      result.current.saveDraftNow();
-    });
+    // current signature and the gated autosave effect never scheduled a
+    // write, so the v2 edit would sit unsaved until the next state change.
+    // This has to go through the debounce rather than saveDraftNow, because
+    // the explicit path is unconditional under I8 and would pass either way.
+    vi.useFakeTimers();
+    try {
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(2000);
+      });
+    } finally {
+      vi.useRealTimers();
+    }
     await waitFor(() => {
       expect(mockedSaveDraft).toHaveBeenCalledTimes(2);
     });

@@ -1,10 +1,9 @@
 import type { NavigateFunction } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useCallback } from "react";
-import { buildDraftSavePayload, computeDraftAutosaveSignature } from "../create/draftPayload";
+import type { useTaskCreateDraftAutosave } from "../create/hooks/useTaskCreateDraftAutosave";
 import type { useTaskCreateFormState } from "../create/hooks/useTaskCreateFormState";
 import type { useTaskCreateModalState } from "../create/hooks/useTaskCreateModalState";
-import type { useTaskCreateMutations } from "../create/hooks/useTaskCreateMutations";
 import { writeEphemeralPrompt } from "./promptDocumentAdapter";
 import {
   generateEphemeralPromptId,
@@ -20,7 +19,7 @@ import type { PromptSourceKind } from "./types";
 type ComposeOpenInput = {
   form: ReturnType<typeof useTaskCreateFormState>;
   modal: ReturnType<typeof useTaskCreateModalState>;
-  mutations: ReturnType<typeof useTaskCreateMutations>;
+  autosave: ReturnType<typeof useTaskCreateDraftAutosave>;
 };
 
 function composeEditorMode(
@@ -36,7 +35,7 @@ function composeEditorMode(
  * Takes `navigate` so create-flow hooks do not require a Router (unit tests).
  */
 export function createOpenComposePromptEditor(input: ComposeOpenInput) {
-  const { form, modal, mutations } = input;
+  const { form, modal, autosave } = input;
 
   return async (navigate: NavigateFunction) => {
     if (!modal.createModalOpen) return;
@@ -61,12 +60,9 @@ export function createOpenComposePromptEditor(input: ComposeOpenInput) {
       kind = "draft";
       id = form.newDraftID;
       if (!id) return;
-      const signature = computeDraftAutosaveSignature(form.formFields);
       try {
-        await mutations.saveDraftMutation.mutateAsync({
-          ...buildDraftSavePayload(form.formFields),
-          signature,
-        });
+        // Explicit save (I8): flush compose state before the editor loads it.
+        await autosave.saveDraftNowAsync();
       } catch {
         // Still open the editor; page can retry save.
       }
