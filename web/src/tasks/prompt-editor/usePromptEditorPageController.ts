@@ -4,6 +4,7 @@ import {
   pickLoadError,
   pickSaveError,
 } from "./promptEditorPageViewModel";
+import { usePromptDocumentInvalidate } from "./usePromptDocumentInvalidate";
 import { usePromptEditorHtmlSession } from "./usePromptEditorHtmlSession";
 import { usePromptEditorLeave } from "./usePromptEditorLeave";
 import { usePromptEditorRouteAdapter } from "./usePromptEditorRouteAdapter";
@@ -12,6 +13,8 @@ import { usePromptEditorTitle } from "./usePromptEditorTitle";
 export function usePromptEditorPageController() {
   const { sourceKind, sourceId, kindOk, launch, adapter } =
     usePromptEditorRouteAdapter();
+
+  const onDocumentSaved = usePromptDocumentInvalidate(sourceKind, sourceId);
 
   const applyHydratedNameRef = useRef<(name?: string) => void>(() => {});
   const applyHydratedName = useCallback((name?: string) => {
@@ -30,6 +33,7 @@ export function usePromptEditorPageController() {
     sourceKind,
     sourceId,
     setSessionError: htmlSession.setSessionError,
+    onDocumentSaved,
   });
   applyHydratedNameRef.current = titleState.applyHydratedName;
 
@@ -42,6 +46,7 @@ export function usePromptEditorPageController() {
     setSessionError: htmlSession.setSessionError,
     setLastSavedAt: htmlSession.setLastSavedAt,
     setSaving: htmlSession.setSaving,
+    onDocumentSaved,
   });
 
   const saveError = pickSaveError(htmlSession.sessionError);

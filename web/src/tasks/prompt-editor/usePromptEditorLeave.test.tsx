@@ -36,6 +36,7 @@ describe("usePromptEditorLeave", () => {
           setSessionError: vi.fn(),
           setLastSavedAt: vi.fn(),
           setSaving: vi.fn(),
+          onDocumentSaved: vi.fn(),
         }),
       { wrapper },
     );

@@ -32,6 +32,7 @@ describe("usePromptEditorTitle", () => {
           sourceKind: "draft",
           sourceId: "d1",
           setSessionError,
+          onDocumentSaved: vi.fn(),
         }),
       { wrapper: wrap(qc) },
     );
@@ -61,6 +62,7 @@ describe("usePromptEditorTitle", () => {
           sourceKind: "task",
           sourceId: "t1",
           setSessionError,
+          onDocumentSaved: vi.fn(),
         }),
       { wrapper: wrap(qc) },
     );
@@ -74,6 +76,35 @@ describe("usePromptEditorTitle", () => {
     expect(setSessionError.mock.calls[0][0].code).toBe("rename_failed");
   });
 
+  it("refreshes owning caches after a successful rename", async () => {
+    const adapter: PromptDocumentAdapter = {
+      load: vi.fn(),
+      save: vi.fn(),
+      saveName: vi.fn(async () => undefined),
+    };
+    const onDocumentSaved = vi.fn();
+    const qc = new QueryClient();
+    const { result } = renderHook(
+      () =>
+        usePromptEditorTitle({
+          launchTitle: "Old name",
+          adapter,
+          sourceKind: "draft",
+          sourceId: "d1",
+          setSessionError: vi.fn(),
+          onDocumentSaved,
+        }),
+      { wrapper: wrap(qc) },
+    );
+
+    await act(async () => {
+      await result.current.onTitleCommit("New name");
+    });
+
+    expect(adapter.saveName).toHaveBeenCalledWith("New name");
+    expect(onDocumentSaved).toHaveBeenCalledTimes(1);
+  });
+
   it("prefers hydrated name from load", () => {
     const qc = new QueryClient();
     const { result } = renderHook(
@@ -84,6 +115,7 @@ describe("usePromptEditorTitle", () => {
           sourceKind: "task",
           sourceId: "t1",
           setSessionError: vi.fn(),
+          onDocumentSaved: vi.fn(),
         }),
       { wrapper: wrap(qc) },
     );

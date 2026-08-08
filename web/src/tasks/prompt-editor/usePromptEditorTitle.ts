@@ -13,6 +13,8 @@ type Args = {
   sourceKind: string;
   sourceId: string;
   setSessionError: (err: PromptEditorSessionError | null) => void;
+  /** Refresh the drafts/templates/task caches that render this name. */
+  onDocumentSaved: () => void;
 };
 
 /**
@@ -25,6 +27,7 @@ export function usePromptEditorTitle({
   sourceKind,
   sourceId,
   setSessionError,
+  onDocumentSaved,
 }: Args) {
   const queryClient = useQueryClient();
   const [title, setTitle] = useState(
@@ -51,12 +54,20 @@ export function usePromptEditorTitle({
         if (sourceKind === "task" && sourceId) {
           patchCachedTaskTitle(queryClient, sourceId, trimmed);
         }
+        onDocumentSaved();
       } catch (err) {
         setTitle(previous);
         setSessionError(renameSessionError(err));
       }
     },
-    [adapter, queryClient, setSessionError, sourceId, sourceKind],
+    [
+      adapter,
+      onDocumentSaved,
+      queryClient,
+      setSessionError,
+      sourceId,
+      sourceKind,
+    ],
   );
 
   return { title, titleRef, onTitleCommit, applyHydratedName };

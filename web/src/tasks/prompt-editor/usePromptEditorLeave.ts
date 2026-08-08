@@ -20,6 +20,8 @@ type Args = {
   setSessionError: (err: PromptEditorSessionError | null) => void;
   setLastSavedAt: (at: number) => void;
   setSaving: (v: boolean) => void;
+  /** Refresh the caches that render this document once the flush lands. */
+  onDocumentSaved: () => void;
 };
 
 /** Leave / Escape flush; `beforeunload` when dirty. Avoids `useBlocker` (needs a data router). */
@@ -32,6 +34,7 @@ export function usePromptEditorLeave({
   setSessionError,
   setLastSavedAt,
   setSaving,
+  onDocumentSaved,
 }: Args) {
   const navigate = useNavigate();
   const [leavePending, setLeavePending] = useState(false);
@@ -47,6 +50,7 @@ export function usePromptEditorLeave({
       dirtyRef.current = false;
       setSessionError(null);
       setLastSavedAt(Date.now());
+      onDocumentSaved();
       const returnPath = launch?.returnPath ?? "/";
       writePromptEditorReturn({
         resumeCompose: Boolean(launch?.resumeCompose),
@@ -72,6 +76,7 @@ export function usePromptEditorLeave({
     titleRef,
     launch,
     navigate,
+    onDocumentSaved,
     setLastSavedAt,
     setSessionError,
     setSaving,
