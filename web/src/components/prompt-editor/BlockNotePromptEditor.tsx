@@ -12,7 +12,10 @@ import { RichPromptRepoHints } from "@/components/rich-prompt/RichPromptRepoHint
 import { computeRepoHintFlags } from "@/components/rich-prompt/richPromptInsertHelpers";
 import { useRepoWorkspaceProbe } from "@/components/rich-prompt/useRepoWorkspaceProbe";
 import { promptEditorSchema } from "./blockNoteSchema";
-import { useEnhanceCodeBlockToolbars } from "./code/useEnhanceCodeBlockToolbars";
+import {
+  useEnhanceCodeBlockToolbars,
+  type CodeBlockLanguageEditor,
+} from "./code/useEnhanceCodeBlockToolbars";
 import { PromptEditorRepoContext } from "./context/PromptEditorRepoContext";
 import {
   PromptEditorMentionMenu,
@@ -163,7 +166,8 @@ export function BlockNotePromptEditor({
   );
 
   const [editorHost, setEditorHost] = useState<HTMLDivElement | null>(null);
-  useEnhanceCodeBlockToolbars(editorHost, disabled);
+  const toolbarEditor = editor as unknown as CodeBlockLanguageEditor;
+  useEnhanceCodeBlockToolbars(editorHost, disabled, toolbarEditor);
 
   return (
     <PromptEditorRepoContext.Provider value={{ worktreeId }}>
