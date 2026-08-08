@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { computeDraftAutosaveSignature } from "./draftPayload";
+import {
+  buildDraftSavePayload,
+  computeDraftAutosaveSignature,
+} from "./draftPayload";
 import type { TaskCreateFormFields } from "./types";
 
 const baseFields: TaskCreateFormFields = {
@@ -32,5 +35,27 @@ describe("computeDraftAutosaveSignature", () => {
     const a = computeDraftAutosaveSignature(baseFields);
     const b = computeDraftAutosaveSignature({ ...baseFields });
     expect(a).toBe(b);
+  });
+
+  it("changes when repository changes", () => {
+    const a = computeDraftAutosaveSignature(baseFields);
+    const b = computeDraftAutosaveSignature({
+      ...baseFields,
+      newRepositoryID: "repo-1",
+    });
+    expect(a).not.toBe(b);
+  });
+});
+
+describe("buildDraftSavePayload", () => {
+  it("includes repository_id and worktree_id", () => {
+    const payload = buildDraftSavePayload({
+      ...baseFields,
+      newRepositoryID: "repo-1",
+      newWorktreeID: "wt-1",
+    });
+    expect(payload.payload.repository_id).toBe("repo-1");
+    expect(payload.payload.worktree_id).toBe("wt-1");
+    expect(payload.payload.project_id).toBe("default");
   });
 });

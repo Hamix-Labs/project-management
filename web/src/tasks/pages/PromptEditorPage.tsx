@@ -40,6 +40,8 @@ export function PromptEditorPage() {
           editedLabel={c.editedLabel}
           wordCountLabel={c.wordCountLabel}
           repoLabel={c.repoLabel}
+          disabled={c.leavePending || !c.ready}
+          onTitleCommit={c.onTitleCommit}
         />
 
         {c.hydrateWarning ? (
@@ -55,7 +57,9 @@ export function PromptEditorPage() {
           <PromptEditorSessionAlert
             title={c.saveError.title}
             detail={c.saveError.detail}
-            onRetry={c.retrySave}
+            onRetry={
+              c.saveError.code === "rename_failed" ? undefined : c.retrySave
+            }
             retryLabel="Retry save"
           />
         ) : null}

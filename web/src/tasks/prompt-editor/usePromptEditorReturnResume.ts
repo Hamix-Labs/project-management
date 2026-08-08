@@ -6,6 +6,7 @@ import {
 
 type ResumeHandlers = {
   setNewPrompt: (html: string) => void;
+  setNewTitle: (title: string) => void;
   resumeComposeFromPromptEditor: () => void;
   promptEditorSuspended: boolean;
 };
@@ -17,6 +18,7 @@ type ResumeHandlers = {
 export function usePromptEditorReturnResume(handlers: ResumeHandlers): void {
   const {
     setNewPrompt,
+    setNewTitle,
     resumeComposeFromPromptEditor,
     promptEditorSuspended,
   } = handlers;
@@ -32,6 +34,9 @@ export function usePromptEditorReturnResume(handlers: ResumeHandlers): void {
     if (payload.html !== undefined) {
       setNewPrompt(payload.html);
     }
+    if (payload.title !== undefined) {
+      setNewTitle(payload.title);
+    }
     if (promptEditorSuspended) {
       resumeComposeFromPromptEditor();
     }
@@ -39,5 +44,6 @@ export function usePromptEditorReturnResume(handlers: ResumeHandlers): void {
     promptEditorSuspended,
     resumeComposeFromPromptEditor,
     setNewPrompt,
+    setNewTitle,
   ]);
 }

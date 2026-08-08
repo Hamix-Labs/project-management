@@ -164,6 +164,23 @@
   line-height: 1.2;
   margin: 0 0 6px;
   color: var(--prompt-editor-text);
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  border: none;
+  background: transparent;
+  padding: 0;
+  outline: none;
+  border-radius: var(--radius-sm, 4px);
+}
+
+.prompt-editor-doc-header__title:focus-visible {
+  box-shadow: var(--shadow-focus);
+}
+
+.prompt-editor-doc-header__title:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 
 .prompt-editor-doc-header__meta {

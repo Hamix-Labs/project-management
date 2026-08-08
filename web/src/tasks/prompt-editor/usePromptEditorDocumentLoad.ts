@@ -17,6 +17,7 @@ type CommitSnapshot = {
   html: string;
   worktreeId?: string;
   repositoryId?: string;
+  name?: string;
 };
 
 type Args = {
@@ -81,6 +82,7 @@ export function usePromptEditorDocumentLoad({
           html,
           worktreeId: fromSnapWt,
           repositoryId: fromSnapRepo,
+          name: snap.name,
         });
         if (!dirtyRef.current) {
           // parent sets lastSavedAt on commit

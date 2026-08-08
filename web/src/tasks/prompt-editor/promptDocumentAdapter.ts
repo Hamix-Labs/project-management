@@ -88,6 +88,18 @@ export function createPromptDocumentAdapter(
             },
           });
         },
+        async saveName(name) {
+          const trimmed = name.trim();
+          const draft = await getTaskDraft(ref.id);
+          await saveTaskDraft({
+            id: draft.id,
+            name: trimmed,
+            payload: {
+              ...draft.payload,
+              title: trimmed,
+            },
+          });
+        },
       };
     case "task":
       return {
@@ -104,14 +116,18 @@ export function createPromptDocumentAdapter(
         async save(html) {
           await patchTask(ref.id, { initial_prompt: html });
         },
+        async saveName(name) {
+          await patchTask(ref.id, { title: name.trim() });
+        },
       };
     case "template":
       return {
         async load(signal) {
           if (ref.id === "new") {
+            const snap = launch ? readEphemeralPrompt("template-new") : null;
             return {
-              html: launch ? readEphemeralPrompt(`template-new`).html : "",
-              name: "New template",
+              html: snap?.html ?? "",
+              name: snap?.name?.trim() || "New template",
               worktreeId: launch?.worktreeId,
               repositoryId: launch?.repositoryId,
             };
@@ -126,10 +142,12 @@ export function createPromptDocumentAdapter(
         },
         async save(html) {
           if (ref.id === "new") {
+            const prev = readEphemeralPrompt("template-new");
             writeEphemeralPrompt("template-new", {
               html,
-              worktreeId: launch?.worktreeId,
-              repositoryId: launch?.repositoryId,
+              worktreeId: launch?.worktreeId ?? prev.worktreeId,
+              repositoryId: launch?.repositoryId ?? prev.repositoryId,
+              name: prev.name,
             });
             return;
           }
@@ -140,6 +158,24 @@ export function createPromptDocumentAdapter(
               ...tpl.payload,
               initial_prompt: html,
             },
+          });
+        },
+        async saveName(name) {
+          const trimmed = name.trim();
+          if (ref.id === "new") {
+            const prev = readEphemeralPrompt("template-new");
+            writeEphemeralPrompt("template-new", {
+              html: prev.html,
+              worktreeId: launch?.worktreeId ?? prev.worktreeId,
+              repositoryId: launch?.repositoryId ?? prev.repositoryId,
+              name: trimmed,
+            });
+            return;
+          }
+          const tpl = await getTaskTemplate(ref.id);
+          await patchTaskTemplate(ref.id, {
+            name: trimmed,
+            payload: tpl.payload,
           });
         },
       };
@@ -160,6 +196,15 @@ export function createPromptDocumentAdapter(
             worktreeId: launch?.worktreeId ?? prev.worktreeId,
             repositoryId: launch?.repositoryId ?? prev.repositoryId,
             name: prev.name,
+          });
+        },
+        async saveName(name) {
+          const prev = readEphemeralPrompt(ref.id);
+          writeEphemeralPrompt(ref.id, {
+            html: prev.html,
+            worktreeId: launch?.worktreeId ?? prev.worktreeId,
+            repositoryId: launch?.repositoryId ?? prev.repositoryId,
+            name: name.trim(),
           });
         },
       };

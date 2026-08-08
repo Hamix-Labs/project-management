@@ -6,7 +6,8 @@ export type PromptEditorSessionErrorCode =
   | "load_failed"
   | "hydrate_fallback"
   | "save_failed"
-  | "leave_save_failed";
+  | "leave_save_failed"
+  | "rename_failed";
 
 /** First-class session failure — title + detail + phase for actionable UI. */
 export type PromptEditorSessionError = {
@@ -54,6 +55,14 @@ export function leaveSaveSessionError(err: unknown): PromptEditorSessionError {
     title: "Couldn't save before leaving",
     code: "leave_save_failed",
     fallbackDetail: "Saving the prompt failed before leaving.",
+  });
+}
+
+export function renameSessionError(err: unknown): PromptEditorSessionError {
+  return sessionErrorFromUnknown("save", err, {
+    title: "Couldn't rename",
+    code: "rename_failed",
+    fallbackDetail: "Saving the document title failed.",
   });
 }
 

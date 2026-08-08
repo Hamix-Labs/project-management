@@ -32,6 +32,7 @@ describe("usePromptEditorDocumentLoad", () => {
     const adapter: PromptDocumentAdapter = {
       load: vi.fn(async () => ({ html: "<p>hello there friend</p>" })),
       save: vi.fn(),
+      saveName: vi.fn(),
     };
     const onCommit = vi.fn();
     const onLoadError = vi.fn();
@@ -55,6 +56,7 @@ describe("usePromptEditorDocumentLoad", () => {
       html: "<p>hello there friend</p>",
       worktreeId: undefined,
       repositoryId: undefined,
+      name: undefined,
     });
     expect(onLoadError).not.toHaveBeenCalled();
     expect(result.current.repoLabel).toBe("No repo");
@@ -64,6 +66,7 @@ describe("usePromptEditorDocumentLoad", () => {
     const adapter: PromptDocumentAdapter = {
       load: vi.fn(async () => ({ html: "<p>server</p>" })),
       save: vi.fn(),
+      saveName: vi.fn(),
     };
     const onCommit = vi.fn();
 
@@ -84,6 +87,7 @@ describe("usePromptEditorDocumentLoad", () => {
         html: "<p>seeded content here</p>",
         worktreeId: undefined,
         repositoryId: undefined,
+        name: undefined,
       }),
     );
   });
@@ -94,6 +98,7 @@ describe("usePromptEditorDocumentLoad", () => {
         throw new Error("draft unavailable");
       }),
       save: vi.fn(),
+      saveName: vi.fn(),
     };
     const onLoadError = vi.fn();
     const onStatus = vi.fn();
@@ -126,7 +131,11 @@ describe("usePromptEditorDocumentLoad", () => {
       .mockImplementationOnce(() => first)
       .mockImplementationOnce(async () => ({ html: "<p>second</p>" }));
 
-    const adapter: PromptDocumentAdapter = { load, save: vi.fn() };
+    const adapter: PromptDocumentAdapter = {
+      load,
+      save: vi.fn(),
+      saveName: vi.fn(),
+    };
     const onCommit = vi.fn();
     const onStatus = vi.fn();
 
@@ -153,6 +162,7 @@ describe("usePromptEditorDocumentLoad", () => {
         html: "<p>second</p>",
         worktreeId: undefined,
         repositoryId: undefined,
+        name: undefined,
       }),
     );
 
@@ -172,6 +182,7 @@ describe("usePromptEditorDocumentLoad", () => {
     const adapter: PromptDocumentAdapter = {
       load: vi.fn(async () => ({ html: "<p>brief</p>" })),
       save: vi.fn(),
+      saveName: vi.fn(),
     };
 
     const { result } = renderHook(() =>
@@ -204,6 +215,7 @@ describe("usePromptEditorDocumentLoad", () => {
     const adapter: PromptDocumentAdapter = {
       load: vi.fn(async () => ({ html: "<p>brief</p>" })),
       save: vi.fn(),
+      saveName: vi.fn(),
     };
 
     const { result } = renderHook(() =>

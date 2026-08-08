@@ -34,6 +34,8 @@ export type PromptDocumentSnapshot = {
 export type PromptDocumentAdapter = {
   load: (signal?: AbortSignal) => Promise<PromptDocumentSnapshot>;
   save: (html: string, signal?: AbortSignal) => Promise<void>;
+  /** Persist document display name (task title / draft name / template name). */
+  saveName: (name: string, signal?: AbortSignal) => Promise<void>;
 };
 
 export const PROMPT_EDITOR_LAUNCH_KEY = "hamix:prompt-editor-launch";
@@ -47,4 +49,6 @@ export type PromptEditorReturnPayload = {
   returnPath: string;
   /** Latest HTML written on Done (compose sync). */
   html?: string;
+  /** Latest document title written on Done (compose sync). */
+  title?: string;
 };

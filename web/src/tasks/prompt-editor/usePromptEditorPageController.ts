@@ -1,166 +1,91 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef } from "react";
 import {
-  deriveEditedLabel,
-  deriveSaveStatus,
-  deriveWordCountLabel,
+  buildPromptEditorChromeLabels,
   pickLoadError,
   pickSaveError,
 } from "./promptEditorPageViewModel";
-import { usePromptEditorAutosave } from "./usePromptEditorAutosave";
-import {
-  usePromptEditorDocumentLoad,
-  type PromptEditorLoadStatus,
-} from "./usePromptEditorDocumentLoad";
+import { usePromptDocumentCoherence } from "./usePromptDocumentCoherence";
+import { usePromptEditorHtmlSession } from "./usePromptEditorHtmlSession";
 import { usePromptEditorLeave } from "./usePromptEditorLeave";
 import { usePromptEditorRouteAdapter } from "./usePromptEditorRouteAdapter";
-import {
-  HYDRATE_FALLBACK_WARNING,
-  type PromptEditorSessionError,
-} from "./promptEditorSessionError";
+import { usePromptEditorTitle } from "./usePromptEditorTitle";
 
 export function usePromptEditorPageController() {
   const { sourceKind, sourceId, kindOk, launch, adapter } =
     usePromptEditorRouteAdapter();
 
-  const [status, setStatus] = useState<PromptEditorLoadStatus>("loading");
-  const [html, setHtml] = useState("");
-  const [sessionError, setSessionError] =
-    useState<PromptEditorSessionError | null>(null);
-  const [hydrateWarning, setHydrateWarning] =
-    useState<PromptEditorSessionError | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [dirty, setDirty] = useState(false);
-  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
-  const [tick, setTick] = useState(0);
-  const [loadNonce, setLoadNonce] = useState(0);
-  const [adapterWorktreeId, setAdapterWorktreeId] = useState<
-    string | undefined
-  >(undefined);
-  const [adapterRepositoryId, setAdapterRepositoryId] = useState<
-    string | undefined
-  >(undefined);
-  const htmlRef = useRef(html);
-  htmlRef.current = html;
-  const dirtyRef = useRef(false);
+  const onDocumentSaved = usePromptDocumentCoherence(sourceKind, sourceId);
 
-  const worktreeId =
-    launch?.worktreeId?.trim() || adapterWorktreeId || undefined;
-  const repositoryId =
-    launch?.repositoryId?.trim() || adapterRepositoryId || undefined;
-  const title = launch?.title?.trim() || "Untitled task";
-
-  const onResolvedWorktreeId = useCallback((id: string | undefined) => {
-    setAdapterWorktreeId(id?.trim() || undefined);
+  const applyHydratedNameRef = useRef<(name?: string) => void>(() => {});
+  const applyHydratedName = useCallback((name?: string) => {
+    applyHydratedNameRef.current(name);
   }, []);
 
-  const onResolvedRepositoryId = useCallback((id: string | undefined) => {
-    setAdapterRepositoryId(id?.trim() || undefined);
-  }, []);
-
-  const onCommit = useCallback((snap: { html: string }) => {
-    setHtml(snap.html);
-    setSessionError(null);
-    setHydrateWarning(null);
-    if (!dirtyRef.current) setLastSavedAt(Date.now());
-  }, []);
-
-  const onLoadError = useCallback((err: PromptEditorSessionError) => {
-    setSessionError(err);
-  }, []);
-
-  const onStatus = useCallback((next: PromptEditorLoadStatus) => {
-    setStatus(next);
-  }, []);
-
-  const { repoLabel } = usePromptEditorDocumentLoad({
+  const htmlSession = usePromptEditorHtmlSession({
     adapter,
     launch,
-    loadNonce,
-    dirtyRef,
-    onCommit,
-    onLoadError,
-    onStatus,
-    worktreeId,
-    repositoryId,
-    onResolvedWorktreeId,
-    onResolvedRepositoryId,
+    applyHydratedName,
   });
 
-  useEffect(() => {
-    const id = window.setInterval(() => setTick((t) => t + 1), 30_000);
-    return () => window.clearInterval(id);
-  }, []);
-
-  const { retrySave } = usePromptEditorAutosave({
+  const titleState = usePromptEditorTitle({
+    launchTitle: launch?.title,
     adapter,
-    status,
-    html,
-    htmlRef,
-    dirtyRef,
-    setDirty,
-    setSaving,
-    setSessionError,
-    setLastSavedAt,
+    sourceKind,
+    sourceId,
+    setSessionError: htmlSession.setSessionError,
+    onDocumentSaved,
   });
-
-  const onChange = useCallback((next: string) => {
-    dirtyRef.current = true;
-    setDirty(true);
-    setHtml(next);
-  }, []);
-
-  const onHydrateFallback = useCallback(() => {
-    setHydrateWarning(HYDRATE_FALLBACK_WARNING);
-  }, []);
+  applyHydratedNameRef.current = titleState.applyHydratedName;
 
   const { leaveEditor, leaveWithoutSave, leavePending } = usePromptEditorLeave({
     adapter,
     launch,
-    htmlRef,
-    dirtyRef,
-    setSessionError,
-    setLastSavedAt,
-    setSaving,
+    htmlRef: htmlSession.htmlRef,
+    titleRef: titleState.titleRef,
+    dirtyRef: htmlSession.dirtyRef,
+    setSessionError: htmlSession.setSessionError,
+    setLastSavedAt: htmlSession.setLastSavedAt,
+    setSaving: htmlSession.setSaving,
   });
 
-  const saveError = pickSaveError(sessionError);
-  const loadError = pickLoadError(status, sessionError);
-  const ready = status === "ready";
-  void tick;
+  const saveError = pickSaveError(htmlSession.sessionError);
+  const loadError = pickLoadError(htmlSession.status, htmlSession.sessionError);
+  const ready = htmlSession.status === "ready";
+  const chrome = buildPromptEditorChromeLabels({
+    status: htmlSession.status,
+    ready,
+    lastSavedAt: htmlSession.lastSavedAt,
+    html: htmlSession.html,
+    repoLabel: htmlSession.repoLabel,
+    saveError,
+    saving: htmlSession.saving,
+    leavePending,
+    dirty: htmlSession.dirty,
+  });
 
   return {
     kindOk,
     sourceId,
     sourceKind,
     launch,
-    html,
-    status,
+    html: htmlSession.html,
+    status: htmlSession.status,
     ready,
     loadError,
     saveError,
-    hydrateWarning,
-    dismissHydrateWarning: () => setHydrateWarning(null),
-    saving,
+    hydrateWarning: htmlSession.hydrateWarning,
+    dismissHydrateWarning: htmlSession.dismissHydrateWarning,
+    saving: htmlSession.saving,
     leavePending,
-    saveStatus: deriveSaveStatus({
-      saveError,
-      saving,
-      leavePending,
-      dirty,
-    }),
-    title,
-    editedLabel: deriveEditedLabel(status, ready, lastSavedAt),
-    wordCountLabel: deriveWordCountLabel(ready, html),
-    repoLabel: ready ? repoLabel : "—",
-    worktreeId,
-    onChange,
-    onHydrateFallback,
+    ...chrome,
+    title: titleState.title,
+    onTitleCommit: titleState.onTitleCommit,
+    worktreeId: htmlSession.worktreeId,
+    onChange: htmlSession.onChange,
+    onHydrateFallback: htmlSession.onHydrateFallback,
     leaveEditor,
     leaveWithoutSave,
-    retryLoad: () => {
-      setSessionError(null);
-      setLoadNonce((n) => n + 1);
-    },
-    retrySave,
+    retryLoad: htmlSession.retryLoad,
+    retrySave: htmlSession.retrySave,
   };
 }
