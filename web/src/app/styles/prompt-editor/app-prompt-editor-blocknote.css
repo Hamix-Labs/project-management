@@ -58,10 +58,11 @@
 }
 
 /* Suppressed while a block is dragged. The menu stays mounted so the drag
-   handle survives as the drag source, but it must not trail the block. */
+   handle survives as the drag source, but it must not trail the block.
+   Opacity only: `pointer-events` or `visibility` on a live drag source risks
+   the browser cancelling the drag. */
 .blocknote-prompt-editor .prompt-side-menu--dragging .bn-side-menu {
   opacity: 0;
-  pointer-events: none;
 }
 
 .blocknote-prompt-editor .bn-side-menu .bn-ak-button,

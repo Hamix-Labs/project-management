@@ -43,7 +43,8 @@ The prompt editor owns its side menu, built on BlockNote's public API
    `.bn-block-group` remains the `contextElement` so FloatingUI's auto-update
    observers have a connected scroll ancestor.
 2. **Repositioning replaces remounting.** The component captures FloatingUI's
-   `update` via `whileElementsMounted` and calls it from `useEditorChange`.
+   `update` via `whileElementsMounted` and calls it from `useEditorChange`,
+   deferred to an animation frame (see 5).
 3. **Visibility is state, not CSS hover.** `SideMenuExtension.show` plus a block
    id drive `open`; `usePromptBlockDragState` adds a `prompt-side-menu--dragging`
    class while a drag is in flight. The menu stays **mounted** during the drag —
@@ -52,6 +53,13 @@ The prompt editor owns its side menu, built on BlockNote's public API
 4. **Drag completion is read from bubble-phase `drop` and `dragend`**, after
    ProseMirror's capture-phase handlers have applied the transaction, so the
    block is already at its new position when the menu is re-measured.
+5. **Nothing about the menu changes during the `dragstart` handler.** The drag
+   handle is the drag source and lives inside the element this component hides
+   and repositions. Chrome abandons a drag whose source is restyled or moved
+   from within `dragstart`, so the dragging flag is raised in a queued task and
+   repositioning is deferred to an animation frame. This is the same deferral
+   react-dnd uses to hide a drag source. The suppression is `opacity` only:
+   `pointer-events` and `visibility` on a live drag source are not safe.
 
 Upstream's "hide the side menu on ancestor scroll" behaviour is intentionally
 dropped: our portal scrolls with the page, so repositioning is the better result.

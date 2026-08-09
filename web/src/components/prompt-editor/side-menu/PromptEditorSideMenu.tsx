@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { SideMenuExtension } from "@blocknote/core/extensions";
 import {
   GenericPopover,
@@ -55,12 +55,38 @@ export function PromptEditorSideMenu({
   // A block can move without the hovered block id changing (drag & drop, undo,
   // a delete above it), which leaves the menu anchored to stale coordinates.
   // Repositioning is enough — remounting would restart the fade and tear down
-  // the drag handle mid-drag.
-  useEditorChange(
-    useCallback(() => {
+  // the drag handle mid-drag. Deferring a frame both coalesces bursts and keeps
+  // the reposition out of `dragstart`, where moving the drag handle's ancestor
+  // would cancel the drag.
+  const repositionFrame = useRef(0);
+  const scheduleReposition = useCallback(() => {
+    if (repositionFrame.current) {
+      return;
+    }
+    repositionFrame.current = requestAnimationFrame(() => {
+      repositionFrame.current = 0;
       updateRef.current?.();
-    }, []),
+    });
+  }, []);
+
+  useEditorChange(scheduleReposition);
+
+  useEffect(
+    () => () => {
+      if (repositionFrame.current) {
+        cancelAnimationFrame(repositionFrame.current);
+      }
+    },
+    [],
   );
+
+  // A finished drag moved the block without changing the hovered block id, so
+  // nothing else would trigger a position pass.
+  useEffect(() => {
+    if (!dragging) {
+      scheduleReposition();
+    }
+  }, [dragging, scheduleReposition]);
 
   const reference = useMemo<GenericPopoverReference | undefined>(() => {
     if (!editorDom || blockId === undefined) {

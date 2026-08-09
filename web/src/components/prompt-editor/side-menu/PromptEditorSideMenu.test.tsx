@@ -1,4 +1,4 @@
-import { act, render } from "@testing-library/react";
+import { act, render, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 type PopoverReference = { getBoundingClientRect: () => DOMRect };
@@ -127,17 +127,29 @@ describe("PromptEditorSideMenu", () => {
     expect(reference?.getBoundingClientRect().y).toBe(220);
   });
 
-  it("suppresses the menu during a drag without unmounting the drag handle", () => {
+  it("leaves the drag source untouched during the dragstart handler", () => {
+    const host = mountHost();
+    const view = render(<PromptEditorSideMenu editorHost={host} />);
+
+    dispatch(host, "dragstart");
+
+    // Chrome cancels the drag if the source is restyled from within dragstart.
+    expect(view.getByTestId("popover").className).toBe("prompt-side-menu");
+  });
+
+  it("suppresses the menu during a drag without unmounting the drag handle", async () => {
     const host = mountHost();
     const view = render(<PromptEditorSideMenu editorHost={host} />);
 
     expect(view.getByTestId("popover").className).toBe("prompt-side-menu");
 
     dispatch(host, "dragstart");
-
-    expect(view.getByTestId("popover").className).toContain(
-      "prompt-side-menu--dragging",
+    await waitFor(() =>
+      expect(view.getByTestId("popover").className).toContain(
+        "prompt-side-menu--dragging",
+      ),
     );
+
     // The handle is the drag source; unmounting it would strand the drag.
     expect(view.getByTestId("side-menu")).toBeTruthy();
 
@@ -146,29 +158,55 @@ describe("PromptEditorSideMenu", () => {
     expect(view.getByTestId("popover").className).toBe("prompt-side-menu");
   });
 
-  it("never remounts the popover across a full drag cycle", () => {
+  it("never remounts the popover across a full drag cycle", async () => {
     const host = mountHost();
-    render(<PromptEditorSideMenu editorHost={host} />);
+    const view = render(<PromptEditorSideMenu editorHost={host} />);
 
     expect(popoverMounts).toBe(1);
 
     dispatch(host, "dragstart");
+    await waitFor(() =>
+      expect(view.getByTestId("popover").className).toContain(
+        "prompt-side-menu--dragging",
+      ),
+    );
     dispatch(host, "drop");
 
     expect(popoverMounts).toBe(1);
   });
 
-  it("repositions instead of remounting when the document changes", () => {
+  it("repositions instead of remounting when the document changes", async () => {
     render(<PromptEditorSideMenu editorHost={mountHost()} />);
-
-    expect(floatingUpdate).not.toHaveBeenCalled();
+    await waitFor(() => expect(floatingUpdate).toHaveBeenCalled());
+    floatingUpdate.mockClear();
 
     act(() => {
       editorChange?.();
+      editorChange?.();
     });
 
-    expect(floatingUpdate).toHaveBeenCalledTimes(1);
+    // Deferred out of the change handler and coalesced into one pass.
+    expect(floatingUpdate).not.toHaveBeenCalled();
+    await waitFor(() => expect(floatingUpdate).toHaveBeenCalledTimes(1));
     expect(popoverMounts).toBe(1);
+  });
+
+  it("repositions once a drag finishes, since the block moved under it", async () => {
+    const host = mountHost();
+    const view = render(<PromptEditorSideMenu editorHost={host} />);
+    await waitFor(() => expect(floatingUpdate).toHaveBeenCalled());
+
+    dispatch(host, "dragstart");
+    await waitFor(() =>
+      expect(view.getByTestId("popover").className).toContain(
+        "prompt-side-menu--dragging",
+      ),
+    );
+    floatingUpdate.mockClear();
+
+    dispatch(host, "drop");
+
+    await waitFor(() => expect(floatingUpdate).toHaveBeenCalledTimes(1));
   });
 
   it("stays closed while no block is hovered", () => {

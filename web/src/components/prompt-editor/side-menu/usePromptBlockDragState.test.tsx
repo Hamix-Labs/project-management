@@ -1,5 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { usePromptBlockDragState } from "./usePromptBlockDragState";
 
 let host: HTMLElement | null = null;
@@ -28,12 +28,41 @@ function dispatchDrag(
   });
 }
 
+function dispatchMouseMove(target: EventTarget) {
+  act(() => {
+    target.dispatchEvent(new Event("mousemove", { bubbles: true }));
+  });
+}
+
+/** Runs the task the hook queues from `dragstart`. */
+function flushDeferredDragStart() {
+  act(() => {
+    vi.advanceTimersByTime(1);
+  });
+}
+
+beforeEach(() => {
+  vi.useFakeTimers();
+});
+
 afterEach(() => {
+  vi.useRealTimers();
   host?.remove();
   host = null;
 });
 
 describe("usePromptBlockDragState", () => {
+  it("does not flip during the dragstart handler itself", () => {
+    const { host: editorHost, inner } = mountHost();
+    const { result } = renderHook(() => usePromptBlockDragState(editorHost));
+
+    dispatchDrag(inner, "dragstart");
+
+    // Restyling the drag source from inside dragstart makes Chrome abandon the
+    // drag, and the drag handle lives inside the menu this flag hides.
+    expect(result.current).toBe(false);
+  });
+
   it("is active between a drag starting in the editor and its drop", () => {
     const { host: editorHost, inner } = mountHost();
     const { result } = renderHook(() => usePromptBlockDragState(editorHost));
@@ -41,6 +70,7 @@ describe("usePromptBlockDragState", () => {
     expect(result.current).toBe(false);
 
     dispatchDrag(inner, "dragstart");
+    flushDeferredDragStart();
     expect(result.current).toBe(true);
 
     dispatchDrag(inner, "drop");
@@ -52,9 +82,31 @@ describe("usePromptBlockDragState", () => {
     const { result } = renderHook(() => usePromptBlockDragState(editorHost));
 
     dispatchDrag(inner, "dragstart");
-    expect(result.current).toBe(true);
+    flushDeferredDragStart();
 
     dispatchDrag(document.body, "dragend");
+    expect(result.current).toBe(false);
+  });
+
+  it("clears on mousemove, which cannot fire while a drag is in flight", () => {
+    const { host: editorHost, inner } = mountHost();
+    const { result } = renderHook(() => usePromptBlockDragState(editorHost));
+
+    dispatchDrag(inner, "dragstart");
+    flushDeferredDragStart();
+
+    dispatchMouseMove(document.body);
+    expect(result.current).toBe(false);
+  });
+
+  it("drops a pending dragstart when the drag is cancelled immediately", () => {
+    const { host: editorHost, inner } = mountHost();
+    const { result } = renderHook(() => usePromptBlockDragState(editorHost));
+
+    dispatchDrag(inner, "dragstart");
+    dispatchDrag(document.body, "dragend");
+    flushDeferredDragStart();
+
     expect(result.current).toBe(false);
   });
 
@@ -66,6 +118,7 @@ describe("usePromptBlockDragState", () => {
 
     try {
       dispatchDrag(outside, "dragstart", ["blocknote/html"]);
+      flushDeferredDragStart();
       expect(result.current).toBe(true);
     } finally {
       outside.remove();
@@ -80,6 +133,7 @@ describe("usePromptBlockDragState", () => {
 
     try {
       dispatchDrag(outside, "dragstart", ["Files"]);
+      flushDeferredDragStart();
       expect(result.current).toBe(false);
     } finally {
       outside.remove();
@@ -91,6 +145,8 @@ describe("usePromptBlockDragState", () => {
     const { result } = renderHook(() => usePromptBlockDragState(null));
 
     dispatchDrag(inner, "dragstart");
+    flushDeferredDragStart();
+
     expect(result.current).toBe(false);
   });
 });
