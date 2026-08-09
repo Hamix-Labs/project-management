@@ -104,17 +104,13 @@ describe("App routing", () => {
     expect(alert).toHaveTextContent(/network|failed|fetch/i);
   });
 
-  it("hides primary nav on immersive prompt editor routes", async () => {
+  it("treats former Prompt IDE routes as not found", async () => {
     renderAppAt(["/prompt/ephemeral/test-doc"]);
 
-    await waitFor(() => {
-      expect(document.querySelector(".app--immersive")).toBeTruthy();
-    });
-    expect(screen.queryByRole("navigation", { name: /^primary$/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: /^hamix$/i })).not.toBeInTheDocument();
-    expect(screen.getByRole("main")).toHaveAttribute("id", "main-content");
     expect(
-      screen.getByRole("link", { name: /^skip to main content$/i }),
-    ).toHaveAttribute("href", "#main-content");
+      await screen.findByRole("heading", { name: /^page not found$/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: /^primary$/i })).toBeInTheDocument();
+    expect(document.querySelector(".app--immersive")).toBeNull();
   });
 });
