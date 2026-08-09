@@ -36,15 +36,20 @@
   background: transparent;
 }
 
-/* Placeholder: sans + muted, never italic */
+/* Placeholder: muted, never italic. Size / weight / line-height inherit from
+   the block content so empty headings match typed metrics (no jump on the
+   first keystroke). BlockNote's upstream rule uses margin-inline: -2px to
+   cancel the 2px caret min-width slot — reset it so caret and first glyph
+   keep a deliberate gap. */
 .blocknote-prompt-editor
   .bn-block-content:has(.ProseMirror-trailingBreak:only-child)::after,
 .blocknote-prompt-editor
   .bn-block-content:has(.ProseMirror-trailingBreak:only-child):after {
   font-style: normal !important;
-  font-family: var(--font-sans) !important;
-  font-size: 16px;
-  line-height: 1.75;
+  font-family: inherit !important;
+  font-weight: inherit;
+  margin-inline-start: 0;
+  margin-inline-end: 0;
   color: var(--prompt-editor-text-muted) !important;
 }
 
@@ -130,11 +135,75 @@
   box-shadow: var(--shadow-focus);
 }
 
-.blocknote-prompt-editor .bn-editor h2 {
+/*
+  Heading typography lives on .bn-block-content (not only the inner h*) so the
+  placeholder ::after inherits the same metrics as typed text. Specificity
+  matches BlockNote's heading rule plus [data-level] so we beat --level / bold.
+  Line-height is set deliberately — .bn-block-outer's inherited 1.5 made the
+  caret tower over the glyphs. Margins stay on h2 only (issue 154 owns
+  first-block spacing). H1–H3 are the slash-menu levels; no mobile size step
+  (the ≤640px breakpoint does not shrink body headings today).
+*/
+.blocknote-prompt-editor
+  .bn-block-outer:not([data-prev-type])
+  > .bn-block
+  > .bn-block-content[data-content-type="heading"][data-level="1"],
+.blocknote-prompt-editor
+  .bn-block-outer[data-prev-type="heading"][data-prev-level="1"]
+  > .bn-block
+  > .bn-block-content {
+  font-family: var(--font-sans);
+  font-size: 30px;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.blocknote-prompt-editor
+  .bn-block-outer:not([data-prev-type])
+  > .bn-block
+  > .bn-block-content[data-content-type="heading"][data-level="2"],
+.blocknote-prompt-editor
+  .bn-block-outer[data-prev-type="heading"][data-prev-level="2"]
+  > .bn-block
+  > .bn-block-content {
+  font-family: var(--font-sans);
   font-size: 21px;
   font-weight: 500;
-  margin: 30px 0 10px;
+  line-height: 1.3;
+}
+
+.blocknote-prompt-editor
+  .bn-block-outer:not([data-prev-type])
+  > .bn-block
+  > .bn-block-content[data-content-type="heading"][data-level="3"],
+.blocknote-prompt-editor
+  .bn-block-outer[data-prev-type="heading"][data-prev-level="3"]
+  > .bn-block
+  > .bn-block-content {
   font-family: var(--font-sans);
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+/* h* keep font-size: inherit from BlockNote. UA styles force heading weight to
+   bold, which would disagree with the placeholder (inherits 500 from the
+   block content) and jump on the first keystroke — reset to inherit. */
+.blocknote-prompt-editor .bn-editor :is(h1, h2, h3) {
+  font-weight: inherit;
+}
+
+.blocknote-prompt-editor .bn-editor h2 {
+  margin: 30px 0 10px;
+}
+
+/* Paragraph metrics on the block content so the empty placeholder matches
+   typed text (placeholder is a ::after sibling of <p>, not a descendant). */
+.blocknote-prompt-editor
+  .bn-block-content[data-content-type="paragraph"] {
+  font-size: 16px;
+  line-height: 1.75;
+  font-weight: 400;
 }
 
 .blocknote-prompt-editor .bn-editor p {
