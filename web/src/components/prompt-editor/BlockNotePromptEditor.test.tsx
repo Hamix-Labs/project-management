@@ -41,11 +41,9 @@ vi.mock("@blocknote/ariakit", () => ({
 }));
 
 vi.mock("@/api", () => ({
+  ApiError: class ApiError extends Error {},
+  maxRepoSearchQueryBytes: 512,
   searchRepoFiles: vi.fn(async () => []),
-}));
-
-vi.mock("@/components/rich-prompt/useRepoWorkspaceProbe", () => ({
-  useRepoWorkspaceProbe: () => "unavailable" as const,
 }));
 
 vi.mock("./code/useEnhanceCodeBlockToolbars", () => ({

@@ -60,32 +60,6 @@ export type RepoWorkspaceProbe =
   | { state: "unknown" };
 
 /**
- * Lightweight check: can `/repo/search` resolve the given task worktree?
- * Uses an empty `q` so the handler opens the worktree without walking paths.
- */
-export async function probeWorktreeRepo(
-  worktreeId: string,
-  options?: { signal?: AbortSignal },
-): Promise<RepoWorkspaceProbe> {
-  const id = worktreeId.trim();
-  if (id === "") {
-    return { state: "unavailable" };
-  }
-  try {
-    const paths = await searchRepoFiles("", {
-      worktreeId: id,
-      signal: options?.signal,
-    });
-    if (paths === null) {
-      return { state: "unavailable" };
-    }
-    return { state: "available" };
-  } catch {
-    return { state: "unknown" };
-  }
-}
-
-/**
  * Lightweight check: does the running taskapi have a workspace repo configured (via Settings) and on disk?
  * Prefer this over GET /repo/search?q= on mount (avoids walking the tree).
  */

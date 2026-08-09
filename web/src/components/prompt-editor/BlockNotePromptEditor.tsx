@@ -6,21 +6,16 @@ import {
 import { BlockNoteView } from "@blocknote/ariakit";
 import "@blocknote/core/style.css";
 import "@blocknote/ariakit/style.css";
-import { searchRepoFiles } from "@/api";
 import { RichPromptFileReferenceModal } from "@/components/rich-prompt/RichPromptFileReferenceModal";
-import { RichPromptRepoHints } from "@/components/rich-prompt/RichPromptRepoHints";
-import { computeRepoHintFlags } from "@/components/rich-prompt/richPromptInsertHelpers";
-import { useRepoWorkspaceProbe } from "@/components/rich-prompt/useRepoWorkspaceProbe";
 import { promptEditorSchema } from "./blockNoteSchema";
 import {
   useEnhanceCodeBlockToolbars,
   type CodeBlockLanguageEditor,
 } from "./code/useEnhanceCodeBlockToolbars";
 import { PromptEditorRepoContext } from "./context/PromptEditorRepoContext";
-import {
-  PromptEditorMentionMenu,
-  type PromptFileMentionItem,
-} from "./mention/PromptEditorMentionMenu";
+import { PromptEditorMentionMenu } from "./mention/PromptEditorMentionMenu";
+import { PromptFileMentionHint } from "./mention/PromptFileMentionHint";
+import { usePromptFileMentionSearch } from "./mention/usePromptFileMentionSearch";
 import { htmlToInitialBlocks } from "./promptEditorHtml";
 import { usePromptEditorFileWorktree } from "./usePromptEditorFileWorktree";
 
@@ -53,16 +48,10 @@ export function BlockNotePromptEditor({
     worktreeId,
     repositoryId,
   });
-  const fileWorktreeRef = useRef(fileWorktree.worktreeId);
-  fileWorktreeRef.current = fileWorktree.worktreeId;
-  const fileWorktreeResolvingRef = useRef(fileWorktree.resolving);
-  fileWorktreeResolvingRef.current = fileWorktree.resolving;
   const [pendingInsert, setPendingInsert] = useState<PendingInsert | null>(
     null,
   );
   const [rangeWarning, setRangeWarning] = useState<string | null>(null);
-  const [fileSearchUnavailable, setFileSearchUnavailable] = useState(false);
-  const [fileSearchBusy, setFileSearchBusy] = useState(false);
   const hydrateMetaRef = useRef(htmlToInitialBlocks(initialHtml));
 
   const initialContent = useMemo(
@@ -87,49 +76,15 @@ export function BlockNotePromptEditor({
     onChange(html);
   }, [editor, onChange]);
 
-  const workspaceProbe = useRepoWorkspaceProbe(fileWorktree.worktreeId);
-  const repoHints = computeRepoHintFlags(
-    workspaceProbe,
-    fileSearchUnavailable,
-    fileSearchBusy || fileWorktree.resolving,
-    fileWorktree.worktreeId,
-  );
+  const onSelectPath = useCallback((path: string) => {
+    setRangeWarning(null);
+    setPendingInsert({ path });
+  }, []);
 
-  const getMentionItems = useCallback(
-    async (query: string): Promise<PromptFileMentionItem[]> => {
-      const wt = fileWorktreeRef.current?.trim();
-      if (!wt) {
-        setFileSearchUnavailable(!fileWorktreeResolvingRef.current);
-        return [];
-      }
-      setFileSearchBusy(true);
-      try {
-        const paths = await searchRepoFiles(query, { worktreeId: wt });
-        if (paths == null) {
-          setFileSearchUnavailable(true);
-          return [];
-        }
-        setFileSearchUnavailable(false);
-        return paths.slice(0, 20).map((pathRaw) => {
-          const path = pathRaw.replace(/\\/g, "/");
-          return {
-            title: path,
-            query,
-            onItemClick: () => {
-              setRangeWarning(null);
-              setPendingInsert({ path });
-            },
-          };
-        });
-      } catch {
-        setFileSearchUnavailable(true);
-        return [];
-      } finally {
-        setFileSearchBusy(false);
-      }
-    },
-    [],
-  );
+  const mentionSearch = usePromptFileMentionSearch({
+    worktree: fileWorktree,
+    onSelectPath,
+  });
 
   const insertChip = useCallback(
     (path: string, lineStart?: number, lineEnd?: number) => {
@@ -196,7 +151,9 @@ export function BlockNotePromptEditor({
           >
             <SuggestionMenuController
               triggerCharacter="@"
-              getItems={async (q) => getMentionItems(q)}
+              // Must stay referentially stable: BlockNote restarts the load
+              // whenever this identity changes.
+              getItems={mentionSearch.getItems}
               // Custom menu items include `query` for the search header.
               suggestionMenuComponent={
                 PromptEditorMentionMenu as never
@@ -227,16 +184,7 @@ export function BlockNotePromptEditor({
             }}
           />
         ) : null}
-        <RichPromptRepoHints
-          showSelectWorktreeHint={repoHints.showSelectWorktreeHint}
-          showRepoMisconfigHint={repoHints.showRepoMisconfigHint}
-          workspaceBroken={repoHints.workspaceBroken}
-          fileSearchFailedWhileAvailable={
-            repoHints.fileSearchFailedWhileAvailable
-          }
-          showRepoUnknownHint={repoHints.showRepoUnknownHint}
-          showFileSearchSpinner={repoHints.showFileSearchSpinner}
-        />
+        <PromptFileMentionHint status={mentionSearch.status} />
       </div>
     </PromptEditorRepoContext.Provider>
   );

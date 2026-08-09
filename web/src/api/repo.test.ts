@@ -7,7 +7,6 @@ import {
   maxRepoShaQueryBytes,
   parseRepoDiffResponse,
   probeRepoWorkspace,
-  probeWorktreeRepo,
   searchRepoFiles,
   validateRepoRange,
 } from "./repo";
@@ -172,52 +171,6 @@ describe("fetchRepoFile", () => {
     const [url] = vi.mocked(fetch).mock.calls[0] as [string];
     expect(url).toContain("worktree_id=wt-abc");
     expect(url).toContain("path=a.go");
-  });
-});
-
-describe("probeWorktreeRepo", () => {
-  beforeEach(() => {
-    vi.stubGlobal("fetch", vi.fn());
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
-  it("returns unavailable for blank worktree id without fetch", async () => {
-    await expect(probeWorktreeRepo("   ")).resolves.toEqual({
-      state: "unavailable",
-    });
-    expect(fetch).not.toHaveBeenCalled();
-  });
-
-  it("returns available when search succeeds", async () => {
-    vi.mocked(fetch).mockResolvedValue(
-      new Response(JSON.stringify({ paths: [] }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      }),
-    );
-    await expect(probeWorktreeRepo("wt-1")).resolves.toEqual({
-      state: "available",
-    });
-    expect(String(vi.mocked(fetch).mock.calls[0]?.[0])).toContain(
-      "worktree_id=wt-1",
-    );
-  });
-
-  it("returns unavailable when search responds with 409", async () => {
-    vi.mocked(fetch).mockResolvedValue(new Response("", { status: 409 }));
-    await expect(probeWorktreeRepo("wt-1")).resolves.toEqual({
-      state: "unavailable",
-    });
-  });
-
-  it("returns unknown when search throws", async () => {
-    vi.mocked(fetch).mockRejectedValue(new Error("down"));
-    await expect(probeWorktreeRepo("wt-1")).resolves.toEqual({
-      state: "unknown",
-    });
   });
 });
 
