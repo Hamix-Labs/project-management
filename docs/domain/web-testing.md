@@ -10,7 +10,7 @@ Contributor playbook for Vitest projects, MSW handlers, and the CI web matrix.
 
 ## CI groups
 
-CI runs ten parallel `web` jobs via `scripts/check-web.sh --group=<name>`:
+CI runs twelve parallel `web` jobs via `scripts/check-web.sh --group=<name>`:
 
 | Group | Runs |
 | --- | --- |
@@ -18,6 +18,8 @@ CI runs ten parallel `web` jobs via `scripts/check-web.sh --group=<name>`:
 | `build` | `tsc --noEmit`, vite build |
 | `test-unit` | Vitest `unit` project |
 | `test-components` | Vitest `components` project |
+| `test-task-components` | Vitest `task-components` project |
+| `test-task-hooks` | Vitest `task-hooks` project |
 | `test-app` | Vitest `app` project |
 | `test-task-pages` | Vitest `task-pages` project |
 | `test-task-create` | Vitest `task-create` project |
@@ -50,13 +52,23 @@ Defined in [`web/vitest.workspace.ts`](../../web/vitest.workspace.ts):
 | Project | Owns |
 | --- | --- |
 | `unit` | `*.test.ts` — parsers, pure helpers, `renderHook` |
-| `components` | `*.test.tsx` — single components, hooks (`renderHook`), no `<App />`, no full pages |
+| `components` | Every `*.test.tsx` no other project claims — single components, hooks (`renderHook`), no `<App />`, no full pages |
+| `task-components` | `src/tasks/components/**` — task detail, list, board, modals, dialogs |
+| `task-hooks` | `src/tasks/hooks/**` and `src/tasks/prompt-editor/**` |
 | `app` | App shell, routing, bootstrap, 404, route announcer |
 | `task-pages` | Task detail/cycle/event/home/templates/drafts pages |
 | `task-create` | Create-task modal flows (not hooks — those are `components`) |
 | `settings` | Settings page |
 | `projects` | Project list and detail pages |
 | `worktrees` | Worktrees page |
+
+`components` is the catch-all: it includes `src/**/*.test.tsx` and excludes what
+the other projects claim, so a new test file always runs somewhere without
+editing the workspace. `task-components` and `task-hooks` exist only to keep each
+CI job inside the 120s step budget — the per-file jsdom setup cost, not any one
+slow test, is what pushes a shard over. When a shard approaches the budget,
+carve the next heaviest directory out of `components` the same way rather than
+raising the budget.
 
 ## Testing boundary
 

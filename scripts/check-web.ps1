@@ -8,7 +8,7 @@
 #   -Verbose           Stream full tool output (CI uses this)
 #   -Install           Run npm ci in web/ before other steps
 #   -InstallOnly       Run npm ci in web/ and exit (CI web-deps job)
-#   -Group <name>      Restrict to lint|build|test-unit|test-components|test-app|test-task-pages|test-task-create|test-settings|test-projects|test-worktrees (CI matrix)
+#   -Group <name>      Restrict to lint|build|test-unit|test-components|test-task-components|test-task-hooks|test-app|test-task-pages|test-task-create|test-settings|test-projects|test-worktrees (CI matrix)
 #   -Help              Show options
 #
 # CI:
@@ -20,7 +20,7 @@ param(
     [switch]$Verbose,
     [switch]$Install,
     [switch]$InstallOnly,
-    [ValidateSet("lint", "build", "test-unit", "test-components", "test-app", "test-task-pages", "test-task-create", "test-settings", "test-projects", "test-worktrees", "")]
+    [ValidateSet("lint", "build", "test-unit", "test-components", "test-task-components", "test-task-hooks", "test-app", "test-task-pages", "test-task-create", "test-settings", "test-projects", "test-worktrees", "")]
     [string]$Group = ""
 )
 
@@ -54,8 +54,8 @@ function Get-TotalSteps {
     $base = switch ($Scope) {
         "lint" { 3 }
         "build" { 1 }
-        { $_ -in "test-unit", "test-components", "test-app", "test-task-pages", "test-task-create", "test-settings", "test-projects", "test-worktrees" } { 1 }
-        default { 12 }
+        { $_ -in "test-unit", "test-components", "test-task-components", "test-task-hooks", "test-app", "test-task-pages", "test-task-create", "test-settings", "test-projects", "test-worktrees" } { 1 }
+        default { 14 }
     }
     if ($Install) { return $base + 1 }
     return $base
@@ -266,6 +266,26 @@ switch ($Group) {
         }
         Complete-Ok
     }
+    "test-task-components" {
+        Invoke-MaybeNpmCi
+        Push-Location $webDir
+        try {
+            Invoke-WebTest "web (test-task-components)" @("--project=task-components")
+        } finally {
+            Pop-Location
+        }
+        Complete-Ok
+    }
+    "test-task-hooks" {
+        Invoke-MaybeNpmCi
+        Push-Location $webDir
+        try {
+            Invoke-WebTest "web (test-task-hooks)" @("--project=task-hooks")
+        } finally {
+            Pop-Location
+        }
+        Complete-Ok
+    }
     "test-app" {
         Invoke-MaybeNpmCi
         Push-Location $webDir
@@ -335,6 +355,8 @@ Push-Location $webDir
 try {
     Invoke-WebTest "web (test-unit)"        @("--project=unit")
     Invoke-WebTest "web (test-components)"  @("--project=components")
+    Invoke-WebTest "web (test-task-components)" @("--project=task-components")
+    Invoke-WebTest "web (test-task-hooks)"  @("--project=task-hooks")
     Invoke-WebTest "web (test-app)"         @("--project=app")
     Invoke-WebTest "web (test-task-pages)"  @("--project=task-pages")
     Invoke-WebTest "web (test-task-create)" @("--project=task-create")
