@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import type { FileWorktreeResolution } from "../usePromptEditorFileWorktree";
 import type { PromptFileMentionItem } from "./PromptEditorMentionMenu";
 import {
@@ -25,6 +26,7 @@ export function usePromptFileMentionSearch({
   worktree: FileWorktreeResolution;
   onSelectPath: (path: string) => void;
 }): PromptFileMentionSearch {
+  const queryClient = useQueryClient();
   const [bound, setBound] = useState<BoundMentionStatus>({
     worktreeId: undefined,
     value: { kind: "idle" },
@@ -36,30 +38,19 @@ export function usePromptFileMentionSearch({
   worktreeRef.current = worktree;
   const onSelectPathRef = useRef(onSelectPath);
   onSelectPathRef.current = onSelectPath;
+  const queryClientRef = useRef(queryClient);
+  queryClientRef.current = queryClient;
 
   // Only the newest request may write status; superseded ones stay silent.
   const generationRef = useRef(0);
-  const abortRef = useRef<AbortController | null>(null);
   const mountedRef = useRef(true);
 
   useEffect(() => {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
-      abortRef.current?.abort();
     };
   }, []);
-
-  const currentWorktreeId = worktree.worktreeId;
-  useEffect(
-    // Rebinding makes an in-flight lookup pointless. Its status is already
-    // filtered out below, so this only saves the request.
-    () => () => {
-      abortRef.current?.abort();
-      abortRef.current = null;
-    },
-    [currentWorktreeId],
-  );
 
   const getItems = useCallback(
     async (query: string): Promise<PromptFileMentionItem[]> => {
@@ -70,14 +61,10 @@ export function usePromptFileMentionSearch({
         }
       };
 
-      abortRef.current?.abort();
-      const controller = new AbortController();
-      abortRef.current = controller;
-
       const outcome = await runPromptFileMentionSearch({
         query,
         worktree: worktreeRef.current,
-        controller,
+        queryClient: queryClientRef.current,
         onSelectPath: (path) => onSelectPathRef.current(path),
         onProgress: write,
       });
@@ -90,7 +77,7 @@ export function usePromptFileMentionSearch({
   );
 
   const status: MentionSearchStatus =
-    bound.worktreeId === currentWorktreeId ? bound.value : { kind: "idle" };
+    bound.worktreeId === worktree.worktreeId ? bound.value : { kind: "idle" };
 
   return { getItems, status };
 }

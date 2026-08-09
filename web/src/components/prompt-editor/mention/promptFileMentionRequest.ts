@@ -1,16 +1,22 @@
-import { ApiError, maxRepoSearchQueryBytes, searchRepoFiles } from "@/api";
+import type { QueryClient } from "@tanstack/react-query";
+import { ApiError, listRepoFiles, repoQueryKeys, type RepoFileList } from "@/api";
 import type {
   FileWorktreeGap,
   FileWorktreeResolution,
 } from "../usePromptEditorFileWorktree";
 import type { PromptFileMentionItem } from "./PromptEditorMentionMenu";
+import { rankMentionPaths } from "./promptFileMentionRank";
 import {
   mentionStatusFromHttpStatus,
   type MentionSearchStatus,
 } from "./promptFileMentionStatus";
 
-/** BlockNote renders the whole list; a local index lifts this later. */
-const maxMentionItems = 20;
+/**
+ * How long a cached listing is trusted before the next `@` refetches it. Long
+ * enough that a burst of mentions costs one request, short enough that files an
+ * agent just created show up while the operator is still writing the prompt.
+ */
+export const mentionFileListStaleTimeMs = 60_000;
 
 /** A status only ever describes the binding that produced it. */
 export type BoundMentionStatus = {
@@ -37,35 +43,22 @@ function isAbortError(error: unknown): boolean {
   return (error as { name?: string } | null)?.name === "AbortError";
 }
 
-function toMentionItems(
-  paths: string[],
-  query: string,
-  onSelectPath: (path: string) => void,
-): PromptFileMentionItem[] {
-  return paths.slice(0, maxMentionItems).map((rawPath) => {
-    const path = rawPath.replace(/\\/g, "/");
-    return {
-      title: path,
-      query,
-      onItemClick: () => onSelectPath(path),
-    };
-  });
-}
-
 /**
- * Runs one `@` lookup. Never throws: the caller hands the promise to BlockNote,
- * which attaches no rejection handler and would leave the menu loading forever.
+ * Runs one `@` lookup against the cached file list.
+ *
+ * Never throws: the caller hands the promise to BlockNote, which attaches no
+ * rejection handler and would leave the menu loading forever.
  */
 export async function runPromptFileMentionSearch({
   query,
   worktree,
-  controller,
+  queryClient,
   onSelectPath,
   onProgress,
 }: {
   query: string;
   worktree: FileWorktreeResolution;
-  controller: AbortController;
+  queryClient: QueryClient;
   onSelectPath: (path: string) => void;
   onProgress: (progress: BoundMentionStatus) => void;
 }): Promise<MentionSearchOutcome> {
@@ -75,10 +68,6 @@ export async function runPromptFileMentionSearch({
   ): MentionSearchOutcome => ({ worktreeId, value, items: [] });
 
   try {
-    if (query.length > maxRepoSearchQueryBytes) {
-      return empty(worktree.worktreeId, { kind: "query-rejected" });
-    }
-
     let target = worktree.worktreeId?.trim();
     if (!target && worktree.resolving) {
       onProgress({ worktreeId: undefined, value: { kind: "resolving" } });
@@ -88,25 +77,46 @@ export async function runPromptFileMentionSearch({
       return empty(undefined, statusForGap(worktree.gap));
     }
 
-    onProgress({ worktreeId: target, value: { kind: "searching" } });
-    const paths = await searchRepoFiles(query, {
-      worktreeId: target,
-      signal: controller.signal,
-    });
-    if (controller.signal.aborted) return empty(target, { kind: "idle" });
-    if (paths == null) return empty(target, { kind: "no-repo" });
+    const worktreeId = target;
+    const cached = queryClient.getQueryData<RepoFileList | null>(
+      repoQueryKeys.files(worktreeId),
+    );
+    // Only announce a wait when there is nothing cached to rank yet; a warm
+    // list answers within the frame and a spinner would only flicker.
+    if (cached === undefined) {
+      onProgress({ worktreeId, value: { kind: "searching" } });
+    }
 
-    const items = toMentionItems(paths, query, onSelectPath);
-    return { worktreeId: target, value: { kind: "ready", matched: items.length }, items };
+    const listing = await queryClient.fetchQuery({
+      queryKey: repoQueryKeys.files(worktreeId),
+      queryFn: ({ signal }) => listRepoFiles(worktreeId, { signal }),
+      staleTime: mentionFileListStaleTimeMs,
+    });
+
+    if (listing == null) return empty(worktreeId, { kind: "no-repo" });
+    if (listing.paths.length === 0) {
+      return empty(worktreeId, { kind: "empty-repo" });
+    }
+
+    const ranked = rankMentionPaths(listing.paths, query);
+    const items = ranked.map((path) => ({
+      title: path,
+      query,
+      onItemClick: () => onSelectPath(path),
+    }));
+    return {
+      worktreeId,
+      value: {
+        kind: "ready",
+        matched: items.length,
+        truncated: listing.truncated,
+      },
+      items,
+    };
   } catch (error) {
     const target = worktree.worktreeId?.trim();
     if (isAbortError(error)) {
-      // Our own abort means a newer keystroke took over; any other abort came
-      // from the fetch deadline, which the user should hear about.
-      return empty(
-        target,
-        controller.signal.aborted ? { kind: "idle" } : { kind: "timed-out" },
-      );
+      return empty(target, { kind: "timed-out" });
     }
     return empty(
       target,

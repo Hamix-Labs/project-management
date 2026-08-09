@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeAll, describe, expect, it } from "vitest";
@@ -38,12 +40,22 @@ describe("code block language switching", () => {
 
   it("writes each chosen language to the block and follows it in the label", async () => {
     const user = userEvent.setup();
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
     render(
       <BlockNotePromptEditor
         id="prompt"
         initialHtml={CODE_HTML}
         onChange={() => {}}
       />,
+      {
+        wrapper: ({ children }: { children: ReactNode }) => (
+          <QueryClientProvider client={queryClient}>
+            {children}
+          </QueryClientProvider>
+        ),
+      },
     );
 
     await pickLanguage(user, /javascript/i, /^go$/i);

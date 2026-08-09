@@ -18,15 +18,15 @@ export type MentionSearchStatus =
   /** Repository worktree lookup itself failed. */
   | { kind: "unresolved" }
   | { kind: "searching" }
-  | { kind: "ready"; matched: number }
+  | { kind: "ready"; matched: number; truncated: boolean }
+  /** The worktree contains no referenceable files at all. */
+  | { kind: "empty-repo" }
   /** 409 / 503 — repo root is not configured for this worktree. */
   | { kind: "no-repo" }
   /** 404 — the worktree row is gone. */
   | { kind: "worktree-missing" }
   /** 500 — the worktree path is missing or not a directory. */
   | { kind: "worktree-broken" }
-  /** Query exceeded the byte ceiling the API accepts. */
-  | { kind: "query-rejected" }
   /** The request hit the client-side fetch deadline. */
   | { kind: "timed-out" }
   | { kind: "failed"; status?: number };
@@ -47,14 +47,30 @@ export type MentionSearchHint = {
 
 const repositoriesPage = { label: "Repositories page", href: "/repositories" };
 
+/** Mirrors repo.MaxFileListPaths in pkgs/repo/root_files.go. */
+const maxListedFiles = 50000;
+
 /** Hint to show under the editor, or null when the status needs no words. */
 export function describeMentionSearchStatus(
   status: MentionSearchStatus,
 ): MentionSearchHint | null {
   switch (status.kind) {
     case "idle":
-    case "ready":
       return null;
+    case "ready":
+      // Silence is the right answer for a complete list; say so only when the
+      // list the user is scrolling is knowingly partial.
+      return status.truncated
+        ? {
+            tone: "info",
+            message: `This repository is too large to list in full, so @ searches the first ${maxListedFiles.toLocaleString("en-US")} files. Narrow your search to reach the rest.`,
+          }
+        : null;
+    case "empty-repo":
+      return {
+        tone: "info",
+        message: "This repository has no files to reference yet.",
+      };
     case "unbound":
       return {
         tone: "info",
@@ -100,16 +116,11 @@ export function describeMentionSearchStatus(
         action: repositoriesPage,
         trailing: "to restore @ file mentions.",
       };
-    case "query-rejected":
-      return {
-        tone: "info",
-        message: "That search text is too long — shorten it to keep searching files.",
-      };
     case "timed-out":
       return {
         tone: "error",
         message:
-          "File search timed out. The repository may be very large — try a narrower search.",
+          "Listing this repository's files timed out. It may be very large — reopen the menu to try again.",
       };
     case "failed":
       return {

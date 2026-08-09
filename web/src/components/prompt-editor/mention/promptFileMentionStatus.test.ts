@@ -8,7 +8,31 @@ import {
 describe("describeMentionSearchStatus", () => {
   it("stays silent when there is nothing to report", () => {
     expect(describeMentionSearchStatus({ kind: "idle" })).toBeNull();
-    expect(describeMentionSearchStatus({ kind: "ready", matched: 12 })).toBeNull();
+    expect(
+      describeMentionSearchStatus({
+        kind: "ready",
+        matched: 12,
+        truncated: false,
+      }),
+    ).toBeNull();
+  });
+
+  it("admits when the list it is searching is partial", () => {
+    const hint = describeMentionSearchStatus({
+      kind: "ready",
+      matched: 12,
+      truncated: true,
+    });
+
+    expect(hint?.tone).toBe("info");
+    expect(hint?.message).toContain("50,000");
+  });
+
+  it("says an empty repository is empty, not unmatched", () => {
+    const hint = describeMentionSearchStatus({ kind: "empty-repo" });
+
+    expect(hint?.tone).toBe("info");
+    expect(hint?.message).toMatch(/no files/i);
   });
 
   it("separates a missing worktree from a broken one", () => {
@@ -53,10 +77,10 @@ describe("describeMentionSearchStatus", () => {
     }
   });
 
-  it("treats an over-long query as guidance, not an error", () => {
-    const hint = describeMentionSearchStatus({ kind: "query-rejected" });
-    expect(hint?.tone).toBe("info");
-    expect(hint?.action).toBeUndefined();
+  it("tells the user a timeout is retryable", () => {
+    const hint = describeMentionSearchStatus({ kind: "timed-out" });
+    expect(hint?.tone).toBe("error");
+    expect(hint?.message).toMatch(/reopen the menu/i);
   });
 });
 
