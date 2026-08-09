@@ -9,7 +9,7 @@
 #   --verbose, -v       Stream full tool output (CI uses this)
 #   --install           Run npm ci in web/ before other steps
 #   --install-only      Run npm ci in web/ and exit (CI web-deps job)
-#   --group=<name>      Restrict to lint|build|test-unit|test-components|test-app|test-task-pages|test-task-create|test-settings|test-projects|test-worktrees (CI matrix)
+#   --group=<name>      Restrict to lint|build|test-unit|test-components|test-task-components|test-task-hooks|test-app|test-task-pages|test-task-create|test-settings|test-projects|test-worktrees (CI matrix)
 #   --help, -h          Show options
 #
 # CI:
@@ -18,6 +18,8 @@
 #   ./scripts/check-web.sh --verbose --group=build
 #   ./scripts/check-web.sh --verbose --group=test-unit
 #   ./scripts/check-web.sh --verbose --group=test-components
+#   ./scripts/check-web.sh --verbose --group=test-task-components
+#   ./scripts/check-web.sh --verbose --group=test-task-hooks
 #   ./scripts/check-web.sh --verbose --group=test-app
 #   ./scripts/check-web.sh --verbose --group=test-task-pages
 #   ./scripts/check-web.sh --verbose --group=test-task-create
@@ -64,9 +66,9 @@ fi
 
 if [[ -n "$GROUP" ]]; then
   case "$GROUP" in
-    lint|build|test-unit|test-components|test-app|test-task-pages|test-task-create|test-settings|test-projects|test-worktrees) ;;
+    lint|build|test-unit|test-components|test-task-components|test-task-hooks|test-app|test-task-pages|test-task-create|test-settings|test-projects|test-worktrees) ;;
     *)
-      echo "unknown web group: $GROUP (valid: lint build test-unit test-components test-app test-task-pages test-task-create test-settings test-projects test-worktrees)" >&2
+      echo "unknown web group: $GROUP (valid: lint build test-unit test-components test-task-components test-task-hooks test-app test-task-pages test-task-create test-settings test-projects test-worktrees)" >&2
       exit 2
       ;;
   esac
@@ -89,12 +91,12 @@ elif [[ -n "$GROUP" ]]; then
   case "$GROUP" in
     lint) TOTAL=3 ;;
     build) TOTAL=1 ;;
-    test-unit|test-components|test-app|test-task-pages|test-task-create|test-settings|test-projects|test-worktrees) TOTAL=1 ;;
+    test-unit|test-components|test-task-components|test-task-hooks|test-app|test-task-pages|test-task-create|test-settings|test-projects|test-worktrees) TOTAL=1 ;;
   esac
   [[ "$INSTALL" -eq 1 ]] && TOTAL=$((TOTAL + 1))
 else
-  TOTAL=12
-  [[ "$INSTALL" -eq 1 ]] && TOTAL=13
+  TOTAL=14
+  [[ "$INSTALL" -eq 1 ]] && TOTAL=15
 fi
 
 # shellcheck source=check-lib.sh
@@ -261,6 +263,20 @@ case "$GROUP" in
     popd >/dev/null
     complete_ok
     ;;
+  test-task-components)
+    maybe_npm_ci
+    pushd web >/dev/null
+    run_web_test "web (test-task-components)" --project=task-components
+    popd >/dev/null
+    complete_ok
+    ;;
+  test-task-hooks)
+    maybe_npm_ci
+    pushd web >/dev/null
+    run_web_test "web (test-task-hooks)" --project=task-hooks
+    popd >/dev/null
+    complete_ok
+    ;;
   test-app)
     maybe_npm_ci
     pushd web >/dev/null
@@ -312,6 +328,8 @@ maybe_npm_ci
 pushd web >/dev/null
 run_web_test "web (test-unit)" --project=unit
 run_web_test "web (test-components)" --project=components
+run_web_test "web (test-task-components)" --project=task-components
+run_web_test "web (test-task-hooks)" --project=task-hooks
 run_web_test "web (test-app)" --project=app
 run_web_test "web (test-task-pages)" --project=task-pages
 run_web_test "web (test-task-create)" --project=task-create

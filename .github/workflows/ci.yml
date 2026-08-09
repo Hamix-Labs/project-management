@@ -72,7 +72,21 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        group: [lint, build, test-unit, test-components, test-app, test-task-pages, test-task-create, test-settings, test-projects, test-worktrees]
+        group:
+          [
+            lint,
+            build,
+            test-unit,
+            test-components,
+            test-task-components,
+            test-task-hooks,
+            test-app,
+            test-task-pages,
+            test-task-create,
+            test-settings,
+            test-projects,
+            test-worktrees,
+          ]
     steps:
       - uses: actions/checkout@v4
 

@@ -20,6 +20,15 @@ const worktreesIncludes = [
   "src/worktrees/RepositoriesListPage.test.tsx",
 ];
 
+// Carved out of `components` to keep every shard inside the 120s check budget.
+// `components` stays the catch-all, so a new `*.test.tsx` anywhere still runs
+// somewhere without touching this file.
+const taskComponentsIncludes = ["src/tasks/components/**/*.test.tsx"];
+const taskHooksIncludes = [
+  "src/tasks/hooks/**/*.test.tsx",
+  "src/tasks/prompt-editor/**/*.test.tsx",
+];
+
 const fullAppIncludes = [
   ...appIncludes,
   ...taskPagesIncludes,
@@ -54,6 +63,15 @@ const harnessStrictTest = {
   env: { HAMIX_MSW_UNHANDLED: "error" },
 };
 
+/** Shared by the three component shards, which differ only in which files they own. */
+const componentsTest = {
+  ...sharedTest,
+  setupFiles: ["./src/test/setup.components.ts"],
+  // Interactive CustomSelect flows need headroom under parallel load.
+  testTimeout: 15_000,
+  maxWorkers: 4,
+};
+
 export default defineWorkspace([
   {
     ...sharedVite,
@@ -71,16 +89,30 @@ export default defineWorkspace([
   {
     ...sharedVite,
     test: {
+      ...componentsTest,
       name: "components",
       include: ["src/**/*.test.tsx"],
-      exclude: fullAppIncludes,
-      environment: "jsdom",
-      setupFiles: ["./src/test/setup.components.ts"],
-      restoreMocks: true,
-      unstubGlobals: false,
-      // Interactive CustomSelect flows need headroom under parallel load.
-      testTimeout: 15_000,
-      maxWorkers: 4,
+      exclude: [
+        ...fullAppIncludes,
+        ...taskComponentsIncludes,
+        ...taskHooksIncludes,
+      ],
+    },
+  },
+  {
+    ...sharedVite,
+    test: {
+      ...componentsTest,
+      name: "task-components",
+      include: taskComponentsIncludes,
+    },
+  },
+  {
+    ...sharedVite,
+    test: {
+      ...componentsTest,
+      name: "task-hooks",
+      include: taskHooksIncludes,
     },
   },
   {
