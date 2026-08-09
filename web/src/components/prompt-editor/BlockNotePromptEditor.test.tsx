@@ -57,6 +57,10 @@ vi.mock("./code/useEnhanceCodeBlockToolbars", () => ({
   useEnhanceCodeBlockToolbars: () => undefined,
 }));
 
+vi.mock("./side-menu/PromptEditorSideMenu", () => ({
+  PromptEditorSideMenu: () => null,
+}));
+
 import { BlockNotePromptEditor } from "./BlockNotePromptEditor";
 
 describe("BlockNotePromptEditor emit", () => {
