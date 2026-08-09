@@ -1,16 +1,21 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SideMenuExtension } from "@blocknote/core/extensions";
 import {
   DragHandleButton,
   GenericPopover,
   SideMenu,
+  useBlockNoteEditor,
   useEditorChange,
   useEditorDOMElement,
   useExtensionState,
   type GenericPopoverReference,
 } from "@blocknote/react";
+import { decideActiveBlockIds } from "./decideActiveBlockIds";
 import { PromptEditorAddBlockButton } from "./PromptEditorAddBlockButton";
+import { PromptEditorDragHandleMenu } from "./PromptEditorDragHandleMenu";
+import { PromptDragHandleMenuOpenProvider } from "./promptDragHandleMenuOpenContext";
 import { promptSideMenuAnchorRect } from "./promptSideMenuAnchor";
+import { usePromptActiveBlockHighlight } from "./usePromptActiveBlockHighlight";
 import { usePromptBlockDragState } from "./usePromptBlockDragState";
 
 /**
@@ -27,14 +32,16 @@ import { usePromptBlockDragState } from "./usePromptBlockDragState";
  * menu stays mounted while a drag is in flight so the drag handle survives as
  * the drag source and still emits `dragend`.
  *
- * The buttons are passed explicitly so the add-block affordance can be replaced;
- * the drag handle is still BlockNote's.
+ * The buttons are passed explicitly so the add-block affordance can be replaced.
+ * The drag handle stays BlockNote's; its menu is prompt-owned so we can observe
+ * menu-open (for the active-block highlight) and so #156 can extend the items.
  */
 export function PromptEditorSideMenu({
   editorHost,
 }: {
   editorHost: HTMLElement | null;
 }) {
+  const editor = useBlockNoteEditor();
   const editorDom = useEditorDOMElement();
   const dragging = usePromptBlockDragState(editorHost);
   const { show, blockId } = useExtensionState(SideMenuExtension, {
@@ -45,6 +52,57 @@ export function PromptEditorSideMenu({
   });
 
   const open = show && blockId !== undefined;
+  const [dragHandleMenuOpen, setDragHandleMenuOpen] = useState(false);
+
+  // Side-menu dismiss (hover leave, Escape via BlockNote, delete) must clear
+  // the highlight even if the Ariakit beacon teardown is delayed a frame.
+  useEffect(() => {
+    if (!open) {
+      setDragHandleMenuOpen(false);
+    }
+  }, [open]);
+
+  const [selectionBlockIds, setSelectionBlockIds] = useState<
+    string[] | undefined
+  >(undefined);
+
+  const readSelectionBlockIds = useCallback(() => {
+    if (!dragHandleMenuOpen && !dragging) {
+      setSelectionBlockIds((prev) => (prev === undefined ? prev : undefined));
+      return;
+    }
+    const ids = editor.getSelection()?.blocks.map((block) => block.id);
+    setSelectionBlockIds((prev) => {
+      if (
+        prev !== undefined &&
+        ids !== undefined &&
+        prev.length === ids.length &&
+        prev.every((id, index) => id === ids[index])
+      ) {
+        return prev;
+      }
+      return ids;
+    });
+  }, [dragHandleMenuOpen, dragging, editor]);
+
+  useEffect(() => {
+    readSelectionBlockIds();
+  }, [readSelectionBlockIds]);
+
+  useEditorChange(readSelectionBlockIds);
+
+  const activeBlockIds = useMemo(
+    () =>
+      decideActiveBlockIds({
+        menuOpen: dragHandleMenuOpen,
+        dragging,
+        targetBlockId: blockId,
+        selectionBlockIds,
+      }),
+    [blockId, dragHandleMenuOpen, dragging, selectionBlockIds],
+  );
+
+  usePromptActiveBlockHighlight(editorDom ?? null, activeBlockIds);
 
   const updateRef = useRef<(() => void) | null>(null);
   const whileElementsMounted = useCallback(
@@ -139,10 +197,12 @@ export function PromptEditorSideMenu({
   return (
     <GenericPopover reference={reference} {...floatingUIOptions}>
       {open ? (
-        <SideMenu>
-          <PromptEditorAddBlockButton />
-          <DragHandleButton />
-        </SideMenu>
+        <PromptDragHandleMenuOpenProvider onOpenChange={setDragHandleMenuOpen}>
+          <SideMenu>
+            <PromptEditorAddBlockButton />
+            <DragHandleButton dragHandleMenu={PromptEditorDragHandleMenu} />
+          </SideMenu>
+        </PromptDragHandleMenuOpenProvider>
       ) : null}
     </GenericPopover>
   );

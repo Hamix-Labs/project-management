@@ -1,4 +1,5 @@
-const BLOCK_CONTAINER_SELECTOR = '[data-node-type="blockContainer"]';
+import { findPromptBlockElement } from "./promptBlockElement";
+
 const COLUMN_SELECTOR = '[data-node-type="column"]';
 
 /**
@@ -23,9 +24,7 @@ export function promptSideMenuAnchorRect(
     return undefined;
   }
 
-  const block = editorDom.querySelector(
-    `${BLOCK_CONTAINER_SELECTOR}[data-id="${CSS.escape(blockId)}"]`,
-  );
+  const block = findPromptBlockElement(editorDom, blockId);
   if (!block) {
     return undefined;
   }

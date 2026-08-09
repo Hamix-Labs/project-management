@@ -7,6 +7,16 @@
   background: var(--prompt-editor-surface);
 }
 
+/* Embeds already own card chrome; ring rather than a second fill. */
+.blocknote-prompt-editor
+  [data-node-type="blockContainer"][data-prompt-block-active="true"]
+  > .bn-block-content[data-content-type="repoFileEmbed"] {
+  background-image: none;
+  background-color: transparent;
+  box-shadow: 0 0 0 3px var(--prompt-editor-block-selected-bg);
+  transition: box-shadow var(--duration-fast) var(--ease-default);
+}
+
 .file-embed-head {
   display: flex;
   align-items: center;

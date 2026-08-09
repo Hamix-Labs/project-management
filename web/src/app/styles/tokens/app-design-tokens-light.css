@@ -340,6 +340,8 @@
   --prompt-editor-toolbar-focus: var(--shadow-focus);
   --prompt-editor-toolbar-shadow: var(--prompt-editor-menu-shadow);
   --prompt-editor-side-gutter: 54px;
+  /* Soft fill while the drag-handle menu targets a block (or during drag). */
+  --prompt-editor-block-selected-bg: var(--prompt-editor-accent-tint);
 
   font-family: var(--font-sans);
   line-height: 1.5;

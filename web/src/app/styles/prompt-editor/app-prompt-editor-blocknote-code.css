@@ -14,6 +14,16 @@
   overflow: visible;
 }
 
+/* Keep the code surface; ring with the selected wash instead of replacing it. */
+.blocknote-prompt-editor
+  [data-node-type="blockContainer"][data-prompt-block-active="true"]
+  > .bn-block-content[data-content-type="codeBlock"] {
+  background-image: none;
+  background-color: var(--prompt-editor-embed-head-bg);
+  box-shadow: 0 0 0 3px var(--prompt-editor-block-selected-bg);
+  transition: box-shadow var(--duration-fast) var(--ease-default);
+}
+
 .blocknote-prompt-editor .bn-block-content[data-content-type="codeBlock"] > pre {
   padding: 40px 16px 18px;
   margin: 0;

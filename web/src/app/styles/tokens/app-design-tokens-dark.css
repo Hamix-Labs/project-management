@@ -227,6 +227,7 @@
     --prompt-editor-toolbar-focus: var(--shadow-focus);
     --prompt-editor-toolbar-shadow: var(--prompt-editor-menu-shadow);
     --prompt-editor-side-gutter: 54px;
+    --prompt-editor-block-selected-bg: var(--prompt-editor-accent-tint);
 
     --overlay-backdrop: rgb(0 0 0 / 58%);
 

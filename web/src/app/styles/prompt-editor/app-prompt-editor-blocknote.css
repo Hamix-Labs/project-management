@@ -151,6 +151,36 @@
   line-height: 1.75;
 }
 
+/*
+ * Active-block highlight (drag-handle menu open, or block drag in flight).
+ * Attribute is stamped from PromptEditorSideMenu — not ProseMirror selection.
+ * Fill covers only this block's content row (not nested .bn-block-group children);
+ * the side-menu gutter stays outside because the editor's inline-start padding
+ * already owns that column.
+ */
+.blocknote-prompt-editor
+  [data-node-type="blockContainer"][data-prompt-block-active="true"]
+  > .bn-block-content {
+  position: relative;
+  border-radius: var(--radius-sm);
+  /* Layer over any user-set data-background-color without erasing it. */
+  background-image: linear-gradient(
+    var(--prompt-editor-block-selected-bg),
+    var(--prompt-editor-block-selected-bg)
+  );
+  background-color: var(--prompt-editor-block-selected-bg);
+  /* Expand the wash slightly past the text box without shifting layout. */
+  box-shadow: 0 0 0 4px var(--prompt-editor-block-selected-bg);
+  transition: background-color var(--duration-fast) var(--ease-default);
+}
+
+/* Native text selection must stay legible on top of the soft wash. */
+.blocknote-prompt-editor
+  [data-node-type="blockContainer"][data-prompt-block-active="true"]
+  > .bn-block-content ::selection {
+  background-color: var(--prompt-editor-accent-tint-strong);
+}
+
 .blocknote-prompt-editor--disabled {
   opacity: 0.6;
   pointer-events: none;
@@ -168,6 +198,12 @@
 
 @media (prefers-reduced-motion: reduce) {
   .blocknote-prompt-editor .bn-side-menu {
+    transition: none;
+  }
+
+  .blocknote-prompt-editor
+    [data-node-type="blockContainer"][data-prompt-block-active="true"]
+    > .bn-block-content {
     transition: none;
   }
 }

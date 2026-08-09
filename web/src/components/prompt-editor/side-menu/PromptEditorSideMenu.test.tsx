@@ -1,5 +1,6 @@
 import { act, render, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { PROMPT_BLOCK_ACTIVE_ATTR } from "./promptBlockElement";
 
 type PopoverReference = { getBoundingClientRect: () => DOMRect };
 type PopoverProps = {
@@ -18,10 +19,16 @@ type PopoverProps = {
 
 let popoverProps: PopoverProps | null = null;
 let popoverMounts = 0;
-let editorChange: (() => void) | null = null;
+let editorChangeCallbacks: Array<() => void> = [];
 let editorDom: HTMLElement | null = null;
 let sideMenuState: { show: boolean; block?: { id: string } } | undefined;
+let selectionBlockIds: string[] | undefined;
 const floatingUpdate = vi.fn();
+const getSelection = vi.fn(() =>
+  selectionBlockIds
+    ? { blocks: selectionBlockIds.map((id) => ({ id })) }
+    : undefined,
+);
 
 vi.mock("@blocknote/core/extensions", () => ({
   SideMenuExtension: { key: "sideMenu" },
@@ -30,6 +37,24 @@ vi.mock("@blocknote/core/extensions", () => ({
 vi.mock("./PromptEditorAddBlockButton", () => ({
   PromptEditorAddBlockButton: () => <div data-testid="add-block" />,
 }));
+
+vi.mock("./PromptEditorDragHandleMenu", async () => {
+  const React = await vi.importActual<typeof import("react")>("react");
+  const mod = await vi.importActual<
+    typeof import("./promptDragHandleMenuOpenContext")
+  >("./promptDragHandleMenuOpenContext");
+
+  return {
+    PromptEditorDragHandleMenu: function MockDragHandleMenu() {
+      const onOpenChange = mod.usePromptDragHandleMenuOpenChange();
+      React.useEffect(() => {
+        onOpenChange?.(true);
+        return () => onOpenChange?.(false);
+      }, [onOpenChange]);
+      return React.createElement("div", { "data-testid": "drag-handle-menu" });
+    },
+  };
+});
 
 vi.mock("@blocknote/react", async () => {
   const React = await vi.importActual<typeof import("react")>("react");
@@ -56,9 +81,33 @@ vi.mock("@blocknote/react", async () => {
     SideMenu: ({ children }: { children?: React.ReactNode }) => (
       <div data-testid="side-menu">{children}</div>
     ),
-    DragHandleButton: () => <div data-testid="drag-handle" />,
+    DragHandleButton: ({
+      dragHandleMenu: Menu,
+    }: {
+      dragHandleMenu?: React.ComponentType;
+    }) => {
+      const [menuOpen, setMenuOpen] = React.useState(false);
+      return (
+        <div>
+          <button
+            type="button"
+            data-testid="drag-handle"
+            onClick={() => setMenuOpen((open) => !open)}
+          />
+          {menuOpen && Menu ? <Menu /> : null}
+        </div>
+      );
+    },
+    useBlockNoteEditor: () => ({ getSelection }),
     useEditorChange: (callback: () => void) => {
-      editorChange = callback;
+      React.useEffect(() => {
+        editorChangeCallbacks.push(callback);
+        return () => {
+          editorChangeCallbacks = editorChangeCallbacks.filter(
+            (entry) => entry !== callback,
+          );
+        };
+      }, [callback]);
     },
     useEditorDOMElement: () => editorDom,
     useExtensionState: (
@@ -69,6 +118,14 @@ vi.mock("@blocknote/react", async () => {
 });
 
 import { PromptEditorSideMenu } from "./PromptEditorSideMenu";
+
+function fireEditorChange() {
+  act(() => {
+    for (const callback of [...editorChangeCallbacks]) {
+      callback();
+    }
+  });
+}
 
 function stubRect(element: Element, rect: DOMRectInit) {
   element.getBoundingClientRect = () => DOMRect.fromRect(rect);
@@ -92,7 +149,7 @@ function appendBlock(blockGroup: Element, blockId: string, y: number) {
   stubRect(container, { x: 60, y, width: 560, height: 28 });
   outer.appendChild(container);
   blockGroup.appendChild(outer);
-  return outer;
+  return { outer, container };
 }
 
 function mountHost() {
@@ -110,8 +167,10 @@ function dispatch(target: EventTarget, type: "dragstart" | "drop") {
 beforeEach(() => {
   popoverProps = null;
   popoverMounts = 0;
-  editorChange = null;
+  editorChangeCallbacks = [];
   floatingUpdate.mockClear();
+  getSelection.mockClear();
+  selectionBlockIds = undefined;
   sideMenuState = { show: true, block: { id: "block-1" } };
   const built = buildEditorDom();
   editorDom = built.dom;
@@ -187,10 +246,8 @@ describe("PromptEditorSideMenu", () => {
     await waitFor(() => expect(floatingUpdate).toHaveBeenCalled());
     floatingUpdate.mockClear();
 
-    act(() => {
-      editorChange?.();
-      editorChange?.();
-    });
+    fireEditorChange();
+    fireEditorChange();
 
     // Deferred out of the change handler and coalesced into one pass.
     expect(floatingUpdate).not.toHaveBeenCalled();
@@ -231,5 +288,126 @@ describe("PromptEditorSideMenu", () => {
     expect(view.queryByTestId("side-menu")).toBeNull();
     expect(popoverProps?.useFloatingOptions?.open).toBe(false);
     expect(popoverProps?.reference).toBeUndefined();
+  });
+
+  it("does not highlight a block on side-menu hover alone", () => {
+    render(<PromptEditorSideMenu editorHost={mountHost()} />);
+
+    const block = editorDom!.querySelector(
+      '[data-node-type="blockContainer"][data-id="block-1"]',
+    );
+    expect(block?.hasAttribute(PROMPT_BLOCK_ACTIVE_ATTR)).toBe(false);
+  });
+
+  it("highlights the target block while the drag-handle menu is open", async () => {
+    const view = render(<PromptEditorSideMenu editorHost={mountHost()} />);
+
+    act(() => {
+      view.getByTestId("drag-handle").click();
+    });
+
+    await waitFor(() => {
+      const block = editorDom!.querySelector(
+        '[data-node-type="blockContainer"][data-id="block-1"]',
+      );
+      expect(block?.getAttribute(PROMPT_BLOCK_ACTIVE_ATTR)).toBe("true");
+    });
+    expect(view.getByTestId("drag-handle-menu")).toBeTruthy();
+  });
+
+  it("clears the highlight when the drag-handle menu closes", async () => {
+    const view = render(<PromptEditorSideMenu editorHost={mountHost()} />);
+    const block = () =>
+      editorDom!.querySelector(
+        '[data-node-type="blockContainer"][data-id="block-1"]',
+      );
+
+    act(() => {
+      view.getByTestId("drag-handle").click();
+    });
+    await waitFor(() =>
+      expect(block()?.getAttribute(PROMPT_BLOCK_ACTIVE_ATTR)).toBe("true"),
+    );
+
+    act(() => {
+      view.getByTestId("drag-handle").click();
+    });
+
+    await waitFor(() =>
+      expect(block()?.hasAttribute(PROMPT_BLOCK_ACTIVE_ATTR)).toBe(false),
+    );
+  });
+
+  it("clears the highlight when the side menu dismisses", async () => {
+    const host = mountHost();
+    const view = render(<PromptEditorSideMenu editorHost={host} />);
+    const block = () =>
+      editorDom!.querySelector(
+        '[data-node-type="blockContainer"][data-id="block-1"]',
+      );
+
+    act(() => {
+      view.getByTestId("drag-handle").click();
+    });
+    await waitFor(() =>
+      expect(block()?.getAttribute(PROMPT_BLOCK_ACTIVE_ATTR)).toBe("true"),
+    );
+
+    sideMenuState = { show: false };
+    view.rerender(<PromptEditorSideMenu editorHost={host} />);
+
+    await waitFor(() =>
+      expect(block()?.hasAttribute(PROMPT_BLOCK_ACTIVE_ATTR)).toBe(false),
+    );
+  });
+
+  it("highlights every selected block when the handle's block is in the selection", async () => {
+    const blockGroup = editorDom!.firstElementChild!;
+    appendBlock(blockGroup, "block-2", 160);
+    selectionBlockIds = ["block-1", "block-2"];
+
+    const view = render(<PromptEditorSideMenu editorHost={mountHost()} />);
+
+    act(() => {
+      view.getByTestId("drag-handle").click();
+    });
+
+    await waitFor(() => {
+      expect(
+        editorDom!
+          .querySelector(
+            '[data-node-type="blockContainer"][data-id="block-1"]',
+          )
+          ?.getAttribute(PROMPT_BLOCK_ACTIVE_ATTR),
+      ).toBe("true");
+      expect(
+        editorDom!
+          .querySelector(
+            '[data-node-type="blockContainer"][data-id="block-2"]',
+          )
+          ?.getAttribute(PROMPT_BLOCK_ACTIVE_ATTR),
+      ).toBe("true");
+    });
+  });
+
+  it("highlights the dragged block while a drag is in flight", async () => {
+    const host = mountHost();
+    render(<PromptEditorSideMenu editorHost={host} />);
+    const block = () =>
+      editorDom!.querySelector(
+        '[data-node-type="blockContainer"][data-id="block-1"]',
+      );
+
+    dispatch(host, "dragstart");
+
+    await waitFor(() =>
+      expect(block()?.getAttribute(PROMPT_BLOCK_ACTIVE_ATTR)).toBe("true"),
+    );
+
+    dispatch(host, "drop");
+
+    await waitFor(() =>
+      expect(block()?.hasAttribute(PROMPT_BLOCK_ACTIVE_ATTR)).toBe(false),
+    );
   });
 });
