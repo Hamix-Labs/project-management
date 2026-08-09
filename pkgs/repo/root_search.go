@@ -108,7 +108,18 @@ func (r *Root) SearchEntries(query string, kinds SearchKinds) ([]SearchEntry, er
 	var out []SearchEntry
 	err := filepath.WalkDir(r.abs, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			return err
+			// One unreadable entry used to fail the whole request with a 500.
+			// A permission-denied directory deep in a repository should cost
+			// its own subtree, not every result the user was looking for. An
+			// unreadable root is still fatal — there is nothing to return.
+			if path == r.abs {
+				return err
+			}
+			slog.Debug("repo search skipped unreadable entry", "operation", "repo.Root.SearchEntries", "err", err)
+			if d != nil && d.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
 		}
 		if d.IsDir() {
 			name := d.Name()
