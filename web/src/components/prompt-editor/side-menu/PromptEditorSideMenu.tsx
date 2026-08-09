@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { SideMenuExtension } from "@blocknote/core/extensions";
 import {
+  DragHandleButton,
   GenericPopover,
   SideMenu,
   useEditorChange,
@@ -8,6 +9,7 @@ import {
   useExtensionState,
   type GenericPopoverReference,
 } from "@blocknote/react";
+import { PromptEditorAddBlockButton } from "./PromptEditorAddBlockButton";
 import { promptSideMenuAnchorRect } from "./promptSideMenuAnchor";
 import { usePromptBlockDragState } from "./usePromptBlockDragState";
 
@@ -24,6 +26,9 @@ import { usePromptBlockDragState } from "./usePromptBlockDragState";
  * Visibility comes from the extension's own `show` state plus a drag flag; the
  * menu stays mounted while a drag is in flight so the drag handle survives as
  * the drag source and still emits `dragend`.
+ *
+ * The buttons are passed explicitly so the add-block affordance can be replaced;
+ * the drag handle is still BlockNote's.
  */
 export function PromptEditorSideMenu({
   editorHost,
@@ -133,7 +138,12 @@ export function PromptEditorSideMenu({
 
   return (
     <GenericPopover reference={reference} {...floatingUIOptions}>
-      {open ? <SideMenu /> : null}
+      {open ? (
+        <SideMenu>
+          <PromptEditorAddBlockButton />
+          <DragHandleButton />
+        </SideMenu>
+      ) : null}
     </GenericPopover>
   );
 }

@@ -27,6 +27,10 @@ vi.mock("@blocknote/core/extensions", () => ({
   SideMenuExtension: { key: "sideMenu" },
 }));
 
+vi.mock("./PromptEditorAddBlockButton", () => ({
+  PromptEditorAddBlockButton: () => <div data-testid="add-block" />,
+}));
+
 vi.mock("@blocknote/react", async () => {
   const React = await vi.importActual<typeof import("react")>("react");
 
@@ -49,7 +53,10 @@ vi.mock("@blocknote/react", async () => {
         </div>
       );
     },
-    SideMenu: () => <div data-testid="side-menu" />,
+    SideMenu: ({ children }: { children?: React.ReactNode }) => (
+      <div data-testid="side-menu">{children}</div>
+    ),
+    DragHandleButton: () => <div data-testid="drag-handle" />,
     useEditorChange: (callback: () => void) => {
       editorChange = callback;
     },
@@ -207,6 +214,13 @@ describe("PromptEditorSideMenu", () => {
     dispatch(host, "drop");
 
     await waitFor(() => expect(floatingUpdate).toHaveBeenCalledTimes(1));
+  });
+
+  it("renders the prompt add-block button next to BlockNote's drag handle", () => {
+    const view = render(<PromptEditorSideMenu editorHost={mountHost()} />);
+
+    expect(view.getByTestId("add-block")).toBeTruthy();
+    expect(view.getByTestId("drag-handle")).toBeTruthy();
   });
 
   it("stays closed while no block is hovered", () => {
