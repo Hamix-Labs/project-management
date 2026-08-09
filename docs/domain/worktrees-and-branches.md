@@ -67,6 +67,18 @@ See [ADR-0081](../adr/ADR-0081-hamix-managed-worktrees.md), [ADR-0040](../adr/AD
 | **`WorkingDir`** | `runner.Request.WorkingDir` — task worktree path at dequeue |
 | **`@`-mention** | Token in `initial_prompt`: `@path` or `@path(start-end)` |
 
+## File listing for `@`-mentions
+
+`GET /repo/files` returns every referenceable path under a worktree in one sorted list, so the prompt editor caches it and ranks matches in the browser instead of searching the filesystem per keystroke.
+
+The list comes from `git ls-files --cached --others --exclude-standard`, which makes it **gitignore-aware without a hand-maintained exclusion list**: git applies nested `.gitignore` files, `.git/info/exclude`, and `core.excludesFile` itself. That matters beyond noise, because a mentioned file is inlined into the prompt sent to an agent — an ignored `.env` should not be offerable. `--cached` keeps tracked-but-ignored files listed, since a file already under version control is one the operator can legitimately reference.
+
+A worktree that is not a git work tree (a plain registered directory, or a bare repository) falls back to a directory walk with the fixed skip list `/repo/search` uses, reported as `source: "walk"`. Ignore rules do not apply there.
+
+The listing is capped at 50 000 paths (`repo.MaxFileListPaths`), sized for the browser holding it in memory rather than for the filesystem. Past that the response sets `truncated` and the editor says the list is partial.
+
+`/repo/search` is unchanged and still serves the template repo-scope picker and mention validation.
+
 ## Worker and supervisor
 
 - Idle reasons: `no_repository_registered`, `all_worktrees_invalid`, `paused_by_operator`.

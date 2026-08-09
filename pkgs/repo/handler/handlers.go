@@ -155,6 +155,34 @@ func (h *Handler) repoSearch(w http.ResponseWriter, r *http.Request) {
 	handlerhttp.WriteJSON(w, r, op, http.StatusOK, resp)
 }
 
+func (h *Handler) repoFiles(w http.ResponseWriter, r *http.Request) {
+	const op = "repo.files"
+	r = calltrace.WithRequestRoot(r, op)
+	handlerhttp.DebugHTTPRequest(r, op)
+	if r.Method != http.MethodGet {
+		handlerhttp.WriteError(w, r, op, methodNotAllowed(), http.StatusMethodNotAllowed)
+		return
+	}
+	root, ok := h.requireWorktreeRepo(w, r, op)
+	if !ok {
+		return
+	}
+	t0 := time.Now()
+	listing, err := root.Files(r.Context())
+	dur := time.Since(t0)
+	if err != nil {
+		slog.Log(r.Context(), slog.LevelError, "repo operation failed", "cmd", calltrace.LogCmd, "operation", op, "duration_ms", dur.Milliseconds(), "err", err)
+		handlerhttp.WriteJSONError(w, r, op, http.StatusInternalServerError, "file listing failed")
+		return
+	}
+	if listing.Paths == nil {
+		listing.Paths = []string{}
+	}
+	slog.Info("repo files completed", "cmd", calltrace.LogCmd, "operation", op,
+		"path_count", len(listing.Paths), "truncated", listing.Truncated, "source", string(listing.Source), "duration_ms", dur.Milliseconds())
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, listing)
+}
+
 func (h *Handler) repoSymbols(w http.ResponseWriter, r *http.Request) {
 	const op = "repo.symbols"
 	r = calltrace.WithRequestRoot(r, op)
