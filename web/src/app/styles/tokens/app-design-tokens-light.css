@@ -329,15 +329,16 @@
     serif;
   --prompt-editor-font-mono: var(--font-mono);
   --prompt-editor-canvas-max: 760px;
-  --prompt-editor-toolbar-bg: #242018;
-  --prompt-editor-toolbar-fg: #f5f2ea;
-  --prompt-editor-toolbar-muted: #a39d8d;
-  --prompt-editor-toolbar-hover: rgb(255 255 255 / 10%);
-  --prompt-editor-toolbar-border: rgb(255 255 255 / 8%);
-  --prompt-editor-toolbar-separator: rgb(255 255 255 / 14%);
-  --prompt-editor-toolbar-focus: 0 0 0 2px rgb(255 255 255 / 28%);
-  --prompt-editor-toolbar-shadow:
-    0 16px 40px rgb(20 18 12 / 24%), 0 4px 12px rgb(20 18 12 / 18%);
+  /* Selection toolbar shares the slash/drag menu surface so every floating
+     editor control reads as one family. */
+  --prompt-editor-toolbar-bg: var(--prompt-editor-surface);
+  --prompt-editor-toolbar-fg: var(--prompt-editor-text);
+  --prompt-editor-toolbar-muted: var(--prompt-editor-text-muted);
+  --prompt-editor-toolbar-hover: var(--prompt-editor-accent-tint);
+  --prompt-editor-toolbar-border: var(--prompt-editor-border-strong);
+  --prompt-editor-toolbar-separator: var(--prompt-editor-border);
+  --prompt-editor-toolbar-focus: var(--shadow-focus);
+  --prompt-editor-toolbar-shadow: var(--prompt-editor-menu-shadow);
   --prompt-editor-side-gutter: 54px;
 
   font-family: var(--font-sans);

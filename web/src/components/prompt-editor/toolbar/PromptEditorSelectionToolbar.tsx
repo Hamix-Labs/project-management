@@ -20,7 +20,7 @@ import {
  * Rows are plain `div`s so the panel can lay out as a grid, which is safe for
  * the underlying Ariakit toolbar: it collects its items through React context,
  * not by walking direct DOM children. Each row collapses via `:empty` in
- * `app-prompt-editor-blocknote-menus.css` because every BlockNote button
+ * `app-prompt-editor-selection-toolbar.css` because every BlockNote button
  * renders `null` when it does not apply to the current selection.
  *
  * Alignment, indent/outdent, and comment buttons are deliberately absent —
