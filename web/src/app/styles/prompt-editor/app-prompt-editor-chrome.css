@@ -147,7 +147,7 @@
   max-width: var(--prompt-editor-canvas-max);
   width: 100%;
   margin: 0 auto;
-  padding: 64px 32px 220px;
+  padding: 40px 32px 220px;
   box-sizing: border-box;
 }
 
@@ -190,8 +190,8 @@
   gap: 14px;
   font-size: 13px;
   color: var(--prompt-editor-text-muted);
-  margin: 0 0 40px;
-  padding-bottom: 28px;
+  margin: 0 0 20px;
+  padding-bottom: 16px;
   border-bottom: 1px solid var(--prompt-editor-border);
 }
 

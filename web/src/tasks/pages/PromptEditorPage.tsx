@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   BlockNotePromptEditor,
@@ -10,6 +11,7 @@ import { usePromptEditorPageController } from "../prompt-editor/usePromptEditorP
 
 export function PromptEditorPage() {
   const c = usePromptEditorPageController();
+  const canvasRef = useRef<HTMLDivElement>(null);
   useDocumentTitle(c.kindOk ? `${c.title} · Prompt` : "Prompt Editor");
 
   if (!c.kindOk || !c.sourceId) {
@@ -34,7 +36,7 @@ export function PromptEditorPage() {
         onRetrySave={c.retrySave}
       />
 
-      <div className="prompt-editor-page__canvas">
+      <div ref={canvasRef} className="prompt-editor-page__canvas">
         <PromptEditorDocHeader
           title={c.title}
           editedLabel={c.editedLabel}
@@ -98,6 +100,7 @@ export function PromptEditorPage() {
                 c.launch?.placeholder ?? "Write the implementation brief…"
               }
               worktreeId={c.worktreeId}
+              canvasRef={canvasRef}
             />
           ) : null}
         </div>

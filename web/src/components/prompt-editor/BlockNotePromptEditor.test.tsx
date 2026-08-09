@@ -24,6 +24,8 @@ vi.mock("@blocknote/react", () => ({
     blocksToHTMLLossy: () => exportedHtml,
     insertInlineContent: vi.fn(),
     insertBlocks: vi.fn(),
+    setTextCursorPosition: vi.fn(),
+    focus: vi.fn(),
     getTextCursorPosition: () => ({ block: { id: "b1" } }),
   }),
   SuggestionMenuController: () => null,

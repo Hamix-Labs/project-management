@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
 import {
   FormattingToolbarController,
   SuggestionMenuController,
@@ -12,6 +19,7 @@ import { RichPromptFileReferenceModal } from "@/components/rich-prompt/RichPromp
 import { RichPromptRepoHints } from "@/components/rich-prompt/RichPromptRepoHints";
 import { computeRepoHintFlags } from "@/components/rich-prompt/richPromptInsertHelpers";
 import { useRepoWorkspaceProbe } from "@/components/rich-prompt/useRepoWorkspaceProbe";
+import { usePromptCanvasClickFocus } from "./canvas/usePromptCanvasClickFocus";
 import { promptEditorSchema } from "./blockNoteSchema";
 import {
   useEnhanceCodeBlockToolbars,
@@ -36,6 +44,11 @@ export type BlockNotePromptEditorProps = {
   disabled?: boolean;
   placeholder?: string;
   worktreeId?: string;
+  /**
+   * Document canvas element that wraps the header + body. Used for Notion-style
+   * click-to-focus in the header→body gap and canvas padding-bottom (#154).
+   */
+  canvasRef?: RefObject<HTMLElement | null>;
 };
 
 type PendingInsert = { path: string };
@@ -48,6 +61,7 @@ export function BlockNotePromptEditor({
   disabled = false,
   placeholder = "Write the implementation brief…",
   worktreeId,
+  canvasRef,
 }: BlockNotePromptEditorProps) {
   const worktreeRef = useRef(worktreeId);
   worktreeRef.current = worktreeId;
@@ -166,6 +180,15 @@ export function BlockNotePromptEditor({
   const [editorHost, setEditorHost] = useState<HTMLDivElement | null>(null);
   const toolbarEditor = editor as unknown as CodeBlockLanguageEditor;
   useEnhanceCodeBlockToolbars(editorHost, disabled, toolbarEditor);
+
+  const emptyCanvasRef = useRef<HTMLElement | null>(null);
+  usePromptCanvasClickFocus({
+    canvasRef: canvasRef ?? emptyCanvasRef,
+    editorHost,
+    // BlockNote's full editor type is wider; the hook only needs document + caret APIs.
+    editor: editor as never,
+    disabled,
+  });
 
   return (
     <PromptEditorRepoContext.Provider value={{ worktreeId }}>

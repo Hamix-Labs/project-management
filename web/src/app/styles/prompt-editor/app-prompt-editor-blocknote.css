@@ -137,6 +137,17 @@
   font-family: var(--font-sans);
 }
 
+/* Divider→body gap is owned by .prompt-editor-doc-header__meta margin-bottom;
+   do not let the first block's own top margin double it (issue 154). Leave heading
+   font metrics alone — sibling work owns placeholder/typography alignment. */
+.blocknote-prompt-editor
+  .bn-block-group
+  > .bn-block-outer:first-child
+  .bn-block-content
+  > * {
+  margin-top: 0;
+}
+
 .blocknote-prompt-editor .bn-editor p {
   font-size: 16px;
   line-height: 1.75;
