@@ -27,6 +27,11 @@ vi.mock("@blocknote/react", () => ({
     getTextCursorPosition: () => ({ block: { id: "b1" } }),
   }),
   SuggestionMenuController: () => null,
+  FormattingToolbarController: () => null,
+}));
+
+vi.mock("./toolbar/PromptEditorSelectionToolbar", () => ({
+  PromptEditorSelectionToolbar: () => null,
 }));
 
 vi.mock("@blocknote/ariakit", () => ({

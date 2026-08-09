@@ -4,6 +4,7 @@
 @import "./app-prompt-editor-chrome.css";
 @import "./app-prompt-editor-blocknote.css";
 @import "./app-prompt-editor-blocknote-menus.css";
+@import "./app-prompt-editor-selection-toolbar.css";
 @import "./app-prompt-editor-blocknote-code.css";
 @import "./app-prompt-editor-mentions.css";
 @import "./app-prompt-editor-embeds.css";
