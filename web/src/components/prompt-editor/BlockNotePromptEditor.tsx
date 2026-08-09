@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  FormattingToolbarController,
   SuggestionMenuController,
   useCreateBlockNote,
 } from "@blocknote/react";
@@ -22,6 +23,7 @@ import {
   type PromptFileMentionItem,
 } from "./mention/PromptEditorMentionMenu";
 import { htmlToInitialBlocks } from "./promptEditorHtml";
+import { PromptEditorSelectionToolbar } from "./toolbar/PromptEditorSelectionToolbar";
 
 export type BlockNotePromptEditorProps = {
   id: string;
@@ -182,7 +184,11 @@ export function BlockNotePromptEditor({
             theme="light"
             onChange={emitHtml}
             slashMenu={true}
+            formattingToolbar={false}
           >
+            <FormattingToolbarController
+              formattingToolbar={PromptEditorSelectionToolbar}
+            />
             <SuggestionMenuController
               triggerCharacter="@"
               getItems={async (q) => getMentionItems(q)}
