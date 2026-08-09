@@ -45,7 +45,7 @@ describe("usePromptEditorFileWorktree", () => {
       }),
     );
 
-    expect(result.current).toEqual({
+    expect(result.current).toMatchObject({
       worktreeId: "task-wt",
       resolving: false,
     });
@@ -65,7 +65,7 @@ describe("usePromptEditorFileWorktree", () => {
     expect(result.current.resolving).toBe(true);
 
     await waitFor(() =>
-      expect(result.current).toEqual({
+      expect(result.current).toMatchObject({
         worktreeId: "main-wt",
         resolving: false,
       }),
@@ -74,5 +74,58 @@ describe("usePromptEditorFileWorktree", () => {
       "repo-1",
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
     );
+  });
+
+  it("reports unbound when there is neither a worktree nor a repository", () => {
+    const { result } = renderHook(() => usePromptEditorFileWorktree({}));
+
+    expect(result.current.gap).toBe("unbound");
+    expect(result.current.resolving).toBe(false);
+  });
+
+  it("distinguishes a repository without a main worktree from a failed lookup", async () => {
+    listGlobalGitWorktrees.mockResolvedValue([
+      { id: "feature-wt", is_main: false },
+    ]);
+    const noMain = renderHook(() =>
+      usePromptEditorFileWorktree({ repositoryId: "repo-1" }),
+    );
+    await waitFor(() => expect(noMain.result.current.resolving).toBe(false));
+    expect(noMain.result.current.gap).toBe("no-main-worktree");
+
+    listGlobalGitWorktrees.mockRejectedValue(new Error("offline"));
+    const failed = renderHook(() =>
+      usePromptEditorFileWorktree({ repositoryId: "repo-2" }),
+    );
+    await waitFor(() => expect(failed.result.current.resolving).toBe(false));
+    expect(failed.result.current.gap).toBe("lookup-failed");
+  });
+
+  it("lets a caller await the in-flight lookup instead of seeing no worktree", async () => {
+    let release: (worktrees: unknown) => void = () => {};
+    listGlobalGitWorktrees.mockReturnValue(
+      new Promise((resolve) => {
+        release = resolve;
+      }),
+    );
+
+    const { result } = renderHook(() =>
+      usePromptEditorFileWorktree({ repositoryId: "repo-1" }),
+    );
+
+    expect(result.current.worktreeId).toBeUndefined();
+    const awaited = result.current.whenResolved();
+
+    release([{ id: "main-wt", is_main: true }]);
+    await expect(awaited).resolves.toBe("main-wt");
+  });
+
+  it("resolves immediately against an explicit worktree", async () => {
+    const { result } = renderHook(() =>
+      usePromptEditorFileWorktree({ worktreeId: "task-wt" }),
+    );
+
+    await expect(result.current.whenResolved()).resolves.toBe("task-wt");
+    expect(listGlobalGitWorktrees).not.toHaveBeenCalled();
   });
 });
