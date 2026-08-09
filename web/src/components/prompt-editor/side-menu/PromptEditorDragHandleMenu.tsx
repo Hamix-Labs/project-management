@@ -5,6 +5,7 @@ import {
   RemoveBlockItem,
   useDictionary,
 } from "@blocknote/react";
+import { PromptEditorTurnIntoItem } from "./PromptEditorTurnIntoItem";
 import { usePromptDragHandleMenuOpenChange } from "./promptDragHandleMenuOpenContext";
 
 /**
@@ -23,12 +24,11 @@ function DragHandleMenuOpenBeacon() {
 }
 
 /**
- * Prompt-owned drag-handle menu. Stock contents today (Delete, Colors); sibling
- * issue #156 adds "Turn into" here without touching the highlight wiring.
+ * Prompt-owned drag-handle menu. Extends the #158/#166 open-beacon seam with
+ * Turn into (#156) between Delete and Colors. Do not fork a second menu —
+ * highlight wiring stays in the beacon + provider.
  *
- * Passed to BlockNote's `DragHandleButton` via `dragHandleMenu`, so we observe
- * menu-open without forking the button (and without binding highlight to the
- * side menu's hover `show` flag).
+ * Passed to BlockNote's `DragHandleButton` via `dragHandleMenu`.
  */
 export function PromptEditorDragHandleMenu({
   children,
@@ -43,6 +43,7 @@ export function PromptEditorDragHandleMenu({
       {children ?? (
         <>
           <RemoveBlockItem>{dict.drag_handle.delete_menuitem}</RemoveBlockItem>
+          <PromptEditorTurnIntoItem />
           <BlockColorsItem>{dict.drag_handle.colors_menuitem}</BlockColorsItem>
         </>
       )}

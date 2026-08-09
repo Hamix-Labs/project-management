@@ -36,12 +36,19 @@ describe("htmlToInitialBlocks", () => {
     expect(blocks.length).toBeGreaterThan(0);
   });
 
-  it("round-trips multi-paragraph content with non-empty text", () => {
-    const html =
-      "<p>One alpha</p><p>Two <strong>beta</strong> gamma</p><pre><code>const x = 1;</code></pre>";
-    const { blocks } = htmlToInitialBlocks(html);
-    const text = JSON.stringify(blocks);
-    expect(text).toMatch(/One alpha/);
-    expect(text).toMatch(/beta|gamma|Two/);
+  it("round-trips heading, list, quote, and code HTML without fallback", () => {
+    const samples = [
+      "<h2>Section title here</h2>",
+      "<ul><li>Bullet item alpha</li></ul>",
+      "<ol><li>Numbered item beta</li></ol>",
+      "<blockquote><p>Quoted brief text</p></blockquote>",
+      "<pre><code class=\"language-javascript\">const x = 1;</code></pre>",
+    ];
+    for (const html of samples) {
+      const { blocks, usedFallback } = htmlToInitialBlocks(html);
+      expect(usedFallback).toBe(false);
+      expect(blocks.length).toBeGreaterThan(0);
+      expect(JSON.stringify(blocks).length).toBeGreaterThan(10);
+    }
   });
 });

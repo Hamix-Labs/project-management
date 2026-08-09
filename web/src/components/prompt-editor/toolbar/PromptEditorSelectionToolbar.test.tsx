@@ -6,7 +6,6 @@ vi.mock("@blocknote/react", () => ({
   FormattingToolbar: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="toolbar">{children}</div>
   ),
-  BlockTypeSelect: () => <button type="button">Paragraph</button>,
   ColorStyleButton: () => <button type="button">color</button>,
   CreateLinkButton: () => <button type="button">link</button>,
   BasicTextStyleButton: ({ basicTextStyle }: { basicTextStyle: string }) => (
@@ -19,6 +18,12 @@ vi.mock("@blocknote/react", () => ({
   FileDeleteButton: () => null,
   FileDownloadButton: () => null,
   FilePreviewButton: () => null,
+}));
+
+vi.mock("./PromptEditorBlockTypeSelect", () => ({
+  PromptEditorBlockTypeSelect: () => (
+    <button type="button">Paragraph</button>
+  ),
 }));
 
 import { PromptEditorSelectionToolbar } from "./PromptEditorSelectionToolbar";

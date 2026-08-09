@@ -1,6 +1,5 @@
 import {
   BasicTextStyleButton,
-  BlockTypeSelect,
   ColorStyleButton,
   CreateLinkButton,
   FileCaptionButton,
@@ -12,6 +11,7 @@ import {
   FormattingToolbar,
   TableCellMergeButton,
 } from "@blocknote/react";
+import { PromptEditorBlockTypeSelect } from "./PromptEditorBlockTypeSelect";
 
 /**
  * Selection toolbar for the Prompt IDE, stacked as vertical sections rather
@@ -31,7 +31,7 @@ export function PromptEditorSelectionToolbar() {
   return (
     <FormattingToolbar>
       <div className="prompt-selection-toolbar__row prompt-selection-toolbar__row--block-type">
-        <BlockTypeSelect />
+        <PromptEditorBlockTypeSelect />
       </div>
       <div className="prompt-selection-toolbar__row prompt-selection-toolbar__row--format">
         <ColorStyleButton />

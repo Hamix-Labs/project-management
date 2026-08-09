@@ -24,6 +24,7 @@ import {
 } from "./mention/PromptEditorMentionMenu";
 import { htmlToInitialBlocks } from "./promptEditorHtml";
 import { PromptEditorSideMenu } from "./side-menu/PromptEditorSideMenu";
+import { filterPromptSlashMenuItems } from "./side-menu/promptSlashMenuItems";
 import { PromptEditorSelectionToolbar } from "./toolbar/PromptEditorSelectionToolbar";
 
 export type BlockNotePromptEditorProps = {
@@ -184,13 +185,19 @@ export function BlockNotePromptEditor({
             editable={!disabled}
             theme="light"
             onChange={emitHtml}
-            slashMenu={true}
+            slashMenu={false}
             formattingToolbar={false}
             sideMenu={false}
           >
             <PromptEditorSideMenu editorHost={editorHost} />
             <FormattingToolbarController
               formattingToolbar={PromptEditorSelectionToolbar}
+            />
+            <SuggestionMenuController
+              triggerCharacter="/"
+              getItems={async (query) =>
+                filterPromptSlashMenuItems(editor, query)
+              }
             />
             <SuggestionMenuController
               triggerCharacter="@"
