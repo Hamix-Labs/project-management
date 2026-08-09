@@ -24,6 +24,15 @@ func RepoSearchWithWorktree(worktreeID, q string) string {
 	return "/repo/search?" + v.Encode()
 }
 
+// RepoFilesWithWorktree builds GET /repo/files query for handler contract tests.
+//
+//funclogmeasure:skip category=tool-required-noop reason="Test-only URL builder; not part of production trace paths."
+func RepoFilesWithWorktree(worktreeID string) string {
+	v := url.Values{}
+	v.Set("worktree_id", worktreeID)
+	return "/repo/files?" + v.Encode()
+}
+
 // RepoValidateRangeWithWorktree builds GET /repo/validate-range query.
 //
 //funclogmeasure:skip category=tool-required-noop reason="Test-only URL builder; not part of production trace paths."
