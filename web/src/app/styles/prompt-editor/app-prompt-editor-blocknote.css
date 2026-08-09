@@ -48,17 +48,21 @@
   color: var(--prompt-editor-text-muted) !important;
 }
 
-/* Side menu (drag handle / add block) — quiet Notion-like weight + tight pair */
+/* Side menu (drag handle / add block) — quiet Notion-like weight + tight pair.
+   PromptEditorSideMenu mounts this only while a block is hovered, so visibility
+   needs no hover selector here. BlockNote portals the menu out of
+   .bn-block-outer, so a descendant hover rule could not match it anyway. */
 .blocknote-prompt-editor .bn-side-menu {
-  opacity: 0;
   gap: 2px;
   transition: opacity var(--duration-fast, 100ms) var(--ease-default, ease);
 }
 
-.blocknote-prompt-editor .bn-block-outer:hover > .bn-side-menu,
-.blocknote-prompt-editor .bn-side-menu:hover,
-.blocknote-prompt-editor .bn-side-menu:focus-within {
-  opacity: 1;
+/* Suppressed while a block is dragged. The menu stays mounted so the drag
+   handle survives as the drag source, but it must not trail the block.
+   Opacity only: `pointer-events` or `visibility` on a live drag source risks
+   the browser cancelling the drag. */
+.blocknote-prompt-editor .prompt-side-menu--dragging .bn-side-menu {
+  opacity: 0;
 }
 
 .blocknote-prompt-editor .bn-side-menu .bn-ak-button,
@@ -165,6 +169,5 @@
 @media (prefers-reduced-motion: reduce) {
   .blocknote-prompt-editor .bn-side-menu {
     transition: none;
-    opacity: 1;
   }
 }

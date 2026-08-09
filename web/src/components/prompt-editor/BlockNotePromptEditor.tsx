@@ -23,6 +23,7 @@ import {
   type PromptFileMentionItem,
 } from "./mention/PromptEditorMentionMenu";
 import { htmlToInitialBlocks } from "./promptEditorHtml";
+import { PromptEditorSideMenu } from "./side-menu/PromptEditorSideMenu";
 import { PromptEditorSelectionToolbar } from "./toolbar/PromptEditorSelectionToolbar";
 
 export type BlockNotePromptEditorProps = {
@@ -185,7 +186,9 @@ export function BlockNotePromptEditor({
             onChange={emitHtml}
             slashMenu={true}
             formattingToolbar={false}
+            sideMenu={false}
           >
+            <PromptEditorSideMenu editorHost={editorHost} />
             <FormattingToolbarController
               formattingToolbar={PromptEditorSelectionToolbar}
             />
