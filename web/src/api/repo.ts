@@ -14,6 +14,8 @@ export const repoQueryKeys = {
     [...repoQueryKeys.all, "diff", worktreeId, sha] as const,
   file: (worktreeId: string, path: string) =>
     [...repoQueryKeys.all, "file", worktreeId, path] as const,
+  files: (worktreeId: string) =>
+    [...repoQueryKeys.all, "files", worktreeId] as const,
 };
 
 /**
@@ -22,7 +24,7 @@ export const repoQueryKeys = {
  * filesystem walk on first hit, short enough that a hung backend cannot
  * pin a UI request forever.
  */
-const repoFetchTimeoutMs = 45_000;
+export const repoFetchTimeoutMs = 45_000;
 
 function assertRepoRelPath(path: string): string {
   const t = path.trim();
