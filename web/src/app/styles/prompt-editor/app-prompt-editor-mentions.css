@@ -23,6 +23,23 @@
   font-weight: 500;
 }
 
+.prompt-editor-mention-menu__count {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  font-size: 11.5px;
+}
+
+/* Scroller for the virtualized result list — every match is reachable. */
+.prompt-editor-mention-menu__list {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.prompt-editor-mention-menu__viewport {
+  position: relative;
+  width: 100%;
+}
+
 .prompt-editor-mention-menu__item {
   display: flex;
   align-items: center;
@@ -36,6 +53,10 @@
   text-align: left;
   font-family: inherit;
   color: inherit;
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 33px;
 }
 
 .prompt-editor-mention-menu__item[data-selected="true"],
@@ -48,10 +69,17 @@
   color: var(--prompt-editor-text-secondary);
 }
 
+/* Rows are absolutely positioned at a fixed height, so long paths must
+   truncate rather than wrap and break the virtualizer's measurements. */
 .prompt-editor-mention-menu__fname {
   color: var(--prompt-editor-text);
   font-family: var(--prompt-editor-font-mono);
   font-size: 12.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
+  max-width: 55%;
 }
 
 .prompt-editor-mention-menu__fpath {
@@ -59,6 +87,11 @@
   font-size: 11.5px;
   margin-left: auto;
   font-family: var(--prompt-editor-font-mono);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  direction: rtl;
+  text-align: right;
 }
 
 .prompt-editor-mention-menu__empty {
