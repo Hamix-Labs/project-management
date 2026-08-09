@@ -1,4 +1,4 @@
-# ADR-0100: Prompt editor owns block-type conversion ("Turn into")
+# ADR-0101: Prompt editor owns block-type conversion ("Turn into")
 
 ## Context
 
