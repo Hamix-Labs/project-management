@@ -310,37 +310,6 @@
   --mention-syntax-number: #1e6fd6;
   --mention-syntax-function: #b35000;
 
-  /* Prompt editor immersive document surface (Notion-like paper) */
-  --prompt-editor-bg: #fbfaf7;
-  --prompt-editor-surface: #ffffff;
-  --prompt-editor-border: #e8e5dd;
-  --prompt-editor-border-strong: #d8d4c8;
-  --prompt-editor-text: #1f1d18;
-  --prompt-editor-text-secondary: #6b6558;
-  --prompt-editor-text-muted: #a39d8d;
-  --prompt-editor-accent: var(--brand);
-  --prompt-editor-accent-tint: var(--brand-muted);
-  --prompt-editor-accent-tint-strong: #dedaf9;
-  --prompt-editor-save-dot: #5cae6b;
-  --prompt-editor-embed-head-bg: #f5f3ee;
-  --prompt-editor-menu-shadow:
-    0 8px 24px rgb(20 18 12 / 10%), 0 2px 6px rgb(20 18 12 / 6%);
-  --prompt-editor-font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia,
-    serif;
-  --prompt-editor-font-mono: var(--font-mono);
-  --prompt-editor-canvas-max: 760px;
-  /* Selection toolbar shares the slash/drag menu surface so every floating
-     editor control reads as one family. */
-  --prompt-editor-toolbar-bg: var(--prompt-editor-surface);
-  --prompt-editor-toolbar-fg: var(--prompt-editor-text);
-  --prompt-editor-toolbar-muted: var(--prompt-editor-text-muted);
-  --prompt-editor-toolbar-hover: var(--prompt-editor-accent-tint);
-  --prompt-editor-toolbar-border: var(--prompt-editor-border-strong);
-  --prompt-editor-toolbar-separator: var(--prompt-editor-border);
-  --prompt-editor-toolbar-focus: var(--shadow-focus);
-  --prompt-editor-toolbar-shadow: var(--prompt-editor-menu-shadow);
-  --prompt-editor-side-gutter: 54px;
-
   font-family: var(--font-sans);
   line-height: 1.5;
   font-size: var(--text-sm);

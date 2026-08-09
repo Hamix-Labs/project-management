@@ -205,28 +205,6 @@
     --mention-syntax-function: #ffbe7a;
     --mention-code-bg-mix: #0f1624;
 
-    --prompt-editor-bg: var(--surface-1);
-    --prompt-editor-surface: var(--surface-2);
-    --prompt-editor-border: var(--border-soft);
-    --prompt-editor-border-strong: var(--border-strong);
-    --prompt-editor-text: var(--text-primary);
-    --prompt-editor-text-secondary: var(--text-secondary);
-    --prompt-editor-text-muted: var(--text-tertiary);
-    --prompt-editor-accent: var(--brand);
-    --prompt-editor-accent-tint: var(--brand-muted);
-    --prompt-editor-accent-tint-strong: rgb(var(--brand-rgb) / 28%);
-    --prompt-editor-save-dot: #5cae6b;
-    --prompt-editor-embed-head-bg: var(--surface-3);
-    --prompt-editor-menu-shadow: var(--shadow-md);
-    --prompt-editor-toolbar-bg: var(--prompt-editor-surface);
-    --prompt-editor-toolbar-fg: var(--prompt-editor-text);
-    --prompt-editor-toolbar-muted: var(--prompt-editor-text-muted);
-    --prompt-editor-toolbar-hover: var(--prompt-editor-accent-tint);
-    --prompt-editor-toolbar-border: var(--prompt-editor-border-strong);
-    --prompt-editor-toolbar-separator: var(--prompt-editor-border);
-    --prompt-editor-toolbar-focus: var(--shadow-focus);
-    --prompt-editor-toolbar-shadow: var(--prompt-editor-menu-shadow);
-    --prompt-editor-side-gutter: 54px;
 
     --overlay-backdrop: rgb(0 0 0 / 58%);
 

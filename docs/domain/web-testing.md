@@ -54,7 +54,7 @@ Defined in [`web/vitest.workspace.ts`](../../web/vitest.workspace.ts):
 | `unit` | `*.test.ts` — parsers, pure helpers, `renderHook` |
 | `components` | Every `*.test.tsx` no other project claims — single components, hooks (`renderHook`), no `<App />`, no full pages |
 | `task-components` | `src/tasks/components/**` — task detail, list, board, modals, dialogs |
-| `task-hooks` | `src/tasks/hooks/**` and `src/tasks/prompt-editor/**` |
+| `task-hooks` | `src/tasks/hooks/**` |
 | `app` | App shell, routing, bootstrap, 404, route announcer |
 | `task-pages` | Task detail/cycle/event/home/templates/drafts pages |
 | `task-create` | Create-task modal flows (not hooks — those are `components`) |

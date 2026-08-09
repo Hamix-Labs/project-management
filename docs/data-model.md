@@ -19,7 +19,7 @@ Work hierarchy is **Project → Task**. Tasks may have:
 |---|---|---|
 | `id` | string (UUID) | Server-assigned when omitted. |
 | `title` | string | Required after trim. |
-| `initial_prompt` | string (HTML) | BlockNote rich text (HTML wire); `@`-mentions validated against the task's `worktree_id` when present. See [ADR-0096](adr/ADR-0096-prompt-editor-blocknote.md). |
+| `initial_prompt` | string (HTML) | TipTap rich text (HTML wire); `@`-mentions validated against the task's `worktree_id` when present. See [ADR-0099](adr/ADR-0099-prompt-authoring-inline-tiptap.md). |
 | `worktree_id` | string \| null | FK to `git_worktrees.id`; set by server allocate on create from `repository_id` (ADR-0081), or supplied on create to enqueue onto an existing managed worktree. |
 | `worktree_root_task_id` | string \| null (read-only) | Computed: task whose id named the managed `hamix/task-*` branch for this worktree. Not a column. |
 | `repository_id` | string \| null | Registered repo for allocate/reconcile (ADR-0094); required on create with `project_id`. |

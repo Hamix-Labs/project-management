@@ -20,11 +20,6 @@ import { useStickyShellElevation } from "@/lib/useStickyShellElevation";
 // landing user actually needs. Vite resolves the deep module paths to
 // individual chunks; the barrel re-exports remain but tree-shake out
 // of the main chunk because no synchronous consumer imports them.
-const PromptEditorPage = lazy(() =>
-  import("@/tasks/pages/PromptEditorPage").then((m) => ({
-    default: m.PromptEditorPage,
-  })),
-);
 const TaskDetailPage = lazy(() =>
   import("@/tasks/pages/TaskDetailPage").then((m) => ({
     default: m.TaskDetailPage,
@@ -68,7 +63,6 @@ const RepositoriesListPage = lazy(() =>
 import { UiTestModeBanner } from "@/dev/UiTestModeBanner";
 import { ErrorBanner } from "../shared/ErrorBanner";
 import { ModalStackProvider } from "../shared/ModalStackContext";
-import { ImmersiveShell } from "./ImmersiveShell";
 import { NotFoundPage } from "./NotFoundPage";
 import { RouteAnnouncer } from "./RouteAnnouncer";
 import { RoutedMainOutlet } from "./RoutedMainOutlet";
@@ -304,12 +298,6 @@ export default function App() {
             />
             <Route path="tasks/:taskId" element={<TaskDetailPage />} />
             <Route path="*" element={<NotFoundPage />} />
-          </Route>
-          <Route element={<ImmersiveShell />}>
-            <Route
-              path="prompt/:sourceKind/:sourceId"
-              element={<PromptEditorPage />}
-            />
           </Route>
         </Routes>
       </ModalStackProvider>
