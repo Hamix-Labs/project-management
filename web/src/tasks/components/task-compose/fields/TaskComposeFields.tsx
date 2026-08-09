@@ -21,13 +21,17 @@ export type TaskComposeFieldsProps = {
   checklistDisabled?: boolean;
   disabled: boolean;
   onTitleChange: (v: string) => void;
-  onOpenPromptEditor: () => void;
+  onPromptChange: (v: string) => void;
   onPriorityChange: (p: PriorityChoice) => void;
   onAppendChecklistCriterion: (item: ChecklistItemDraft) => void;
   onUpdateChecklistRow: (index: number, item: ChecklistItemDraft) => void;
   onRemoveChecklistRow: (index: number) => void;
+  /** Passed to `RichPromptEditor` as `key` so the editor resets when needed. */
+  editorKey: string;
   /** Rendered between the title row and the prompt editor (e.g. git binding). */
   betweenTitleAndPrompt?: ReactNode;
+  /** When set, @-mentions resolve against this worktree. */
+  worktreeId?: string;
 };
 
 export function TaskComposeFields({
@@ -41,12 +45,14 @@ export function TaskComposeFields({
   checklistDisabled = false,
   disabled,
   onTitleChange,
-  onOpenPromptEditor,
+  onPromptChange,
   onPriorityChange,
   onAppendChecklistCriterion,
   onUpdateChecklistRow,
   onRemoveChecklistRow,
+  editorKey,
   betweenTitleAndPrompt,
+  worktreeId,
 }: TaskComposeFieldsProps) {
   const checklistHeadingId = `${idsPrefix}-checklist-heading`;
 
@@ -81,9 +87,11 @@ export function TaskComposeFields({
 
       <TaskComposePromptField
         idsPrefix={idsPrefix}
+        editorKey={editorKey}
         prompt={prompt}
         disabled={disabled}
-        onOpenPromptEditor={onOpenPromptEditor}
+        onPromptChange={onPromptChange}
+        worktreeId={worktreeId}
       />
 
       {!hideChecklist ? (

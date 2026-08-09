@@ -1,5 +1,4 @@
-export * from "./RichPromptFileReferenceModal";
+export * from "./RichPromptEditor";
+export * from "./RichPromptMenuBar";
 export * from "./RichPromptRepoHints";
 export * from "./MentionRangePanel";
-export * from "./richPromptInsertHelpers";
-export * from "./useRepoWorkspaceProbe";

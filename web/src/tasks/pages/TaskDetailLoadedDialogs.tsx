@@ -1,5 +1,4 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
 import { errorMessage } from "@/lib/errorMessage";
 import type { TaskChecklistResponse } from "@/types";
 import { TaskModelConfigModal } from "../components/task-detail";
@@ -9,7 +8,6 @@ import {
   TaskOpenPRConfirmDialog,
   TaskPolishDialog,
 } from "../components/dialogs";
-import { consumePromptEditorReturn } from "../prompt-editor/promptEditorSession";
 import { taskQueryKeys } from "../task-query";
 import type { TaskDetailLoadedViewProps } from "./TaskDetailLoadedView";
 
@@ -62,26 +60,6 @@ export function TaskDetailLoadedDialogs({
   );
   const polishCriteria =
     checklist?.items.map((item) => ({ id: item.id, text: item.text })) ?? [];
-  const [polishInstructions, setPolishInstructions] = useState("");
-  const polishResumeHandled = useRef(false);
-
-  useEffect(() => {
-    if (polishResumeHandled.current) return;
-    const payload = consumePromptEditorReturn();
-    if (!payload) return;
-    if (payload.resumeCompose) {
-      // Compose resume is owned by useTasksApp — put it back.
-      sessionStorage.setItem(
-        "hamix:prompt-editor-return",
-        JSON.stringify(payload),
-      );
-      return;
-    }
-    if (!payload.resumePolish || payload.polishTaskId !== task.id) return;
-    polishResumeHandled.current = true;
-    setPolishInstructions(payload.html ?? "");
-    setPolishDialogOpen(true);
-  }, [task.id, setPolishDialogOpen]);
 
   return (
     <>
@@ -151,11 +129,7 @@ export function TaskDetailLoadedDialogs({
 
       {polishDialogOpen ? (
         <TaskPolishDialog
-          key={polishInstructions}
-          taskId={task.id}
-          taskTitle={task.title}
           worktreeId={task.worktree_id}
-          initialInstructions={polishInstructions}
           criteria={polishCriteria}
           saving={saving}
           pending={polishMutation.isPending}
@@ -166,7 +140,6 @@ export function TaskDetailLoadedDialogs({
           }
           onCancel={() => {
             setPolishDialogOpen(false);
-            setPolishInstructions("");
             if (polishMutation.isError) polishMutation.reset();
           }}
           onConfirm={(payload) => polishMutation.mutate(payload)}

@@ -8,7 +8,7 @@ import { buildTaskCreateModalProps } from "../components/task-create-modal/build
 import { useTasksAppContext } from "../app/TasksAppProvider";
 import { CreateModalChunkFallback } from "./CreateModalChunkFallback";
 
-// BlockNote / prompt editor stay off the home cold path until create/edit opens.
+// TipTap / tippy stay off the home cold path until create/edit opens.
 const TaskCreateModal = lazy(() =>
   import("../components/task-create-modal").then((m) => ({
     default: m.TaskCreateModal,
@@ -19,9 +19,9 @@ const CREATE_MODAL_LAYER_FALLBACK =
   "Something went wrong while opening the task form.";
 
 /**
- * Create/edit overlays sit outside the route outlet boundary, so lazy-chunk
- * failures must be contained here — otherwise they wipe the whole SPA via the
- * app-root boundary.
+ * Create/edit overlays sit outside the route outlet boundary, so TipTap /
+ * lazy-chunk failures must be contained here — otherwise they wipe the whole
+ * SPA via the app-root boundary.
  */
 export function TaskCreateModalsLayer() {
   const app = useTasksAppContext();
@@ -103,9 +103,6 @@ function TaskCreateModalsLayerBody() {
               functionInputs: app.newFunctionInputs,
               onTitleChange: app.setNewTitle,
               onPromptChange: app.setNewPrompt,
-              onOpenPromptEditor: () => {
-                void app.openPromptEditor(navigate);
-              },
               onPriorityChange: app.setNewPriority,
               onAppendChecklistCriterion: app.appendNewChecklistCriterion,
               onUpdateChecklistRow: app.updateNewChecklistRow,

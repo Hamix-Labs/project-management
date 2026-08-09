@@ -1,27 +1,48 @@
-import { PromptEditorEntry } from "@/components/prompt-editor";
+import { FieldLabel } from "@/shared/FieldLabel";
+import { RichPromptEditor } from "@/components/rich-prompt";
 
 type Props = {
   idsPrefix: string;
+  editorKey: string;
   prompt: string;
   disabled: boolean;
-  onOpenPromptEditor: () => void;
+  onPromptChange: (v: string) => void;
+  worktreeId?: string;
+  /** When true, the section header owns the label — omit the field label. */
+  hideLabel?: boolean;
 };
 
-/** Compose prompt summary + Open Prompt Editor CTA (no in-place editor). */
 export function TaskComposePromptField({
   idsPrefix,
+  editorKey,
   prompt,
   disabled,
-  onOpenPromptEditor,
+  onPromptChange,
+  worktreeId,
+  hideLabel = false,
 }: Props) {
+  const promptId = `${idsPrefix}-prompt`;
+
   return (
     <div className="field grow stack-tight prompt-field-full task-create-prompt">
-      <label htmlFor={`${idsPrefix}-prompt-open`}>Initial prompt</label>
-      <div className="task-create-editor-shell" id={`${idsPrefix}-prompt-open`}>
-        <PromptEditorEntry
-          promptHtml={prompt}
+      {hideLabel ? null : (
+        <FieldLabel
+          id={`${promptId}-label`}
+          htmlFor={promptId}
+          requirement="optional"
+        >
+          Initial prompt
+        </FieldLabel>
+      )}
+      <div className="task-create-editor-shell">
+        <RichPromptEditor
+          key={editorKey}
+          id={promptId}
+          value={prompt}
+          onChange={onPromptChange}
           disabled={disabled}
-          onOpen={onOpenPromptEditor}
+          placeholder="Describe the task in detail. Type @ to mention a repo file…"
+          worktreeId={worktreeId}
         />
       </div>
     </div>

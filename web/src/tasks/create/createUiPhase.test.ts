@@ -38,28 +38,14 @@ describe("createUiPhase", () => {
     });
   });
 
-  it("suspends compose for prompt editor without clearing edit identity", () => {
-    const compose = reduceCreateUiPhase(initialCreateUiPhase(), {
-      type: "openCompose",
-      target: "task",
-      operation: "create",
-      editingTaskId: null,
+  it("transitions picker → closed → repo setup", () => {
+    const picker = reduceCreateUiPhase(initialCreateUiPhase(), {
+      type: "showDraftPicker",
     });
-    const suspended = reduceCreateUiPhase(compose, {
-      type: "suspendForPromptEditor",
-      target: "task",
-      operation: "create",
-    });
-    expect(suspended.kind).toBe("promptEditorSuspended");
-    expect(deriveCreateUiFlags(suspended)).toMatchObject({
-      createModalOpen: false,
-      promptEditorSuspended: true,
-      composeTarget: "task",
-    });
-    const resumed = reduceCreateUiPhase(suspended, {
-      type: "resumeComposeFromPromptEditor",
-    });
-    expect(resumed.kind).toBe("compose");
-    expect(deriveCreateUiFlags(resumed).createModalOpen).toBe(true);
+    expect(deriveCreateUiFlags(picker).draftPickerOpen).toBe(true);
+    const closed = reduceCreateUiPhase(picker, { type: "close" });
+    expect(closed.kind).toBe("closed");
+    const repo = reduceCreateUiPhase(closed, { type: "showRepositorySetup" });
+    expect(deriveCreateUiFlags(repo).repositorySetupPromptOpen).toBe(true);
   });
 });

@@ -37,7 +37,6 @@ export type TaskCreateModalEssentials = {
 export type TaskCreateModalPromptFields = {
   prompt: string;
   onPromptChange: (v: string) => void;
-  onOpenPromptEditor: () => void;
 };
 
 export type TaskCreateModalCriteria = {

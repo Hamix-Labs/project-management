@@ -12,10 +12,6 @@ export {
 export { invalidateTaskListAndStats } from "./invalidateTaskListCoherence";
 export { invalidateTaskDetailCoherence } from "./invalidateTaskDetailCoherence";
 export {
-  invalidatePromptDocumentCoherence,
-  promptDocumentCoherenceScopes,
-} from "./invalidatePromptDocumentCoherence";
-export {
   invalidateTaskCache,
   invalidateTaskCacheAsync,
 } from "./invalidateTaskCache";
