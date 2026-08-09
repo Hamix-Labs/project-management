@@ -222,6 +222,11 @@
     --prompt-editor-toolbar-fg: #f5f2ea;
     --prompt-editor-toolbar-muted: var(--text-tertiary);
     --prompt-editor-toolbar-hover: rgb(255 255 255 / 10%);
+    --prompt-editor-toolbar-border: rgb(255 255 255 / 8%);
+    --prompt-editor-toolbar-separator: rgb(255 255 255 / 14%);
+    --prompt-editor-toolbar-focus: 0 0 0 2px rgb(255 255 255 / 28%);
+    --prompt-editor-toolbar-shadow:
+      0 16px 40px rgb(20 18 12 / 24%), 0 4px 12px rgb(20 18 12 / 18%);
     --prompt-editor-side-gutter: 54px;
 
     --overlay-backdrop: rgb(0 0 0 / 58%);
