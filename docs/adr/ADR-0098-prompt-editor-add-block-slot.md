@@ -1,5 +1,7 @@
 # ADR-0098: Prompt editor add-block resolves a slot instead of always inserting
 
+**Status:** Superseded by [ADR-0099](./ADR-0099-prompt-authoring-inline-tiptap.md)
+
 ## Context
 
 Clicking the side menu's add-block (`+`) button next to a paragraph, dismissing

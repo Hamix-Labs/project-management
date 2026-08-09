@@ -1,5 +1,7 @@
 # ADR-0096: Full-page Prompt Editor (BlockNote)
 
+**Status:** Superseded by [ADR-0099](./ADR-0099-prompt-authoring-inline-tiptap.md)
+
 ## Context
 
 Task create/edit and polish previously embedded TipTap inside modals. Long

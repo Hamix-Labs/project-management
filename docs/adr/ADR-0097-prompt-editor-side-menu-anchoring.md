@@ -1,5 +1,7 @@
 # ADR-0097: Prompt editor owns its BlockNote side-menu anchoring
 
+**Status:** Superseded by [ADR-0099](./ADR-0099-prompt-authoring-inline-tiptap.md)
+
 ## Context
 
 The prompt IDE side menu (add-block and drag-handle buttons) stayed painted at a
