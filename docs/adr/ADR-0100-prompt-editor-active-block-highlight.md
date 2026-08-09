@@ -1,4 +1,4 @@
-# ADR-0099: Prompt editor owns the drag-handle menu open signal for block highlight
+# ADR-0100: Prompt editor owns the drag-handle menu open signal for block highlight
 
 ## Context
 
