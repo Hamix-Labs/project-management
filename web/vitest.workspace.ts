@@ -26,7 +26,6 @@ const worktreesIncludes = [
 const taskComponentsIncludes = ["src/tasks/components/**/*.test.tsx"];
 const taskHooksIncludes = [
   "src/tasks/hooks/**/*.test.tsx",
-  "src/tasks/prompt-editor/**/*.test.tsx",
 ];
 
 const fullAppIncludes = [

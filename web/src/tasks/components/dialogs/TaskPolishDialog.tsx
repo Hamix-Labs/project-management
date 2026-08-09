@@ -1,11 +1,9 @@
 import { useId, useState } from "react";
-import { useLocation } from "react-router-dom";
-import { PromptEditorEntry } from "@/components/prompt-editor";
+import { RichPromptEditor } from "@/components/rich-prompt";
 import { promptHasVisibleContent } from "@/lib/promptFormat";
 import { Modal } from "@/shared/Modal";
 import { MutationErrorBanner } from "@/shared/MutationErrorBanner";
 import type { ChecklistItemDraft } from "@/types";
-import { useOpenPolishPromptEditor } from "@/tasks/prompt-editor/useOpenPromptEditor";
 import { TaskPolishAddCriteria } from "./TaskPolishAddCriteria";
 import { TaskPolishCriteriaList } from "./TaskPolishCriteriaList";
 import { CloseGlyph, SparkleGlyph } from "./TaskPolishGlyphs";
@@ -24,11 +22,6 @@ export type PolishConfirmPayload = {
 
 type Props = {
   worktreeId?: string;
-  taskId: string;
-  /** Persisted task title for editor crumb/header. */
-  taskTitle?: string;
-  /** Seeded when returning from Prompt Editor. */
-  initialInstructions?: string;
   criteria?: PolishCriterionOption[];
   saving: boolean;
   pending: boolean;
@@ -39,9 +32,6 @@ type Props = {
 
 export function TaskPolishDialog({
   worktreeId,
-  taskId,
-  taskTitle,
-  initialInstructions = "",
   criteria = [],
   saving,
   pending,
@@ -51,13 +41,13 @@ export function TaskPolishDialog({
 }: Props) {
   const titleId = useId();
   const descriptionId = useId();
+  const instructionsId = useId();
+  const instructionsLabelId = `${instructionsId}-label`;
   const flaggedHeadingId = useId();
   const addHeadingId = useId();
-  const [instructions] = useState(initialInstructions);
+  const [instructions, setInstructions] = useState("");
   const [flaggedIds, setFlaggedIds] = useState<Set<string>>(() => new Set());
   const drafts = usePolishCriterionDrafts();
-  const openPolishEditor = useOpenPolishPromptEditor();
-  const location = useLocation();
   const canSubmit =
     promptHasVisibleContent(instructions) && !saving && !pending;
   const controlsDisabled = saving || pending;
@@ -133,26 +123,27 @@ export function TaskPolishDialog({
 
           <div className="task-polish-dialog__section">
             <div className="task-polish-dialog__label-row">
-              <span className="task-polish-dialog__label">Instructions</span>
+              <label
+                id={instructionsLabelId}
+                htmlFor={instructionsId}
+                className="task-polish-dialog__label"
+              >
+                Instructions
+              </label>
               <span className="task-polish-dialog__hint">
-                Use <kbd>@</kbd> in the Prompt Editor to reference files
+                Type <kbd>@</kbd> to reference files
               </span>
             </div>
-            <PromptEditorEntry
-              promptHtml={instructions}
-              disabled={controlsDisabled}
-              openLabel="Open Prompt Editor"
-              emptyHint="Open the Prompt Editor to write polish instructions."
-              onOpen={() => {
-                openPolishEditor({
-                  instructionsHtml: instructions,
-                  worktreeId: worktreeId?.trim() || undefined,
-                  taskId,
-                  taskTitle,
-                  returnPath: location.pathname,
-                });
-              }}
-            />
+            <div className="task-create-editor-shell">
+              <RichPromptEditor
+                id={instructionsId}
+                value={instructions}
+                onChange={setInstructions}
+                disabled={controlsDisabled}
+                placeholder="Describe what should change in this polish pass…"
+                worktreeId={worktreeId?.trim() || undefined}
+              />
+            </div>
           </div>
         </div>
 
@@ -173,7 +164,7 @@ export function TaskPolishDialog({
             </button>
             <button
               type="button"
-              className="primary task-polish-dialog__confirm"
+              className="primary task-polish-dialog__submit"
               disabled={!canSubmit}
               onClick={() =>
                 onConfirm({
@@ -183,7 +174,14 @@ export function TaskPolishDialog({
                 })
               }
             >
-              {pending ? "Queueing…" : "Polish"}
+              {pending ? (
+                "Queueing…"
+              ) : (
+                <>
+                  <SparkleGlyph size={16} />
+                  Polish
+                </>
+              )}
             </button>
           </div>
         </footer>

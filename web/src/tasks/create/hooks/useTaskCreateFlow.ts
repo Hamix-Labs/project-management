@@ -13,7 +13,6 @@ import { useTaskCreateFormState } from "./useTaskCreateFormState";
 import { useTaskCreateModalState } from "./useTaskCreateModalState";
 import { useTaskCreateMutations } from "./useTaskCreateMutations";
 import { useTaskCreateSubmitActions } from "./useTaskCreateSubmitActions";
-import { createOpenComposePromptEditor } from "../../prompt-editor/useOpenPromptEditor";
 
 /**
  * Create-task modal, draft autosave, draft picker, and related mutations.
@@ -44,8 +43,7 @@ export function useTaskCreateFlow() {
     setDraftAutosaveBaseline: form.setDraftAutosaveBaseline,
     setDraftAutosaveBaselineID: form.setDraftAutosaveBaselineID,
     setLastDraftSavedAt: form.setLastDraftSavedAt,
-    // Keep draft saves alive while Prompt Editor is open (compose is suspended).
-    createModalOpen: modal.createModalOpen || modal.promptEditorSuspended,
+    createModalOpen: modal.createModalOpen,
     editingTemplateId: modal.editingTemplateId,
   });
 
@@ -104,10 +102,6 @@ export function useTaskCreateFlow() {
   });
   const submitActions = useTaskCreateSubmitActions({ form, modal, mutations });
   const checklistActions = useTaskCreateChecklistActions({ form });
-  const openPromptEditor = useMemo(
-    () => createOpenComposePromptEditor({ form, modal, mutations }),
-    [form, modal, mutations],
-  );
 
   const actions = { ...entryActions, ...submitActions, ...checklistActions };
   const createFlowError = useMemo(
@@ -123,6 +117,5 @@ export function useTaskCreateFlow() {
     autosave,
     actions,
     draftsQuery,
-    openPromptEditor,
   });
 }

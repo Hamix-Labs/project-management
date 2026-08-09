@@ -149,7 +149,7 @@ export function sanitizePromptHtml(input: string): string {
   return doc.body.innerHTML;
 }
 
-/** Heuristic: stored prompt looks like rich HTML (TipTap/BlockNote). */
+/** Heuristic: stored prompt looks like rich HTML (TipTap). */
 export function looksLikeStoredHtml(s: string): boolean {
   const t = s.trim();
   return t.startsWith("<") && /<\/[a-z][\s\S]*>/i.test(t);

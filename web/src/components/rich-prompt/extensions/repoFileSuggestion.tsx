@@ -1,0 +1,246 @@
+import { Extension } from "@tiptap/core";
+import Suggestion, {
+  exitSuggestion,
+  type SuggestionKeyDownProps,
+  type SuggestionProps,
+} from "@tiptap/suggestion";
+import { ReactRenderer } from "@tiptap/react";
+import type { Instance as TippyInstance } from "tippy.js";
+import tippy from "tippy.js";
+import { PluginKey } from "@tiptap/pm/state";
+import { searchRepoFiles } from "@/api";
+import { RepoFileSuggestionList, type RepoSuggestionItem } from "./repoFileSuggestionList";
+import {
+  MENTION_POPOVER_Z_INDEX,
+  referenceRectForSuggestion,
+} from "./repoFileSuggestionReferenceRect";
+
+export type { RepoSuggestionItem } from "./repoFileSuggestionList";
+
+export const repoFileSuggestionPluginKey = new PluginKey("repoFileSuggestion");
+
+export type RepoFilePickedPayload = {
+  /** Path relative to the configured workspace repo (forward slashes). */
+  path: string;
+  /** Document position where the mention should be inserted (`@` was removed). */
+  insertAt: number;
+};
+
+export type RepoFileSuggestionOptions = {
+  onRepoUnavailable: () => void;
+  onRepoAvailable: () => void;
+  onSuggestFetchChange?: (busy: boolean) => void;
+  onFilePicked?: (payload: RepoFilePickedPayload) => void;
+  getWorktreeId?: () => string | undefined;
+};
+
+export const RepoFileSuggestion = Extension.create<RepoFileSuggestionOptions>({
+  name: "repoFileSuggestion",
+
+  addOptions() {
+    return {
+      onRepoUnavailable: () => {},
+      onRepoAvailable: () => {},
+      onSuggestFetchChange: undefined as
+        | ((busy: boolean) => void)
+        | undefined,
+      onFilePicked: undefined as
+        | ((payload: RepoFilePickedPayload) => void)
+        | undefined,
+    };
+  },
+
+  addProseMirrorPlugins() {
+    const onUnavailable = this.options.onRepoUnavailable;
+    const onAvailable = this.options.onRepoAvailable;
+    const onSuggestFetchChange = this.options.onSuggestFetchChange;
+    const onFilePicked = this.options.onFilePicked;
+    const getWorktreeId = this.options.getWorktreeId;
+    const setFetchBusy = (busy: boolean) => {
+      onSuggestFetchChange?.(busy);
+    };
+
+    // TipTap/ProseMirror may run overlapping async `view.update` passes; abort + returning []
+    // lets a stale completion overwrite a newer successful `items` result and clears the menu.
+    let mentionSearchSeq = 0;
+    let lastRepoSuggestionItems: RepoSuggestionItem[] = [];
+
+    return [
+      Suggestion<RepoSuggestionItem, RepoSuggestionItem>({
+        pluginKey: repoFileSuggestionPluginKey,
+        editor: this.editor,
+        char: "@",
+        allowSpaces: false,
+        // Default is only a regular space; allow @ after a newline inside the same block.
+        allowedPrefixes: [" ", "\n"],
+        command: ({ editor, range, props }) => {
+          const insertAt = range.from;
+          const path = props.path.replace(/\\/g, "/");
+          editor.chain().focus().deleteRange(range).run();
+          exitSuggestion(editor.view, repoFileSuggestionPluginKey);
+          onFilePicked?.({ path, insertAt });
+        },
+        items: async ({ query }) => {
+          mentionSearchSeq += 1;
+          const seq = mentionSearchSeq;
+
+          try {
+            const scopedWorktreeId = getWorktreeId?.()?.trim();
+            if (!scopedWorktreeId) {
+              lastRepoSuggestionItems = [];
+              return [];
+            }
+            const paths = await searchRepoFiles(query, { worktreeId: scopedWorktreeId });
+            if (seq !== mentionSearchSeq) {
+              return lastRepoSuggestionItems;
+            }
+            if (paths === null) {
+              onUnavailable();
+              lastRepoSuggestionItems = [];
+              return [];
+            }
+            onAvailable();
+            lastRepoSuggestionItems = paths.map((path) => ({ path }));
+            return lastRepoSuggestionItems;
+          } catch {
+            if (seq !== mentionSearchSeq) {
+              return lastRepoSuggestionItems;
+            }
+            // Transient errors: keep prior list if any; do not toggle the repo banner.
+            return lastRepoSuggestionItems;
+          } finally {
+            // TipTap may interleave async view updates; always clear busy for this completion
+            // so the inline hint never sticks if onStart/onUpdate ordering changes.
+            if (seq === mentionSearchSeq) {
+              setFetchBusy(false);
+            }
+          }
+        },
+        render: () => {
+          let component: ReactRenderer | null = null;
+          let popup: TippyInstance | null = null;
+          let latestProps: SuggestionProps<
+            RepoSuggestionItem,
+            RepoSuggestionItem
+          > | null = null;
+          let selectedIndex = 0;
+          let lastQuery = "";
+
+          const listProps = (
+            props: SuggestionProps<RepoSuggestionItem, RepoSuggestionItem>,
+            index: number,
+          ) => ({
+            items: props.items,
+            query: props.query,
+            selectedIndex: index,
+            command: (item: RepoSuggestionItem) => {
+              props.command(item);
+            },
+          });
+
+          return {
+            onBeforeStart() {
+              setFetchBusy(true);
+            },
+            onBeforeUpdate() {
+              setFetchBusy(true);
+            },
+            onStart(
+              props: SuggestionProps<RepoSuggestionItem, RepoSuggestionItem>,
+            ) {
+              latestProps = props;
+              selectedIndex = 0;
+              lastQuery = props.query;
+              component = new ReactRenderer(RepoFileSuggestionList, {
+                props: listProps(props, selectedIndex),
+                editor: props.editor,
+              });
+
+              const t = tippy(document.body, {
+                getReferenceClientRect: () =>
+                  latestProps != null
+                    ? referenceRectForSuggestion(latestProps)
+                    : new DOMRect(0, 0, 0, 0),
+                appendTo: () => document.body,
+                content: component.element,
+                showOnCreate: true,
+                interactive: true,
+                trigger: "manual",
+                placement: "bottom-start",
+                zIndex: MENTION_POPOVER_Z_INDEX,
+                /* Override tippy.css default dark #333 box + padding (see app-task-list-and-mentions.css) */
+                theme: "repo-files-popover",
+                arrow: false,
+                maxWidth: "min(100vw - 2rem, 28rem)",
+                offset: [0, 6],
+              });
+              popup = Array.isArray(t) ? t[0]! : t;
+            },
+
+            onUpdate(
+              props: SuggestionProps<RepoSuggestionItem, RepoSuggestionItem>,
+            ) {
+              latestProps = props;
+              if (props.query !== lastQuery) {
+                selectedIndex = 0;
+                lastQuery = props.query;
+              } else {
+                const max = Math.max(0, props.items.length - 1);
+                selectedIndex = Math.min(selectedIndex, max);
+              }
+              if (props.items.length === 0) selectedIndex = 0;
+              component?.updateProps(listProps(props, selectedIndex));
+              popup?.setProps({
+                getReferenceClientRect: () =>
+                  latestProps != null
+                    ? referenceRectForSuggestion(latestProps)
+                    : new DOMRect(0, 0, 0, 0),
+              });
+            },
+
+            onKeyDown(props: SuggestionKeyDownProps) {
+              if (props.event.key === "Escape") {
+                popup?.hide();
+                return true;
+              }
+              if (!latestProps || latestProps.items.length === 0) {
+                return false;
+              }
+              if (props.event.key === "ArrowDown") {
+                props.event.preventDefault();
+                selectedIndex = Math.min(
+                  selectedIndex + 1,
+                  latestProps.items.length - 1,
+                );
+                component?.updateProps(listProps(latestProps, selectedIndex));
+                return true;
+              }
+              if (props.event.key === "ArrowUp") {
+                props.event.preventDefault();
+                selectedIndex = Math.max(selectedIndex - 1, 0);
+                component?.updateProps(listProps(latestProps, selectedIndex));
+                return true;
+              }
+              if (props.event.key === "Enter") {
+                const item = latestProps.items[selectedIndex];
+                if (!item) return false;
+                props.event.preventDefault();
+                latestProps.command(item);
+                return true;
+              }
+              return false;
+            },
+
+            onExit() {
+              lastRepoSuggestionItems = [];
+              selectedIndex = 0;
+              setFetchBusy(false);
+              popup?.destroy();
+              component?.destroy();
+            },
+          };
+        },
+      }),
+    ];
+  },
+});

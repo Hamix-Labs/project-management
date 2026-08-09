@@ -36,7 +36,6 @@ export function buildTaskCreateModalProps(
     prompt: {
       prompt: input.prompt,
       onPromptChange: input.onPromptChange,
-      onOpenPromptEditor: input.onOpenPromptEditor,
     },
     criteria: {
       checklistItems: input.checklistItems,
