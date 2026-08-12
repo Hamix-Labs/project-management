@@ -86,7 +86,7 @@ export function useTaskCreateComposeEntryActions(input: {
       lockProjectAssignment?: boolean;
       lockGitAssignment?: boolean;
     }) => {
-      void openComposeModal({
+      return openComposeModal({
         projectID: prefill?.projectID,
         repositoryID: prefill?.repositoryID,
         worktreeID: prefill?.worktreeID,

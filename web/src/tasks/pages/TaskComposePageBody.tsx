@@ -17,16 +17,20 @@ export function TaskComposePageBody({ mode }: { mode: ComposeMode }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const appTimezone = useAppTimezone();
-  const seeded = useRef(false);
+  /** True after this mount has shown compose/draft-picker/repo-setup. */
   const sawComposeSurface = useRef(false);
   const [seedError, setSeedError] = useState<string | null>(null);
   const [scenariosOpen, setScenariosOpen] = useState(false);
   const scenariosTriggerRef = useRef<HTMLButtonElement>(null);
   const backTo = composeBackTo(mode);
 
+  /**
+   * Seed compose from the route. Must re-run after React Strict Mode's
+   * setup→cleanup→setup: the cleanup closes the form and bumps the entry
+   * request id, so a one-shot "seeded" ref would leave the page on Loading…
+   * forever.
+   */
   useEffect(() => {
-    if (seeded.current) return;
-    seeded.current = true;
     let cancelled = false;
 
     const run = async () => {
@@ -42,7 +46,7 @@ export function TaskComposePageBody({ mode }: { mode: ComposeMode }) {
           if (draft) {
             await app.resumeDraftByID(draft);
           } else if (project) {
-            app.openCreateModal({
+            await app.openCreateModal({
               projectID: project,
               repositoryID: repository,
               worktreeID: worktree,
@@ -50,19 +54,13 @@ export function TaskComposePageBody({ mode }: { mode: ComposeMode }) {
               lockProjectAssignment: lockProject,
             });
           } else {
-            app.openCreateModal();
+            await app.openCreateModal();
           }
-          return;
-        }
-        if (mode.kind === "template-create") {
+        } else if (mode.kind === "template-create") {
           app.openTemplateCreateModal();
-          return;
-        }
-        if (mode.kind === "template-edit") {
+        } else if (mode.kind === "template-edit") {
           await app.editTemplateByID(mode.templateId);
-          return;
-        }
-        if (mode.kind === "task-edit") {
+        } else if (mode.kind === "task-edit") {
           const task = await getTask(mode.taskId);
           if (cancelled) return;
           app.openEdit(task);
@@ -75,20 +73,21 @@ export function TaskComposePageBody({ mode }: { mode: ComposeMode }) {
         }
       }
     };
+
     void run();
     return () => {
       cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    return () => {
+      // Strict Mode runs cleanup between double-invokes; don't treat that
+      // close as "user left compose" or the leave-effect will bounce home.
+      sawComposeSurface.current = false;
       app.closeEdit();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [mode.kind, "taskId" in mode ? mode.taskId : "", "templateId" in mode ? mode.templateId : "", searchParams]);
 
+  // Leave the route once compose has been shown and then closed (create
+  // success, Cancel, etc.). Ignore the Strict Mode cleanup flicker by only
+  // arming after a surface was visible on this mount.
   useEffect(() => {
     if (
       app.createModalOpen ||
@@ -98,10 +97,9 @@ export function TaskComposePageBody({ mode }: { mode: ComposeMode }) {
       sawComposeSurface.current = true;
       return;
     }
-    if (sawComposeSurface.current && seeded.current) {
-      sawComposeSurface.current = false;
-      navigate(backTo, { replace: true });
-    }
+    if (!sawComposeSurface.current) return;
+    sawComposeSurface.current = false;
+    navigate(backTo, { replace: true });
   }, [
     app.createModalOpen,
     app.draftPickerOpen,
