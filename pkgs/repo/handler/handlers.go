@@ -167,20 +167,36 @@ func (h *Handler) repoFiles(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	q := r.URL.Query().Get("q")
+	if len(q) > MaxSearchQueryBytes {
+		handlerhttp.WriteJSONError(w, r, op, http.StatusBadRequest, "search query too long")
+		return
+	}
+	after := strings.TrimSpace(r.URL.Query().Get("after"))
+	limit := repo.DefaultFilePageLimit
+	if raw := strings.TrimSpace(r.URL.Query().Get("limit")); raw != "" {
+		n, err := strconv.Atoi(raw)
+		if err != nil || n < 1 {
+			handlerhttp.WriteJSONError(w, r, op, http.StatusBadRequest, "invalid limit")
+			return
+		}
+		limit = n
+	}
 	t0 := time.Now()
-	listing, err := root.Files(r.Context())
+	page, err := root.FilesPage(r.Context(), q, after, limit)
 	dur := time.Since(t0)
 	if err != nil {
 		slog.Log(r.Context(), slog.LevelError, "repo operation failed", "cmd", calltrace.LogCmd, "operation", op, "duration_ms", dur.Milliseconds(), "err", err)
 		handlerhttp.WriteJSONError(w, r, op, http.StatusInternalServerError, "file listing failed")
 		return
 	}
-	if listing.Paths == nil {
-		listing.Paths = []string{}
+	if page.Paths == nil {
+		page.Paths = []string{}
 	}
 	slog.Info("repo files completed", "cmd", calltrace.LogCmd, "operation", op,
-		"path_count", len(listing.Paths), "truncated", listing.Truncated, "source", string(listing.Source), "duration_ms", dur.Milliseconds())
-	handlerhttp.WriteJSON(w, r, op, http.StatusOK, listing)
+		"path_count", len(page.Paths), "has_more", page.HasMore, "truncated", page.Truncated,
+		"source", string(page.Source), "duration_ms", dur.Milliseconds(), "q_empty", strings.TrimSpace(q) == "")
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, page)
 }
 
 func (h *Handler) repoSymbols(w http.ResponseWriter, r *http.Request) {

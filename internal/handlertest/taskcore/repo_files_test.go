@@ -3,6 +3,7 @@ package taskcore_test
 import (
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -14,13 +15,19 @@ import (
 
 type repoFilesPayload struct {
 	Paths     []string `json:"paths"`
+	NextAfter string   `json:"next_after"`
+	HasMore   bool     `json:"has_more"`
 	Truncated bool     `json:"truncated"`
 	Source    string   `json:"source"`
 }
 
-func getRepoFiles(t *testing.T, baseURL, worktreeID string) repoFilesPayload {
+func getRepoFiles(t *testing.T, baseURL, worktreeID string, query url.Values) repoFilesPayload {
 	t.Helper()
-	res, err := http.Get(baseURL + handlertest.RepoFilesWithWorktree(worktreeID))
+	if query == nil {
+		query = url.Values{}
+	}
+	query.Set("worktree_id", worktreeID)
+	res, err := http.Get(baseURL + "/repo/files?" + query.Encode())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -62,7 +69,7 @@ func TestHTTP_repo_files_excludes_ignored_paths(t *testing.T) {
 	srv, wtID, _ := handlertest.NewBoundRepoServer(t, dir)
 	defer srv.Close()
 
-	payload := getRepoFiles(t, srv.URL, wtID)
+	payload := getRepoFiles(t, srv.URL, wtID, url.Values{"limit": []string{"50"}})
 	if payload.Source != "git" {
 		t.Fatalf("source = %q, want git", payload.Source)
 	}
@@ -74,6 +81,38 @@ func TestHTTP_repo_files_excludes_ignored_paths(t *testing.T) {
 	}
 	if payload.Truncated {
 		t.Fatal("a three-file repository must not report truncation")
+	}
+	if payload.HasMore {
+		t.Fatal("small repo should fit in one page")
+	}
+}
+
+func TestHTTP_repo_files_paginates(t *testing.T) {
+	dir := t.TempDir()
+	for _, name := range []string{"a.txt", "b.txt", "c.txt", "d.txt"} {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte("x"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	srv, wtID, _ := handlertest.NewBoundRepoServer(t, dir)
+	defer srv.Close()
+
+	page1 := getRepoFiles(t, srv.URL, wtID, url.Values{"limit": []string{"2"}})
+	if len(page1.Paths) != 2 || !page1.HasMore || page1.NextAfter == "" {
+		t.Fatalf("page1 = %+v", page1)
+	}
+	page2 := getRepoFiles(t, srv.URL, wtID, url.Values{
+		"limit": []string{"2"},
+		"after": []string{page1.NextAfter},
+	})
+	if len(page2.Paths) != 2 {
+		t.Fatalf("page2 = %+v", page2)
+	}
+	seen := append(append([]string{}, page1.Paths...), page2.Paths...)
+	for _, want := range []string{"a.txt", "b.txt", "c.txt", "d.txt"} {
+		if !slices.Contains(seen, want) {
+			t.Fatalf("missing %s in %v", want, seen)
+		}
 	}
 }
 
