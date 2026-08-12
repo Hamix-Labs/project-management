@@ -6,7 +6,6 @@ import {
   TaskChangeModelModal,
   TaskDraftsPage,
   TaskTemplatesPage,
-  TaskCreateModalsLayer,
   TaskHome,
 } from "@/tasks";
 import { TasksAppProvider, useTasksAppContext, useTasksAppMeta } from "@/tasks/app/TasksAppProvider";
@@ -20,6 +19,26 @@ import { useStickyShellElevation } from "@/lib/useStickyShellElevation";
 // landing user actually needs. Vite resolves the deep module paths to
 // individual chunks; the barrel re-exports remain but tree-shake out
 // of the main chunk because no synchronous consumer imports them.
+const TaskComposeNewPage = lazy(() =>
+  import("@/tasks/pages/TaskComposePage").then((m) => ({
+    default: m.TaskComposeNewPage,
+  })),
+);
+const TaskComposeEditPage = lazy(() =>
+  import("@/tasks/pages/TaskComposePage").then((m) => ({
+    default: m.TaskComposeEditPage,
+  })),
+);
+const TemplateComposeNewPage = lazy(() =>
+  import("@/tasks/pages/TaskComposePage").then((m) => ({
+    default: m.TemplateComposeNewPage,
+  })),
+);
+const TemplateComposeEditPage = lazy(() =>
+  import("@/tasks/pages/TaskComposePage").then((m) => ({
+    default: m.TemplateComposeEditPage,
+  })),
+);
 const TaskDetailPage = lazy(() =>
   import("@/tasks/pages/TaskDetailPage").then((m) => ({
     default: m.TaskDetailPage,
@@ -197,7 +216,6 @@ function StandardShell() {
 
       <main id="main-content" tabIndex={-1}>
         <RoutedMainOutlet />
-        <TaskCreateModalsLayer />
 
         {app.closeTarget ? (
           <CloseConfirmDialog
@@ -250,6 +268,7 @@ function routeNeedsHomeListData(pathname: string): boolean {
   // list cache on close. Keeping data enabled here avoids a flash of
   // empty list state when the user navigates back to "/".
   if (pathname.startsWith("/tasks/")) return true;
+  if (pathname.startsWith("/templates/")) return true;
   return false;
 }
 
@@ -269,6 +288,11 @@ export default function App() {
             <Route index element={<TaskHome />} />
             <Route path="drafts" element={<TaskDraftsPage />} />
             <Route path="templates" element={<TaskTemplatesPage />} />
+            <Route path="templates/new" element={<TemplateComposeNewPage />} />
+            <Route
+              path="templates/:templateId/edit"
+              element={<TemplateComposeEditPage />}
+            />
             <Route path="repositories" element={<RepositoriesListPage />} />
             <Route path="worktrees" element={<Navigate to="/repositories" replace />} />
             <Route
@@ -284,6 +308,11 @@ export default function App() {
               <Route path="projects/*" element={<Navigate to="/" replace />} />
             )}
             <Route path="settings" element={<SettingsPage />} />
+            <Route path="tasks/new" element={<TaskComposeNewPage />} />
+            <Route
+              path="tasks/:taskId/edit"
+              element={<TaskComposeEditPage />}
+            />
             <Route
               path="tasks/:taskId/events/:eventSeq"
               element={<TaskEventDetailPage />}

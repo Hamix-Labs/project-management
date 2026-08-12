@@ -1,12 +1,15 @@
 import { useRef, useState } from "react";
 import type { TestScenario } from "@/tasks/test-scenarios";
-import { taskCreateModalBusyLabel } from "./taskCreateModalBusyLabel";
+import { TaskComposeForm } from "../task-compose/TaskComposeForm";
 import { resolveTaskCreateModalPresentation } from "./taskCreateModalPresentation";
 import type { TaskCreateModalProps } from "./taskCreateModalProps";
-import { TaskCreateModalShell } from "./TaskCreateModalShell";
 
 export type { TaskCreateModalProps };
 
+/**
+ * Compose form entry used by unit tests and any non-route host.
+ * Production create/edit uses {@link TaskComposePage} with the same fields.
+ */
 export function TaskCreateModal(props: TaskCreateModalProps) {
   const { session, actions } = props;
   const editingTaskId = session.editingTaskId ?? null;
@@ -36,10 +39,10 @@ export function TaskCreateModal(props: TaskCreateModalProps) {
   };
 
   return (
-    <TaskCreateModalShell
+    <TaskComposeForm
       {...props}
       presentation={presentation}
-      busyLabel={taskCreateModalBusyLabel()}
+      backTo="/"
       scenariosOpen={scenariosOpen}
       scenariosTriggerRef={scenariosTriggerRef}
       onToggleScenarios={() => setScenariosOpen((open) => !open)}

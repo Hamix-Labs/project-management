@@ -7,18 +7,14 @@ import { TaskDraftsListSkeleton } from "../components/skeletons";
 import { SavedEntityRow } from "../components/saved-entities/SavedEntityRow";
 import { useDeleteWithExitAnimation } from "../hooks/useDeleteWithExitAnimation";
 import { useTasksAppContext } from "../app/TasksAppProvider";
+import { tasksNewPath } from "../composeRoutes";
 
 export function TaskDraftsPage() {
   const app = useTasksAppContext();
   useDocumentTitle("Task drafts");
   const navigate = useNavigate();
   const openDraftInCreateForm = async (draftId: string) => {
-    try {
-      await app.resumeDraftByID(draftId);
-      navigate("/");
-    } catch {
-      // Error state is exposed by the hook and rendered inline on this page.
-    }
+    navigate(tasksNewPath({ draft: draftId }));
   };
   const loading = app.draftListLoading;
   const error = app.draftListError;
@@ -101,8 +97,7 @@ export function TaskDraftsPage() {
                 action={{
                   label: "Create a task",
                   onClick: () => {
-                    navigate("/");
-                    app.openCreateModal();
+                    navigate(tasksNewPath());
                   },
                 }}
               />

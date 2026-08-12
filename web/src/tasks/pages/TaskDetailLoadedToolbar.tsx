@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { StatusBadge } from "@/components/task-status";
 import {
   TaskDetailSchedule,
@@ -8,6 +9,7 @@ import { TokenUsageChip } from "../components/task-detail/TokenUsageChip";
 import { ViewPullRequestLink } from "../components/task-detail/layout/ViewPullRequestLink";
 import { useTaskCycles } from "../hooks/useTaskCycles";
 import { canEditTask } from "../task-display/canEditTask";
+import { taskEditPath, tasksNewPath } from "../composeRoutes";
 import {
   CREATING_PR_STATUS_LABEL,
   isOpenPrRunKind,
@@ -49,6 +51,7 @@ export function TaskDetailLoadedToolbar({
   polishMutation,
   autonomyMutation,
 }: TaskDetailLoadedToolbarProps) {
+  const navigate = useNavigate();
   const inReview = task.status === "review";
   const inPrReady = task.status === "pr_ready";
   const isClosed = task.status === "closed";
@@ -103,7 +106,7 @@ export function TaskDetailLoadedToolbar({
       <TaskDetailToolbarActions
         saving={saving}
         canEdit={canEditTask(task.status) && !isClosed}
-        onEdit={() => modals.openEdit(task)}
+        onEdit={() => navigate(taskEditPath(task.id))}
         onClose={
           isClosed
             ? undefined
@@ -130,13 +133,15 @@ export function TaskDetailLoadedToolbar({
                 const repositoryID = task.repository_id?.trim() ?? "";
                 const worktreeID = task.worktree_id?.trim() ?? "";
                 if (!projectID || !repositoryID || !worktreeID) return;
-                modals.openCreateModal({
-                  projectID,
-                  repositoryID,
-                  worktreeID,
-                  lockProjectAssignment: true,
-                  lockGitAssignment: true,
-                });
+                navigate(
+                  tasksNewPath({
+                    project: projectID,
+                    repository: repositoryID,
+                    worktree: worktreeID,
+                    lockGit: true,
+                    lockProject: true,
+                  }),
+                );
               }
             : undefined
         }

@@ -58,9 +58,9 @@
   max-height: min(92vh, 56rem);
 }
 
-.modal-shell--wide:has(.task-create-modal-sheet.task-create) {
-  width: min(100%, 52rem);
-}
+/* Task compose is a routed page (ADR-0100); there is no compose modal
+   shell to cap. Kept as a comment so a future search for the class name
+   lands on the ADR. */
 
 .modal-shell--wide:has(.workspace-picker-modal) {
   width: min(100%, 48rem);

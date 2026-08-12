@@ -16,5 +16,4 @@ export { TaskChangeModelModal } from "./components/task-detail/edit/TaskChangeMo
 export { useTasksApp } from "./hooks/useTasksApp";
 export { TaskDraftsPage } from "./pages/TaskDraftsPage";
 export { TaskTemplatesPage } from "./pages/TaskTemplatesPage";
-export { TaskCreateModalsLayer } from "./pages/TaskCreateModalsLayer";
 export { TaskHome } from "./pages/TaskHome";

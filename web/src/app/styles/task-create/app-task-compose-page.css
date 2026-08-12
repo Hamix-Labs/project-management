@@ -1,0 +1,185 @@
+/*
+ * Task compose page (ADR-0100).
+ *
+ * Compose is a routed main-column page, not a 52rem modal. Layout is:
+ *   - back-link + title (sticky top),
+ *   - scrolling body containing the shared `.task-create-modal-sheet` form,
+ *   - sticky footer with primary/secondary actions,
+ *   - reserved right column (`.task-compose-page__assist`) for Plan 4.
+ *
+ * The 52rem modal cap that used to apply (via
+ * `.modal-shell--wide:has(.task-create-modal-sheet.task-create)`) is
+ * intentionally not reproduced here — the page owns its own max-width.
+ */
+
+.task-compose-page {
+  --task-compose-max: 80rem;
+  --task-compose-max-with-assist: 90rem;
+  width: 100%;
+  margin-inline: auto;
+  padding-inline: var(--space-6);
+  padding-block: var(--space-4) var(--space-8);
+  max-width: var(--task-compose-max);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.task-compose-page[data-has-assist="true"] {
+  max-width: var(--task-compose-max-with-assist);
+}
+
+.task-compose-page__topbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--color-surface);
+  padding-block: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.task-compose-page__back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-md);
+}
+
+.task-compose-page__back:hover,
+.task-compose-page__back:focus-visible {
+  color: var(--color-text-primary);
+  background: var(--color-bg-subtle);
+}
+
+.task-compose-page__title-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.task-compose-page__title {
+  margin: 0;
+  font-size: var(--text-title-app, var(--text-xl));
+  font-weight: 600;
+}
+
+.task-compose-page__subtitle {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.task-compose-page__top-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Two-column grid: form body on the left, reserved assist slot on the
+   right. Assist slot is empty in Wave A (Plan 4 fills it). */
+.task-compose-page__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-6);
+  align-items: start;
+}
+
+.task-compose-page[data-has-assist="true"] .task-compose-page__grid {
+  grid-template-columns: minmax(0, 1fr) minmax(20rem, 24rem);
+}
+
+.task-compose-page__form-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.task-compose-page__assist {
+  /* Present in the DOM so a11y tree + layout are stable when Plan 4 fills
+     this slot. Wave A leaves it empty. */
+  min-height: 100%;
+}
+
+/* Draft status pill / mutation errors sit above the sticky footer, not
+   overlapping the sheet's inner scroll. */
+.task-compose-page__errors {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* Sticky footer — always visible while the operator scrolls the form. */
+.task-compose-page__footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  background: var(--color-surface);
+  padding-block: var(--space-3);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* Prompt gets material vertical room by default. The modal used to cap
+   the editor at ~9.5rem; on the page the editor grows into the column. */
+.task-compose-page .task-create-editor-shell {
+  min-height: 20rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.task-compose-page .task-create-editor-shell .rich-prompt-wrap,
+.task-compose-page .task-create-editor-shell .rich-prompt-wrap .tiptap {
+  flex: 1 1 auto;
+  min-height: 18rem;
+}
+
+/* Sheet reset — the shared `.task-create-modal-sheet` chrome assumes a
+   fixed-height modal panel with its own inner scroll. On the page we
+   flatten it: no bordered card, no inner scroll — the browser scrolls
+   the page instead. */
+.task-compose-page .task-create-modal-sheet.task-create {
+  height: auto;
+  max-height: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.task-compose-page .task-create-modal-form.task-create-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.task-compose-page .task-create-modal-scroll {
+  overflow: visible;
+  padding: 0;
+  height: auto;
+  max-height: none;
+}
+
+@media (max-width: 60rem) {
+  .task-compose-page[data-has-assist="true"] .task-compose-page__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .task-compose-page__assist {
+    display: none;
+  }
+}

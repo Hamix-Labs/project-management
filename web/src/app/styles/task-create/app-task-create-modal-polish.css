@@ -17,23 +17,9 @@
   background: var(--bg-elevated);
 }
 
-.modal-shell--wide:has(.task-create-modal-sheet.task-create) {
-  overflow: hidden;
-  max-height: min(
-    calc(100dvh - 2 * var(--layout-modal-safe-padding)),
-    880px
-  );
-  display: flex;
-  flex-direction: column;
-}
-
-.modal-shell--wide:has(.task-create-modal-sheet.task-create) > .panel {
-  overflow: hidden;
-  flex: 1 1 auto;
-  min-height: 0;
-  max-height: 100%;
-  margin-bottom: 0;
-}
+/* Compose is a routed page (ADR-0100); the modal-shell overrides that
+   used to cap the sheet at 52rem / 880px live on the compose page CSS
+   (`app-task-compose-page.css`) instead. */
 
 /* —— Header —— */
 .task-create-modal-header {

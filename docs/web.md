@@ -27,7 +27,11 @@ Vite + React client under `web/`. All `fetch` calls live in `web/src/api/`; resp
 | Path | Module | Notes |
 | --- | --- | --- |
 | `/` | `web/src/tasks/` | Task home — list (default) or board (`?view=board`) |
+| `/tasks/new` | `web/src/tasks/pages/TaskComposePage.tsx` | Create task (compose page; ADR-0100). Query: `project`, `draft`, `repository`, `worktree`, `lock_git`, `lock_project` |
+| `/tasks/:id/edit` | `web/src/tasks/pages/TaskComposePage.tsx` | Edit task |
 | `/templates` | `web/src/tasks/` | Saved task templates (search, batch instantiate) |
+| `/templates/new` | `web/src/tasks/pages/TaskComposePage.tsx` | Create template |
+| `/templates/:id/edit` | `web/src/tasks/pages/TaskComposePage.tsx` | Edit template |
 | `/drafts` | `web/src/tasks/` | Saved create-task drafts |
 | `/projects` | `web/src/projects/` | Project list |
 | `/projects/:id` | `web/src/projects/` | Project detail |
@@ -79,7 +83,7 @@ Create-task policy and hook composition live in [`web/src/tasks/create/`](../web
 5. `mapCreateFlowViewModel.ts` — flat public return shape for `useTasksApp`
 6. `hooks/useTaskCreateFlow.ts` — composer; shim at `web/src/tasks/hooks/useTaskCreateFlow.ts`
 
-Modal UI stays in `web/src/tasks/components/task-create-modal/` for V1. **`composeTarget`** (`task` | `template`) and **`composeOperation`** (`create` | `edit`) drive one modal for task create/edit and template save/edit. Templates list and batch create: `web/src/tasks/pages/TaskTemplatesPage.tsx` (`GET /task-templates`, `POST /task-templates/instantiate`). API client: `web/src/api/taskTemplates.ts`. Race contracts: `useTasksApp.test.tsx`.
+Compose UI is a **routed page** at `/tasks/new`, `/tasks/:id/edit`, `/templates/new`, `/templates/:id/edit` ([ADR-0100](./adr/ADR-0100-compose-page.md)). Layout: `web/src/tasks/components/task-compose/`. Form sections remain under `task-create-modal/` (shared fields). **`composeTarget`** (`task` | `template`) and **`composeOperation`** (`create` | `edit`) still drive one form for task create/edit and template save/edit. Templates list and batch create: `web/src/tasks/pages/TaskTemplatesPage.tsx`. Deep link `/?create=1&project=` redirects to `/tasks/new?project=`.
 
 ## Query policy
 

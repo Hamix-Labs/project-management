@@ -10,10 +10,21 @@ export async function waitForCreateTaskEnabled(dialog: HTMLElement) {
   });
 }
 
-export async function openNewTaskModal(user: ReturnType<typeof userEvent.setup>) {
+/** Opens create compose page from home and returns the page root. */
+export async function openNewTaskModal(
+  user: ReturnType<typeof userEvent.setup>,
+) {
   await user.click(screen.getByRole("button", { name: /\+?\s*new task/i }));
-  // Create-modal / TipTap is lazy; wait for the real dialog, not the chunk fallback.
-  return screen.findByRole("dialog", { name: /^new task$/i }, { timeout: 10_000 });
+  const heading = await screen.findByRole(
+    "heading",
+    { name: /^new task$/i },
+    { timeout: 10_000 },
+  );
+  const page = heading.closest(".task-compose-page");
+  if (!(page instanceof HTMLElement)) {
+    throw new Error("compose page root not found");
+  }
+  return page;
 }
 
 export async function choosePriorityInDialog(
