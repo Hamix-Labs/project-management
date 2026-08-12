@@ -69,15 +69,17 @@ See [ADR-0081](../adr/ADR-0081-hamix-managed-worktrees.md), [ADR-0040](../adr/AD
 
 ## File listing for `@`-mentions
 
-`GET /repo/files` returns every referenceable path under a worktree in one sorted list, so the prompt editor caches it and ranks matches in the browser instead of searching the filesystem per keystroke.
+`GET /repo/files` serves **cursor pages** of referenceable paths under a worktree (`limit` + `after`, optional `q`). The prompt editor **warms a client-side index** as soon as a repository (create → main worktree) or task worktree is selected: it fetches pages in the background, then ranks matches **locally** on every keystroke (IDE quick-open style — no per-character network). While the index is still warming, the popover shows progressive results and may use `q` as a correctness fallback.
 
-The list comes from `git ls-files --cached --others --exclude-standard`, which makes it **gitignore-aware without a hand-maintained exclusion list**: git applies nested `.gitignore` files, `.git/info/exclude`, and `core.excludesFile` itself. That matters beyond noise, because a mentioned file is inlined into the prompt sent to an agent — an ignored `.env` should not be offerable. `--cached` keeps tracked-but-ignored files listed, since a file already under version control is one the operator can legitimately reference.
+The underlying list comes from `git ls-files --cached --others --exclude-standard`, which makes it **gitignore-aware without a hand-maintained exclusion list**: git applies nested `.gitignore` files, `.git/info/exclude`, and `core.excludesFile` itself. That matters beyond noise, because a mentioned file is inlined into the prompt sent to an agent — an ignored `.env` should not be offerable. `--cached` keeps tracked-but-ignored files listed, since a file already under version control is one the operator can legitimately reference.
+
+The server keeps a short **TTL process-local cache** of the full sorted path list per worktree so warm page requests do not re-spawn `git ls-files` on every batch.
 
 A worktree that is not a git work tree (a plain registered directory, or a bare repository) falls back to a directory walk with the fixed skip list `/repo/search` uses, reported as `source: "walk"`. Ignore rules do not apply there.
 
-The listing is capped at 50 000 paths (`repo.MaxFileListPaths`), sized for the browser holding it in memory rather than for the filesystem. Past that the response sets `truncated` and the editor says the list is partial.
+`/repo/search` is unchanged and still serves the template repo-scope picker and other callers that need a capped walk.
 
-`/repo/search` is unchanged and still serves the template repo-scope picker and mention validation.
+**Create-time `@`:** the New Task form clears `worktree_id` (Hamix allocates a managed worktree after create). Mentions resolve against the selected repository’s **main** worktree for `/repo/*` and validation only — they do not bind the task to main.
 
 ## Worker and supervisor
 
