@@ -8,6 +8,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/gitwork"
 	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/repo"
+	draftassistcontract "github.com/AlexsanderHamir/Hamix/pkgs/draftassist/contract"
 	settingscontract "github.com/AlexsanderHamir/Hamix/pkgs/settings/contract"
 	composehandler "github.com/AlexsanderHamir/Hamix/pkgs/taskcompose/handler"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/postgres"
@@ -40,6 +41,9 @@ type Handler struct {
 
 	enqueueInstantiate composehandler.EnqueueInstantiateFunc
 	instantiateWorker  *instantiateWorker
+
+	draftAssistStore  draftassistcontract.Store
+	draftAssistRunner draftassistcontract.Runner
 }
 
 // NewHandler returns the task REST API and GET /events (SSE) when hub is non-nil.
@@ -127,5 +131,15 @@ func WithSchemaDriftReport(r postgres.SchemaDriftReport) HandlerOption {
 func WithGitAvailable(ok bool) HandlerOption {
 	return func(h *Handler) {
 		h.gitAvailable = ok
+	}
+}
+
+// WithDraftAssist wires the in-memory draft-assist store and runner
+// (ADR-0101). When omitted, /draft-assist/* routes are not registered.
+func WithDraftAssist(store draftassistcontract.Store, runner draftassistcontract.Runner) HandlerOption {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.WithDraftAssist")
+	return func(h *Handler) {
+		h.draftAssistStore = store
+		h.draftAssistRunner = runner
 	}
 }

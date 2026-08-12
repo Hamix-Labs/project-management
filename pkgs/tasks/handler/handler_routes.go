@@ -15,6 +15,7 @@ import (
 	taskcorehandler "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/handler"
 	taskcycleshandler "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/handler"
 	eventhandler "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/handler"
+	draftassisthandler "github.com/AlexsanderHamir/Hamix/pkgs/draftassist/handler"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 )
 
@@ -84,6 +85,12 @@ func (h *Handler) registerRoutes(m *http.ServeMux) {
 	taskcorehandler.Register(m, h.taskcoreDeps())
 	repohandler.Register(m, repohandler.Deps{Provider: h.repoProv})
 	runnershandler.Register(m, runnershandler.Deps{Settings: h.store})
+	if h.draftAssistStore != nil {
+		draftassisthandler.Register(m, draftassisthandler.Deps{
+			Store:  h.draftAssistStore,
+			Runner: h.draftAssistRunner,
+		})
+	}
 	h.registerMiscRoutes(m)
 }
 

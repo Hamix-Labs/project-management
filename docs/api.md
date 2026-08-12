@@ -111,6 +111,23 @@ Model semantics (tags, milestone, `depends_on`, gate, worker readiness): [data-m
 | GET | `/task-drafts/{id}` | Full draft with `payload` defaulted to `{}`. |
 | DELETE | `/task-drafts/{id}` | `204`. |
 
+### Draft assist (compose AI)
+
+In-memory prompt-assist sessions for the compose page (ADR-0101). Not part of the task SSE hub. Heartbeats are SSE comments every 3s while a run is active.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/draft-assist/ready` | `{ ready, runner: "fake"\|"missing", reason? }` |
+| POST | `/draft-assist/sessions` | Create session. Body `{ worktree_id?, snapshot }`. `201` `{ id, nonce, … }` |
+| GET | `/draft-assist/sessions/{id}` | Session + snapshot |
+| PUT | `/draft-assist/sessions/{id}/snapshot` | Replace form snapshot |
+| GET | `/draft-assist/sessions/{id}/events` | SSE: `session`, `status`, `token`, `tool`, `patch`, `error`, `done`. `Last-Event-ID` replay |
+| POST | `/draft-assist/sessions/{id}/runs` | **202** `{ run_id }` immediately. Body `{ user_message, snapshot? }` |
+| POST | `/draft-assist/sessions/{id}/runs/{runId}/cancel` | **202** cancelling |
+| DELETE | `/draft-assist/sessions/{id}` | `204` |
+
+See [domain/draft-assist.md](./domain/draft-assist.md).
+
 ### Task templates
 
 Named, durable task compose blueprints. Payload shape matches task create fields (title, prompt, status, priority, checklist, runner, project, schedule, tags, milestone, `depends_on`) plus optional template-only `function_inputs` (see [ADR-0088](./adr/ADR-0088-template-functions.md)). Never publishes on SSE for CRUD; instantiate accepts with **202** and publishes `task_created` per created task as each commit finishes (same enrichment as `POST /tasks`).
