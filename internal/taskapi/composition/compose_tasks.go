@@ -49,13 +49,27 @@ func (a *API) RequestTaskRetry(ctx context.Context, in taskcorestore.RequestRetr
 
 func (a *API) RequestTaskApprove(ctx context.Context, taskID string, by taskcoredomain.Actor) (*taskcoredomain.Task, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.RequestTaskApprove", "task_id", taskID)
-	updated, prev, err := a.taskcore.RequestTaskApprove(ctx, taskID, by)
+	cur, err := a.taskcore.Get(ctx, taskID)
+	if err != nil {
+		return nil, err
+	}
+	var updated *taskcoredomain.Task
+	var prev taskcoredomain.Status
+	if cur.Status == taskcoredomain.StatusReview {
+		if err := a.requireNonRootStackLayer(ctx, cur); err != nil {
+			return nil, err
+		}
+		updated, prev, err = a.taskcore.RequestTaskApproveStackLayer(ctx, taskID, by)
+	} else {
+		updated, prev, err = a.taskcore.RequestTaskApprove(ctx, taskID, by)
+	}
 	if err != nil {
 		return nil, err
 	}
 	if updated == nil {
 		return nil, nil
 	}
+	a.enrichTaskWorktreeRoot(ctx, updated)
 	if updated.Status == taskcoredomain.StatusDone && prev != taskcoredomain.StatusDone {
 		a.notifyUnblockedDependents(ctx, updated.ID)
 	}
@@ -80,6 +94,13 @@ func (a *API) RequestTaskPolish(ctx context.Context, in taskcorestore.RequestPol
 
 func (a *API) RequestTaskOpenPR(ctx context.Context, in taskcorestore.RequestOpenPRInput, by taskcoredomain.Actor) (*taskcoredomain.Task, error) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "tasks.store.RequestTaskOpenPR", "task_id", in.TaskID)
+	cur, err := a.taskcore.Get(ctx, in.TaskID)
+	if err != nil {
+		return nil, err
+	}
+	if err := a.requireWorktreeRootForOpenPR(ctx, cur); err != nil {
+		return nil, err
+	}
 	updated, prev, err := a.taskcore.RequestTaskOpenPR(ctx, in, by)
 	if err != nil {
 		return nil, err
@@ -87,6 +108,7 @@ func (a *API) RequestTaskOpenPR(ctx context.Context, in taskcorestore.RequestOpe
 	if updated == nil {
 		return nil, nil
 	}
+	a.enrichTaskWorktreeRoot(ctx, updated)
 	now := time.Now().UTC()
 	a.applyNotifyDecision(ctx, *updated, scheduling.DecideNotifyAfterReadyTransition(prev, updated, false, now))
 	return updated, nil
