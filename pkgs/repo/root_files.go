@@ -112,6 +112,7 @@ func (r *Root) FilesPage(ctx context.Context, q, after string, limit int) (FileP
 	}, nil
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure filter; ListFiles emits the operation-level trace."
 func filterPathsSubstring(paths []string, q string) []string {
 	needle := strings.ToLower(q)
 	out := make([]string, 0, len(paths)/8+1)
@@ -126,6 +127,7 @@ func filterPathsSubstring(paths []string, q string) []string {
 // pathCursorStart returns the index of the first path strictly after `after`
 // in a sorted slice (lexicographic). If after is missing, starts at 0 so a
 // stale cursor still returns a stable page rather than erroring.
+//funclogmeasure:skip category=hot-path reason="Pure cursor helper; ListFiles emits the operation-level trace."
 func pathCursorStart(paths []string, after string) int {
 	i := sort.Search(len(paths), func(i int) bool {
 		return paths[i] > after
