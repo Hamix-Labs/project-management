@@ -127,6 +127,7 @@ func filterPathsSubstring(paths []string, q string) []string {
 // pathCursorStart returns the index of the first path strictly after `after`
 // in a sorted slice (lexicographic). If after is missing, starts at 0 so a
 // stale cursor still returns a stable page rather than erroring.
+//
 //funclogmeasure:skip category=hot-path reason="Pure cursor helper; ListFiles emits the operation-level trace."
 func pathCursorStart(paths []string, after string) int {
 	i := sort.Search(len(paths), func(i int) bool {
