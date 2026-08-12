@@ -7,6 +7,7 @@ type Props = {
   editorKey: string;
   prompt: string;
   worktreeId: string;
+  repositoryId: string;
   onPromptChange: (v: string) => void;
 };
 
@@ -15,6 +16,7 @@ export function TaskCreateModalPromptSection({
   editorKey,
   prompt,
   worktreeId,
+  repositoryId,
   onPromptChange,
 }: Props) {
   return (
@@ -30,6 +32,12 @@ export function TaskCreateModalPromptSection({
         disabled={presentation.disabled}
         onPromptChange={onPromptChange}
         worktreeId={worktreeId.trim() || undefined}
+        repositoryId={
+          presentation.isTaskEdit
+            ? repositoryId.trim() || undefined
+            : repositoryId
+        }
+        preferRepositoryHint={!presentation.isTaskEdit}
       />
     </TaskCreateModalSection>
   );

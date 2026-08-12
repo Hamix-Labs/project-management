@@ -40,6 +40,16 @@ func TestParseFileMentions(t *testing.T) {
 			in:   `use @docs/file(1-2).md next`,
 			want: []Mention{{Path: "docs/file(1-2).md", RawStart: 4, RawEnd: 22}},
 		},
+		{
+			name: "html chip uses data-path not tag soup",
+			in:   `<p>see <span class="repo-file-chip" data-repo-file="true" data-path="x.go">@x.go</span> more</p>`,
+			want: []Mention{{Path: "x.go", RawStart: 7, RawEnd: 75}},
+		},
+		{
+			name: "html chip with line range attrs",
+			in:   `<span data-repo-file="true" data-path="web/a.ts" data-line-start="2" data-line-end="9">@web/a.ts(2-9)</span>`,
+			want: []Mention{{Path: "web/a.ts", StartLine: 2, EndLine: 9, HasRange: true, RawStart: 0, RawEnd: 87}},
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

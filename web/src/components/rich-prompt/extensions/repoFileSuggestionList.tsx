@@ -1,14 +1,23 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  EnterGlyph,
+  FileGlyph,
+  iconKindFor,
+  SearchGlyph,
+} from "./repoFileSuggestionGlyphs";
 
 export type RepoSuggestionItem = { path: string };
+
+const ROW_HEIGHT_PX = 36;
+const LIST_MAX_HEIGHT_PX = 280;
+const OVERSCAN = 6;
 
 type ListProps = {
   items: RepoSuggestionItem[];
   command: (item: RepoSuggestionItem) => void;
-  /** Live TipTap query after `@` — shown in the decorative search header. */
   query?: string;
-  /** Keyboard-selected row index (owned by the suggestion plugin). */
   selectedIndex?: number;
+  indexing?: boolean;
 };
 
 export function splitPath(path: string): [string, string] {
@@ -18,142 +27,56 @@ export function splitPath(path: string): [string, string] {
   return [normalized.slice(0, idx + 1), normalized.slice(idx + 1)];
 }
 
-type IconKind = "file" | "doc" | "config";
-
-function iconKindFor(path: string): IconKind {
-  const name = path.replace(/\\/g, "/").split("/").pop() ?? path;
-  if (/\.(md|mdc|txt|rst)$/i.test(name)) return "doc";
-  if (
-    name.startsWith(".") ||
-    /\.(json|ya?ml|toml|gitignore|editorconfig|lock)$/i.test(name)
-  ) {
-    return "config";
-  }
-  return "file";
-}
-
-function SearchGlyph() {
-  return (
-    <svg
-      className="mention-dropdown__glyph"
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <circle cx="11" cy="11" r="7" />
-      <path d="m20 20-3.5-3.5" />
-    </svg>
-  );
-}
-
-function FileGlyph({ kind }: { kind: IconKind }) {
-  if (kind === "doc") {
-    return (
-      <svg
-        className="mention-dropdown__glyph"
-        width="16"
-        height="16"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-        <path d="M14 2v6h6" />
-        <path d="M8 13h8" />
-        <path d="M8 17h6" />
-      </svg>
-    );
-  }
-  if (kind === "config") {
-    return (
-      <svg
-        className="mention-dropdown__glyph"
-        width="16"
-        height="16"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-      </svg>
-    );
-  }
-  return (
-    <svg
-      className="mention-dropdown__glyph"
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <path d="M14 2v6h6" />
-      <path d="M10 12h.01" />
-      <path d="M10 16h.01" />
-      <path d="M14 12h.01" />
-      <path d="M14 16h.01" />
-    </svg>
-  );
-}
-
-function EnterGlyph() {
-  return (
-    <svg
-      className="mention-dropdown__glyph"
-      width="12"
-      height="12"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M9 10h10v8" />
-      <path d="m15 14-4 4 4 4" />
-      <path d="M5 4v10a4 4 0 0 0 4 4h1" />
-    </svg>
-  );
-}
-
 export function RepoFileSuggestionList({
   items,
   command,
   query = "",
-  selectedIndex = 0,
+  selectedIndex = -1,
+  indexing = false,
 }: ListProps) {
-  const listRef = useRef<HTMLUListElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const [scrollTop, setScrollTop] = useState(0);
   const trimmedQuery = query.trim();
 
-  useEffect(() => {
-    const el = listRef.current?.querySelector<HTMLElement>(
-      `[data-index="${selectedIndex}"]`,
+  const viewportHeight = Math.min(
+    LIST_MAX_HEIGHT_PX,
+    Math.max(ROW_HEIGHT_PX, items.length * ROW_HEIGHT_PX || ROW_HEIGHT_PX),
+  );
+
+  const { start, end } = useMemo(() => {
+    const startIdx = Math.max(
+      0,
+      Math.floor(scrollTop / ROW_HEIGHT_PX) - OVERSCAN,
     );
-    // jsdom does not implement scrollIntoView.
-    if (el && typeof el.scrollIntoView === "function") {
-      el.scrollIntoView({ block: "nearest" });
+    const visible = Math.ceil(viewportHeight / ROW_HEIGHT_PX) + OVERSCAN * 2;
+    return {
+      start: startIdx,
+      end: Math.min(items.length, startIdx + visible),
+    };
+  }, [scrollTop, viewportHeight, items.length]);
+
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el || items.length === 0 || selectedIndex < 0) return;
+    const rowTop = selectedIndex * ROW_HEIGHT_PX;
+    const rowBottom = rowTop + ROW_HEIGHT_PX;
+    if (rowTop < el.scrollTop) {
+      el.scrollTop = rowTop;
+    } else if (rowBottom > el.scrollTop + el.clientHeight) {
+      el.scrollTop = rowBottom - el.clientHeight;
     }
-  }, [selectedIndex, items]);
+  }, [selectedIndex, items.length]);
+
+  const slice = items.slice(start, end);
+
+  let emptyMessage: string;
+  if (indexing && items.length === 0) {
+    emptyMessage = "Indexing repository files…";
+  } else if (trimmedQuery) {
+    emptyMessage = `No files match “${trimmedQuery}”`;
+  } else {
+    emptyMessage = "No matching files";
+  }
 
   return (
     <div className="mention-dropdown mention-dropdown--repo-files tiptap-suggestion-list">
@@ -171,55 +94,78 @@ export function RepoFileSuggestionList({
         <kbd className="mention-dropdown__at-kbd">@</kbd>
       </div>
 
-      <ul
+      <div
         ref={listRef}
         role="listbox"
         aria-label="Matching repository files"
-        className="mention-dropdown__list"
+        className="mention-dropdown__list mention-dropdown__list--virtual"
+        style={{ height: viewportHeight, overflowY: "auto" }}
+        onScroll={(e) => setScrollTop(e.currentTarget.scrollTop)}
       >
         {items.length === 0 ? (
-          <li className="mention-dropdown__empty" role="presentation">
-            {trimmedQuery
-              ? `No files match “${trimmedQuery}”`
-              : "No matching files"}
-          </li>
+          <div className="mention-dropdown__empty" role="presentation">
+            {emptyMessage}
+          </div>
         ) : (
-          items.map((item, i) => {
-            const [dir, name] = splitPath(item.path);
-            const active = i === selectedIndex;
-            return (
-              <li
-                key={item.path}
-                className={[
-                  "mention-option",
-                  "mention-option--repo-file",
-                  active ? "mention-option--active" : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-                role="option"
-                aria-selected={active}
-                data-index={i}
-              >
-                <button type="button" onClick={() => command(item)}>
-                  <FileGlyph kind={iconKindFor(item.path)} />
-                  <span className="mention-dropdown__path">
-                    {dir ? (
-                      <span className="mention-dropdown__dir">{dir}</span>
-                    ) : null}
-                    <span className="mention-dropdown__name">{name}</span>
-                  </span>
-                </button>
-              </li>
-            );
-          })
+          <ul
+            className="mention-dropdown__virtual-window"
+            style={{
+              height: items.length * ROW_HEIGHT_PX,
+              position: "relative",
+              margin: 0,
+              padding: 0,
+              listStyle: "none",
+            }}
+          >
+            {slice.map((item, offset) => {
+              const i = start + offset;
+              const [dir, name] = splitPath(item.path);
+              const active = i === selectedIndex;
+              return (
+                <li
+                  key={item.path}
+                  className={[
+                    "mention-option",
+                    "mention-option--repo-file",
+                    active ? "mention-option--active" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  role="option"
+                  aria-selected={active}
+                  data-index={i}
+                  style={{
+                    position: "absolute",
+                    top: i * ROW_HEIGHT_PX,
+                    left: 0,
+                    right: 0,
+                    height: ROW_HEIGHT_PX,
+                  }}
+                >
+                  <button type="button" onClick={() => command(item)}>
+                    <FileGlyph kind={iconKindFor(item.path)} />
+                    <span className="mention-dropdown__path">
+                      {dir ? (
+                        <span className="mention-dropdown__dir">{dir}</span>
+                      ) : null}
+                      <span className="mention-dropdown__name">{name}</span>
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
         )}
-      </ul>
+      </div>
 
       <div className="mention-dropdown__footer" aria-hidden="true">
-        <span>
-          <span className="mention-dropdown__footer-keys">↑↓</span> to navigate
-        </span>
+        {indexing ? (
+          <span>Indexing files…</span>
+        ) : (
+          <span>
+            <span className="mention-dropdown__footer-keys">↑↓</span> to navigate
+          </span>
+        )}
         <span className="mention-dropdown__footer-select">
           <EnterGlyph /> to select
         </span>

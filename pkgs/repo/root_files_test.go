@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 )
 
@@ -137,5 +138,49 @@ func TestRoot_Files_returns_sorted_paths(t *testing.T) {
 	}
 	if !slices.IsSorted(listing.Paths) {
 		t.Fatalf("paths are not sorted: %v", listing.Paths)
+	}
+}
+
+func TestRoot_FilesPage_cursor_and_filter(t *testing.T) {
+	resetFileListCacheForTest()
+	dir := t.TempDir()
+	for _, rel := range []string{"a.go", "b.go", "c_test.go", "readme.md"} {
+		writeFile(t, dir, rel, "x")
+	}
+	r, err := OpenRoot(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	page1, err := r.FilesPage(context.Background(), "", "", 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(page1.Paths) != 2 || !page1.HasMore || page1.NextAfter == "" {
+		t.Fatalf("page1 = %+v", page1)
+	}
+
+	page2, err := r.FilesPage(context.Background(), "", page1.NextAfter, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(page2.Paths) != 2 {
+		t.Fatalf("page2 paths = %v", page2.Paths)
+	}
+	if page2.HasMore {
+		t.Fatalf("expected no more after second page: %+v", page2)
+	}
+
+	filtered, err := r.FilesPage(context.Background(), "test", "", 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Contains(filtered.Paths, "c_test.go") {
+		t.Fatalf("filter missed c_test.go: %v", filtered.Paths)
+	}
+	for _, p := range filtered.Paths {
+		if !strings.Contains(strings.ToLower(p), "test") {
+			t.Fatalf("unfiltered path %q in %v", p, filtered.Paths)
+		}
 	}
 }

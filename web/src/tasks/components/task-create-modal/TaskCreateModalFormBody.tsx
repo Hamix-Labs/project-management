@@ -70,6 +70,7 @@ export function TaskCreateModalFormBody({
         editorKey={editorKey}
         prompt={prompt.prompt}
         worktreeId={git.worktreeId}
+        repositoryId={git.repositoryId}
         onPromptChange={prompt.onPromptChange}
       />
 

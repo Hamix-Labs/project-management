@@ -7,6 +7,8 @@ type Props = {
   disabled: boolean;
   onPromptChange: (v: string) => void;
   worktreeId?: string;
+  repositoryId?: string;
+  preferRepositoryHint?: boolean;
 };
 
 export function TaskCreateModalPromptFields({
@@ -16,6 +18,8 @@ export function TaskCreateModalPromptFields({
   disabled,
   onPromptChange,
   worktreeId,
+  repositoryId,
+  preferRepositoryHint = false,
 }: Props) {
   return (
     <TaskComposePromptField
@@ -25,6 +29,8 @@ export function TaskCreateModalPromptFields({
       disabled={disabled}
       onPromptChange={onPromptChange}
       worktreeId={worktreeId}
+      repositoryId={repositoryId}
+      preferRepositoryHint={preferRepositoryHint}
       hideLabel
     />
   );

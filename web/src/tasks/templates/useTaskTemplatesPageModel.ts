@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { getTaskTemplate, listGlobalGitWorktrees, listTaskTemplates } from "@/api";
+import { getTaskTemplate, listTaskTemplates } from "@/api";
 import { TASK_TIMINGS } from "@/constants/tasks";
 import { useDelayedTrue } from "@/lib/useDelayedTrue";
+import { resolveMentionWorktreeId } from "@/lib/resolveMentionWorktreeId";
 import { useDebouncedTrimmedValue } from "@/hooks/useDebouncedTrimmedValue";
 import { useOptionalToast } from "@/shared/toast/ToastProvider";
 import type { TaskTemplateSummary, TemplateFunctionBinding } from "@/types";
@@ -26,17 +27,10 @@ import {
 async function resolveWorktreeIdForTemplate(detail: {
   payload: { worktree_id?: string; repository_id?: string };
 }): Promise<string | null> {
-  const fromPayload = detail.payload.worktree_id?.trim();
-  if (fromPayload) return fromPayload;
-  const repoId = detail.payload.repository_id?.trim();
-  if (!repoId) return null;
-  try {
-    const trees = await listGlobalGitWorktrees(repoId);
-    const main = trees.find((wt) => wt.is_main);
-    return main?.id ?? null;
-  } catch {
-    return null;
-  }
+  return resolveMentionWorktreeId({
+    worktreeId: detail.payload.worktree_id,
+    repositoryId: detail.payload.repository_id,
+  });
 }
 
 type TaskTemplatesApp = ReturnType<typeof useTasksAppContext>;
