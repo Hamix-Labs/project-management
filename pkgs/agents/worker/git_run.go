@@ -105,6 +105,10 @@ func (w *Worker) abortRunningFromGitPrep(ctx context.Context, taskID string, pre
 
 //funclogmeasure:skip category=delegate-already-logs reason="Orchestrator; resolveTaskGitBinding and prepareGitRun emit operation traces."
 func (w *Worker) runWithGitPrep(ctx context.Context, task *taskcoredomain.Task, run func()) {
+	if err := w.store.EnsureTaskStackLayer(ctx, task.ID); err != nil {
+		w.abortRunningFromGitPrep(ctx, task.ID, err)
+		return
+	}
 	binding, err := w.resolveTaskGitBinding(ctx, task)
 	if err != nil {
 		w.abortRunningFromGitPrep(ctx, task.ID, err)

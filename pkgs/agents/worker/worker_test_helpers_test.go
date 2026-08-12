@@ -16,6 +16,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/runner/runnerfake"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents/worker"
+	"github.com/AlexsanderHamir/Hamix/pkgs/gitstack"
 	taskcoredomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/domain"
 	cyclesdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/domain"
 	taskeventsdomain "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/domain"
@@ -37,7 +38,7 @@ type harness struct {
 
 func newHarness(t *testing.T) *harness {
 	t.Helper()
-	st := composition.NewAPI(tasktestdb.OpenSQLite(t))
+	st := composition.NewAPI(tasktestdb.OpenSQLite(t)).WithGitStackCLI(gitstack.Nop{})
 	q := agents.NewMemoryQueue(8)
 	st.SetReadyTaskNotifier(q)
 	wtID, dir := seedWorkerTestGit(t, st)

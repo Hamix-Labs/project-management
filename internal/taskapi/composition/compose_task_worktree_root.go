@@ -59,19 +59,25 @@ func (a *API) resolveWorktreeRootTaskID(ctx context.Context, worktreeID string) 
 	if err != nil || wt.IsMain {
 		return nil
 	}
-	br, err := a.git.GetGitBranchByID(ctx, wt.BranchID)
-	if err != nil {
-		return nil
-	}
-	if !strings.HasPrefix(br.Name, "hamix/task-") {
-		return nil
+	// Prefer worktree name: allocate stamps the root layer branch there and it
+	// stays stable when active branch_id moves across stack layers (ADR-0097).
+	rootBranch := strings.TrimSpace(wt.Name)
+	if !strings.HasPrefix(rootBranch, "hamix/task-") {
+		br, brErr := a.git.GetGitBranchByID(ctx, wt.BranchID)
+		if brErr != nil {
+			return nil
+		}
+		rootBranch = br.Name
+		if !strings.HasPrefix(rootBranch, "hamix/task-") {
+			return nil
+		}
 	}
 	family, err := a.taskcore.ListFlat(ctx, 200, 0, &taskcorestore.ListFilter{WorktreeID: &worktreeID})
 	if err != nil {
 		return nil
 	}
 	for i := range family {
-		if gitinventorystore.TaskBranchName(family[i].ID) == br.Name {
+		if gitinventorystore.TaskBranchName(family[i].ID) == rootBranch {
 			id := family[i].ID
 			return &id
 		}
