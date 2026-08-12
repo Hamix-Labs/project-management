@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	draftassisthandler "github.com/AlexsanderHamir/Hamix/pkgs/draftassist/handler"
 	gitinventoryhandler "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/handler"
 	projecthandler "github.com/AlexsanderHamir/Hamix/pkgs/projects/handler"
 	repohandler "github.com/AlexsanderHamir/Hamix/pkgs/repo/handler"
@@ -15,7 +16,6 @@ import (
 	taskcorehandler "github.com/AlexsanderHamir/Hamix/pkgs/taskcore/handler"
 	taskcycleshandler "github.com/AlexsanderHamir/Hamix/pkgs/taskcycles/handler"
 	eventhandler "github.com/AlexsanderHamir/Hamix/pkgs/taskevents/handler"
-	draftassisthandler "github.com/AlexsanderHamir/Hamix/pkgs/draftassist/handler"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/realtime"
 )
 
