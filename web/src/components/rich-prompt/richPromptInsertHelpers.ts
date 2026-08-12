@@ -8,6 +8,7 @@ export type PendingFileInsert = {
 
 export type RepoHintFlags = {
   showSelectWorktreeHint: boolean;
+  showSelectRepositoryHint: boolean;
   showRepoMisconfigHint: boolean;
   workspaceBroken: boolean;
   fileSearchFailedWhileAvailable: boolean;
@@ -40,28 +41,49 @@ export function computeRepoHintFlags(
   workspaceProbe: RepoWorkspaceProbe | "pending",
   fileSearchUnavailable: boolean,
   showFileSearchSpinner: boolean,
-  worktreeId?: string,
+  options: {
+    /** Resolved mention worktree id (may be "" while resolving / unset). */
+    mentionWorktreeId?: string;
+    /** True when the editor participates in git-scoped @ mentions. */
+    gitScoped: boolean;
+    preferRepositoryHint?: boolean;
+    repositoryId?: string;
+  },
 ): RepoHintFlags {
-  const worktreeScoped = worktreeId !== undefined;
-  const worktreeSelected = worktreeId?.trim() !== "";
+  const mentionSelected = options.mentionWorktreeId?.trim() !== "";
   const probeDone = workspaceProbe !== "pending";
+  const preferRepositoryHint = options.preferRepositoryHint === true;
+  const repositorySelected = options.repositoryId?.trim() !== "";
+
+  const showSelectRepositoryHint =
+    options.gitScoped &&
+    preferRepositoryHint &&
+    probeDone &&
+    !repositorySelected &&
+    !mentionSelected;
+
   const showSelectWorktreeHint =
-    worktreeScoped && probeDone && !worktreeSelected;
+    options.gitScoped &&
+    !preferRepositoryHint &&
+    probeDone &&
+    !mentionSelected;
+
   const showRepoMisconfigHint =
-    worktreeScoped &&
-    worktreeSelected &&
+    options.gitScoped &&
+    mentionSelected &&
     probeDone &&
     (workspaceProbe.state === "unavailable" ||
       workspaceProbe.state === "broken" ||
       (workspaceProbe.state === "available" && fileSearchUnavailable));
   const showRepoUnknownHint =
-    worktreeScoped &&
-    worktreeSelected &&
+    options.gitScoped &&
+    mentionSelected &&
     probeDone &&
     workspaceProbe.state === "unknown";
 
   return {
     showSelectWorktreeHint,
+    showSelectRepositoryHint,
     showRepoMisconfigHint,
     workspaceBroken:
       workspaceProbe !== "pending" && workspaceProbe.state === "broken",

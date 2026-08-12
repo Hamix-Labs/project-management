@@ -4,6 +4,7 @@ import Placeholder from "@tiptap/extension-placeholder";
 import StarterKit from "@tiptap/starter-kit";
 import { waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { clearRepoFileIndex } from "@/lib/repoFileIndex";
 import { RepoFileMention } from "./repoFileMention";
 import { RepoFileSuggestion } from "./repoFileSuggestion";
 import { GIT_TEST_WORKTREE_ID } from "@/test/handlers/git";
@@ -12,25 +13,32 @@ const suggestionOptions = {
   getWorktreeId: () => GIT_TEST_WORKTREE_ID,
 };
 
+function filesPageResponse(paths: string[], status = 200) {
+  return new Response(
+    JSON.stringify({ paths, has_more: false, source: "git" }),
+    {
+      status,
+      headers: { "Content-Type": "application/json" },
+    },
+  );
+}
+
 describe("RepoFileSuggestion", () => {
   beforeEach(() => {
+    clearRepoFileIndex();
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({ paths: ["a/b.go"] }), {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        }),
-      ),
+      vi.fn().mockResolvedValue(filesPageResponse(["a/b.go"])),
     );
   });
 
   afterEach(() => {
+    clearRepoFileIndex();
     vi.unstubAllGlobals();
   });
 
-  it("invokes onRepoUnavailable when /repo/search returns 503", async () => {
-    vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 503 }));
+  it("invokes onRepoUnavailable when /repo/files returns 503", async () => {
+    vi.mocked(fetch).mockResolvedValue(new Response(null, { status: 503 }));
     const onRepoUnavailable = vi.fn();
     const editor = new Editor({
       extensions: [
@@ -46,8 +54,8 @@ describe("RepoFileSuggestion", () => {
     editor.destroy();
   });
 
-  it("does not invoke onRepoUnavailable when fetch throws (transient error)", async () => {
-    vi.mocked(fetch).mockRejectedValueOnce(new Error("network"));
+  it("invokes onRepoUnavailable when index warm fetch throws", async () => {
+    vi.mocked(fetch).mockRejectedValue(new Error("network"));
     const onRepoUnavailable = vi.fn();
     const editor = new Editor({
       extensions: [
@@ -59,18 +67,11 @@ describe("RepoFileSuggestion", () => {
       content: "<p></p>",
     });
     editor.chain().insertContent("@").run();
-    await waitFor(() => expect(vi.mocked(fetch)).toHaveBeenCalled());
-    vi.useFakeTimers();
-    try {
-      await vi.advanceTimersByTimeAsync(30);
-    } finally {
-      vi.useRealTimers();
-    }
-    expect(onRepoUnavailable).not.toHaveBeenCalled();
+    await waitFor(() => expect(onRepoUnavailable).toHaveBeenCalled());
     editor.destroy();
   });
 
-  it("invokes onRepoAvailable when search succeeds", async () => {
+  it("invokes onRepoAvailable when file index warm succeeds", async () => {
     const onRepoAvailable = vi.fn();
     const editor = new Editor({
       extensions: [

@@ -8,7 +8,7 @@ import { useRichPromptEditorController } from "./useRichPromptEditorController";
 
 /** Rich initial prompt (TipTap) with @ file suggestions scoped to the task worktree. */
 export function RichPromptEditor(props: RichPromptEditorProps) {
-  const { id, disabled, worktreeId } = props;
+  const { id, disabled } = props;
   const {
     editor,
     pendingInsert,
@@ -17,6 +17,7 @@ export function RichPromptEditor(props: RichPromptEditorProps) {
     insertPathOnly,
     insertWithRange,
     repoHints,
+    mentionWorktreeId,
   } = useRichPromptEditorController(props);
 
   return (
@@ -28,7 +29,7 @@ export function RichPromptEditor(props: RichPromptEditorProps) {
           id={id}
           pendingInsert={pendingInsert}
           disabled={disabled}
-          worktreeId={worktreeId}
+          worktreeId={mentionWorktreeId || undefined}
           rangeWarning={rangeWarning}
           onClose={dismissPendingInsert}
           onInsertWithRange={insertWithRange}
@@ -37,6 +38,7 @@ export function RichPromptEditor(props: RichPromptEditorProps) {
       ) : null}
       <RichPromptRepoHints
         showSelectWorktreeHint={repoHints.showSelectWorktreeHint}
+        showSelectRepositoryHint={repoHints.showSelectRepositoryHint}
         showRepoMisconfigHint={repoHints.showRepoMisconfigHint}
         workspaceBroken={repoHints.workspaceBroken}
         fileSearchFailedWhileAvailable={

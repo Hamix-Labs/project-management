@@ -8,6 +8,9 @@ type Props = {
   disabled: boolean;
   onPromptChange: (v: string) => void;
   worktreeId?: string;
+  repositoryId?: string;
+  /** Create flow: hint asks for a repository when none is selected. */
+  preferRepositoryHint?: boolean;
   /** When true, the section header owns the label — omit the field label. */
   hideLabel?: boolean;
 };
@@ -19,6 +22,8 @@ export function TaskComposePromptField({
   disabled,
   onPromptChange,
   worktreeId,
+  repositoryId,
+  preferRepositoryHint = false,
   hideLabel = false,
 }: Props) {
   const promptId = `${idsPrefix}-prompt`;
@@ -43,6 +48,8 @@ export function TaskComposePromptField({
           disabled={disabled}
           placeholder="Describe the task in detail. Type @ to mention a repo file…"
           worktreeId={worktreeId}
+          repositoryId={repositoryId}
+          preferRepositoryHint={preferRepositoryHint}
         />
       </div>
     </div>

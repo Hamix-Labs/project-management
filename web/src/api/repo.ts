@@ -1,4 +1,5 @@
 import { apiErrorFromResponse, fetchWithTimeout } from "./shared";
+import { fetchRepoFilesPage } from "./repoFiles";
 
 /** Match pkgs/tasks/handler/repo_handlers.go and docs/api.md (abuse guards). */
 export const maxRepoPathQueryBytes = 4096;
@@ -60,8 +61,8 @@ export type RepoWorkspaceProbe =
   | { state: "unknown" };
 
 /**
- * Lightweight check: can `/repo/search` resolve the given task worktree?
- * Uses an empty `q` so the handler opens the worktree without walking paths.
+ * Lightweight check: can `/repo/files` resolve the given task worktree?
+ * Uses limit=1 so the handler opens the worktree without shipping a full page.
  */
 export async function probeWorktreeRepo(
   worktreeId: string,
@@ -72,11 +73,12 @@ export async function probeWorktreeRepo(
     return { state: "unavailable" };
   }
   try {
-    const paths = await searchRepoFiles("", {
+    const page = await fetchRepoFilesPage({
       worktreeId: id,
+      limit: 1,
       signal: options?.signal,
     });
-    if (paths === null) {
+    if (page === null) {
       return { state: "unavailable" };
     }
     return { state: "available" };

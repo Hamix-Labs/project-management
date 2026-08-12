@@ -1,5 +1,6 @@
 type Props = {
   showSelectWorktreeHint: boolean;
+  showSelectRepositoryHint?: boolean;
   showRepoMisconfigHint: boolean;
   workspaceBroken: boolean;
   fileSearchFailedWhileAvailable: boolean;
@@ -10,6 +11,7 @@ type Props = {
 /** Status copy under the rich prompt when repo / @ search is misconfigured or busy. */
 export function RichPromptRepoHints({
   showSelectWorktreeHint,
+  showSelectRepositoryHint = false,
   showRepoMisconfigHint,
   workspaceBroken,
   fileSearchFailedWhileAvailable,
@@ -18,6 +20,11 @@ export function RichPromptRepoHints({
 }: Props) {
   return (
     <>
+      {showSelectRepositoryHint ? (
+        <p className="mention-repo-hint" role="status">
+          Select a repository above to enable <code>@file</code> mentions.
+        </p>
+      ) : null}
       {showSelectWorktreeHint ? (
         <p className="mention-repo-hint" role="status">
           Select a worktree above to enable <code>@file</code> mentions.

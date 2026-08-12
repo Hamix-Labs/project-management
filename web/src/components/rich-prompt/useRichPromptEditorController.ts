@@ -6,6 +6,9 @@ import {
   looksLikeStoredHtml,
   plainTextToInitialHtml,
 } from "@/lib/promptFormat";
+import { useResolvedMentionWorktreeId } from "@/hooks/useResolvedMentionWorktreeId";
+import { useRepoFileIndex } from "@/hooks/useRepoFileIndex";
+import { clearRepoFileIndex } from "@/lib/repoFileIndex";
 import type { RepoFileSuggestionOptions } from "./extensions/repoFileSuggestion";
 import { buildRichPromptExtensions } from "./richPromptExtensions";
 import {
@@ -30,8 +33,20 @@ export function useRichPromptEditorController({
   disabled,
   placeholder,
   worktreeId,
+  repositoryId,
+  preferRepositoryHint = false,
 }: RichPromptEditorProps) {
-  const workspaceProbe = useRepoWorkspaceProbe(worktreeId);
+  const gitScoped = worktreeId !== undefined || repositoryId !== undefined;
+  const mentionWorktreeId = useResolvedMentionWorktreeId(
+    worktreeId,
+    repositoryId,
+  );
+
+  useRepoFileIndex(mentionWorktreeId);
+
+  const workspaceProbe = useRepoWorkspaceProbe(
+    gitScoped ? mentionWorktreeId : undefined,
+  );
   const [fileSearchUnavailable, setFileSearchUnavailable] = useState(false);
   const [fileSuggestBusy, setFileSuggestBusy] = useState(false);
   const [pendingInsert, setPendingInsert] = useState<PendingFileInsert | null>(
@@ -49,14 +64,23 @@ export function useRichPromptEditorController({
     [],
   );
 
-  const worktreeIdRef = useRef(worktreeId);
+  const worktreeIdRef = useRef(mentionWorktreeId);
   useEffect(() => {
-    worktreeIdRef.current = worktreeId;
-  }, [worktreeId]);
+    worktreeIdRef.current = mentionWorktreeId;
+  }, [mentionWorktreeId]);
 
   useEffect(() => {
     setFileSearchUnavailable(false);
-  }, [worktreeId]);
+  }, [mentionWorktreeId]);
+
+  useEffect(() => {
+    const idToClear = mentionWorktreeId;
+    return () => {
+      if (idToClear.trim() !== "") {
+        clearRepoFileIndex(idToClear);
+      }
+    };
+  }, [mentionWorktreeId]);
 
   const repoOpts = useMemo<RepoFileSuggestionOptions>(
     () => ({
@@ -64,7 +88,10 @@ export function useRichPromptEditorController({
       onRepoAvailable: () => setFileSearchUnavailable(false),
       onSuggestFetchChange: setFileSuggestBusy,
       onFilePicked,
-      getWorktreeId: () => worktreeIdRef.current,
+      getWorktreeId: () => {
+        const id = worktreeIdRef.current.trim();
+        return id !== "" ? id : undefined;
+      },
     }),
     [onFilePicked],
   );
@@ -74,10 +101,6 @@ export function useRichPromptEditorController({
     [placeholder, repoOpts],
   );
 
-  // TipTap 3 + React StrictMode: sync create during render leaves a destroyed
-  // editor whose `.commands` getter throws on the remount effect pass.
-  // Seed content from the controlled value so an empty first paint cannot
-  // onChange-wipe a hydrated prompt (template/task edit).
   const editor = useEditor({
     immediatelyRender: false,
     extensions,
@@ -125,7 +148,12 @@ export function useRichPromptEditorController({
     workspaceProbe,
     fileSearchUnavailable,
     showFileSearchSpinner,
-    worktreeId,
+    {
+      gitScoped,
+      mentionWorktreeId: gitScoped ? mentionWorktreeId : undefined,
+      preferRepositoryHint,
+      repositoryId,
+    },
   );
 
   const insertPathOnly = useCallback(() => {
@@ -180,5 +208,6 @@ export function useRichPromptEditorController({
     insertPathOnly,
     insertWithRange,
     repoHints,
+    mentionWorktreeId,
   };
 }

@@ -191,29 +191,32 @@ describe("probeWorktreeRepo", () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
-  it("returns available when search succeeds", async () => {
+  it("returns available when /repo/files succeeds", async () => {
     vi.mocked(fetch).mockResolvedValue(
-      new Response(JSON.stringify({ paths: [] }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      }),
+      new Response(
+        JSON.stringify({ paths: [], has_more: false, source: "git" }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        },
+      ),
     );
     await expect(probeWorktreeRepo("wt-1")).resolves.toEqual({
       state: "available",
     });
-    expect(String(vi.mocked(fetch).mock.calls[0]?.[0])).toContain(
-      "worktree_id=wt-1",
-    );
+    const url = String(vi.mocked(fetch).mock.calls[0]?.[0]);
+    expect(url).toContain("/repo/files?");
+    expect(url).toContain("worktree_id=wt-1");
   });
 
-  it("returns unavailable when search responds with 409", async () => {
+  it("returns unavailable when /repo/files responds with 409", async () => {
     vi.mocked(fetch).mockResolvedValue(new Response("", { status: 409 }));
     await expect(probeWorktreeRepo("wt-1")).resolves.toEqual({
       state: "unavailable",
     });
   });
 
-  it("returns unknown when search throws", async () => {
+  it("returns unknown when /repo/files throws", async () => {
     vi.mocked(fetch).mockRejectedValue(new Error("down"));
     await expect(probeWorktreeRepo("wt-1")).resolves.toEqual({
       state: "unknown",
