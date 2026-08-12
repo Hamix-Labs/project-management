@@ -31,7 +31,7 @@ export function RepoFileSuggestionList({
   items,
   command,
   query = "",
-  selectedIndex = 0,
+  selectedIndex = -1,
   indexing = false,
 }: ListProps) {
   const listRef = useRef<HTMLDivElement>(null);
@@ -57,7 +57,7 @@ export function RepoFileSuggestionList({
 
   useEffect(() => {
     const el = listRef.current;
-    if (!el || items.length === 0) return;
+    if (!el || items.length === 0 || selectedIndex < 0) return;
     const rowTop = selectedIndex * ROW_HEIGHT_PX;
     const rowBottom = rowTop + ROW_HEIGHT_PX;
     if (rowTop < el.scrollTop) {

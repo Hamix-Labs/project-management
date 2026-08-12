@@ -66,6 +66,22 @@ describe("RepoFileSuggestionList", () => {
     expect(options[1]).toHaveClass("mention-option--active");
   });
 
+  it("does not highlight any row when selectedIndex is unset", () => {
+    render(
+      <RepoFileSuggestionList
+        items={[
+          { path: ".codegraph/.gitignore" },
+          { path: ".cursor/install.sh" },
+        ]}
+        command={vi.fn()}
+      />,
+    );
+    for (const option of screen.getAllByRole("option")) {
+      expect(option).toHaveAttribute("aria-selected", "false");
+      expect(option).not.toHaveClass("mention-option--active");
+    }
+  });
+
   it("invokes command when a row is clicked", async () => {
     const user = userEvent.setup();
     const command = vi.fn();

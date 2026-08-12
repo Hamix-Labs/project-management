@@ -36,7 +36,8 @@ export function createRepoFileSuggestionRender(deps: RenderDeps) {
     RepoSuggestionItem,
     RepoSuggestionItem
   > | null = null;
-  let selectedIndex = 0;
+  // -1 = no keyboard highlight (mouse hover alone). Do not default to row 0.
+  let selectedIndex = -1;
   let lastQuery = "";
   let unsubIndex: (() => void) | null = null;
   let indexing = false;
@@ -63,7 +64,7 @@ export function createRepoFileSuggestionRender(deps: RenderDeps) {
       onUnavailable();
       latestProps = { ...latestProps, items: [] };
       setLastItems([]);
-      selectedIndex = 0;
+      selectedIndex = -1;
       indexing = false;
       component?.updateProps(listProps(latestProps, selectedIndex, false));
       return;
@@ -72,9 +73,11 @@ export function createRepoFileSuggestionRender(deps: RenderDeps) {
     indexing = next.indexing;
     latestProps = { ...latestProps, items: next.items };
     setLastItems(next.items);
-    const max = Math.max(0, next.items.length - 1);
-    selectedIndex = Math.min(selectedIndex, max);
-    if (next.items.length === 0) selectedIndex = 0;
+    if (next.items.length === 0 || selectedIndex < 0) {
+      selectedIndex = -1;
+    } else {
+      selectedIndex = Math.min(selectedIndex, next.items.length - 1);
+    }
     component?.updateProps(listProps(latestProps, selectedIndex, indexing));
     if (next.items.length > 0 || snap.status === "ready") {
       onAvailable();
@@ -90,7 +93,7 @@ export function createRepoFileSuggestionRender(deps: RenderDeps) {
     },
     onStart(props: SuggestionProps<RepoSuggestionItem, RepoSuggestionItem>) {
       latestProps = props;
-      selectedIndex = 0;
+      selectedIndex = -1;
       lastQuery = props.query;
       const wt = getWorktreeId?.()?.trim();
       if (wt) {
@@ -126,13 +129,13 @@ export function createRepoFileSuggestionRender(deps: RenderDeps) {
     onUpdate(props: SuggestionProps<RepoSuggestionItem, RepoSuggestionItem>) {
       latestProps = props;
       if (props.query !== lastQuery) {
-        selectedIndex = 0;
+        selectedIndex = -1;
         lastQuery = props.query;
+      } else if (props.items.length === 0 || selectedIndex < 0) {
+        selectedIndex = -1;
       } else {
-        const max = Math.max(0, props.items.length - 1);
-        selectedIndex = Math.min(selectedIndex, max);
+        selectedIndex = Math.min(selectedIndex, props.items.length - 1);
       }
-      if (props.items.length === 0) selectedIndex = 0;
       const wt = getWorktreeId?.()?.trim();
       indexing = wt ? itemsFromIndex(wt, props.query).indexing : false;
       component?.updateProps(listProps(props, selectedIndex, indexing));
@@ -165,13 +168,15 @@ export function createRepoFileSuggestionRender(deps: RenderDeps) {
       }
       if (props.event.key === "ArrowUp") {
         props.event.preventDefault();
-        selectedIndex = Math.max(selectedIndex - 1, 0);
+        // From no selection, ↑ stays clear; from row 0, ↑ clears again.
+        selectedIndex = selectedIndex <= 0 ? -1 : selectedIndex - 1;
         component?.updateProps(
           listProps(latestProps, selectedIndex, indexing),
         );
         return true;
       }
       if (props.event.key === "Enter") {
+        if (selectedIndex < 0) return false;
         const item = latestProps.items[selectedIndex];
         if (!item) return false;
         props.event.preventDefault();
@@ -185,7 +190,7 @@ export function createRepoFileSuggestionRender(deps: RenderDeps) {
       unsubIndex?.();
       unsubIndex = null;
       setLastItems([]);
-      selectedIndex = 0;
+      selectedIndex = -1;
       setFetchBusy(false);
       popup?.destroy();
       component?.destroy();
