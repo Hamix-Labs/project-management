@@ -40,10 +40,13 @@ type MemoryStore struct {
 }
 
 // NewMemoryStore constructs an empty store.
+//
+//funclogmeasure:skip category=hot-path reason="Constructor; mutating methods emit operation traces."
 func NewMemoryStore() *MemoryStore {
 	return &MemoryStore{sessions: make(map[string]*sessionState)}
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure id helper without I/O beyond crypto/rand."
 func newID() string {
 	var b [16]byte
 	_, _ = rand.Read(b[:])
@@ -165,6 +168,8 @@ func (s *MemoryStore) StartRun(ctx context.Context, id string, in contract.RunIn
 }
 
 // BindRunContext stores a cancel func derived from StartRun's parent; called by handler.
+//
+//funclogmeasure:skip category=hot-path reason="Internal cancel wiring; CreateRun emits the operation trace."
 func (s *MemoryStore) BindRunCancel(sessionID, runID string, cancel context.CancelFunc) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -212,6 +217,7 @@ func (s *MemoryStore) FinishRun(_ context.Context, sessionID, runID string) erro
 	return nil
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure accessor; CreateRun/CompleteRun emit operation traces."
 func (s *MemoryStore) RunActive(_ context.Context, sessionID string) (bool, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -222,6 +228,7 @@ func (s *MemoryStore) RunActive(_ context.Context, sessionID string) (bool, erro
 	return st.activeRun != "", nil
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure accessor; CreateRun/CompleteRun emit operation traces."
 func (s *MemoryStore) ActiveRunID(sessionID string) (string, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

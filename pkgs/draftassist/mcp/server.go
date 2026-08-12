@@ -23,6 +23,8 @@ type BindFile struct {
 }
 
 // LoadBind reads and validates a draft-assist bind file.
+//
+//funclogmeasure:skip category=hot-path reason="Bind-file parse helper; host emits operation traces."
 func LoadBind(path string) (*BindFile, error) {
 	raw, err := os.ReadFile(strings.TrimSpace(path))
 	if err != nil {
@@ -49,6 +51,8 @@ type ToolHost struct {
 }
 
 // DefaultTools registers prompt-write and read tools on the MCP server.
+//
+//funclogmeasure:skip category=hot-path reason="Tool table wiring; tool handlers emit traces when executed."
 func RegisterTools(server *mcp.Server, host *ToolHost) {
 	type emptyIn struct{}
 	mcp.AddTool(server, &mcp.Tool{
@@ -116,9 +120,61 @@ func RegisterTools(server *mcp.Server, host *ToolHost) {
 		})
 		return nil, map[string]string{"status": "ok"}, nil
 	})
+
+	type searchRepoIn struct {
+		Query string `json:"query"`
+		Limit int    `json:"limit,omitempty"`
+	}
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "hamix.draft_search_repo",
+		Description: "Search the bound worktree for paths matching a query (read-only).",
+	}, func(_ context.Context, _ *mcp.CallToolRequest, in searchRepoIn) (*mcp.CallToolResult, map[string]any, error) {
+		// Worktree crawl is wired when the SDK sidecar binds cwd (Plan 3).
+		_ = in
+		return nil, map[string]any{"matches": []any{}, "note": "repo search deferred to sidecar cwd"}, nil
+	})
+
+	type readFileIn struct {
+		Path string `json:"path"`
+	}
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "hamix.draft_read_file",
+		Description: "Read a file from the bound worktree (read-only).",
+	}, func(_ context.Context, _ *mcp.CallToolRequest, in readFileIn) (*mcp.CallToolResult, map[string]string, error) {
+		if strings.TrimSpace(in.Path) == "" {
+			return nil, nil, fmt.Errorf("%w: path required", domain.ErrInvalidInput)
+		}
+		return nil, nil, fmt.Errorf("%w: draft_read_file requires sidecar workspace (Plan 3)", domain.ErrUnavailable)
+	})
+
+	type listTemplatesIn struct {
+		Query string `json:"query,omitempty"`
+		Limit int    `json:"limit,omitempty"`
+	}
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "hamix.draft_list_templates",
+		Description: "List saved task templates the operator can reuse.",
+	}, func(_ context.Context, _ *mcp.CallToolRequest, in listTemplatesIn) (*mcp.CallToolResult, map[string]any, error) {
+		_ = in
+		return nil, map[string]any{"templates": []any{}, "note": "template listing via taskapi is Plan 3+"}, nil
+	})
+
+	type searchTasksIn struct {
+		Query string `json:"query"`
+		Limit int    `json:"limit,omitempty"`
+	}
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "hamix.draft_search_tasks",
+		Description: "Search existing tasks for context while drafting.",
+	}, func(_ context.Context, _ *mcp.CallToolRequest, in searchTasksIn) (*mcp.CallToolResult, map[string]any, error) {
+		_ = in
+		return nil, map[string]any{"tasks": []any{}, "note": "task search via taskapi is Plan 3+"}, nil
+	})
 }
 
 // RunStdio serves MCP over stdin/stdout with DefaultTools.
+//
+//funclogmeasure:skip category=hot-path reason="Stdio bootstrap; MCP SDK owns request traces."
 func RunStdio(ctx context.Context, host *ToolHost) error {
 	server := mcp.NewServer(&mcp.Implementation{Name: "hamix-draft-mcp", Version: "v1.0.0"}, nil)
 	RegisterTools(server, host)

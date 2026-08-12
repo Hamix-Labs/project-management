@@ -32,7 +32,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        group: [core, tasks, agents, harness]
+        group: [core, tasks, handlertest, handlertest-ui, task-bcs, agents, harness]
     steps:
       - uses: actions/checkout@v4
 

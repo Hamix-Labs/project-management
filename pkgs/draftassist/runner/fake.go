@@ -28,6 +28,8 @@ type Fake struct {
 }
 
 // NewFake returns a fake runner with sensible defaults for latency tests.
+//
+//funclogmeasure:skip category=hot-path reason="Constructor; Run emits the operation trace."
 func NewFake(opts FakeOptions) *Fake {
 	if opts.TokenDelay == 0 {
 		opts.TokenDelay = 5 * time.Millisecond
@@ -38,7 +40,10 @@ func NewFake(opts FakeOptions) *Fake {
 	return &Fake{opts: opts}
 }
 
-func (f *Fake) Name() string { return "fake" }
+func (f *Fake) Name() string {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "draftassist.Fake.Name")
+	return "fake"
+}
 
 func (f *Fake) Run(ctx context.Context, sessionID, runID string, in contract.RunInput, h contract.RunHandle) error {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "draftassist.Fake.Run", "session_id", sessionID, "run_id", runID)

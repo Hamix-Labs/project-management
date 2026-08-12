@@ -9,7 +9,7 @@
 Task draft AI (see `docs/design/task-draft-ai.md`) needs a durable, multi-turn
 agent that patches the initial-prompt HTML while the operator composes a task.
 The SPA cannot run the Cursor SDK, and Go cannot import `@cursor/sdk`. Draft
-sessions live only as long as the modal, so there is no persistence
+sessions live only as long as the compose page, so there is no persistence
 requirement. The stream contract the SPA will trust must ship **before** the
 Node sidecar exists so front-end and runner work can proceed in parallel.
 
@@ -66,19 +66,20 @@ Space-for-AI, and the SPA compose page. Those live in Plan 3 and Plan 4.
 
 ### Negative / trade-offs
 
-- Sessions are process-local; a taskapi restart drops the modal state. Modal
-  UX already implies "recompose after crash", so this is acceptable in v1.
+- Sessions are process-local; a taskapi restart drops the compose-page state.
+  Leaving the page already implies "recompose after crash", so this is
+  acceptable in v1.
 - The SSE hub is **per session** (not the global `pkgs/tasks/realtime` hub) —
   new code path to review, and heartbeats are scheduled locally instead of via
   the shared hub. Justified by the different lifecycle (SSE is attached before
-  send and only for one modal).
+  send and only for one compose session).
 
 ## Alternatives Considered
 
 | Alternative | Reason rejected |
 |---|---|
-| Reuse `/events` global SSE hub | Different audience (one modal, not all tabs); would need per-session filters + heartbeats grafted into the shared hub. |
-| Persist sessions in Postgres | Modal-lifetime state; no cross-tab / cross-device requirement in v1. |
+| Reuse `/events` global SSE hub | Different audience (one compose session, not all tabs); would need per-session filters + heartbeats grafted into the shared hub. |
+| Persist sessions in Postgres | Compose-page lifetime state; no cross-tab / cross-device requirement in v1. |
 | Ship the SDK sidecar in this PR | Blocks the contract on a `CURSOR_API_KEY`-gated Node process — plan 2 must stay green in CI without live model output. |
 
 ## See also

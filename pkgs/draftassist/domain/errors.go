@@ -12,4 +12,6 @@ var (
 	ErrNonceMismatch = errors.New("draftassist: nonce mismatch")
 	// ErrRunActive: cannot start a new run while one is in flight.
 	ErrRunActive = errors.New("draftassist: run active")
+	// ErrUnavailable: tool needs a capability not available in this host.
+	ErrUnavailable = errors.New("draftassist: unavailable")
 )

@@ -49,6 +49,7 @@ func Register(m *http.ServeMux, deps Deps) {
 }
 
 func (h *Handler) ready(w http.ResponseWriter, r *http.Request) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "draftassist.handler.ready")
 	op := "draftAssist.ready"
 	name := "missing"
 	ready := false
@@ -71,6 +72,7 @@ type createSessionBody struct {
 }
 
 func (h *Handler) createSession(w http.ResponseWriter, r *http.Request) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "draftassist.handler.createSession")
 	op := "draftAssist.createSession"
 	var body createSessionBody
 	if err := handlerhttp.DecodeJSON(r.Context(), r.Body, &body); err != nil {
@@ -95,6 +97,7 @@ func (h *Handler) createSession(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) getSession(w http.ResponseWriter, r *http.Request) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "draftassist.handler.getSession")
 	op := "draftAssist.getSession"
 	id := r.PathValue("id")
 	sess, err := h.store.GetSession(r.Context(), id)
@@ -113,6 +116,7 @@ func (h *Handler) getSession(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) putSnapshot(w http.ResponseWriter, r *http.Request) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "draftassist.handler.putSnapshot")
 	op := "draftAssist.putSnapshot"
 	id := r.PathValue("id")
 	var snap domain.FormSnapshot
@@ -137,6 +141,7 @@ type startRunBody struct {
 }
 
 func (h *Handler) startRun(w http.ResponseWriter, r *http.Request) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "draftassist.handler.startRun")
 	op := "draftAssist.startRun"
 	id := r.PathValue("id")
 	var body startRunBody
@@ -213,12 +218,14 @@ var cancelRegistry = struct {
 }{m: map[cancelKey]context.CancelFunc{}}
 
 func (h *Handler) trackCancel(sessionID, runID string, cancel context.CancelFunc) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "draftassist.handler.trackCancel")
 	cancelRegistry.mu.Lock()
 	defer cancelRegistry.mu.Unlock()
 	cancelRegistry.m[cancelKey{sessionID, runID}] = cancel
 }
 
 func (h *Handler) cancelRun(w http.ResponseWriter, r *http.Request) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "draftassist.handler.cancelRun")
 	op := "draftAssist.cancelRun"
 	id := r.PathValue("id")
 	runID := r.PathValue("runId")
@@ -239,6 +246,7 @@ func (h *Handler) cancelRun(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) deleteSession(w http.ResponseWriter, r *http.Request) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "draftassist.handler.deleteSession")
 	op := "draftAssist.deleteSession"
 	id := r.PathValue("id")
 	if err := h.store.DeleteSession(r.Context(), id); err != nil {
@@ -249,6 +257,7 @@ func (h *Handler) deleteSession(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) events(w http.ResponseWriter, r *http.Request) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "draftassist.handler.events")
 	op := "draftAssist.events"
 	id := r.PathValue("id")
 	flusher, ok := w.(http.Flusher)
@@ -326,6 +335,7 @@ type emitHandle struct {
 	store contract.Store
 }
 
+//funclogmeasure:skip category=hot-path reason="Publish fan-out helper; runner emits the operation-level trace."
 func (h *emitHandle) Emit(ctx context.Context, sessionID, runID string, kind domain.EventKind, data any) error {
 	return h.store.Publish(ctx, sessionID, domain.Event{
 		Kind:  kind,
@@ -336,6 +346,7 @@ func (h *emitHandle) Emit(ctx context.Context, sessionID, runID string, kind dom
 }
 
 func writeSSEEvent(w http.ResponseWriter, flusher http.Flusher, ev domain.Event) bool {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "draftassist.handler.writeSSEEvent")
 	payload, err := json.Marshal(ev)
 	if err != nil {
 		return false
@@ -348,6 +359,7 @@ func writeSSEEvent(w http.ResponseWriter, flusher http.Flusher, ev domain.Event)
 }
 
 func parseLastEventID(raw string) uint64 {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "draftassist.handler.parseLastEventID")
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
 		return 0
@@ -360,6 +372,7 @@ func parseLastEventID(raw string) uint64 {
 }
 
 func writeStoreErr(w http.ResponseWriter, r *http.Request, op string, err error) {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "draftassist.handler.writeStoreErr")
 	switch {
 	case errors.Is(err, domain.ErrNotFound):
 		handlerhttp.WriteJSONError(w, r, op, http.StatusNotFound, "not found")

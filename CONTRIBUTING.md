@@ -77,7 +77,7 @@ Each **check-script step** (e.g. `web (test-unit)`, `go-tests (core)`) must fini
 | First run / lockfile changed | `./scripts/check.sh --install` or `.\scripts\check.ps1 -Install` |
 | Same as CI web deps seed | `./scripts/check-web.sh --install-only --verbose` or `.\scripts\check-web.ps1 -InstallOnly -Verbose` |
 | Same as CI Go lint | `./scripts/check-go.sh --lint-only --verbose` or `.\scripts\check-go.ps1 -LintOnly -Verbose` |
-| Same as CI Go tests (one group) | `./scripts/check-go.sh --tests-only --group=core --verbose` (groups: `core`, `tasks`, `agents`, `harness`) — includes [coverage gate](docs/domain/testing.md#coverage-floors) |
+| Same as CI Go tests (one group) | `./scripts/check-go.sh --tests-only --group=core --verbose` (groups: `core`, `tasks`, `handlertest`, `task-bcs`, `agents`, `harness`) — includes [coverage gate](docs/domain/testing.md#coverage-floors) |
 | Same as CI Go (full local bar) | `./scripts/check-go.sh --verbose` or `.\scripts\check-go.ps1 -Verbose` |
 | Same as CI web matrix cell | `./scripts/check-web.sh --verbose --group=test-unit` (after install / `node_modules` present); groups match CI: `lint`, `build`, `test-unit`, `test-components`, … |
 | Full local web bar | `./scripts/check-web.sh --verbose` or `.\scripts\check-web.ps1 -Verbose` (`-Install` if needed) |
@@ -132,7 +132,7 @@ Vertical slice (domain → store → handler → optional web): [docs/agent-map.
 | No repository for file search / `@`-mentions | Register a git repo on **Repositories** (`/repositories`, or `/repositories?register=1`; legacy `/worktrees` redirects) — [docs/domain/worktrees-and-branches.md](docs/domain/worktrees-and-branches.md) |
 | Tests fail with database errors | Use `internal/tasktestdb/` (SQLite); gate real Postgres with `//go:build integration` |
 | Match API error to logs | `request_id` in JSON body / `X-Request-ID` header on access logs |
-| Still failing local checks | Use scoped groups: `.\scripts\check-go.ps1 -TestsOnly -Group <core\|tasks\|agents\|harness>` (same as CI). Full bar: `.\scripts\check.ps1 -GoOnly`. Avoid `go test ./...` — it pulls in `web/node_modules` test packages and can flake on parallel SQLite. |
+| Still failing local checks | Use scoped groups: `.\scripts\check-go.ps1 -TestsOnly -Group <core\|tasks\|handlertest\|task-bcs\|agents\|harness>` (same as CI). Full bar: `.\scripts\check.ps1 -GoOnly`. Avoid `go test ./...` — it pulls in `web/node_modules` test packages and can flake on parallel SQLite. |
 | File-size CI fails on “new red-zone file” | Split the file under [CODE_STANDARDS](.cursor/rules/CODE_STANDARDS.mdc) limits, or (legacy only) add the path to `scripts/code-standards-size-baseline.txt` and burn it down later |
 
 ## Security
