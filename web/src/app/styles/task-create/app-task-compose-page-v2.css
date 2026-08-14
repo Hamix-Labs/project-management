@@ -504,7 +504,7 @@ form.task-compose-page__form-shell {
 
 .task-compose-page--v2 .compose-priority__segment[data-active="true"][data-warn="true"] {
   background: var(--warning);
-  color: #fff;
+  color: var(--text-on-brand);
 }
 
 .task-compose-page--v2 .compose-priority__segment:focus-visible {
