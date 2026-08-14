@@ -15,29 +15,43 @@ import (
 
 	"github.com/AlexsanderHamir/Hamix/pkgs/draftassist/contract"
 	"github.com/AlexsanderHamir/Hamix/pkgs/draftassist/domain"
+	draftassistmetrics "github.com/AlexsanderHamir/Hamix/pkgs/draftassist/metrics"
 	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handlerhttp"
 )
 
 const heartbeatInterval = 3 * time.Second
 
+// ReadyProbe optionally overrides /draft-assist/ready. When nil, readiness is
+// derived from whether a Runner is configured.
+type ReadyProbe interface {
+	// Ready reports whether draft-assist can accept runs.
+	// runner is one of "sdk", "fake", "missing".
+	// reason is empty when ready; otherwise missing_key, sidecar_down, or no_runner.
+	Ready() (ready bool, runner string, reason string)
+}
+
 // Deps wires draft-assist HTTP handlers.
 type Deps struct {
 	Store  contract.Store
 	Runner contract.Runner
+	// Ready is optional. When set, /draft-assist/ready uses it instead of
+	// inferring readiness from Runner != nil.
+	Ready ReadyProbe
 }
 
 // Handler serves draft-assist routes.
 type Handler struct {
 	store  contract.Store
 	runner contract.Runner
+	readyP ReadyProbe
 }
 
 // Register mounts draft-assist routes on m.
 //
 //funclogmeasure:skip category=hot-path reason="Route table wiring only; operation trace is emitted by registered handlers."
 func Register(m *http.ServeMux, deps Deps) {
-	h := &Handler{store: deps.Store, runner: deps.Runner}
+	h := &Handler{store: deps.Store, runner: deps.Runner, readyP: deps.Ready}
 	m.Handle("GET /draft-assist/ready", http.HandlerFunc(h.ready))
 	m.Handle("POST /draft-assist/sessions", http.HandlerFunc(h.createSession))
 	m.Handle("PUT /draft-assist/sessions/{id}/snapshot", http.HandlerFunc(h.putSnapshot))
@@ -51,19 +65,24 @@ func Register(m *http.ServeMux, deps Deps) {
 func (h *Handler) ready(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "draftassist.handler.ready")
 	op := "draftAssist.ready"
-	name := "missing"
 	ready := false
-	reason := "no runner configured"
-	if h.runner != nil {
+	name := "missing"
+	reason := draftassistmetrics.ReasonNoRunner
+	if h.readyP != nil {
+		ready, name, reason = h.readyP.Ready()
+	} else if h.runner != nil {
 		name = h.runner.Name()
 		ready = true
 		reason = ""
 	}
-	handlerhttp.WriteJSON(w, r, op, http.StatusOK, map[string]any{
+	out := map[string]any{
 		"ready":  ready,
 		"runner": name,
-		"reason": reason,
-	})
+	}
+	if reason != "" {
+		out["reason"] = reason
+	}
+	handlerhttp.WriteJSON(w, r, op, http.StatusOK, out)
 }
 
 type createSessionBody struct {
@@ -184,10 +203,11 @@ func (h *Handler) startRun(w http.ResponseWriter, r *http.Request) {
 	}
 
 	runCtx, cancel := context.WithCancel(context.Background())
+	runStart := time.Now().UTC()
 	go func() {
 		defer cancel()
 		defer func() { _ = h.store.FinishRun(context.Background(), id, runID) }()
-		handle := &emitHandle{store: h.store}
+		handle := &emitHandle{store: h.store, runStart: runStart}
 		in := contract.RunInput{UserMessage: msg}
 		if sess, err := h.store.GetSession(runCtx, id); err == nil {
 			in.Snapshot = sess.Snapshot
@@ -242,6 +262,12 @@ func (h *Handler) cancelRun(w http.ResponseWriter, r *http.Request) {
 		writeStoreErr(w, r, op, err)
 		return
 	}
+	_ = h.store.Publish(r.Context(), id, domain.Event{
+		Kind:  domain.EventStatus,
+		RunID: runID,
+		At:    time.Now().UTC(),
+		Data:  domain.StatusEventData{Status: domain.RunStatusCancelling},
+	})
 	handlerhttp.WriteJSON(w, r, op, http.StatusAccepted, map[string]any{"run_id": runID, "status": "cancelling"})
 }
 
@@ -285,9 +311,10 @@ func (h *Handler) events(w http.ResponseWriter, r *http.Request) {
 			Kind: domain.EventSession,
 			At:   time.Now().UTC(),
 			Data: domain.SessionEventData{
-				SessionID:  sess.ID,
-				WorktreeID: sess.WorktreeID,
-				Snapshot:   sess.Snapshot,
+				SessionID:     sess.ID,
+				WorktreeID:    sess.WorktreeID,
+				Snapshot:      sess.Snapshot,
+				SchemaVersion: domain.DraftAssistSchemaVersion,
 			},
 		}
 		_ = h.store.Publish(r.Context(), id, ev)
@@ -332,11 +359,19 @@ func (h *Handler) events(w http.ResponseWriter, r *http.Request) {
 }
 
 type emitHandle struct {
-	store contract.Store
+	store    contract.Store
+	runStart time.Time
+	once     sync.Once
 }
 
 //funclogmeasure:skip category=hot-path reason="Publish fan-out helper; runner emits the operation-level trace."
 func (h *emitHandle) Emit(ctx context.Context, sessionID, runID string, kind domain.EventKind, data any) error {
+	switch kind {
+	case domain.EventStatus, domain.EventToken, domain.EventTool, domain.EventError:
+		h.once.Do(func() {
+			draftassistmetrics.ObserveFirstEvent(h.runStart)
+		})
+	}
 	return h.store.Publish(ctx, sessionID, domain.Event{
 		Kind:  kind,
 		RunID: runID,

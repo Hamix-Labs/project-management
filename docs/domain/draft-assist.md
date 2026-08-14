@@ -12,17 +12,38 @@ In-memory sessions and SSE for prompt-box LLM help while composing a task
 ## Overview
 
 SPA opens a session, attaches SSE, POSTs a run (202), and streams named
-events. A **fake runner** ships in Wave A so CI proves the stream contract
-without `CURSOR_KEY`. Plan 3 swaps the runner for `@cursor/sdk`.
+events. A **fake runner** ships so CI proves the stream contract without
+`CURSOR_API_KEY`. Later plans swap the runner for `@cursor/sdk`.
 
 ## Stream events
 
-`session`, `status`, `token`, `tool`, `patch`, `error`, `done`, plus SSE
-comment heartbeats every 3s while a run is active.
+Named events: `session`, `status`, `token`, `tool`, `patch`, `error`, `done`.
+
+Heartbeats are **SSE comments** (`: heartbeat`) every 3s while a run is
+active — not a named `event: heartbeat` frame.
+
+`session` payload includes `schema_version` (currently `1`). The SPA must
+assert this before trusting the stream.
+
+### Replay
+
+Each session keeps a ring of the last **256** events with monotonic `id`
+values. `GET /draft-assist/sessions/{id}/events` honours `Last-Event-ID`
+and replays ring entries with `id > Last-Event-ID`, then tails live
+events.
 
 ## Status machine
 
-`idle → thinking → streaming | tool → idle` (also `cancelled`, `failed`).
+`idle → thinking → streaming | tool → idle`
+
+Also: `cancelling` (cancel accepted), then terminal `done` with
+`status=cancelled` | `done` | `failed`.
+
+Cancel yields two frames: `status=cancelling`, then `done{status=cancelled}`.
+
+## Concurrent runs
+
+`POST /runs` while a run is active → **409** (`ErrRunActive`).
 
 ## MCP tools (v1)
 
@@ -31,7 +52,18 @@ Prompt write only; nonce fail-closed.
 
 ## Ready probe
 
-`GET /draft-assist/ready` → `{ ready, runner: "fake"|"missing", reason? }`.
+`GET /draft-assist/ready` → `{ ready, runner: "sdk"|"fake"|"missing", reason? }`.
+
+| `ready` | `runner` | `reason` |
+| --- | --- | --- |
+| true | `fake` or `sdk` | omitted |
+| false | `missing` | `no_runner` |
+| false | `sdk` | `missing_key` or `sidecar_down` |
+
+## Metrics
+
+- `taskapi_draftassist_run_first_event_ms` — histogram, accept → first status/token/tool/error
+- `taskapi_draftassist_watchdog_total` — counter, silence watchdog firings
 
 ## See also
 

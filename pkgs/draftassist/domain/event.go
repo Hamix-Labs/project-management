@@ -44,9 +44,10 @@ type Event struct {
 
 // SessionEventData is the payload for EventSession.
 type SessionEventData struct {
-	SessionID  string       `json:"session_id"`
-	WorktreeID string       `json:"worktree_id,omitempty"`
-	Snapshot   FormSnapshot `json:"snapshot"`
+	SessionID     string       `json:"session_id"`
+	WorktreeID    string       `json:"worktree_id,omitempty"`
+	Snapshot      FormSnapshot `json:"snapshot"`
+	SchemaVersion int          `json:"schema_version"`
 }
 
 // StatusEventData is the payload for EventStatus.
