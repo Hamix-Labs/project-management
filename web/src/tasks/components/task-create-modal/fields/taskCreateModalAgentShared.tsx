@@ -21,6 +21,8 @@ export type TaskCreateModalAgentSectionProps = {
   disabled: boolean;
   lockRunner?: boolean;
   variant?: TaskCreateModalAgentSectionVariant;
+  /** When true, omit the section heading (compose rail owns the title). */
+  hideHeader?: boolean;
   runner: string;
   cursorModel: string;
   modelIds: Set<string>;
