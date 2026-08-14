@@ -87,7 +87,7 @@ func TestDraftAssist_streamContract(t *testing.T) {
 			line := sc.Text()
 			if strings.HasPrefix(line, "data: ") {
 				var envelope struct {
-					Kind string `json:"kind"`
+					Kind string          `json:"kind"`
 					Data json.RawMessage `json:"data"`
 				}
 				if err := json.Unmarshal([]byte(strings.TrimPrefix(line, "data: ")), &envelope); err == nil && envelope.Kind == "session" {
