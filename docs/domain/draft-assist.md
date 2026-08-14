@@ -84,7 +84,50 @@ hrefs are rejected.
 - `taskapi_draftassist_run_first_event_ms` — histogram, accept → first status/token/tool/error
 - `taskapi_draftassist_watchdog_total` — counter, silence watchdog firings
 
+## Sidecar (`hamix-draft-agent`)
+
+The SDK-backed runner lives in [`sidecars/hamix-draft-agent`](../../sidecars/hamix-draft-agent/) —
+a small Node process that hosts `@cursor/sdk` (Go cannot import it) and
+exposes a loopback HTTP + SSE surface for taskapi.
+
+### Port discovery
+
+`scripts/dev.*` build the sidecar bundle to `sidecars/hamix-draft-agent/dist/`
+and drop a `hamix-draft-agent` launcher (`.cmd` on Windows) at the repo root.
+The launcher is on the same PATH `taskapi` inherits. Boot with an ephemeral
+port so the supervisor can pick one:
+
+```powershell
+hamix-draft-agent --port 0
+# stdout: listening on 63421
+```
+
+Taskapi reads the `listening on <port>` line to dial the sidecar. `PORT` env
+is honoured when `--port` is not passed.
+
+### Endpoints (loopback)
+
+| Method + path | Purpose |
+| --- | --- |
+| `POST /runs` | Start / follow-up a run; SSE stream (`session`, `status`, `token`, `tool`, `patch`, `error`, `done`); `: heartbeat` every 3s |
+| `POST /runs/{run_id}/cancel` | 202; run ends with `status=cancelling` then `done{status=cancelled}` |
+| `GET  /healthz` | `{ ok, sdk_version?, agents_active }` |
+| `GET  /readyz` | `{ ready, reason? }` — `missing_key` when `CURSOR_API_KEY` is unset |
+
+The sidecar writes a per-session bind JSON (`bind_schema_version: 1`,
+`session_id`, `nonce`, optional `taskapi_base_url`) into a tmp directory and
+passes the path to `hamix-draft-mcp --bind <tmp>` on the SDK's inline
+`mcpServers["hamix-draft"]` entry. Plan 4 replaces the local writer with
+taskapi's canonical `WriteBind`.
+
+### Ready surface (`/draft-assist/ready`)
+
+The taskapi ready probe delegates to the sidecar's `/readyz` when
+`runner=sdk`. `missing_key` and `sidecar_down` are the two `sdk` failure
+reasons.
+
 ## See also
 
 - [api.md](../api.md) — route table
 - [agent-mcp.md](./agent-mcp.md) — execute/verify MCP (different tools)
+- [`sidecars/hamix-draft-agent/README.md`](../../sidecars/hamix-draft-agent/README.md)

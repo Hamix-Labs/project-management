@@ -1,0 +1,31 @@
+{
+  "name": "hamix-draft-agent",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Node sidecar hosting @cursor/sdk for the Hamix draft-assist prompt agent.",
+  "type": "module",
+  "main": "dist/hamix-draft-agent.js",
+  "bin": {
+    "hamix-draft-agent": "dist/hamix-draft-agent.js"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "dev": "node --loader ts-node/esm src/server.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {},
+  "optionalDependencies": {
+    "@cursor/sdk": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
