@@ -222,7 +222,7 @@ describe("create task from home", () => {
     expect(posted.parent_id).toBeUndefined();
   });
 
-  it("surfaces create POST failure, keeps modal open, and leaves the list unchanged", async () => {
+  it("surfaces create POST failure, keeps compose open, and leaves the list unchanged", async () => {
     const user = userEvent.setup();
     server.use(
       tasksList([defaultTask("seed", "Existing task")]),
@@ -245,11 +245,13 @@ describe("create task from home", () => {
       await within(dialog).findByRole("alert"),
     ).toHaveTextContent(/server returned 500/i);
     expect(dialog).toBeInTheDocument();
+
+    await user.click(within(dialog).getByRole("button", { name: /^cancel$/i }));
+    expect(
+      await screen.findByRole("link", { name: /existing task/i }),
+    ).toBeInTheDocument();
     expect(
       screen.queryByRole("link", { name: /will fail/i }),
     ).not.toBeInTheDocument();
-    expect(
-      screen.getByRole("link", { name: /existing task/i }),
-    ).toBeInTheDocument();
   });
 });

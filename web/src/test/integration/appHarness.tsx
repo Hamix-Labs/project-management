@@ -1,19 +1,22 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render } from "@testing-library/react";
+import { Suspense } from "react";
 import { BrowserRouter, MemoryRouter, Route, Routes } from "react-router-dom";
 import { ROUTER_FUTURE_FLAGS } from "@/lib/routerFutureFlags";
 import App from "@/app/App";
-import {
-  TaskCreateModalsLayer,
-  TaskDraftsPage,
-  TaskHome,
-} from "@/tasks";
+import { TaskDraftsPage, TaskHome } from "@/tasks";
 import { TasksAppProvider } from "@/tasks/app/TasksAppProvider";
 import { useTasksApp } from "@/tasks/hooks/useTasksApp";
+import {
+  TaskComposeEditPage,
+  TaskComposeNewPage,
+  TemplateComposeEditPage,
+  TemplateComposeNewPage,
+} from "@/tasks/pages/TaskComposePage";
 import { ModalStackProvider } from "@/shared/ModalStackContext";
 import { bootstrapUnavailable } from "@/test/handlers/bootstrap";
 import { stubEventSource } from "@/test/browserMocks";
-import { draftsListEmpty } from "@/test/handlers/drafts";
+import { draftCreateOk, draftsListEmpty } from "@/test/handlers/drafts";
 import { globalGitApiHandlers } from "@/test/handlers/gitMsw";
 import { projectsListEmpty } from "@/test/handlers/projects";
 import { repoNotConfigured } from "@/test/handlers/repo";
@@ -28,6 +31,12 @@ export function appDefaultHandlers() {
     taskStatsEmpty(),
     repoNotConfigured(),
     draftsListEmpty(),
+    draftCreateOk({
+      id: "draft-auto",
+      name: "Autosaved draft",
+      created_at: "2026-04-07T10:00:00Z",
+      updated_at: "2026-04-07T10:00:00Z",
+    }),
     projectsListEmpty(),
     ...globalGitApiHandlers(),
     listCursorModelsOk(),
@@ -79,11 +88,19 @@ function TasksShellRoutes() {
   return (
     <TasksAppProvider value={app}>
       <ModalStackProvider>
-        <Routes>
-          <Route path="/" element={<TaskHome />} />
-          <Route path="/drafts" element={<TaskDraftsPage />} />
-        </Routes>
-        <TaskCreateModalsLayer />
+        <Suspense fallback={null}>
+          <Routes>
+            <Route path="/" element={<TaskHome />} />
+            <Route path="/drafts" element={<TaskDraftsPage />} />
+            <Route path="/tasks/new" element={<TaskComposeNewPage />} />
+            <Route path="/tasks/:taskId/edit" element={<TaskComposeEditPage />} />
+            <Route path="/templates/new" element={<TemplateComposeNewPage />} />
+            <Route
+              path="/templates/:templateId/edit"
+              element={<TemplateComposeEditPage />}
+            />
+          </Routes>
+        </Suspense>
       </ModalStackProvider>
     </TasksAppProvider>
   );

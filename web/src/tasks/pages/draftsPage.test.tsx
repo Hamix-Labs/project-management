@@ -32,6 +32,7 @@ function renderDraftsPage(app: App) {
       <MemoryRouter future={ROUTER_FUTURE_FLAGS} initialEntries={["/drafts"]}>
         <Routes>
           <Route path="/" element={<div>Home route</div>} />
+          <Route path="/tasks/new" element={<div>Compose route</div>} />
           <Route path="/drafts" element={<TaskDraftsPage />} />
         </Routes>
       </MemoryRouter>
@@ -70,14 +71,12 @@ describe("TaskDraftsPage", () => {
     expect(retryDraftList).toHaveBeenCalledTimes(1);
   });
 
-  it("navigates home and opens create modal from the empty state", async () => {
-    const openCreateModal = vi.fn();
-    renderDraftsPage(makeApp({ openCreateModal }));
+  it("navigates to the compose page from the empty state", async () => {
+    renderDraftsPage(makeApp());
 
     fireEvent.click(screen.getByRole("button", { name: /^create a task$/i }));
 
-    expect(screen.getByText("Home route")).toBeInTheDocument();
-    expect(openCreateModal).toHaveBeenCalledTimes(1);
+    expect(screen.getByText("Compose route")).toBeInTheDocument();
   });
 
   it("shows resume error from app state", () => {
@@ -116,12 +115,10 @@ describe("TaskDraftsPage", () => {
     expect(screen.getByRole("alert")).toHaveTextContent(/delete failed/i);
   });
 
-  it("calls resumeDraftByID when a draft row is opened", async () => {
+  it("navigates to compose with the draft query when a draft row is opened", async () => {
     const user = userEvent.setup();
-    const resumeDraftByID = vi.fn().mockResolvedValue(undefined);
     renderDraftsPage(
       makeApp({
-        resumeDraftByID,
         taskDrafts: [
           {
             id: "d1",
@@ -137,6 +134,6 @@ describe("TaskDraftsPage", () => {
       screen.getByRole("listitem", { name: /^resume draft: draft from list$/i }),
     );
 
-    expect(resumeDraftByID).toHaveBeenCalledWith("d1");
+    expect(screen.getByText("Compose route")).toBeInTheDocument();
   });
 });

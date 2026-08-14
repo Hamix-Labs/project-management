@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useDocumentTitle } from "@/shared/useDocumentTitle";
 import { Button } from "@/components/ui";
 import { runViewTransition } from "@/lib/runViewTransition";
+import type { Task } from "@/types";
 import { TaskListSection } from "../components/task-list";
 import { TaskBoardSection } from "../components/task-board/TaskBoardSection";
 import { TaskHomeViewToggle } from "../components/task-board/TaskHomeViewToggle";
@@ -10,6 +11,7 @@ import { useTasksAppList, useTasksAppModals } from "../app/TasksAppProvider";
 import { useTasksBoard } from "../hooks/useTasksBoard";
 import { isUiFeatureOmitted } from "@/launch/omittedFeatures";
 import { useProjects } from "@/hooks/useProjects";
+import { taskEditPath, tasksNewPath, templatesNewPath } from "../composeRoutes";
 import {
   applyTaskHomeView,
   parseTaskHomeView,
@@ -20,6 +22,7 @@ export function TaskHome() {
   useDocumentTitle(undefined);
   const list = useTasksAppList();
   const modals = useTasksAppModals();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const view = parseTaskHomeView(searchParams.get("view"));
   /** CSS enter fallback when View Transitions API is unavailable. */
@@ -30,7 +33,7 @@ export function TaskHome() {
     limit: 100,
     enabled: projectsUiEnabled,
   });
-  const { openCreateModal, createModalOpen } = modals;
+  const { createModalOpen } = modals;
 
   const board = useTasksBoard({
     view,
@@ -46,9 +49,16 @@ export function TaskHome() {
 
   useEffect(() => {
     if (createIntent !== "1" || !projectIntent) return;
-    openCreateModal({ projectID: projectIntent });
-    setSearchParams({}, { replace: true });
-  }, [openCreateModal, createIntent, projectIntent, setSearchParams]);
+    navigate(tasksNewPath({ project: projectIntent }), { replace: true });
+  }, [navigate, createIntent, projectIntent]);
+
+  const openCreate = useCallback(() => {
+    navigate(tasksNewPath());
+  }, [navigate]);
+
+  const openTemplateCreate = useCallback(() => {
+    navigate(templatesNewPath());
+  }, [navigate]);
 
   const onViewChange = useCallback(
     (next: TaskHomeView) => {
@@ -89,7 +99,7 @@ export function TaskHome() {
       hasPrevPage: list.hasPrevTaskPage,
       worktreeFamilyFilter: list.worktreeFamilyId,
       onWorktreeFamilyFilterChange: list.setWorktreeFamilyId,
-      onEdit: modals.openEdit,
+      onEdit: (task: Task) => navigate(taskEditPath(task.id)),
       onRequestClose: modals.requestClose,
       taskStats: list.taskStats ?? null,
     }),
@@ -110,7 +120,7 @@ export function TaskHome() {
       list.hasPrevTaskPage,
       list.worktreeFamilyId,
       list.setWorktreeFamilyId,
-      modals.openEdit,
+      navigate,
       modals.requestClose,
       list.taskStats,
     ],
@@ -123,7 +133,7 @@ export function TaskHome() {
         <Button
           variant="secondary"
           className="task-home-new-template-btn"
-          onClick={() => modals.openTemplateCreateModal()}
+          onClick={() => openTemplateCreate()}
           disabled={createModalOpen}
         >
           <svg
@@ -164,7 +174,7 @@ export function TaskHome() {
         <Button
           variant="primary"
           className="task-home-new-task-btn"
-          onClick={() => openCreateModal()}
+          onClick={() => openCreate()}
           disabled={createModalOpen}
         >
           + New task
@@ -174,8 +184,8 @@ export function TaskHome() {
     [
       view,
       onViewChange,
-      openCreateModal,
-      modals.openTemplateCreateModal,
+      openCreate,
+      openTemplateCreate,
       createModalOpen,
     ],
   );
@@ -183,10 +193,10 @@ export function TaskHome() {
   const emptyAction = useMemo(
     () => ({
       label: "New task",
-      onClick: () => openCreateModal(),
+      onClick: () => openCreate(),
       disabled: createModalOpen,
     }),
-    [openCreateModal, createModalOpen],
+    [openCreate, createModalOpen],
   );
 
   return (

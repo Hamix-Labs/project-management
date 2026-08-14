@@ -17,7 +17,7 @@ describe("draft entry hints", () => {
     server.use(...appDefaultHandlers());
   });
 
-  it("shows loading status in draft picker modal from home", async () => {
+  it("shows loading status in draft picker from home", async () => {
     const user = userEvent.setup();
     const [pendingHandler, deferred] = draftsListPending();
     server.use(pendingHandler);
@@ -29,16 +29,18 @@ describe("draft entry hints", () => {
 
     await deferred.resolve(HttpResponse.json({ drafts: [] }));
     expect(
-      await screen.findByRole("heading", { name: /resume a draft or start fresh/i }),
+      await screen.findByRole("heading", {
+        name: /resume a draft or start fresh/i,
+      }),
     ).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /^start fresh$/i }));
     expect(
-      await screen.findByRole("dialog", { name: /^new task$/i }, { timeout: 10_000 }),
+      await screen.findByRole("heading", { name: /^new task$/i }, { timeout: 10_000 }),
     ).toBeInTheDocument();
   });
 
-  it("shows home entry hint when drafts fail and opens fresh create form", async () => {
+  it("shows entry hint when drafts fail and opens fresh create form", async () => {
     const user = userEvent.setup();
     server.use(
       listCursorModelsOk(),
@@ -52,7 +54,7 @@ describe("draft entry hints", () => {
     await user.click(screen.getByRole("button", { name: /\+?\s*new task/i }));
 
     expect(
-      await screen.findByRole("dialog", { name: /^new task$/i }, { timeout: 10_000 }),
+      await screen.findByRole("heading", { name: /^new task$/i }, { timeout: 10_000 }),
     ).toBeInTheDocument();
     const draftsHintAlert = await screen.findByRole("alert");
     expect(draftsHintAlert).toHaveTextContent(
@@ -63,7 +65,7 @@ describe("draft entry hints", () => {
     ).toBeInTheDocument();
   });
 
-  it("retries draft loading from home entry hint and opens draft picker when available", async () => {
+  it("retries draft loading from entry hint and opens draft picker when available", async () => {
     const user = userEvent.setup();
     let draftAttempts = 0;
     server.use(
@@ -88,6 +90,7 @@ describe("draft entry hints", () => {
     renderTasksHome();
     await screen.findByText("No tasks yet");
     await user.click(screen.getByRole("button", { name: /\+?\s*new task/i }));
+    await screen.findByRole("heading", { name: /^new task$/i }, { timeout: 10_000 });
     await user.click(screen.getByRole("button", { name: /retry loading drafts/i }));
 
     expect(

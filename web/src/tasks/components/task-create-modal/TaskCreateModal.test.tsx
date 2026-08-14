@@ -126,14 +126,14 @@ describe("TaskCreateModal", () => {
     expect(within(row as HTMLElement).getByText("*")).toBeInTheDocument();
   });
 
-  it("shows the create subtitle and header close control", async () => {
+  it("shows the create subtitle and cancel control", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
     renderModal({ onClose });
     expect(
       screen.getByText(/define the work, then hand it off to your agent/i),
     ).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /^close$/i }));
+    await user.click(screen.getByRole("button", { name: /^cancel$/i }));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
@@ -431,26 +431,29 @@ describe("TaskCreateModal", () => {
       });
     }
 
-    it("renders the edit dialog with the task id and current title", () => {
+    it("renders the edit page with the task id and current title", () => {
       renderEditModal();
       expect(
-        screen.getByRole("dialog", { name: /edit task/i }),
+        screen.getByRole("heading", { name: /^edit task$/i }),
       ).toBeInTheDocument();
       expect(screen.getByText("task-123")).toBeInTheDocument();
       expect(screen.getByDisplayValue(/existing title/i)).toBeInTheDocument();
     });
 
-    it("calls onClose on Escape while the patch is pending (dismissibleWhileBusy)", async () => {
+    it("keeps Cancel available while a patch is pending", async () => {
       const user = userEvent.setup();
       const onClose = vi.fn();
-      renderEditModal({ patchPending: true, saving: true, onClose });
-      await user.keyboard("{Escape}");
+      renderEditModal({ patchPending: true, onClose });
+      await user.click(screen.getByRole("button", { name: /^cancel$/i }));
       expect(onClose).toHaveBeenCalledTimes(1);
     });
 
-    it("still renders the busy spinner overlay while pending", () => {
-      renderEditModal({ patchPending: true, saving: true });
-      expect(screen.getByRole("status")).toBeInTheDocument();
+    it("does not block the form behind a modal busy overlay while pending", () => {
+      renderEditModal({ patchPending: true });
+      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { name: /^edit task$/i }),
+      ).toBeInTheDocument();
     });
 
     it("does not render an alert region when patchError and formError are null", () => {
@@ -521,17 +524,17 @@ describe("TaskCreateModal", () => {
       ).not.toBeInTheDocument();
     });
 
-    it("uses the New template dialog title in create mode", () => {
+    it("uses the New template page title in create mode", () => {
       renderTemplateModal();
       expect(
-        screen.getByRole("dialog", { name: /new template/i }),
+        screen.getByRole("heading", { name: /^new template$/i }),
       ).toBeInTheDocument();
     });
 
-    it("uses the Edit template dialog title when editing", () => {
+    it("uses the Edit template page title when editing", () => {
       renderTemplateModal({ composeOperation: "edit" });
       expect(
-        screen.getByRole("dialog", { name: /edit template/i }),
+        screen.getByRole("heading", { name: /^edit template$/i }),
       ).toBeInTheDocument();
       expect(
         screen.getByRole("button", { name: /^save$/i }),

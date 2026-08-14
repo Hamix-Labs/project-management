@@ -4,6 +4,7 @@ import { useDocumentTitle } from "@/shared/useDocumentTitle";
 import { useGlobalRepositories } from "@/hooks/useGlobalRepositories";
 import { useProjects } from "@/hooks/useProjects";
 import { useTasksAppContext } from "../app/TasksAppProvider";
+import { templateEditPath, templatesNewPath } from "../composeRoutes";
 import { TemplateBatchBar } from "./components/TemplateBatchBar";
 import { TemplateFunctionBindModal } from "./components/TemplateFunctionBindModal";
 import { TemplatePageBody } from "./components/TemplatePageBody";
@@ -41,7 +42,7 @@ export function TaskTemplatesPage() {
 
   return (
     <section className="templates-page-card task-detail-content--enter">
-      <TemplatePageHeader onNewTemplate={() => app.openTemplateCreateModal()} />
+      <TemplatePageHeader onNewTemplate={() => navigate(templatesNewPath())} />
       <div className="templates-page-toolbar-section">
         <TemplateToolbar
           searchInput={model.searchInput}
@@ -63,7 +64,7 @@ export function TaskTemplatesPage() {
         templates={model.templates}
         hasFilters={model.hasFilters}
         onClearFilters={model.clearFilters}
-        onNewTemplate={() => app.openTemplateCreateModal()}
+        onNewTemplate={() => navigate(templatesNewPath())}
         selectedIds={model.selectedIds}
         instanceCounts={model.instanceCounts}
         allSelected={model.allSelected}
@@ -78,7 +79,7 @@ export function TaskTemplatesPage() {
         onToggleSelectAll={model.toggleSelectAll}
         onToggleSelected={model.toggleSelected}
         onInstanceCountChange={model.setInstanceCountForTemplate}
-        onEdit={(id) => void app.editTemplateByID(id)}
+        onEdit={(id) => navigate(templateEditPath(id))}
         onDelete={(id) => void model.deleteTemplate(id)}
       />
       <TemplateBatchBar
