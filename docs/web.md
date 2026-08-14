@@ -85,6 +85,8 @@ Create-task policy and hook composition live in [`web/src/tasks/create/`](../web
 
 Compose UI is a **routed page** at `/tasks/new`, `/tasks/:id/edit`, `/templates/new`, `/templates/:id/edit` ([ADR-0100](./adr/ADR-0100-compose-page.md)). Layout: `web/src/tasks/components/task-compose/`. Form sections remain under `task-create-modal/` (shared fields). **`composeTarget`** (`task` | `template`) and **`composeOperation`** (`create` | `edit`) still drive one form for task create/edit and template save/edit. Templates list and batch create: `web/src/tasks/pages/TaskTemplatesPage.tsx`. Deep link `/?create=1&project=` redirects to `/tasks/new?project=`.
 
+Draft-assist prompt help (compose page) uses [`web/src/tasks/hooks/useDraftAssistSession.ts`](../web/src/tasks/hooks/useDraftAssistSession.ts) for lazy session lifecycle and [`web/src/tasks/hooks/useDraftAssistStream.ts`](../web/src/tasks/hooks/useDraftAssistStream.ts) for the SSE event bus (Last-Event-ID reconnect, 8s heartbeat-loss watchdog). Wire contract in [domain/draft-assist.md](./domain/draft-assist.md); parsers assert `schema_version === 1` on the initial `session` frame.
+
 ## Query policy
 
 TanStack Query staleTime tiers live in [`web/src/lib/queryPolicy.ts`](../web/src/lib/queryPolicy.ts) (re-exported from [`tasks/queryPolicy.ts`](../web/src/tasks/queryPolicy.ts)). SSE connection policy: [`web/src/lib/queryConnectionPolicy.ts`](../web/src/lib/queryConnectionPolicy.ts). Read order:
