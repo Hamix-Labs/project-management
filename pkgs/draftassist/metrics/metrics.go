@@ -23,6 +23,8 @@ var (
 
 // RegisterOn registers draft-assist latency and watchdog metrics. Safe to call
 // more than once; subsequent calls are no-ops.
+//
+//funclogmeasure:skip category=hot-path reason="Prometheus registration; no request-scoped operation to trace."
 func RegisterOn(reg prometheus.Registerer) {
 	registerOnce.Do(func() {
 		runFirstEventMS = prometheus.NewHistogram(prometheus.HistogramOpts{
@@ -40,6 +42,8 @@ func RegisterOn(reg prometheus.Registerer) {
 }
 
 // ObserveFirstEvent records latency from runStart to now in milliseconds.
+//
+//funclogmeasure:skip category=hot-path reason="Histogram observe on SSE emit path; caller already traces."
 func ObserveFirstEvent(runStart time.Time) {
 	if runFirstEventMS == nil || runStart.IsZero() {
 		return
@@ -48,6 +52,8 @@ func ObserveFirstEvent(runStart time.Time) {
 }
 
 // IncWatchdog increments the watchdog counter.
+//
+//funclogmeasure:skip category=hot-path reason="Counter increment; caller already traces."
 func IncWatchdog() {
 	if watchdogTotal == nil {
 		return
