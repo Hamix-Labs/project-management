@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { DraftAssistEvent } from "@/types/draftAssist";
 import {
-  DRAFT_ASSIST_HEARTBEAT_LOSS_MS,
   connectDraftAssistStream,
   type DraftAssistStreamStatus,
 } from "./draftAssistStreamConnection";
