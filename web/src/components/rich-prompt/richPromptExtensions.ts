@@ -5,19 +5,43 @@ import {
   RepoFileSuggestion,
   type RepoFileSuggestionOptions,
 } from "./extensions/repoFileSuggestion";
+import { PressSpaceForAI } from "./extensions/pressSpaceForAI";
+import { SlashMenu } from "./extensions/slashMenu";
+
+export const EMPTY_BLOCK_PLACEHOLDER = "Press Space for AI or / for commands";
+
+export type BuildRichPromptExtensionsOpts = {
+  onAiTrigger?: (msg: string) => void;
+};
 
 export function buildRichPromptExtensions(
-  placeholder: string | undefined,
+  placeholderOverride: string | undefined,
   repoOpts: RepoFileSuggestionOptions,
+  opts: BuildRichPromptExtensionsOpts = {},
 ) {
+  const emptyBlockPlaceholder = placeholderOverride?.trim()
+    ? placeholderOverride
+    : EMPTY_BLOCK_PLACEHOLDER;
   return [
     StarterKit.configure({
       heading: { levels: [2, 3, 4] },
     }),
     Placeholder.configure({
-      placeholder: placeholder ?? "",
+      showOnlyCurrent: true,
+      placeholder: ({ node, hasAnchor }) => {
+        if (!hasAnchor) return "";
+        if (node.type.name !== "paragraph") return "";
+        if (node.content.size !== 0) return "";
+        return emptyBlockPlaceholder;
+      },
     }),
     RepoFileMention,
     RepoFileSuggestion.configure(repoOpts),
+    PressSpaceForAI.configure({
+      onAiTrigger: opts.onAiTrigger,
+    }),
+    SlashMenu.configure({
+      onAiTrigger: opts.onAiTrigger,
+    }),
   ];
 }

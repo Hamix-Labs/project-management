@@ -26,6 +26,11 @@ function initialPromptHtml(value: string): string {
   return plainTextToInitialHtml(value);
 }
 
+export type AiComposerState = {
+  open: boolean;
+  initialValue: string;
+};
+
 export function useRichPromptEditorController({
   id,
   value,
@@ -35,6 +40,7 @@ export function useRichPromptEditorController({
   worktreeId,
   repositoryId,
   preferRepositoryHint = false,
+  onAiTrigger,
 }: RichPromptEditorProps) {
   const gitScoped = worktreeId !== undefined || repositoryId !== undefined;
   const mentionWorktreeId = useResolvedMentionWorktreeId(
@@ -96,9 +102,31 @@ export function useRichPromptEditorController({
     [onFilePicked],
   );
 
+  const [aiComposer, setAiComposer] = useState<AiComposerState>({
+    open: false,
+    initialValue: "",
+  });
+
+  const onAiTriggerRef = useRef(onAiTrigger);
+  useEffect(() => {
+    onAiTriggerRef.current = onAiTrigger;
+  }, [onAiTrigger]);
+
+  const handleAiTrigger = useCallback((msg: string) => {
+    setAiComposer({ open: true, initialValue: msg });
+    onAiTriggerRef.current?.(msg);
+  }, []);
+
+  const closeAiComposer = useCallback(() => {
+    setAiComposer((prev) => (prev.open ? { ...prev, open: false } : prev));
+  }, []);
+
   const extensions = useMemo(
-    () => buildRichPromptExtensions(placeholder, repoOpts),
-    [placeholder, repoOpts],
+    () =>
+      buildRichPromptExtensions(placeholder, repoOpts, {
+        onAiTrigger: handleAiTrigger,
+      }),
+    [placeholder, repoOpts, handleAiTrigger],
   );
 
   const editor = useEditor({
@@ -200,6 +228,22 @@ export function useRichPromptEditorController({
     setRangeWarning(null);
   }, []);
 
+  const getAiAnchorRect = useCallback((): DOMRect | null => {
+    if (!editor || editor.isDestroyed) return null;
+    try {
+      const { from } = editor.state.selection;
+      const coords = editor.view.coordsAtPos(from);
+      return new DOMRect(
+        coords.left,
+        coords.top,
+        1,
+        coords.bottom - coords.top,
+      );
+    } catch {
+      return null;
+    }
+  }, [editor]);
+
   return {
     editor,
     pendingInsert,
@@ -209,5 +253,8 @@ export function useRichPromptEditorController({
     insertWithRange,
     repoHints,
     mentionWorktreeId,
+    aiComposer,
+    closeAiComposer,
+    getAiAnchorRect,
   };
 }

@@ -1,6 +1,7 @@
 import "tippy.js/dist/tippy.css";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { EditorContent } from "@tiptap/react";
+import { InlineAiComposer } from "./InlineAiComposer";
 import { RichPromptFileReferenceModal } from "./RichPromptFileReferenceModal";
 import { RichPromptMenuBar } from "./RichPromptMenuBar";
 import { RichPromptRepoHints } from "./RichPromptRepoHints";
@@ -9,7 +10,8 @@ import { useRichPromptEditorController } from "./useRichPromptEditorController";
 
 /** Rich initial prompt (TipTap) with @ file suggestions scoped to the task worktree. */
 export function RichPromptEditor(props: RichPromptEditorProps) {
-  const { id, disabled, menuVariant, menuRight, onEditorReady } = props;
+  const { id, disabled, menuVariant, menuRight, onAiTrigger, onEditorReady } =
+    props;
   const {
     editor,
     pendingInsert,
@@ -19,7 +21,18 @@ export function RichPromptEditor(props: RichPromptEditorProps) {
     insertWithRange,
     repoHints,
     mentionWorktreeId,
+    aiComposer,
+    closeAiComposer,
+    getAiAnchorRect,
   } = useRichPromptEditorController(props);
+
+  const handleSubmit = useCallback(
+    (msg: string) => {
+      onAiTrigger?.(msg);
+      closeAiComposer();
+    },
+    [onAiTrigger, closeAiComposer],
+  );
 
   useEffect(() => {
     onEditorReady?.(editor);
@@ -37,6 +50,13 @@ export function RichPromptEditor(props: RichPromptEditorProps) {
         right={menuRight}
       />
       <EditorContent editor={editor} />
+      <InlineAiComposer
+        open={aiComposer.open}
+        initialValue={aiComposer.initialValue}
+        getAnchorRect={getAiAnchorRect}
+        onClose={closeAiComposer}
+        onSubmit={handleSubmit}
+      />
       {pendingInsert ? (
         <RichPromptFileReferenceModal
           id={id}

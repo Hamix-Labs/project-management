@@ -13,6 +13,16 @@ type Props = {
   preferRepositoryHint?: boolean;
   /** When true, the section header owns the label — omit the field label. */
   hideLabel?: boolean;
+  /**
+   * Optional callback fired when the operator invokes Space-for-AI or picks
+   * `/ai` from the slash menu. Default no-op in Plan 1; Plan 3 wires this
+   * to `hamix-draft-agent`.
+   */
+  onAiTrigger?: (msg: string) => void;
+};
+
+const NOOP_AI_TRIGGER = (_msg: string) => {
+  void _msg;
 };
 
 export function TaskComposePromptField({
@@ -25,6 +35,7 @@ export function TaskComposePromptField({
   repositoryId,
   preferRepositoryHint = false,
   hideLabel = false,
+  onAiTrigger = NOOP_AI_TRIGGER,
 }: Props) {
   const promptId = `${idsPrefix}-prompt`;
 
@@ -46,10 +57,10 @@ export function TaskComposePromptField({
           value={prompt}
           onChange={onPromptChange}
           disabled={disabled}
-          placeholder="Describe the task in detail. Type @ to mention a repo file…"
           worktreeId={worktreeId}
           repositoryId={repositoryId}
           preferRepositoryHint={preferRepositoryHint}
+          onAiTrigger={onAiTrigger}
         />
       </div>
     </div>
