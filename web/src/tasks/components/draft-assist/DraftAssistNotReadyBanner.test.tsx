@@ -1,8 +1,14 @@
-import { render, screen, waitFor } from "@testing-library/react";
-import { http, HttpResponse } from "msw";
+import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
+import { ensureMswListening } from "@/test/mswLifecycle";
 import { server } from "@/test/server";
+import {
+  draftAssistReadyMissing,
+  draftAssistReadyOk,
+} from "@/test/handlers/draftAssist";
 import { DraftAssistNotReadyBanner } from "./DraftAssistNotReadyBanner";
+
+ensureMswListening("error");
 
 describe("DraftAssistNotReadyBanner", () => {
   beforeEach(() => {
@@ -10,27 +16,15 @@ describe("DraftAssistNotReadyBanner", () => {
   });
 
   it("stays hidden when ready", async () => {
-    server.use(
-      http.get("*/draft-assist/ready", () =>
-        HttpResponse.json({ ready: true, runner: "fake" }),
-      ),
-    );
+    server.use(draftAssistReadyOk("fake"));
     render(<DraftAssistNotReadyBanner />);
-    await waitFor(() => {
-      expect(screen.queryByRole("status")).not.toBeInTheDocument();
-    });
+    await expect(
+      screen.findByRole("status", {}, { timeout: 300 }),
+    ).rejects.toThrow();
   });
 
   it("shows missing_key copy with Retry", async () => {
-    server.use(
-      http.get("*/draft-assist/ready", () =>
-        HttpResponse.json({
-          ready: false,
-          runner: "sdk",
-          reason: "missing_key",
-        }),
-      ),
-    );
+    server.use(draftAssistReadyMissing("missing_key", "sdk"));
     render(<DraftAssistNotReadyBanner />);
     expect(
       await screen.findByText(/set CURSOR_API_KEY/i),
@@ -39,15 +33,7 @@ describe("DraftAssistNotReadyBanner", () => {
   });
 
   it("shows sidecar_down copy", async () => {
-    server.use(
-      http.get("*/draft-assist/ready", () =>
-        HttpResponse.json({
-          ready: false,
-          runner: "sdk",
-          reason: "sidecar_down",
-        }),
-      ),
-    );
+    server.use(draftAssistReadyMissing("sidecar_down", "sdk"));
     render(<DraftAssistNotReadyBanner />);
     expect(
       await screen.findByText(/sidecar is down/i),
