@@ -60,7 +60,8 @@ done
 GOOS="$(go env GOOS)"
 DESKTOP_EXE="$ROOT/hamix-desktop-dev"
 MCP_EXE="$ROOT/hamix-agent-mcp"
-[ "$GOOS" = "windows" ] && DESKTOP_EXE="$ROOT/hamix-desktop-dev.exe" && MCP_EXE="$ROOT/hamix-agent-mcp.exe"
+DRAFT_MCP_EXE="$ROOT/hamix-draft-mcp"
+[ "$GOOS" = "windows" ] && DESKTOP_EXE="$ROOT/hamix-desktop-dev.exe" && MCP_EXE="$ROOT/hamix-agent-mcp.exe" && DRAFT_MCP_EXE="$ROOT/hamix-draft-mcp.exe"
 DESKTOP_DIR="$ROOT/cmd/hamix-desktop"
 COPY_SCRIPT="$DESKTOP_DIR/scripts/copy-web-dist.mjs"
 
@@ -71,6 +72,7 @@ fi
 go mod download
 ( cd "$ROOT/web" && npm install )
 go build -o "$MCP_EXE" ./cmd/hamix-agent-mcp
+go build -o "$DRAFT_MCP_EXE" ./cmd/hamix-draft-mcp
 export PATH="$ROOT${PATH:+:$PATH}"
 
 if [[ "$LIVE" -eq 1 ]]; then

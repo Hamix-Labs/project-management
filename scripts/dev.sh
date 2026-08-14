@@ -60,7 +60,8 @@ GOOS="$(go env GOOS)"
 PORT="${DEV_TASKAPI_PORT:-8080}"
 EXE="$ROOT/taskapi-dev"
 MCP_EXE="$ROOT/hamix-agent-mcp"
-[ "$GOOS" = "windows" ] && EXE="$ROOT/taskapi-dev.exe" && MCP_EXE="$ROOT/hamix-agent-mcp.exe"
+DRAFT_MCP_EXE="$ROOT/hamix-draft-mcp"
+[ "$GOOS" = "windows" ] && EXE="$ROOT/taskapi-dev.exe" && MCP_EXE="$ROOT/hamix-agent-mcp.exe" && DRAFT_MCP_EXE="$ROOT/hamix-draft-mcp.exe"
 
 readiness_timeout_sec() {
   local sec
@@ -95,6 +96,32 @@ go mod download
 go build -o "$EXE" ./cmd/taskapi
 # Agent MCP host for Cursor execute/verify (LookPath from the taskapi process).
 go build -o "$MCP_EXE" ./cmd/hamix-agent-mcp
+# Draft-assist MCP host (Plan 4) for compose-page draft AI (bound to taskapi via --bind).
+go build -o "$DRAFT_MCP_EXE" ./cmd/hamix-draft-mcp
+
+# Draft-assist sidecar (Node). Build the ESM bundle and drop a launcher on
+# PATH so taskapi can spawn `hamix-draft-agent` the same way it spawns
+# `hamix-agent-mcp`.
+SIDECAR="$ROOT/sidecars/hamix-draft-agent"
+if [[ -d "$SIDECAR" ]]; then
+  (
+    cd "$SIDECAR"
+    if command -v pnpm >/dev/null 2>&1; then
+      pnpm install --silent
+      pnpm run build
+    else
+      npm install --silent
+      npm run build
+    fi
+  )
+  cp "$SIDECAR/dist/hamix-draft-agent.js" "$ROOT/hamix-draft-agent.js"
+  cat > "$ROOT/hamix-draft-agent" <<'LAUNCHER'
+#!/usr/bin/env sh
+exec node "$(dirname "$0")/hamix-draft-agent.js" "$@"
+LAUNCHER
+  chmod +x "$ROOT/hamix-draft-agent"
+fi
+
 export PATH="$ROOT${PATH:+:$PATH}"
 
 API_PID=""

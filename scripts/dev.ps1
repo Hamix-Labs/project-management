@@ -61,6 +61,7 @@ $port = if ($env:DEV_TASKAPI_PORT) { [int]$env:DEV_TASKAPI_PORT } else { 8080 }
 $exeSuffix = if ($IsWindows) { '.exe' } else { '' }
 $exe = Join-Path $repo ("taskapi-dev" + $exeSuffix)
 $mcpExe = Join-Path $repo ("hamix-agent-mcp" + $exeSuffix)
+$draftMcpExe = Join-Path $repo ("hamix-draft-mcp" + $exeSuffix)
 $readinessSec = if ($Migrate) { Get-DevReadinessTimeoutSec } else { 30 }
 
 $envFile = Join-Path $repo ".env"
@@ -91,6 +92,36 @@ try {
     & go build -o $exe "./cmd/taskapi"
     # Agent MCP host for Cursor execute/verify (LookPath from the taskapi process).
     & go build -o $mcpExe "./cmd/hamix-agent-mcp"
+    # Draft-assist MCP host (Plan 4) for compose-page draft AI (bound to taskapi via --bind).
+    & go build -o $draftMcpExe "./cmd/hamix-draft-mcp"
+
+    # Draft-assist sidecar (Node). Build the ESM bundle and drop a launcher on
+    # PATH so taskapi can spawn `hamix-draft-agent` the same way it spawns
+    # `hamix-agent-mcp`.
+    $sidecar = Join-Path $repo "sidecars\hamix-draft-agent"
+    if (Test-Path -LiteralPath $sidecar) {
+        Push-Location $sidecar
+        try {
+            if (Get-Command pnpm -ErrorAction SilentlyContinue) {
+                & pnpm install --silent
+                & pnpm run build
+            } else {
+                & npm install --silent
+                & npm run build
+            }
+        } finally {
+            Pop-Location
+        }
+        $bundle = Join-Path $sidecar "dist\hamix-draft-agent.js"
+        $rootJs = Join-Path $repo "hamix-draft-agent.js"
+        Copy-Item -LiteralPath $bundle -Destination $rootJs -Force
+        $cmdShim = Join-Path $repo "hamix-draft-agent.cmd"
+        @"
+@echo off
+node "%~dp0hamix-draft-agent.js" %*
+"@ | Set-Content -LiteralPath $cmdShim -Encoding ASCII
+    }
+
     $env:PATH = "$repo" + [IO.Path]::PathSeparator + $env:PATH
 
     Stop-ListenerOnPort $port
