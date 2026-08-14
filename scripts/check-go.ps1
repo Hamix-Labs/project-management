@@ -9,7 +9,7 @@
 #   -SkipFunclog        Skip funclogmeasure -enforce
 #   -LintOnly           Lint steps only (includes test-group coverage guard)
 #   -TestsOnly          go test only (use with -Group for CI matrix cells)
-#   -Group <name>       Restrict go test to core|tasks|agents|harness
+#   -Group <name>       Restrict go test to core|tasks|handlertest|task-bcs|agents|harness
 #   -Help               Show options
 #
 # CI: ./scripts/check-go.sh --lint-only --verbose

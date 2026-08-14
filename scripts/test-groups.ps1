@@ -15,9 +15,26 @@ function Get-GroupPackages {
                 Where-Object { $_ -notmatch '/(handlertest|agentreconcile)(/|$)' }
         }
         'tasks' {
-            go list ./pkgs/tasks/... ./pkgs/projects/... ./pkgs/gitinventory/... ./pkgs/settings/... ./pkgs/taskcompose/... `
-                ./pkgs/taskcore/... ./pkgs/taskchecklist/... ./pkgs/taskcycles/... ./pkgs/taskevents/... `
-                ./pkgs/runners/handler ./pkgs/storekernel/... ./internal/handlertest/...
+            go list ./pkgs/tasks/... ./pkgs/runners/handler ./pkgs/storekernel/...
+        }
+        'handlertest' {
+            @(
+                'github.com/AlexsanderHamir/Hamix/internal/handlertest/events',
+                'github.com/AlexsanderHamir/Hamix/internal/handlertest/cycles',
+                'github.com/AlexsanderHamir/Hamix/internal/handlertest/sse'
+            )
+        }
+        'handlertest-ui' {
+            @(
+                'github.com/AlexsanderHamir/Hamix/internal/handlertest',
+                'github.com/AlexsanderHamir/Hamix/internal/handlertest/checklist',
+                'github.com/AlexsanderHamir/Hamix/internal/handlertest/compose',
+                'github.com/AlexsanderHamir/Hamix/internal/handlertest/shell'
+            )
+        }
+        'task-bcs' {
+            go list ./pkgs/projects/... ./pkgs/gitinventory/... ./pkgs/settings/... ./pkgs/taskcompose/... `
+                ./pkgs/taskcore/... ./pkgs/taskchecklist/... ./pkgs/taskcycles/... ./pkgs/taskevents/... ./pkgs/draftassist/...
         }
         'agents' {
             go list ./pkgs/agents/... ./internal/taskapi/agentreconcile/... | Where-Object { $_ -notmatch '/harness' }
@@ -34,7 +51,7 @@ function Get-GroupPackages {
 }
 
 function Get-GroupNames {
-    'core', 'tasks', 'agents', 'harness'
+    'core', 'tasks', 'handlertest', 'handlertest-ui', 'task-bcs', 'agents', 'harness'
 }
 
 function Assert-GroupsCoverAll {

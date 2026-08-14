@@ -1,7 +1,10 @@
 {
   "core": 30,
   "tasks": 27,
+  "handlertest": 27,
+  "handlertest-ui": 27,
+  "task-bcs": 27,
   "agents": 62,
   "harness": 56,
-  "notes": "Statement coverage floors (percent). Ratchet quarterly (+1–2% per group). tasks floor recalibrated after Tier-4 BC extraction (taskcore, taskchecklist, taskcycles, taskevents) joined the tasks group."
+  "notes": "Statement coverage floors (percent). Ratchet quarterly (+1–2% per group). handlertest* and task-bcs split from tasks so each CI matrix job stays under the check step budget."
 }

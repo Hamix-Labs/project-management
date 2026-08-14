@@ -11,7 +11,7 @@ Contributor playbook for Go verification, coverage gates, test tiers, and anti-p
 ## In this article
 
 - [Verification ladder](#verification-ladder)
-- [Four CI test groups](#four-ci-test-groups)
+- [Six CI test groups](#six-ci-test-groups)
 - [Coverage floors](#coverage-floors)
 - [Test tiers](#test-tiers)
 - [Where to add tests](#where-to-add-tests)
@@ -24,7 +24,7 @@ Work from narrow to full bar — same order CI expects.
 
 | Step | Command (PowerShell) | When |
 | --- | --- | --- |
-| 1. Scoped group | `.\scripts\check-go.ps1 -TestsOnly -Group <core\|tasks\|agents\|harness> -Verbose` | Iterating on one area |
+| 1. Scoped group | `.\scripts\check-go.ps1 -TestsOnly -Group <core\|tasks\|handlertest\|task-bcs\|agents\|harness> -Verbose` | Iterating on one area |
 | 2. Full Go | `.\scripts\check.ps1 -GoOnly` | Before pushing Go-only changes |
 | 3. Full repo | `.\scripts\check.ps1` | Before opening a PR (add `-Install` when `web/package-lock.json` changed) |
 
@@ -32,14 +32,17 @@ Unix: `./scripts/check-go.sh --tests-only --group=harness --verbose`, etc.
 
 **Do not** use `go test ./...` as the primary loop. It includes unrelated packages (e.g. `web/node_modules`), runs more than CI, and can flake on parallel SQLite. Use the check scripts — they mirror [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml).
 
-## Four CI test groups
+## Six CI test groups
 
 Package lists are defined in [`scripts/test-groups.sh`](../../scripts/test-groups.sh) / [`scripts/test-groups.ps1`](../../scripts/test-groups.ps1). Lint job asserts every repo package belongs to exactly one group.
 
 | Group | Owns | Examples |
 | --- | --- | --- |
 | `core` | Binaries, `internal/`, repo/git helpers | `cmd/taskapi`, `internal/taskapi`, `pkgs/repo` |
-| `tasks` | Task domain BCs (except agentreconcile) | `pkgs/tasks/handler`, `pkgs/taskcore`, `pkgs/taskcycles`, `pkgs/settings` |
+| `tasks` | Task HTTP/store kernel | `pkgs/tasks/handler`, `pkgs/storekernel` |
+| `handlertest` | Handler integration (events/cycles/sse) | `internal/handlertest/events` |
+| `handlertest-ui` | Handler integration (compose/checklist) | `internal/handlertest/compose` |
+| `task-bcs` | Task-adjacent BCs | `pkgs/taskcore`, `pkgs/draftassist`, `pkgs/settings`, `pkgs/projects` |
 | `agents` | Agent worker, runner, queue, reconcile e2e | `pkgs/agents/worker`, `runner`, `internal/taskapi/agentreconcile` |
 | `harness` | Agent harness only | `pkgs/agents/harness/...` |
 
@@ -53,6 +56,9 @@ After tests pass, each group job runs the **coverage gate** (`scripts/coverage-g
 | --- | ---: |
 | `core` | 30 |
 | `tasks` | 27 |
+| `handlertest` | 27 |
+| `handlertest-ui` | 27 |
+| `task-bcs` | 27 |
 | `agents` | 62 |
 | `harness` | 56 |
 

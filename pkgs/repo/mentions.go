@@ -40,10 +40,12 @@ func ParseFileMentions(s string) []Mention {
 	return parsePlainFileMentions(s)
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure predicate; ParseFileMentions emits the operation trace."
 func looksLikePromptHTML(s string) bool {
 	return strings.Contains(s, "<") && strings.Contains(s, ">")
 }
 
+//funclogmeasure:skip category=hot-path reason="Parse helper; ParseFileMentions emits the operation trace."
 func parseHTMLDataPathMentions(s string) []Mention {
 	var out []Mention
 	for _, loc := range dataPathTagRe.FindAllStringSubmatchIndex(s, -1) {
@@ -83,6 +85,7 @@ func parseHTMLDataPathMentions(s string) []Mention {
 	return parsePlainFileMentions(stripHTMLTags(s))
 }
 
+//funclogmeasure:skip category=hot-path reason="Pure string helper; ParseFileMentions emits the operation trace."
 func stripHTMLTags(s string) string {
 	var b strings.Builder
 	b.Grow(len(s))
@@ -104,6 +107,7 @@ func stripHTMLTags(s string) string {
 	return html.UnescapeString(b.String())
 }
 
+//funclogmeasure:skip category=hot-path reason="Parse helper; ParseFileMentions emits the operation trace."
 func parsePlainFileMentions(s string) []Mention {
 	var out []Mention
 	i := 0

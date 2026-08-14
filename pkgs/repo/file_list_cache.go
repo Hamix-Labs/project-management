@@ -21,6 +21,8 @@ var (
 // cachedFiles returns the full sorted listing for r, reusing a short-lived
 // process-local entry so paginated /repo/files warm requests do not re-run
 // git ls-files on every page.
+//
+//funclogmeasure:skip category=hot-path reason="Cache helper; Files/ListFiles emit the operation-level trace."
 func (r *Root) cachedFiles(ctx context.Context) (FileListing, error) {
 	key := r.abs
 	now := time.Now()
@@ -48,6 +50,8 @@ func (r *Root) cachedFiles(ctx context.Context) (FileListing, error) {
 }
 
 // resetFileListCacheForTest clears the TTL cache (unit tests only).
+//
+//funclogmeasure:skip category=hot-path reason="Test-only cache reset without production I/O path."
 func resetFileListCacheForTest() {
 	fileListCacheMu.Lock()
 	fileListCache = map[string]fileListCacheEntry{}

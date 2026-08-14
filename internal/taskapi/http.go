@@ -7,6 +7,8 @@ import (
 	"net/http"
 
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
+	"github.com/AlexsanderHamir/Hamix/pkgs/draftassist/runner"
+	draftassiststore "github.com/AlexsanderHamir/Hamix/pkgs/draftassist/store"
 	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/repo"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/handler"
@@ -37,5 +39,11 @@ func NewHTTPHandler(s *composition.API, hub *realtime.SSEHub, rep *repo.Root, ag
 	if rep == nil {
 		opts = append(opts, handler.WithRepoProvider(handler.NewSettingsRepoProvider(s)))
 	}
+	// Draft-assist (ADR-0101): in-memory sessions + fake runner until Plan 3
+	// swaps in the Cursor SDK sidecar.
+	opts = append(opts, handler.WithDraftAssist(
+		draftassiststore.NewMemoryStore(),
+		runner.NewFake(runner.FakeOptions{}),
+	))
 	return middleware.Stack(handler.NewHandler(s, hub, rep, opts...), calltrace.Path)
 }

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	draftassisthandler "github.com/AlexsanderHamir/Hamix/pkgs/draftassist/handler"
 	gitinventoryhandler "github.com/AlexsanderHamir/Hamix/pkgs/gitinventory/handler"
 	projecthandler "github.com/AlexsanderHamir/Hamix/pkgs/projects/handler"
 	repohandler "github.com/AlexsanderHamir/Hamix/pkgs/repo/handler"
@@ -84,6 +85,12 @@ func (h *Handler) registerRoutes(m *http.ServeMux) {
 	taskcorehandler.Register(m, h.taskcoreDeps())
 	repohandler.Register(m, repohandler.Deps{Provider: h.repoProv})
 	runnershandler.Register(m, runnershandler.Deps{Settings: h.store})
+	if h.draftAssistStore != nil {
+		draftassisthandler.Register(m, draftassisthandler.Deps{
+			Store:  h.draftAssistStore,
+			Runner: h.draftAssistRunner,
+		})
+	}
 	h.registerMiscRoutes(m)
 }
 
