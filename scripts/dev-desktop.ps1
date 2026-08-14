@@ -53,6 +53,7 @@ but local agent/MCP wiring expects the same .env as .\scripts\dev.ps1.)
 $exeSuffix = if ($IsWindows -or $env:OS -match 'Windows') { '.exe' } else { '' }
 $desktopExe = Join-Path $repo ("hamix-desktop-dev" + $exeSuffix)
 $mcpExe = Join-Path $repo ("hamix-agent-mcp" + $exeSuffix)
+$draftMcpExe = Join-Path $repo ("hamix-draft-mcp" + $exeSuffix)
 $desktopDir = Join-Path $repo "cmd\hamix-desktop"
 $copyScript = Join-Path $desktopDir "scripts\copy-web-dist.mjs"
 
@@ -70,6 +71,8 @@ try {
 
     # Agent MCP host for Cursor execute/verify (LookPath from the desktop process).
     & go build -o $mcpExe "./cmd/hamix-agent-mcp"
+    # Draft-assist MCP host (Plan 4) for compose-page draft AI.
+    & go build -o $draftMcpExe "./cmd/hamix-draft-mcp"
     $env:PATH = "$repo" + [IO.Path]::PathSeparator + $env:PATH
 
     if ($Live) {

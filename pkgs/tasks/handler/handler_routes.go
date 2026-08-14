@@ -86,10 +86,14 @@ func (h *Handler) registerRoutes(m *http.ServeMux) {
 	repohandler.Register(m, repohandler.Deps{Provider: h.repoProv})
 	runnershandler.Register(m, runnershandler.Deps{Settings: h.store})
 	if h.draftAssistStore != nil {
-		draftassisthandler.Register(m, draftassisthandler.Deps{
+		deps := draftassisthandler.Deps{
 			Store:  h.draftAssistStore,
 			Runner: h.draftAssistRunner,
-		})
+		}
+		if h.draftAssistReady != nil {
+			deps.Ready = h.draftAssistReady
+		}
+		draftassisthandler.Register(m, deps)
 	}
 	h.registerMiscRoutes(m)
 }
