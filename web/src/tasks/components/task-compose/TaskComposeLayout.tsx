@@ -10,9 +10,32 @@ type Props = {
   children: ReactNode;
   errors?: ReactNode;
   footer?: ReactNode;
-  /** Reserved for Plan 4 assist thread; empty in Wave A. */
+  /** Right-hand handoff rail (Destination / Priority / Agent / Tags). */
+  rightRail?: ReactNode;
+  /** Fixed bottom action bar (readiness + Cancel / Save / Create). */
+  stickyFooter?: ReactNode;
+  /** Reserved for Plan 4 assist thread; empty in Wave A. Ignored when rightRail is set. */
   assist?: ReactNode;
 };
+
+function BackArrowIcon() {
+  return (
+    <svg
+      className="task-compose-page__back-icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M19 12H5" />
+      <path d="m12 19-7-7 7-7" />
+    </svg>
+  );
+}
 
 /** Page chrome for task/template compose (ADR-0100). */
 export function TaskComposeLayout({
@@ -24,26 +47,43 @@ export function TaskComposeLayout({
   children,
   errors,
   footer,
+  rightRail,
+  stickyFooter,
   assist,
 }: Props) {
-  const hasAssist = assist != null;
+  const hasRail = rightRail != null;
+  const hasAssist = !hasRail && assist != null;
 
   return (
     <section
-      className="task-compose-page"
+      className={
+        hasRail
+          ? "task-compose-page task-compose-page--v2"
+          : "task-compose-page"
+      }
       data-has-assist={hasAssist ? "true" : "false"}
+      data-has-rail={hasRail ? "true" : "false"}
     >
       <header className="task-compose-page__topbar">
-        <Link className="task-compose-page__back" to={backTo}>
-          ← {backLabel}
-        </Link>
-        <div className="task-compose-page__title-block">
-          <h1 className="task-compose-page__title" id="task-compose-page-title">
-            {title}
-          </h1>
-          {subtitle ? (
-            <p className="task-compose-page__subtitle">{subtitle}</p>
-          ) : null}
+        <div className="task-compose-page__heading">
+          <Link
+            className="task-compose-page__back"
+            to={backTo}
+            aria-label={backLabel}
+          >
+            {hasRail ? <BackArrowIcon /> : `← ${backLabel}`}
+          </Link>
+          <div className="task-compose-page__title-block">
+            <h1
+              className="task-compose-page__title"
+              id="task-compose-page-title"
+            >
+              {title}
+            </h1>
+            {subtitle ? (
+              <p className="task-compose-page__subtitle">{subtitle}</p>
+            ) : null}
+          </div>
         </div>
         {topActions ? (
           <div className="task-compose-page__top-actions">{topActions}</div>
@@ -56,18 +96,32 @@ export function TaskComposeLayout({
           {errors ? (
             <div className="task-compose-page__errors">{errors}</div>
           ) : null}
-          {footer != null ? (
+          {footer != null && !stickyFooter ? (
             <footer className="task-compose-page__footer">{footer}</footer>
           ) : null}
         </div>
-        <aside
-          className="task-compose-page__assist"
-          aria-label="Draft assist"
-          data-empty={hasAssist ? "false" : "true"}
-        >
-          {assist}
-        </aside>
+        {hasRail ? (
+          <aside className="task-compose-page__rail" aria-label="Handoff">
+            {rightRail}
+          </aside>
+        ) : (
+          <aside
+            className="task-compose-page__assist"
+            aria-label="Draft assist"
+            data-empty={hasAssist ? "false" : "true"}
+          >
+            {assist}
+          </aside>
+        )}
       </div>
+
+      {stickyFooter ? (
+        <div className="task-compose-page__sticky-footer">
+          <div className="task-compose-page__sticky-footer-inner">
+            {stickyFooter}
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
