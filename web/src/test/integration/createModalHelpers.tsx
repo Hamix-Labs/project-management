@@ -32,13 +32,16 @@ export async function choosePriorityInDialog(
   dialog: HTMLElement,
   level: "low" | "medium" | "high" | "critical" = "medium",
 ) {
-  const combo = within(dialog).getByRole("combobox", {
+  const labels = {
+    low: /^low$/i,
+    medium: /^medium$/i,
+    high: /^high$/i,
+    critical: /^critical$/i,
+  } as const;
+  const group = within(dialog).getByRole("radiogroup", {
     name: /^priority$/i,
   });
-  await user.click(combo);
-  await user.click(
-    screen.getByRole("option", { name: new RegExp(`^${level}$`, "i") }),
-  );
+  await user.click(within(group).getByRole("radio", { name: labels[level] }));
 }
 
 export async function addCriterionInDialog(
@@ -46,9 +49,10 @@ export async function addCriterionInDialog(
   dialog: HTMLElement,
   text: string,
 ) {
-  await user.click(
-    within(dialog).getByRole("button", { name: /new criterion/i }),
-  );
+  const addBtn =
+    within(dialog).queryByTestId("compose-criteria-add") ??
+    within(dialog).getByRole("button", { name: /new criterion/i });
+  await user.click(addBtn);
   const criterionDialog = await screen.findByRole("dialog", {
     name: /new criterion/i,
   });
