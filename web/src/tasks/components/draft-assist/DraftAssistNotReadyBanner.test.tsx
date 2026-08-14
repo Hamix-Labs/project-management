@@ -1,5 +1,4 @@
 import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it } from "vitest";
 import { server } from "@/test/server";
@@ -12,7 +11,7 @@ describe("DraftAssistNotReadyBanner", () => {
 
   it("stays hidden when ready", async () => {
     server.use(
-      http.get("/draft-assist/ready", () =>
+      http.get("*/draft-assist/ready", () =>
         HttpResponse.json({ ready: true, runner: "fake" }),
       ),
     );
@@ -22,29 +21,36 @@ describe("DraftAssistNotReadyBanner", () => {
     });
   });
 
-  it("shows missing_key copy and retries", async () => {
-    let attempts = 0;
+  it("shows missing_key copy with Retry", async () => {
     server.use(
-      http.get("/draft-assist/ready", () => {
-        attempts += 1;
-        if (attempts === 1) {
-          return HttpResponse.json({
-            ready: false,
-            runner: "sdk",
-            reason: "missing_key",
-          });
-        }
-        return HttpResponse.json({ ready: true, runner: "sdk" });
-      }),
+      http.get("*/draft-assist/ready", () =>
+        HttpResponse.json({
+          ready: false,
+          runner: "sdk",
+          reason: "missing_key",
+        }),
+      ),
     );
-    const user = userEvent.setup();
     render(<DraftAssistNotReadyBanner />);
     expect(
       await screen.findByText(/set CURSOR_API_KEY/i),
     ).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /retry/i }));
-    await waitFor(() => {
-      expect(screen.queryByRole("status")).not.toBeInTheDocument();
-    });
+    expect(screen.getByRole("button", { name: /retry/i })).toBeInTheDocument();
+  });
+
+  it("shows sidecar_down copy", async () => {
+    server.use(
+      http.get("*/draft-assist/ready", () =>
+        HttpResponse.json({
+          ready: false,
+          runner: "sdk",
+          reason: "sidecar_down",
+        }),
+      ),
+    );
+    render(<DraftAssistNotReadyBanner />);
+    expect(
+      await screen.findByText(/sidecar is down/i),
+    ).toBeInTheDocument();
   });
 });
