@@ -83,6 +83,27 @@ hrefs are rejected.
 
 - `taskapi_draftassist_run_first_event_ms` — histogram, accept → first status/token/tool/error
 - `taskapi_draftassist_watchdog_total` — counter, silence watchdog firings
+- `taskapi_draftassist_sidecar_restart_total` — counter, supervisor respawns
+- `taskapi_draftassist_sidecar_up` — gauge, 1 when `/readyz` reports ready
+
+## Supervisor
+
+`internal/taskapi/draftsidecar` keeps `hamix-draft-agent` warm:
+
+1. `LookPath("hamix-draft-agent")` at taskapi boot.
+2. Spawn with `--port 0`; parse `listening on <port>` from stdout.
+3. Probe `GET /readyz` every 2s; mark ready / `sidecar_down` / `missing_key`.
+4. On child exit: restart with backoff 1s → 2s → 5s → 15s (cap).
+5. Propagate `CURSOR_API_KEY` via child env only (never logged).
+6. `Close()` on taskapi shutdown.
+
+Boot selection in `internal/taskapi/http.go`:
+
+| Binary | `CURSOR_API_KEY` | Runner | Ready |
+| --- | --- | --- | --- |
+| missing | — | fake | `runner=missing`, `reason=no_runner` |
+| present | unset | fake | `runner=sdk`, `reason=missing_key` |
+| present | set | sdk (sidecar) | supervisor probe |
 
 ## Sidecar (`hamix-draft-agent`)
 

@@ -20,6 +20,11 @@ type CreateSessionInput struct {
 type RunInput struct {
 	UserMessage string
 	Snapshot    domain.FormSnapshot
+	// WorktreeCwd is the absolute path the runner should treat as the
+	// agent's cwd. The handler fills it from the session's worktree
+	// binding (may be empty when the operator has not bound one yet;
+	// the sidecar runner will fail closed in that case).
+	WorktreeCwd string
 }
 
 // Subscription is a live event feed on one session. Events is closed when
