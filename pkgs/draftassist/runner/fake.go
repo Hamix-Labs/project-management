@@ -51,11 +51,16 @@ func (f *Fake) Run(ctx context.Context, sessionID, runID string, in contract.Run
 		return h.Emit(ctx, sessionID, runID, kind, data)
 	}
 
+	emitCancelled := func() error {
+		_ = emit(domain.EventStatus, domain.StatusEventData{Status: domain.RunStatusCancelling})
+		_ = emit(domain.EventDone, domain.DoneEventData{Status: domain.RunStatusCancelled})
+		return ctx.Err()
+	}
+
 	if f.opts.ThinkDelay > 0 {
 		select {
 		case <-ctx.Done():
-			_ = emit(domain.EventDone, domain.DoneEventData{Status: domain.RunStatusCancelled})
-			return ctx.Err()
+			return emitCancelled()
 		case <-time.After(f.opts.ThinkDelay):
 		}
 	}
@@ -65,8 +70,7 @@ func (f *Fake) Run(ctx context.Context, sessionID, runID string, in contract.Run
 
 	select {
 	case <-ctx.Done():
-		_ = emit(domain.EventDone, domain.DoneEventData{Status: domain.RunStatusCancelled})
-		return ctx.Err()
+		return emitCancelled()
 	case <-time.After(f.opts.TokenDelay):
 	}
 	if err := emit(domain.EventStatus, domain.StatusEventData{Status: domain.RunStatusStreaming}); err != nil {
@@ -79,8 +83,7 @@ func (f *Fake) Run(ctx context.Context, sessionID, runID string, in contract.Run
 	if f.opts.SlowAfterToken > 0 {
 		select {
 		case <-ctx.Done():
-			_ = emit(domain.EventDone, domain.DoneEventData{Status: domain.RunStatusCancelled})
-			return ctx.Err()
+			return emitCancelled()
 		case <-time.After(f.opts.SlowAfterToken):
 		}
 	}

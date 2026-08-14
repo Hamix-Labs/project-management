@@ -61,6 +61,7 @@ $port = if ($env:DEV_TASKAPI_PORT) { [int]$env:DEV_TASKAPI_PORT } else { 8080 }
 $exeSuffix = if ($IsWindows) { '.exe' } else { '' }
 $exe = Join-Path $repo ("taskapi-dev" + $exeSuffix)
 $mcpExe = Join-Path $repo ("hamix-agent-mcp" + $exeSuffix)
+$draftMcpExe = Join-Path $repo ("hamix-draft-mcp" + $exeSuffix)
 $readinessSec = if ($Migrate) { Get-DevReadinessTimeoutSec } else { 30 }
 
 $envFile = Join-Path $repo ".env"
@@ -91,6 +92,8 @@ try {
     & go build -o $exe "./cmd/taskapi"
     # Agent MCP host for Cursor execute/verify (LookPath from the taskapi process).
     & go build -o $mcpExe "./cmd/hamix-agent-mcp"
+    # Draft-assist MCP host (Plan 4) for compose-page draft AI (bound to taskapi via --bind).
+    & go build -o $draftMcpExe "./cmd/hamix-draft-mcp"
     $env:PATH = "$repo" + [IO.Path]::PathSeparator + $env:PATH
 
     Stop-ListenerOnPort $port
