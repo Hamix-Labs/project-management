@@ -1,5 +1,7 @@
+import { useCallback } from "react";
 import { FieldLabel } from "@/shared/FieldLabel";
 import { RichPromptEditor } from "@/components/rich-prompt";
+import { useOptionalDraftAssistContext } from "@/tasks/components/draft-assist";
 
 type Props = {
   idsPrefix: string;
@@ -15,14 +17,12 @@ type Props = {
   hideLabel?: boolean;
   /**
    * Optional callback fired when the operator invokes Space-for-AI or picks
-   * `/ai` from the slash menu. Default no-op in Plan 1; Plan 3 wires this
-   * to `hamix-draft-agent`.
+   * `/ai` from the slash menu. When omitted, the field falls back to the
+   * nearest `DraftAssistProvider`: the first trigger calls `open(msg)` so
+   * Plan 3's assist thread opens lazily; subsequent triggers reuse the
+   * session via `send(msg)`.
    */
   onAiTrigger?: (msg: string) => void;
-};
-
-const NOOP_AI_TRIGGER = (_msg: string) => {
-  void _msg;
 };
 
 export function TaskComposePromptField({
@@ -35,8 +35,21 @@ export function TaskComposePromptField({
   repositoryId,
   preferRepositoryHint = false,
   hideLabel = false,
-  onAiTrigger = NOOP_AI_TRIGGER,
+  onAiTrigger,
 }: Props) {
+  const draftAssist = useOptionalDraftAssistContext();
+  const contextTrigger = useCallback(
+    (msg: string) => {
+      if (!draftAssist) return;
+      if (draftAssist.active) {
+        draftAssist.send(msg);
+      } else {
+        draftAssist.open(msg);
+      }
+    },
+    [draftAssist],
+  );
+  const trigger = onAiTrigger ?? (draftAssist ? contextTrigger : undefined);
   const promptId = `${idsPrefix}-prompt`;
 
   return (
@@ -60,7 +73,7 @@ export function TaskComposePromptField({
           worktreeId={worktreeId}
           repositoryId={repositoryId}
           preferRepositoryHint={preferRepositoryHint}
-          onAiTrigger={onAiTrigger}
+          onAiTrigger={trigger}
         />
       </div>
     </div>

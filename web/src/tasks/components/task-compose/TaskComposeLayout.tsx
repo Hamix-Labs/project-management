@@ -14,7 +14,7 @@ type Props = {
   rightRail?: ReactNode;
   /** Fixed bottom action bar (readiness + Cancel / Save / Create). */
   stickyFooter?: ReactNode;
-  /** Reserved for Plan 4 assist thread; empty in Wave A. Ignored when rightRail is set. */
+  /** Draft-assist thread column. Shown beside the handoff rail when both are set. */
   assist?: ReactNode;
 };
 
@@ -52,7 +52,7 @@ export function TaskComposeLayout({
   assist,
 }: Props) {
   const hasRail = rightRail != null;
-  const hasAssist = !hasRail && assist != null;
+  const hasAssist = assist != null;
 
   return (
     <section
@@ -100,19 +100,26 @@ export function TaskComposeLayout({
             <footer className="task-compose-page__footer">{footer}</footer>
           ) : null}
         </div>
+        {hasAssist ? (
+          <aside
+            className="task-compose-page__assist"
+            aria-label="Draft assist"
+            data-empty="false"
+          >
+            {assist}
+          </aside>
+        ) : !hasRail ? (
+          <aside
+            className="task-compose-page__assist"
+            aria-label="Draft assist"
+            data-empty="true"
+          />
+        ) : null}
         {hasRail ? (
           <aside className="task-compose-page__rail" aria-label="Handoff">
             {rightRail}
           </aside>
-        ) : (
-          <aside
-            className="task-compose-page__assist"
-            aria-label="Draft assist"
-            data-empty={hasAssist ? "false" : "true"}
-          >
-            {assist}
-          </aside>
-        )}
+        ) : null}
       </div>
 
       {stickyFooter ? (

@@ -1,5 +1,6 @@
-import type { ReactNode } from "react";
+import { useCallback, type ReactNode } from "react";
 import { RichPromptEditor } from "@/components/rich-prompt";
+import { useOptionalDraftAssistContext } from "@/tasks/components/draft-assist";
 import { useRichPromptWordCount } from "./useRichPromptWordCount";
 
 type Props = {
@@ -34,6 +35,18 @@ export function TaskComposeBriefCard({
   const titleId = `${idsPrefix}-title`;
   const promptId = `${idsPrefix}-prompt`;
   const { wordCount, onEditorReady } = useRichPromptWordCount();
+  const draftAssist = useOptionalDraftAssistContext();
+  const onAiTrigger = useCallback(
+    (msg: string) => {
+      if (!draftAssist) return;
+      if (draftAssist.active) {
+        draftAssist.send(msg);
+      } else {
+        draftAssist.open(msg);
+      }
+    },
+    [draftAssist],
+  );
 
   return (
     <section className="compose-card compose-brief" aria-labelledby={titleId}>
@@ -71,6 +84,7 @@ export function TaskComposeBriefCard({
             </span>
           }
           onEditorReady={onEditorReady}
+          onAiTrigger={draftAssist ? onAiTrigger : undefined}
         />
       </div>
     </section>

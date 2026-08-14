@@ -88,12 +88,17 @@
   margin-left: auto;
 }
 
-/* Two-column grid */
+/* Two-column grid (form + handoff rail). Expands to three when assist is open. */
 .task-compose-page--v2 .task-compose-page__grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) var(--compose-rail-width);
   gap: var(--space-6);
   align-items: start;
+}
+
+.task-compose-page--v2[data-has-assist="true"] .task-compose-page__grid {
+  grid-template-columns:
+    minmax(0, 1fr) minmax(16rem, 22rem) var(--compose-rail-width);
 }
 
 .task-compose-page--v2 .task-compose-page__form-column {
@@ -114,6 +119,16 @@
 
 .task-compose-page--v2 .task-compose-page__assist {
   display: none;
+}
+
+.task-compose-page--v2[data-has-assist="true"] .task-compose-page__assist {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  position: sticky;
+  top: 6rem;
+  align-self: start;
+  max-height: calc(100vh - 8rem);
 }
 
 /* Flatten the old modal sheet chrome inside the page */
@@ -489,7 +504,7 @@ form.task-compose-page__form-shell {
 
 .task-compose-page--v2 .compose-priority__segment[data-active="true"][data-warn="true"] {
   background: var(--warning);
-  color: #fff;
+  color: var(--text-on-brand);
 }
 
 .task-compose-page--v2 .compose-priority__segment:focus-visible {
@@ -713,11 +728,14 @@ form.task-compose-page__form-shell {
 }
 
 @media (max-width: 60rem) {
-  .task-compose-page--v2 .task-compose-page__grid {
+  .task-compose-page--v2 .task-compose-page__grid,
+  .task-compose-page--v2[data-has-assist="true"] .task-compose-page__grid {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .task-compose-page--v2 .task-compose-page__rail {
+  .task-compose-page--v2 .task-compose-page__rail,
+  .task-compose-page--v2[data-has-assist="true"] .task-compose-page__assist {
     position: static;
+    max-height: none;
   }
 }
