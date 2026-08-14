@@ -121,11 +121,8 @@ describe("TaskCreateModal", () => {
   it("marks Done criteria as required", () => {
     renderModal({ checklistItems: [] });
     const heading = screen.getByRole("heading", { name: /done criteria/i });
-    const row = heading.closest(".task-create-modal-section__title-row");
-    expect(row).not.toBeNull();
-    expect(within(row as HTMLElement).getByText("*")).toBeInTheDocument();
+    expect(within(heading).getByText("*")).toBeInTheDocument();
   });
-
   it("shows the create subtitle and cancel control", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
@@ -307,10 +304,12 @@ describe("TaskCreateModal", () => {
       milestone: "M1",
       schedule: "2026-04-19T13:00:00Z",
     });
+    // Tags live in the rail card; schedule/milestone stay in More options.
+    expect(screen.getByLabelText(/^tags$/i)).toBeInTheDocument();
     const toggle = screen.getByTestId("task-create-more-options-toggle");
     expect(toggle).toHaveTextContent(/Scheduled/);
-    expect(toggle).toHaveTextContent(/2 tags/);
     expect(toggle).toHaveTextContent(/Milestone/);
+    expect(toggle).not.toHaveTextContent(/2 tags/);
   });
 
   describe("launch omissions", () => {
@@ -321,35 +320,37 @@ describe("TaskCreateModal", () => {
           feature === "taskTags" ||
           feature === "taskDependencies",
       );
-      const user = userEvent.setup();
       renderModal({
         tagsCsv: "backend, api",
         milestone: "M1",
         schedule: "2026-04-19T13:00:00Z",
       });
-      const toggle = screen.getByTestId("task-create-more-options-toggle");
-      expect(toggle).not.toHaveTextContent(/2 tags/);
-      expect(toggle).not.toHaveTextContent(/Scheduled/);
-      await expandMoreOptions(user);
+      // Agent is promoted to the rail; with schedule/deps omitted there is
+      // nothing left for More options, so the disclosure is absent.
+      expect(
+        screen.queryByTestId("task-create-more-options-toggle"),
+      ).not.toBeInTheDocument();
       expect(screen.queryByTestId("schedule-picker-input")).not.toBeInTheDocument();
       expect(screen.queryByLabelText(/^tags$/i)).not.toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { name: /^agent$/i }),
+      ).toBeInTheDocument();
     });
 
     it("shows tags only when taskTags is restored and taskDependencies stays omitted", async () => {
       isUiFeatureOmitted.mockImplementation(
         (feature) => feature === "schedule" || feature === "taskDependencies",
       );
-      const user = userEvent.setup();
       renderModal({
         tagsCsv: "backend, api",
         milestone: "M1",
       });
-      const toggle = screen.getByTestId("task-create-more-options-toggle");
-      expect(toggle).toHaveTextContent(/2 tags/);
-      expect(toggle).not.toHaveTextContent(/Milestone/);
-      await expandMoreOptions(user);
       expect(screen.getByLabelText(/^tags$/i)).toBeInTheDocument();
       expect(screen.queryByLabelText(/^milestone$/i)).not.toBeInTheDocument();
+      // Schedule + deps omitted → no More options body for those fields.
+      expect(
+        screen.queryByTestId("task-create-more-options-toggle"),
+      ).not.toBeInTheDocument();
     });
   });
 

@@ -18,6 +18,7 @@ export function TaskCreateModalAgentSection({
   disabled,
   lockRunner = false,
   variant = "default",
+  hideHeader = false,
   runner,
   cursorModel,
   modelIds,
@@ -45,9 +46,9 @@ export function TaskCreateModalAgentSection({
       ]
         .filter(Boolean)
         .join(" ")}
-      aria-labelledby={AGENT_HEADING_ID}
+      aria-labelledby={hideHeader ? undefined : AGENT_HEADING_ID}
     >
-      {isCreateModal ? (
+      {hideHeader ? null : isCreateModal ? (
         <TaskCreateConfigSectionHeader
           id={AGENT_HEADING_ID}
           title="Agent"

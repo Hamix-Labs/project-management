@@ -43,9 +43,10 @@ type Runtime struct {
 	AgentQueue  *agents.MemoryQueue
 	AgentWorker *agentworker.Supervisor
 
-	db         *gorm.DB
-	stopAgents context.CancelFunc
-	cmdName    string
+	db          *gorm.DB
+	stopAgents  context.CancelFunc
+	closeHTTP   func() error
+	cmdName     string
 }
 
 // Start opens the database, optionally migrates, wires agents, and builds
@@ -88,7 +89,7 @@ func buildRuntime(ctx context.Context, db *gorm.DB, drift postgres.SchemaDriftRe
 		return nil, err
 	}
 
-	api := taskapi.NewHTTPHandler(store, hub, nil, aw, drift)
+	api, closeHTTP := taskapi.NewHTTPHandler(store, hub, nil, aw, drift)
 	return &Runtime{
 		Handler:     api,
 		SchemaDrift: drift,
@@ -98,6 +99,7 @@ func buildRuntime(ctx context.Context, db *gorm.DB, drift postgres.SchemaDriftRe
 		AgentWorker: aw,
 		db:          db,
 		stopAgents:  stopAgents,
+		closeHTTP:   closeHTTP,
 		cmdName:     cmd,
 	}, nil
 }
@@ -116,6 +118,12 @@ func (r *Runtime) Close() error {
 	if r.stopAgents != nil {
 		r.stopAgents()
 		r.stopAgents = nil
+	}
+	if r.closeHTTP != nil {
+		if err := r.closeHTTP(); err != nil {
+			slog.Warn("taskapi http close failed", "cmd", r.cmdName, "operation", "taskapiruntime.Close", "err", err)
+		}
+		r.closeHTTP = nil
 	}
 	if r.db != nil {
 		ok := closeSQLDBOrLog(r.db, r.cmdName)

@@ -121,6 +121,7 @@ In-memory prompt-assist sessions for the compose page (ADR-0101). Not part of th
 | POST | `/draft-assist/sessions` | Create session. Body `{ worktree_id?, snapshot }`. `201` `{ id, nonce, … }` |
 | GET | `/draft-assist/sessions/{id}` | Session + snapshot |
 | PUT | `/draft-assist/sessions/{id}/snapshot` | Replace form snapshot |
+| PATCH | `/draft-assist/sessions/{id}/prompt` | MCP write path. Requires `X-Hamix-Draft-Nonce` header. Body `{ prompt }` validated against the TipTap subset (`pkgs/draftassist/domain/promptsubset.go`). 401 if header missing, 403 on stale nonce, 400 on disallowed HTML. On success publishes an SSE `patch` frame. |
 | GET | `/draft-assist/sessions/{id}/events` | SSE: `session` (includes `schema_version: 1`), `status`, `token`, `tool`, `patch`, `error`, `done`. Heartbeats are `: heartbeat` comments every 3s while a run is active. Ring size 256; `Last-Event-ID` replay. |
 | POST | `/draft-assist/sessions/{id}/runs` | **202** `{ run_id }` immediately. Body `{ user_message, snapshot? }`. Concurrent run → **409**. |
 | POST | `/draft-assist/sessions/{id}/runs/{runId}/cancel` | **202** `{ status: "cancelling" }`; SSE emits `status=cancelling` then `done{cancelled}` |

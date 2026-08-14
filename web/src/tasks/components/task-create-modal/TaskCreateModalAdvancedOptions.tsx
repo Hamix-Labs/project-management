@@ -33,6 +33,16 @@ type Props = {
   onTagsCsvChange: (value: string) => void;
   onMilestoneChange: (value: string) => void;
   onDependsOnChange: (value: string[]) => void;
+  /**
+   * When true, skip Agent section (compose page promotes it to the rail).
+   * Default false preserves modal behavior.
+   */
+  omitAgent?: boolean;
+  /**
+   * When true, hide Tags inside scheduling fields (compose page promotes Tags).
+   * Milestone / depends-on still render when enabled. Default false.
+   */
+  omitTags?: boolean;
 };
 
 export function TaskCreateModalAdvancedOptions({
@@ -53,6 +63,8 @@ export function TaskCreateModalAdvancedOptions({
   onTagsCsvChange,
   onMilestoneChange,
   onDependsOnChange,
+  omitAgent = false,
+  omitTags = false,
 }: Props) {
   const agentRunner = presentation.isTaskEdit ? editingTaskRunner : taskRunner;
   const agentOptions = useTaskCreateAgentOptions(agentRunner);
@@ -61,9 +73,23 @@ export function TaskCreateModalAdvancedOptions({
     presentation.isTaskEdit && onComposeStatusChange,
   );
   const showSchedule = presentation.scheduleUiEnabled;
-  const showTagsOrDeps =
-    presentation.tagsUiEnabled || presentation.dependenciesUiEnabled;
+  const showTags = presentation.tagsUiEnabled && !omitTags;
+  const showDeps =
+    presentation.dependenciesUiEnabled;
+  const showTagsOrDeps = showTags || showDeps;
   const showAfterTags = showStatus || showSchedule;
+
+  const summaryLine = advancedSummaryLine({
+    runner: presentation.isTaskEdit ? editingTaskRunner : taskRunner,
+    cursorModel: taskCursorModel,
+    schedule,
+    tagsCsv: omitTags ? "" : tagsCsv,
+    milestone,
+    dependsOn,
+    includeSchedule: presentation.scheduleUiEnabled,
+    includeTags: presentation.tagsUiEnabled && !omitTags,
+    includeDependencies: presentation.dependenciesUiEnabled,
+  });
 
   return (
     <details className="task-create-advanced">
@@ -73,44 +99,38 @@ export function TaskCreateModalAdvancedOptions({
       >
         <span className="task-create-advanced__chevron" aria-hidden="true" />
         <span className="task-create-advanced__label">More options</span>
-        <span className="task-create-advanced__hint">
-          {advancedSummaryLine({
-            runner: presentation.isTaskEdit ? editingTaskRunner : taskRunner,
-            cursorModel: taskCursorModel,
-            schedule,
-            tagsCsv,
-            milestone,
-            dependsOn,
-            includeSchedule: presentation.scheduleUiEnabled,
-            includeTags: presentation.tagsUiEnabled,
-            includeDependencies: presentation.dependenciesUiEnabled,
-          })}
-        </span>
+        <span className="task-create-advanced__hint">{summaryLine}</span>
       </summary>
       <div className="task-create-advanced__body">
-        <TaskCreateModalAgentSection
-          disabled={presentation.disabled}
-          variant="createModal"
-          lockRunner={presentation.isTaskEdit}
-          runner={agentRunner}
-          cursorModel={taskCursorModel}
-          {...agentOptions}
-          onRunnerChange={presentation.isTaskEdit ? () => {} : onTaskRunnerChange}
-          onCursorModelChange={onTaskCursorModelChange}
-        />
+        {!omitAgent ? (
+          <TaskCreateModalAgentSection
+            disabled={presentation.disabled}
+            variant="createModal"
+            lockRunner={presentation.isTaskEdit}
+            runner={agentRunner}
+            cursorModel={taskCursorModel}
+            {...agentOptions}
+            onRunnerChange={
+              presentation.isTaskEdit ? () => {} : onTaskRunnerChange
+            }
+            onCursorModelChange={onTaskCursorModelChange}
+          />
+        ) : null}
 
         {showTagsOrDeps ? (
           <>
-            <div className="task-create-advanced__divider" role="separator" />
+            {!omitAgent ? (
+              <div className="task-create-advanced__divider" role="separator" />
+            ) : null}
             <TaskCreateModalSchedulingFields
               disabled={presentation.disabled}
               tagsCsv={tagsCsv}
               milestone={milestone}
               projectId={projectId}
               dependsOn={dependsOn}
-              showTags={presentation.tagsUiEnabled}
-              showMilestone={presentation.dependenciesUiEnabled}
-              showDependsOn={presentation.dependenciesUiEnabled}
+              showTags={showTags}
+              showMilestone={showDeps}
+              showDependsOn={showDeps}
               dependsOnDisabled={presentation.isTaskEdit}
               configChrome
               onTagsCsvChange={onTagsCsvChange}
