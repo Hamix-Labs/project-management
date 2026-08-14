@@ -117,13 +117,13 @@ In-memory prompt-assist sessions for the compose page (ADR-0101). Not part of th
 
 | Method | Path | Notes |
 |---|---|---|
-| GET | `/draft-assist/ready` | `{ ready, runner: "fake"\|"missing", reason? }` |
+| GET | `/draft-assist/ready` | `{ ready, runner: "sdk"\|"fake"\|"missing", reason? }`. Reasons when not ready: `no_runner`, `missing_key`, `sidecar_down`. |
 | POST | `/draft-assist/sessions` | Create session. Body `{ worktree_id?, snapshot }`. `201` `{ id, nonce, … }` |
 | GET | `/draft-assist/sessions/{id}` | Session + snapshot |
 | PUT | `/draft-assist/sessions/{id}/snapshot` | Replace form snapshot |
-| GET | `/draft-assist/sessions/{id}/events` | SSE: `session`, `status`, `token`, `tool`, `patch`, `error`, `done`. `Last-Event-ID` replay |
-| POST | `/draft-assist/sessions/{id}/runs` | **202** `{ run_id }` immediately. Body `{ user_message, snapshot? }` |
-| POST | `/draft-assist/sessions/{id}/runs/{runId}/cancel` | **202** cancelling |
+| GET | `/draft-assist/sessions/{id}/events` | SSE: `session` (includes `schema_version: 1`), `status`, `token`, `tool`, `patch`, `error`, `done`. Heartbeats are `: heartbeat` comments every 3s while a run is active. Ring size 256; `Last-Event-ID` replay. |
+| POST | `/draft-assist/sessions/{id}/runs` | **202** `{ run_id }` immediately. Body `{ user_message, snapshot? }`. Concurrent run → **409**. |
+| POST | `/draft-assist/sessions/{id}/runs/{runId}/cancel` | **202** `{ status: "cancelling" }`; SSE emits `status=cancelling` then `done{cancelled}` |
 | DELETE | `/draft-assist/sessions/{id}` | `204` |
 
 See [domain/draft-assist.md](./domain/draft-assist.md).

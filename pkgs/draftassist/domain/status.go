@@ -14,6 +14,8 @@ const (
 	RunStatusStreaming RunStatus = "streaming"
 	// RunStatusTool: model is executing an MCP tool.
 	RunStatusTool RunStatus = "tool"
+	// RunStatusCancelling: cancel accepted; terminal cancelled frame follows.
+	RunStatusCancelling RunStatus = "cancelling"
 	// RunStatusCancelled: run was cancelled by the operator.
 	RunStatusCancelled RunStatus = "cancelled"
 	// RunStatusDone: run completed successfully.
