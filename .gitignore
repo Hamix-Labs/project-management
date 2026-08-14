@@ -16,6 +16,14 @@ hamix-desktop-dev
 hamix-desktop-dev.exe
 /hamix-agent-mcp
 /hamix-agent-mcp.exe
+/hamix-draft-mcp
+/hamix-draft-mcp.exe
+/hamix-draft-agent
+/hamix-draft-agent.exe
+/hamix-draft-agent.cmd
+/hamix-draft-agent.js
+sidecars/hamix-draft-agent/dist/
+sidecars/hamix-draft-agent/node_modules/
 /worker
 /cover-agents
 cover-agents.out

@@ -17,8 +17,10 @@ const (
 var (
 	registerOnce sync.Once
 
-	runFirstEventMS prometheus.Histogram
-	watchdogTotal   prometheus.Counter
+	runFirstEventMS      prometheus.Histogram
+	watchdogTotal        prometheus.Counter
+	sidecarRestartTotal  prometheus.Counter
+	sidecarUp            prometheus.Gauge
 )
 
 // RegisterOn registers draft-assist latency and watchdog metrics. Safe to call
@@ -36,8 +38,18 @@ func RegisterOn(reg prometheus.Registerer) {
 			Name: "taskapi_draftassist_watchdog_total",
 			Help: "Times the SPA/client silence watchdog fired (instrumented by callers).",
 		})
+		sidecarRestartTotal = prometheus.NewCounter(prometheus.CounterOpts{
+			Name: "taskapi_draftassist_sidecar_restart_total",
+			Help: "Total draft-assist sidecar respawns performed by the supervisor.",
+		})
+		sidecarUp = prometheus.NewGauge(prometheus.GaugeOpts{
+			Name: "taskapi_draftassist_sidecar_up",
+			Help: "1 when the draft-assist sidecar last health probe succeeded, 0 otherwise.",
+		})
 		_ = reg.Register(runFirstEventMS)
 		_ = reg.Register(watchdogTotal)
+		_ = reg.Register(sidecarRestartTotal)
+		_ = reg.Register(sidecarUp)
 	})
 }
 
@@ -59,4 +71,30 @@ func IncWatchdog() {
 		return
 	}
 	watchdogTotal.Inc()
+}
+
+// IncSidecarRestart increments the sidecar restart counter. Called once per
+// respawn by the draftsidecar supervisor.
+//
+//funclogmeasure:skip category=hot-path reason="Counter increment; caller already traces."
+func IncSidecarRestart() {
+	if sidecarRestartTotal == nil {
+		return
+	}
+	sidecarRestartTotal.Inc()
+}
+
+// SetSidecarUp writes the sidecar liveness gauge (1 healthy, 0 down). Called
+// on every health probe transition by the supervisor.
+//
+//funclogmeasure:skip category=hot-path reason="Gauge set; caller already traces."
+func SetSidecarUp(up bool) {
+	if sidecarUp == nil {
+		return
+	}
+	if up {
+		sidecarUp.Set(1)
+	} else {
+		sidecarUp.Set(0)
+	}
 }

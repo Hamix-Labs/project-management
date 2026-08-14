@@ -65,6 +65,15 @@ Manual migrate only: `go run ./cmd/dbcheck -migrate` — [Schema migrations in c
 
 Taskapi does **not** migrate on dev startup by default. See [Schema migrations in docs/configuration.md](docs/configuration.md).
 
+### Draft-assist sidecar
+
+`scripts/dev.*` also build [`sidecars/hamix-draft-agent`](sidecars/hamix-draft-agent/) and
+drop a `hamix-draft-agent` launcher on PATH next to `taskapi`. Test the
+sidecar on its own with `pnpm --dir sidecars/hamix-draft-agent test`
+(or `npm --prefix sidecars/hamix-draft-agent test`). Tests use a mock SDK
+and do **not** require `CURSOR_API_KEY`. See
+[docs/domain/draft-assist.md](docs/domain/draft-assist.md#sidecar-hamix-draft-agent).
+
 ## Before you open a PR
 
 Verification steps live in `scripts/check-go.sh` / `scripts/check-web.sh` (and PowerShell twins). CI runs those leaf scripts directly — not duplicated commands in `.github/workflows/ci.yml`.

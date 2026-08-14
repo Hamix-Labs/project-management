@@ -14,4 +14,6 @@ var (
 	ErrRunActive = errors.New("draftassist: run active")
 	// ErrUnavailable: tool needs a capability not available in this host.
 	ErrUnavailable = errors.New("draftassist: unavailable")
+	// ErrUnauthorized: MCP tool rejected by taskapi (nonce mismatch or missing).
+	ErrUnauthorized = errors.New("draftassist: unauthorized")
 )

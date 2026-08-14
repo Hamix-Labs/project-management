@@ -66,19 +66,7 @@ describe("create task from home", () => {
     const dialog = await openNewTaskModal(user);
     await user.type(within(dialog).getByLabelText(/^title$/i), "With criteria");
     await choosePriorityInDialog(user, dialog);
-    await user.click(
-      within(dialog).getByRole("button", { name: /new criterion/i }),
-    );
-    const criterionDialog = await screen.findByRole("dialog", {
-      name: /new criterion/i,
-    });
-    await user.type(
-      within(criterionDialog).getByLabelText(/^criterion$/i),
-      "Tests pass",
-    );
-    await user.click(
-      within(criterionDialog).getByRole("button", { name: /^add criterion$/i }),
-    );
+    await addCriterionInDialog(user, dialog, "Tests pass");
 
     await waitForCreateTaskEnabled(dialog);
     await user.click(
@@ -113,19 +101,7 @@ describe("create task from home", () => {
       "With edited criteria",
     );
     await choosePriorityInDialog(user, dialog);
-    await user.click(
-      within(dialog).getByRole("button", { name: /new criterion/i }),
-    );
-    const addCriterionDialog = await screen.findByRole("dialog", {
-      name: /new criterion/i,
-    });
-    await user.type(
-      within(addCriterionDialog).getByLabelText(/^criterion$/i),
-      "Old wording",
-    );
-    await user.click(
-      within(addCriterionDialog).getByRole("button", { name: /^add criterion$/i }),
-    );
+    await addCriterionInDialog(user, dialog, "Old wording");
 
     await user.click(within(dialog).getByRole("button", { name: /^edit$/i }));
     const editCriterionDialog = await screen.findByRole("dialog", {
