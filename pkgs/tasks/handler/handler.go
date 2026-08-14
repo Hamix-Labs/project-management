@@ -44,6 +44,15 @@ type Handler struct {
 
 	draftAssistStore  draftassistcontract.Store
 	draftAssistRunner draftassistcontract.Runner
+	draftAssistReady  draftassistReadyProbe
+}
+
+// draftassistReadyProbe aliases the handler-package interface so
+// composition packages can wire a supervisor without a direct import
+// cycle. The handler_routes.go glue passes it into the draft-assist
+// registrar.
+type draftassistReadyProbe interface {
+	Ready() (ready bool, runner string, reason string)
 }
 
 // NewHandler returns the task REST API and GET /events (SSE) when hub is non-nil.
@@ -141,5 +150,18 @@ func WithDraftAssist(store draftassistcontract.Store, runner draftassistcontract
 	return func(h *Handler) {
 		h.draftAssistStore = store
 		h.draftAssistRunner = runner
+	}
+}
+
+// WithDraftAssistReady overrides the /draft-assist/ready probe with a
+// custom ReadyProbe. Composition wiring uses this to surface supervisor
+// state (missing_key / sidecar_down) even when the effective runner
+// falls back to fake.
+func WithDraftAssistReady(probe draftassistReadyProbe) HandlerOption {
+	slog.Debug("trace", "cmd", calltrace.LogCmd, "operation", "handler.WithDraftAssistReady")
+	return func(h *Handler) {
+		if probe != nil {
+			h.draftAssistReady = probe
+		}
 	}
 }

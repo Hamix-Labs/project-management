@@ -20,13 +20,18 @@ func TestNewHTTPHandler_healthAndBootstrap(t *testing.T) {
 	db := tasktestdb.OpenSQLite(t)
 	st := composition.NewAPI(db)
 	hub := realtime.NewSSEHub()
-	api := taskapi.NewHTTPHandler(st, hub, nil, nil, postgres.SchemaDriftReport{
+	api, closeHTTP := taskapi.NewHTTPHandler(st, hub, nil, nil, postgres.SchemaDriftReport{
 		Status:       postgres.SchemaDriftOK,
 		CodeRevision: postgres.SchemaRevision,
 		DBRevision:   postgres.SchemaRevision,
 	})
 	srv := httptest.NewServer(api)
-	t.Cleanup(srv.Close)
+	t.Cleanup(func() {
+		srv.Close()
+		if closeHTTP != nil {
+			_ = closeHTTP()
+		}
+	})
 
 	t.Run("health", func(t *testing.T) {
 		res, err := http.Get(srv.URL + "/health")

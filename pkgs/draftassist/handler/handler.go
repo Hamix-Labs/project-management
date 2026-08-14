@@ -253,6 +253,7 @@ func (h *Handler) startRun(w http.ResponseWriter, r *http.Request) {
 		in := contract.RunInput{UserMessage: msg}
 		if sess, err := h.store.GetSession(runCtx, id); err == nil {
 			in.Snapshot = sess.Snapshot
+			in.WorktreeCwd = sess.WorktreeID
 		}
 		if err := h.runner.Run(runCtx, id, runID, in, handle); err != nil && !errors.Is(err, context.Canceled) {
 			slog.Warn("draftassist runner failed", "cmd", calltrace.LogCmd, "operation", op, "err", err, "session_id", id, "run_id", runID)
