@@ -10,6 +10,7 @@ import type { TestScenario } from "@/tasks/test-scenarios";
 import {
   DraftAssistProvider,
   DraftAssistThread,
+  DraftAssistNotReadyBanner,
   useDraftAssistContext,
 } from "../draft-assist";
 import type { DraftAssistSnapshot } from "@/types/draftAssist";
@@ -218,6 +219,7 @@ function TaskComposeFormShell({
           className="panel modal-sheet modal-sheet--edit task-create-modal-sheet task-create"
           aria-labelledby="task-compose-page-title"
         >
+          <DraftAssistNotReadyBanner />
           {presentation.isTaskEdit && editingTaskId ? (
             <p
               className="muted stack-tight-zero task-create-modal-task-id"
