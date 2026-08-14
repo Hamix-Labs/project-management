@@ -47,8 +47,27 @@ Cancel yields two frames: `status=cancelling`, then `done{status=cancelled}`.
 
 ## MCP tools (v1)
 
-`hamix.draft_get`, `hamix.draft_set_prompt`, `hamix.draft_patch_prompt`.
-Prompt write only; nonce fail-closed.
+Complete tool table for `hamix-draft-mcp`. All writes carry the session
+nonce via `X-Hamix-Draft-Nonce`; a stale nonce fails closed (`ErrUnauthorized`).
+
+| Tool | Kind | Backing endpoint | Notes |
+| --- | --- | --- | --- |
+| `hamix.draft_get` | read | `GET /draft-assist/sessions/{id}` | Snapshot: prompt, title, priority, criteria, tags, git binding, model |
+| `hamix.draft_set_prompt` | write | `PATCH /draft-assist/sessions/{id}/prompt` | Replace prompt HTML; validated against the TipTap subset (see below) |
+| `hamix.draft_patch_prompt` | write | `PATCH …/prompt` (client fetches, computes, replaces) | Bounded find/replace / append / set on current prompt |
+| `hamix.draft_search_repo` | read | `GET /repo/files?worktree_id=…&q=…` | Scoped to the session's bound worktree |
+| `hamix.draft_read_file` | read | `GET /repo/file?worktree_id=…&path=…` | 32 MiB preview; `warning` surfaces binary/truncation |
+| `hamix.draft_list_templates` | read | `GET /task-templates` | Raw templates payload forwarded |
+| `hamix.draft_search_tasks` | read | `GET /tasks` (title-substring filtered client-side) | Read-only; no dependency on server-side `q=` |
+
+### Prompt subset validator
+
+`pkgs/draftassist/domain/promptsubset.go::ValidateHTML` is enforced on both
+sides — the MCP tool and the `PATCH …/prompt` handler. Allowed tags:
+`h2`–`h4`, `p`, `ul`, `ol`, `li`, `blockquote`, `a[href]`, `br`, and the
+`repo-file` mention chip (`span[data-repo-file="true"]`). `script`,
+`iframe`, `style`, form controls, event handlers, and `javascript:`/`data:`
+hrefs are rejected.
 
 ## Ready probe
 

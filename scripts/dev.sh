@@ -60,7 +60,8 @@ GOOS="$(go env GOOS)"
 PORT="${DEV_TASKAPI_PORT:-8080}"
 EXE="$ROOT/taskapi-dev"
 MCP_EXE="$ROOT/hamix-agent-mcp"
-[ "$GOOS" = "windows" ] && EXE="$ROOT/taskapi-dev.exe" && MCP_EXE="$ROOT/hamix-agent-mcp.exe"
+DRAFT_MCP_EXE="$ROOT/hamix-draft-mcp"
+[ "$GOOS" = "windows" ] && EXE="$ROOT/taskapi-dev.exe" && MCP_EXE="$ROOT/hamix-agent-mcp.exe" && DRAFT_MCP_EXE="$ROOT/hamix-draft-mcp.exe"
 
 readiness_timeout_sec() {
   local sec
@@ -95,6 +96,8 @@ go mod download
 go build -o "$EXE" ./cmd/taskapi
 # Agent MCP host for Cursor execute/verify (LookPath from the taskapi process).
 go build -o "$MCP_EXE" ./cmd/hamix-agent-mcp
+# Draft-assist MCP host (Plan 4) for compose-page draft AI (bound to taskapi via --bind).
+go build -o "$DRAFT_MCP_EXE" ./cmd/hamix-draft-mcp
 export PATH="$ROOT${PATH:+:$PATH}"
 
 API_PID=""
