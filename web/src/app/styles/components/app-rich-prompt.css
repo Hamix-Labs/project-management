@@ -122,6 +122,108 @@
   z-index: var(--z-rich-prompt-float);
 }
 
+/* Empty-block placeholder — only rendered by the focused, empty paragraph.
+   Copy is owned by the placeholder function in `richPromptExtensions.ts`. */
+.rich-prompt-wrap .tiptap p.is-empty::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: var(--text-tertiary);
+  pointer-events: none;
+  font-style: normal;
+}
+
+/* Slash menu popover — matches the repo-file suggestion surface tokens. */
+.slash-menu__options {
+  padding: var(--space-1) 0;
+}
+
+.slash-menu__option button {
+  display: flex;
+  width: 100%;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 0.4rem 0.75rem;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+}
+
+.slash-menu__option.mention-option--active button,
+.slash-menu__option button:hover {
+  background: var(--bg-subtle);
+}
+
+.slash-menu__label {
+  font-weight: 500;
+  font-size: var(--text-base);
+}
+
+.slash-menu__hint {
+  color: var(--text-tertiary);
+  font-size: var(--text-help);
+}
+
+/* Inline AI composer — anchored via tippy to the empty-block caret. */
+.inline-ai-composer {
+  display: grid;
+  gap: var(--space-2);
+  min-width: min(28rem, calc(100vw - 2rem));
+  max-width: min(36rem, calc(100vw - 2rem));
+  padding: var(--space-3);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--neutral-lip-shadow);
+}
+
+.inline-ai-composer__input {
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-sm);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font: inherit;
+  resize: vertical;
+}
+
+.inline-ai-composer__input:focus-visible {
+  outline: none;
+  border-color: var(--success-rich-focus-border);
+  box-shadow: 0 0 0 3px var(--success-soft);
+}
+
+.inline-ai-composer__footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.inline-ai-composer__hint {
+  color: var(--text-tertiary);
+  font-size: var(--text-help);
+}
+
+.inline-ai-composer__hint kbd {
+  padding: 0 0.3rem;
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-sm);
+  background: var(--bg-subtle);
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inline-ai-composer {
+    transition: none;
+  }
+}
+
 
 /* REFERENCES block — read-only, sits above the editable prompt area.
    Operators can only change it by adding/removing project context

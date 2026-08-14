@@ -16,4 +16,11 @@ export type RichPromptEditorProps = {
    * instead of a worktree.
    */
   preferRepositoryHint?: boolean;
+  /**
+   * Fired when the user presses Space at the start of an empty block or
+   * chooses `/ai` from the slash menu. Plan 3 wires this to the real draft
+   * agent; for Plan 1 the default host is a no-op — the inline composer
+   * opens either way so operators see the shell.
+   */
+  onAiTrigger?: (msg: string) => void;
 };
