@@ -15,7 +15,9 @@ import (
 )
 
 const (
-	eventRingCap     = 512
+	// eventRingCap bounds Last-Event-ID replay. Documented in
+	// docs/domain/draft-assist.md; bump only with an ADR note.
+	eventRingCap     = 256
 	subscriberBufCap = 64
 )
 

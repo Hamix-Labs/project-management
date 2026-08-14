@@ -178,6 +178,9 @@ POST Send returns **202** `{ run_id }` immediately. The stream is already open. 
 
 Also: `cancelling`, `error`, `disconnected`.
 
+Cancel yields `cancelling` then a terminal cancelled state (aligned with
+backend `status=cancelling` + `done{status=cancelled}`).
+
 Copy (sentence case, specific): Starting assistant…; Preparing workspace…; Thinking…; Reading `path`…; Updating prompt…; Still working (Ns); Couldn’t reach the assistant. Retry; Assistant stopped; Prompt updated.
 
 Never: “Loading…”, empty spinner, swallowing errors, disabling the whole form during a run. The prompt stays editable. Send becomes **Stop** while a run is active.

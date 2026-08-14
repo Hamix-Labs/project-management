@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"sync"
 
+	draftassistmetrics "github.com/AlexsanderHamir/Hamix/pkgs/draftassist/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 )
@@ -32,6 +33,7 @@ func RegisterDefaultPrometheusCollectors() {
 				continue
 			}
 		}
+		draftassistmetrics.RegisterOn(reg)
 		slog.Info("prometheus default collectors registered", "cmd", calltrace.LogCmd, "operation", "taskapi.prometheus_register",
 			"go_collector", true, "process_collector", true)
 	})
