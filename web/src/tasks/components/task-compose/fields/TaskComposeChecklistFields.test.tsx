@@ -36,7 +36,7 @@ describe("TaskComposeChecklistFields", () => {
     expect(primary?.querySelector(".task-checklist-verify-badge")).toBeNull();
     expect(trailing?.querySelector(".task-checklist-verify-badge")).not.toBeNull();
     expect(actions).not.toBeNull();
-    expect(trailing?.contains(actions)).toBe(true);
+    expect(trailing && actions && trailing.contains(actions)).toBe(true);
   });
 
   it("omits the verify badge when a criterion has no commands", () => {
@@ -60,7 +60,7 @@ describe("TaskComposeChecklistFields", () => {
     expect(trailing?.querySelector(".task-checklist-verify-badge")).toBeNull();
     expect(screen.getByRole("button", { name: "Edit" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /remove/i })).toBeInTheDocument();
-    expect(trailing?.contains(actions)).toBe(true);
+    expect(trailing && actions && trailing.contains(actions)).toBe(true);
   });
 
   it("opens edit when anywhere on the criterion row is clicked", async () => {
