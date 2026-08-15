@@ -1,6 +1,7 @@
 // Package draftsidecar owns the lifetime of the hamix-draft-agent sidecar
 // process and adapts its loopback HTTP+SSE surface to draftassist
-// contract.Runner. The supervisor discovers the binary via exec.LookPath,
+// contract.Runner. ResolveBinary locates the launcher (HAMIX_DRAFT_AGENT_BIN,
+// a sibling of the current executable, then exec.LookPath). The supervisor
 // spawns it with --port 0 so a free port is chosen, parses the
 // "listening on <port>" line from stdout to learn the port, then keeps a
 // health probe running against GET /readyz. On crashes it respawns with

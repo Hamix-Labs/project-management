@@ -43,10 +43,10 @@ type Runtime struct {
 	AgentQueue  *agents.MemoryQueue
 	AgentWorker *agentworker.Supervisor
 
-	db          *gorm.DB
-	stopAgents  context.CancelFunc
-	closeHTTP   func() error
-	cmdName     string
+	db         *gorm.DB
+	stopAgents context.CancelFunc
+	closeHTTP  func() error
+	cmdName    string
 }
 
 // Start opens the database, optionally migrates, wires agents, and builds
@@ -89,7 +89,7 @@ func buildRuntime(ctx context.Context, db *gorm.DB, drift postgres.SchemaDriftRe
 		return nil, err
 	}
 
-	api, closeHTTP := taskapi.NewHTTPHandler(store, hub, nil, aw, drift)
+	api, closeHTTP := taskapi.NewHTTPHandler(store, hub, nil, aw, drift, taskapi.DefaultDraftAssistHost())
 	return &Runtime{
 		Handler:     api,
 		SchemaDrift: drift,
