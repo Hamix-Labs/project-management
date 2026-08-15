@@ -55,6 +55,9 @@ export function TaskComposeAgentCard({
           enabled={autonomyEnabled}
           disabled={disabled || autonomyDisabled}
           onChange={onAutonomyChange}
+          label="Autonomous"
+          readyHint="Picks it up when no other task is running."
+          pausedHint="Paused until you resume from the task page."
         />
       </div>
     </section>

@@ -367,9 +367,7 @@ describe("TaskCreateModal", () => {
       expect(toggle).toBeInTheDocument();
       expect(toggle).toBeChecked();
       expect(
-        screen.getByText(
-          /created as ready.*no other task is running/i,
-        ),
+        screen.getByText("Picks it up when no other task is running."),
       ).toBeInTheDocument();
     });
 
@@ -378,7 +376,7 @@ describe("TaskCreateModal", () => {
       const toggle = getAutonomyCheckbox();
       expect(toggle).not.toBeChecked();
       expect(
-        screen.getByText(/created paused until you resume/i),
+        screen.getByText("Paused until you resume from the task page."),
       ).toBeInTheDocument();
     });
 

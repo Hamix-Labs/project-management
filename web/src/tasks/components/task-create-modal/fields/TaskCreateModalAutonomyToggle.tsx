@@ -4,6 +4,10 @@ type Props = {
   enabled: boolean;
   disabled: boolean;
   onChange: (enabled: boolean) => void;
+  /** Visible title; defaults to the create-modal wording. */
+  label?: string;
+  readyHint?: string;
+  pausedHint?: string;
 };
 
 /**
@@ -24,24 +28,23 @@ export function TaskCreateModalAutonomyToggle({
   enabled,
   disabled,
   onChange,
+  label = "Autonomous execution",
+  readyHint = "Created as ready. The agent picks it up when no other task is running.",
+  pausedHint = "Created paused until you resume from the task page.",
 }: Props) {
   function handle(e: ChangeEvent<HTMLInputElement>) {
     onChange(e.target.checked);
   }
   return (
-    <section className="task-create-autonomy" aria-label="Autonomous execution">
+    <section className="task-create-autonomy" aria-label={label}>
       <label
         className="task-create-autonomy__row"
         htmlFor="task-create-autonomy-toggle"
       >
         <span className="task-create-autonomy__text">
-          <span className="task-create-autonomy__label">
-            Autonomous execution
-          </span>
+          <span className="task-create-autonomy__label">{label}</span>
           <span className="task-create-autonomy__hint">
-            {enabled
-              ? "Created as ready. The agent picks it up when no other task is running."
-              : "Created paused until you resume from the task page."}
+            {enabled ? readyHint : pausedHint}
           </span>
         </span>
         <span
@@ -54,7 +57,7 @@ export function TaskCreateModalAutonomyToggle({
         <input
           id="task-create-autonomy-toggle"
           type="checkbox"
-          className="task-create-autonomy__input"
+          className="task-create-autonomy__input visually-hidden"
           role="switch"
           aria-checked={enabled}
           checked={enabled}

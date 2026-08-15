@@ -585,22 +585,121 @@ form.task-compose-page__form-shell {
   box-shadow: none;
 }
 
+.task-compose-page--v2 .compose-agent__fields .task-create-agent::before {
+  content: none;
+}
+
 .task-compose-page--v2 .compose-agent__fields .task-create-agent > .task-create-config-section-header,
 .task-compose-page--v2 .compose-agent__fields .task-create-subtasks-heading,
 .task-compose-page--v2 .compose-agent__fields .task-create-config-section-header {
   display: none;
 }
 
+.task-compose-page--v2 .compose-agent .task-create-agent-panel {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.task-compose-page--v2 .compose-agent .task-create-agent-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
 .task-compose-page--v2 .compose-agent__autonomy {
   margin-top: 1rem;
-  border-radius: 0.75rem;
-  border: 1px solid var(--compose-card-border);
-  background: color-mix(in oklab, var(--bg-subtle) 40%, transparent);
-  padding: 0.875rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 .task-compose-page--v2 .compose-agent__autonomy .task-create-autonomy {
   margin: 0;
+  border-radius: 0.75rem;
+  border: 1px solid var(--compose-card-border);
+  background: var(--surface-1);
+}
+
+.task-compose-page--v2 .compose-agent .task-create-autonomy__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.task-compose-page--v2 .compose-agent .task-create-autonomy__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0.875rem;
+  cursor: pointer;
+}
+
+.task-compose-page--v2 .compose-agent .task-create-autonomy__label {
+  font-weight: 600;
+}
+
+.task-compose-page--v2 .compose-agent .task-create-autonomy__switch {
+  position: relative;
+  flex: 0 0 auto;
+  width: 2.75rem;
+  height: 1.5rem;
+  border-radius: var(--radius-full);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-hairline);
+  transition:
+    background var(--duration-normal) var(--ease-default),
+    border-color var(--duration-normal) var(--ease-default);
+}
+
+.task-compose-page--v2 .compose-agent .task-create-autonomy__switch[data-checked="true"] {
+  background: var(--brand);
+  border-color: var(--brand);
+}
+
+.task-compose-page--v2 .compose-agent .task-create-autonomy__switch-thumb {
+  position: absolute;
+  top: 50%;
+  left: 0.125rem;
+  width: 1.125rem;
+  height: 1.125rem;
+  border-radius: var(--radius-full);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-xs);
+  transform: translateY(-50%);
+  transition: transform var(--duration-normal) var(--ease-default);
+}
+
+.task-compose-page--v2
+  .compose-agent
+  .task-create-autonomy__switch[data-checked="true"]
+  .task-create-autonomy__switch-thumb {
+  transform: translate(1.25rem, -50%);
+}
+
+.task-compose-page--v2 .compose-agent .task-create-autonomy__row:focus-within .task-create-autonomy__switch {
+  box-shadow: var(--shadow-focus);
+}
+
+.task-compose-page--v2
+  .compose-agent
+  .task-create-autonomy__row:has(.task-create-autonomy__input:disabled)
+  .task-create-autonomy__switch {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.task-compose-page--v2
+  .compose-agent
+  .task-create-autonomy__row:has(.task-create-autonomy__input:disabled) {
+  cursor: not-allowed;
 }
 
 /* Tags card */
