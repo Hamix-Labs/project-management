@@ -4,6 +4,24 @@ import { describe, expect, it } from "vitest";
 import { TaskComposeLayout } from "./TaskComposeLayout";
 
 describe("TaskComposeLayout", () => {
+  it("marks the page as v2 when a handoff rail is present", () => {
+    render(
+      <MemoryRouter>
+        <TaskComposeLayout
+          title="New task"
+          backTo="/"
+          rightRail={<div>Destination</div>}
+        >
+          <p>Form body</p>
+        </TaskComposeLayout>
+      </MemoryRouter>,
+    );
+
+    expect(document.querySelector(".task-compose-page")).toHaveClass(
+      "task-compose-page--v2",
+    );
+  });
+
   it("portals the sticky footer to document.body so it can stay viewport-fixed", () => {
     render(
       <MemoryRouter>
