@@ -13,6 +13,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi"
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi/agentworker"
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
+	"github.com/AlexsanderHamir/Hamix/internal/taskapi/draftsidecar"
 	"github.com/AlexsanderHamir/Hamix/pkgs/agents"
 	"github.com/AlexsanderHamir/Hamix/pkgs/obs/calltrace"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/middleware"
@@ -84,12 +85,18 @@ func buildRuntime(ctx context.Context, db *gorm.DB, drift postgres.SchemaDriftRe
 	hub := realtime.NewSSEHubWith(realtime.DefaultSSEHubOptions())
 	logHandlerMiddlewareConfig(cmd)
 
+	da, err := draftAssistHost(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("%s: draft-assist sidecar: %w", cmd, err)
+	}
+
 	stopAgents, q, aw, err := startReadyTaskAgents(ctx, store, hub, cmd)
 	if err != nil {
+		_ = da.Close()
 		return nil, err
 	}
 
-	api, closeHTTP := taskapi.NewHTTPHandler(store, hub, nil, aw, drift, taskapi.DefaultDraftAssistHost())
+	api, closeHTTP := taskapi.NewHTTPHandler(store, hub, nil, aw, drift, da)
 	return &Runtime{
 		Handler:     api,
 		SchemaDrift: drift,
@@ -171,4 +178,20 @@ func logHandlerMiddlewareConfig(cmd string) {
 	slog.Info("idempotency config", "cmd", cmd, "operation", "taskapi.idempotency",
 		"enabled", idemTTL > 0, "ttl_sec", idemSec,
 		"max_entries", idemMaxEntries, "max_bytes", idemMaxBytes)
+}
+
+// draftAssistHost starts the SDK sidecar. Tests inject Fake via
+// NewHTTPHandler; this path is for hosts only and fails closed.
+//
+//funclogmeasure:skip category=tool-required-noop reason="Boot-time MustHost wrapper; sidecar Start/Close emit lifecycle logs."
+func draftAssistHost(ctx context.Context) (taskapi.DraftAssistHost, error) {
+	host, err := draftsidecar.MustHost(ctx)
+	if err != nil {
+		return taskapi.DraftAssistHost{}, err
+	}
+	return taskapi.DraftAssistHost{
+		Runner: host.Runner,
+		Ready:  host,
+		Close:  host.Close,
+	}, nil
 }

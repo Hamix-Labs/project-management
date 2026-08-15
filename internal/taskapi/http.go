@@ -22,7 +22,7 @@ type DraftAssistReady interface {
 }
 
 // DraftAssistHost is the already-started draft-assist runner the HTTP
-// stack mounts. Production hosts pass DefaultDraftAssistHost(); tests
+// stack mounts. Production hosts pass draftsidecar.MustHost(); tests
 // inject Fake so CI does not spawn hamix-draft-agent.
 type DraftAssistHost struct {
 	Runner draftassistcontract.Runner
