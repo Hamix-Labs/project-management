@@ -10,6 +10,8 @@ type Props = {
   checklistItems: ChecklistItemDraft[];
   repositoryId: string;
   draftSaving: boolean;
+  /** Associates submit with a form when the footer is portaled outside it. */
+  form?: string;
   onClose: () => void;
   onSaveDraft: () => void;
 };
@@ -21,6 +23,7 @@ export function TaskCreateModalActionFooter({
   checklistItems,
   repositoryId,
   draftSaving,
+  form,
   onClose,
   onSaveDraft,
 }: Props) {
@@ -29,6 +32,7 @@ export function TaskCreateModalActionFooter({
       <TaskCreateModalEditFooterActions
         disabled={presentation.disabled}
         saveDisabled={!title.trim()}
+        form={form}
         onClose={onClose}
       />
     );
@@ -44,6 +48,7 @@ export function TaskCreateModalActionFooter({
       checklistItems={checklistItems}
       repositoryId={repositoryId}
       requireGitBinding
+      form={form}
       onClose={onClose}
       onSaveDraft={presentation.isTemplateMode ? undefined : onSaveDraft}
     />

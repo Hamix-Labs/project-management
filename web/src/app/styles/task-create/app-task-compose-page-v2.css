@@ -642,29 +642,31 @@ form.task-compose-page__form-shell {
   padding: 0 1.25rem 1.25rem;
 }
 
-/* Sticky action footer */
-.task-compose-page--v2 .task-compose-page__sticky-footer {
+/* Sticky action footer — portaled to document.body so it stays
+   viewport-fixed while the compose form scrolls. */
+.task-compose-page__sticky-footer {
   position: fixed;
   inset-inline: 0;
   bottom: 0;
-  z-index: 40;
-  border-top: 1px solid color-mix(in oklab, var(--compose-card-border) 70%, transparent);
-  background: color-mix(in oklab, var(--bg-page) 85%, transparent);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  z-index: var(--z-sticky);
+  border-top: 1px solid var(--border-hairline);
+  background: var(--surface-1);
+  /* Upward shadow so the bar reads as floating over scrolling content. */
+  box-shadow: 0 -0.5rem 1.5rem color-mix(in oklab, var(--text-primary) 8%, transparent);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-.task-compose-page--v2 .task-compose-page__sticky-footer-inner {
-  max-width: var(--compose-max);
+.task-compose-page__sticky-footer-inner {
+  max-width: var(--layout-max-width);
   margin-inline: auto;
-  padding: 0.875rem var(--space-6);
+  padding: 0.75rem var(--space-6);
   display: flex;
   align-items: center;
   gap: var(--space-4);
 }
 
-.task-compose-page--v2 .task-compose-page__sticky-footer .task-create-modal-footer,
-.task-compose-page--v2 .task-compose-page__sticky-footer .task-create-modal-actions {
+.task-compose-page__sticky-footer .task-create-modal-footer,
+.task-compose-page__sticky-footer .task-create-modal-actions {
   margin: 0;
   margin-left: auto;
   border: 0;
@@ -675,11 +677,34 @@ form.task-compose-page__form-shell {
   gap: 0.5rem;
 }
 
-.task-compose-page--v2 .task-compose-page__sticky-footer .task-create-modal-actions__start,
-.task-compose-page--v2 .task-compose-page__sticky-footer .task-create-modal-actions__end {
+.task-compose-page__sticky-footer .task-create-modal-actions__start,
+.task-compose-page__sticky-footer .task-create-modal-actions__end {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.task-compose-page__sticky-footer .task-create-cancel-btn {
+  border-radius: var(--radius-full);
+}
+
+.task-compose-page__sticky-footer button.secondary {
+  border-radius: var(--radius-full);
+}
+
+.task-compose-page__sticky-footer .task-create-submit {
+  border-radius: var(--radius-full);
+  background: var(--brand);
+  color: var(--text-on-brand);
+}
+
+.task-compose-page__sticky-footer .task-create-submit:not(:disabled):hover {
+  background: var(--brand-hover);
+}
+
+.task-compose-page__sticky-footer .task-create-submit:disabled {
+  background: var(--brand);
+  color: var(--text-on-brand);
 }
 
 .task-compose-page--v2 .task-compose-page__errors {

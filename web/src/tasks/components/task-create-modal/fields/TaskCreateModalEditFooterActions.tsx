@@ -1,12 +1,14 @@
 type Props = {
   disabled: boolean;
   saveDisabled?: boolean;
+  form?: string;
   onClose: () => void;
 };
 
 export function TaskCreateModalEditFooterActions({
   disabled,
   saveDisabled = false,
+  form,
   onClose,
 }: Props) {
   return (
@@ -25,6 +27,7 @@ export function TaskCreateModalEditFooterActions({
         <button
           type="submit"
           className="task-create-submit"
+          form={form}
           disabled={disabled || saveDisabled}
         >
           Save

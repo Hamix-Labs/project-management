@@ -77,6 +77,7 @@ export function TaskComposeFormShell({
   return (
     <>
       <form
+        id="task-compose-form"
         className="task-create-modal-form task-create-form task-compose-page__form-shell"
         onSubmit={actions.onSubmit}
       >
@@ -123,6 +124,7 @@ export function TaskComposeFormShell({
                 checklistItems={criteria.checklistItems}
                 repositoryId={git.repositoryId}
                 draftSaving={session.draftSaving}
+                form="task-compose-form"
                 onClose={actions.onClose}
                 onSaveDraft={actions.onSaveDraft}
               />

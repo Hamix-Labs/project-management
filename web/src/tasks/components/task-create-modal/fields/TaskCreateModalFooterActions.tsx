@@ -10,6 +10,7 @@ type Props = {
   checklistItems: ChecklistItemDraft[];
   repositoryId?: string;
   requireGitBinding?: boolean;
+  form?: string;
   onClose: () => void;
   onSaveDraft?: () => void;
 };
@@ -23,6 +24,7 @@ export function TaskCreateModalFooterActions({
   checklistItems,
   repositoryId = "",
   requireGitBinding = false,
+  form,
   onClose,
   onSaveDraft,
 }: Props) {
@@ -62,6 +64,7 @@ export function TaskCreateModalFooterActions({
         <button
           type="submit"
           className="task-create-submit"
+          form={form}
           disabled={submitDisabled}
         >
           {submitLabel}
