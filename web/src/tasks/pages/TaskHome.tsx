@@ -4,6 +4,7 @@ import { useDocumentTitle } from "@/shared/useDocumentTitle";
 import { Button } from "@/components/ui";
 import { runViewTransition } from "@/lib/runViewTransition";
 import type { Task } from "@/types";
+import { DraftResumeModal } from "../components/draft-resume";
 import { TaskListSection } from "../components/task-list";
 import { TaskBoardSection } from "../components/task-board/TaskBoardSection";
 import { TaskHomeViewToggle } from "../components/task-board/TaskHomeViewToggle";
@@ -17,6 +18,7 @@ import {
   parseTaskHomeView,
   type TaskHomeView,
 } from "./taskHomeView";
+import { useTaskHomeNewTask } from "./useTaskHomeNewTask";
 
 export function TaskHome() {
   useDocumentTitle(undefined);
@@ -33,7 +35,7 @@ export function TaskHome() {
     limit: 100,
     enabled: projectsUiEnabled,
   });
-  const { createModalOpen } = modals;
+  const newTask = useTaskHomeNewTask();
 
   const board = useTasksBoard({
     view,
@@ -51,10 +53,6 @@ export function TaskHome() {
     if (createIntent !== "1" || !projectIntent) return;
     navigate(tasksNewPath({ project: projectIntent }), { replace: true });
   }, [navigate, createIntent, projectIntent]);
-
-  const openCreate = useCallback(() => {
-    navigate(tasksNewPath());
-  }, [navigate]);
 
   const openTemplateCreate = useCallback(() => {
     navigate(templatesNewPath());
@@ -134,7 +132,7 @@ export function TaskHome() {
           variant="secondary"
           className="task-home-new-template-btn"
           onClick={() => openTemplateCreate()}
-          disabled={createModalOpen}
+          disabled={newTask.createBlocked}
         >
           <svg
             className="task-home-new-template-btn__icon"
@@ -174,8 +172,9 @@ export function TaskHome() {
         <Button
           variant="primary"
           className="task-home-new-task-btn"
-          onClick={() => openCreate()}
-          disabled={createModalOpen}
+          onClick={() => newTask.openCreate()}
+          disabled={newTask.createBlocked}
+          loading={newTask.awaitingDrafts}
         >
           + New task
         </Button>
@@ -184,19 +183,20 @@ export function TaskHome() {
     [
       view,
       onViewChange,
-      openCreate,
+      newTask.openCreate,
+      newTask.createBlocked,
+      newTask.awaitingDrafts,
       openTemplateCreate,
-      createModalOpen,
     ],
   );
 
   const emptyAction = useMemo(
     () => ({
       label: "New task",
-      onClick: () => openCreate(),
-      disabled: createModalOpen,
+      onClick: () => newTask.openCreate(),
+      disabled: newTask.createBlocked,
     }),
-    [openCreate, createModalOpen],
+    [newTask.openCreate, newTask.createBlocked],
   );
 
   return (
@@ -232,6 +232,20 @@ export function TaskHome() {
           />
         )}
       </div>
+      {newTask.resumeOpen ? (
+        <DraftResumeModal
+          drafts={newTask.drafts}
+          onClose={newTask.closeResume}
+          onStartFresh={newTask.startFresh}
+          onResume={newTask.resumeDraft}
+          loadError={newTask.draftListError}
+          onRetryLoad={() => {
+            void newTask.retryDraftList();
+          }}
+          resumePending={newTask.resumePending}
+          resumeError={newTask.resumeError}
+        />
+      ) : null}
     </div>
   );
 }

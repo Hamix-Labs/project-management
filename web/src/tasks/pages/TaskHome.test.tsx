@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useSearchParams } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ROUTER_FUTURE_FLAGS } from "@/lib/routerFutureFlags";
@@ -88,6 +88,16 @@ function makeApp(overrides: Partial<App> = {}): App {
   } as unknown as App;
 }
 
+function ComposeRouteProbe() {
+  const [params] = useSearchParams();
+  return (
+    <div
+      data-testid="compose-route"
+      data-draft={params.get("draft") ?? ""}
+    />
+  );
+}
+
 function renderHome(app: App, entries: string[] = ["/"]) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, staleTime: Infinity } },
@@ -96,7 +106,11 @@ function renderHome(app: App, entries: string[] = ["/"]) {
     <QueryClientProvider client={client}>
       <TasksAppProvider value={app}>
         <MemoryRouter initialEntries={entries} future={ROUTER_FUTURE_FLAGS}>
-          <TaskHome />
+          <Routes>
+            <Route path="/" element={<TaskHome />} />
+            <Route path="/tasks/new" element={<ComposeRouteProbe />} />
+            <Route path="/templates/new" element={<div data-testid="template-route" />} />
+          </Routes>
         </MemoryRouter>
       </TasksAppProvider>
     </QueryClientProvider>,
@@ -142,5 +156,86 @@ describe("TaskHome", () => {
     expect(
       container.querySelector(".task-home-view-swap--enter"),
     ).toBeInTheDocument();
+  });
+
+  it("opens the resume modal on the list when drafts exist and does not navigate until pick", async () => {
+    const user = userEvent.setup();
+    renderHome(
+      makeApp({
+        taskDrafts: [
+          {
+            id: "draft-saved",
+            name: "Saved draft",
+            created_at: "2026-04-07T10:00:00Z",
+            updated_at: "2026-04-07T10:05:00Z",
+          },
+        ],
+      }),
+    );
+
+    await user.click(screen.getByRole("button", { name: /\+?\s*new task/i }));
+
+    expect(
+      screen.getByRole("heading", { name: /resume a draft or start fresh/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("task-list-section")).toBeInTheDocument();
+    expect(screen.queryByTestId("compose-route")).not.toBeInTheDocument();
+  });
+
+  it("navigates to /tasks/new with no modal when there are no drafts", async () => {
+    const user = userEvent.setup();
+    renderHome(makeApp());
+
+    await user.click(screen.getByRole("button", { name: /\+?\s*new task/i }));
+
+    expect(screen.getByTestId("compose-route")).toHaveAttribute("data-draft", "");
+    expect(
+      screen.queryByRole("heading", { name: /resume a draft or start fresh/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("navigates to /tasks/new with the picked draft id", async () => {
+    const user = userEvent.setup();
+    renderHome(
+      makeApp({
+        taskDrafts: [
+          {
+            id: "draft-saved",
+            name: "Saved draft",
+            created_at: "2026-04-07T10:00:00Z",
+            updated_at: "2026-04-07T10:05:00Z",
+          },
+        ],
+      }),
+    );
+
+    await user.click(screen.getByRole("button", { name: /\+?\s*new task/i }));
+    await user.click(screen.getByRole("button", { name: /resume: saved draft/i }));
+
+    expect(screen.getByTestId("compose-route")).toHaveAttribute(
+      "data-draft",
+      "draft-saved",
+    );
+  });
+
+  it("starts fresh from the picker without a draft id", async () => {
+    const user = userEvent.setup();
+    renderHome(
+      makeApp({
+        taskDrafts: [
+          {
+            id: "draft-saved",
+            name: "Saved draft",
+            created_at: "2026-04-07T10:00:00Z",
+            updated_at: "2026-04-07T10:05:00Z",
+          },
+        ],
+      }),
+    );
+
+    await user.click(screen.getByRole("button", { name: /\+?\s*new task/i }));
+    await user.click(screen.getByRole("button", { name: /^start fresh$/i }));
+
+    expect(screen.getByTestId("compose-route")).toHaveAttribute("data-draft", "");
   });
 });

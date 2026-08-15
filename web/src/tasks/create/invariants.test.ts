@@ -7,6 +7,6 @@ describe("create flow invariants", () => {
     // I3 — useTaskCreateMutations create onSuccess draft_id ref check
     // I4 — resumeDraftByID requestedResumeRef + useTasksApp resume race tests
     // I6 — validateCreateForm.test / useTaskCreateFlow.test default project
-    // I7 — decideCreateEntry.test + useTaskCreateEntryActions openCreateModal
+    // I7 — decideCreateEntry.test + useTaskHomeNewTask (list) / openCreateModal (compose)
   });
 });

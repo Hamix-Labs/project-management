@@ -10,21 +10,18 @@ export async function waitForCreateTaskEnabled(dialog: HTMLElement) {
   });
 }
 
-/** Opens create compose page from home and returns the page root. */
+/** Opens create compose from home. Includes the portaled sticky action bar. */
 export async function openNewTaskModal(
   user: ReturnType<typeof userEvent.setup>,
 ) {
   await user.click(screen.getByRole("button", { name: /\+?\s*new task/i }));
-  const heading = await screen.findByRole(
+  await screen.findByRole(
     "heading",
     { name: /^new task$/i },
     { timeout: 10_000 },
   );
-  const page = heading.closest(".task-compose-page");
-  if (!(page instanceof HTMLElement)) {
-    throw new Error("compose page root not found");
-  }
-  return page;
+  await screen.findByTestId("task-compose-sticky-footer");
+  return document.body;
 }
 
 export async function choosePriorityInDialog(
