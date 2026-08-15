@@ -67,11 +67,12 @@ Taskapi does **not** migrate on dev startup by default. See [Schema migrations i
 
 ### Draft-assist sidecar
 
-`scripts/dev.*` also build [`sidecars/hamix-draft-agent`](sidecars/hamix-draft-agent/) and
-drop a `hamix-draft-agent` launcher on PATH next to `taskapi`. Test the
-sidecar on its own with `pnpm --dir sidecars/hamix-draft-agent test`
-(or `npm --prefix sidecars/hamix-draft-agent test`). Tests use a mock SDK
-and do **not** require `CURSOR_API_KEY`. See
+`scripts/dev.*` also build [`sidecars/hamix-draft-agent`](sidecars/hamix-draft-agent/)
+and set `HAMIX_DRAFT_AGENT_BIN`. **Running taskapi or hamix-desktop requires
+`CURSOR_API_KEY` in `.env`** — there is no fake production runner. Sidecar
+unit tests (`pnpm --dir sidecars/hamix-draft-agent test` or
+`npm --prefix sidecars/hamix-draft-agent test`) use a mock SDK and do **not**
+need the key. See
 [docs/domain/draft-assist.md](docs/domain/draft-assist.md#sidecar-hamix-draft-agent).
 
 ## Before you open a PR

@@ -1,3 +1,4 @@
+import { http, HttpResponse } from "msw";
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 import { ensureMswListening } from "@/test/mswLifecycle";
@@ -37,6 +38,18 @@ describe("DraftAssistNotReadyBanner", () => {
     render(<DraftAssistNotReadyBanner />);
     expect(
       await screen.findByText(/sidecar is down/i),
+    ).toBeInTheDocument();
+  });
+
+  it("shows taskapi-down copy when the probe cannot reach the server", async () => {
+    server.use(
+      http.get("/draft-assist/ready", () =>
+        HttpResponse.json({ error: "down" }, { status: 503 }),
+      ),
+    );
+    render(<DraftAssistNotReadyBanner />);
+    expect(
+      await screen.findByText(/taskapi is not running/i),
     ).toBeInTheDocument();
   });
 });
