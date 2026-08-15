@@ -152,6 +152,48 @@ describe("CustomSelect", () => {
     ).not.toBeNull();
   });
 
+  it("keeps priority pill classes on highlighted toolbar options", async () => {
+    const user = userEvent.setup();
+    const options: CustomSelectOption[] = [
+      { value: "all", label: "All priorities" },
+      {
+        value: "high",
+        label: "High",
+        pillClass: "cell-pill cell-pill--priority cell-pill--priority-high",
+      },
+      {
+        value: "critical",
+        label: "Critical",
+        pillClass:
+          "cell-pill cell-pill--priority cell-pill--priority-critical",
+      },
+    ];
+
+    render(
+      <CustomSelect
+        id="priority"
+        label="Priority"
+        value="all"
+        options={options}
+        dropdownVariant="toolbar"
+        listboxName="Filter by priority"
+        onChange={() => {}}
+      />,
+    );
+
+    await user.click(screen.getByRole("combobox", { name: /priority/i }));
+    const high = screen.getByRole("option", { name: "High" });
+    await user.hover(high);
+
+    expect(high).toHaveClass("custom-select-option--highlight");
+    expect(high.querySelector(".cell-pill--priority-high")).not.toBeNull();
+    expect(
+      screen
+        .getByRole("option", { name: "Critical" })
+        .querySelector(".cell-pill--priority-critical"),
+    ).not.toBeNull();
+  });
+
   it("exposes option title on the trigger and listbox options", async () => {
     const user = userEvent.setup();
     const titled: CustomSelectOption[] = [

@@ -4,7 +4,7 @@
  */
 
 .task-compose-page--v2 {
-  --compose-card-radius: 1rem;
+  --compose-card-radius: var(--radius-xl);
   --compose-card-border: var(--border-hairline);
   --compose-card-shadow: var(--shadow-xs);
   --compose-rail-width: 22.5rem;
@@ -19,6 +19,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
+  font-family: var(--font-sans);
 }
 
 /* Heading — circle back + title block + actions */
@@ -72,20 +73,56 @@
 
 .task-compose-page--v2 .task-compose-page__title {
   margin: 0;
-  font-size: var(--text-2xl, 1.5rem);
+  font-family: var(--font-sans);
+  font-size: var(--text-2xl);
   font-weight: 600;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
   line-height: 1.25;
+  color: var(--text-primary);
 }
 
 .task-compose-page--v2 .task-compose-page__subtitle {
   margin: 0.25rem 0 0;
+  font-family: var(--font-sans);
   font-size: 0.9375rem;
+  font-weight: 400;
+  line-height: 1.4;
   color: var(--text-secondary);
 }
 
 .task-compose-page--v2 .task-compose-page__top-actions {
   margin-left: auto;
+}
+
+/* Inspiration: rounded-lg, text-sm font-medium, brand icon, no chevron. */
+.task-compose-page--v2 .test-scenarios-trigger {
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  min-height: 2.25rem;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--text-primary);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--compose-card-border);
+  background: var(--surface-1);
+  box-shadow: var(--shadow-xs);
+}
+
+.task-compose-page--v2 .test-scenarios-trigger svg:first-of-type {
+  color: var(--brand);
+}
+
+.task-compose-page--v2 .test-scenarios-trigger-chevron {
+  display: none;
+}
+
+.task-compose-page--v2 .test-scenarios-trigger:not(:disabled):hover,
+.task-compose-page--v2 .test-scenarios-trigger[data-active="true"] {
+  background: var(--bg-subtle);
+  border-color: var(--compose-card-border);
+  color: var(--text-primary);
 }
 
 /* Two-column grid (form + handoff rail). Expands to three when assist is open. */
@@ -189,44 +226,63 @@ form.task-compose-page__form-shell {
 }
 
 .task-compose-page--v2 .compose-card__section-label {
-  font-size: 0.8125rem;
+  font-family: var(--font-sans);
+  font-size: var(--text-help);
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.025em;
   text-transform: uppercase;
   color: var(--text-secondary);
 }
 
-/* Brief hero */
+/* Brief hero — frameless title + hairline toolbar + white mono editor.
+   Selectors must beat .task-create-modal-sheet input / .task-create-editor-shell. */
 .task-compose-page--v2 .compose-brief__title-block {
   border-bottom: 1px solid var(--compose-card-border);
   padding: 1.5rem 1.5rem 1.25rem;
+  background: var(--surface-1);
 }
 
-.task-compose-page--v2 .compose-brief__title-input {
+.task-compose-page--v2 .compose-brief input.compose-brief__title-input,
+.task-compose-page--v2 .compose-brief input.compose-brief__title-input:hover,
+.task-compose-page--v2 .compose-brief input.compose-brief__title-input:focus,
+.task-compose-page--v2 .compose-brief input.compose-brief__title-input:focus-visible {
   width: 100%;
-  border: 0;
-  background: transparent;
-  font-size: 1.5rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  color: var(--text-primary);
+  min-height: 0;
+  margin: 0;
   padding: 0;
-  outline: none;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   box-shadow: none;
+  outline: none;
+  appearance: none;
+  font-family: var(--font-sans);
+  font-size: var(--text-2xl);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+  color: var(--text-primary);
 }
 
-.task-compose-page--v2 .compose-brief__title-input::placeholder {
-  color: var(--text-tertiary);
+.task-compose-page--v2 .compose-brief input.compose-brief__title-input::placeholder {
+  color: color-mix(in srgb, var(--text-tertiary) 70%, transparent);
 }
 
 .task-compose-page--v2 .compose-brief__title-hint {
   margin: 0.375rem 0 0;
-  font-size: 0.8125rem;
+  font-family: var(--font-sans);
+  font-size: var(--text-help);
   color: var(--text-secondary);
 }
 
-.task-compose-page--v2 .compose-brief__editor {
+.task-compose-page--v2 .compose-brief .compose-brief__editor.task-create-editor-shell,
+.task-compose-page--v2 .compose-brief .compose-brief__editor.task-create-editor-shell:focus-within {
   min-height: 18.75rem;
+  border: 0;
+  border-radius: 0;
+  background: var(--surface-1);
+  box-shadow: none;
+  overflow: hidden;
 }
 
 .task-compose-page--v2 .compose-brief__editor .rich-prompt-wrap {
@@ -236,14 +292,17 @@ form.task-compose-page__form-shell {
   box-shadow: none;
 }
 
-.task-compose-page--v2 .compose-brief__editor .rich-prompt-toolbar {
+.task-compose-page--v2 .compose-brief .task-create-editor-shell .rich-prompt-toolbar {
   display: flex;
   align-items: center;
   gap: 0.125rem;
+  margin: 0;
+  border: 0;
   border-bottom: 1px solid var(--compose-card-border);
+  border-radius: 0;
   background: color-mix(in oklab, var(--bg-subtle) 40%, transparent);
   padding: 0.5rem 0.75rem;
-  border-radius: 0;
+  font-family: var(--font-sans);
 }
 
 .task-compose-page--v2 .compose-brief__editor .rich-prompt-toolbar[data-variant="icons"] .toolbar-btn {
@@ -274,21 +333,32 @@ form.task-compose-page__form-shell {
   background: var(--compose-card-border);
 }
 
-.task-compose-page--v2 .compose-brief__editor .rich-prompt-toolbar__right {
+.task-compose-page--v2 .compose-brief__editor .rich-prompt-toolbar__right,
+.task-compose-page--v2 .compose-brief__word-count {
   margin-left: auto;
   padding-right: 0.25rem;
-  font-size: 0.75rem;
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
   font-variant-numeric: tabular-nums;
   color: var(--text-secondary);
 }
 
-.task-compose-page--v2 .compose-brief__editor .tiptap,
-.task-compose-page--v2 .compose-brief__editor .ProseMirror {
+.task-compose-page--v2 .compose-brief .task-create-editor-shell .rich-prompt-wrap .tiptap,
+.task-compose-page--v2 .compose-brief .task-create-editor-shell .rich-prompt-wrap .ProseMirror,
+.task-compose-page--v2 .compose-brief .task-create-editor-shell .rich-prompt-wrap .tiptap:focus-within {
   min-height: 18.75rem;
+  max-height: none;
+  margin: 0;
   padding: 1.25rem 1.5rem;
+  border: 0;
+  border-radius: 0;
+  background: var(--surface-1);
+  box-shadow: none;
+  outline: none;
   font-family: var(--font-mono);
   font-size: 0.84375rem;
-  line-height: 1.65;
+  line-height: 1.625;
+  color: var(--text-primary);
 }
 
 /* Criteria card */
@@ -305,26 +375,19 @@ form.task-compose-page__form-shell {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  font-family: var(--font-sans);
   font-size: 0.9375rem;
   font-weight: 600;
 }
 
-.task-compose-page--v2 .compose-criteria__count {
-  display: inline-flex;
-  align-items: center;
-  border-radius: var(--radius-full);
-  background: var(--bg-subtle);
-  padding: 0.125rem 0.5rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  font-variant-numeric: tabular-nums;
+.task-compose-page--v2 .compose-criteria__lede {
+  margin: 0.125rem 0 0;
+  font-size: var(--text-help);
   color: var(--text-secondary);
 }
 
-.task-compose-page--v2 .compose-criteria__lede {
-  margin: 0.125rem 0 0;
-  font-size: 0.8125rem;
-  color: var(--text-secondary);
+.task-compose-page--v2 .compose-criteria .field-req--required {
+  color: var(--warning);
 }
 
 .task-compose-page--v2 .compose-criteria__add {
@@ -332,13 +395,14 @@ form.task-compose-page__form-shell {
   align-items: center;
   gap: 0.375rem;
   flex-shrink: 0;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   border: 1px solid var(--compose-card-border);
   background: var(--surface-1);
   padding: 0.375rem 0.75rem;
-  font-size: 0.875rem;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
   font-weight: 500;
-  box-shadow: var(--compose-card-shadow);
+  box-shadow: var(--shadow-xs);
   color: var(--text-primary);
   cursor: pointer;
 }
@@ -358,6 +422,11 @@ form.task-compose-page__form-shell {
 
 .task-compose-page--v2 .compose-criteria__body .task-create-checklist {
   margin: 0;
+  padding-top: 0;
+}
+
+.task-compose-page--v2 .compose-criteria__body .task-create-checklist::before {
+  content: none;
 }
 
 .task-compose-page--v2 .compose-criteria__body .task-checklist-surface {
@@ -365,21 +434,36 @@ form.task-compose-page__form-shell {
   border-radius: 0;
   background: transparent;
   box-shadow: none;
+  overflow: visible;
+  margin: 0;
 }
 
-.task-compose-page--v2 .compose-criteria__body .task-checklist-list {
+.task-compose-page--v2 .compose-criteria__body .task-checklist-list,
+.task-compose-page--v2 .compose-criteria__body .task-checklist-list--grouped {
   margin: 0;
   padding: 0;
   list-style: none;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  overflow: visible;
 }
 
+.task-compose-page--v2 .compose-criteria__body .task-checklist-list--grouped .task-checklist-row,
 .task-compose-page--v2 .compose-criteria__body .task-checklist-row {
+  position: relative;
   display: flex;
+  flex-direction: row;
+  /* items-start: check, text, and trailing cluster share the first line. */
   align-items: flex-start;
-  gap: 0.75rem;
+  gap: var(--space-3);
+  border: 0;
   border-bottom: 1px solid var(--compose-card-border);
-  padding: 0.875rem 1.5rem;
+  border-radius: 0;
+  /* py-3.5 px-6 from done-criteria.tsx */
+  padding: 0.875rem var(--space-6);
   margin: 0;
+  background: transparent;
 }
 
 .task-compose-page--v2 .compose-criteria__body .task-checklist-row:last-child {
@@ -390,40 +474,201 @@ form.task-compose-page__form-shell {
   flex: 1;
   min-width: 0;
   display: flex;
+  flex-wrap: nowrap;
   align-items: flex-start;
-  gap: 0.75rem;
+  justify-content: flex-start;
+  gap: var(--space-3);
+}
+
+.task-compose-page--v2 .compose-criteria__check {
+  /* size-5 + mt-0.5: 20px slot optically on the 15px/leading-relaxed first line. */
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: 0.125rem;
+  color: var(--text-tertiary);
+}
+
+.task-compose-page--v2 .compose-criteria__check svg {
+  /* 16px glyph ≈ first-line cap height of 15px body; slot stays size-5. */
+  display: block;
+  width: 1rem;
+  height: 1rem;
 }
 
 .task-compose-page--v2 .compose-criteria__body .task-checklist-text {
-  flex: 1;
+  /* Grow into leftover space beside the check. Trailing chrome
+     (badge + actions) is a sibling sized to max-content, so wrap
+     uses the real remaining track. `flex: 1` (basis 0%) plus
+     inherited width/max-width 100% from detail checklist styles
+     made wrap ignore that track. */
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+  max-width: none;
+  font-family: var(--font-sans);
   font-size: 0.9375rem;
-  line-height: 1.5;
+  line-height: 1.625;
   white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  overflow-wrap: normal;
+  word-break: normal;
 }
 
 .task-compose-page--v2 .compose-criteria__body .task-checklist-row-trailing {
+  /* Badge + Edit/trash, ml-auto, first-line aligned (not centered on the wrap). */
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-  margin-left: auto;
+  align-self: flex-start;
+  gap: var(--space-1);
+  flex: 0 0 auto;
+  min-width: 0;
+  width: max-content;
+  margin-top: 0.125rem;
+  margin-inline-start: auto;
 }
 
 .task-compose-page--v2 .compose-criteria__body .task-checklist-row-actions {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-  opacity: 0;
-  transition: opacity var(--duration-fast, 100ms) var(--ease-default, ease);
+  flex-shrink: 0;
+  gap: var(--space-1);
+  white-space: nowrap;
 }
 
-.task-compose-page--v2 .compose-criteria__body .task-checklist-row:hover .task-checklist-row-actions,
-.task-compose-page--v2 .compose-criteria__body .task-checklist-row:focus-within .task-checklist-row-actions {
-  opacity: 1;
+/* Compact Edit / trash: beat generic `button` (dark fill + light text) and
+   the task-detail checklist min-height (--touch-target-min).
+   1.75rem = 28px matches the redesign size-7 trash control. */
+.task-compose-page--v2 .compose-criteria button.task-detail-checklist-edit,
+.task-compose-page--v2 .compose-criteria button.task-detail-checklist-remove {
+  box-sizing: border-box;
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.75rem;
+  height: 1.75rem;
+  font-family: var(--font-sans);
+  font-weight: 400;
+  letter-spacing: normal;
+  line-height: 1;
+  background: transparent;
+  border: 1px solid transparent;
+  box-shadow: none;
+  transform: none;
+  filter: none;
+}
+
+.task-compose-page--v2 .compose-criteria button.task-detail-checklist-edit {
+  padding: 0 var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  border-radius: var(--radius-md);
+}
+
+.task-compose-page--v2 .compose-criteria button.task-detail-checklist-remove {
+  width: 1.75rem;
+  min-width: 1.75rem;
+  padding: 0;
+  color: var(--text-secondary);
+  background: transparent;
+  background-color: transparent;
+  border-color: transparent;
+  border-radius: var(--radius-md);
+}
+
+.task-compose-page--v2 .compose-criteria button.task-detail-checklist-remove svg {
+  display: block;
+  width: 1rem;
+  height: 1rem;
+}
+
+.task-compose-page--v2
+  .compose-criteria
+  button.task-detail-checklist-edit:not(:disabled):hover,
+.task-compose-page--v2
+  .compose-criteria
+  button.task-detail-checklist-edit:focus-visible {
+  color: var(--text-secondary);
+  background: var(--bg-subtle);
+  border-color: transparent;
+  box-shadow: none;
+  transform: none;
+  filter: none;
+}
+
+.task-compose-page--v2
+  .compose-criteria
+  button.task-detail-checklist-edit:focus-visible {
+  box-shadow: var(--shadow-focus);
+}
+
+.task-compose-page--v2
+  .compose-criteria
+  button.task-detail-checklist-remove:not(:disabled):hover,
+.task-compose-page--v2
+  .compose-criteria
+  button.task-detail-checklist-remove:focus-visible {
+  color: var(--danger);
+  background: var(--danger-soft);
+  border-color: transparent;
+  box-shadow: none;
+  transform: none;
+  filter: none;
+}
+
+.task-compose-page--v2
+  .compose-criteria
+  button.task-detail-checklist-remove:focus-visible {
+  box-shadow: var(--shadow-focus-danger);
+}
+
+.task-compose-page--v2 .compose-criteria button.task-detail-checklist-edit:disabled,
+.task-compose-page--v2 .compose-criteria button.task-detail-checklist-remove:disabled {
+  color: var(--text-tertiary);
+}
+
+@media (hover: hover) {
+  .task-compose-page--v2 .compose-criteria__body .task-checklist-list--grouped .task-checklist-row:hover {
+    background: transparent;
+  }
+
+  /* Hover-capable: hide Edit/trash visually but keep their full width in
+     the trailing cluster. Collapsing width/max-width at rest reflows wrap
+     (1 line → 2) and shifts the command badge when actions appear. */
+  .task-compose-page--v2 .compose-criteria__body .task-checklist-row-actions {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--duration-fast) var(--ease-default);
+  }
+
+  .task-compose-page--v2 .compose-criteria__body .task-checklist-row:hover .task-checklist-row-actions,
+  .task-compose-page--v2 .compose-criteria__body .task-checklist-row:focus-within .task-checklist-row-actions {
+    opacity: 1;
+    pointer-events: auto;
+  }
 }
 
 .task-compose-page--v2 .compose-criteria__body .task-create-checklist-empty {
   padding: 2rem 1.5rem;
   text-align: center;
+}
+
+.task-compose-page--v2 .compose-criteria__body .task-create-checklist-empty__text {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.task-compose-page--v2 .compose-criteria .task-checklist-verify-badge {
+  background: var(--brand-muted);
+  color: var(--brand);
+  border-color: transparent;
+  font-size: var(--text-xs);
+  font-weight: 500;
 }
 
 /* Destination / assignment inside rail card */
@@ -438,18 +683,114 @@ form.task-compose-page__form-shell {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  margin-bottom: 0;
+}
+
+/* Label → control is tighter than control → next label (selector gap above). */
+.task-compose-page--v2 .compose-destination .field,
+.task-compose-page--v2 .compose-destination .field--custom-select {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.task-compose-page--v2 .compose-destination .field-label-with-req {
+  gap: 0.25rem;
+}
+
+.task-compose-page--v2 .compose-destination .field-label-with-req label,
+.task-compose-page--v2 .compose-agent .field-label-with-req label {
+  font-size: var(--text-help);
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.task-compose-page--v2 .compose-destination .field-req--required,
+.task-compose-page--v2 .compose-agent .field-req--required {
+  color: var(--warning);
+}
+
+.task-compose-page--v2 .compose-destination button.custom-select-trigger,
+.task-compose-page--v2 .compose-agent button.custom-select-trigger {
+  min-height: 2.75rem;
+  padding: 0.5rem 0.875rem;
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  font-weight: 400;
+  color: var(--text-primary);
+  border-radius: 0.75rem;
+  border: 1px solid var(--compose-card-border);
+  background: var(--surface-1);
+  box-shadow: none;
+}
+
+.task-compose-page--v2 .compose-destination button.custom-select-trigger:hover:not(:disabled),
+.task-compose-page--v2 .compose-agent button.custom-select-trigger:hover:not(:disabled) {
+  border-color: var(--border-strong);
+  background: var(--surface-1);
+  box-shadow: none;
+}
+
+.task-compose-page--v2
+  .compose-destination
+  .field--custom-select--leading-icon
+  button.custom-select-trigger,
+.task-compose-page--v2
+  .compose-agent
+  .field--custom-select--leading-icon
+  button.custom-select-trigger {
+  padding-left: 2.5rem;
+}
+
+.task-compose-page--v2 .compose-destination .custom-select-leading-icon,
+.task-compose-page--v2 .compose-agent .custom-select-leading-icon {
+  left: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.task-compose-page--v2 .compose-destination .custom-select-leading-icon svg,
+.task-compose-page--v2 .compose-destination .worktrees-git-selector__icon,
+.task-compose-page--v2 .compose-destination .project-select__icon,
+.task-compose-page--v2 .compose-agent .custom-select-leading-icon svg {
+  width: 1rem;
+  height: 1rem;
+  color: var(--text-secondary);
+}
+
+.task-compose-page--v2 .compose-destination .custom-select-value-neutral,
+.task-compose-page--v2 .compose-agent .custom-select-value-neutral {
+  color: var(--text-primary);
+  font-weight: 400;
+}
+
+.task-compose-page--v2 .compose-destination .custom-select-chevron,
+.task-compose-page--v2 .compose-agent .custom-select-chevron {
+  color: var(--text-secondary);
 }
 
 .task-compose-page--v2 .compose-destination__hint {
-  margin: 1rem 0 0;
+  margin: 0;
   display: flex;
   align-items: flex-start;
   gap: 0.5rem;
   border-radius: 0.75rem;
   background: color-mix(in oklab, var(--bg-subtle) 60%, transparent);
   padding: 0.75rem;
-  font-size: 0.78125rem;
-  line-height: 1.5;
+  font-size: var(--text-xs);
+  line-height: 1.625;
+  color: var(--text-secondary);
+}
+
+.task-compose-page--v2 .compose-destination > .compose-destination__hint {
+  margin-top: 1rem;
+}
+
+.task-compose-page--v2 .compose-destination__hint-icon {
+  flex-shrink: 0;
+  width: 0.875rem;
+  height: 0.875rem;
+  margin-top: 0.125rem;
   color: var(--text-secondary);
 }
 
@@ -484,7 +825,7 @@ form.task-compose-page__form-shell {
   border-radius: var(--radius-md);
   background: transparent;
   padding: 0.375rem 0.5rem;
-  font-size: 0.8125rem;
+  font-size: var(--text-help);
   font-weight: 500;
   color: var(--text-secondary);
   cursor: pointer;
@@ -492,24 +833,54 @@ form.task-compose-page__form-shell {
     color var(--duration-fast, 100ms) var(--ease-default, ease);
 }
 
-.task-compose-page--v2 .compose-priority__segment:hover:not(:disabled) {
-  color: var(--text-primary);
+.task-compose-page--v2 .compose-priority__segment[data-priority="low"] {
+  --compose-priority-bg: var(--pill-priority-low-bg);
+  --compose-priority-text: var(--pill-priority-low-text);
+  --compose-priority-border: var(--pill-priority-low-border);
 }
 
-.task-compose-page--v2 .compose-priority__segment[data-active="true"] {
-  background: var(--surface-1);
-  color: var(--text-primary);
-  box-shadow: var(--shadow-xs);
+.task-compose-page--v2 .compose-priority__segment[data-priority="medium"] {
+  --compose-priority-bg: var(--pill-priority-medium-bg);
+  --compose-priority-text: var(--pill-priority-medium-text);
+  --compose-priority-border: var(--pill-priority-medium-border);
 }
 
-.task-compose-page--v2 .compose-priority__segment[data-active="true"][data-warn="true"] {
-  background: var(--warning);
-  color: var(--text-on-brand);
+.task-compose-page--v2 .compose-priority__segment[data-priority="high"] {
+  --compose-priority-bg: var(--pill-priority-high-bg);
+  --compose-priority-text: var(--pill-priority-high-text);
+  --compose-priority-border: var(--pill-priority-high-border);
+}
+
+.task-compose-page--v2 .compose-priority__segment[data-priority="critical"] {
+  --compose-priority-bg: var(--pill-danger-fill-bg);
+  --compose-priority-text: var(--pill-danger-fill-text);
+  --compose-priority-border: var(--pill-danger-fill-border);
+}
+
+/* Unclassified button:hover in app-button-controls.css paints
+   --control-primary-hover-bg. That fill plus --text-primary (or the
+   inherited secondary label) blacks out the segment. Hover must set
+   background here so the CTA chrome cannot show through. */
+.task-compose-page--v2 .compose-priority__segment:hover:not(:disabled):not([data-active="true"]) {
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--compose-priority-bg) 72%, transparent);
+}
+
+.task-compose-page--v2 .compose-priority__segment[data-active="true"],
+.task-compose-page--v2 .compose-priority__segment[data-active="true"]:hover:not(:disabled) {
+  background: var(--compose-priority-bg);
+  color: var(--compose-priority-text);
+  box-shadow: inset 0 0 0 1px var(--compose-priority-border);
 }
 
 .task-compose-page--v2 .compose-priority__segment:focus-visible {
   outline: none;
   box-shadow: var(--shadow-focus);
+}
+
+.task-compose-page--v2 .compose-priority__segment[data-active="true"]:focus-visible,
+.task-compose-page--v2 .compose-priority__segment[data-active="true"]:hover:not(:disabled):focus-visible {
+  box-shadow: var(--shadow-focus), inset 0 0 0 1px var(--compose-priority-border);
 }
 
 .task-compose-page--v2 .compose-priority__segment:disabled {
@@ -531,22 +902,135 @@ form.task-compose-page__form-shell {
   box-shadow: none;
 }
 
+.task-compose-page--v2 .compose-agent__fields .task-create-agent::before {
+  content: none;
+}
+
 .task-compose-page--v2 .compose-agent__fields .task-create-agent > .task-create-config-section-header,
 .task-compose-page--v2 .compose-agent__fields .task-create-subtasks-heading,
 .task-compose-page--v2 .compose-agent__fields .task-create-config-section-header {
   display: none;
 }
 
+.task-compose-page--v2 .compose-agent .task-create-agent-panel {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.task-compose-page--v2 .compose-agent .task-create-agent-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.task-compose-page--v2 .compose-agent .task-create-agent-field,
+.task-compose-page--v2 .compose-agent .field--custom-select {
+  gap: 0.5rem;
+}
+
 .task-compose-page--v2 .compose-agent__autonomy {
   margin-top: 1rem;
-  border-radius: 0.75rem;
-  border: 1px solid var(--compose-card-border);
-  background: color-mix(in oklab, var(--bg-subtle) 40%, transparent);
-  padding: 0.875rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 .task-compose-page--v2 .compose-agent__autonomy .task-create-autonomy {
   margin: 0;
+  border-radius: 0.75rem;
+  border: 1px solid var(--compose-card-border);
+  background: color-mix(in oklab, var(--bg-subtle) 40%, transparent);
+}
+
+.task-compose-page--v2 .compose-agent .task-create-autonomy__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.task-compose-page--v2 .compose-agent .task-create-autonomy__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0.875rem;
+  cursor: pointer;
+}
+
+.task-compose-page--v2 .compose-agent .task-create-autonomy__label {
+  font-family: var(--font-sans);
+  font-size: 0.84375rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.task-compose-page--v2 .compose-agent .task-create-autonomy__hint {
+  font-size: var(--text-xs);
+  line-height: 1.375;
+  color: var(--text-secondary);
+}
+
+.task-compose-page--v2 .compose-agent .task-create-autonomy__switch {
+  position: relative;
+  flex: 0 0 auto;
+  width: 2.75rem;
+  height: 1.5rem;
+  border-radius: var(--radius-full);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-hairline);
+  transition:
+    background var(--duration-normal) var(--ease-default),
+    border-color var(--duration-normal) var(--ease-default);
+}
+
+.task-compose-page--v2 .compose-agent .task-create-autonomy__switch[data-checked="true"] {
+  background: var(--brand);
+  border-color: var(--brand);
+}
+
+.task-compose-page--v2 .compose-agent .task-create-autonomy__switch-thumb {
+  position: absolute;
+  top: 50%;
+  left: 0.125rem;
+  width: 1.125rem;
+  height: 1.125rem;
+  border-radius: var(--radius-full);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-xs);
+  transform: translateY(-50%);
+  transition: transform var(--duration-normal) var(--ease-default);
+}
+
+.task-compose-page--v2
+  .compose-agent
+  .task-create-autonomy__switch[data-checked="true"]
+  .task-create-autonomy__switch-thumb {
+  transform: translate(1.25rem, -50%);
+}
+
+.task-compose-page--v2 .compose-agent .task-create-autonomy__row:focus-within .task-create-autonomy__switch {
+  box-shadow: var(--shadow-focus);
+}
+
+.task-compose-page--v2
+  .compose-agent
+  .task-create-autonomy__row:has(.task-create-autonomy__input:disabled)
+  .task-create-autonomy__switch {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.task-compose-page--v2
+  .compose-agent
+  .task-create-autonomy__row:has(.task-create-autonomy__input:disabled) {
+  cursor: not-allowed;
 }
 
 /* Tags card */
@@ -558,11 +1042,25 @@ form.task-compose-page__form-shell {
   display: none;
 }
 
-.task-compose-page--v2 .compose-tags__hint {
+.task-compose-page--v2 .compose-tags__hint,
+.task-compose-page--v2 .compose-tags .task-create-tags-field__hint {
   margin: 0.5rem 0 0;
-  font-size: 0.75rem;
-  line-height: 1.4;
+  font-size: var(--text-xs);
+  line-height: 1.375;
   color: var(--text-secondary);
+}
+
+.task-compose-page--v2 .compose-tags .task-create-tags-pills {
+  min-height: 2.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--compose-card-border);
+  background: var(--surface-1);
+  box-shadow: none;
+  font-family: var(--font-sans);
+}
+
+.task-compose-page--v2 .compose-tags .task-create-tags-pills__input {
+  font-size: 0.9375rem;
 }
 
 /* More options under the rail */
@@ -588,20 +1086,23 @@ form.task-compose-page__form-shell {
   padding: 0 1.25rem 1.25rem;
 }
 
-/* Sticky action footer */
-.task-compose-page--v2 .task-compose-page__sticky-footer {
+/* Sticky action footer — portaled to document.body so it stays
+   viewport-fixed while the compose form scrolls. */
+.task-compose-page__sticky-footer {
   position: fixed;
   inset-inline: 0;
   bottom: 0;
-  z-index: 40;
-  border-top: 1px solid color-mix(in oklab, var(--compose-card-border) 70%, transparent);
-  background: color-mix(in oklab, var(--bg-page) 85%, transparent);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  z-index: var(--z-sticky);
+  border-top: 1px solid color-mix(in srgb, var(--border-hairline) 70%, transparent);
+  background: color-mix(in srgb, var(--bg-page) 85%, transparent);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow: var(--shadow-modal-sheet);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-.task-compose-page--v2 .task-compose-page__sticky-footer-inner {
-  max-width: var(--compose-max);
+.task-compose-page__sticky-footer-inner {
+  max-width: var(--layout-max-width);
   margin-inline: auto;
   padding: 0.875rem var(--space-6);
   display: flex;
@@ -609,8 +1110,8 @@ form.task-compose-page__form-shell {
   gap: var(--space-4);
 }
 
-.task-compose-page--v2 .task-compose-page__sticky-footer .task-create-modal-footer,
-.task-compose-page--v2 .task-compose-page__sticky-footer .task-create-modal-actions {
+.task-compose-page__sticky-footer .task-create-modal-footer,
+.task-compose-page__sticky-footer .task-create-modal-actions {
   margin: 0;
   margin-left: auto;
   border: 0;
@@ -621,11 +1122,68 @@ form.task-compose-page__form-shell {
   gap: 0.5rem;
 }
 
-.task-compose-page--v2 .task-compose-page__sticky-footer .task-create-modal-actions__start,
-.task-compose-page--v2 .task-compose-page__sticky-footer .task-create-modal-actions__end {
+.task-compose-page__sticky-footer .task-create-modal-actions__start,
+.task-compose-page__sticky-footer .task-create-modal-actions__end {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.task-compose-page__sticky-footer .task-create-modal-actions .task-create-cancel-btn,
+.task-compose-page__sticky-footer button.secondary,
+.task-compose-page__sticky-footer .task-create-submit {
+  min-height: 2.75rem;
+  border-radius: var(--radius-xl);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  letter-spacing: 0;
+}
+
+.task-compose-page__sticky-footer .task-create-modal-actions .task-create-cancel-btn {
+  margin-right: 0;
+  padding: 0.625rem 1rem;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  font-weight: 500;
+  box-shadow: none;
+}
+
+.task-compose-page__sticky-footer .task-create-modal-actions .task-create-cancel-btn:not(:disabled):hover {
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+  border-color: transparent;
+}
+
+.task-compose-page__sticky-footer button.secondary {
+  padding: 0.625rem 1rem;
+  font-weight: 500;
+  border: 1px solid var(--border-hairline);
+  background: var(--surface-1);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-xs);
+}
+
+.task-compose-page__sticky-footer button.secondary:not(:disabled):hover {
+  background: var(--bg-subtle);
+}
+
+.task-compose-page__sticky-footer .task-create-submit {
+  padding: 0.625rem 1.25rem;
+  font-weight: 600;
+  background: var(--brand);
+  color: var(--text-on-brand);
+  box-shadow: var(--shadow-xs);
+}
+
+.task-compose-page__sticky-footer .task-create-submit:not(:disabled):hover {
+  background: var(--brand-hover);
+}
+
+.task-compose-page__sticky-footer .task-create-submit:disabled {
+  background: color-mix(in srgb, var(--brand) 40%, transparent);
+  color: var(--text-on-brand);
+  opacity: 1;
 }
 
 .task-compose-page--v2 .task-compose-page__errors {
@@ -671,7 +1229,8 @@ form.task-compose-page__form-shell {
 }
 
 .task-compose-readiness__label {
-  font-size: 0.875rem;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
   color: var(--text-secondary);
   white-space: nowrap;
 }
@@ -700,7 +1259,8 @@ form.task-compose-page__form-shell {
   gap: 0.25rem;
   border-radius: var(--radius-full);
   padding: 0.125rem 0.5rem;
-  font-size: 0.75rem;
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
 }
 
 .task-compose-readiness__chip[data-ok="true"] {

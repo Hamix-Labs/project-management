@@ -7,7 +7,6 @@ import type { TaskCreateModalProps } from "../task-create-modal/taskCreateModalP
 import type { TaskCreateModalPresentation } from "../task-create-modal/taskCreateModalPresentation";
 import type { TestScenario } from "@/tasks/test-scenarios";
 import {
-  DraftAssistNotReadyBanner,
   DraftAssistThread,
   useDraftAssistContext,
 } from "../draft-assist";
@@ -22,7 +21,7 @@ export type TaskComposeFormShellProps = Omit<
   never
 > & {
   presentation: TaskCreateModalPresentation;
-  draftSubtitle: string | null;
+  subtitle: string | null;
   backTo: string;
   backLabel?: string;
   scenariosOpen: boolean;
@@ -35,7 +34,7 @@ export type TaskComposeFormShellProps = Omit<
 /** Inner compose UI; must sit under DraftAssistProvider. */
 export function TaskComposeFormShell({
   presentation,
-  draftSubtitle,
+  subtitle,
   backTo,
   backLabel,
   scenariosOpen,
@@ -77,12 +76,13 @@ export function TaskComposeFormShell({
   return (
     <>
       <form
+        id="task-compose-form"
         className="task-create-modal-form task-create-form task-compose-page__form-shell"
         onSubmit={actions.onSubmit}
       >
         <TaskComposeLayout
           title={presentation.modalTitle}
-          subtitle={draftSubtitle}
+          subtitle={subtitle}
           backTo={backTo}
           backLabel={backLabel}
           topActions={
@@ -123,26 +123,36 @@ export function TaskComposeFormShell({
                 checklistItems={criteria.checklistItems}
                 repositoryId={git.repositoryId}
                 draftSaving={session.draftSaving}
+                form="task-compose-form"
                 onClose={actions.onClose}
                 onSaveDraft={actions.onSaveDraft}
               />
             </>
           }
           errors={
-            <TaskCreateModalMutationErrors
-              isTaskEdit={presentation.isTaskEdit}
-              createFormError={createFormError}
-              createError={createError}
-              formError={formError}
-              patchError={patchError}
-            />
+            <>
+              {session.draftSaveError ? (
+                <p
+                  className="task-create-draft-status task-create-draft-status--error"
+                  aria-live="assertive"
+                >
+                  {session.draftSaveLabel ?? "Draft autosave failed"}
+                </p>
+              ) : null}
+              <TaskCreateModalMutationErrors
+                isTaskEdit={presentation.isTaskEdit}
+                createFormError={createFormError}
+                createError={createError}
+                formError={formError}
+                patchError={patchError}
+              />
+            </>
           }
         >
           <section
             className="panel modal-sheet modal-sheet--edit task-create-modal-sheet task-create"
             aria-labelledby="task-compose-page-title"
           >
-            <DraftAssistNotReadyBanner />
             {presentation.isTaskEdit && editingTaskId ? (
               <p
                 className="muted stack-tight-zero task-create-modal-task-id"

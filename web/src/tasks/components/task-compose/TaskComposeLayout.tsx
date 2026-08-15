@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 
 type Props = {
@@ -54,7 +55,7 @@ export function TaskComposeLayout({
   const hasRail = rightRail != null;
   const hasAssist = assist != null;
 
-  return (
+  const page = (
     <section
       className={
         hasRail
@@ -122,13 +123,30 @@ export function TaskComposeLayout({
         ) : null}
       </div>
 
-      {stickyFooter ? (
-        <div className="task-compose-page__sticky-footer">
-          <div className="task-compose-page__sticky-footer-inner">
-            {stickyFooter}
-          </div>
-        </div>
-      ) : null}
     </section>
+  );
+
+  const stickyFooterPortal =
+    stickyFooter && typeof document !== "undefined"
+      ? createPortal(
+          <div
+            className="task-compose-page__sticky-footer"
+            data-testid="task-compose-sticky-footer"
+            role="region"
+            aria-label="Compose actions"
+          >
+            <div className="task-compose-page__sticky-footer-inner">
+              {stickyFooter}
+            </div>
+          </div>,
+          document.body,
+        )
+      : null;
+
+  return (
+    <>
+      {page}
+      {stickyFooterPortal}
+    </>
   );
 }

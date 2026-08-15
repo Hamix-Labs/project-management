@@ -287,3 +287,63 @@ button.custom-select-trigger:focus-visible {
   font-weight: 500;
 }
 
+/* Priority options: highlight/hover uses that level's pill palette instead of
+   brand-muted / bg-subtle (which washed Low–Critical into one gray ring).
+   Mix a little of the text hue into the pill bg so Low stays visible. */
+.custom-select-option:has(.cell-pill--priority-low) {
+  --custom-select-tone-bg: color-mix(
+    in srgb,
+    var(--pill-priority-low-text) 14%,
+    var(--pill-priority-low-bg)
+  );
+  --custom-select-tone-border: var(--pill-priority-low-border);
+}
+
+.custom-select-option:has(.cell-pill--priority-medium) {
+  --custom-select-tone-bg: color-mix(
+    in srgb,
+    var(--pill-priority-medium-text) 14%,
+    var(--pill-priority-medium-bg)
+  );
+  --custom-select-tone-border: var(--pill-priority-medium-border);
+}
+
+.custom-select-option:has(.cell-pill--priority-high) {
+  --custom-select-tone-bg: color-mix(
+    in srgb,
+    var(--pill-priority-high-text) 14%,
+    var(--pill-priority-high-bg)
+  );
+  --custom-select-tone-border: var(--pill-priority-high-border);
+}
+
+.custom-select-option:has(.cell-pill--priority-critical) {
+  --custom-select-tone-bg: color-mix(
+    in srgb,
+    var(--pill-danger-fill-text) 14%,
+    var(--pill-danger-fill-bg)
+  );
+  --custom-select-tone-border: var(--pill-danger-fill-border);
+}
+
+.custom-select-option--highlight:has(.cell-pill--priority),
+.custom-select-option--highlight:has(.cell-pill--priority):hover {
+  background: var(--custom-select-tone-bg);
+}
+
+@media (hover: hover) {
+  .custom-select-option:hover:not(.custom-select-option--highlight):has(.cell-pill--priority) {
+    background: var(--custom-select-tone-bg);
+  }
+}
+
+.custom-select-dropdown--toolbar .custom-select-option--highlight:has(.cell-pill--priority),
+.custom-select-dropdown--toolbar .custom-select-option--highlight:has(.cell-pill--priority):hover {
+  background: var(--custom-select-tone-bg);
+  box-shadow: inset 0 0 0 1px var(--custom-select-tone-border);
+}
+
+.custom-select-dropdown--toolbar .custom-select-option--highlight:has(.cell-pill--priority) .custom-select-option-pill {
+  box-shadow: none;
+}
+

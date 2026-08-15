@@ -179,12 +179,13 @@
     --pill-danger-fill-bg: rgb(244 63 94 / 14%);
     --pill-danger-fill-text: rgb(253 164 175);
     --pill-danger-fill-border: rgb(251 113 133 / 38%);
-    --pill-priority-low-bg: rgb(148 163 184 / 10%);
-    --pill-priority-low-text: rgb(203 213 225);
-    --pill-priority-low-border: rgb(148 163 184 / 22%);
-    --pill-priority-medium-bg: rgb(56 189 248 / 12%);
-    --pill-priority-medium-text: rgb(125 211 252);
-    --pill-priority-medium-border: rgb(56 189 248 / 32%);
+    /* Priority severity ladder (green-tint → gold-tint → orange-tint → rose). */
+    --pill-priority-low-bg: var(--pill-success-fill-bg);
+    --pill-priority-low-text: var(--pill-success-fill-text);
+    --pill-priority-low-border: var(--pill-success-fill-border);
+    --pill-priority-medium-bg: var(--warning-surface);
+    --pill-priority-medium-text: var(--warning-ink);
+    --pill-priority-medium-border: var(--warning-border);
     --pill-priority-high-bg: rgb(251 146 60 / 12%);
     --pill-priority-high-text: rgb(253 186 116);
     --pill-priority-high-border: rgb(251 146 60 / 32%);

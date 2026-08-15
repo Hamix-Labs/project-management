@@ -1,4 +1,5 @@
 export type CreateEntryDecision =
+  | { kind: "wait" }
   | { kind: "showPicker" }
   | { kind: "openFreshForm"; entryDraftErrorHint: string | null };
 
@@ -9,7 +10,7 @@ export function decideCreateEntry(input: {
   draftCount: number;
 }): CreateEntryDecision {
   if (input.isPending) {
-    return { kind: "showPicker" };
+    return { kind: "wait" };
   }
   if (input.isError) {
     return { kind: "openFreshForm", entryDraftErrorHint: input.errorMessage };

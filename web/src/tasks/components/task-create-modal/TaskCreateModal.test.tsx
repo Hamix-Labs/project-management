@@ -244,9 +244,11 @@ describe("TaskCreateModal", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("surfaces the draft save status near the modal heading", () => {
-    renderModal({ draftSaveLabel: "Saving draft…" });
-    expect(screen.getByText(/saving draft/i)).toBeInTheDocument();
+  it("keeps the helper subtitle when a draft save label is present", () => {
+    renderModal({ draftSaveLabel: "Draft saved" });
+    expect(document.querySelector(".task-compose-page__subtitle")).toHaveTextContent(
+      /define the work, then hand it off to your agent/i,
+    );
   });
 
   it("shows Cursor model as a custom select with an Auto option", async () => {
@@ -367,9 +369,7 @@ describe("TaskCreateModal", () => {
       expect(toggle).toBeInTheDocument();
       expect(toggle).toBeChecked();
       expect(
-        screen.getByText(
-          /created as ready.*no other task is running/i,
-        ),
+        screen.getByText("Picks it up when no other task is running."),
       ).toBeInTheDocument();
     });
 
@@ -378,7 +378,7 @@ describe("TaskCreateModal", () => {
       const toggle = getAutonomyCheckbox();
       expect(toggle).not.toBeChecked();
       expect(
-        screen.getByText(/created paused until you resume/i),
+        screen.getByText("Paused until you resume from the task page."),
       ).toBeInTheDocument();
     });
 

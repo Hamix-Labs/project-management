@@ -17,7 +17,7 @@ describe("draft entry hints", () => {
     server.use(...appDefaultHandlers());
   });
 
-  it("shows loading status in draft picker from home", async () => {
+  it("stays on the list while drafts load and goes to compose when none exist", async () => {
     const user = userEvent.setup();
     const [pendingHandler, deferred] = draftsListPending();
     server.use(pendingHandler);
@@ -25,19 +25,22 @@ describe("draft entry hints", () => {
     renderTasksHome();
     await screen.findByText("No tasks yet");
     await user.click(screen.getByRole("button", { name: /\+?\s*new task/i }));
-    expect(await screen.findByText(/loading drafts/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /\+?\s*new task/i })).toHaveAttribute(
+      "aria-busy",
+      "true",
+    );
+    expect(screen.queryByText(/loading drafts/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: /resume a draft or start fresh/i }),
+    ).not.toBeInTheDocument();
 
     await deferred.resolve(HttpResponse.json({ drafts: [] }));
     expect(
-      await screen.findByRole("heading", {
-        name: /resume a draft or start fresh/i,
-      }),
-    ).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: /^start fresh$/i }));
-    expect(
       await screen.findByRole("heading", { name: /^new task$/i }, { timeout: 10_000 }),
     ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: /resume a draft or start fresh/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("shows entry hint when drafts fail and opens fresh create form", async () => {

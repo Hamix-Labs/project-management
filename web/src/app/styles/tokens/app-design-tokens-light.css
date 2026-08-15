@@ -284,12 +284,15 @@
   --pill-danger-fill-bg: rgb(255 241 242);
   --pill-danger-fill-text: rgb(190 18 60);
   --pill-danger-fill-border: rgb(254 205 211);
-  --pill-priority-low-bg: rgb(248 250 252);
-  --pill-priority-low-text: rgb(100 116 139);
-  --pill-priority-low-border: rgb(226 232 240);
-  --pill-priority-medium-bg: rgb(240 249 255);
-  --pill-priority-medium-text: rgb(3 105 161);
-  --pill-priority-medium-border: rgb(186 230 253);
+  /* Priority = severity ladder (success → gold → orange → danger), not slate/sky.
+     Compose selected chips and list filter pills share these. Critical uses
+     --pill-danger-fill-* at the call site. */
+  --pill-priority-low-bg: var(--pill-success-fill-bg);
+  --pill-priority-low-text: var(--pill-success-fill-text);
+  --pill-priority-low-border: var(--pill-success-fill-border);
+  --pill-priority-medium-bg: var(--color-warning-subtle);
+  --pill-priority-medium-text: var(--warning-ink);
+  --pill-priority-medium-border: var(--warning-border);
   --pill-priority-high-bg: rgb(255 247 237);
   --pill-priority-high-text: rgb(194 65 12);
   --pill-priority-high-border: rgb(254 215 170);

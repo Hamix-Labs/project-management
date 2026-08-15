@@ -123,24 +123,6 @@
   gap: var(--space-2);
 }
 
-.task-compose-page__assist-banner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  margin-bottom: var(--space-4);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-surface-muted, var(--color-surface));
-}
-
-.task-compose-page__assist-banner-copy {
-  margin: 0;
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
-}
-
 /* Sticky footer — always visible while the operator scrolls the form. */
 .task-compose-page__footer {
   position: sticky;

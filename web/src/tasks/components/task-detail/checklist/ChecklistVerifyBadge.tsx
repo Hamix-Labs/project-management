@@ -25,17 +25,15 @@ export function ChecklistVerifyBadge({ count }: Props) {
         xmlns="http://www.w3.org/2000/svg"
         aria-hidden
       >
-        <rect
-          x={5}
-          y={4}
-          width={14}
-          height={16}
-          rx={2}
+        <path
+          d="M7 8.5 11 12l-4 3.5"
           stroke="currentColor"
           strokeWidth={1.75}
+          strokeLinecap="round"
+          strokeLinejoin="round"
         />
         <path
-          d="M9 10h6M9 14h4"
+          d="M12.5 16.5h5"
           stroke="currentColor"
           strokeWidth={1.75}
           strokeLinecap="round"

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useCallback } from "react";
+import { useCallback, type ReactNode } from "react";
 import { CustomSelect } from "@/components/custom-select";
 import { FolderGitIcon } from "@/components/icons/FolderGitIcon";
 import { ProjectSelect } from "@/components/project/ProjectSelect";
@@ -13,6 +13,8 @@ type Props = {
   worktreeId: string;
   onAssignmentChange: (next: ComposeGitAssignment) => void;
   disabled?: boolean;
+  /** Override the repository trigger glyph (compose Destination uses FolderGit2). */
+  repositoryLeadingIcon?: ReactNode;
 };
 
 export function TaskCreateAssignmentFields({
@@ -22,6 +24,7 @@ export function TaskCreateAssignmentFields({
   worktreeId,
   onAssignmentChange,
   disabled = false,
+  repositoryLeadingIcon,
 }: Props) {
   const onAssignmentChangeStable = useCallback(onAssignmentChange, [onAssignmentChange]);
 
@@ -56,7 +59,9 @@ export function TaskCreateAssignmentFields({
         disabled={disabled || git.loading || git.repoOptions.length === 0}
         requirement="required"
         leadingIcon={
-          <FolderGitIcon className="worktrees-git-selector__icon" />
+          repositoryLeadingIcon ?? (
+            <FolderGitIcon className="worktrees-git-selector__icon" />
+          )
         }
         onChange={git.selectRepository}
       />

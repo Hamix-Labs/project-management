@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { decideCreateEntry } from "./decideCreateEntry";
 
 describe("decideCreateEntry", () => {
-  it("shows picker while draft list is loading", () => {
+  it("waits while draft list is loading so the list can avoid an empty picker flash", () => {
     expect(
       decideCreateEntry({
         isPending: true,
@@ -10,7 +10,7 @@ describe("decideCreateEntry", () => {
         errorMessage: null,
         draftCount: 0,
       }),
-    ).toEqual({ kind: "showPicker" });
+    ).toEqual({ kind: "wait" });
   });
 
   it("opens fresh form with hint when draft list fails", () => {

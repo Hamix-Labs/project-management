@@ -2,7 +2,6 @@ import type { QueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { errorMessage } from "@/lib/errorMessage";
 import { ensureRepositoriesRegistered } from "@/lib/ensureRepositoriesRegistered";
-import { decideCreateEntry } from "../decideCreateEntry";
 import type { ComposeOperation, ComposeTarget, TaskDraftsQuery } from "../types";
 import type { useTaskCreateModalState } from "./useTaskCreateModalState";
 
@@ -20,7 +19,6 @@ export function useTaskCreateComposeEntryActions(input: {
       lockGitAssignment?: boolean;
       target?: ComposeTarget;
       operation?: ComposeOperation;
-      skipDraftPicker?: boolean;
     }) => {
       const requestId = input.modal.beginEntryRequest();
       input.modal.setCreateEntryDraftErrorHint(null);
@@ -36,10 +34,11 @@ export function useTaskCreateComposeEntryActions(input: {
         : null;
       const target = opts?.target ?? "task";
       const operation = opts?.operation ?? "create";
-      const skipDraftPicker =
-        opts?.skipDraftPicker === true ||
+      const skipRepoCheck =
+        target !== "task" ||
+        operation !== "create" ||
         (opts?.lockGitAssignment === true && Boolean(opts?.worktreeID?.trim()));
-      if (target === "task" && operation === "create" && !skipDraftPicker) {
+      if (!skipRepoCheck) {
         const hasRepos = await ensureRepositoriesRegistered(input.queryClient);
         if (!input.modal.isEntryRequestCurrent(requestId)) {
           return;
@@ -52,25 +51,11 @@ export function useTaskCreateComposeEntryActions(input: {
       if (!input.modal.isEntryRequestCurrent(requestId)) {
         return;
       }
-      if (target === "template" || skipDraftPicker) {
-        input.modal.resetNewTaskForm();
-        input.modal.applyCreateModalPrefill();
-        input.modal.openComposePhase({ target, operation });
-        return;
+      if (target === "task" && operation === "create" && input.draftsQuery.isError) {
+        input.modal.setCreateEntryDraftErrorHint(
+          errorMessage(input.draftsQuery.error),
+        );
       }
-      const decision = decideCreateEntry({
-        isPending: input.draftsQuery.isPending,
-        isError: input.draftsQuery.isError,
-        errorMessage: input.draftsQuery.isError
-          ? errorMessage(input.draftsQuery.error)
-          : null,
-        draftCount: input.draftsQuery.data?.length ?? 0,
-      });
-      if (decision.kind === "showPicker") {
-        input.modal.showDraftPickerPhase();
-        return;
-      }
-      input.modal.setCreateEntryDraftErrorHint(decision.entryDraftErrorHint);
       input.modal.resetNewTaskForm();
       input.modal.applyCreateModalPrefill();
       input.modal.openComposePhase({ target, operation });
@@ -100,7 +85,7 @@ export function useTaskCreateComposeEntryActions(input: {
   );
 
   const openTemplateCreateModal = useCallback(() => {
-    openComposeModal({ target: "template", operation: "create", skipDraftPicker: true });
+    openComposeModal({ target: "template", operation: "create" });
   }, [openComposeModal]);
 
   const startFreshDraft = useCallback(async () => {

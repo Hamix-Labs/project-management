@@ -89,33 +89,35 @@ export function TaskComposeChecklistFields({
                   }}
                 >
                   <div className="task-checklist-row-primary">
+                    <CriterionMarkerIcon />
                     <span className="task-checklist-text" title={item.text}>
                       {item.text}
                     </span>
-                    <div className="task-checklist-row-trailing">
+                  </div>
+                  <div className="task-checklist-row-trailing">
                     {commandCount > 0 ? (
                       <ChecklistVerifyBadge count={commandCount} />
                     ) : null}
                     <div className="task-checklist-row-actions">
-                    <button
-                      type="button"
-                      className="task-detail-checklist-edit"
-                      disabled={disabled}
-                      onClick={() => onOpenEditCriterion(index, item)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      className="task-detail-checklist-remove"
-                      disabled={disabled}
-                      onClick={() => onRemoveRow(index)}
-                    >
-                      Remove
-                    </button>
+                      <button
+                        type="button"
+                        className="task-detail-checklist-edit"
+                        disabled={disabled}
+                        onClick={() => onOpenEditCriterion(index, item)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        className="task-detail-checklist-remove"
+                        disabled={disabled}
+                        aria-label="Remove"
+                        onClick={() => onRemoveRow(index)}
+                      >
+                        <CriterionTrashIcon />
+                      </button>
                     </div>
                   </div>
-                </div>
                 </li>
               );
             })}
@@ -123,5 +125,75 @@ export function TaskComposeChecklistFields({
         </div>
       )}
     </div>
+  );
+}
+
+function CriterionTrashIcon() {
+  return (
+    <svg
+      width={16}
+      height={16}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <path
+        d="M3 6h18"
+        stroke="currentColor"
+        strokeWidth={1.75}
+        strokeLinecap="round"
+      />
+      <path
+        d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"
+        stroke="currentColor"
+        strokeWidth={1.75}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+        stroke="currentColor"
+        strokeWidth={1.75}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M10 11v6M14 11v6"
+        stroke="currentColor"
+        strokeWidth={1.75}
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+/** Decorative circle-check — compose criteria are not yet satisfied. */
+function CriterionMarkerIcon() {
+  return (
+    <span className="compose-criteria__check" aria-hidden="true">
+      <svg
+        width={20}
+        height={20}
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <circle
+          cx={12}
+          cy={12}
+          r={10}
+          stroke="currentColor"
+          strokeWidth={1.75}
+        />
+        <path
+          d="M8 12.5 10.8 15.2 16 9.8"
+          stroke="currentColor"
+          strokeWidth={1.75}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </span>
   );
 }

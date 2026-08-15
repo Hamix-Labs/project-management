@@ -19,7 +19,7 @@ type Props = {
 };
 
 /**
- * Done-criteria card with count pill and Add button.
+ * Done-criteria card with Add button.
  * List editing still flows through TaskCreateModalCriteriaFields + ChecklistCriterionModal.
  */
 export function TaskComposeCriteriaCard({
@@ -40,7 +40,6 @@ export function TaskComposeCriteriaCard({
     openNewCriterionRef.current = open;
   }, []);
 
-  const count = checklistItems.filter((c) => c.text.trim() !== "").length;
   const headingId = "task-compose-criteria-heading";
 
   return (
@@ -53,7 +52,6 @@ export function TaskComposeCriteriaCard({
           <h2 id={headingId} className="compose-criteria__title">
             Done criteria
             <FieldRequirementBadge requirement={checklistRequirement} />
-            <span className="compose-criteria__count">{count}</span>
           </h2>
           <p className="compose-criteria__lede">
             Checkable conditions that define when this task is complete.

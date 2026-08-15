@@ -13,6 +13,42 @@
   --layout-max-width: 90rem;
 }
 
+/*
+ * Compose v2 is a full-viewport page (inspiration: min-h-screen + inner
+ * max-w-6xl). Default `.app` is already --layout-max-width with
+ * --layout-gutter-x and --space-10/--space-16 padding; nesting compose's
+ * own 72rem + --space-6 inside that shrinks the form and leaves the nav
+ * looking heavy relative to the content. Unwrap the shell so the compose
+ * column, header inner, and portaled footer share one 72rem band.
+ */
+.app:has(.task-compose-page--v2) {
+  max-width: none;
+  padding: 0;
+}
+
+.app:has(.task-compose-page--v2) .app-header--sticky {
+  /* Cancel the bleed that compensates for .app padding we just removed.
+     64px bar — inspiration h-16 / DS top-nav, not the padded strip. */
+  margin: 0;
+  padding-block: 0;
+  padding-inline: 0;
+}
+
+.app:has(.task-compose-page--v2) .app-header-top {
+  padding-inline: var(--space-6);
+}
+
+.app:has(.task-compose-page--v2) .error-banner,
+.app:has(.task-compose-page--v2) .app-ui-test-banner {
+  margin-inline: var(--space-6);
+}
+
+.app:has(.task-compose-page--v2) .task-compose-page--v2 {
+  /* Heading → grid: inspiration mt-8. Card stack gap stays --space-6. */
+  padding-block-start: var(--space-10);
+  gap: var(--space-8);
+}
+
 /* Screen-reader-only copy (captions, live regions, etc.) */
 .visually-hidden {
   position: absolute;

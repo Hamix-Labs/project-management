@@ -136,6 +136,8 @@ export function TaskComposePageBody({ mode }: { mode: ComposeMode }) {
     );
   }
 
+  // Retry-from-entry-hint can still open the picker here; New task on the
+  // list is the primary gate and /tasks/new no longer auto-opens it.
   if (app.draftPickerOpen) {
     return (
       <TaskComposeLayout title="Resume a draft?" backTo={backTo}>
