@@ -89,7 +89,7 @@ func buildRuntime(ctx context.Context, db *gorm.DB, drift postgres.SchemaDriftRe
 		return nil, err
 	}
 
-	api, closeHTTP := taskapi.NewHTTPHandler(store, hub, nil, aw, drift)
+	api, closeHTTP := taskapi.NewHTTPHandler(store, hub, nil, aw, drift, taskapi.DefaultDraftAssistHost())
 	return &Runtime{
 		Handler:     api,
 		SchemaDrift: drift,
