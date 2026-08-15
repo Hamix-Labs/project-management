@@ -196,27 +196,37 @@ form.task-compose-page__form-shell {
   color: var(--text-secondary);
 }
 
-/* Brief hero */
+/* Brief hero — frameless title + hairline toolbar + white mono editor.
+   Selectors must beat .task-create-modal-sheet input / .task-create-editor-shell. */
 .task-compose-page--v2 .compose-brief__title-block {
   border-bottom: 1px solid var(--compose-card-border);
   padding: 1.5rem 1.5rem 1.25rem;
+  background: var(--surface-1);
 }
 
-.task-compose-page--v2 .compose-brief__title-input {
+.task-compose-page--v2 .compose-brief input.compose-brief__title-input,
+.task-compose-page--v2 .compose-brief input.compose-brief__title-input:hover,
+.task-compose-page--v2 .compose-brief input.compose-brief__title-input:focus,
+.task-compose-page--v2 .compose-brief input.compose-brief__title-input:focus-visible {
   width: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
   border: 0;
+  border-radius: 0;
   background: transparent;
+  box-shadow: none;
+  outline: none;
+  appearance: none;
   font-size: 1.5rem;
   font-weight: 600;
   letter-spacing: -0.02em;
+  line-height: 1.25;
   color: var(--text-primary);
-  padding: 0;
-  outline: none;
-  box-shadow: none;
 }
 
-.task-compose-page--v2 .compose-brief__title-input::placeholder {
-  color: var(--text-tertiary);
+.task-compose-page--v2 .compose-brief input.compose-brief__title-input::placeholder {
+  color: color-mix(in srgb, var(--text-tertiary) 70%, transparent);
 }
 
 .task-compose-page--v2 .compose-brief__title-hint {
@@ -225,8 +235,14 @@ form.task-compose-page__form-shell {
   color: var(--text-secondary);
 }
 
-.task-compose-page--v2 .compose-brief__editor {
+.task-compose-page--v2 .compose-brief .compose-brief__editor.task-create-editor-shell,
+.task-compose-page--v2 .compose-brief .compose-brief__editor.task-create-editor-shell:focus-within {
   min-height: 18.75rem;
+  border: 0;
+  border-radius: 0;
+  background: var(--surface-1);
+  box-shadow: none;
+  overflow: hidden;
 }
 
 .task-compose-page--v2 .compose-brief__editor .rich-prompt-wrap {
@@ -236,14 +252,16 @@ form.task-compose-page__form-shell {
   box-shadow: none;
 }
 
-.task-compose-page--v2 .compose-brief__editor .rich-prompt-toolbar {
+.task-compose-page--v2 .compose-brief .task-create-editor-shell .rich-prompt-toolbar {
   display: flex;
   align-items: center;
   gap: 0.125rem;
+  margin: 0;
+  border: 0;
   border-bottom: 1px solid var(--compose-card-border);
+  border-radius: 0;
   background: color-mix(in oklab, var(--bg-subtle) 40%, transparent);
   padding: 0.5rem 0.75rem;
-  border-radius: 0;
 }
 
 .task-compose-page--v2 .compose-brief__editor .rich-prompt-toolbar[data-variant="icons"] .toolbar-btn {
@@ -282,13 +300,22 @@ form.task-compose-page__form-shell {
   color: var(--text-secondary);
 }
 
-.task-compose-page--v2 .compose-brief__editor .tiptap,
-.task-compose-page--v2 .compose-brief__editor .ProseMirror {
+.task-compose-page--v2 .compose-brief .task-create-editor-shell .rich-prompt-wrap .tiptap,
+.task-compose-page--v2 .compose-brief .task-create-editor-shell .rich-prompt-wrap .ProseMirror,
+.task-compose-page--v2 .compose-brief .task-create-editor-shell .rich-prompt-wrap .tiptap:focus-within {
   min-height: 18.75rem;
+  max-height: none;
+  margin: 0;
   padding: 1.25rem 1.5rem;
+  border: 0;
+  border-radius: 0;
+  background: var(--surface-1);
+  box-shadow: none;
+  outline: none;
   font-family: var(--font-mono);
   font-size: 0.84375rem;
   line-height: 1.65;
+  color: var(--text-primary);
 }
 
 /* Criteria card */
