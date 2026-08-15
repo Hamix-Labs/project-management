@@ -4,7 +4,6 @@ import (
 	"context"
 	"log/slog"
 	"os"
-	"os/exec"
 
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi/draftsidecar"
 	draftassistmetrics "github.com/AlexsanderHamir/Hamix/pkgs/draftassist/metrics"
@@ -28,9 +27,9 @@ func (s staticReadyProbe) Ready() (bool, string, string) {
 	return false, s.runner, s.reason
 }
 
-// DefaultDraftAssistHost picks the SDK sidecar when hamix-draft-agent is
-// on PATH and CURSOR_API_KEY is set; otherwise it keeps the in-process
-// fake runner so CI and offline hosts still serve.
+// DefaultDraftAssistHost picks the SDK sidecar when ResolveBinary finds
+// hamix-draft-agent and CURSOR_API_KEY is set; otherwise it keeps the
+// in-process fake runner so CI and offline hosts still serve.
 //
 //funclogmeasure:skip category=tool-required-noop reason="Boot-time runner picker; each branch emits a decision log."
 func DefaultDraftAssistHost() DraftAssistHost {
@@ -40,9 +39,9 @@ func DefaultDraftAssistHost() DraftAssistHost {
 // draftAssistRunnerSelection returns the runner + ready probe pair to
 // wire into the handler. The chosen path depends on:
 //
-//   - hamix-draft-agent on PATH: no → fake + no_runner.
-//   - hamix-draft-agent on PATH, CURSOR_API_KEY unset: → fake + missing_key.
-//   - Both present: → sidecar SDK runner + supervisor.Ready() probe.
+//   - ResolveBinary miss: fake + no_runner.
+//   - Binary found, CURSOR_API_KEY unset: fake + missing_key.
+//   - Both present: sidecar SDK runner + supervisor.Ready() probe.
 //
 // The supervisor spawn error also degrades to fake + sidecar_down; the
 // SPA banner then invites the operator to retry.
@@ -53,12 +52,13 @@ func draftAssistRunnerSelection() DraftAssistHost {
 	fake := runner.NewFake(runner.FakeOptions{})
 	noopCloser := func() error { return nil }
 
-	binPath, lookErr := exec.LookPath(draftsidecar.BinaryName)
+	binPath, lookErr := draftsidecar.ResolveBinary()
 	if lookErr != nil {
 		slog.Info("draft-assist runner=fake reason=no_runner",
 			"cmd", calltrace.LogCmd,
 			"operation", "taskapi.draftAssistRunnerSelection",
 			"binary", draftsidecar.BinaryName,
+			"err", lookErr,
 		)
 		return DraftAssistHost{
 			Runner: fake,
