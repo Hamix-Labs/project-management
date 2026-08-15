@@ -38,7 +38,6 @@ export function TaskComposePriorityCard({
       >
         {PRIORITIES.map((p) => {
           const active = value === p;
-          const warn = p === "high" || p === "critical";
           return (
             <button
               key={p}
@@ -47,7 +46,7 @@ export function TaskComposePriorityCard({
               aria-checked={active}
               disabled={disabled}
               data-active={active ? "true" : "false"}
-              data-warn={warn ? "true" : "false"}
+              data-priority={p}
               className="compose-priority__segment"
               onClick={() => onChange(p)}
             >
