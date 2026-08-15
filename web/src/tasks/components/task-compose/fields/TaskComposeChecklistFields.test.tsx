@@ -27,12 +27,14 @@ describe("TaskComposeChecklistFields", () => {
       screen.getByLabelText(/1 verify command for the execute agent/i),
     ).toHaveTextContent("1 command");
     expect(screen.getByRole("button", { name: "Edit" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Remove" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /remove/i })).toBeInTheDocument();
 
-    const trailing = document.querySelector(".task-checklist-row-trailing");
-    expect(trailing).not.toBeNull();
+    const row = document.querySelector(".task-checklist-row");
+    const trailing = row?.querySelector(".task-checklist-row-trailing");
+    const actions = row?.querySelector(".task-checklist-row-actions");
     expect(trailing?.querySelector(".task-checklist-verify-badge")).not.toBeNull();
-    expect(trailing?.querySelector(".task-checklist-row-actions")).not.toBeNull();
+    expect(actions).not.toBeNull();
+    expect(trailing?.contains(actions)).toBe(false);
   });
 
   it("omits the verify badge when a criterion has no commands so trailing chrome does not reserve wrap width", () => {
@@ -50,8 +52,12 @@ describe("TaskComposeChecklistFields", () => {
     expect(
       screen.queryByLabelText(/verify command for the execute agent/i),
     ).not.toBeInTheDocument();
+    expect(document.querySelector(".task-checklist-row-trailing")).toBeNull();
     expect(screen.getByRole("button", { name: "Edit" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Remove" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /remove/i })).toBeInTheDocument();
+    expect(
+      document.querySelector(".task-checklist-row")?.querySelector(".task-checklist-row-actions"),
+    ).not.toBeNull();
   });
 
   it("opens edit when anywhere on the criterion row is clicked", async () => {

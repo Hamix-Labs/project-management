@@ -493,12 +493,12 @@ form.task-compose-page__form-shell {
 }
 
 .task-compose-page--v2 .compose-criteria__body .task-checklist-text {
-  /* Grow into leftover space after the check + *visible* trailing chrome.
-     `flex: 1` (basis 0%) plus inherited width/max-width: 100% from the
-     detail checklist styles made wrap width ignore the real remaining
-     track — text broke early (and mid-word) while a gap sat before
-     the badge or hover actions. */
-  flex: 1 1 auto;
+  /* Shrink/wrap beside the check + badge. Do not grow — that would
+     shove the command badge to the card edge and park Edit/trash
+     on top of it. `flex: 1` (basis 0%) plus inherited width/max-width
+     100% from detail checklist styles also made wrap ignore the
+     remaining track. */
+  flex: 0 1 auto;
   min-width: 0;
   width: auto;
   max-width: none;
@@ -513,23 +513,18 @@ form.task-compose-page__form-shell {
 }
 
 .task-compose-page--v2 .compose-criteria__body .task-checklist-row-trailing {
-  /* Size to in-flow chrome only (the command badge on pointer devices).
-     Hover actions are taken out of flow below so they cannot reserve a
-     wrap column. Stretch so absolute actions can center on the row. */
-  position: relative;
+  /* In-flow command badge only — stays with the text cluster. */
   display: flex;
   align-items: center;
-  align-self: stretch;
-  gap: 0.25rem;
   flex: 0 0 auto;
   min-width: 0;
   width: max-content;
-  overflow: visible;
 }
 
 .task-compose-page--v2 .compose-criteria__body .task-checklist-row-actions {
   display: flex;
   align-items: center;
+  align-self: center;
   flex-shrink: 0;
   gap: var(--space-2);
   white-space: nowrap;
@@ -628,14 +623,19 @@ form.task-compose-page__form-shell {
     background: transparent;
   }
 
-  /* Overlay Edit/Remove so they do not steal wrap width. Sit to the
-     left of the trailing cluster (badge, or the row end when empty). */
+  /* 5.25rem = compact Edit + 8px gap + 28px trash, so hover actions
+     pin to the row's inline-end without covering the command badge.
+     Text still wraps against the badge, not a 38px reserved column. */
+  .task-compose-page--v2 .compose-criteria__body .task-checklist-row-primary {
+    padding-inline-end: 5.25rem;
+  }
+
   .task-compose-page--v2 .compose-criteria__body .task-checklist-row-actions {
     position: absolute;
-    inset-inline-end: 100%;
+    inset-inline-end: 0;
     top: 50%;
     transform: translateY(-50%);
-    margin-inline-end: 0.25rem;
+    margin-inline-end: 0;
     opacity: 0;
     pointer-events: none;
     background: var(--surface-1);
