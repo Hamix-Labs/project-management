@@ -89,33 +89,34 @@ export function TaskComposeChecklistFields({
                   }}
                 >
                   <div className="task-checklist-row-primary">
+                    <CriterionMarkerIcon />
                     <span className="task-checklist-text" title={item.text}>
                       {item.text}
                     </span>
                     <div className="task-checklist-row-trailing">
-                    {commandCount > 0 ? (
-                      <ChecklistVerifyBadge count={commandCount} />
-                    ) : null}
-                    <div className="task-checklist-row-actions">
-                    <button
-                      type="button"
-                      className="task-detail-checklist-edit"
-                      disabled={disabled}
-                      onClick={() => onOpenEditCriterion(index, item)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      className="task-detail-checklist-remove"
-                      disabled={disabled}
-                      onClick={() => onRemoveRow(index)}
-                    >
-                      Remove
-                    </button>
+                      {commandCount > 0 ? (
+                        <ChecklistVerifyBadge count={commandCount} />
+                      ) : null}
+                      <div className="task-checklist-row-actions">
+                        <button
+                          type="button"
+                          className="task-detail-checklist-edit"
+                          disabled={disabled}
+                          onClick={() => onOpenEditCriterion(index, item)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          className="task-detail-checklist-remove"
+                          disabled={disabled}
+                          onClick={() => onRemoveRow(index)}
+                        >
+                          Remove
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
                 </li>
               );
             })}
@@ -123,5 +124,35 @@ export function TaskComposeChecklistFields({
         </div>
       )}
     </div>
+  );
+}
+
+/** Decorative circle-check — compose criteria are not yet satisfied. */
+function CriterionMarkerIcon() {
+  return (
+    <span className="compose-criteria__check" aria-hidden="true">
+      <svg
+        width={20}
+        height={20}
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <circle
+          cx={12}
+          cy={12}
+          r={10}
+          stroke="currentColor"
+          strokeWidth={1.75}
+        />
+        <path
+          d="M8 12.5 10.8 15.2 16 9.8"
+          stroke="currentColor"
+          strokeWidth={1.75}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </span>
   );
 }

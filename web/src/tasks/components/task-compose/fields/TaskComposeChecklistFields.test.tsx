@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { TaskComposeChecklistFields } from "./TaskComposeChecklistFields";
 
 describe("TaskComposeChecklistFields", () => {
-  it("shows verify command badge below criterion text in the meta row", () => {
+  it("shows a check marker, verify command badge, and edit actions on each row", () => {
     render(
       <TaskComposeChecklistFields
         checklistHeadingId="checklist-heading"
@@ -22,9 +22,12 @@ describe("TaskComposeChecklistFields", () => {
     );
 
     expect(screen.getByText("The full test suite still passes.")).toBeInTheDocument();
+    expect(document.querySelector(".compose-criteria__check")).not.toBeNull();
     expect(
       screen.getByLabelText(/1 verify command for the execute agent/i),
     ).toHaveTextContent("1 command");
+    expect(screen.getByRole("button", { name: "Edit" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Remove" })).toBeInTheDocument();
   });
 
   it("opens edit when anywhere on the criterion row is clicked", async () => {
