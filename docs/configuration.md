@@ -19,7 +19,7 @@ The two surfaces do not overlap. Anything in `app_settings` is **not** driven by
 
 `taskapi` loads `.env` from the repo root via `internal/envload.Load`. `dbcheck` follows the same discovery rule for `DATABASE_URL`.
 
-> **Note** — [.env.example](../.env.example) lists only `DATABASE_URL` and optional logging knobs. The tables below are the full operator reference (defaults, flags, and dev-only tunables).
+> **Note** — [.env.example](../.env.example) lists `DATABASE_URL`, required `CURSOR_API_KEY`, and optional logging knobs. The tables below are the full operator reference (defaults, flags, and dev-only tunables).
 
 | Variable | Required | Default | Purpose |
 |---|---|---|---|
@@ -42,7 +42,8 @@ The two surfaces do not overlap. Anything in `app_settings` is **not** driven by
 | `HAMIX_WORKER_REPORT_DIR` | No | `<os.TempDir()>/hamix-worker` | Worker-managed scratch root for the agent ↔ worker side-channel report files (`criteria-report.json`, `verify-report.json`). Lives outside task worktrees so customer working trees stay clean. The supervisor probes writability at startup; failure logs a `report_dir_not_writable` warn and the worker still starts (verify will fail loudly on the first run instead of silently). The per-cycle `<dir>/<cycle_id>/` subdirectory is GC'd at cycle terminate so disk use stays bounded. |
 | `HAMIX_MANAGED_WORKTREE_ROOT` | No | `{UserConfigDir}/hamix` | Root for Hamix-allocated task worktrees (`{root}/worktrees/{repoID}/{branchSlug}`). Default is the OS user config directory (`%AppData%\hamix` on Windows, `~/Library/Application Support/hamix` on macOS, `~/.config/hamix` on Linux). Set in tests or restricted deployments to keep checkouts out of Documents / beside the registered repo. See [ADR-0081](adr/ADR-0081-hamix-managed-worktrees.md). |
 | `HAMIX_SSE_TEST` | No | — | Dev: enable synthetic SSE ticker. See [api.md](./api.md). |
-| `CURSOR_API_KEY` | No* | — | Cursor SDK API key for compose-page draft assist (`hamix-draft-agent`). Independent of `runner_configs.cursor.binary_path` / execute-verify CLI auth. When unset (or `hamix-draft-agent` is missing from PATH), taskapi keeps the fake draft-assist runner and `/draft-assist/ready` reports `missing_key` / `no_runner`. *Required only when using real draft-assist SDK runs. |
+| `CURSOR_API_KEY` | **Yes** | — | Cursor SDK API key for compose-page draft assist (`hamix-draft-agent`). Independent of `runner_configs.cursor.binary_path` / execute-verify CLI auth. When unset (or the launcher cannot be resolved), **taskapi and hamix-desktop exit before binding HTTP**. Canonical name only — not `CURSOR_KEY`. |
+| `HAMIX_DRAFT_AGENT_BIN` | No | sibling of the taskapi binary, then `PATH` | Absolute (or cwd-relative) path to the `hamix-draft-agent` launcher. `scripts/dev.*` / `scripts/dev-desktop.*` set this after building the sidecar. |
 | `HAMIX_SSE_TEST_*` | No | — | Dev tuning (interval, events per tick, lifecycle simulation). See [api.md](./api.md) and [domain/sse-hub.md](domain/sse-hub.md). |
 
 ### Local development (optional)
@@ -79,9 +80,10 @@ Reconcile tick interval is fixed in code (`pkgs/agents.ReconcileTickInterval`, 2
 4. `postgres.CheckSchemaDrift` — compare code `SchemaRevision` to `schema_meta` row; stderr + log alert when migrate is required.
 5. **Optional** `postgres.Migrate` — only when `taskapi -migrate` or `HAMIX_MIGRATE=1`; otherwise skipped (see [Schema migrations](#schema-migrations)).
 6. `store.NewStore`, `(*store.Store).SetReadyTaskNotifier` (in-process queue), `(*store.Store).SetPickupWake` (deferred ready), `handler.NewSSEHub`.
-7. Agent worker supervisor (`internal/taskapiruntime` → `internal/taskapi/agentworker`) reads `app_settings`, builds the runner via `pkgs/agents/runner/registry`, probes the binary, and starts the worker when conditions are met. Deep dive: [domain/agent-supervisor.md](domain/agent-supervisor.md).
-8. `internal/taskapi.NewHTTPHandler` wires store + hub + repo into `handler.NewHandler`, then applies `pkgs/tasks/middleware.Stack` (recovery, metrics, access logging, rate limit, optional auth, timeouts, body cap, idempotency).
-9. `http.Server` on `-port` (default 8080). `ReadHeaderTimeout` / `ReadTimeout` / `IdleTimeout` / `MaxHeaderBytes` are set; `WriteTimeout` is intentionally **not** set so SSE streams are not cut off.
+7. Draft-assist sidecar (`draftsidecar.MustHost`): require `CURSOR_API_KEY`, resolve `hamix-draft-agent`, spawn, wait until `/readyz` is ready. Failure **exits** — no fake runner, no listen. After boot, child crash respawns; `/draft-assist/ready` may briefly report `sidecar_down`.
+8. Agent worker supervisor (`internal/taskapiruntime` → `internal/taskapi/agentworker`) reads `app_settings`, builds the runner via `pkgs/agents/runner/registry`, probes the binary, and starts the worker when conditions are met. Deep dive: [domain/agent-supervisor.md](domain/agent-supervisor.md).
+9. `internal/taskapi.NewHTTPHandler` wires store + hub + repo into `handler.NewHandler`, then applies `pkgs/tasks/middleware.Stack` (recovery, metrics, access logging, rate limit, optional auth, timeouts, body cap, idempotency).
+10. `http.Server` on `-port` (default 8080). `ReadHeaderTimeout` / `ReadTimeout` / `IdleTimeout` / `MaxHeaderBytes` are set; `WriteTimeout` is intentionally **not** set so SSE streams are not cut off.
 
 ### Graceful shutdown
 

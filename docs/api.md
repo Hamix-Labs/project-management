@@ -117,7 +117,7 @@ In-memory prompt-assist sessions for the compose page (ADR-0101). Not part of th
 
 | Method | Path | Notes |
 |---|---|---|
-| GET | `/draft-assist/ready` | `{ ready, runner: "sdk"\|"fake"\|"missing", reason? }`. Reasons when not ready: `no_runner`, `missing_key`, `sidecar_down`. |
+| GET | `/draft-assist/ready` | `{ ready, runner: "sdk"\|"fake"\|"missing", reason? }`. Production hosts serve `runner=sdk`. `fake` is a test seam. Reasons when not ready: `no_runner`, `missing_key`, `sidecar_down`. Missing launcher/key abort boot instead of this banner. |
 | POST | `/draft-assist/sessions` | Create session. Body `{ worktree_id?, snapshot }`. `201` `{ id, nonce, … }` |
 | GET | `/draft-assist/sessions/{id}` | Session + snapshot |
 | PUT | `/draft-assist/sessions/{id}/snapshot` | Replace form snapshot |

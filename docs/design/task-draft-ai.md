@@ -187,7 +187,9 @@ Never: “Loading…”, empty spinner, swallowing errors, disabling the whole f
 
 ### Failure must look like failure
 
-- Missing `CURSOR_KEY` / sidecar down: banner on the compose page **before** Send if we can probe; otherwise on first Send with **Retry**.
+- Missing `CURSOR_API_KEY` / sidecar down: hosts refuse to listen. If the
+  probe cannot reach taskapi, the compose banner says taskapi is not running
+  **before** Send; otherwise on first Send with **Retry**.
 - SSE drop: **Reconnecting…** then auto-resume; if it cannot, **Connection lost. Retry**.
 - Cancel: immediate UI; then confirm when `run.cancel` completes.
 

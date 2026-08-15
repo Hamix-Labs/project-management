@@ -12,8 +12,10 @@ In-memory sessions and SSE for prompt-box LLM help while composing a task
 ## Overview
 
 SPA opens a session, attaches SSE, POSTs a run (202), and streams named
-events. A **fake runner** ships so CI proves the stream contract without
-`CURSOR_API_KEY`. Later plans swap the runner for `@cursor/sdk`.
+events. The production runner is `hamix-draft-agent` (`@cursor/sdk`). A
+**fake runner** exists only as a **test seam** so CI proves the stream
+contract without `CURSOR_API_KEY` — it is never a production fallback.
+Hosts fail to boot unless the sidecar is healthy.
 
 ## Stream events
 
@@ -75,9 +77,9 @@ hrefs are rejected.
 
 | `ready` | `runner` | `reason` |
 | --- | --- | --- |
-| true | `fake` or `sdk` | omitted |
-| false | `missing` | `no_runner` |
-| false | `sdk` | `missing_key` or `sidecar_down` |
+| true | `sdk` (production) or `fake` (tests) | omitted |
+| false | `missing` | `no_runner` (handler tests; hosts do not reach HTTP in this state) |
+| false | `sdk` | `sidecar_down` (post-boot child flap). `missing_key` is a boot failure, not a ready banner. |
 
 ## Metrics
 
@@ -90,20 +92,22 @@ hrefs are rejected.
 
 `internal/taskapi/draftsidecar` keeps `hamix-draft-agent` warm:
 
-1. `LookPath("hamix-draft-agent")` at taskapi boot.
-2. Spawn with `--port 0`; parse `listening on <port>` from stdout.
-3. Probe `GET /readyz` every 2s; mark ready / `sidecar_down` / `missing_key`.
-4. On child exit: restart with backoff 1s → 2s → 5s → 15s (cap).
-5. Propagate `CURSOR_API_KEY` via child env only (never logged).
-6. `Close()` on taskapi shutdown.
+1. `ResolveBinary` at host boot (`HAMIX_DRAFT_AGENT_BIN`, executable sibling, then PATH).
+2. Require `CURSOR_API_KEY`; spawn with `--port 0`; parse `listening on <port>` from stdout.
+3. Block until `GET /readyz` reports ready (`MustHost`). Failure aborts `taskapiruntime.Start`.
+4. Probe `GET /readyz` every 2s; after boot, mark `sidecar_down` on flap and respawn.
+5. On child exit: restart with backoff 1s → 2s → 5s → 15s (cap).
+6. Propagate `CURSOR_API_KEY` via child env only (never logged).
+7. `Close()` on taskapi shutdown.
 
-Boot selection in `internal/taskapi/http.go`:
+Boot in `internal/taskapiruntime` (`MustHost`):
 
-| Binary | `CURSOR_API_KEY` | Runner | Ready |
-| --- | --- | --- | --- |
-| missing | — | fake | `runner=missing`, `reason=no_runner` |
-| present | unset | fake | `runner=sdk`, `reason=missing_key` |
-| present | set | sdk (sidecar) | supervisor probe |
+| Binary | `CURSOR_API_KEY` | Result |
+| --- | --- | --- |
+| missing | — | **exit 1** (do not bind HTTP) |
+| present | unset | **exit 1** |
+| present | set, `/readyz` not ready | **exit 1** |
+| present | set, healthy | sdk runner + supervisor probe |
 
 ## Sidecar (`hamix-draft-agent`)
 
@@ -113,10 +117,10 @@ exposes a loopback HTTP + SSE surface for taskapi.
 
 ### Port discovery
 
-`scripts/dev.*` build the sidecar bundle to `sidecars/hamix-draft-agent/dist/`
-and drop a `hamix-draft-agent` launcher (`.cmd` on Windows) at the repo root.
-The launcher is on the same PATH `taskapi` inherits. Boot with an ephemeral
-port so the supervisor can pick one:
+`scripts/dev.*` and `scripts/dev-desktop.*` build the sidecar bundle to
+`sidecars/hamix-draft-agent/dist/`, drop a `hamix-draft-agent` launcher
+(`.cmd` on Windows) at the repo root, and set `HAMIX_DRAFT_AGENT_BIN` to
+that launcher. Boot with an ephemeral port so the supervisor can pick one:
 
 ```powershell
 hamix-draft-agent --port 0
@@ -144,8 +148,8 @@ taskapi's canonical `WriteBind`.
 ### Ready surface (`/draft-assist/ready`)
 
 The taskapi ready probe delegates to the sidecar's `/readyz` when
-`runner=sdk`. `missing_key` and `sidecar_down` are the two `sdk` failure
-reasons.
+`runner=sdk`. After a healthy boot, `sidecar_down` is the failure reason
+while the supervisor respawns. Missing key or missing binary never serve.
 
 ## See also
 
