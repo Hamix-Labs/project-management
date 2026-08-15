@@ -99,28 +99,9 @@ go build -o "$MCP_EXE" ./cmd/hamix-agent-mcp
 # Draft-assist MCP host (Plan 4) for compose-page draft AI (bound to taskapi via --bind).
 go build -o "$DRAFT_MCP_EXE" ./cmd/hamix-draft-mcp
 
-# Draft-assist sidecar (Node). Build the ESM bundle and drop a launcher on
-# PATH so taskapi can spawn `hamix-draft-agent` the same way it spawns
-# `hamix-agent-mcp`.
-SIDECAR="$ROOT/sidecars/hamix-draft-agent"
-if [[ -d "$SIDECAR" ]]; then
-  (
-    cd "$SIDECAR"
-    if command -v pnpm >/dev/null 2>&1; then
-      pnpm install --silent
-      pnpm run build
-    else
-      npm install --silent
-      npm run build
-    fi
-  )
-  cp "$SIDECAR/dist/hamix-draft-agent.js" "$ROOT/hamix-draft-agent.js"
-  cat > "$ROOT/hamix-draft-agent" <<'LAUNCHER'
-#!/usr/bin/env sh
-exec node "$(dirname "$0")/hamix-draft-agent.js" "$@"
-LAUNCHER
-  chmod +x "$ROOT/hamix-draft-agent"
-fi
+# Draft-assist sidecar (Node). Required: taskapi fail-boots without it.
+# shellcheck source=install-draft-agent.sh
+. "$ROOT/scripts/install-draft-agent.sh"
 
 export PATH="$ROOT${PATH:+:$PATH}"
 

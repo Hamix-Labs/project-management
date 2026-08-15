@@ -73,6 +73,7 @@ try {
     & go build -o $mcpExe "./cmd/hamix-agent-mcp"
     # Draft-assist MCP host (Plan 4) for compose-page draft AI.
     & go build -o $draftMcpExe "./cmd/hamix-draft-mcp"
+    & (Join-Path $PSScriptRoot "install-draft-agent.ps1")
     $env:PATH = "$repo" + [IO.Path]::PathSeparator + $env:PATH
 
     if ($Live) {

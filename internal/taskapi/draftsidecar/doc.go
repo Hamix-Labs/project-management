@@ -13,4 +13,8 @@
 // draftassist/handler.ReadyProbe so /draft-assist/ready surfaces
 // missing_key / sidecar_down / no_runner using the shared constants in
 // pkgs/draftassist/metrics.
+//
+// MustHost is the production boot gate: resolve binary, require
+// CURSOR_API_KEY, spawn, wait until /readyz is ready. There is no fake
+// fallback; the caller must fail to serve on error.
 package draftsidecar
