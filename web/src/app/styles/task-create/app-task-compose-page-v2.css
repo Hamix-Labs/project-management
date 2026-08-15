@@ -637,39 +637,19 @@ form.task-compose-page__form-shell {
     background: transparent;
   }
 
-  /* Collapse Edit/trash at rest so opacity:0 controls do not steal wrap
-     width. Badge stays in the trailing cluster (ml-auto). */
-  .task-compose-page--v2 .compose-criteria__body .task-checklist-row-trailing {
-    gap: 0;
-  }
-
+  /* Hover-capable: hide Edit/trash visually but keep their full width in
+     the trailing cluster. Collapsing width/max-width at rest reflows wrap
+     (1 line → 2) and shifts the command badge when actions appear. */
   .task-compose-page--v2 .compose-criteria__body .task-checklist-row-actions {
-    flex: 0 0 0;
-    width: 0;
-    min-width: 0;
-    max-width: 0;
-    margin: 0;
-    overflow: hidden;
     opacity: 0;
     pointer-events: none;
-    gap: 0;
     transition: opacity var(--duration-fast) var(--ease-default);
-  }
-
-  .task-compose-page--v2 .compose-criteria__body .task-checklist-row:hover .task-checklist-row-trailing,
-  .task-compose-page--v2 .compose-criteria__body .task-checklist-row:focus-within .task-checklist-row-trailing {
-    gap: var(--space-1);
   }
 
   .task-compose-page--v2 .compose-criteria__body .task-checklist-row:hover .task-checklist-row-actions,
   .task-compose-page--v2 .compose-criteria__body .task-checklist-row:focus-within .task-checklist-row-actions {
-    flex: 0 0 auto;
-    width: auto;
-    max-width: none;
-    overflow: visible;
     opacity: 1;
     pointer-events: auto;
-    gap: var(--space-1);
   }
 }
 
