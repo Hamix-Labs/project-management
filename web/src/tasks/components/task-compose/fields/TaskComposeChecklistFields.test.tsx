@@ -28,6 +28,30 @@ describe("TaskComposeChecklistFields", () => {
     ).toHaveTextContent("1 command");
     expect(screen.getByRole("button", { name: "Edit" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Remove" })).toBeInTheDocument();
+
+    const trailing = document.querySelector(".task-checklist-row-trailing");
+    expect(trailing).not.toBeNull();
+    expect(trailing?.querySelector(".task-checklist-verify-badge")).not.toBeNull();
+    expect(trailing?.querySelector(".task-checklist-row-actions")).not.toBeNull();
+  });
+
+  it("omits the verify badge when a criterion has no commands so trailing chrome does not reserve wrap width", () => {
+    render(
+      <TaskComposeChecklistFields
+        checklistHeadingId="checklist-heading"
+        checklistItems={[{ text: "The chosen entry point is named with a justification for why it was picked." }]}
+        disabled={false}
+        onOpenNewCriterion={vi.fn()}
+        onOpenEditCriterion={vi.fn()}
+        onRemoveRow={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.queryByLabelText(/verify command for the execute agent/i),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Edit" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Remove" })).toBeInTheDocument();
   });
 
   it("opens edit when anywhere on the criterion row is clicked", async () => {

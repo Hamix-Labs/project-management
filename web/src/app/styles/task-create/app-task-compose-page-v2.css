@@ -437,6 +437,7 @@ form.task-compose-page__form-shell {
   flex: 1;
   min-width: 0;
   display: flex;
+  flex-wrap: nowrap;
   align-items: flex-start;
   justify-content: flex-start;
   gap: 0.75rem;
@@ -457,26 +458,45 @@ form.task-compose-page__form-shell {
 }
 
 .task-compose-page--v2 .compose-criteria__body .task-checklist-text {
-  flex: 1;
+  /* Grow into leftover space after the check + *visible* trailing chrome.
+     `flex: 1` (basis 0%) plus inherited width/max-width: 100% from the
+     detail checklist styles made wrap width ignore the real remaining
+     track — text broke early (and mid-word) while a gap sat before
+     the badge or hover actions. */
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+  max-width: none;
   font-size: 0.9375rem;
   line-height: 1.5;
   white-space: normal;
   overflow: visible;
   text-overflow: unset;
+  overflow-wrap: normal;
+  word-break: normal;
 }
 
 .task-compose-page--v2 .compose-criteria__body .task-checklist-row-trailing {
+  /* Size to in-flow chrome only (the command badge on pointer devices).
+     Hover actions are taken out of flow below so they cannot reserve a
+     wrap column. Stretch so absolute actions can center on the row. */
+  position: relative;
   display: flex;
   align-items: center;
+  align-self: stretch;
   gap: 0.25rem;
-  margin-left: auto;
-  flex-shrink: 0;
+  flex: 0 0 auto;
+  min-width: 0;
+  width: max-content;
+  overflow: visible;
 }
 
 .task-compose-page--v2 .compose-criteria__body .task-checklist-row-actions {
   display: flex;
   align-items: center;
+  flex-shrink: 0;
   gap: 0.25rem;
+  white-space: nowrap;
 }
 
 @media (hover: hover) {
@@ -484,14 +504,18 @@ form.task-compose-page__form-shell {
     background: transparent;
   }
 
+  /* Overlay Edit/Remove so they do not steal wrap width. Sit to the
+     left of the trailing cluster (badge, or the row end when empty). */
   .task-compose-page--v2 .compose-criteria__body .task-checklist-row-actions {
     position: absolute;
-    inset-inline-end: 1.5rem;
+    inset-inline-end: 100%;
     top: 50%;
     transform: translateY(-50%);
+    margin-inline-end: 0.25rem;
     opacity: 0;
     pointer-events: none;
     background: var(--surface-1);
+    z-index: 1;
     transition: opacity var(--duration-fast) var(--ease-default);
   }
 
