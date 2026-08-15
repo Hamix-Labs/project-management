@@ -6,7 +6,6 @@ export type {
 } from "./DraftAssistContext";
 export { DraftAssistThread } from "./DraftAssistThread";
 export { DraftAssistMessage } from "./DraftAssistMessage";
-export { DraftAssistNotReadyBanner } from "./DraftAssistNotReadyBanner";
 export {
   draftAssistStatusReducer,
   draftAssistStatusCopy,

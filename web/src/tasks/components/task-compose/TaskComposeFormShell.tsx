@@ -7,7 +7,6 @@ import type { TaskCreateModalProps } from "../task-create-modal/taskCreateModalP
 import type { TaskCreateModalPresentation } from "../task-create-modal/taskCreateModalPresentation";
 import type { TestScenario } from "@/tasks/test-scenarios";
 import {
-  DraftAssistNotReadyBanner,
   DraftAssistThread,
   useDraftAssistContext,
 } from "../draft-assist";
@@ -144,7 +143,6 @@ export function TaskComposeFormShell({
             className="panel modal-sheet modal-sheet--edit task-create-modal-sheet task-create"
             aria-labelledby="task-compose-page-title"
           >
-            <DraftAssistNotReadyBanner />
             {presentation.isTaskEdit && editingTaskId ? (
               <p
                 className="muted stack-tight-zero task-create-modal-task-id"
