@@ -73,6 +73,8 @@ go mod download
 ( cd "$ROOT/web" && npm install )
 go build -o "$MCP_EXE" ./cmd/hamix-agent-mcp
 go build -o "$DRAFT_MCP_EXE" ./cmd/hamix-draft-mcp
+# shellcheck source=install-draft-agent.sh
+. "$ROOT/scripts/install-draft-agent.sh"
 export PATH="$ROOT${PATH:+:$PATH}"
 
 if [[ "$LIVE" -eq 1 ]]; then

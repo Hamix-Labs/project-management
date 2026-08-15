@@ -11,6 +11,7 @@ import (
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi"
 	"github.com/AlexsanderHamir/Hamix/internal/taskapi/composition"
 	"github.com/AlexsanderHamir/Hamix/internal/tasktestdb"
+	"github.com/AlexsanderHamir/Hamix/pkgs/draftassist/runner"
 	"github.com/AlexsanderHamir/Hamix/pkgs/tasks/postgres"
 )
 
@@ -24,6 +25,8 @@ func TestNewHTTPHandler_healthAndBootstrap(t *testing.T) {
 		Status:       postgres.SchemaDriftOK,
 		CodeRevision: postgres.SchemaRevision,
 		DBRevision:   postgres.SchemaRevision,
+	}, taskapi.DraftAssistHost{
+		Runner: runner.NewFake(runner.FakeOptions{}),
 	})
 	srv := httptest.NewServer(api)
 	t.Cleanup(func() {
