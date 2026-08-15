@@ -2,6 +2,9 @@ import { useCallback, useEffect, useState } from "react";
 import { readyProbe } from "@/api/draftAssist";
 import type { DraftAssistReady } from "@/types/draftAssist";
 
+const TASKAPI_DOWN_COPY =
+  "Assistant unavailable — taskapi is not running.";
+
 function copyForReady(ready: DraftAssistReady | null): string | null {
   if (!ready || ready.ready) return null;
   switch (ready.reason) {
@@ -10,7 +13,7 @@ function copyForReady(ready: DraftAssistReady | null): string | null {
     case "sidecar_down":
       return "Assistant unavailable — draft-assist sidecar is down.";
     case "no_runner":
-      return "Assistant unavailable — hamix-draft-agent is not on PATH.";
+      return "Assistant unavailable — hamix-draft-agent launcher is missing.";
     default:
       return "Assistant unavailable — try again in a moment.";
   }
@@ -27,14 +30,17 @@ type Props = {
  */
 export function DraftAssistNotReadyBanner({ onRetry }: Props) {
   const [ready, setReady] = useState<DraftAssistReady | null>(null);
+  const [unreachable, setUnreachable] = useState(false);
   const [probing, setProbing] = useState(true);
 
   const probe = useCallback(async () => {
     setProbing(true);
     try {
       setReady(await readyProbe());
+      setUnreachable(false);
     } catch {
-      setReady({ ready: false, runner: "missing", reason: "no_runner" });
+      setReady(null);
+      setUnreachable(true);
     } finally {
       setProbing(false);
     }
@@ -44,7 +50,7 @@ export function DraftAssistNotReadyBanner({ onRetry }: Props) {
     void probe();
   }, [probe]);
 
-  const copy = copyForReady(ready);
+  const copy = unreachable ? TASKAPI_DOWN_COPY : copyForReady(ready);
   if (probing || copy == null) return null;
 
   return (
