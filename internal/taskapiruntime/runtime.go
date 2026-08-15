@@ -43,10 +43,10 @@ type Runtime struct {
 	AgentQueue  *agents.MemoryQueue
 	AgentWorker *agentworker.Supervisor
 
-	db          *gorm.DB
-	stopAgents  context.CancelFunc
-	closeHTTP   func() error
-	cmdName     string
+	db         *gorm.DB
+	stopAgents context.CancelFunc
+	closeHTTP  func() error
+	cmdName    string
 }
 
 // Start opens the database, optionally migrates, wires agents, and builds
