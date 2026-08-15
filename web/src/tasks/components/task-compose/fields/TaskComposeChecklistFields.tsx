@@ -93,30 +93,30 @@ export function TaskComposeChecklistFields({
                     <span className="task-checklist-text" title={item.text}>
                       {item.text}
                     </span>
-                    {commandCount > 0 ? (
-                      <div className="task-checklist-row-trailing">
-                        <ChecklistVerifyBadge count={commandCount} />
-                      </div>
-                    ) : null}
                   </div>
-                  <div className="task-checklist-row-actions">
-                    <button
-                      type="button"
-                      className="task-detail-checklist-edit"
-                      disabled={disabled}
-                      onClick={() => onOpenEditCriterion(index, item)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      className="task-detail-checklist-remove"
-                      disabled={disabled}
-                      aria-label="Remove"
-                      onClick={() => onRemoveRow(index)}
-                    >
-                      <CriterionTrashIcon />
-                    </button>
+                  <div className="task-checklist-row-trailing">
+                    {commandCount > 0 ? (
+                      <ChecklistVerifyBadge count={commandCount} />
+                    ) : null}
+                    <div className="task-checklist-row-actions">
+                      <button
+                        type="button"
+                        className="task-detail-checklist-edit"
+                        disabled={disabled}
+                        onClick={() => onOpenEditCriterion(index, item)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        className="task-detail-checklist-remove"
+                        disabled={disabled}
+                        aria-label="Remove"
+                        onClick={() => onRemoveRow(index)}
+                      >
+                        <CriterionTrashIcon />
+                      </button>
+                    </div>
                   </div>
                 </li>
               );
