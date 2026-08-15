@@ -36,16 +36,11 @@ export function TaskComposeForm({
   onScenarioPicked,
   onCloseScenarios,
 }: Props) {
-  const createHint =
+  // Draft save status belongs on the Save draft footer control, not the heading.
+  const subtitle =
     !presentation.isEdit && !presentation.isTemplateMode
       ? "Define the work, then hand it off to your agent."
       : null;
-  const draftSubtitle =
-    presentation.showDraftStatus && session.draftSaveLabel
-      ? session.draftSaveLabel
-      : session.draftSaveError
-        ? "Draft autosave failed"
-        : createHint;
 
   const promptRef = useRef(prompt.prompt);
   promptRef.current = prompt.prompt;
@@ -95,7 +90,7 @@ export function TaskComposeForm({
     >
       <TaskComposeFormShell
         presentation={presentation}
-        draftSubtitle={draftSubtitle}
+        subtitle={subtitle}
         backTo={backTo}
         backLabel={backLabel}
         scenariosOpen={scenariosOpen}

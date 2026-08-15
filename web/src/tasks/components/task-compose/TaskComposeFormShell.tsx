@@ -21,7 +21,7 @@ export type TaskComposeFormShellProps = Omit<
   never
 > & {
   presentation: TaskCreateModalPresentation;
-  draftSubtitle: string | null;
+  subtitle: string | null;
   backTo: string;
   backLabel?: string;
   scenariosOpen: boolean;
@@ -34,7 +34,7 @@ export type TaskComposeFormShellProps = Omit<
 /** Inner compose UI; must sit under DraftAssistProvider. */
 export function TaskComposeFormShell({
   presentation,
-  draftSubtitle,
+  subtitle,
   backTo,
   backLabel,
   scenariosOpen,
@@ -82,7 +82,7 @@ export function TaskComposeFormShell({
       >
         <TaskComposeLayout
           title={presentation.modalTitle}
-          subtitle={draftSubtitle}
+          subtitle={subtitle}
           backTo={backTo}
           backLabel={backLabel}
           topActions={
@@ -130,13 +130,23 @@ export function TaskComposeFormShell({
             </>
           }
           errors={
-            <TaskCreateModalMutationErrors
-              isTaskEdit={presentation.isTaskEdit}
-              createFormError={createFormError}
-              createError={createError}
-              formError={formError}
-              patchError={patchError}
-            />
+            <>
+              {session.draftSaveError ? (
+                <p
+                  className="task-create-draft-status task-create-draft-status--error"
+                  aria-live="assertive"
+                >
+                  {session.draftSaveLabel ?? "Draft autosave failed"}
+                </p>
+              ) : null}
+              <TaskCreateModalMutationErrors
+                isTaskEdit={presentation.isTaskEdit}
+                createFormError={createFormError}
+                createError={createError}
+                formError={formError}
+                patchError={patchError}
+              />
+            </>
           }
         >
           <section

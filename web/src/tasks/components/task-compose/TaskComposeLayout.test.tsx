@@ -4,6 +4,24 @@ import { describe, expect, it } from "vitest";
 import { TaskComposeLayout } from "./TaskComposeLayout";
 
 describe("TaskComposeLayout", () => {
+  it("renders helper copy in the topbar subtitle", () => {
+    render(
+      <MemoryRouter>
+        <TaskComposeLayout
+          title="New task"
+          subtitle="Define the work, then hand it off to your agent."
+          backTo="/"
+        >
+          <p>Form body</p>
+        </TaskComposeLayout>
+      </MemoryRouter>,
+    );
+
+    expect(document.querySelector(".task-compose-page__subtitle")).toHaveTextContent(
+      "Define the work, then hand it off to your agent.",
+    );
+  });
+
   it("marks the page as v2 when a handoff rail is present", () => {
     render(
       <MemoryRouter>
