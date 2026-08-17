@@ -1,18 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { PRIORITIES } from "@/types";
-import {
-  TEST_SCENARIO_DIFFICULTY_ORDER,
-  TEST_SCENARIOS,
-  findTestScenarioById,
-  groupTestScenariosByDifficulty,
-} from "./testScenarios";
+import { TEST_SCENARIOS, findTestScenarioById } from "./testScenarios";
 
 describe("TEST_SCENARIOS catalog", () => {
-  it("has at least one scenario per difficulty bucket", () => {
-    const byDifficulty = groupTestScenariosByDifficulty();
-    for (const difficulty of TEST_SCENARIO_DIFFICULTY_ORDER) {
-      expect(byDifficulty[difficulty].length).toBeGreaterThan(0);
-    }
+  it("has the three sample-task ids in display order", () => {
+    expect(TEST_SCENARIOS.map((s) => s.id)).toEqual([
+      "observability",
+      "flaky-test",
+      "dep-upgrade",
+    ]);
   });
 
   it("every scenario has a unique id", () => {
@@ -27,8 +23,9 @@ describe("TEST_SCENARIOS catalog", () => {
     }
   });
 
-  it("every scenario has non-empty title, description, prompt, and at least one criterion", () => {
+  it("every scenario has non-empty name, title, description, prompt, and at least one criterion", () => {
     for (const scenario of TEST_SCENARIOS) {
+      expect(scenario.name.trim()).not.toBe("");
       expect(scenario.title.trim()).not.toBe("");
       expect(scenario.description.trim()).not.toBe("");
       expect(scenario.prompt.trim()).not.toBe("");
@@ -47,25 +44,4 @@ describe("TEST_SCENARIOS catalog", () => {
     expect(findTestScenarioById(first.id)?.id).toBe(first.id);
     expect(findTestScenarioById("does-not-exist")).toBeUndefined();
   });
-
-  it("groupTestScenariosByDifficulty preserves catalog order within each bucket", () => {
-    const byDifficulty = groupTestScenariosByDifficulty();
-    for (const difficulty of TEST_SCENARIO_DIFFICULTY_ORDER) {
-      const fromCatalog = TEST_SCENARIOS.filter(
-        (s) => s.difficulty === difficulty,
-      ).map((s) => s.id);
-      const fromGroup = byDifficulty[difficulty].map((s) => s.id);
-      expect(fromGroup).toEqual(fromCatalog);
-    }
-  });
-
-  it("does not place the same scenario in multiple difficulty buckets", () => {
-    const byDifficulty = groupTestScenariosByDifficulty();
-    const totalGrouped = TEST_SCENARIO_DIFFICULTY_ORDER.reduce(
-      (sum, d) => sum + byDifficulty[d].length,
-      0,
-    );
-    expect(totalGrouped).toBe(TEST_SCENARIOS.length);
-  });
-
 });

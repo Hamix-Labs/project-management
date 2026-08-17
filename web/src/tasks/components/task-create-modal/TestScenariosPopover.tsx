@@ -1,12 +1,6 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import {
-  TEST_SCENARIO_DIFFICULTY_HINT,
-  TEST_SCENARIO_DIFFICULTY_LABEL,
-  TEST_SCENARIO_DIFFICULTY_ORDER,
-  groupTestScenariosByDifficulty,
-  type TestScenario,
-} from "@/tasks/test-scenarios";
+import { TEST_SCENARIOS, type TestScenario } from "@/tasks/test-scenarios";
 
 type Props = {
   /**
@@ -124,8 +118,6 @@ export function TestScenariosPopover({ anchor, onPick, onClose }: Props) {
 
   if (!anchor) return null;
 
-  const grouped = groupTestScenariosByDifficulty();
-
   return createPortal(
     <div
       ref={popoverRef}
@@ -155,49 +147,25 @@ export function TestScenariosPopover({ anchor, onPick, onClose }: Props) {
         </p>
       </header>
       <div className="test-scenarios-popover__sections">
-        {TEST_SCENARIO_DIFFICULTY_ORDER.map((difficulty) => {
-          const scenarios = grouped[difficulty];
-          if (scenarios.length === 0) return null;
-          return (
-            <section
-              key={difficulty}
-              className="test-scenarios-popover__section"
-              data-difficulty={difficulty}
-              aria-labelledby={`${titleId}-${difficulty}-label`}
-            >
-              <header className="test-scenarios-popover__section-header">
-                <h4
-                  id={`${titleId}-${difficulty}-label`}
-                  className="test-scenarios-popover__section-label"
-                >
-                  {TEST_SCENARIO_DIFFICULTY_LABEL[difficulty]}
-                </h4>
-                <span className="test-scenarios-popover__section-hint">
-                  {TEST_SCENARIO_DIFFICULTY_HINT[difficulty]}
+        <ul className="test-scenarios-popover__list">
+          {TEST_SCENARIOS.map((scenario) => (
+            <li key={scenario.id}>
+              <button
+                type="button"
+                className="test-scenarios-popover__row"
+                data-testid={`test-scenarios-pick-${scenario.id}`}
+                onClick={() => onPick(scenario)}
+              >
+                <span className="test-scenarios-popover__row-title">
+                  {scenario.title}
                 </span>
-              </header>
-              <ul className="test-scenarios-popover__list">
-                {scenarios.map((scenario) => (
-                  <li key={scenario.id}>
-                    <button
-                      type="button"
-                      className="test-scenarios-popover__row"
-                      data-testid={`test-scenarios-pick-${scenario.id}`}
-                      onClick={() => onPick(scenario)}
-                    >
-                      <span className="test-scenarios-popover__row-title">
-                        {scenario.title}
-                      </span>
-                      <span className="test-scenarios-popover__row-description">
-                        {scenario.description}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          );
-        })}
+                <span className="test-scenarios-popover__row-description">
+                  {scenario.description}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
       </div>
     </div>,
     document.body,

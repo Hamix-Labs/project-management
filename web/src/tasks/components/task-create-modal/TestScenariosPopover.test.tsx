@@ -2,11 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useRef, useState } from "react";
 import { describe, expect, it, vi } from "vitest";
-import {
-  TEST_SCENARIO_DIFFICULTY_LABEL,
-  TEST_SCENARIOS,
-  type TestScenario,
-} from "@/tasks/test-scenarios";
+import { TEST_SCENARIOS, type TestScenario } from "@/tasks/test-scenarios";
 import { TestScenariosPopover } from "./TestScenariosPopover";
 
 function Harness({ onPick }: { onPick: (s: TestScenario) => void }) {
@@ -37,16 +33,11 @@ function Harness({ onPick }: { onPick: (s: TestScenario) => void }) {
 }
 
 describe("TestScenariosPopover", () => {
-  it("renders a section heading per difficulty bucket and every scenario row", async () => {
+  it("renders every sample-task pick row", async () => {
     const user = userEvent.setup();
     render(<Harness onPick={vi.fn()} />);
     await user.click(screen.getByTestId("harness-trigger"));
     expect(screen.getByTestId("test-scenarios-popover")).toBeInTheDocument();
-    for (const label of Object.values(TEST_SCENARIO_DIFFICULTY_LABEL)) {
-      expect(
-        screen.getByRole("heading", { name: new RegExp(`^${label}$`) }),
-      ).toBeInTheDocument();
-    }
     for (const scenario of TEST_SCENARIOS) {
       expect(
         screen.getByTestId(`test-scenarios-pick-${scenario.id}`),
