@@ -1,5 +1,4 @@
 import { render, screen } from "@testing-library/react";
-import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import {
   COMPOSE_BRIEF_PLACEHOLDER,
@@ -7,25 +6,23 @@ import {
 } from "./TaskComposeBriefCard";
 import { COMPOSE_BRIEF_EDITOR_MIN_PX } from "./useComposeBriefVerticalResize";
 
-vi.mock("@/components/rich-prompt", () => ({
-  RichPromptEditor: ({
-    placeholder,
-    menuRight,
-  }: {
-    placeholder?: string;
-    menuRight?: ReactNode;
-  }) => (
-    <div className="rich-prompt-wrap">
-      <div
-        className="tiptap ProseMirror rich-prompt-editor notion-like-editor"
-        data-testid="compose-brief-editor"
-        data-placeholder={placeholder}
-      >
-        {menuRight}
+vi.mock("@/components/rich-prompt", async () => {
+  const actual = await vi.importActual<typeof import("@/components/rich-prompt")>(
+    "@/components/rich-prompt",
+  );
+  return {
+    ...actual,
+    RichPromptEditor: ({ placeholder }: { placeholder?: string }) => (
+      <div className="rich-prompt-wrap">
+        <div
+          className="tiptap ProseMirror rich-prompt-editor notion-like-editor"
+          data-testid="compose-brief-editor"
+          data-placeholder={placeholder}
+        />
       </div>
-    </div>
-  ),
-}));
+    ),
+  };
+});
 
 function renderCard() {
   return render(
@@ -81,9 +78,10 @@ describe("TaskComposeBriefCard", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("keeps the live word count beside the editor", () => {
+  it("keeps the live word count in the title row", () => {
     renderCard();
     expect(screen.getByText("0 words")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Expand" })).not.toBeInTheDocument();
   });
 });
 

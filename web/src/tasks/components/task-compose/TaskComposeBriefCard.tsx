@@ -20,10 +20,7 @@ type Props = {
 /** Empty-block cursor copy; `/` opens the Notion slash menu (Hamix Ask AI + files included). */
 export const COMPOSE_BRIEF_PLACEHOLDER = "Press `/` for commands";
 
-/**
- * Brief hero card: large title input + Notion-like prompt editor.
- * Formatting is slash + selection bubble; `/` includes Hamix Ask AI and mention a file.
- */
+/** Brief hero card: title + word count + Notion editor + resize grip. */
 export function TaskComposeBriefCard({
   idsPrefix,
   editorKey,
@@ -66,17 +63,22 @@ export function TaskComposeBriefCard({
       aria-labelledby={titleId}
     >
       <div className="compose-brief__title-block">
-        <input
-          id={titleId}
-          className="compose-brief__title-input"
-          value={title}
-          onChange={(e) => onTitleChange(e.target.value)}
-          placeholder="Name this task"
-          required
-          aria-required="true"
-          aria-label="Title"
-          disabled={disabled}
-        />
+        <div className="compose-brief__title-row">
+          <input
+            id={titleId}
+            className="compose-brief__title-input"
+            value={title}
+            onChange={(e) => onTitleChange(e.target.value)}
+            placeholder="Name this task"
+            required
+            aria-required="true"
+            aria-label="Title"
+            disabled={disabled}
+          />
+          <span className="compose-brief__word-count" aria-live="polite">
+            {wordCount} words
+          </span>
+        </div>
       </div>
       <div className="compose-brief__editor task-create-editor-shell">
         <RichPromptEditor
@@ -89,11 +91,6 @@ export function TaskComposeBriefCard({
           worktreeId={worktreeId}
           repositoryId={repositoryId}
           preferRepositoryHint={preferRepositoryHint}
-          menuRight={
-            <span className="compose-brief__word-count" aria-live="polite">
-              {wordCount} words
-            </span>
-          }
           onEditorReady={onEditorReady}
           onAiTrigger={draftAssist ? onAiTrigger : undefined}
         />
