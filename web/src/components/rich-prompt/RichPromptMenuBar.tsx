@@ -85,7 +85,7 @@ export type RichPromptMenuBarProps = {
   disabled?: boolean;
   /**
    * `"icons"` renders SVG glyphs; `"text"` keeps legacy labels;
-   * `"none"` hides formatting buttons (slash menu is the insert path).
+   * `"none"` hides formatting buttons but keeps an optional trailing slot.
    */
   variant?: "text" | "icons" | "none";
   /** Optional trailing slot (e.g. word count). */

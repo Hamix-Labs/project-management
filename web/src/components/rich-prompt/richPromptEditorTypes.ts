@@ -27,8 +27,14 @@ export type RichPromptEditorProps = {
    */
   onAiTrigger?: (msg: string) => void;
   /**
+   * Slash (`/`) catalog. `"all"` includes markdown block inserts (headings,
+   * lists, quote). `"commands"` is Hamix product actions only (mention a
+   * file, Ask AI) so the toolbar can own markdown formatting.
+   */
+  slashMenu?: "all" | "commands";
+  /**
    * Toolbar chrome: `"text"` (default labels), `"icons"` (SVG glyphs),
-   * or `"none"` (no formatting buttons — slash menu owns block insertion).
+   * or `"none"` (formatting buttons omitted; trailing `menuRight` still renders).
    */
   menuVariant?: "text" | "icons" | "none";
   /** Optional trailing toolbar slot (e.g. word count). */
