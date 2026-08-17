@@ -180,7 +180,7 @@ func checkFileSizes(repoRoot string, out io.Writer) (sizeResult, error) {
 		if readErr != nil {
 			return result, readErr
 		}
-		if strings.EqualFold(filepath.Ext(path), ".go") && patGenerated.MatchString(text) {
+		if patGenerated.MatchString(text) {
 			continue
 		}
 

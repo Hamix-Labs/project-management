@@ -88,6 +88,8 @@ import { RoutedMainOutlet } from "./RoutedMainOutlet";
 import { useBootstrap } from "./hooks/useBootstrap";
 import { useSettingsRoutePrefetch } from "./hooks/usePrefetchOnIntent";
 import "./App.css";
+import "./styles/app-tiptap-notion.scss";
+import "./styles/tokens/app-design-tokens-tiptap.css";
 
 /** Product chrome (nav, settings, create/close modals) for standard app routes. */
 function StandardShell() {
