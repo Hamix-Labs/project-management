@@ -23,6 +23,12 @@ function makeWrapper() {
   return { Wrapper };
 }
 
+function editorRoot(id: string): HTMLElement {
+  const el = document.querySelector<HTMLElement>(`#${id}`);
+  if (!el) throw new Error(`expected editor #${id}`);
+  return el;
+}
+
 describe("RichPromptEditor", () => {
   beforeEach(() => {
     vi.stubGlobal(
@@ -40,15 +46,18 @@ describe("RichPromptEditor", () => {
     vi.unstubAllGlobals();
   });
 
-  it("renders the formatting toolbar", () => {
+  it("renders the Notion-like editor surface", () => {
     const { Wrapper } = makeWrapper();
     render(
       <RichPromptEditor id="rich-1" value="<p></p>" onChange={vi.fn()} />,
       { wrapper: Wrapper },
     );
+    const root = editorRoot("rich-1");
+    expect(root).toHaveAttribute("contenteditable", "true");
+    expect(root).toHaveClass("notion-like-editor");
     expect(
-      screen.getByRole("toolbar", { name: /text formatting/i }),
-    ).toBeInTheDocument();
+      screen.queryByRole("toolbar", { name: /text formatting/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("mounts under StrictMode without throwing (TipTap immediatelyRender)", async () => {
@@ -60,9 +69,7 @@ describe("RichPromptEditor", () => {
       </StrictMode>,
       { wrapper: Wrapper },
     );
-    expect(
-      await screen.findByRole("toolbar", { name: /text formatting/i }),
-    ).toBeInTheDocument();
+    expect(editorRoot("rich-strict")).toHaveAttribute("contenteditable", "true");
     expect(
       errorSpy.mock.calls.some((c) =>
         String(c[0] ?? "").includes("reading 'commands'"),
@@ -108,14 +115,14 @@ describe("RichPromptEditor", () => {
     });
   });
 
-  it("hides the formatting toolbar when menuVariant is none", async () => {
+  it("keeps menuRight when the bubble toolbar is hidden", async () => {
     const { Wrapper } = makeWrapper();
     render(
       <RichPromptEditor
         id="rich-none"
         value="<p></p>"
         onChange={vi.fn()}
-        menuVariant="none"
+        toolbar="none"
         menuRight={<span>0 words</span>}
       />,
       { wrapper: Wrapper },
@@ -125,10 +132,6 @@ describe("RichPromptEditor", () => {
     });
     expect(
       screen.queryByRole("toolbar", { name: /text formatting/i }),
-    ).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Bold" })).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: "Heading 2" }),
     ).not.toBeInTheDocument();
   });
 
@@ -146,9 +149,7 @@ describe("RichPromptEditor", () => {
       { wrapper: Wrapper },
     );
 
-    const editorEl = document.querySelector<HTMLElement>("#rich-space");
-    expect(editorEl).not.toBeNull();
-    editorEl!.focus();
+    editorRoot("rich-space").focus();
     await user.keyboard(" ");
 
     const composer = await screen.findByRole("dialog", {
@@ -178,8 +179,7 @@ describe("RichPromptEditor", () => {
       { wrapper: Wrapper },
     );
 
-    const editorEl = document.querySelector<HTMLElement>("#rich-escape");
-    editorEl!.focus();
+    editorRoot("rich-escape").focus();
     await user.keyboard(" ");
 
     const composer = await screen.findByRole("dialog", {

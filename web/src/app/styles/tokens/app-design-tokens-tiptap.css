@@ -1,0 +1,11 @@
+/* TipTap Notion-like tokens mapped onto Hamix chrome. Loaded after `_variables.scss`. */
+:root {
+  --tt-bg-color: var(--bg-elevated);
+  --tt-theme-text: var(--text-primary);
+  --tt-brand-color-500: var(--brand);
+  --tt-brand-color-400: var(--brand-hover);
+  --tt-brand-color-600: var(--brand-deep);
+  --tt-cursor-color: var(--text-primary);
+  --tt-selection-color: var(--brand-muted);
+  --tt-radius-md: var(--radius-md);
+}

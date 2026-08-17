@@ -5,7 +5,37 @@ import reactHooks from "eslint-plugin-react-hooks";
 import globals from "globals";
 
 export default defineConfig(
-  { ignores: ["dist/**", "node_modules/**", "scripts/**"] },
+  {
+    ignores: [
+      "dist/**",
+      "node_modules/**",
+      "scripts/**",
+      "src/components/tiptap-*/**",
+      "src/components/tiptap-templates/**",
+      "src/components/tiptap-icons/**",
+      "src/components/tiptap-node/**",
+      "src/components/tiptap-extension/**",
+      "src/components/tiptap-ui-primitive/**",
+      "src/components/tiptap-ui-utils/**",
+      "src/lib/tiptap-*.ts",
+      "src/hooks/use-composed-ref.ts",
+      "src/hooks/use-isomorphic-layout-effect.ts",
+      "src/hooks/use-on-click-outside.ts",
+      "src/hooks/use-menu-navigation.ts",
+      "src/hooks/use-floating-element.ts",
+      "src/hooks/use-element-rect.ts",
+      "src/hooks/use-unmount.ts",
+      "src/hooks/use-throttled-callback.ts",
+      "src/hooks/use-ui-editor-state.ts",
+      "src/hooks/use-is-breakpoint.ts",
+      "src/hooks/use-tiptap-editor.ts",
+      "src/hooks/use-floating-toolbar-visibility.ts",
+      "src/hooks/use-scrolling.ts",
+      "src/hooks/use-window-size.ts",
+      "src/hooks/use-cursor-visibility.ts",
+      "src/contexts/**",
+    ],
+  },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   {

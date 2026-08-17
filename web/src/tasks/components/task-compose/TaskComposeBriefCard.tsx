@@ -17,12 +17,12 @@ type Props = {
   onPromptChange: (v: string) => void;
 };
 
-/** Empty-block cursor copy; `/` opens Hamix product commands (not markdown blocks). */
+/** Empty-block cursor copy; `/` opens the Notion slash menu (Hamix Ask AI + files included). */
 export const COMPOSE_BRIEF_PLACEHOLDER = "Press `/` for commands";
 
 /**
- * Brief hero card: large title input + rich prompt editor with icon toolbar.
- * Markdown (bold, italic, H2/H3, lists, code) is the toolbar; `/` is product commands.
+ * Brief hero card: large title input + Notion-like prompt editor.
+ * Formatting is slash + selection bubble; `/` includes Hamix Ask AI and mention a file.
  */
 export function TaskComposeBriefCard({
   idsPrefix,
@@ -89,8 +89,6 @@ export function TaskComposeBriefCard({
           worktreeId={worktreeId}
           repositoryId={repositoryId}
           preferRepositoryHint={preferRepositoryHint}
-          menuVariant="icons"
-          slashMenu="commands"
           menuRight={
             <span className="compose-brief__word-count" aria-live="polite">
               {wordCount} words

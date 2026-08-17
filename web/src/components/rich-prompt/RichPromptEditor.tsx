@@ -1,16 +1,15 @@
 import "tippy.js/dist/tippy.css";
 import { useCallback, useEffect } from "react";
-import { EditorContent } from "@tiptap/react";
 import { InlineAiComposer } from "./InlineAiComposer";
 import { RichPromptFileReferenceModal } from "./RichPromptFileReferenceModal";
-import { RichPromptMenuBar } from "./RichPromptMenuBar";
+import { HamixNotionEditorSurface } from "./HamixNotionEditorSurface";
 import { RichPromptRepoHints } from "./RichPromptRepoHints";
 import type { RichPromptEditorProps } from "./richPromptEditorTypes";
 import { useRichPromptEditorController } from "./useRichPromptEditorController";
 
-/** Rich initial prompt (TipTap) with @ file suggestions scoped to the task worktree. */
+/** Rich initial prompt (TipTap Notion-like) with @ file suggestions scoped to the task worktree. */
 export function RichPromptEditor(props: RichPromptEditorProps) {
-  const { id, disabled, menuVariant, menuRight, onAiTrigger, onEditorReady } =
+  const { id, disabled, toolbar, menuRight, onAiTrigger, onEditorReady } =
     props;
   const {
     editor,
@@ -43,13 +42,12 @@ export function RichPromptEditor(props: RichPromptEditorProps) {
 
   return (
     <div className="rich-prompt-wrap">
-      <RichPromptMenuBar
+      <HamixNotionEditorSurface
         editor={editor}
-        disabled={disabled}
-        variant={menuVariant}
-        right={menuRight}
+        toolbar={toolbar}
+        menuRight={menuRight}
+        onAiTrigger={onAiTrigger}
       />
-      <EditorContent editor={editor} />
       <InlineAiComposer
         open={aiComposer.open}
         initialValue={aiComposer.initialValue}

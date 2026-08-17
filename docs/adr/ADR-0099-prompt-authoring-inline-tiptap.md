@@ -16,7 +16,7 @@ We are abandoning the Prompt IDE and restoring inline TipTap in the create/edit 
 2. **Delete the full-page Prompt IDE**: `/prompt` route, `ImmersiveShell`, BlockNote packages, prompt-editor CSS tokens, and sessionStorage launch/suspend/resume.
 3. **Wire format stays HTML** in `initial_prompt` / draft `payload.initial_prompt`. No DB migration.
 4. **Accept imperfect round-trip** for prompts that only BlockNote could represent (custom embeds / nodes). TipTap loads HTML best-effort; operators may need to rewrite those briefs.
-5. TipTap packages pin at **3.23.6** with `tippy.js` **^6.3.7**. All `@blocknote/*` and `@shikijs/*` dependencies are removed.
+5. TipTap packages pin at **3.30.1**. Prompt chrome is the licensed **Notion-like** template (Start/Pro UI), vendored under `web/src/components/tiptap-*`. Hamix does **not** enable Tiptap Cloud collaboration, Tiptap Cloud AI, image upload, or user `@` mentions. Slash is the template menu plus Hamix Ask AI and mention-a-file. `@` stays Hamix repo-file chips. Agents still send HTML on the wire.
 
 This ADR **supersedes** [ADR-0096](./ADR-0096-prompt-editor-blocknote.md), [ADR-0097](./ADR-0097-prompt-editor-side-menu-anchoring.md), and [ADR-0098](./ADR-0098-prompt-editor-add-block-slot.md).
 
@@ -27,6 +27,7 @@ This ADR **supersedes** [ADR-0096](./ADR-0096-prompt-editor-blocknote.md), [ADR-
 - Create/edit/polish keep an editable prompt field; no CTA that navigates away or 404s.
 - Smaller SPA dependency graph and no immersive shell fork of app chrome.
 - Resume existing TipTap mention/`@` repo-file chip behavior against the HTML wire format.
+- Notion-like slash + bubble formatting without a sticky Hamix toolbar, and without a Tiptap Cloud token in CI (`@tiptap-pro/*` is not a runtime dependency).
 
 ### Negative / accepted risks
 

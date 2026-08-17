@@ -1,0 +1,122 @@
+.tiptap-cta {
+  position: fixed;
+  bottom: 12px;
+  left: 12px;
+  z-index: 9999;
+
+  display: flex;
+  flex-direction: column;
+  width: 13rem;
+  padding: 16px;
+  padding-bottom: 12px;
+  border-radius: 20px;
+  line-height: normal;
+  color: var(--white);
+
+  box-shadow: var(--tt-shadow-elevated-md);
+  background: linear-gradient(-45deg, #6300e5, #e713ff);
+  background-size: 400% 400%;
+  animation: gradient-cta-card-animiaton 15s ease infinite;
+
+  .tiptap-cta__close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 14px;
+    height: 14px;
+    min-width: min-content;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    color: var(--white);
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    &-icon {
+      width: 12px;
+      height: 12px;
+    }
+  }
+
+  .tiptap-cta__title {
+    margin-bottom: 6px;
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .tiptap-cta__subtitle {
+    margin-bottom: 12px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .tiptap-cta__actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2px;
+    margin-bottom: 12px;
+
+    .tiptap-cta__btn {
+      border-radius: var(--tt-radius-xl);
+
+      .tiptap-button-text {
+        flex-grow: 0;
+        text-align: center;
+        font-weight: 700;
+        font-size: 12px;
+      }
+
+      &--ghost {
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.1);
+        }
+
+        .tiptap-button-text,
+        .tiptap-button-icon,
+        .tiptap-button-icon:hover {
+          color: var(--white) !important;
+        }
+      }
+
+      &--primary {
+        background: var(--white);
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.8);
+        }
+
+        .tiptap-button-text,
+        .tiptap-button-icon,
+        .tiptap-button-icon:hover {
+          color: var(--black) !important;
+        }
+      }
+    }
+  }
+
+  .tiptap-cta__footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 10px;
+    font-weight: 600;
+  }
+}
+
+@keyframes gradient-cta-card-animiaton {
+  0% {
+    background-position: 0 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}

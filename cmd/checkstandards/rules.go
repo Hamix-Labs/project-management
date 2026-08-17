@@ -196,6 +196,9 @@ func runSimpleRule(repoRoot string, rule simpleRule, out io.Writer) (bool, error
 		if readErr != nil {
 			return failed, readErr
 		}
+		if patGenerated.MatchString(text) {
+			continue
+		}
 		if rule.pattern.MatchString(text) {
 			fmt.Fprintf(out, rule.message+"\n", path)
 			failed = true
