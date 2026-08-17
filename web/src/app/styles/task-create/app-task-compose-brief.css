@@ -90,6 +90,10 @@
   background: var(--compose-card-border);
 }
 
+.task-compose-page--v2 .compose-brief__editor .rich-prompt-toolbar[data-variant="none"] {
+  justify-content: flex-end;
+}
+
 .task-compose-page--v2 .compose-brief__editor .rich-prompt-toolbar__right,
 .task-compose-page--v2 .compose-brief__word-count {
   margin-left: auto;

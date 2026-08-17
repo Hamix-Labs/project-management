@@ -16,9 +16,12 @@ type Props = {
   onPromptChange: (v: string) => void;
 };
 
+/** Empty-block cursor copy; `/` opens the existing rich-prompt slash menu. */
+export const COMPOSE_BRIEF_PLACEHOLDER = "Press `/` for commands";
+
 /**
- * Brief hero card: large title input + rich prompt editor with icon toolbar.
- * Bound to the same essentials/prompt handlers as the former essentials+prompt sections.
+ * Brief hero card: large title input + rich prompt editor.
+ * Structure is inserted via `/` slash commands, not a markdown block toolbar.
  */
 export function TaskComposeBriefCard({
   idsPrefix,
@@ -70,11 +73,11 @@ export function TaskComposeBriefCard({
           value={prompt}
           onChange={onPromptChange}
           disabled={disabled}
-          placeholder="Describe the full brief the agent starts from. Supports Markdown."
+          placeholder={COMPOSE_BRIEF_PLACEHOLDER}
           worktreeId={worktreeId}
           repositoryId={repositoryId}
           preferRepositoryHint={preferRepositoryHint}
-          menuVariant="icons"
+          menuVariant="none"
           menuRight={
             <span className="compose-brief__word-count" aria-live="polite">
               {wordCount} words
