@@ -2,6 +2,9 @@ import { cleanup } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import { afterAll, afterEach, beforeAll } from "vitest";
 import { server } from "./server";
+import { installEditorDomStubs } from "./setup-editor-dom";
+
+installEditorDomStubs();
 
 /**
  * Full-app Vitest projects set HAMIX_MSW_UNHANDLED=error so a forgotten

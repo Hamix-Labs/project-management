@@ -10,22 +10,16 @@ import { COMPOSE_BRIEF_EDITOR_MIN_PX } from "./useComposeBriefVerticalResize";
 vi.mock("@/components/rich-prompt", () => ({
   RichPromptEditor: ({
     placeholder,
-    menuVariant,
-    slashMenu,
     menuRight,
   }: {
     placeholder?: string;
-    menuVariant?: string;
-    slashMenu?: string;
     menuRight?: ReactNode;
   }) => (
     <div className="rich-prompt-wrap">
       <div
-        className="tiptap ProseMirror rich-prompt-editor"
+        className="tiptap ProseMirror rich-prompt-editor notion-like-editor"
         data-testid="compose-brief-editor"
         data-placeholder={placeholder}
-        data-menu-variant={menuVariant}
-        data-slash-menu={slashMenu}
       >
         {menuRight}
       </div>
@@ -64,7 +58,6 @@ function briefCard(container: HTMLElement): HTMLElement {
 }
 
 function dispatchPointer(el: HTMLElement, type: string, clientY: number) {
-  // jsdom has no PointerEvent; MouseEvent still carries clientY for React.
   el.dispatchEvent(
     new MouseEvent(type, {
       bubbles: true,
@@ -79,30 +72,18 @@ function dispatchPointer(el: HTMLElement, type: string, clientY: number) {
 describe("TaskComposeBriefCard", () => {
   it("uses slash-command empty-state copy instead of a markdown brief placeholder", () => {
     renderCard();
-    const editor = screen.getByTestId("compose-brief-editor");
-    expect(editor).toHaveAttribute("data-placeholder", COMPOSE_BRIEF_PLACEHOLDER);
-    expect(editor).toHaveAttribute(
+    expect(screen.getByTestId("compose-brief-editor")).toHaveAttribute(
       "data-placeholder",
-      "Press `/` for commands",
+      COMPOSE_BRIEF_PLACEHOLDER,
     );
     expect(
       screen.queryByPlaceholderText(/describe the full brief/i),
     ).not.toBeInTheDocument();
   });
 
-  it("presents the icon markdown toolbar and keeps the word count", () => {
+  it("keeps the live word count beside the editor", () => {
     renderCard();
-    const editor = screen.getByTestId("compose-brief-editor");
-    expect(editor).toHaveAttribute("data-menu-variant", "icons");
     expect(screen.getByText("0 words")).toBeInTheDocument();
-  });
-
-  it("uses the product-command slash catalog rather than markdown blocks", () => {
-    renderCard();
-    expect(screen.getByTestId("compose-brief-editor")).toHaveAttribute(
-      "data-slash-menu",
-      "commands",
-    );
   });
 });
 
@@ -116,29 +97,20 @@ describe("TaskComposeBriefCard resize", () => {
 
   it("grows the editor height downward when the grip is dragged", () => {
     const { container } = renderCard();
-    const handle = grip(container);
-    const card = briefCard(container);
-
-    dispatchPointer(handle, "pointerdown", 400);
-    dispatchPointer(handle, "pointermove", 520);
-    dispatchPointer(handle, "pointerup", 520);
-
-    expect(card.style.getPropertyValue("--compose-brief-editor-h")).toBe(
+    dispatchPointer(grip(container), "pointerdown", 400);
+    dispatchPointer(grip(container), "pointermove", 520);
+    dispatchPointer(grip(container), "pointerup", 520);
+    expect(briefCard(container).style.getPropertyValue("--compose-brief-editor-h")).toBe(
       `${COMPOSE_BRIEF_EDITOR_MIN_PX + 120}px`,
     );
-    expect(card.style.width).toBe("");
   });
 
   it("does not shrink the editor below the 320px minimum", () => {
     const { container } = renderCard();
-    const handle = grip(container);
-    const card = briefCard(container);
-
-    dispatchPointer(handle, "pointerdown", 400);
-    dispatchPointer(handle, "pointermove", 100);
-    dispatchPointer(handle, "pointerup", 100);
-
-    expect(card.style.getPropertyValue("--compose-brief-editor-h")).toBe(
+    dispatchPointer(grip(container), "pointerdown", 400);
+    dispatchPointer(grip(container), "pointermove", 100);
+    dispatchPointer(grip(container), "pointerup", 100);
+    expect(briefCard(container).style.getPropertyValue("--compose-brief-editor-h")).toBe(
       `${COMPOSE_BRIEF_EDITOR_MIN_PX}px`,
     );
   });

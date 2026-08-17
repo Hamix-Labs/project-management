@@ -17,6 +17,11 @@ import {
   type PendingFileInsert,
 } from "./richPromptInsertHelpers";
 import { useRepoWorkspaceProbe } from "./useRepoWorkspaceProbe";
+import {
+  handlePromptImageDrop,
+  handlePromptImagePaste,
+} from "./rejectImageTransfer";
+import { stripEphemeralEditorAttrs } from "./stripEphemeralEditorAttrs";
 import type { RichPromptEditorProps } from "./richPromptEditorTypes";
 
 function initialPromptHtml(value: string): string {
@@ -41,7 +46,6 @@ export function useRichPromptEditorController({
   repositoryId,
   preferRepositoryHint = false,
   onAiTrigger,
-  slashMenu = "all",
 }: RichPromptEditorProps) {
   const gitScoped = worktreeId !== undefined || repositoryId !== undefined;
   const mentionWorktreeId = useResolvedMentionWorktreeId(
@@ -126,9 +130,8 @@ export function useRichPromptEditorController({
     () =>
       buildRichPromptExtensions(placeholder, repoOpts, {
         onAiTrigger: handleAiTrigger,
-        slashMenu,
       }),
-    [placeholder, repoOpts, handleAiTrigger, slashMenu],
+    [placeholder, repoOpts, handleAiTrigger],
   );
 
   const editor = useEditor({
@@ -138,13 +141,16 @@ export function useRichPromptEditorController({
     editable: !disabled,
     editorProps: {
       attributes: {
-        class: "rich-prompt-editor",
+        class: "rich-prompt-editor notion-like-editor",
         id,
         "aria-labelledby": `${id}-label`,
       },
+      handlePaste: handlePromptImagePaste,
+      handleDrop: handlePromptImageDrop,
     },
     onUpdate: ({ editor: ed }) => {
-      const html = ed.getHTML();
+      const html = stripEphemeralEditorAttrs(ed.getHTML());
+      if (html === lastEmittedHtml.current) return;
       lastEmittedHtml.current = html;
       onChange(html);
     },

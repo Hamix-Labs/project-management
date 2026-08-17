@@ -21,23 +21,15 @@ export type RichPromptEditorProps = {
   preferRepositoryHint?: boolean;
   /**
    * Fired when the user presses Space at the start of an empty block or
-   * chooses `/ai` from the slash menu. Plan 3 wires this to the real draft
-   * agent; for Plan 1 the default host is a no-op — the inline composer
-   * opens either way so operators see the shell.
+   * chooses Ask AI from the slash menu.
    */
   onAiTrigger?: (msg: string) => void;
   /**
-   * Slash (`/`) catalog. `"all"` includes markdown block inserts (headings,
-   * lists, quote). `"commands"` is Hamix product actions only (mention a
-   * file, Ask AI) so the toolbar can own markdown formatting.
+   * `"full"` (default) shows the Notion floating format bar on selection.
+   * `"none"` hides it (trailing `menuRight` still renders).
    */
-  slashMenu?: "all" | "commands";
-  /**
-   * Toolbar chrome: `"text"` (default labels), `"icons"` (SVG glyphs),
-   * or `"none"` (formatting buttons omitted; trailing `menuRight` still renders).
-   */
-  menuVariant?: "text" | "icons" | "none";
-  /** Optional trailing toolbar slot (e.g. word count). */
+  toolbar?: "full" | "none";
+  /** Optional trailing meta slot (e.g. word count). */
   menuRight?: ReactNode;
   /** Notifies when the TipTap editor instance is ready (or destroyed). */
   onEditorReady?: (editor: Editor | null) => void;
