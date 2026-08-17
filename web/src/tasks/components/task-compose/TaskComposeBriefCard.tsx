@@ -1,4 +1,4 @@
-import { useCallback, type ReactNode } from "react";
+import { useCallback } from "react";
 import { RichPromptEditor } from "@/components/rich-prompt";
 import { useOptionalDraftAssistContext } from "@/tasks/components/draft-assist";
 import { useRichPromptWordCount } from "./useRichPromptWordCount";
@@ -85,21 +85,5 @@ export function TaskComposeBriefCard({
         />
       </div>
     </section>
-  );
-}
-
-/** Shared section title chrome for rail cards. */
-export function ComposeRailSectionTitle({
-  icon,
-  children,
-}: {
-  icon: ReactNode;
-  children: ReactNode;
-}) {
-  return (
-    <div className="compose-card__section-title">
-      <span className="compose-card__section-icon">{icon}</span>
-      <h2 className="compose-card__section-label">{children}</h2>
-    </div>
   );
 }
