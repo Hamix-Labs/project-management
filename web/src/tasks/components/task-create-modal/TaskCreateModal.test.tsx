@@ -368,18 +368,14 @@ describe("TaskCreateModal", () => {
       const toggle = getAutonomyCheckbox();
       expect(toggle).toBeInTheDocument();
       expect(toggle).toBeChecked();
-      expect(
-        screen.getByText("Picks it up when no other task is running."),
-      ).toBeInTheDocument();
+      expect(screen.getByText("Autonomous")).toBeInTheDocument();
     });
 
-    it("renders unchecked + on-hold helper copy when autonomyEnabled is false", () => {
+    it("renders unchecked when autonomyEnabled is false", () => {
       renderModal({ autonomyEnabled: false });
       const toggle = getAutonomyCheckbox();
       expect(toggle).not.toBeChecked();
-      expect(
-        screen.getByText("Paused until you resume from the task page."),
-      ).toBeInTheDocument();
+      expect(screen.getByText("Autonomous")).toBeInTheDocument();
     });
 
     it("forwards the new value through onAutonomyChange when toggled", async () => {
