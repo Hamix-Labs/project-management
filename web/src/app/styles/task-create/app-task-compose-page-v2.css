@@ -654,7 +654,11 @@ form.task-compose-page__form-shell {
 }
 
 .task-compose-page--v2 .compose-criteria__body .task-create-checklist-empty {
-  padding: 2rem 1.5rem;
+  /* Inset the dashed placeholder so it does not collide with the body's
+     divider. Body padding is not used because filled rows must stay
+     full-bleed with card-width separators. */
+  margin: var(--space-4) var(--space-6);
+  padding: var(--space-8) var(--space-6);
   text-align: center;
 }
 
