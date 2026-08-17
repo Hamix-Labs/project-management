@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import {
   COMPOSE_BRIEF_PLACEHOLDER,
@@ -81,7 +82,6 @@ describe("TaskComposeBriefCard", () => {
   it("keeps the live word count in the title row", () => {
     renderCard();
     expect(screen.getByText("0 words")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Expand" })).not.toBeInTheDocument();
   });
 });
 
@@ -111,5 +111,26 @@ describe("TaskComposeBriefCard resize", () => {
     expect(briefCard(container).style.getPropertyValue("--compose-brief-editor-h")).toBe(
       `${COMPOSE_BRIEF_EDITOR_MIN_PX}px`,
     );
+  });
+});
+
+describe("TaskComposeBriefCard focused writing", () => {
+  it("expands, closes on Done, and restores focus to Expand", async () => {
+    const user = userEvent.setup();
+    renderCard();
+    const expand = screen.getByRole("button", { name: "Expand" });
+    await user.click(expand);
+    expect(screen.getByRole("dialog", { name: "Editing brief" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /done/i }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(expand).toHaveFocus();
+  });
+
+  it("closes on Escape", async () => {
+    const user = userEvent.setup();
+    renderCard();
+    await user.click(screen.getByRole("button", { name: "Expand" }));
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });

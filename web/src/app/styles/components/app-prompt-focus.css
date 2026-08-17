@@ -1,0 +1,89 @@
+/* Focused Notion-like brief overlay — Hamix chrome, same editor instance. */
+
+.prompt-focus-frame--expanded {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-prompt-focus);
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-1);
+  animation: prompt-focus-enter var(--duration-moderate) var(--ease-out);
+}
+
+.prompt-focus-frame__header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.prompt-focus-frame__label {
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  font-weight: 600;
+}
+
+.prompt-focus-frame__count {
+  margin-left: auto;
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+}
+
+.prompt-focus-frame__done {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: var(--touch-target-min);
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+}
+
+.prompt-focus-frame__body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.compose-brief__expand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.compose-brief[data-focus-expanded="true"] .compose-brief__expand,
+.compose-brief[data-focus-expanded="true"] .compose-brief__word-count {
+  display: none;
+}
+
+@keyframes prompt-focus-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .prompt-focus-frame--expanded {
+    animation: none;
+  }
+}

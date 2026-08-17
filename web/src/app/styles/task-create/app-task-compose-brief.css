@@ -114,6 +114,10 @@
   user-select: none;
 }
 
+.task-compose-page--v2 .compose-brief[data-focus-expanded="true"] .compose-brief__resize-grip {
+  display: none;
+}
+
 .task-compose-page--v2 .compose-brief__resize-grip svg {
   display: block;
 }
@@ -123,4 +127,12 @@
   stroke: currentColor;
   stroke-width: 1.5;
   stroke-linecap: round;
+}
+
+.task-compose-page--v2 .compose-brief[data-focus-expanded="true"] .task-create-editor-shell .rich-prompt-wrap .tiptap,
+.task-compose-page--v2 .compose-brief[data-focus-expanded="true"] .task-create-editor-shell .rich-prompt-wrap .ProseMirror {
+  height: auto;
+  min-height: 0;
+  flex: 1;
+  padding: 1.5rem clamp(1.5rem, 8vw, 6rem) 4rem;
 }
