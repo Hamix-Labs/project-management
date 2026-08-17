@@ -87,6 +87,51 @@ describe("RichPromptEditor", () => {
     });
   });
 
+  it("renders an override placeholder on the empty block", async () => {
+    const { Wrapper } = makeWrapper();
+    render(
+      <RichPromptEditor
+        id="rich-override"
+        value="<p></p>"
+        onChange={vi.fn()}
+        placeholder="Press `/` for commands"
+      />,
+      { wrapper: Wrapper },
+    );
+    await waitFor(() => {
+      const paragraph = document.querySelector(
+        "#rich-override p",
+      ) as HTMLElement | null;
+      expect(paragraph?.getAttribute("data-placeholder")).toBe(
+        "Press `/` for commands",
+      );
+    });
+  });
+
+  it("hides the formatting toolbar when menuVariant is none", async () => {
+    const { Wrapper } = makeWrapper();
+    render(
+      <RichPromptEditor
+        id="rich-none"
+        value="<p></p>"
+        onChange={vi.fn()}
+        menuVariant="none"
+        menuRight={<span>0 words</span>}
+      />,
+      { wrapper: Wrapper },
+    );
+    await waitFor(() => {
+      expect(screen.getByText("0 words")).toBeInTheDocument();
+    });
+    expect(
+      screen.queryByRole("toolbar", { name: /text formatting/i }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Bold" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Heading 2" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("opens the inline composer and calls onAiTrigger on submit", async () => {
     const { Wrapper } = makeWrapper();
     const onAiTrigger = vi.fn();

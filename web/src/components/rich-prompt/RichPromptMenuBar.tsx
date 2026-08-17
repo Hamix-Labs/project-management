@@ -83,8 +83,11 @@ function CodeIcon({ className }: IconProps) {
 export type RichPromptMenuBarProps = {
   editor: Editor | null;
   disabled?: boolean;
-  /** `"icons"` renders SVG glyphs (compose page); `"text"` keeps legacy labels. */
-  variant?: "text" | "icons";
+  /**
+   * `"icons"` renders SVG glyphs; `"text"` keeps legacy labels;
+   * `"none"` hides formatting buttons (slash menu is the insert path).
+   */
+  variant?: "text" | "icons" | "none";
   /** Optional trailing slot (e.g. word count). */
   right?: ReactNode;
 };
@@ -96,6 +99,14 @@ export function RichPromptMenuBar({
   right,
 }: RichPromptMenuBarProps) {
   if (!editor) return null;
+  if (variant === "none") {
+    if (!right) return null;
+    return (
+      <div className="rich-prompt-toolbar" data-variant="none">
+        <span className="rich-prompt-toolbar__right">{right}</span>
+      </div>
+    );
+  }
   const d = Boolean(disabled);
   const icons = variant === "icons";
 

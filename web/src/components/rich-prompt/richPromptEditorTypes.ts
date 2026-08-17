@@ -26,8 +26,11 @@ export type RichPromptEditorProps = {
    * opens either way so operators see the shell.
    */
   onAiTrigger?: (msg: string) => void;
-  /** Toolbar chrome: `"text"` (default) or `"icons"` for compose page. */
-  menuVariant?: "text" | "icons";
+  /**
+   * Toolbar chrome: `"text"` (default labels), `"icons"` (SVG glyphs),
+   * or `"none"` (no formatting buttons — slash menu owns block insertion).
+   */
+  menuVariant?: "text" | "icons" | "none";
   /** Optional trailing toolbar slot (e.g. word count). */
   menuRight?: ReactNode;
   /** Notifies when the TipTap editor instance is ready (or destroyed). */
