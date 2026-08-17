@@ -30,8 +30,8 @@ describe("TaskComposeAgentCard", () => {
 
     expect(screen.getByText("Autonomous")).toBeInTheDocument();
     expect(
-      screen.getByText("Picks it up when no other task is running."),
-    ).toBeInTheDocument();
+      screen.queryByText("Picks it up when no other task is running."),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByText("Autonomous execution"),
     ).not.toBeInTheDocument();

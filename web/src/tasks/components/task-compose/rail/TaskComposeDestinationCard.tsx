@@ -1,6 +1,4 @@
-import { Link } from "react-router-dom";
 import { TaskCreateAssignmentFields } from "../../task-create-modal/fields/TaskCreateAssignmentFields";
-import { ComposeRailSectionTitle } from "../TaskComposeBriefCard";
 
 type Props = {
   idsPrefix: string;
@@ -29,9 +27,7 @@ export function TaskComposeDestinationCard({
 }: Props) {
   return (
     <section className="compose-handoff__section compose-destination">
-      <ComposeRailSectionTitle icon={<FolderGit2Icon />}>
-        Destination
-      </ComposeRailSectionTitle>
+      <h2 className="compose-handoff__title">Destination</h2>
       {showWorktree ? (
         <div className="compose-destination__fields">
           <TaskCreateAssignmentFields
@@ -55,24 +51,8 @@ export function TaskComposeDestinationCard({
             }}
             disabled={disabled || assignmentLocked}
           />
-          <p className="compose-destination__hint">
-            <GitBranchIcon />
-            <span>
-              {worktreeId.trim() !== "" && (disabled || assignmentLocked)
-                ? "This task will reuse the selected worktree and branch. "
-                : "A worktree and branch are allocated when the task is created. "}
-              <Link to="/repositories" target="_blank" rel="noopener noreferrer">
-                Inspect repositories
-              </Link>
-            </span>
-          </p>
         </div>
-      ) : (
-        <p className="compose-destination__hint">
-          <GitBranchIcon />
-          <span>Repository binding is fixed for this edit.</span>
-        </p>
-      )}
+      ) : null}
     </section>
   );
 }
@@ -94,26 +74,6 @@ function FolderGit2Icon({ className }: { className?: string }) {
       <circle cx="13" cy="12" r="2" />
       <path d="M18 19c-2.8 0-5-2.2-5-5v8" />
       <circle cx="20" cy="19" r="2" />
-    </svg>
-  );
-}
-
-function GitBranchIcon() {
-  return (
-    <svg
-      className="compose-destination__hint-icon"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <line x1="6" y1="3" x2="6" y2="15" />
-      <circle cx="18" cy="6" r="3" />
-      <circle cx="6" cy="18" r="3" />
-      <path d="M18 9a9 9 0 0 1-9 9" />
     </svg>
   );
 }
