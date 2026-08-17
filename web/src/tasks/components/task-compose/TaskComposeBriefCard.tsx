@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { RichPromptEditor } from "@/components/rich-prompt";
 import { useOptionalDraftAssistContext } from "@/tasks/components/draft-assist";
+import { useComposeBriefVerticalResize } from "./useComposeBriefVerticalResize";
 import { useRichPromptWordCount } from "./useRichPromptWordCount";
 
 type Props = {
@@ -38,6 +39,13 @@ export function TaskComposeBriefCard({
   const titleId = `${idsPrefix}-title`;
   const promptId = `${idsPrefix}-prompt`;
   const { wordCount, onEditorReady } = useRichPromptWordCount();
+  const {
+    rootRef,
+    onGripPointerDown,
+    onGripPointerMove,
+    onGripPointerUp,
+    onGripPointerCancel,
+  } = useComposeBriefVerticalResize();
   const draftAssist = useOptionalDraftAssistContext();
   const onAiTrigger = useCallback(
     (msg: string) => {
@@ -52,7 +60,11 @@ export function TaskComposeBriefCard({
   );
 
   return (
-    <section className="compose-card compose-brief" aria-labelledby={titleId}>
+    <section
+      ref={rootRef}
+      className="compose-card compose-brief"
+      aria-labelledby={titleId}
+    >
       <div className="compose-brief__title-block">
         <input
           id={titleId}
@@ -86,6 +98,21 @@ export function TaskComposeBriefCard({
           onEditorReady={onEditorReady}
           onAiTrigger={draftAssist ? onAiTrigger : undefined}
         />
+      </div>
+      {/* Pointer-only, matching native textarea resize; editor keeps keyboard focus. */}
+      <div
+        className="compose-brief__resize-grip"
+        aria-hidden="true"
+        onPointerDown={onGripPointerDown}
+        onPointerMove={onGripPointerMove}
+        onPointerUp={onGripPointerUp}
+        onPointerCancel={onGripPointerCancel}
+        onLostPointerCapture={onGripPointerCancel}
+      >
+        <svg viewBox="0 0 12 12" width="12" height="12" focusable="false">
+          <path d="M4 12 L12 4" />
+          <path d="M8.5 12 L12 8.5" />
+        </svg>
       </div>
     </section>
   );
