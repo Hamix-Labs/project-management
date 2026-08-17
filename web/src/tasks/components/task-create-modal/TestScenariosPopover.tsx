@@ -1,12 +1,6 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import {
-  TEST_SCENARIO_DIFFICULTY_HINT,
-  TEST_SCENARIO_DIFFICULTY_LABEL,
-  TEST_SCENARIO_DIFFICULTY_ORDER,
-  groupTestScenariosByDifficulty,
-  type TestScenario,
-} from "@/tasks/test-scenarios";
+import { TEST_SCENARIOS, type TestScenario } from "@/tasks/test-scenarios";
 
 type Props = {
   /**
@@ -19,9 +13,9 @@ type Props = {
   onClose: () => void;
 };
 
-const POPOVER_VERTICAL_GAP = 6;
+const POPOVER_VERTICAL_GAP = 8;
 const POPOVER_VIEWPORT_MARGIN = 12;
-const POPOVER_DEFAULT_WIDTH = 460;
+const POPOVER_DEFAULT_WIDTH = 320;
 /**
  * Same z tier as the schedule quick-pick popover (see
  * `QuickScheduleOffsetPopover`) so both float above the create modal
@@ -29,21 +23,22 @@ const POPOVER_DEFAULT_WIDTH = 460;
  */
 const POPOVER_Z_INDEX = 13000;
 
+/** Survives popover remount so the last-picked check shows on reopen. Not persisted. */
+let lastPickedScenarioId: string | null = null;
+
 /**
- * Anchored popover that lists every entry in the
- * `web/src/tasks/test-scenarios` catalog grouped by difficulty.
- * Picking a scenario calls `onPick` (the parent applies it to the form)
- * and closes the popover.
+ * Anchored popover listing the three sample tasks. Picking a row calls
+ * `onPick` (the parent applies it to the form) and closes the popover.
  *
  * Renders into `document.body` so the modal's overflow does not clip it.
- * Mirrors the keyboard / focus / dismiss contract of
- * `QuickScheduleOffsetPopover` so the two trigger surfaces feel like
- * siblings: Escape closes + returns focus to the trigger, click-outside
- * dismisses, popover focuses itself on open for screen readers.
+ * Escape closes and returns focus to the trigger; click-outside dismisses.
  */
 export function TestScenariosPopover({ anchor, onPick, onClose }: Props) {
   const titleId = useId();
   const popoverRef = useRef<HTMLDivElement>(null);
+  const [lastPickedId, setLastPickedId] = useState<string | null>(
+    lastPickedScenarioId,
+  );
   const [pos, setPos] = useState<{
     top: number;
     left: number;
@@ -124,8 +119,6 @@ export function TestScenariosPopover({ anchor, onPick, onClose }: Props) {
 
   if (!anchor) return null;
 
-  const grouped = groupTestScenariosByDifficulty();
-
   return createPortal(
     <div
       ref={popoverRef}
@@ -145,61 +138,59 @@ export function TestScenariosPopover({ anchor, onPick, onClose }: Props) {
         zIndex: POPOVER_Z_INDEX,
       }}
     >
-      <header className="test-scenarios-popover__header">
-        <h3 id={titleId} className="test-scenarios-popover__title">
-          Test scenarios
-        </h3>
-        <p className="test-scenarios-popover__hint">
-          Pick a ready-made task to dispatch a real agent run with zero typing.
-          Every scenario is codebase-agnostic.
-        </p>
-      </header>
-      <div className="test-scenarios-popover__sections">
-        {TEST_SCENARIO_DIFFICULTY_ORDER.map((difficulty) => {
-          const scenarios = grouped[difficulty];
-          if (scenarios.length === 0) return null;
+      <p id={titleId} className="test-scenarios-popover__title">
+        Load a sample task
+      </p>
+      <ul className="test-scenarios-popover__list">
+        {TEST_SCENARIOS.map((scenario) => {
+          const picked = lastPickedId === scenario.id;
           return (
-            <section
-              key={difficulty}
-              className="test-scenarios-popover__section"
-              data-difficulty={difficulty}
-              aria-labelledby={`${titleId}-${difficulty}-label`}
-            >
-              <header className="test-scenarios-popover__section-header">
-                <h4
-                  id={`${titleId}-${difficulty}-label`}
-                  className="test-scenarios-popover__section-label"
-                >
-                  {TEST_SCENARIO_DIFFICULTY_LABEL[difficulty]}
-                </h4>
-                <span className="test-scenarios-popover__section-hint">
-                  {TEST_SCENARIO_DIFFICULTY_HINT[difficulty]}
+            <li key={scenario.id}>
+              <button
+                type="button"
+                className="test-scenarios-popover__row"
+                data-testid={`test-scenarios-pick-${scenario.id}`}
+                onClick={() => {
+                  lastPickedScenarioId = scenario.id;
+                  setLastPickedId(scenario.id);
+                  onPick(scenario);
+                }}
+              >
+                <span className="test-scenarios-popover__marker">
+                  {picked ? <CheckGlyph /> : <span className="test-scenarios-popover__bullet" />}
                 </span>
-              </header>
-              <ul className="test-scenarios-popover__list">
-                {scenarios.map((scenario) => (
-                  <li key={scenario.id}>
-                    <button
-                      type="button"
-                      className="test-scenarios-popover__row"
-                      data-testid={`test-scenarios-pick-${scenario.id}`}
-                      onClick={() => onPick(scenario)}
-                    >
-                      <span className="test-scenarios-popover__row-title">
-                        {scenario.title}
-                      </span>
-                      <span className="test-scenarios-popover__row-description">
-                        {scenario.description}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </section>
+                <span className="test-scenarios-popover__row-copy">
+                  <span className="test-scenarios-popover__row-title">
+                    {scenario.name}
+                  </span>
+                  <span className="test-scenarios-popover__row-description">
+                    {scenario.description}
+                  </span>
+                </span>
+              </button>
+            </li>
           );
         })}
-      </div>
+      </ul>
     </div>,
     document.body,
+  );
+}
+
+function CheckGlyph() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M20 6 9 17l-5-5" />
+    </svg>
   );
 }

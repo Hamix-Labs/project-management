@@ -25,6 +25,10 @@ export function useTaskCreateChecklistActions(input: {
           })
           .filter((item): item is ChecklistItemDraft => item !== null),
       );
+      const tags = scenario.tags?.trim();
+      if (tags) {
+        input.form.setNewTagsCsv(tags);
+      }
     },
     [input.form],
   );
