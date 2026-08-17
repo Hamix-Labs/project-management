@@ -74,3 +74,4 @@ web/src/tasks/create/hooks/useTaskCreateModalState.ts
 web/src/tasks/hooks/useTaskEditFlow.ts
 web/src/worktrees/components/GitWorktreeIcons.tsx
 web/src/app/styles/task-create/app-task-compose-page-v2.css
+web/src/app/styles/task-create/app-task-compose-handoff.css
