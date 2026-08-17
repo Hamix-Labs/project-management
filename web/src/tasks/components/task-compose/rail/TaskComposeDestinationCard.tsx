@@ -28,7 +28,7 @@ export function TaskComposeDestinationCard({
   onWorktreeChange,
 }: Props) {
   return (
-    <section className="compose-card compose-card--padded compose-destination">
+    <section className="compose-handoff__section compose-destination">
       <ComposeRailSectionTitle icon={<FolderGit2Icon />}>
         Destination
       </ComposeRailSectionTitle>

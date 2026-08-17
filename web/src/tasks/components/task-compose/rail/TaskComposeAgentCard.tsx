@@ -31,7 +31,7 @@ export function TaskComposeAgentCard({
 
   return (
     <section
-      className="compose-card compose-card--padded compose-agent"
+      className="compose-handoff__section compose-agent"
       aria-labelledby="task-compose-agent-heading"
     >
       <ComposeRailSectionTitle icon={<AgentBotIcon />}>

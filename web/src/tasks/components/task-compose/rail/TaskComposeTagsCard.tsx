@@ -14,7 +14,7 @@ export function TaskComposeTagsCard({
   onTagsCsvChange,
 }: Props) {
   return (
-    <section className="compose-card compose-card--padded compose-tags">
+    <section className="compose-handoff__section compose-tags">
       <ComposeRailSectionTitle icon={<AgentTagIcon />}>
         Tags
       </ComposeRailSectionTitle>

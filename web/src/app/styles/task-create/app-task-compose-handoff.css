@@ -1,3 +1,20 @@
+/* One rail card: Destination / Priority / Agent / Tags as hairlined sections. */
+.task-compose-page--v2 .compose-handoff {
+  border-radius: var(--compose-card-radius);
+  border: 1px solid var(--compose-card-border);
+  background: var(--surface-1);
+  box-shadow: var(--compose-card-shadow);
+  overflow: hidden;
+}
+
+.task-compose-page--v2 .compose-handoff__section {
+  padding: 1rem 1.25rem;
+}
+
+.task-compose-page--v2 .compose-handoff__section:not(:last-child) {
+  border-bottom: 1px solid var(--compose-card-border);
+}
+
 /* Destination / assignment inside rail card */
 .task-compose-page--v2 .compose-destination__fields {
   margin-top: 1rem;

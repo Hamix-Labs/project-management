@@ -25,7 +25,7 @@ export function TaskComposePriorityCard({
 }: Props) {
   return (
     <section
-      className="compose-card compose-card--padded compose-priority"
+      className="compose-handoff__section compose-priority"
       aria-label="Priority"
     >
       <ComposeRailSectionTitle icon={<ZapIcon />}>
