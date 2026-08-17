@@ -62,9 +62,6 @@ export function TaskComposeBriefCard({
           aria-label="Title"
           disabled={disabled}
         />
-        <p className="compose-brief__title-hint">
-          A short, action-oriented summary. This is what your agent sees first.
-        </p>
       </div>
       <div className="compose-brief__editor task-create-editor-shell">
         <RichPromptEditor
@@ -73,7 +70,7 @@ export function TaskComposeBriefCard({
           value={prompt}
           onChange={onPromptChange}
           disabled={disabled}
-          placeholder="Describe the full brief the agent starts from. Supports Markdown. Type @ to mention a repo file…"
+          placeholder="Describe the full brief the agent starts from. Supports Markdown."
           worktreeId={worktreeId}
           repositoryId={repositoryId}
           preferRepositoryHint={preferRepositoryHint}

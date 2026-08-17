@@ -32,13 +32,6 @@
   color: color-mix(in srgb, var(--text-tertiary) 70%, transparent);
 }
 
-.task-compose-page--v2 .compose-brief__title-hint {
-  margin: 0.375rem 0 0;
-  font-family: var(--font-sans);
-  font-size: var(--text-help);
-  color: var(--text-secondary);
-}
-
 .task-compose-page--v2 .compose-brief .compose-brief__editor.task-create-editor-shell,
 .task-compose-page--v2 .compose-brief .compose-brief__editor.task-create-editor-shell:focus-within {
   min-height: 18.75rem;
@@ -62,9 +55,9 @@
   gap: 0.125rem;
   margin: 0;
   border: 0;
-  border-bottom: 1px solid var(--compose-card-border);
+  border-block: 1px solid var(--compose-card-border);
   border-radius: 0;
-  background: color-mix(in oklab, var(--bg-subtle) 40%, transparent);
+  background: var(--surface-1);
   padding: 0.5rem 0.75rem;
   font-family: var(--font-sans);
 }
@@ -85,7 +78,7 @@
 
 .task-compose-page--v2 .compose-brief__editor .rich-prompt-toolbar[data-variant="icons"] .toolbar-btn:hover:not(:disabled),
 .task-compose-page--v2 .compose-brief__editor .rich-prompt-toolbar[data-variant="icons"] .toolbar-btn[aria-pressed="true"] {
-  background: var(--surface-1);
+  background: var(--bg-subtle);
   color: var(--text-primary);
 }
 
