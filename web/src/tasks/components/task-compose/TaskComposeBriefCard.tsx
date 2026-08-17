@@ -17,12 +17,12 @@ type Props = {
   onPromptChange: (v: string) => void;
 };
 
-/** Empty-block cursor copy; `/` opens the existing rich-prompt slash menu. */
+/** Empty-block cursor copy; `/` opens Hamix product commands (not markdown blocks). */
 export const COMPOSE_BRIEF_PLACEHOLDER = "Press `/` for commands";
 
 /**
- * Brief hero card: large title input + rich prompt editor.
- * Structure is inserted via `/` slash commands, not a markdown block toolbar.
+ * Brief hero card: large title input + rich prompt editor with icon toolbar.
+ * Markdown (bold, italic, H2/H3, lists, code) is the toolbar; `/` is product commands.
  */
 export function TaskComposeBriefCard({
   idsPrefix,
@@ -89,7 +89,7 @@ export function TaskComposeBriefCard({
           worktreeId={worktreeId}
           repositoryId={repositoryId}
           preferRepositoryHint={preferRepositoryHint}
-          menuVariant="none"
+          menuVariant="icons"
           menuRight={
             <span className="compose-brief__word-count" aria-live="polite">
               {wordCount} words

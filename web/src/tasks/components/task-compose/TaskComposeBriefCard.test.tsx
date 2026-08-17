@@ -87,16 +87,10 @@ describe("TaskComposeBriefCard", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("does not present the icon markdown toolbar on compose", () => {
+  it("presents the icon markdown toolbar and keeps the word count", () => {
     renderCard();
     const editor = screen.getByTestId("compose-brief-editor");
-    expect(editor).toHaveAttribute("data-menu-variant", "none");
-    expect(
-      screen.queryByRole("toolbar", { name: /text formatting/i }),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: /heading 2/i }),
-    ).not.toBeInTheDocument();
+    expect(editor).toHaveAttribute("data-menu-variant", "icons");
     expect(screen.getByText("0 words")).toBeInTheDocument();
   });
 });

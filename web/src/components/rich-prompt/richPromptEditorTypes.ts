@@ -28,7 +28,7 @@ export type RichPromptEditorProps = {
   onAiTrigger?: (msg: string) => void;
   /**
    * Toolbar chrome: `"text"` (default labels), `"icons"` (SVG glyphs),
-   * or `"none"` (no formatting buttons — slash menu owns block insertion).
+   * or `"none"` (formatting buttons omitted; trailing `menuRight` still renders).
    */
   menuVariant?: "text" | "icons" | "none";
   /** Optional trailing toolbar slot (e.g. word count). */
