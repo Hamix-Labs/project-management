@@ -106,7 +106,7 @@ describe("TaskComposeBriefCard resize", () => {
     const { container } = renderCard();
     const handle = grip(container);
     expect(handle).toHaveAttribute("aria-hidden", "true");
-    expect(handle.querySelector("path")).not.toBeNull();
+    expect(handle.querySelectorAll("path")).toHaveLength(2);
   });
 
   it("grows the editor height downward when the grip is dragged", () => {

@@ -109,9 +109,9 @@ export function TaskComposeBriefCard({
         onPointerCancel={onGripPointerCancel}
         onLostPointerCapture={onGripPointerCancel}
       >
-        <svg viewBox="0 0 12 12" width="12" height="12" focusable="false">
-          <path d="M4 12 L12 4" />
-          <path d="M8.5 12 L12 8.5" />
+        <svg viewBox="0 0 16 16" width="16" height="16" focusable="false">
+          <path d="M6 14 L14 6" />
+          <path d="M10 15 L15 10" />
         </svg>
       </div>
     </section>
