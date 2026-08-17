@@ -71,4 +71,29 @@ describe("TaskComposeReadinessBar", () => {
     expect(screen.getByText("1/4")).toBeInTheDocument();
     expect(screen.getByText(/essentials ready/)).toBeInTheDocument();
   });
+
+  it("renders inline essential chips, not a ready/incomplete summary only", () => {
+    render(
+      <TaskComposeReadinessBar
+        title="Ship observability"
+        brief=""
+        repositoryId="repo-1"
+        checklistItems={[]}
+      />,
+    );
+    const chips = document.querySelectorAll(".task-compose-readiness__chip");
+    expect([...chips].map((el) => el.textContent)).toEqual([
+      "Title",
+      "Brief",
+      "Repository",
+      "Done criteria",
+    ]);
+    expect(chips[0]).toHaveAttribute("data-ok", "true");
+    expect(chips[1]).toHaveAttribute("data-ok", "false");
+    expect(chips[2]).toHaveAttribute("data-ok", "true");
+    expect(chips[3]).toHaveAttribute("data-ok", "false");
+    expect(document.querySelectorAll(".task-compose-readiness__chip-dot")).toHaveLength(
+      4,
+    );
+  });
 });
