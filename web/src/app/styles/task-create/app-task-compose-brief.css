@@ -55,9 +55,9 @@
   gap: 0.125rem;
   margin: 0;
   border: 0;
-  border-bottom: 1px solid var(--compose-card-border);
+  border-block: 1px solid var(--compose-card-border);
   border-radius: 0;
-  background: color-mix(in oklab, var(--bg-subtle) 40%, transparent);
+  background: var(--surface-1);
   padding: 0.5rem 0.75rem;
   font-family: var(--font-sans);
 }
@@ -78,7 +78,7 @@
 
 .task-compose-page--v2 .compose-brief__editor .rich-prompt-toolbar[data-variant="icons"] .toolbar-btn:hover:not(:disabled),
 .task-compose-page--v2 .compose-brief__editor .rich-prompt-toolbar[data-variant="icons"] .toolbar-btn[aria-pressed="true"] {
-  background: var(--surface-1);
+  background: var(--bg-subtle);
   color: var(--text-primary);
 }
 

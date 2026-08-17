@@ -50,7 +50,7 @@ export function TaskComposeCriteriaCard({
         <h2 id={headingId} className="compose-criteria__title">
           Done criteria
         </h2>
-        <button>
+        <button
           type="button"
           className="compose-criteria__add"
           data-testid="compose-criteria-add"
