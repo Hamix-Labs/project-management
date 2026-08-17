@@ -33,16 +33,18 @@ function Harness({ onPick }: { onPick: (s: TestScenario) => void }) {
 }
 
 describe("TestScenariosPopover", () => {
-  it("renders every sample-task pick row", async () => {
+  it("renders Load a sample task and the three pick rows", async () => {
     const user = userEvent.setup();
     render(<Harness onPick={vi.fn()} />);
     await user.click(screen.getByTestId("harness-trigger"));
     expect(screen.getByTestId("test-scenarios-popover")).toBeInTheDocument();
+    expect(screen.getByText("Load a sample task")).toBeInTheDocument();
     for (const scenario of TEST_SCENARIOS) {
       expect(
         screen.getByTestId(`test-scenarios-pick-${scenario.id}`),
       ).toBeInTheDocument();
     }
+    expect(TEST_SCENARIOS).toHaveLength(3);
   });
 
   it("invokes onPick with the chosen scenario when a row is clicked", async () => {
