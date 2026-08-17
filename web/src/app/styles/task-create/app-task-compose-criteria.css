@@ -17,16 +17,6 @@
   font-weight: 600;
 }
 
-.task-compose-page--v2 .compose-criteria__lede {
-  margin: 0.125rem 0 0;
-  font-size: var(--text-help);
-  color: var(--text-secondary);
-}
-
-.task-compose-page--v2 .compose-criteria .field-req--required {
-  color: var(--warning);
-}
-
 .task-compose-page--v2 .compose-criteria__add {
   display: inline-flex;
   align-items: center;

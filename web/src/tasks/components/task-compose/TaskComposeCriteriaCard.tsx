@@ -1,6 +1,5 @@
 import { useCallback, useRef } from "react";
 import type { ChecklistItemDraft, TemplateFunctionInputDef } from "@/types";
-import { FieldRequirementBadge } from "@/shared/FieldLabel";
 import { TaskCreateModalCriteriaFields } from "../task-create-modal/fields/TaskCreateModalCriteriaFields";
 import { TaskCreateModalFunctionInputsField } from "../task-create-modal/fields/TaskCreateModalFunctionInputsField";
 
@@ -48,16 +47,10 @@ export function TaskComposeCriteriaCard({
       aria-labelledby={headingId}
     >
       <div className="compose-criteria__head">
-        <div>
-          <h2 id={headingId} className="compose-criteria__title">
-            Done criteria
-            <FieldRequirementBadge requirement={checklistRequirement} />
-          </h2>
-          <p className="compose-criteria__lede">
-            Checkable conditions that define when this task is complete.
-          </p>
-        </div>
-        <button
+        <h2 id={headingId} className="compose-criteria__title">
+          Done criteria
+        </h2>
+        <button>
           type="button"
           className="compose-criteria__add"
           data-testid="compose-criteria-add"
