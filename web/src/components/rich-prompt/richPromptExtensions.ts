@@ -6,12 +6,13 @@ import {
   type RepoFileSuggestionOptions,
 } from "./extensions/repoFileSuggestion";
 import { PressSpaceForAI } from "./extensions/pressSpaceForAI";
-import { SlashMenu } from "./extensions/slashMenu";
+import { SlashMenu, type SlashMenuCatalog } from "./extensions/slashMenu";
 
 export const EMPTY_BLOCK_PLACEHOLDER = "Press Space for AI or / for commands";
 
 export type BuildRichPromptExtensionsOpts = {
   onAiTrigger?: (msg: string) => void;
+  slashMenu?: SlashMenuCatalog;
 };
 
 export function buildRichPromptExtensions(
@@ -42,6 +43,7 @@ export function buildRichPromptExtensions(
     }),
     SlashMenu.configure({
       onAiTrigger: opts.onAiTrigger,
+      catalog: opts.slashMenu ?? "all",
     }),
   ];
 }

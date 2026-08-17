@@ -90,6 +90,7 @@ export function TaskComposeBriefCard({
           repositoryId={repositoryId}
           preferRepositoryHint={preferRepositoryHint}
           menuVariant="icons"
+          slashMenu="commands"
           menuRight={
             <span className="compose-brief__word-count" aria-live="polite">
               {wordCount} words

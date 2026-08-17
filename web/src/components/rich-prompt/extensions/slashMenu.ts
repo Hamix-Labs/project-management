@@ -20,8 +20,15 @@ import {
 
 export const slashMenuPluginKey = new PluginKey("slashMenu");
 
+export type SlashMenuCatalog = "all" | "commands";
+
 export type SlashMenuOptions = {
   onAiTrigger?: (msg: string) => void;
+  /**
+   * `"all"` includes markdown block inserts. `"commands"` is Hamix product
+   * actions only (mention a file, Ask AI) — markdown stays on the toolbar.
+   */
+  catalog?: SlashMenuCatalog;
 };
 
 export type SlashCommandId =
@@ -36,47 +43,67 @@ export type SlashCommandId =
 export const SLASH_ITEMS: SlashMenuItem[] = [
   {
     id: "heading-2",
+    kind: "block",
     label: "Heading 2",
     hint: "Section title",
     keywords: ["h2", "heading", "title"],
   },
   {
     id: "heading-3",
+    kind: "block",
     label: "Heading 3",
     hint: "Subsection",
     keywords: ["h3", "heading", "subtitle"],
   },
   {
     id: "bullet-list",
+    kind: "block",
     label: "Bulleted list",
     hint: "• Unordered list",
     keywords: ["list", "ul", "bullet", "unordered"],
   },
   {
     id: "ordered-list",
+    kind: "block",
     label: "Numbered list",
     hint: "1. Ordered list",
     keywords: ["list", "ol", "numbered", "ordered"],
   },
   {
     id: "blockquote",
+    kind: "block",
     label: "Quote",
     hint: "Block quote",
     keywords: ["quote", "blockquote", "callout"],
   },
   {
     id: "mention",
+    kind: "command",
     label: "Mention a file",
     hint: "Insert @",
     keywords: ["mention", "file", "at", "@"],
   },
   {
     id: "ai",
+    kind: "command",
     label: "Ask AI",
     hint: "Open the inline composer",
     keywords: ["ai", "assistant", "space", "help"],
   },
 ];
+
+export function slashItemsForCatalog(
+  catalog: SlashMenuCatalog,
+  items: SlashMenuItem[] = SLASH_ITEMS,
+): SlashMenuItem[] {
+  if (catalog === "commands") {
+    return items.filter((item) => item.kind === "command");
+  }
+  return items;
+}
+
+const COMMANDS_EMPTY_QUERY_HINT = "Mention a file or Ask AI";
+const ALL_EMPTY_QUERY_HINT = "Insert a block or trigger AI";
 
 export function runSlashCommand(
   editor: import("@tiptap/core").Editor,
@@ -117,11 +144,16 @@ export const SlashMenu = Extension.create<SlashMenuOptions>({
   addOptions() {
     return {
       onAiTrigger: undefined,
+      catalog: "all",
     };
   },
 
   addProseMirrorPlugins() {
     const onAiTrigger = this.options.onAiTrigger;
+    const catalog = this.options.catalog ?? "all";
+    const catalogItems = slashItemsForCatalog(catalog);
+    const emptyQueryHint =
+      catalog === "commands" ? COMMANDS_EMPTY_QUERY_HINT : ALL_EMPTY_QUERY_HINT;
 
     return [
       Suggestion<SlashMenuItem, SlashMenuItem>({
@@ -150,14 +182,14 @@ export const SlashMenu = Extension.create<SlashMenuOptions>({
           );
           exitSuggestion(editor.view, slashMenuPluginKey);
         },
-        items: ({ query }) => filterSlashItems(SLASH_ITEMS, query),
-        render: () => createSlashMenuRender(),
+        items: ({ query }) => filterSlashItems(catalogItems, query),
+        render: () => createSlashMenuRender(emptyQueryHint),
       }),
     ];
   },
 });
 
-function createSlashMenuRender() {
+function createSlashMenuRender(emptyQueryHint: string) {
   let component: ReactRenderer | null = null;
   let popup: TippyInstance | null = null;
   let latestProps: SuggestionProps<SlashMenuItem, SlashMenuItem> | null = null;
@@ -170,6 +202,7 @@ function createSlashMenuRender() {
     items: props.items,
     query: props.query,
     selectedIndex: props.items.length === 0 ? -1 : index,
+    emptyQueryHint,
     command: (item: SlashMenuItem) => {
       props.command(item);
     },

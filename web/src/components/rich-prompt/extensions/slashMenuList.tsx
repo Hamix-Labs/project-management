@@ -1,11 +1,15 @@
 import { useEffect, useRef } from "react";
 import { EnterGlyph } from "./repoFileSuggestionGlyphs";
 
+export type SlashItemKind = "block" | "command";
+
 export type SlashMenuItem = {
   id: string;
   label: string;
   hint?: string;
   keywords: string[];
+  /** `"block"` inserts markdown structure; `"command"` is a Hamix product action. */
+  kind: SlashItemKind;
 };
 
 type ListProps = {
@@ -13,7 +17,11 @@ type ListProps = {
   command: (item: SlashMenuItem) => void;
   query?: string;
   selectedIndex?: number;
+  /** Shown in the popover search row when `/` has no filter text yet. */
+  emptyQueryHint?: string;
 };
+
+const DEFAULT_EMPTY_QUERY_HINT = "Insert a block or trigger AI";
 
 export function filterSlashItems(
   items: SlashMenuItem[],
@@ -34,6 +42,7 @@ export function SlashMenuList({
   command,
   query = "",
   selectedIndex = -1,
+  emptyQueryHint = DEFAULT_EMPTY_QUERY_HINT,
 }: ListProps) {
   const listRef = useRef<HTMLUListElement>(null);
   const trimmedQuery = query.trim();
@@ -59,7 +68,7 @@ export function SlashMenuList({
               : "mention-dropdown__search-placeholder"
           }
         >
-          {trimmedQuery ? `/${trimmedQuery}` : "Insert a block or trigger AI"}
+          {trimmedQuery ? `/${trimmedQuery}` : emptyQueryHint}
         </span>
         <kbd className="mention-dropdown__at-kbd">/</kbd>
       </div>

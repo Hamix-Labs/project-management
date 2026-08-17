@@ -2,7 +2,12 @@
 import { Editor } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import { describe, expect, it, vi } from "vitest";
-import { runSlashCommand, SLASH_ITEMS, SlashMenu } from "./slashMenu";
+import {
+  runSlashCommand,
+  SLASH_ITEMS,
+  slashItemsForCatalog,
+  SlashMenu,
+} from "./slashMenu";
 import { filterSlashItems } from "./slashMenuList";
 
 function makeEditor(onAiTrigger: (msg: string) => void = () => {}) {
@@ -26,6 +31,19 @@ describe("SLASH_ITEMS", () => {
         "ai",
       ]),
     );
+  });
+});
+
+describe("slashItemsForCatalog", () => {
+  it("returns the full catalog for all", () => {
+    expect(slashItemsForCatalog("all")).toEqual(SLASH_ITEMS);
+  });
+
+  it("keeps only Hamix product commands", () => {
+    expect(slashItemsForCatalog("commands").map((i) => i.id)).toEqual([
+      "mention",
+      "ai",
+    ]);
   });
 });
 

@@ -11,10 +11,12 @@ vi.mock("@/components/rich-prompt", () => ({
   RichPromptEditor: ({
     placeholder,
     menuVariant,
+    slashMenu,
     menuRight,
   }: {
     placeholder?: string;
     menuVariant?: string;
+    slashMenu?: string;
     menuRight?: ReactNode;
   }) => (
     <div className="rich-prompt-wrap">
@@ -23,6 +25,7 @@ vi.mock("@/components/rich-prompt", () => ({
         data-testid="compose-brief-editor"
         data-placeholder={placeholder}
         data-menu-variant={menuVariant}
+        data-slash-menu={slashMenu}
       >
         {menuRight}
       </div>
@@ -92,6 +95,14 @@ describe("TaskComposeBriefCard", () => {
     const editor = screen.getByTestId("compose-brief-editor");
     expect(editor).toHaveAttribute("data-menu-variant", "icons");
     expect(screen.getByText("0 words")).toBeInTheDocument();
+  });
+
+  it("uses the product-command slash catalog rather than markdown blocks", () => {
+    renderCard();
+    expect(screen.getByTestId("compose-brief-editor")).toHaveAttribute(
+      "data-slash-menu",
+      "commands",
+    );
   });
 });
 

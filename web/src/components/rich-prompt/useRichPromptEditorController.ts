@@ -41,6 +41,7 @@ export function useRichPromptEditorController({
   repositoryId,
   preferRepositoryHint = false,
   onAiTrigger,
+  slashMenu = "all",
 }: RichPromptEditorProps) {
   const gitScoped = worktreeId !== undefined || repositoryId !== undefined;
   const mentionWorktreeId = useResolvedMentionWorktreeId(
@@ -125,8 +126,9 @@ export function useRichPromptEditorController({
     () =>
       buildRichPromptExtensions(placeholder, repoOpts, {
         onAiTrigger: handleAiTrigger,
+        slashMenu,
       }),
-    [placeholder, repoOpts, handleAiTrigger],
+    [placeholder, repoOpts, handleAiTrigger, slashMenu],
   );
 
   const editor = useEditor({

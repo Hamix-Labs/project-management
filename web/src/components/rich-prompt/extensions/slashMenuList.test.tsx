@@ -12,6 +12,25 @@ describe("SlashMenuList", () => {
     expect(screen.getByText(/insert a block/i)).toBeInTheDocument();
   });
 
+  it("uses a product-command header when emptyQueryHint is overridden", () => {
+    render(
+      <SlashMenuList
+        items={SLASH_ITEMS.filter((i) => i.kind === "command")}
+        command={vi.fn()}
+        query=""
+        emptyQueryHint="Mention a file or Ask AI"
+      />,
+    );
+    expect(screen.getByText("Mention a file or Ask AI")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /mention a file/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /ask ai/i })).toBeInTheDocument();
+    expect(screen.queryByText("Heading 2")).not.toBeInTheDocument();
+    expect(screen.queryByText("Heading 3")).not.toBeInTheDocument();
+    expect(screen.queryByText("Bulleted list")).not.toBeInTheDocument();
+    expect(screen.queryByText("Numbered list")).not.toBeInTheDocument();
+    expect(screen.queryByText("Quote")).not.toBeInTheDocument();
+  });
+
   it("renders the live query in the header", () => {
     render(
       <SlashMenuList items={SLASH_ITEMS} command={vi.fn()} query="head" />,
