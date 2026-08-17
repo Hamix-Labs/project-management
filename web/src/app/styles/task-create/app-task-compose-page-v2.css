@@ -46,24 +46,34 @@
 .task-compose-page--v2 .task-compose-page__back {
   display: grid;
   place-items: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  margin-top: 0.25rem;
+  /* PageHeading: size-8 (32px), mt-1.5, borderless, no shadow. */
+  width: 2rem;
+  height: 2rem;
+  margin-top: 0.375rem;
   padding: 0;
   flex-shrink: 0;
   border-radius: var(--radius-full);
-  border: 1px solid var(--compose-card-border);
-  background: var(--surface-1);
+  border: 0;
+  background: transparent;
   color: var(--text-secondary);
-  box-shadow: var(--compose-card-shadow);
+  box-shadow: none;
   text-decoration: none;
   font-size: 0;
+  transition:
+    color var(--duration-fast) var(--ease-default),
+    background var(--duration-fast) var(--ease-default);
 }
 
-.task-compose-page--v2 .task-compose-page__back:hover,
+.task-compose-page--v2 .task-compose-page__back:hover {
+  color: var(--text-primary);
+  background: var(--bg-subtle);
+}
+
 .task-compose-page--v2 .task-compose-page__back:focus-visible {
   color: var(--text-primary);
   background: var(--bg-subtle);
+  outline: none;
+  box-shadow: var(--shadow-focus);
 }
 
 .task-compose-page--v2 .task-compose-page__back-icon {
@@ -206,6 +216,9 @@ form.task-compose-page__form-shell {
 /* Sticky action footer — portaled to document.body so it stays
    viewport-fixed while the compose form scrolls. */
 .task-compose-page__sticky-footer {
+  /* Portaled to document.body, so --compose-max on .task-compose-page--v2
+     does not inherit. Re-declare so the inner column matches the page. */
+  --compose-max: 72rem;
   position: fixed;
   inset-inline: 0;
   bottom: 0;
@@ -219,7 +232,7 @@ form.task-compose-page__form-shell {
 }
 
 .task-compose-page__sticky-footer-inner {
-  max-width: var(--layout-max-width);
+  max-width: var(--compose-max);
   margin-inline: auto;
   padding: 0.875rem var(--space-6);
   display: flex;
