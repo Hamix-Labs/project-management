@@ -91,9 +91,46 @@
   border: 0;
   border-radius: var(--radius-md);
   background: transparent;
-  color: var(--chrome-icon-muted);
+  color: var(--text-secondary);
   box-shadow: none;
-  font-size: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  line-height: 1;
+}
+
+.task-compose-page--v2 .compose-brief__editor .rich-prompt-toolbar[data-variant="icons"] .toolbar-btn svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.task-compose-page--v2 .compose-brief__editor .rich-prompt-toolbar[data-variant="icons"] .toolbar-btn:is(
+    [aria-label="Bold"],
+    [aria-label="Italic"],
+    [aria-label="Heading 2"],
+    [aria-label="Heading 3"]
+  )
+  svg {
+  display: none;
+}
+
+.task-compose-page--v2 .compose-brief__editor .rich-prompt-toolbar[data-variant="icons"] .toolbar-btn[aria-label="Bold"]::after {
+  content: "B";
+  font-weight: 700;
+}
+
+.task-compose-page--v2 .compose-brief__editor .rich-prompt-toolbar[data-variant="icons"] .toolbar-btn[aria-label="Italic"]::after {
+  content: "I";
+  font-style: italic;
+  font-weight: 500;
+}
+
+.task-compose-page--v2 .compose-brief__editor .rich-prompt-toolbar[data-variant="icons"] .toolbar-btn[aria-label="Heading 2"]::after {
+  content: "H₂";
+}
+
+.task-compose-page--v2 .compose-brief__editor .rich-prompt-toolbar[data-variant="icons"] .toolbar-btn[aria-label="Heading 3"]::after {
+  content: "H₃";
 }
 
 .task-compose-page--v2 .compose-brief__editor .rich-prompt-toolbar[data-variant="icons"] .toolbar-btn:hover:not(:disabled),
@@ -119,11 +156,12 @@
 .task-compose-page--v2 .compose-brief__editor .rich-prompt-toolbar__right,
 .task-compose-page--v2 .compose-brief__word-count {
   margin-left: auto;
-  padding-right: 0.25rem;
+  padding-right: 0.375rem;
   font-family: var(--font-sans);
   font-size: var(--text-xs);
+  font-weight: 400;
   font-variant-numeric: tabular-nums;
-  color: var(--text-secondary);
+  color: color-mix(in srgb, var(--text-secondary) 70%, transparent);
 }
 
 .task-compose-page--v2 .compose-brief .task-create-editor-shell .rich-prompt-wrap .tiptap,
