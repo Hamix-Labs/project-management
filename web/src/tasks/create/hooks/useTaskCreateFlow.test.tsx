@@ -213,11 +213,14 @@ describe("useTaskCreateFlow", () => {
     });
 
     const scenarios = await import("../../test-scenarios");
-    const scenario = scenarios.TEST_SCENARIOS.find(
-      (s) => s.criteria.length > 0,
-    );
+    const scenario = scenarios.findTestScenarioById("observability");
     expect(scenario).toBeDefined();
-    if (!scenario) throw new Error("expected at least one scenario");
+    if (!scenario) throw new Error("expected observability scenario");
+
+    act(() => {
+      result.current.setNewRepositoryID("repo-keep");
+      result.current.setNewProjectID("project-keep");
+    });
 
     act(() => {
       result.current.applyTestScenario(scenario);
@@ -225,6 +228,9 @@ describe("useTaskCreateFlow", () => {
 
     expect(result.current.newTitle).toBe(scenario.title);
     expect(result.current.newPriority).toBe(scenario.priority);
+    expect(result.current.newTagsCsv).toBe(scenario.tags);
+    expect(result.current.newRepositoryID).toBe("repo-keep");
+    expect(result.current.newProjectID).toBe("project-keep");
     expect(result.current.newChecklistItems).toEqual(
       scenario.criteria.map((item) => ({
         text: item.text,
