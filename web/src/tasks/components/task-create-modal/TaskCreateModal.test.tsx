@@ -1,6 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
-import { within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi, beforeEach } from "vitest";
@@ -118,10 +117,11 @@ describe("TaskCreateModal", () => {
     expect(screen.getByText(/add at least one done criterion/i)).toBeInTheDocument();
   });
 
-  it("marks Done criteria as required", () => {
+  it("omits the required badge on the Done criteria heading", () => {
     renderModal({ checklistItems: [] });
     const heading = screen.getByRole("heading", { name: /done criteria/i });
-    expect(within(heading).getByText("*")).toBeInTheDocument();
+    expect(heading).toHaveTextContent(/^Done criteria$/);
+    expect(heading).not.toHaveTextContent("*");
   });
   it("shows the create subtitle and cancel control", async () => {
     const user = userEvent.setup();
