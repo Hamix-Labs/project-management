@@ -17,6 +17,10 @@ type Props = {
   disabled?: boolean;
   tagsCsv: string;
   onTagsCsvChange: (value: string) => void;
+  /** Hide the comma-commit helper under the pills. Modal keeps the default hint. */
+  hideHint?: boolean;
+  /** Empty-state placeholder. Default stays the modal copy. */
+  placeholder?: string;
 };
 
 const TAG_HINT =
@@ -31,6 +35,8 @@ export function TaskCreateTagsPillsField({
   disabled = false,
   tagsCsv,
   onTagsCsvChange,
+  hideHint = false,
+  placeholder = "e.g. backend, api",
 }: Props) {
   const generatedId = useId();
   const inputId = id ?? generatedId;
@@ -119,9 +125,9 @@ export function TaskCreateTagsPillsField({
           className="task-create-tags-pills__input"
           value={draft}
           disabled={disabled}
-          placeholder={tags.length === 0 ? "e.g. backend, api" : "Add a tag"}
+          placeholder={tags.length === 0 ? placeholder : "Add a tag"}
           aria-invalid={error ? true : undefined}
-          aria-describedby={error ? errorId : hintId}
+          aria-describedby={error ? errorId : hideHint ? undefined : hintId}
           onChange={(e) => {
             setDraft(e.target.value);
             setError(null);
@@ -134,7 +140,7 @@ export function TaskCreateTagsPillsField({
         <p id={errorId} className="task-create-tags-field__error" role="alert">
           {error}
         </p>
-      ) : (
+      ) : hideHint ? null : (
         <p id={hintId} className="task-create-tags-field__hint">
           {TAG_HINT}
         </p>

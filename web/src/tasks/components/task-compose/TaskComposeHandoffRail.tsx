@@ -40,41 +40,43 @@ export function TaskComposeHandoffRail({
 
   return (
     <>
-      <TaskComposeDestinationCard
-        idsPrefix={presentation.idsPrefix}
-        repositoryId={git.repositoryId}
-        projectId={git.projectId}
-        worktreeId={git.worktreeId}
-        assignmentLocked={git.assignmentLocked === true}
-        disabled={presentation.disabled}
-        showWorktree={!presentation.isTaskEdit}
-        onRepositoryChange={git.onRepositoryChange}
-        onProjectChange={git.onProjectChange}
-        onWorktreeChange={git.onWorktreeChange}
-      />
-      <TaskComposePriorityCard
-        value={essentials.priority}
-        disabled={presentation.disabled}
-        onChange={essentials.onPriorityChange}
-      />
-      <TaskComposeAgentCard
-        disabled={presentation.disabled}
-        lockRunner={presentation.isTaskEdit}
-        runner={agentRunner}
-        cursorModel={execution.taskCursorModel}
-        autonomyEnabled={execution.autonomyEnabled}
-        autonomyDisabled={autonomyDisabled}
-        onRunnerChange={execution.onTaskRunnerChange}
-        onCursorModelChange={execution.onTaskCursorModelChange}
-        onAutonomyChange={execution.onAutonomyChange}
-      />
-      {showTagsCard ? (
-        <TaskComposeTagsCard
-          tagsCsv={criteria.tagsCsv}
+      <div className="compose-handoff">
+        <TaskComposeDestinationCard
+          idsPrefix={presentation.idsPrefix}
+          repositoryId={git.repositoryId}
+          projectId={git.projectId}
+          worktreeId={git.worktreeId}
+          assignmentLocked={git.assignmentLocked === true}
           disabled={presentation.disabled}
-          onTagsCsvChange={criteria.onTagsCsvChange}
+          showWorktree={!presentation.isTaskEdit}
+          onRepositoryChange={git.onRepositoryChange}
+          onProjectChange={git.onProjectChange}
+          onWorktreeChange={git.onWorktreeChange}
         />
-      ) : null}
+        <TaskComposePriorityCard
+          value={essentials.priority}
+          disabled={presentation.disabled}
+          onChange={essentials.onPriorityChange}
+        />
+        <TaskComposeAgentCard
+          disabled={presentation.disabled}
+          lockRunner={presentation.isTaskEdit}
+          runner={agentRunner}
+          cursorModel={execution.taskCursorModel}
+          autonomyEnabled={execution.autonomyEnabled}
+          autonomyDisabled={autonomyDisabled}
+          onRunnerChange={execution.onTaskRunnerChange}
+          onCursorModelChange={execution.onTaskCursorModelChange}
+          onAutonomyChange={execution.onAutonomyChange}
+        />
+        {showTagsCard ? (
+          <TaskComposeTagsCard
+            tagsCsv={criteria.tagsCsv}
+            disabled={presentation.disabled}
+            onTagsCsvChange={criteria.onTagsCsvChange}
+          />
+        ) : null}
+      </div>
       {showMoreOptions ? (
         <div className="compose-more-options">
           <TaskCreateModalAdvancedOptions

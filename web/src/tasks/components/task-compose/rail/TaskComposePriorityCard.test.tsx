@@ -10,9 +10,14 @@ describe("TaskComposePriorityCard", () => {
       <TaskComposePriorityCard value="high" onChange={vi.fn()} />,
     );
 
+    const labels: Record<(typeof PRIORITIES)[number], string> = {
+      low: "Low",
+      medium: "Medium",
+      high: "High",
+      critical: "Urgent",
+    };
     for (const priority of PRIORITIES) {
-      const label = priority[0].toUpperCase() + priority.slice(1);
-      const segment = screen.getByRole("radio", { name: label });
+      const segment = screen.getByRole("radio", { name: labels[priority] });
       expect(segment).toHaveAttribute("data-priority", priority);
       expect(segment).not.toHaveAttribute("data-warn");
       expect(segment).toHaveAttribute(
@@ -29,7 +34,7 @@ describe("TaskComposePriorityCard", () => {
       <TaskComposePriorityCard value="medium" onChange={onChange} />,
     );
 
-    await user.click(screen.getByRole("radio", { name: "Critical" }));
+    await user.click(screen.getByRole("radio", { name: "Urgent" }));
     expect(onChange).toHaveBeenCalledWith("critical");
   });
 });

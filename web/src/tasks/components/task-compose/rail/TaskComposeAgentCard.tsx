@@ -1,8 +1,6 @@
-import { AgentBotIcon } from "../../task-create-modal/fields/TaskCreateAgentIcons";
 import { TaskCreateModalAgentSection } from "../../task-create-modal/fields/TaskCreateModalAgentSection";
 import { TaskCreateModalAutonomyToggle } from "../../task-create-modal/fields/TaskCreateModalAutonomyToggle";
 import { useTaskCreateAgentOptions } from "@/tasks/create/hooks/useTaskCreateAgentOptions";
-import { ComposeRailSectionTitle } from "../TaskComposeBriefCard";
 
 type Props = {
   disabled: boolean;
@@ -31,12 +29,12 @@ export function TaskComposeAgentCard({
 
   return (
     <section
-      className="compose-card compose-card--padded compose-agent"
+      className="compose-handoff__section compose-agent"
       aria-labelledby="task-compose-agent-heading"
     >
-      <ComposeRailSectionTitle icon={<AgentBotIcon />}>
-        <span id="task-compose-agent-heading">Agent</span>
-      </ComposeRailSectionTitle>
+      <h2 className="compose-handoff__title" id="task-compose-agent-heading">
+        Agent
+      </h2>
       <div className="compose-agent__fields">
         <TaskCreateModalAgentSection
           disabled={disabled}
@@ -56,8 +54,8 @@ export function TaskComposeAgentCard({
           disabled={disabled || autonomyDisabled}
           onChange={onAutonomyChange}
           label="Autonomous"
-          readyHint="Picks it up when no other task is running."
-          pausedHint="Paused until you resume from the task page."
+          readyHint=""
+          pausedHint=""
         />
       </div>
     </section>

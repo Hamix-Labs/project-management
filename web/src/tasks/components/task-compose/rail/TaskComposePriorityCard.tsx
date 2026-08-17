@@ -1,5 +1,4 @@
 import { PRIORITIES, type Priority, type PriorityChoice } from "@/types";
-import { ComposeRailSectionTitle } from "../TaskComposeBriefCard";
 
 type Props = {
   value: PriorityChoice;
@@ -11,7 +10,7 @@ const LABELS: Record<Priority, string> = {
   low: "Low",
   medium: "Medium",
   high: "High",
-  critical: "Critical",
+  critical: "Urgent",
 };
 
 /**
@@ -25,12 +24,10 @@ export function TaskComposePriorityCard({
 }: Props) {
   return (
     <section
-      className="compose-card compose-card--padded compose-priority"
+      className="compose-handoff__section compose-priority"
       aria-label="Priority"
     >
-      <ComposeRailSectionTitle icon={<ZapIcon />}>
-        Priority
-      </ComposeRailSectionTitle>
+      <h2 className="compose-handoff__title">Priority</h2>
       <div
         className="compose-priority__segments"
         role="radiogroup"
@@ -50,27 +47,12 @@ export function TaskComposePriorityCard({
               className="compose-priority__segment"
               onClick={() => onChange(p)}
             >
+              <span className="compose-priority__dot" aria-hidden="true" />
               {LABELS[p]}
             </button>
           );
         })}
       </div>
     </section>
-  );
-}
-
-function ZapIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-    </svg>
   );
 }
